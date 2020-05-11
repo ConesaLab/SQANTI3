@@ -346,7 +346,5 @@ dependencies:
   - zstd=1.3.7=h0b5b093_0
   - pip:
     - bx-python==0.8.8
-    - cupcake==12.0.0
     - sklearn==0.0
-prefix: /home/fpardopalacios/anaconda2/envs/SQANTI3.env_test
 
