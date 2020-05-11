@@ -1,0 +1,178 @@
+README file of GeneMarkS-T
+
+#====================================================================
+# Copyright Georgia Institute of Technology, Atlanta, Georgia, USA
+# Distributed by Gene Probe Inc., Atlanta, Georgia, USA
+#====================================================================
+
+March 2014
+
+References:
+Tang S. and Borodovsky M.
+"GeneMarkS-T: identification of protein coding regions in RNA transcripts"
+
+Other References for GeneMark Suite
+Lukashin A. and Borodovsky M.
+"GeneMark.hmm: new solutions for gene finding."
+Nucleic Acids Research, 1998, Vol. 26, No. 4, pp. 1107-1115
+
+Besemer J., Lomsadze A. and Borodovsky M.
+"GeneMarkS: a self-training method for prediction of gene starts in
+microbial genomes. Implications for finding sequence motifs in
+regulatory regions."
+
+Nucleic Acids Research, 2001, Vol. 29, No. 12, 2607-2618
+Besemer J. and Borodovsky M.
+"Heuristic approach to deriving models for gene finding."
+Nucleic Acids Research, 1999, Vol. 27, No. 19, pp. 3911-3920
+
+
+More specific instructions on using the programs described above follow below.
+
+Further details on the data file formats and definitions are available at the site
+http://topaz.gatech.edu/
+
+#====================================================================
+GeneMarkS-T options
+
+GeneMarkS  version 5.1 March 2014
+Usage: gmst.pl [options] <sequence file name>
+
+input sequence in FASTA format
+
+
+Output options:
+(output is in current working directory)
+
+--output    <string> output file with predicted gene coordinates by GeneMarh.hmm
+            and species parameters derived by GeneMarkS-T.
+            (default: <sequence file name>.lst)
+ 
+            GeneMark.hmm can be executed independently after finishing GeneMarkS training.
+            This method may be the preferable option in some situations, as it provides accesses to GeneMarh.hmm options.
+--format    <string> output coordinates of predicted genes in this format
+            (default: LST; supported: LST and GFF)
+--fnn       create file with nucleotide sequence of predicted genes
+--faa       create file with protein sequence of predicted genes
+--clean     <number> delete all temporary files
+            (default: 1; supported: 1 <true> and 0 <false>)
+			
+Run options:
+
+--bins      <number> number of clusters for inhomogeneous genome
+            (default: 0; supported: 0(automatic clustering),1,2,3)
+--filter    <number> keep at most one prediction per sequence
+            (default: 1; supported: 1 <true> and 0 <false>)
+--strand    <string> sequence strand to predict genes in
+            (default: 'both'; supported: direct, reverse and both )
+--order     <number> markov chain order
+            (default: 4; supported in range: >= 0)
+--order_non <number> order for non-coding parameters
+            (default: 2)
+--gcode     <number> genetic code
+            (default: 1; supported: 11, 4 and 1)
+--motif     <number> iterative search for a sequence motif associated with CDS start
+            (default: 1; supported: 1 <true> and 0 <false>)
+--width     <number> motif width
+            (default: 12; supported in range: >= 3)
+--prestart  <number> length of sequence upstream of translation initiation site that presumably includes the motif
+            (default: 6; supported in range: >= 0)
+--fixmotif  <number> the motif is located at a fixed position with regard to the start; motif could overlap start codon
+            (default: 1; supported: 1 <true> and 0 <false> if this option is on, it changes the meaning of --prestart 
+            option which in this case will define the distance from start codon to motif start)
+--offover   <number> prohibits gene overlap
+            (default: 1; supported: 1 <true> and 0 <false>)
+
+Combined output and run options:
+
+--prok      to run program on prokaryotic transcripts
+            (this option is the same as:  --bins 1  --filter 0  --order 2  --order_non 2  --gcode 11 --width 6  --prestart 40 --fixmotif 0)
+
+
+Test/developer options:
+
+--par      <file name> custom parameters for GeneMarkS
+           (default is selected based on gcode value: 'par_<gcode>.default' )
+--gibbs    <number> version of Gibbs sampler software
+           (default: 3; supported versions: 1 and 3 ) 
+--test     installation test
+--identity  <number> identity level assigned for termination of iterations
+            (default: 0.99; supported in range: >=0 and <= 1)
+--maxitr    <number> maximum number of iterations
+            (default: 10; supported in range: >= 1)
+--verbose
+--version
+
+examples:
+     gmst.pl Euka_transcripts.fasta 
+     gmst.pl --prok Prok_transcripts.fasta
+
+output: 
+     seq.fasta.lst:    predicted genes in LST format.
+     GeneMark_hmm.mod: GeneMark.hmm model derived by self-training on the input sequence.
+     gms.log:          log file containing commands to accomplish GeneMarkS-T training.
+	 
+     If multiple bins are used, a sequence file and a model file are also generated for each bin.
+
+gmhmmp program can be used to predict genes in transcripts from the same species after 
+GeneMarkS-T training is completed. The specefic command line for your run is available 
+in the end of gms.log file. 
+
+#====================================================================
+GeneMark.hmm options
+
+
+GeneMark.hmm version 3.20
+
+Usage:
+    gmhmmp [options] [sequence file]
+
+    [sequence file] - file with sequence/s in FASTA format
+
+Required options:
+	-m	[model file] file with gene finding parameters
+    metagenome style model file is allowed
+
+Optional parameters:
+
+*** Output options
+
+	-o	[output file] output file name
+		default = [sequence file].lst
+	-f	output format: [L] for LST, [G] for GFF
+		default = L
+	-a	output protein sequences of predicted genes
+	-d	output nucleotide sequences of predicted genes
+	-k	output RBS score and spacer
+	-K	[file] output all RBS scores and location to file
+	-b	output one best prediction per sequence
+
+*** Prediction options
+
+	-r	Use RBS for gene start prediction
+	-s	[d|r|.] Strand to predict genes on
+		default = '.' predict genes on both strands
+	-p	[1|0] Gene overlap are allowed [1] or prohibited [0]
+		default = 1
+		[0] is used for gene finding in intron-less eukaryotic genomes
+	-e	[filename] use this file with external infromation to profile predictions
+	-c	parse parameters from FASTA defline
+
+*** Developer options
+
+	-M	[model file] file with gene finding parameters for metagenomes
+	-R	[model file] file with parameters of RBS sub model
+	-L	[log file] output information into loginfo file
+	-i	[number] Probability of initiation and termination in non-coding state
+		default = 0.5
+	-n	Turn OFF prediction of the incomplete genes at sequence gaps
+		(gap : string of unknown letters 'N' longer then 20 nt)
+	-E	[value] evidence score for coding regions
+	-v	verbose
+	-V	debug mode
+
+Examples:
+
+	gmhmmp -r -m bsub.mod -o sequence.lst sequence.fasta
+	gmhmmp -r -p 0 -m yeast.mod -o sequence.lst sequence.fasta
+
