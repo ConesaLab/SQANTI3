@@ -124,12 +124,11 @@ $ source activate SQANTI3_env
 ```
 
 #### Minimum Input to SQANTI3 QC
+*   **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like PacBio's Iso-Seq or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF. If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
 
-* **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like PacBio's Iso-Seq or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF. If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
+*   **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
 
-* **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
-
-* **Reference genome**, in FASTA format. For example hg38. *Make sure your annotation GTF is based on the correct ref genome version!* Please check that the chromosome/scaffolds names are the same in the reference annotation and the reference genome.
+*   **Reference genome**, in FASTA format. For example hg38. *Make sure your annotation GTF is based on the correct ref genome version!* Please check that the chromosome/scaffolds names are the same in the reference annotation and the reference genome.
 
 #### Optional inputs:
 
@@ -142,6 +141,8 @@ $ source activate SQANTI3_env
 * FL count information. See <a href="#flcount">FL count section</a> to include Iso-Seq FL count information for each isoform.
 
 * Short read expression. See <a href="#exp">Short Read Expression section</a> to include short read expression (RSEM or Kallisto).
+
+* tappAS-annotation file. A gff3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/) if --isoAnnotLite option is specified.
 
 
 ### Running SQANTI3 Quality Control script
