@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 # SQANTI: Structural and Quality Annotation of Novel Transcript Isoforms
 # Authors: Lorena de la Fuente, Hector del Risco, Cecile Pereira and Manuel Tardaguila
-# Modified by Liz (etseng@pacb.com) currently as SQANTI2 working version
-# Modified by Fran (francisco.pardo.palacios@gmail.com) as SQANTI3 in-house version (02/28/2020)
+# Modified by Liz (etseng@pacb.com) currently as SQANTI3 working version
+# Modified by Fran (francisco.pardo.palacios@gmail.com) as SQANTI3 version (05/11/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '6.0.0'  # Python 3.7
+__version__ = '1.0.0'  # Python 3.7
 
-import pdb
-import os, re, sys, subprocess, timeit, glob
+import os, re, sys, subprocess, timeit, glob, copy
+import shutil
 import distutils.spawn
 import itertools
 import bisect
 import argparse
 import math
-from scipy import mean # Fran
-from collections import defaultdict, Counter, namedtuple, Iterable # Iterable is Fran's
+from scipy import mean
+from collections import defaultdict, Counter, namedtuple, Iterable
 from csv import DictWriter, DictReader
+from multiprocessing import Process
 
 utilitiesPath =  os.path.dirname(os.path.realpath(__file__))+"/utilities/" 
 sys.path.insert(0, utilitiesPath)
@@ -79,7 +80,7 @@ DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
 GMST_CMD = "perl " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
 
-GTF2GENEPRED_PROG = "gtfToGenePred"
+GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
 if distutils.spawn.find_executable(GTF2GENEPRED_PROG) is None:
@@ -110,7 +111,9 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'n_indels_junc',  'bite',  'iso_exp', 'gene_exp',  'ratio_exp',
                 'FSM_class',   'coding', 'ORF_length', 'CDS_length', 'CDS_start',
                 'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'predicted_NMD',
-                'perc_A_downstream_TTS', 'dist_to_cage_peak', 'within_cage_peak',
+                'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
+                'dist_to_cage_peak', 'within_cage_peak',
+                'dist_to_polya_site', 'within_polya_site',
                 'polyA_motif', 'polyA_dist']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
@@ -119,6 +122,8 @@ RSCRIPT_REPORT = 'SQANTI3_report.R'
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
+
+SPLIT_ROOT_DIR = 'splits/'
 
 
 class genePredReader(object):
@@ -215,8 +220,9 @@ class myQueryTranscripts:
                  refStart = "NA", refEnd = "NA",
                  q_splicesite_hit = 0,
                  q_exon_overlap = 0,
-                 FSM_class = None, percAdownTTS = None,
+                 FSM_class = None, percAdownTTS = None, seqAdownTTS=None,
                  dist_cage='NA', within_cage='NA',
+                 dist_polya_site='NA', within_polya_site='NA',
                  polyA_motif='NA', polyA_dist='NA'):
 
         self.id  = id
@@ -262,10 +268,13 @@ class myQueryTranscripts:
         self.FSM_class   = FSM_class
         self.bite        = bite
         self.percAdownTTS = percAdownTTS
+        self.seqAdownTTS  = seqAdownTTS
         self.dist_cage   = dist_cage
         self.within_cage = within_cage
+        self.within_polya_site = within_polya_site
+        self.dist_polya_site   = dist_polya_site    # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist  = polyA_dist
+        self.polyA_dist  = polyA_dist               # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff)+abs(self.tts_diff)
@@ -311,8 +320,11 @@ class myQueryTranscripts:
                                                                                                                                                            str(self.CDSlen()), str(self.CDS_start), str(self.CDS_end),
                                                                                                                                                            str(self.CDS_genomic_start), str(self.CDS_genomic_end), str(self.is_NMD),
                                                                                                                                                            str(self.percAdownTTS),
+                                                                                                                                                           str(self.seqAdownTTS),
                                                                                                                                                            str(self.dist_cage),
                                                                                                                                                            str(self.within_cage),
+                                                                                                                                                           str(self.dist_polya_site),
+                                                                                                                                                           str(self.within_polya_site),
                                                                                                                                                            str(self.polyA_motif),
                                                                                                                                                            str(self.polyA_dist))
 
@@ -356,8 +368,11 @@ class myQueryTranscripts:
          'CDS_genomic_end': self.CDS_genomic_end,
          'predicted_NMD': self.is_NMD,
          'perc_A_downstream_TTS': self.percAdownTTS,
+         'seq_A_downstream_TTS': self.seqAdownTTS,
          'dist_to_cage_peak': self.dist_cage,
          'within_cage_peak': self.within_cage,
+         'dist_to_polya_site': self.dist_polya_site,
+         'within_polya_site': self.within_polya_site,
          'polyA_motif': self.polyA_motif,
          'polyA_dist': self.polyA_dist
          }
@@ -428,6 +443,21 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                     r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
             write_collapseGFF_format(f, r)
 
+def get_corr_filenames(args, dir=None):
+    d = dir if dir is not None else args.dir
+    corrPathPrefix = os.path.join(d, args.output)
+    corrGTF = corrPathPrefix +"_corrected.gtf"
+    corrSAM = corrPathPrefix +"_corrected.sam"
+    corrFASTA = corrPathPrefix +"_corrected.fasta"
+    corrORF =  corrPathPrefix +"_corrected.faa"
+    return corrGTF, corrSAM, corrFASTA, corrORF
+
+def get_class_junc_filenames(args, dir=None):
+    d = dir if dir is not None else args.dir
+    outputPathPrefix = os.path.join(d, args.output)
+    outputClassPath = outputPathPrefix + "_classification.txt"
+    outputJuncPath = outputPathPrefix + "_junctions.txt"
+    return outputClassPath, outputJuncPath
 
 def correctionPlusORFpred(args, genome_dict):
     """
@@ -438,12 +468,9 @@ def correctionPlusORFpred(args, genome_dict):
     global corrSAM
     global corrFASTA
 
-    corrPathPrefix = os.path.join(args.dir, os.path.splitext(os.path.basename(args.isoforms))[0])
-    corrGTF = corrPathPrefix +"_corrected.gtf"
-    corrSAM = corrPathPrefix +"_corrected.sam"
-    corrFASTA = corrPathPrefix +"_corrected.fasta"
-    corrORF =  corrPathPrefix +"_corrected.faa"
+    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
 
+    n_cpu = max(1, args.cpus // args.chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
     #         IF sequence is provided, align as SAM then correct with genome
@@ -456,7 +483,7 @@ def correctionPlusORFpred(args, genome_dict):
             else:
                 if args.aligner_choice == "gmap":
                     print("****Aligning reads with GMAP...", file=sys.stdout)
-                    cmd = GMAP_CMD.format(cpus=args.gmap_threads,
+                    cmd = GMAP_CMD.format(cpus=n_cpu,
                                           dir=os.path.dirname(args.gmap_index),
                                           name=os.path.basename(args.gmap_index),
                                           sense=args.sense,
@@ -464,14 +491,14 @@ def correctionPlusORFpred(args, genome_dict):
                                           o=corrSAM)
                 elif args.aligner_choice == "minimap2":
                     print("****Aligning reads with Minimap2...", file=sys.stdout)
-                    cmd = MINIMAP2_CMD.format(cpus=args.gmap_threads,
+                    cmd = MINIMAP2_CMD.format(cpus=n_cpu,
                                               sense=args.sense,
                                               g=args.genome,
                                               i=args.isoforms,
                                               o=corrSAM)
                 elif args.aligner_choice == "deSALT":
                     print("****Aligning reads with deSALT...", file=sys.stdout)
-                    cmd = DESALT_CMD.format(cpus=args.gmap_threads,
+                    cmd = DESALT_CMD.format(cpus=n_cpu,
                                             dir=args.gmap_index,
                                             i=args.isoforms,
                                             o=corrSAM)
@@ -529,7 +556,7 @@ def correctionPlusORFpred(args, genome_dict):
             os.remove(corrGTF_tpm)
 
             if not os.path.exists(corrSAM):
-                sys.stdout.write("\nIndels will be not calculated since you ran SQANTI2 without alignment step (SQANTI2 with gtf format as transcriptome input).\n")
+                sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
             subprocess.call([GFFREAD_PROG, corrGTF, '-g', args.genome, '-w', corrFASTA])
@@ -537,11 +564,10 @@ def correctionPlusORFpred(args, genome_dict):
     # ORF generation
     print("**** Predicting ORF sequences...", file=sys.stdout)
 
-    gmst_dir = os.path.join(args.dir, "GMST")
+    gmst_dir = os.path.join(os.path.abspath(args.dir), "GMST")
     gmst_pre = os.path.join(gmst_dir, "GMST_tmp")
     if not os.path.exists(gmst_dir):
         os.makedirs(gmst_dir)
-
 
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
     gmst_rex = re.compile('(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
@@ -561,10 +587,13 @@ def correctionPlusORFpred(args, genome_dict):
             cds_end = int(m.group(5))
             orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, proteinID=r.id)
     else:
+        cur_dir = os.path.abspath(os.getcwd())
+        os.chdir(args.dir)
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
         if subprocess.check_call(cmd, shell=True, cwd=gmst_dir)!=0:
             print("ERROR running GMST cmd: {0}".format(cmd), file=sys.stderr)
             sys.exit(-1)
+        os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
         with open(corrORF, "w") as f:
             for r in SeqIO.parse(open(gmst_pre+'.faa'), 'fasta'):
@@ -613,10 +642,10 @@ def reference_parser(args, genome_chroms):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
         ## gtf to genePred
-        if not args.geneid:
-            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
-        else:
+        if not args.genename:
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
+        else:
+            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -735,16 +764,16 @@ def mergeDict(dict1, dict2):
     dict3 = {**dict1, **dict2}
     for key, value in dict3.items():
         if key in dict1 and key in dict2:
-                dict3[key] = [value , dict1[key]] 
+                dict3[key] = [value , dict1[key]]
     return dict3
 
 def flatten(lis):
-     
+
      for item in lis:
          if isinstance(item, Iterable) and not isinstance(item, str):
              for x in flatten(item):
                  yield x
-         else:        
+         else:
              yield item
 
 
@@ -760,26 +789,26 @@ def expression_parser(expressionFile):
                 exp_paths = expressionFile.split(",")
     exp_all = {}
     for exp_file in exp_paths:
-    	reader = DictReader(open(exp_file), delimiter='\t')
-    	if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
-    		print("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.", file=sys.stderr)
-    		name_id, name_tpm = 'target_id', 'tpm'
-    	elif all(k in reader.fieldnames for k in EXP_RSEM_HEADERS):
-    		print("Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.", file=sys.stderr)
-    		name_id, name_tpm = 'transcript_id', 'TPM'
-    	else:
-    		print("Expected Kallisto or RSEM file format from {0}. Abort!".format(expressionFile), file=sys.stderr)
-    	exp_sample = {}
-    	for r in reader:
-    		exp_sample[r[name_id]] = float(r[name_tpm])
-	
-    	exp_all = mergeDict(exp_all, exp_sample)
- ##### falta hacer la media de los values de cada entrada al diccionario y guardarlo en el exp_dict que acabará siendo el output   
+        reader = DictReader(open(exp_file), delimiter='\t')
+        if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
+                print("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.", file=sys.stderr)
+                name_id, name_tpm = 'target_id', 'tpm'
+        elif all(k in reader.fieldnames for k in EXP_RSEM_HEADERS):
+                print("Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.", file=sys.stderr)
+                name_id, name_tpm = 'transcript_id', 'TPM'
+        else:
+                print("Expected Kallisto or RSEM file format from {0}. Abort!".format(expressionFile), file=sys.stderr)
+        exp_sample = {}
+        for r in reader:
+                exp_sample[r[name_id]] = float(r[name_tpm])
+
+        exp_all = mergeDict(exp_all, exp_sample)
+    
     exp_dict = {}
     if len(exp_paths)>1:
         for k in exp_all:
-    	    exp_all[k] = list(flatten(exp_all[k]))
-    	    exp_dict[k] = mean(exp_all[k]) 
+            exp_all[k] = list(flatten(exp_all[k]))
+            exp_dict[k] = mean(exp_all[k])
         return exp_dict
     else:
         exp_dict=exp_all
@@ -910,7 +939,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                     chrom=trec.chrom,
                                     strand=trec.strand, \
                                     subtype="no_subcategory",\
-                                    percAdownTTS=str(percA))
+                                    percAdownTTS=str(percA),\
+                                    seqAdownTTS=seq_downTTS)
 
     ##***************************************##
     ########### SPLICED TRANSCRIPTS ###########
@@ -919,6 +949,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
     cat_ranking = {'full-splice_match': 5, 'incomplete-splice_match': 4, 'anyKnownJunction': 3, 'anyKnownSpliceSite': 2,
                    'geneOverlap': 1, '': 0}
 
+    #if trec.id.startswith('PB.1961.2'):
+    #    pdb.set_trace()
     if trec.exonCount >= 2:
 
         hits_by_gene = defaultdict(lambda: [])  # gene --> list of hits
@@ -941,7 +973,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                              chrom=trec.chrom,
                                              strand=trec.strand, \
                                              subtype="no_subcategory", \
-                                             percAdownTTS=str(percA))
+                                             percAdownTTS=str(percA), \
+                                             seqAdownTTS=seq_downTTS)
 
             for ref in hits_by_gene[ref_gene]:
                 if trec.strand != ref.strand:
@@ -949,11 +982,11 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
 
-                #if trec.id.startswith('PB.1252.'):
+                #if trec.id.startswith('PB.102.9'):
                 #    pdb.set_trace()
                 if ref.exonCount == 1: # mono-exonic reference, handle specially here
                     if calc_exon_overlap(trec.exons, ref.exons) > 0 and cat_ranking[isoform_hit.str_class] < cat_ranking["geneOverlap"]:
-                        isoform_hit = myQueryTranscripts(trec.id, "NA", "NA", 1, trec.length,
+                        isoform_hit = myQueryTranscripts(trec.id, "NA", "NA", trec.exonCount, trec.length,
                                                             "geneOverlap",
                                                              subtype="mono-exon",
                                                              chrom=trec.chrom,
@@ -966,7 +999,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=0,
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA))
+                                                             percAdownTTS=str(percA),
+                                                             seqAdownTTS=seq_downTTS)
 
                 else: # multi-exonic reference
                     match_type = compare_junctions(trec, ref, internal_fuzzy_max_dist=0, max_5_diff=999999, max_3_diff=999999)
@@ -999,7 +1033,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA))
+                                                             percAdownTTS=str(percA),
+                                                             seqAdownTTS=seq_downTTS)
                     # #######################################################
                     # SQANTI's incomplete-splice_match
                     # (only check if don't already have a FSM match)
@@ -1024,7 +1059,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA))
+                                                             percAdownTTS=str(percA),
+                                                             seqAdownTTS=seq_downTTS)
                     # #######################################################
                     # Some kind of junction match that isn't ISM/FSM
                     # #######################################################
@@ -1049,7 +1085,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA))
+                                                             percAdownTTS=str(percA),
+                                                             seqAdownTTS=seq_downTTS)
                     else: # must be nomatch
                         assert match_type == 'nomatch'
                         # at this point, no junction overlap, but may be a single splice site (donor or acceptor) match?
@@ -1069,7 +1106,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons,
                                                                                               ref.exons),
-                                                             percAdownTTS=str(percA))
+                                                             percAdownTTS=str(percA),
+                                                             seqAdownTTS=seq_downTTS)
 
                         if isoform_hit.str_class=="": # still not hit yet, check exonic overlap
                             if cat_ranking[isoform_hit.str_class] < cat_ranking["geneOverlap"] and calc_exon_overlap(trec.exons, ref.exons) > 0:
@@ -1086,7 +1124,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                                  refEnd=ref.txEnd,
                                                                  q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                                  q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA))
+                                                                 percAdownTTS=str(percA),
+                                                                 seqAdownTTS=seq_downTTS)
 
             best_by_gene[ref_gene] = isoform_hit
         # now we have best_by_gene:
@@ -1126,7 +1165,7 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
 
                 # see if there's already an existing match AND if so, if this one is better
                 if isoform_hit.str_class == "": # no match so far
-                    isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, 1, trec.length, "full-splice_match",
+                    isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length, "full-splice_match",
                                                             subtype="mono-exon",
                                                             chrom=trec.chrom,
                                                             strand=trec.strand,
@@ -1134,7 +1173,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                             transcripts=[ref.id],
                                                             refLen=ref.length,
                                                             refExons = ref.exonCount,
-                                                            percAdownTTS=str(percA))
+                                                            percAdownTTS=str(percA),
+                                                            seqAdownTTS=seq_downTTS)
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.modify(ref.id, ref.gene, diff_tss, diff_tts, ref.length, ref.exonCount)
 
@@ -1143,6 +1183,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
             # (1) if it overlaps with a ref exon and is contained in an exon, we call it ISM
             # (2) else, if it is completely within a ref gene start-end region, we call it NIC by intron retention
             for ref in refs_exons_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
+                if calc_exon_overlap(trec.exons, ref.exons) == 0:   # no exonic overlap, skip!
+                    continue
                 if ref.strand != trec.strand:
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
@@ -1391,6 +1433,11 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     else:
         cage_peak_obj = None
 
+    if args.polyA_peak is not None:
+        print("**** Reading polyA Peak data.", file=sys.stdout)
+        polya_peak_obj = PolyAPeak(args.polyA_peak)
+    else:
+        polya_peak_obj = None
 
     if args.polyA_motif_list is not None:
         print("**** Reading PolyA motif list.", file=sys.stdout)
@@ -1417,14 +1464,11 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
 
     accepted_canonical_sites = list(args.sites.split(","))
 
-    outputPathPrefix = args.dir+"/"+args.output
-
-    outputClassPath = outputPathPrefix+"_classification.txt"
     handle_class = open(outputClassPath+"_tmp", "w")
     fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter='\t')
     fout_class.writeheader()
 
-    outputJuncPath = outputPathPrefix+"_junctions.txt"
+    #outputJuncPath = outputPathPrefix+"_junctions.txt"
     handle_junc = open(outputJuncPath+"_tmp", "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter='\t')
     fout_junc.writeheader()
@@ -1449,7 +1493,10 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
 
             if isoform_hit.str_class in ("intergenic", "genic_intron"):
                 # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
-                isoform_hit.genes = ['novelGene_' + str(novel_gene_index)]
+                if args.novel_gene_prefix is not None:  # used by splits to not have redundant novelGene IDs
+                    isoform_hit.genes = ['novelGene_' + str(args.novel_gene_prefix) + '_' + str(novel_gene_index)]
+                else:
+                    isoform_hit.genes = ['novelGene_' + str(novel_gene_index)]
                 isoform_hit.transcripts = ['novel']
                 novel_gene_index += 1
 
@@ -1461,6 +1508,15 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                     within_cage, dist_cage = cage_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
                 isoform_hit.within_cage = within_cage
                 isoform_hit.dist_cage = dist_cage
+
+            # look at PolyA Peak info (if available)
+            if polya_peak_obj is not None:
+                if rec.strand == '+':
+                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                else:
+                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
+                isoform_hit.within_polya_site = within_polya_site
+                isoform_hit.dist_polya_site = dist_polya_site
 
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
             if polyA_motif_list is not None:
@@ -1619,11 +1675,14 @@ def FLcount_parser(fl_count_filename):
     return samples, fl_count_dict
 
 def run(args):
+    global outputClassPath
+    global outputJuncPath
+
+    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
 
     start3 = timeit.default_timer()
 
     print("**** Parsing provided files....", file=sys.stdout)
-
     print("Reading genome fasta {0}....".format(args.genome), file=sys.stdout)
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), 'fasta'))
@@ -1652,10 +1711,7 @@ def run(args):
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
 
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
-
-    outputPathPrefix = os.path.join(args.dir, args.output)
-    outputClassPath = outputPathPrefix + "_classification.txt"
-    outputJuncPath = outputPathPrefix + "_junctions.txt"
+    #os.rename(corrGTF+'.cds.gff', corrGTF)
 
     ## RT-switching computation
     print("**** RT-switching computation....", file=sys.stderr)
@@ -1766,7 +1822,7 @@ def run(args):
             (r['canonical'] == 'non_canonical'):
             isoforms_info[r['isoform']].canonical = r['canonical']
 
-        if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'FALSE'):
+        if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
 
         if r['indel_near_junct'] == 'TRUE':
@@ -1795,7 +1851,6 @@ def run(args):
         isoforms_info[pbid].sd = pstdev(covs)
 
     #### Printing output file:
-
     print("**** Writing output files....", file=sys.stderr)
 
     # sort isoform keys
@@ -1820,31 +1875,31 @@ def run(args):
             fout_junc.writerow(r)
 
     ## Generating report
-
-    print("**** Generating SQANTI report....", file=sys.stderr)
-    cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {u}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc , u=utilitiesPath)
-    if subprocess.check_call(cmd, shell=True)!=0:
-        print("ERROR running command: {0}".format(cmd), file=sys.stderr)
-        sys.exit(-1)
+    if not args.skip_report:
+        print("**** Generating SQANTI3 report....", file=sys.stderr)
+        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc)
+        if subprocess.check_call(cmd, shell=True)!=0:
+            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
+            sys.exit(-1)
     stop3 = timeit.default_timer()
 
     print("Removing temporary files....", file=sys.stderr)
     os.remove(outputClassPath+"_tmp")
     os.remove(outputJuncPath+"_tmp")
 
-    ### IsoAnnot Lite implementation
+    print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
+
+### IsoAnnot Lite implementation
     ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
     if args.isoAnnotLite:
         if args.gff3:
-            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} ".format(g=corrGTF , c=outputClassPath, j=outputJuncPath, t=args.gff3, d=args.dir)
+            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(g=corrGTF , c=outputClassPath, j=outputJuncPath, t=args.gff3, d=args.dir, o=args.output)
         else:
-            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} ".format(g=corrGTF , c=outputClassPath , j=outputJuncPath, d=args.dir)
+            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} -o {o}".format(g=corrGTF , c=outputClassPath , j=outputJuncPath, d=args.dir, o=args.output)
         if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
             print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
             sys.exit(-1)
-    
-    
-    print("SQANTI complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
+
 
 
 def rename_isoform_seqids(input_fasta, force_id_ignore=False):
@@ -1904,28 +1959,167 @@ class CAGEPeak:
         :param start0: 0-based start of the 5' end to query
         :return: <True/False falls within a cage peak>, <nearest dist to TSS>
         dist to TSS is 0 if right on spot
-        dist to TSS is + if downstream of CAGE peak, - if upstream (watch for strand!!!)
+        dist to TSS is + if downstream, - if upstream (watch for strand!!!)
         """
         within_peak, dist_peak = False, 'NA'
-        for (tss0,start0,end1) in self.cage_peaks[(chrom,strand)].find(int(query)-search_window, int(query)+search_window):
-### (Fran) Skip those cage peaks that are downstream the detected TSS because degradation just make the transcript shorter
+        for (tss0,start0,end1) in self.cage_peaks[(chrom,strand)].find(query-search_window, query+search_window):
+ # Skip those cage peaks that are downstream the detected TSS because degradation just make the transcript shorter
             if strand=='+' and start0>int(query) and end1>int(query):
                 continue
             if strand=='-' and start0<int(query) and end1<int(query):
                 continue
-###
+##
             if not within_peak:
-                within_peak, dist_peak = (start0<=int(query)<end1), int((int(query) - tss0) * (-1 if strand=='-' else +1))
+                within_peak, dist_peak = (start0<=query<end1), (query - tss0) * (-1 if strand=='-' else +1)
             else:
-                d = int((int(query) - tss0) * (-1 if strand=='-' else +1))
-                if abs(int(d)) < abs(int(dist_peak)):
-                    within_peak, dist_peak = (start0<=int(query)<end1), d
+                d = (query - tss0) * (-1 if strand=='-' else +1)
+                if abs(d) < abs(dist_peak):
+                    within_peak, dist_peak = (start0<=query<end1), d
         return within_peak, dist_peak
 
+class PolyAPeak:
+    def __init__(self, polya_bed_filename):
+        self.polya_bed_filename = polya_bed_filename
+        self.polya_peaks = defaultdict(lambda: IntervalTree()) # (chrom,strand) --> intervals of peaks
 
+        self.read_bed()
+
+    def read_bed(self):
+        for line in open(self.polya_bed_filename):
+            raw = line.strip().split()
+            chrom = raw[0]
+            start0 = int(raw[1])
+            end1 = int(raw[2])
+            strand = raw[5]
+            self.polya_peaks[(chrom,strand)].insert(start0, end1, (start0, end1))
+
+    def find(self, chrom, strand, query, search_window=100):
+        """
+        :param start0: 0-based start of the 5' end to query
+        :return: <True/False falls within some distance to polyA>, distance to closest
+        + if downstream, - if upstream (watch for strand!!!)
+        """
+        assert strand in ('+', '-')
+        hits = self.polya_peaks[(chrom,strand)].find(query-search_window, query+search_window)
+        if len(hits) == 0:
+            return False, None
+        else:
+            s0, e1 = hits[0]
+            min_dist = query - s0
+            for s0, e1 in hits[1:]:
+                d = query - s0
+                if abs(d) < abs(min_dist):
+                    min_dist = d
+            if strand == '-':
+                min_dist = -min_dist
+            return True, min_dist
+
+
+def split_input_run(args):
+    if os.path.exists(SPLIT_ROOT_DIR):
+        print("WARNING: {0} directory already exists! Abort!".format(SPLIT_ROOT_DIR), file=sys.stderr)
+        sys.exit(-1)
+    else:
+        os.makedirs(SPLIT_ROOT_DIR)
+
+    if args.gtf:
+        recs = [r for r in collapseGFFReader(args.isoforms)]
+        n = len(recs)
+        chunk_size = n//args.chunks + (n%args.chunks >0)
+        split_outs = []
+        #pdb.set_trace()
+        for i in range(args.chunks):
+            if i*chunk_size >= n:
+                break
+            d = os.path.join(SPLIT_ROOT_DIR, str(i))
+            os.makedirs(d)
+            f = open(os.path.join(d, os.path.basename(args.isoforms)+'.split'+str(i)), 'w')
+            for j in range(i*chunk_size, min((i+1)*chunk_size, n)):
+                write_collapseGFF_format(f, recs[j])
+            f.close()
+            split_outs.append((os.path.abspath(d), f.name))
+    else:
+        recs = [r for r in SeqIO.parse(open(args.isoforms),'fasta')]
+        n = len(recs)
+        chunk_size = n//args.chunks + (n%args.chunks >0)
+        split_outs = []
+        for i in range(args.chunks):
+            if i*chunk_size >= n:
+                break
+            d = os.path.join(SPLIT_ROOT_DIR, str(i))
+            os.makedirs(d)
+            f = open(os.path.join(d, os.path.basename(args.isoforms)+'.split'+str(i)), 'w')
+            for j in range(i*chunk_size, min((i+1)*chunk_size, n)):
+                SeqIO.write(recs[j], f, 'fasta')
+            f.close()
+            split_outs.append((os.path.abspath(d), f.name))
+
+    pools = []
+    for i,(d,x) in enumerate(split_outs):
+        print("launching worker on on {0}....".format(x))
+        args2 = copy.deepcopy(args)
+        args2.isoforms = x
+        args2.novel_gene_prefix = str(i)
+        args2.dir = d
+        args2.skip_report = True
+        p = Process(target=run, args=(args2,))
+        p.start()
+        pools.append(p)
+
+    for p in pools:
+        p.join()
+    return [d for (d,x) in split_outs]
+
+def combine_split_runs(args, split_dirs):
+    """
+    Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
+    Then write out the PDF report
+    """
+    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+
+    if not args.skipORF:
+        f_faa = open(corrORF, 'w')
+    f_fasta = open(corrFASTA, 'w')
+    f_gtf = open(corrGTF, 'w')
+    f_class = open(outputClassPath, 'w')
+    f_junc = open(outputJuncPath, 'w')
+
+    for i,split_d in enumerate(split_dirs):
+        _gtf, _sam, _fasta, _orf = get_corr_filenames(args, split_d)
+        _class, _junc = get_class_junc_filenames(args, split_d)
+        if not args.skipORF:
+            with open(_orf) as h: f_faa.write(h.read())
+        with open(_gtf) as h: f_gtf.write(h.read())
+        with open(_fasta) as h: f_fasta.write(h.read())
+        with open(_class) as h:
+            if i == 0:
+                f_class.write(h.readline())
+            else:
+                h.readline()
+            f_class.write(h.read())
+        with open(_junc) as h:
+            if i == 0:
+                f_junc.write(h.readline())
+            else:
+                h.readline()
+            f_junc.write(h.read())
+
+    f_fasta.close()
+    f_gtf.close()
+    f_class.close()
+    f_junc.close()
+    if not args.skipORF:
+        f_faa.close()
+
+    if not args.skip_report:
+        print("**** Generating SQANTI3 report....", file=sys.stderr)
+        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc)
+        if subprocess.check_call(cmd, shell=True)!=0:
+            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
+            sys.exit(-1)
 
 def main():
-
     global utilitiesPath
 
     #arguments
@@ -1938,24 +2132,28 @@ def main():
     parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap'], default='minimap2')
     parser.add_argument('--cage_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
     parser.add_argument("--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)")
+    parser.add_argument("--polyA_peak", help='\t\tPolyA Peak (BED format, optional)')
     parser.add_argument("--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)")
     parser.add_argument("--skipORF", default=False, action="store_true", help="\t\tSkip ORF prediction (to save time)")
     parser.add_argument("--is_fusion", default=False, action="store_true", help="\t\tInput are fusion isoforms, must supply GTF as input using --gtf")
     parser.add_argument('-g', '--gtf', help='\t\tUse when running SQANTI by using as input a gtf of isoforms', action='store_true')
-    parser.add_argument('-e','--expression', help='\t\tExpression matrix (supported: Kallisto tsv and RSEM output). Provide a single file, a path to the folder where the files are located or several files separated by commas. ', required=False)
+    parser.add_argument('-e','--expression', help='\t\tExpression matrix (supported: Kallisto tsv)', required=False)
     parser.add_argument('-x','--gmap_index', help='\t\tPath and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
-    parser.add_argument('-t', '--gmap_threads', help='\t\tNumber of threads used during alignment by aligners.', required=False, default="1", type=int)
+    parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. (default: 10)')
+    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI333 analysis in for speed up (default: 1).')
     #parser.add_argument('-z', '--sense', help='\t\tOption that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences', required=False, action='store_true')
     parser.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     parser.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
     parser.add_argument('-c','--coverage', help='\t\tJunction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").', required=False)
     parser.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     parser.add_argument('-w','--window', default="20", help='\t\tSize of the window in the genomic DNA screened for Adenine content downstream of TTS', required=False, type=int)
-    parser.add_argument('--geneid', help='\t\tUse gene_id tag from GTF to define genes. Default: gene_name used to define genes', default=False, action='store_true')
+    parser.add_argument('--genename', help='\t\tUse gene_name tag from GTF to define genes. Default: gene_id used to define genes', default=False, action='store_true')
     parser.add_argument('-fl', '--fl_count', help='\t\tFull-length PacBio abundance file', required=False)
+    parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
+    parser.add_argument("--skip_report", action="store_true", default=False, help=argparse.SUPPRESS)
     parser.add_argument('--isoAnnotLite' , help='\t\tRun isoAnnot Lite to output a tappAS-compatible gff3 file',required=False, action='store_true' , default=False)
     parser.add_argument('--gff3' , help='\t\tPrecomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes',required=False)
-    parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI2 '+str(__version__))
+
 
     args = parser.parse_args()
 
@@ -1965,20 +2163,23 @@ def main():
         if not args.gtf:
             print("ERROR: if --is_fusion is on, must supply GTF as input and use --gtf!", file=sys.stderr)
             sys.exit(-1)
+
     if args.gff3 is not None:
         args.gff3 = os.path.abspath(args.gff3)
         if not os.path.isfile(args.gff3):
             print("ERROR: Precomputed tappAS GFF3 annoation file {0} doesn't exist. Abort!".format(args.genome), file=sys.stderr)
             sys.exit(-1)
-# modified by Fran
+
     if args.expression is not None:
         if os.path.isdir(args.expression)==True:
             print("Expression files located in {0} folder".format(args.expression), file=sys.stderr)
         else:
             for f in args.expression.split(','):
-            	if not os.path.exists(f):
-            		print("Expression file {0} not found. Abort!".format(f), file=sys.stderr)
-            		sys.exit(-1)
+                if not os.path.exists(f):
+                        print("Expression file {0} not found. Abort!".format(f), file=sys.stderr)
+                        sys.exit(-1)
+
+
     # path and prefix for output files
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
@@ -1986,17 +2187,17 @@ def main():
     if args.dir is None:
         args.dir = os.getcwd()
     else:
-        if not os.path.isdir(os.path.abspath(args.dir)):
-            print("ERROR: {0} directory doesn't exist. Abort!".format(args.dir), file=sys.stderr)
-            sys.exit()
+        args.dir = os.path.abspath(args.dir)
+        if os.path.isdir(args.dir):
+            print("WARNING: output directory {0} already exists. Overwriting!".format(args.dir), file=sys.stderr)
         else:
-            args.dir = os.path.abspath(args.dir)
+            os.makedirs(args.dir)
 
     args.genome = os.path.abspath(args.genome)
     if not os.path.isfile(args.genome):
         print("ERROR: genome fasta {0} doesn't exist. Abort!".format(args.genome), file=sys.stderr)
         sys.exit()
-    
+
     args.isoforms = os.path.abspath(args.isoforms)
     if not os.path.isfile(args.isoforms):
         print("ERROR: Input isoforms {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
@@ -2034,8 +2235,10 @@ def main():
     #elif args.aligner_choice == "deSALT":  #deSALT does not support this yet
     #    args.sense = "--trans-strand"
 
+
+    args.novel_gene_prefix = None
     # Print out parameters so can be put into report PDF later
-    args.doc = os.path.join(args.dir, args.output+".params.txt")
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
     print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
     with open(args.doc, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
@@ -2048,14 +2251,17 @@ def main():
         f.write("Junction\t" + (os.path.basename(args.coverage) if args.coverage is not None else "NA") + "\n")
         f.write("CagePeak\t" + (os.path.basename(args.cage_peak)  if args.cage_peak is not None else "NA") + "\n")
         f.write("PolyA\t" + (os.path.basename(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
+        f.write("PolyAPeak\t" + (os.path.basename(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
         f.write("IsFusion\t" + str(args.is_fusion) + "\n")
-        f.write("tappAS GFF3 file\t" + (os.path.basename(args.gff3) if args.gff3 is not None else "NA") + "\n")
     
     # Running functionality
-    print("**** Running SQANTI...", file=sys.stdout)
-    run(args)
-
-    
+    print("**** Running SQANTI3...", file=sys.stdout)
+    if args.chunks == 1:
+        run(args)
+    else:
+        split_dirs = split_input_run(args)
+        combine_split_runs(args, split_dirs)
+        shutil.rmtree(SPLIT_ROOT_DIR)
 
 if __name__ == "__main__":
     main()
