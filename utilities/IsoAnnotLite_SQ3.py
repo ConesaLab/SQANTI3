@@ -1287,6 +1287,7 @@ def main():
     parser.add_argument('junction', help='\t\t*_junctions.txt file from SQANTI 3 output.')
     parser.add_argument('-gff3', help='\t\ttappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3).', required = False)
     parser.add_argument('-d', '--dir', help='\t\tOutput directory. ', required = False)
+    parser.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
 
 
     args = parser.parse_args()
@@ -1348,7 +1349,7 @@ def run(args):
         gff3 = args.gff3
     
         #File names
-        filename =  os.path.join(args.dir , "tappAS_annot_from_SQANTI3.gff3")
+        filename =  os.path.join(args.dir , args.output+"_tappAS_annot_from_SQANTI3.gff3")
         filenameMod = filename[:-5] + "_mod" + filename[-5:]
 
         #################

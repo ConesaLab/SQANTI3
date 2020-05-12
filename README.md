@@ -1,105 +1,41 @@
-# SQANTI2
-# This is the SQANTI2 version as it is right now. New commits and features will be added soon until getting SQANTI3
+# SQANTI3
+
+Last Updated: 05/12/2020 (v0.1)   SQANTI3 release!
+
+## What is SQANTI3?
+
+SQANTI3 is the newest version of SQANTI ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/), [code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)) . It includes all the features included in original SQANTI and SQANTI2 and more!! Both tools now converge in SQANTI3 with the intention of providing you the best characterization possible about your new long read-defined transcriptome.
 
 
-Last Updated: 02/07/2020 (v7.3.2)   Now works with Python 3.7 exclusively!!
+New features implemented in SQANTI3 not available in previous versions:
 
-## What is SQANTI2
+* isoAnnot Lite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
+* CAGE peak definitions --- CAGE peak will only be associated to a certain transcript if it is upstream of the transcript stariting site. Must provide CAGE peak data.
+* Updated BITE definition
+* Accepts several expression files at the same time
+* New plots:
+  *  Saturation curves
+  *  Distance to CAGE (if any)
+  *  Accumulation plots
+  *  More to come soon...
 
-SQANTI2 is a developer's version of SQANTI ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/), [code repository](https://bitbucket.org/ConesaLab/sqanti)). 
+## SQANTI3 HowTos
 
-
-New features implemented in SQANTI2 not available in SQANTI:
-
-* NMD detection -- new field `predicted_NMD` in classification output.
-* Intron retention --- marked with `intron_retention` in `subcategory` field in classification output.
-* CAGE peak --- new fields `dist_peak` and `within_peak` in classification output. Must provide CAGE peak data.
-* polyA motif --- new field `polyA_motif` in classification output. Must provide polyA motif list.
-* CDS-annotated GFF --- SQANTI2 outputs a `xxxx.cds.gff` GFF file that annotates CDS regions.
-* PacBio Iso-Seq FL count multi-sample plotting --- use the `--fl_count` option for single or multi-sample FL counts
-
-
-## SQANTI2 HowTos
-
-* <a href="#install">Setting up SQANTI2</a>
-* <a href="#input">Running SQANTI2 Classification</a>
+* <a href="#install">Setting up SQANTI3</a>
+* <a href="#Running">Running SQANTI3 Quality Control</a>
    * <a href="#flcount">Single or Multi-Sample FL Count Plotting</a>
    * <a href="#exp">Short Read Expression</a>
-* <a href="#filter">Filtering Isoforms using SQANTI2</a>
-* <a href="#explain">SQANTI2 Output Explanation</a>
+* <a href="#filter">Filtering Isoforms using SQANTI3</a>
+* <a href="#explain">SQANTI3 Output Explanation</a>
    * <a href="#class">Classification Output Explanation</a>
    * <a href="#junction">Junction Output Explanation</a>
    
 
-![sqanti2workflow](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_workflow.png)
+###########![sqanti3workflow](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_workflow.png)
 
 ## Updates
 
-2020.02.07 updated to version 7.3.2. fixed default param for intrapriming to 0.6.
-
-2020.02.06 updated to version 7.3.1. `sqanti_filter2.py` supports runA length filtering (`--runAlength`), monoexonic (`--filter_mono_exonic`) and skipping GTF/Isoform output (`--skipGTF` and `--skipFaFq`).
-
-2020.02.04 updated to version 7.2.0. Fixed classification bug where multi-exon transcripts were listed as having exon count of 1.
-
-2020.02.04 updated to version 7.1.0. Fixed classification `_TPM.txt` output format bug. Added `seq_A_downstream_TTS` field to classification output.
-
-2020.01.31 updated to version 7.0.0. Minor re-classification changes for edge case mono-exonic transcripts. Supporting multithreading with `-n` option!
-
-2019.12.12 updated to version 6.0.0. MAJOR re-classification changes! See [notes](https://www.dropbox.com/s/d1ya562ib00qhzc/Dec2019_SQANTI2_6.0.0_release_Notes.pptx?dl=0)
-
-2019.11.24 updated to version 5.1.0. `--is_fusion` must be used together with `--gtf`. Added addtional tables if `--fl_count` supplied.
-
-2019.11.12 updated to version 5.0.0. Now works exclusively with Python 3.7!
-
-2019.09.24 updated to version 4.1. `sqanti_qc2.py` now supports `--fl_count` multi-sample with plotting.
-
-2019.08.22 updated to version 4.0. `sqanti_filter2.py` now outputs GTF.
-
-<details>
-   <summary>Click here to see older update logs.</summary>
-    
-    2019.08.19 updated to version 3.9. Fixed minor bug in removing superPBID (not always the case) in `sqanti_qc2.py`
-    
-    2019.08.13 updated to version 3.8. Fixed `SQANTI_report2.R` printing bug for when polyA info is NA.
-    
-    2019.08.01 updated to version 3.7. `--expression` supports RSEM and Kallisto output. Expression and polyA motifs added to PDF plots.
-    
-    2019.07.26 updated to version 3.6. `--fl_count` is supported again!
-    
-    2019.07.25 updated to version 3.5. Checks for Cupcake version (8.1+)
-    
-    2019.07.24 updated to versoin 3.4. Now `--gtf` input option works with collapsed GFF format.
-    
-    2019.07.23 updated to version 3.3. Added CDS for GFF support and IR fix.
-    
-    2019.07.19 updated to version 3.2. `sqanti_qc2.py` fusion mode surpressed ORF prediction for the meantime. Minor mod to gmst to work on small input.
-    
-    2019.07.17 updated to version 3.1. `sqanti_qc2.py` now supports GTF input `--gtf` again. Minor change to NIC subtype categorization naming.
-    
-    2019.07.16 updated to version 3.0. now use Bioconda install of `gtfToGenePred` and `gffread`.
-    
-    2019.07.12 updated to version 2.9. `sqanti_qc2.py` now annotates NMD prediction.
-    
-    2019.06.19 updated to version 2.8. `sqanti_qc2.py` now works with fusion transcripts (must have ID `PBfusion.X`) using the `--is_fusion` option
-    
-    2019.06.02 updated to version 2.7. Fixed GMAP option bug + added distance to closest annotated start/end for the gene (not ref isoform) and filtering afterwards.
-    
-    2019.05.02 updated to version 2.6. Added deSALT aligner support using `--aligner=deSALT`. 
-    
-    2019.03.18 minor typo fixed for version 2.5. updated doc for `sqanti_filter2.py`
-    
-    2019.03.10 updated to version 2.5. Fixed `sqanti_filter2.py` missing fusion category also using polyA_motif as part of filtering.
-    
-    2019.02.27 updated to version 2.4.  Added polyA motif finding.
-    
-    2019.02.27 updated to version 2.3. `junction_category` fixed to check for (ss5,ss3) pairs in provided GTF.
-    
-    2019.02.26 updated to version 2.2. added support for CAGE peak (FANTOM5) and Intropolis junction BED. 
-    
-    2018.10.15 updated to version 1.1. modified use of SAM to GFF with added `source` parameter.
-
-</details>
-
+2020.05.12 - SQANTI3 release.
 
 
 <a name="install"/>
@@ -122,50 +58,48 @@ New features implemented in SQANTI2 not available in SQANTI:
 ### R-related libraries
 
 * R (>= 3.4.0)
-* R packages (for `sqanti_qc2.py`): ggplot2, scales, reshape, gridExtra, grid, dplyr
+* R packages (for `sqanti3_qc.py`): ggplot2, scales, reshape, gridExtra, grid, dplyr, NOISeq, ggplotify
 
-## Installing Python dependencies
+### External scripts
 
-I recommend using Anaconda which makes installing all the Python packages much easier. If you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step), you can activate your current environment and directly go to step (4).
+* gtfToGenePred
 
-(1)  Here's the generic Anaconda installation for [Linux environment](http://docs.continuum.io/anaconda/install/#linux-install). Currently only Linux environment supported.
+## Installing dependencies
+
+We recommend using Anaconda which makes installing all the Python packages much easier. Probably you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). Please, follow the steps here described to have a perfect installation.
+
+(0)  Make sure you have installed Anaconda and it is updated. Here's the generic Anaconda installation for [Linux environment](http://docs.continuum.io/anaconda/install/#linux-install). Currently only Linux environment supported.
 
 ```
 export PATH=$HOME/anacondaPy37/bin:$PATH
 conda -V
 conda update conda
 ```
-
-(2) Create a virutal environment. I will call it `anaCogent3`. Type `y` to agree to the interactive questions.
-
-```
-conda create -n anaCogent3 python=3.7 anaconda
-source activate anaCogent3
-```
-
-(3) Once you have activated the virtualenv, you should see your prompt changing to something like this:
+(1)  Download or clone the SQANTI3 repository. 
 
 ```
-(anaCogent3)-bash-4.1$
+ git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
-(4) Install additional required libraries:
+(2) Create a virutal environment with all the Python packages required for installation. For doing that in just one step, use the `SQANTI3.conda_env.yml` that you can find in the main folder. This file contains all the information necessary to install the dependencies. The new environment created will be called by default *SQANTI3_env*. Type `y` to agree to the interactive questions. You can change the name of the environment by using -n option during its creation.
 
 ```
-conda install -n anaCogent3 -c bioconda pysam
-conda install -n anaCogent3 psutil
-conda install -n anaCogent3 biopython
-conda install -n anaCogent3 -c bioconda bx-python
-conda install -n anaCogent3 -c bioconda bcbiogff
-conda install -n anaCogent3 -c bioconda gffread
+conda env create -f SQANTI3.conda_env.yml
+source activate SQANTI3_env
 ```
 
-We also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl). At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add the binary to your `$PATH` variable:
+(3) Once you have activated the virtual environment, you should see your prompt changing to something like this:
 
 ```
-export PATH=$PATH:<path_to>/gtfToGenePred
+(SQANTI3_env)-bash-4.1$
 ```
 
+(4) We also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl). At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add it to the `utilities` folder (and give it execute permissions):
+
+```
+wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P /path/to/utilities/
+chmod +x /path/to/utilities/gtfToGenePred 
+```
 
 If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now:
 
@@ -176,31 +110,30 @@ $ python setup.py build
 $ python setup.py install
 ```
 
-No installation for SQANTI2 itself is required. The scripts can be run directly.
+No installation for SQANTI3 itself is required. The scripts can be run directly.
 
+<a name="Running"/>
 
-## Running SQANTI2
+## Running SQANTI3 Quality Control
 
-Activate the Anaconda environment. Make sure minimap2 works. Add `cDNA_Cupcake/sequence` to `$PYTHONPATH`.
+First of all, activate the SQANTI3 environment and add `cDNA_Cupcake/sequence` to `$PYTHONPATH`.
 
 ```
-$ source activate anaCogent3
-(anaCogent3)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
-(anaCogent3)-bash-4.1$ minimap2 --version
-2.15-r905
+$ source activate SQANTI3_env
+(SQANTI3_env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
 ```
 
-<a name="input"/>
+#### Minimum Input to SQANTI3 QC
 
-#### Input to SQANTI2 Classification
+* **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like PacBio's Iso-Seq or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF. If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
 
-* *Iso-Seq output*. Preferably already mapped to the genome and [collapsed to unique transcripts](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse). (FASTA/FASTQ/GTF)
-* *Reference annotation* in GTF format. For example [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
-* *Reference genome*, in FASTA format. For example hg38. *Make sure your annotation GTF is based on the correct ref genome version!*
+* **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
 
-Optionally:
+* **Reference genome**, in FASTA format. For example hg38. *Make sure your annotation GTF is based on the correct ref genome version!* Please check that the chromosome/scaffolds names are the same in the reference annotation and the reference genome.
 
-* CAGE Peak data (from FANTOM5). I've provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). 
+#### Optional inputs:
+
+* CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). 
 
 * [Intropolis](https://github.com/nellore/intropolis/blob/master/README.md) Junction BED file. I've provided a version of [Intropolis for hg38 genome, modified into STAR junction format](https://github.com/Magdoll/images_public/tree/master/SQANTI2_support_data).
 
@@ -210,55 +143,45 @@ Optionally:
 
 * Short read expression. See <a href="#exp">Short Read Expression section</a> to include short read expression (RSEM or Kallisto).
 
-### Running SQANTI2 Classification
+
+### Running SQANTI3 Quality Control script
 
 The script usage is:
 
 ```
-python sqanti_qc2.py [-t cpus] [-n chunks]
-     [--gtf] [--skipORF] 
-     [-c shortread_STAR_junction_out] 
-     [--cage_peak CAGE_PEAK_BED]
-     [--polyA_motif_list POLYA_LIST]
-     [--fl_count FL_COUNT]
-     [--expression EXPRESSION]
-     [--aligner_choice=minimap2,deSALT]
-     [--is_fusion]
-     <input_fasta> <annotation_gtf> <genome_fasta>
+python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN]
+                     [--aligner_choice {minimap2,deSALT,gmap}]
+                     [--cage_peak CAGE_PEAK]
+                     [--polyA_motif_list POLYA_MOTIF_LIST]
+                     [--polyA_peak POLYA_PEAK] [--phyloP_bed PHYLOP_BED]
+                     [--skipORF] [--is_fusion] [-g] [-e EXPRESSION]
+                     [-x GMAP_INDEX] [-t CPUS] [-n CHUNKS] [-o OUTPUT]
+                     [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
+                     [--genename] [-fl FL_COUNT] [-v] [--isoAnnotLite]
+                     [--gff3 GFF3]
+                     isoforms annotation genome
+
 ```
 
 If you don't feel like running the ORF prediction part, use `--skipORF`. Just know that all your transcripts will be annotated as non-coding.
-If you have short read data, you can run STAR to get the junction file (usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)) and supply it to SQANTI2.
+If you have short read data, you can run STAR to get the junction file (usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)) and supply it to SQANTI3 as is.
 
 If `--aligner_choice=minimap2`, the minimap2 parameter used currently is: `minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`
-If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT aln -x ccs`. 
-
-You can look at the [`MINIMAP2_CMD` and `DESALT_CMD` in `sqanti_qc2.py` for the full command format](https://github.com/Magdoll/SQANTI2/blob/master/sqanti_qc2.py#L61).
+If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT aln -x ccs`.
+If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide it through `-x` option.
 
 
 There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger. 
 If your input is GTF (using `--gtf` option), the `-t` option has no effect.
-The second is `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI2 in parallel before combining them. 
+The second is `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI3 in parallel before combining them. 
 Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
 
-For example:
-
-```
-python sqanti_qc2.py -t 30 -n 10 --gtf example/test.gtf \
-     gencode.v29.annotation.gtf hg38.fa \
-     --fl_count example/test.chained_count.txt \
-     --polyA_motif_list example/polyA.list \
-     --cage_peak hg38.cage_peak_phase1and2combined_coord.bed \
-     -c "Public_Intronpolis/*10.modified"
-```
 
 
-For fusion transcripts, you must use the `--is_fusion` option for `sqanti_qc2.py` to work properly. Furthermore, the IDs in the input FASTA/FASTQ *must* have the format `PBfusion.X`, as is output by [`fusion_finder.py` in Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#fusion).
+### SQANTI3 Quality Control Output
 
 
-### SQANTI2 Classification Output
-
-You can look at the [example](https://github.com/Magdoll/SQANTI2/tree/master/example) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI_report2.R](https://github.com/Magdoll/SQANTI2/blob/master/utilities/SQANTI_report2.R), taking the `_classification.txt` and `_junctions.txt` as the two input. If you know R well, you are free to modify the R script to add new figures! I will be constantly adding new figures as well.
+You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `_classification.txt` and `_junctions.txt` as the two input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well.
 
 Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#explain">below</a>.
 
@@ -267,9 +190,7 @@ Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#exp
 
 ### Single or Multi-Sample FL Count Plotting
 
-Supported since: version 4.1
-
-`sqanti_qc2.py` supports single or multi-sample FL counts from PacBio Iso-Seq pipeline. There are three acceptable formats.
+`sqanti3_qc.py` supports single or multi-sample FL counts from PacBio Iso-Seq pipeline. There are three acceptable formats.
 
 #### Single Sample FL Count
 
@@ -304,11 +225,11 @@ PB.1.3,4,4
 This is a comma-delimited file.
 
 
-#### SQANTI2 output of FL Count information
+#### SQANTI3 output of FL Count information
 
-For each sample provided through the `--fl_count` option, `sqanti_qc2.py` will create a column in the `.classification.txt` output file that is `FL.<sample>`. Note that this is the raw FL count provided.
+For each sample provided through the `--fl_count` option, `sqanti3_qc.py` will create a column in the `.classification.txt` output file that is `FL.<sample>`. Note that this is the raw FL count provided. The sum of all the FL reads accross the samples associated to one transcript will be recorded in th `FL` column of the `.classification.txt` output file
 
-When plotted, the script [SQANTI_report2.R](https://github.com/Magdoll/SQANTI2/blob/master/utilities/SQANTI_report2.R) will convert the FL counts to TPM using the formula:
+When plotted, the script [SQANTI3_report.R](ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 
 ```
                            raw FL count for PB.X.Y in sample1
@@ -323,7 +244,7 @@ Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be ad
 
 ### Short Read Expression
 
-Use `--expression` to optionally provide short read expression data. Two formats are supported.
+Use `--expression` to optionally provide short read expression data. Two formats are supported. In any case, you can provide several expression data files as a chain of comma-separated paths or by providing a directory were ONLY expression data is present.
 
 #### Kallisto Expression Input
 
@@ -359,24 +280,23 @@ PB.100.2        PB.100  226     81.11   20.18   2.26    9.47    100.00  16.84   
 
 <a name="filter"/>
 
-### Filtering Isoforms using SQANTI2
+### Filtering Isoforms using SQANTI3 output and a pre-defined rules
 
 
-I've made a lightweight filtering script based on SQANTI2 output that filters for two things: (a) intra-priming and (b) short read junction support.  
+I've made a lightweight filtering script based on SQANTI3 output that filters for two things: (a) intra-priming and (b) short read junction support.  
 
 The script usage is:
 
 ```
-usage: sqanti_filter2.py sqanti_class isoforms gtf_file
-                         [--sam SAM] [--faa FAA] 
-                         [-r RUNALENGTH] [-a INTRAPRIMING]
-                         [-c MIN_COV] [-m MAX_DIST_TO_KNOWN_END]
-                         [--filter_mono_exonic] 
-                         [--skipGTF] [--skipFaFq] 
-                         sqanti_class isoforms gtf_file
-sqanti_filter2.py: error: the following arguments are required: sqanti_class, isoforms, gtf_file
+usage: sqanti3_RulesFilter.py [-h] [--sam SAM] [--faa FAA] [-a INTRAPRIMING]
+                              [-r RUNALENGTH] [-m MAX_DIST_TO_KNOWN_END]
+                              [-c MIN_COV] [--filter_mono_exonic] [--skipGTF]
+                              [--skipFaFq] [--skipJunction] [-v]
+                              sqanti_class isoforms gtf_file
 
-python sqanti_filter2.py [classification] [fasta] [sam] [gtf]
+sqanti3_RulesFilter.py: error: the following arguments are required: sqanti_class, isoforms, gtf_file
+
+python sqanti3_RulesFilter.py [classification] [fasta] [sam] [gtf]
          [-a INTRAPRIMING] [-c MIN_COV] [-m MAX_DIST_TO_KNOWN_END]
 ```
 
@@ -391,7 +311,7 @@ where `-a` determines the fraction of genomic 'A's above which the isoform will 
 For example:
 
 ```
-python sqanti_filter2.py test_classification.txt \
+python sqanti3_RulesFilter.py test_classification.txt \
                          test.renamed_corrected.fasta \
                          test.gtf
 ```
@@ -404,10 +324,10 @@ The current filtering rules are as follow:
 
 <a name="explain"/>
 
-### SQANTI2 Output Explanation
+### SQANTI3 Output Explanation
 
 
-SQANTI/SQANTI2 categorizes each isoform by finding the best matching reference transcript in the following order:
+SQANTI/SQANTI2/SQANTI3 categorizes each isoform by finding the best matching reference transcript in the following order:
 
 * FSM (*Full Splice Match*): meaning the reference and query isoform have the same number of exons and each internal junction agree. The exact 5' start and 3' end can differ by any amount.
 
@@ -428,7 +348,7 @@ SQANTI/SQANTI2 categorizes each isoform by finding the best matching reference t
 ![sqanti_explain](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_classification.png)
 
 
-Some of the classifications have further subtypes (the `subtype`) field in SQANTI2 classification output. They are explained below.
+Some of the classifications have further subtypes (the `subtype`) field in SQANTI3 classification output. They are explained below.
 
 ![ISM_subtype](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_ISM_subtype.png)
 
@@ -466,7 +386,7 @@ The output `.classification.txt` has the following fields:
 20. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
 21. `n_indels`: total number of indels based on alignment.
 22. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
-23. `bite`: TRUE if all junctions match reference junctions completely.
+23. `bite`: TRUE if contains at least one "bite" positive SJ.
 24. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
 25. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
 26. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
@@ -480,7 +400,7 @@ The output `.classification.txt` has the following fields:
 34. `predicted_NMD`: TRUE if there's a predicted ORF and CDS ends before the last junction; FALSE if otherwise. NA if non-coding.
 35. `perc_A_downstreamTTS`: percent of genomic "A"s in the downstream 20 bp window. If this number if high (say > 0.8), the 3' end site of this isoform is probably not reliable.
 36. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
-37. `dist_peak`: distance to closest TSS based on CAGE Peak data. Negative means upstream of TSS and positive means downstream of TSS. Strand-specific. SQANTI2 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
+37. `dist_peak`: distance to closest TSS based on CAGE Peak data. Negative means upstream of TSS and positive means downstream of TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
 38. `within_peak`: TRUE if the PacBio transcript start site is within a CAGE Peak. 
 39. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
 40. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
@@ -505,7 +425,7 @@ THe `.junctions.txt` file shows every junction for every PB isoform. NOTE becaus
 10. `end_site_category`: `known` if the junction end site is annotated. If on - strand, this is actually the acceptor site.
 11. `diff_to_Ref_start_site`: distance to closest annotated junction start site. If on - strand, this is actually the donor site.
 12. `diff_to_Ref_end_site`: distance to closest annotated junction end site. If on - strand, this is actually the acceptor site.
-13. `bite_junction`: TRUE if either or both the junction start/end site matches annotation.
+13. `bite_junction`: Applies only to novel splice junctions. If the novel intron partially overlaps annotated exons the bite value is TRUE, otherwise it is FALSE.
 14. `splice_site`: Splice motif.
 15. `RTS_junction`: TRUE if junction is predicted to a template switching artifact.
 16. `indel_near_junct`: TRUE if there is alignment indel error near the junction site, indicating potential junction incorrectness.

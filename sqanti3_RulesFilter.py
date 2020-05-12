@@ -19,7 +19,7 @@ from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath =  os.path.dirname(os.path.realpath(__file__))+"/utilities/"
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
-RSCRIPT_REPORT = 'SQANTI_report2.R'
+RSCRIPT_REPORT = 'SQANTI3_report.R'
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -157,20 +157,20 @@ def sqanti_filter_lite(args):
         print("Output written to: {0}".format(f.name), file=sys.stdout)
 
 
-    print("**** Generating SQANTI2 report....", file=sys.stderr)
-    cmd = RSCRIPTPATH + " {d}/{f} {c} {j}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath)
+    print("**** Generating SQANTI3 report....", file=sys.stderr)
+    cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p="mock")
     if subprocess.check_call(cmd, shell=True)!=0:
         print("ERROR running command: {0}".format(cmd), file=sys.stderr)
         sys.exit(-1)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI2 attributes")
+    parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes")
     parser.add_argument('sqanti_class', help='\t\tSQANTI classification output file.')
-    parser.add_argument('isoforms', help='\t\tfasta/fastq isoform file to be filtered by SQANTI2')
+    parser.add_argument('isoforms', help='\t\tfasta/fastq isoform file to be filtered by SQANTI3')
     parser.add_argument('gtf_file', help='\t\tGTF of the input fasta/fastq')
     parser.add_argument('--sam', help='\t\t(Optional) SAM alignment of the input fasta/fastq')
-    parser.add_argument('--faa', help="\t\t(Optional) ORF prediction faa file to be filtered by SQANTI2")
+    parser.add_argument('--faa', help="\t\t(Optional) ORF prediction faa file to be filtered by SQANTI3")
     parser.add_argument('-a',"--intrapriming", type=float, default=0.6, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 0.6)')
     parser.add_argument('-r', "--runAlength", type=int, default=6, help='\t\tContinuous run-A length at genomic 3\' end to flag an isoform as intra-priming (default: 6)')
     parser.add_argument('-m',"--max_dist_to_known_end", type=int, default=50, help="\t\tMaximum distance to an annotated 3' end to preserve as a valid 3' end and not filter out (default: 50bp)")
@@ -180,7 +180,7 @@ def main():
     parser.add_argument("--skipFaFq", action="store_true", default=False, help='\t\tSkip output of isoform fasta/fastq')
     parser.add_argument("--skipJunction", action="store_true", default=False, help='\t\tSkip output of junctions file')
     #parser.add_argument("--always_keep_canonical", default=False, action="store_true", help="Always keep isoforms with all canonical junctions, regardless of other criteria. (default: False)")
-    parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI2 '+str(__version__))
+    parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
 
     args = parser.parse_args()
 
