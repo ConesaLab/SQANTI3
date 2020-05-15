@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 05/12/2020 (v0.1)   SQANTI3 release!
+Last Updated: 05/15/2020 (v0.1)   SQANTI3 release!
 
 ## What is SQANTI3?
 
