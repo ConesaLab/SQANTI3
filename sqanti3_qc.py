@@ -895,8 +895,8 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
         """
         intron_retention --- at least one trec exon covers at least two adjacent ref exons
         complete --- all junctions agree and is not IR
-        5prime_fragment --- all junctions agree but trec has less 5' exons
-        3prime_fragment --- all junctions agree but trec has less 3' exons
+        5prime_fragment --- all junctions agree but trec has less 5' exons. The isoform is a 5' fragment of the reference transcript
+        3prime_fragment --- all junctions agree but trec has less 3' exons. The isoform is a 3' fragment of the reference transcript
         internal_fragment --- all junctions agree but trec has less 5' and 3' exons
         """
         # check intron retention
@@ -912,10 +912,10 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
             if agree_end:
                 return "complete"
             else: # front agrees, end does not
-                return ("3prime_fragment" if trec.strand=='+' else '5prime_fragment')
+                return ("5prime_fragment" if trec.strand=='+' else '3prime_fragment')
         else:
             if agree_end: # front does not agree, end agrees
-                return ("5prime_fragment" if trec.strand=='+' else '3prime_fragment')
+                return ("3prime_fragment" if trec.strand=='+' else '5prime_fragment')
             else:
                 return "internal_fragment"
 
@@ -2140,7 +2140,7 @@ def main():
     parser.add_argument('-e','--expression', help='\t\tExpression matrix (supported: Kallisto tsv)', required=False)
     parser.add_argument('-x','--gmap_index', help='\t\tPath and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
     parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. (default: 10)')
-    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI333 analysis in for speed up (default: 1).')
+    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up (default: 1).')
     #parser.add_argument('-z', '--sense', help='\t\tOption that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences', required=False, action='store_true')
     parser.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     parser.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
