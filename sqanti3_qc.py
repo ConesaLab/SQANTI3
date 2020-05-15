@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # SQANTI: Structural and Quality Annotation of Novel Transcript Isoforms
 # Authors: Lorena de la Fuente, Hector del Risco, Cecile Pereira and Manuel Tardaguila
-# Modified by Liz (etseng@pacb.com) currently as SQANTI3 working version
-# Modified by Fran (francisco.pardo.palacios@gmail.com) as SQANTI3 version (05/11/2020)
+# Modified by Liz (etseng@pacb.com) as SQANTI2/3 versions
+# Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
 __version__ = '1.0.0'  # Python 3.7
