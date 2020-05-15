@@ -32,7 +32,7 @@ New features implemented in SQANTI3 not available in previous versions:
     * <a href="#junction">Junction Output Explanation</a>
    
 
-##![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
+![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
 <a name="Updates"/>
 
@@ -43,6 +43,7 @@ New features implemented in SQANTI3 not available in previous versions:
 
 
 <a name="Prerequisites"/>
+
 ## Prerequisites
 
 * Perl
@@ -68,6 +69,7 @@ New features implemented in SQANTI3 not available in previous versions:
 * gtfToGenePred
 
 <a name="install"/>
+
 ## Installing dependencies
 
 We recommend using Anaconda which makes installing all the Python packages much easier. Probably you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). Please, follow the steps here described to have a perfect installation. All the prerequisites will be installed automatically in a conda environment, except for cDNA_Cupcake (more details in step 5). The installation will be done just once. When the environment has been entirely built, you will need to activate the conda environment of SQANTI3 and run it!
@@ -132,7 +134,8 @@ $ source activate SQANTI3_env
 
 This are the minimal files that you will need to run SQANTI3:
 
-*   **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF (using `--gtf` option). If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
+
+*    **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF (using `--gtf` option). If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
 
 *   **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
 
