@@ -32,7 +32,7 @@ New features implemented in SQANTI3 not available in previous versions:
     * <a href="#junction">Junction Output Explanation</a>
    
 
-###########![sqanti3workflow](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_workflow.png)
+##![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
 <a name="Updates"/>
 
@@ -399,11 +399,11 @@ SQANTI/SQANTI2/SQANTI3 categorize each isoform by finding the best matching refe
 
 Some of the classifications have further subtypes (the `subtype`) field in SQANTI3 classification output. They are explained below.
 
-![ISM_subtype](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_ISM_subtype.png)
+![ISM_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_ism_subcat_SQ3.png)
 
 Novel isoforms are subtyped based on whether they use a combination of known junctions (junctions are pairs of <donor>,<acceptor> sites), a combination of known splice sites (the individual donor and acceptor sites are known, but at least combination is novel), or at least one splice site (donor or acceptor) is novel. 
 
-![NIC_subtype](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_NIC_subtype.png)
+![NIC_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_nic_nnc_subcat_SQ3.png)
 
 <a name="class"/>
 
