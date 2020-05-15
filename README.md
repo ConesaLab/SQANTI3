@@ -184,7 +184,7 @@ By way of example, the following command was used to run SQANTI3 with th `exampl
 python sqanti3_qc.py test_chr13_seqs.fasta \
                      Homo_sapiens.GRCh38.86.chr13.gtf \
                      Homo_sapiens.GRCh38.dna.chromosome.13.fa \
-                     --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif  polyA.list \
+                     --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif_list  polyA.list \
                      --expression rsemQuantification.chr13.isoforms.results \
                      --fl_count chr13_FL.abundances.txt \
                      -c chr13_SR_support.star.SJ.out.tab \
