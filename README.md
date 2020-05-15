@@ -4,50 +4,53 @@ Last Updated: 05/12/2020 (v0.1)   SQANTI3 release!
 
 ## What is SQANTI3?
 
-SQANTI3 is the newest version of SQANTI ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/), [code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)) . It includes all the features included in original SQANTI and SQANTI2 and more!! Both tools now converge in SQANTI3 with the intention of providing you the best characterization possible about your new long read-defined transcriptome.
+SQANTI3 is the newest version of SQANTI ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/), [code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)) . It includes all the features included in original SQANTI and SQANTI2 and more!! Both tools now converge in SQANTI3 with the intention of providing you the best characterization possible about your new long read-defined transcriptome. Even though it works independently, SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework. 
 
 
 New features implemented in SQANTI3 not available in previous versions:
 
 * isoAnnot Lite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
 * CAGE peak definitions --- CAGE peak will only be associated to a certain transcript if it is upstream of the transcript stariting site. Must provide CAGE peak data.
-* Updated BITE definition
-* Accepts several expression files at the same time
+* Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
+* Accepts several expression files at the same time.
 * New plots:
-  *  Saturation curves
-  *  Distance to CAGE (if any)
-  *  Accumulation plots
-  *  More to come soon...
+    *  Saturation curves.
+    *  Distance to CAGE (if any).
+    *  Accumulation plots.
+    *  More to come soon...
 
 ## SQANTI3 HowTos
 
 * <a href="#install">Setting up SQANTI3</a>
+    * <a href="#Prerequisites"> Prerequisites
 * <a href="#Running">Running SQANTI3 Quality Control</a>
-   * <a href="#flcount">Single or Multi-Sample FL Count Plotting</a>
-   * <a href="#exp">Short Read Expression</a>
+    * <a href="#flcount">Single or Multi-Sample FL Count Plotting</a>
+    * <a href="#exp">Short Read Expression</a>
 * <a href="#filter">Filtering Isoforms using SQANTI3</a>
 * <a href="#explain">SQANTI3 Output Explanation</a>
-   * <a href="#class">Classification Output Explanation</a>
-   * <a href="#junction">Junction Output Explanation</a>
+    * <a href="#class">Classification Output Explanation</a>
+    * <a href="#junction">Junction Output Explanation</a>
    
 
 ###########![sqanti3workflow](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_workflow.png)
 
+<a name="Updates"/>
+
 ## Updates
 
-2020.05.12 - SQANTI3 release.
+2020.05.12 - SQANTI3 first release.
 
 
-<a name="install"/>
 
-## Prerequisite
+<a name="Prerequisites"/>
+## Prerequisites
 
 * Perl
 * Minimap2 
+* Python (3.7)
 
 ### Python-related libraries
 
-* Python (3.7)
 * pysam
 * psutil
 * bx-python
@@ -64,9 +67,10 @@ New features implemented in SQANTI3 not available in previous versions:
 
 * gtfToGenePred
 
+<a name="install"/>
 ## Installing dependencies
 
-We recommend using Anaconda which makes installing all the Python packages much easier. Probably you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). Please, follow the steps here described to have a perfect installation.
+We recommend using Anaconda which makes installing all the Python packages much easier. Probably you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). Please, follow the steps here described to have a perfect installation. All the prerequisites will be installed automatically in a conda environment, except for cDNA_Cupcake (more details in step 5). The installation will be done just once. When the environment has been entirely built, you will need to activate the conda environment of SQANTI3 and run it!
 
 (0)  Make sure you have installed Anaconda and it is updated. Here's the generic Anaconda installation for [Linux environment](http://docs.continuum.io/anaconda/install/#linux-install). Currently only Linux environment supported.
 
@@ -81,9 +85,10 @@ conda update conda
  git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
-(2) Create a virutal environment with all the Python packages required for installation. For doing that in just one step, use the `SQANTI3.conda_env.yml` that you can find in the main folder. This file contains all the information necessary to install the dependencies. The new environment created will be called by default *SQANTI3_env*. Type `y` to agree to the interactive questions. You can change the name of the environment by using -n option during its creation.
+(2) Move into the SQANTI3 folder and create a virutal environment with all the Python packages required for installation. For doing that in just one step, use the `SQANTI3.conda_env.yml` that you can find in the main folder. This file contains all the information necessary to install the dependencies. Type `y` to agree to the interactive questions. You can change the name of the environment if you want to by using -n option during its creation. By default, the name of the environment will be **SQANTI3_env**.
 
 ```
+cd SQANTI3
 conda env create -f SQANTI3.conda_env.yml
 source activate SQANTI3_env
 ```
@@ -91,23 +96,23 @@ source activate SQANTI3_env
 (3) Once you have activated the virtual environment, you should see your prompt changing to something like this:
 
 ```
-(SQANTI3_env)-bash-4.1$
+(SQANTI3_env)$
 ```
 
-(4) We also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl). At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add it to the `utilities` folder (and give it execute permissions):
+(4) We also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl) when installed though conda. At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add it to the `SQANTI3/utilities` folder (and give it execute permissions):
 
 ```
-wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P /path/to/utilities/
-chmod +x /path/to/utilities/gtfToGenePred 
+wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <path_to>/SQANTI3/utilities/
+chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred 
 ```
 
-If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now:
+(5) If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now. First, check that you have already activated the `SQANTI3_env` environment and then proceed with the following commands:
 
 ```
-$ git clone https://github.com/Magdoll/cDNA_Cupcake.git
-$ cd cDNA_Cupcake
-$ python setup.py build
-$ python setup.py install
+(SQANTI3_env)$ git clone https://github.com/Magdoll/cDNA_Cupcake.git
+(SQANTI3_env)$ cd cDNA_Cupcake
+(SQANTI3_env)$ python setup.py build
+(SQANTI3_env)$ python setup.py install
 ```
 
 No installation for SQANTI3 itself is required. The scripts can be run directly.
@@ -116,7 +121,7 @@ No installation for SQANTI3 itself is required. The scripts can be run directly.
 
 ## Running SQANTI3 Quality Control
 
-First of all, activate the SQANTI3 environment and add `cDNA_Cupcake/sequence` to `$PYTHONPATH`.
+Before starting any SQANTI3 run, remember that you need to activate the SQANTI3 environment and add `cDNA_Cupcake/sequence` to `$PYTHONPATH`.
 
 ```
 $ source activate SQANTI3_env
@@ -124,7 +129,10 @@ $ source activate SQANTI3_env
 ```
 
 #### Minimum Input to SQANTI3 QC
-*   **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like PacBio's Iso-Seq or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF. If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
+
+This are the minimal files that you will need to run SQANTI3:
+
+*   **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF (using `--gtf` option). If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
 
 *   **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
 
@@ -134,7 +142,7 @@ $ source activate SQANTI3_env
 
 * CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). 
 
-* [Intropolis](https://github.com/nellore/intropolis/blob/master/README.md) Junction BED file. I've provided a version of [Intropolis for hg38 genome, modified into STAR junction format](https://github.com/Magdoll/images_public/tree/master/SQANTI2_support_data).
+* [Intropolis](https://github.com/nellore/intropolis/blob/master/README.md) Junction BED file. In previous versions of SQANTI, it was provided a version of [Intropolis for hg38 genome, modified into STAR junction format](https://github.com/Magdoll/images_public/tree/master/SQANTI2_support_data) which is still valid.
 
 * polyA motif list. A ranked  list of polyA motifs to find upstream of the 3' end site. See [human polyA list](https://raw.githubusercontent.com/Magdoll/images_public/master/SQANTI2_support_data/human.polyA.list.txt) for an example.
 
@@ -142,10 +150,10 @@ $ source activate SQANTI3_env
 
 * Short read expression. See <a href="#exp">Short Read Expression section</a> to include short read expression (RSEM or Kallisto).
 
-* tappAS-annotation file. A gff3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/) if --isoAnnotLite option is specified.
+* tappAS-annotation file. A gff3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. When `--isoAnnotLite` option is activated and a gff3 tappAS-like is provided, SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/). You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). For more information about tappAS functionalities visit its [webpage](https://app.tappas.org/).
 
 
-### Running SQANTI3 Quality Control script
+#### Running SQANTI3 Quality Control script
 
 The script usage is:
 
@@ -165,11 +173,28 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN]
 ```
 
 If you don't feel like running the ORF prediction part, use `--skipORF`. Just know that all your transcripts will be annotated as non-coding.
-If you have short read data, you can run STAR to get the junction file (usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)) and supply it to SQANTI3 as is.
+If you have short read data, you can run STAR to get the junction file (usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)) and supply it to SQANTI3 as is. If you have several samples, it is recommended to provide them as separated `*SJ.out.tab` files.
 
-If `--aligner_choice=minimap2`, the minimap2 parameter used currently is: `minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`
+By way of example, the following command was used to run SQANTI3 with th `example` data. The input files are a subdivision of the [Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data) that corresponds just to those polished sequences that map to chromosome 13. 
+
+```
+python sqanti3_qc.py test_chr13_seqs.fasta \
+                     Homo_sapiens.GRCh38.86.chr13.gtf \
+                     Homo_sapiens.GRCh38.dna.chromosome.13.fa \
+                     --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif  polyA.list \
+                     --expression rsemQuantification.chr13.isoforms.results \
+                     --fl_count chr13_FL.abundances.txt \
+                     -c chr13_SR_support.star.SJ.out.tab \
+                     --isoAnnotLite --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
+                     
+```
+
+
+If `--aligner_choice=minimap2`, the minimap2 parameter used currently is: `minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`.
+
 If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT aln -x ccs`.
-If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide it through `-x` option.
+
+If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide its path through `-x` option.
 
 
 There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger. 
@@ -182,7 +207,7 @@ Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
 ### SQANTI3 Quality Control Output
 
 
-You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `_classification.txt` and `_junctions.txt` as the two input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well.
+You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `melanoma_chr13_classification.txt` and `melanoma_chr13_junctions.txt` of the same folder as input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well, so check out <a href="#Updates">the updates section</a> 
 
 Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#explain">below</a>.
 
@@ -196,6 +221,26 @@ Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#exp
 #### Single Sample FL Count
 
 A single sample FL Count file is automatically produced by the Iso-Seq With Mapping pipeline in [SMRTLink/SMRTAnalysis](https://www.pacb.com/products-and-services/analytical-software/) with the following format:
+
+```
+#
+# -----------------
+# Field explanation
+# -----------------
+# count_fl: Number of associated FL reads
+# norm_fl: count_fl / total number of FL reads, mapped or unmapped
+# Total Number of FL reads: 1065
+#
+pbid    count_fl        norm_fl
+PB.1.1  2       1.8779e-03
+PB.1.2  6       5.6338e-03
+PB.1.3  3       2.8169e-03
+PB.2.1  3       2.8169e-03
+PB.3.1  2       1.8779e-03
+PB.4.1  8       7.5117e-03
+
+```
+
 
 #### Multi Sample Chained FL Count
 
@@ -228,7 +273,7 @@ This is a comma-delimited file.
 
 #### SQANTI3 output of FL Count information
 
-For each sample provided through the `--fl_count` option, `sqanti3_qc.py` will create a column in the `.classification.txt` output file that is `FL.<sample>`. Note that this is the raw FL count provided. The sum of all the FL reads accross the samples associated to one transcript will be recorded in th `FL` column of the `.classification.txt` output file
+For each sample provided through the `--fl_count` option, `sqanti3_qc.py` will create a column in the `_classification.txt` output file that is `FL.<sample>`. Note that this is the raw FL count provided. The sum of all the FL reads accross the samples associated to one transcript will be recorded in th `FL` column of the `_classification.txt` output file.
 
 When plotted, the script [SQANTI3_report.R](ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 
@@ -238,14 +283,14 @@ FL_TPM(PB.X.Y,sample1) = ------------------------------------- x 10^6
                                total FL count in sample1
 ```
 
-Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `.classification_TPM.txt`.
+Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `_classification_TPM.txt`. Please, do not mix up `_classification_TPM.txt`  and `_classification.txt` files. The one used in subsequent scripts (filtering, future isoAnnot, etc.) will be the `_classification.txt` one. 
 
 
 <a name="exp"/>
 
 ### Short Read Expression
 
-Use `--expression` to optionally provide short read expression data. Two formats are supported. In any case, you can provide several expression data files as a chain of comma-separated paths or by providing a directory were ONLY expression data is present.
+Use `--expression` to optionally provide short read expression data. Two formats are supported. In any case, you can provide several expression data files as a chain of comma-separated paths or by providing a directory were ONLY expression data is present. If more than one file is provided, `iso_exp` column will represent the average of the expression value accross the files.
 
 #### Kallisto Expression Input
 
@@ -306,7 +351,7 @@ where `-a` determines the fraction of genomic 'A's above which the isoform will 
 
 `-m` sets the maximum distance to an annotated 3' end (the `diff_to_gene_TTS` field in classification output) to offset the intrapriming rule.
 
-`-c` is the filter for the minimum short read junction support (looking at the `min_cov` field in `.classification.txt`), and can only be used if you have short read data.
+`-c` is the filter for the minimum short read junction support (looking at the `min_cov` field in `_classification.txt`), and can only be used if you have short read data.
 
 
 For example:
@@ -320,7 +365,10 @@ python sqanti3_RulesFilter.py test_classification.txt \
 The current filtering rules are as follow:
 
 * If a transcript is FSM, then it is kept unless the 3' end is unreliable (intrapriming).
-* If a transcript is not FSM, then it is kept only if all of below are true: (1) 3' end is reliable (2) does not have a junction that is labeled as RTSwitching (3) all junctions are either canonical or has short read coverage above `-c` threshold
+* If a transcript is not FSM, then it is kept only if all of below are true: 
+    * (1) 3' end is reliable.
+    * (2) does not have a junction that is labeled as RTSwitching.
+    * (3) all junctions are either canonical or has short read coverage above `-c` threshold.
 
 
 <a name="explain"/>
@@ -328,7 +376,7 @@ The current filtering rules are as follow:
 ### SQANTI3 Output Explanation
 
 
-SQANTI/SQANTI2/SQANTI3 categorizes each isoform by finding the best matching reference transcript in the following order:
+SQANTI/SQANTI2/SQANTI3 categorize each isoform by finding the best matching reference transcript in the following order:
 
 * FSM (*Full Splice Match*): meaning the reference and query isoform have the same number of exons and each internal junction agree. The exact 5' start and 3' end can differ by any amount.
 
@@ -346,7 +394,7 @@ SQANTI/SQANTI2/SQANTI3 categorizes each isoform by finding the best matching ref
 
 * *Intergenic*: the query isoform is in the intergenic region.
 
-![sqanti_explain](https://github.com/Magdoll/images_public/blob/master/SQANTI2_figures/sqanti2_classification.png)
+![sqanti_explain](https://github.com/FJPardoPalacios/public_figures/blob/master/figuras_class_SQ3.png)
 
 
 Some of the classifications have further subtypes (the `subtype`) field in SQANTI3 classification output. They are explained below.
@@ -361,7 +409,7 @@ Novel isoforms are subtyped based on whether they use a combination of known jun
 
 #### Classification Output Explanation
 
-The output `.classification.txt` has the following fields:
+The output `_classification.txt` has the following fields:
 
 1. `isoform`: the isoform ID. Usually in `PB.X.Y` format.
 2. `chrom`: chromosome.
@@ -414,10 +462,10 @@ The output `.classification.txt` has the following fields:
 
 THe `.junctions.txt` file shows every junction for every PB isoform. NOTE because of this the *same* junction might appear multiple times if they are shared by multiple PB isoforms. 
 
-1. `isoform`: Isoform ID
-2. `junction_number`: The i-th junction of the isoform
-3. `chrom`: Chromosome 
-4. `strand`: Strand
+1. `isoform`: Isoform ID.
+2. `junction_number`: The i-th junction of the isoform.
+3. `chrom`: Chromosome.
+4. `strand`: Strand.
 5. `genomic_start_coord`: Start of the junction (1-based), note that if on - strand, this would be the junction acceptor site instead.
 6. `genomic_end_coord`: End of the junction (1-based), note that if on - strand, this would be the junction donor site instead.
 7. `transcript_coord`: Currently not implemented. Ignore.
