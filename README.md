@@ -4,12 +4,12 @@ Last Updated: 05/15/2020 (v0.1)   SQANTI3 release!
 
 ## What is SQANTI3?
 
-SQANTI3 is the newest version of SQANTI ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/), [code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)) . It includes all the features included in original SQANTI and SQANTI2 and more!! Both tools now converge in SQANTI3 with the intention of providing you the best characterization possible about your new long read-defined transcriptome. Even though it works independently, SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework. 
+SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/)) that merges features from SQANTI, ([code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)), together with new additions. SQANTI3 will continue as an integrated development aiming to  providing you the best characterization possible for your new long read-defined transcriptome. SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, that also includes IsoAnnot and tappAS.
 
 
-New features implemented in SQANTI3 not available in previous versions:
+New features implemented in SQANTI3 not available in previous versions are:
 
-* isoAnnot Lite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
+* isoAnnotLite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
 * CAGE peak definitions --- CAGE peak will only be associated to a certain transcript if it is upstream of the transcript stariting site. Must provide CAGE peak data.
 * Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
 * Accepts several expression files at the same time.
