@@ -9,15 +9,14 @@ SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi
 
 New features implemented in SQANTI3 not available in previous versions are:
 
-* isoAnnotLite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
-* CAGE peak definitions --- CAGE peak will only be associated to a certain transcript if it is upstream of the transcript stariting site. Must provide CAGE peak data.
+* IsoAnnotLite implemented to generate tappAS compatible gff3 files. Gff3 output may incorporate functional annotation labels for model species supported by tappAS.
+* CAGE peak definitions: CAGE peak will only be associated to a transcript when located upstream of the transcript stariting site. This option requires CAGE peak data.
 * Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
 * Accepts several expression files at the same time.
 * New plots:
-    *  Saturation curves.
+    *  Saturation curves (number of transcripts detected as a function of the sequencing depth)
     *  Distance to CAGE (if any).
-    *  Accumulation plots.
-    *  More to come soon...
+    *  Reference transcript redundance (number of FSM and ISM with the same reference transcript match)
 
 ## SQANTI3 HowTos
 
