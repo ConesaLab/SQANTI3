@@ -17,6 +17,7 @@ New features implemented in SQANTI3 not available in previous versions are:
     *  Saturation curves (number of transcripts detected as a function of the sequencing depth)
     *  Distance to CAGE (if any).
     *  Reference transcript redundance (number of FSM and ISM with the same reference transcript match)
+* Installation provided as a Conda yml environment file  
 
 ## SQANTI3 HowTos
 
