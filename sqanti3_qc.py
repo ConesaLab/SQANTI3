@@ -14,6 +14,7 @@ import itertools
 import bisect
 import argparse
 import math
+import numpy as np
 from scipy import mean
 from collections import defaultdict, Counter, namedtuple, Iterable
 from csv import DictWriter, DictReader
@@ -782,12 +783,14 @@ def expression_parser(expressionFile):
     Currently accepts expression format: Kallisto or RSEM
     :param expressionFile: Kallisto or RSEM
     :return: dict of PBID --> TPM
+    Include the possibility of providing an expression matrix --> first column must be "ID"
     """
     if os.path.isdir(expressionFile)==True:
                 exp_paths = [os.path.join(expressionFile,fn) for fn in next(os.walk(expressionFile))[2]]
     else:
                 exp_paths = expressionFile.split(",")
     exp_all = {}
+    ismatrix = False
     for exp_file in exp_paths:
         reader = DictReader(open(exp_file), delimiter='\t')
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
@@ -796,10 +799,18 @@ def expression_parser(expressionFile):
         elif all(k in reader.fieldnames for k in EXP_RSEM_HEADERS):
                 print("Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.", file=sys.stderr)
                 name_id, name_tpm = 'transcript_id', 'TPM'
+        elif reader.fieldnames[0]=="ID":
+                print("Detected expression matrix format")
+                ismatrix = True
+                name_id = 'ID'
         else:
                 print("Expected Kallisto or RSEM file format from {0}. Abort!".format(expressionFile), file=sys.stderr)
         exp_sample = {}
-        for r in reader:
+        if ismatrix:
+            for r in reader:
+                exp_sample[r[name_id]] = np.average(list(map(float,list(r.values())[1:])))
+        else:
+            for r in reader:
                 exp_sample[r[name_id]] = float(r[name_tpm])
 
         exp_all = mergeDict(exp_all, exp_sample)
@@ -2128,7 +2139,7 @@ def main():
     parser.add_argument('annotation', help='\t\tReference annotation file (GTF format)')
     parser.add_argument('genome', help='\t\tReference genome (Fasta format)')
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
-    parser.add_argument("--force_id_ignore", action="store_true", default=False, help=argparse.SUPPRESS)
+    parser.add_argument("--force_id_ignore", action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap'], default='minimap2')
     parser.add_argument('--cage_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
     parser.add_argument("--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)")
