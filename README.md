@@ -12,7 +12,7 @@ New features implemented in SQANTI3 not available in previous versions:
 * isoAnnot Lite implemented --- use `--isoAnnotLite` and `--gff3` option to generate a tappAS-compatible gff3 file automatically.
 * CAGE peak definitions --- CAGE peak will only be associated to a certain transcript if it is upstream of the transcript stariting site. Must provide CAGE peak data.
 * Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
-* Accepts several expression files at the same time.
+* Accepts several Short Reads expression files at the same time or as a expression matrix.
 * New plots:
     *  Saturation curves.
     *  Distance to CAGE (if any).
@@ -87,12 +87,12 @@ conda update conda
  git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
-(2) Move into the SQANTI3 folder and create a virutal environment with all the Python packages required for installation. For doing that in just one step, use the `SQANTI3.conda_env.yml` that you can find in the main folder. This file contains all the information necessary to install the dependencies. Type `y` to agree to the interactive questions. You can change the name of the environment if you want to by using -n option during its creation. By default, the name of the environment will be **SQANTI3_env**.
+(2) Move into the SQANTI3 folder and create a virutal environment with all the Python packages required for installation. For doing that in just one step, use the `SQANTI3.conda_env.yml` that you can find in the main folder. This file contains all the information necessary to install the dependencies. Type `y` to agree to the interactive questions. You can change the name of the environment if you want to by using -n option during its creation. By default, the name of the environment will be **SQANTI3.env**.
 
 ```
 cd SQANTI3
 conda env create -f SQANTI3.conda_env.yml
-source activate SQANTI3_env
+source activate SQANTI3.env
 ```
 
 (3) Once you have activated the virtual environment, you should see your prompt changing to something like this:
@@ -135,7 +135,7 @@ $ source activate SQANTI3_env
 This are the minimal files that you will need to run SQANTI3:
 
 
-*    **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF (using `--gtf` option). If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
+*   **Long read-defined transcriptome**. It can be obtained from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Nanopore. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF (using `--gtf` option). If you provide the sequences of your transcripts, a mapping step will be performed initially with *minimap2*. It is strongly recommended to collapse them into unique transcripts *BEFORE* running SQANTI3 using [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or [TAMA](https://github.com/GenomeRIK/tama/wiki).
 
 *   **Reference annotation** in GTF format. This file will be taken as reference to describe the degree of novelty of each transcript. Some examples of reference transcriptomes can be, for example, [GENCODE](https://www.gencodegenes.org/releases/current.html) or [CHESS](http://ccb.jhu.edu/chess/).
 
@@ -161,7 +161,7 @@ This are the minimal files that you will need to run SQANTI3:
 The script usage is:
 
 ```
-python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN]
+python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
                      [--aligner_choice {minimap2,deSALT,gmap}]
                      [--cage_peak CAGE_PEAK]
                      [--polyA_motif_list POLYA_MOTIF_LIST]
@@ -170,7 +170,7 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN]
                      [-x GMAP_INDEX] [-t CPUS] [-n CHUNKS] [-o OUTPUT]
                      [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
                      [--genename] [-fl FL_COUNT] [-v] [--isoAnnotLite]
-                     [--gff3 GFF3]
+                     [--gff3 GFF3] 
                      isoforms annotation genome
 
 ```
@@ -293,7 +293,9 @@ Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be ad
 
 ### Short Read Expression
 
-Use `--expression` to optionally provide short read expression data. Two formats are supported. In any case, you can provide several expression data files as a chain of comma-separated paths or by providing a directory were ONLY expression data is present. If more than one file is provided, `iso_exp` column will represent the average of the expression value accross the files.
+Use `--expression` to optionally provide short read expression data. Two formats are supported if you input one file per sample. In any case, you can provide several expression data files as a chain of comma-separated paths or by providing a directory were ONLY expression data is present. If more than one file is provided, `iso_exp` column will represent the average of the expression value accross all the files.
+
+There is also the possibility of using as input an expression matrix, as a tab-separated file, in which each transcript will be a row and each sample/replicate a column. Transcript idientifiers must be the same than the ones described in the *Long read-defined transcriptome* used as input and the name for that column must be `ID`. The rest of the column names in the header should be the sample/replicate identifier.
 
 #### Kallisto Expression Input
 
