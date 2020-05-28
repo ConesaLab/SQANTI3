@@ -1,0 +1,60 @@
+# the image build from this recipe is not reproducible, since it 
+# depends on third party software which can change any time.
+# Use it on your own risk
+bootstrap: debootstrap
+OSVersion: testing
+MirrorURL: http://ftp.de.debian.org/debian/
+
+%files
+   # used to place already available files to speedup singularity build
+   # modify the %post section accordingly
+   # include /
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt update
+    apt install -y --no-install-recommends --no-install-suggests localepurge build-essential git ca-certificates wget curl
+    # the deps for gtfToGenePred, see ldd gtfToGenePred
+    apt install -y --no-install-recommends --no-install-suggests libkrb5-3 libk5crypto3
+    locale-gen en_US.UTF-8
+    localepurge
+    apt-get clean
+    apt-get autoclean
+    # get miniconda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh
+    bash /Miniconda3-py37_4.8.2-Linux-x86_64.sh -b -p /miniconda3
+    git clone https://github.com/ConesaLab/SQANTI3.git
+    eval "$(/miniconda3/bin/conda shell.bash hook)"
+    # it seems this yaml need some fresh packages
+    conda env create -f SQANTI3/SQANTI3.conda_env.yml
+    conda clean -a
+    wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P /SQANTI3/utilities/
+    chmod +x /SQANTI3/utilities/gtfToGenePred
+    # activate doesn't work with non-interactive bash? well, let's export PATH and PYTHONPATH
+    # /miniconda3/bin/activate SQANTI3
+    export PATH=/miniconda3/envs/SQANTI3.env/bin:/miniconda3/envs/SQANTI3.env/utilities:/SQANTI3:$PATH
+    export PYTHONPATH=/miniconda3/envs/SQANTI3.env/lib/python3.7/site-packages/
+    git clone https://github.com/Magdoll/cDNA_Cupcake.git
+    cd cDNA_Cupcake && python setup.py build && python setup.py install
+    # Install packages needed for report script, ideally should be part of conda install?
+    /miniconda3/envs/SQANTI3.env/bin/R --save <<EOF
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(c("ggplot2", "scales", "reshape", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify"))
+q()
+EOF
+    # cleanup
+    apt remove -y build-essential git wget curl
+    apt autoremove -y
+    # rm -rf /include
+    rm -rf /Miniconda3-py37_4.8.2-Linux-x86_64.sh
+    rm -rf /cDNA_Cupcake/.git
+    rm -rf /SQANTI3/.git
+
+%environment
+    export LC_ALL=C
+    export PATH=/miniconda3/envs/SQANTI3.env/bin:/miniconda3/envs/SQANTI3.env/utilities:/SQANTI3:$PATH
+    export PYTHONPATH=/miniconda3/envs/SQANTI3.env/lib/python3.7/site-packages:/cDNA_Cupcake:/cDNA_Cupcake/sequence/
+
+%runscript
+    sqanti3_qc.py
