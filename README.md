@@ -98,7 +98,7 @@ source activate SQANTI3.env
 (3) Once you have activated the virtual environment, you should see your prompt changing to something like this:
 
 ```
-(SQANTI3_env)$
+(SQANTI3.env)$
 ```
 
 (4) You also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl) when installed though conda. At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add it to the `SQANTI3/utilities` folder (and give it execute permissions):
@@ -108,13 +108,13 @@ wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <pat
 chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred 
 ```
 
-(5) If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now. First, check that you have already activated the `SQANTI3_env` environment and then proceed with the following commands:
+(5) If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now. First, check that you have already activated the `SQANTI3.env` environment and then proceed with the following commands:
 
 ```
-(SQANTI3_env)$ git clone https://github.com/Magdoll/cDNA_Cupcake.git
-(SQANTI3_env)$ cd cDNA_Cupcake
-(SQANTI3_env)$ python setup.py build
-(SQANTI3_env)$ python setup.py install
+(SQANTI3.env)$ git clone https://github.com/Magdoll/cDNA_Cupcake.git
+(SQANTI3.env)$ cd cDNA_Cupcake
+(SQANTI3.env)$ python setup.py build
+(SQANTI3.env)$ python setup.py install
 ```
 
 No installation for SQANTI3 itself is required. The scripts can be run directly.
@@ -127,8 +127,8 @@ Before starting any SQANTI3 run, remember that you need to activate the SQANTI3 
 
 ```
 $ source activate SQANTI3.env
-(SQANTI3_env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
-(SQANTI3_env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/
+(SQANTI3.env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
+(SQANTI3.env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/
 ```
 
 #### Minimum Input to SQANTI3 QC
