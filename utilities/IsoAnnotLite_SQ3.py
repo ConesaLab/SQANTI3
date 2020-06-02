@@ -1408,7 +1408,7 @@ def run(args):
 
     else:
         #File names
-        filename = "tappAS_annotation_from_SQANTI3.gff3"
+        filename = os.path.join(args.dir , args.output+"_tappAS_annot_from_SQANTI3.gff3")
         filenameMod = filename[:-5] + "_mod" + filename[-5:]
 
         #################
