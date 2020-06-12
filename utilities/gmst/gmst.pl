@@ -628,7 +628,7 @@ sub train{
 	{
 	&RunSystem( "$build --clean_join $seq --seq $input_seq --log $logfile --MIN_CONTIG_SIZE 0 --GAP_FILLER ", "prepare sequence\n" );
 	$do_iterations = 0;
-	} 
+	}
 
 	&Log( "do_iterations = $do_iterations\n" );
 
@@ -641,7 +641,7 @@ sub train{
 
 	#------------------------------------------------
 	# enter iterations loop
-    #print "(Liz) metamodel ".$meta_model." next ".$next."\n";
+
 	&Log( "entering iteration loop\n" );
 
 	while( $do_iterations )
@@ -716,10 +716,9 @@ sub train{
 		
 	}
 	else
-	{
-	   print "WARNING: unable to train model, using initialized system instead.\n";
-		&RunSystem( "cp $next $input_seq.mod", "create: $input_seq.mod\n" );
-		return $next;
+	{ 
+	#	&RunSystem( "cp $imod $input_seq.mod", "create: $input_seq.mod\n" );
+	#	return $meta_model;
 	}
 
 }
