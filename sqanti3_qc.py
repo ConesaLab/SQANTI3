@@ -79,7 +79,7 @@ MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
 GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
-GMST_CMD = "perl " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
+GMST_CMD = "perl -W " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
 
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
@@ -592,6 +592,7 @@ def correctionPlusORFpred(args, genome_dict):
         os.chdir(args.dir)
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
         if subprocess.check_call(cmd, shell=True, cwd=gmst_dir)!=0:
+            print(cmd)
             print("ERROR running GMST cmd: {0}".format(cmd), file=sys.stderr)
             sys.exit(-1)
         os.chdir(cur_dir)
