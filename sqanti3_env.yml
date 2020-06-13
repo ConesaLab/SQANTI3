@@ -8,7 +8,6 @@ dependencies:
   - r-ggplot2=3.3.1
   - r-ggplotify=0.0.5
   - r-scales=1.1.1
-  - r-reshape=0.8.8
   - r-gridextra=2.3
   - r-dplyr=1.0.0
   - bioconductor-noiseq=2.31.0
@@ -41,3 +40,5 @@ dependencies:
   - bx-python=0.8.8
   - biopython=1.76
   - bcbiogff=0.6.6
+  - gffread=0.11.7
+  - r-tidyr==1.1.0

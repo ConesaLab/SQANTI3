@@ -49,7 +49,7 @@ RUN apt remove -y \
         curl && \
     apt autoremove -y && \
     # rm -rf /include
-    rm -rf /opt/Miniconda3-py37_4.8.2-Linux-x86_64.sh && \
+    rm -rf /opt/Miniconda3-latest-Linux-x86_64.sh && \
     rm -rf /opt/cDNA_Cupcake/.git && \
     rm -rf /opt/SQANTI3/.git
 
