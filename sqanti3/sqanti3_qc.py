@@ -79,7 +79,7 @@ MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
 GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
-GMST_CMD = "perl -W " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
+GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
 
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
@@ -503,8 +503,10 @@ def correctionPlusORFpred(args, genome_dict):
                                             dir=args.gmap_index,
                                             i=args.isoforms,
                                             o=corrSAM)
-                if subprocess.check_call(cmd, shell=True)!=0:
-                    print("ERROR running alignment cmd: {0}".format(cmd), file=sys.stderr)
+                try:
+                    sp = subprocess.run(cmd, shell=True, check=True, capture_output=True)
+                except subprocess.CalledProcessError as error:
+                    print(f"{error}\n {error.output}")
                     sys.exit(-1)
 
             # if is fusion - go in and change the IDs to reflect PBfusion.X.1, PBfusion.X.2...
@@ -536,7 +538,7 @@ def correctionPlusORFpred(args, genome_dict):
             # GFF to GTF (in case the user provides gff instead of gtf)
             corrGTF_tpm = corrGTF+".tmp"
             try:
-                subprocess.call([GFFREAD_PROG, args.isoforms , '-T', '-o', corrGTF_tpm])
+                subprocess.run([GFFREAD_PROG, args.isoforms , '-T', '-o', corrGTF_tpm])
             except (RuntimeError, TypeError, NameError):
                 sys.stderr.write('ERROR: File %s without GTF/GFF format.\n' % args.isoforms)
                 raise SystemExit(1)
@@ -560,7 +562,7 @@ def correctionPlusORFpred(args, genome_dict):
                 sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
-            subprocess.call([GFFREAD_PROG, corrGTF, '-g', args.genome, '-w', corrFASTA])
+            subprocess.run([GFFREAD_PROG, corrGTF, '-g', args.genome, '-w', corrFASTA])
 
     # ORF generation
     print("**** Predicting ORF sequences...", file=sys.stdout)
@@ -591,9 +593,10 @@ def correctionPlusORFpred(args, genome_dict):
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
-        if subprocess.check_call(cmd, shell=True, cwd=gmst_dir)!=0:
-            print(cmd)
-            print("ERROR running GMST cmd: {0}".format(cmd), file=sys.stderr)
+        try:
+            subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,)
+        except subprocess.CalledProcessError as error:
+            print(error, subprocess.PIPE)
             sys.exit(-1)
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
@@ -645,9 +648,14 @@ def reference_parser(args, genome_chroms):
     else:
         ## gtf to genePred
         if not args.genename:
-            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
+            cmd = [GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
         else:
-            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
+            cmd = [GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2']
+        try:
+            subprocess.check_call(cmd, shell=True, check=True)
+        except subprocess.CalledProcessError as error:
+            print(error, file=subprocess.STDOUT)
+            sys.exit(-1)
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
