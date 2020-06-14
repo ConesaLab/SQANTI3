@@ -24,3 +24,4 @@ bx-python==0.8.8
 biopython==1.76
 bcbio-gff==0.6.6
 numpy==1.18.1
+zest.releaser==6.20.1
