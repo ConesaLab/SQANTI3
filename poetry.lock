@@ -82,6 +82,18 @@ version = "0.4.3"
 
 [[package]]
 category = "main"
+description = ""
+name = "cupcake"
+optional = false
+python-versions = "~=3.7"
+version = "12.1.2"
+
+[package.source]
+reference = "0c02320717a57035fd5d9e3e49fc3635b91dd58d"
+type = "git"
+url = "https://github.com/milescsmith/cDNA_Cupcake.git"
+[[package]]
+category = "main"
 description = "The Cython compiler for writing C extensions for the Python language."
 name = "cython"
 optional = false
@@ -432,7 +444,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "52795a76f83c1765952f2840008cf99c8a10810c251ebc0e83279f2606f8987a"
+content-hash = "40808f8dbb4bae4d35ecd31890e1b157177622b9bc51dfd2f7599b52629249e5"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -518,6 +530,7 @@ colorama = [
     {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
     {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
 ]
+cupcake = []
 cython = [
     {file = "Cython-0.29.20-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:a49d0f5c55ad0f4aacad32f058a71d0701cb8936d6883803e50698fa04cac8d2"},
     {file = "Cython-0.29.20-cp27-cp27m-manylinux1_i686.whl", hash = "sha256:a985a7e3c7f1663af398938029659a4381cfe9d1bd982cf19c46b01453e81775"},
