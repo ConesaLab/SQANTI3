@@ -1,0 +1,8 @@
+# added by check_manifest.py
+include *.in
+include *.lock
+include *.md
+include *.rst
+include *.txt
+include *.yml
+include Dockerfile
