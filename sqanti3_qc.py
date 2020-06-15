@@ -1900,16 +1900,18 @@ def run(args):
 
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 
+
 ### IsoAnnot Lite implementation
-    ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
-    if args.isoAnnotLite:
-        if args.gff3:
-            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(g=corrGTF , c=outputClassPath, j=outputJuncPath, t=args.gff3, d=args.dir, o=args.output)
-        else:
-            ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} -o {o}".format(g=corrGTF , c=outputClassPath , j=outputJuncPath, d=args.dir, o=args.output)
-        if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
-            print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
-            sys.exit(-1)
+ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
+
+def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outDir, outName, gff3_opt):
+    if gff3_opt:
+        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, d=outDir, o=outName)
+    else:
+        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, d=outDir, o=outName)
+    if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
+        print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
+        sys.exit(-1)
 
 
 
@@ -2269,10 +2271,19 @@ def main():
     print("**** Running SQANTI3...", file=sys.stdout)
     if args.chunks == 1:
         run(args)
+        if args.isoAnnotLite:
+            corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+            outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
     else:
         split_dirs = split_input_run(args)
         combine_split_runs(args, split_dirs)
         shutil.rmtree(SPLIT_ROOT_DIR)
+        if args.isoAnnotLite:
+            corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+            outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
+
 
 if __name__ == "__main__":
     main()
