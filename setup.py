@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 try:
     from sqanti3 import __author__, __email__
 except ImportError:  # Deps not yet installed
-    __author__ = __email__ = ("fraparp1@upv.edu.es","pedsalga@upv.edu.es")
+    __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
 
 setup(
     name="SQANTI3",
@@ -38,10 +38,20 @@ setup(
     ],
     # extras_require=dict(doc=["sphinx", "sphinx_rtd_theme", "sphinx_autodoc_typehints"]),
     include_package_data=True,
-    entry_points={"console_scripts": ["sqanti3_qc = sqanti3.sqanti3_qc:main",
-                                      "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter.py:main"]},
-    packages=find_packages(include=["sqanti3", "sqanti3.*"]),
+    entry_points={
+        "console_scripts": [
+            "sqanti3_qc = sqanti3.sqanti3_qc:main",
+            "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter.py:main",
+        ]
+    },
+    packages=find_packages(),
     package_dir={"sqanti3": "sqanti3"},
-    package_data={"": ["sqanti3/example/*.*", "sqanti3/utilities/gmst/*.*", "sqanti3/utilities/*.*",]},
-    keywords=["isoseq", "rnaseq", "pacbio", "long reads"],    
+    package_data={
+        "": [
+            "sqanti3/example/*.*",
+            "sqanti3/utilities/gmst/*.*",
+            "sqanti3/utilities/*.*",
+        ]
+    },
+    keywords=["isoseq", "rnaseq", "pacbio", "long reads"],
 )
