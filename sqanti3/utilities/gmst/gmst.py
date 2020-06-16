@@ -3,9 +3,11 @@ __version__ = "0.1.0"
 import sys
 import os
 import click
-import regex
+import re
+import logging
 from click_option_group import optgroup
 from typing import Optional
+import logging
 
 BINS = "1|2|3|0"
 SHAPE_TYPE = "linear|circular|partial"
@@ -20,7 +22,7 @@ MIN_LENGTH = 10000
 minGC = 30
 maxGC = 70
 metaout = "meta.lst"
-logfile  = "gms.log"
+logfile = "gms.log"
 seq = "sequence"
 start_prefix = "startseq."
 gibbs_prefix = "gibbs_out."
@@ -36,7 +38,9 @@ fnn_out = ""
 faa_out = ""
 
 meta_out = "initial.meta.lst"
-gc_out = $meta_out.".feature"
+# gc_out = meta_out.".feature" # what?
+verbose = False
+
 
 @click.command()
 @optgroup.group("Output options", help="output is in current working directory")
@@ -53,7 +57,7 @@ gc_out = $meta_out.".feature"
     type=str,
     help="output coordinates of predicted genes in LST or GTF format.",
     default="LST",
-    show_default=True
+    show_default=True,
 )
 @optgroup.option(
     "--fnn",
@@ -74,14 +78,14 @@ gc_out = $meta_out.".feature"
     is_flag=True,
     help="delete all temporary files",
     default=True,
-    show_default=True
+    show_default=True,
 )
 
 # # Run options:
 @optgroup.group("Run options")
 @optgroup.option(
     "--bins",
-    type=click.Choice(["0","1","2","3"]),
+    type=click.Choice(["0", "1", "2", "3"]),
     help="number of clusters for inhomogeneous genome. Use 0 for automatic clustering",
     default=0,
     show_default=True,
@@ -96,14 +100,14 @@ gc_out = $meta_out.".feature"
 )
 @optgroup.option(
     "--strand",
-    type=click.Choice(["direct","reverse","both"]),
+    type=click.Choice(["direct", "reverse", "both"]),
     help="sequence strand to predict genes in",
     default="both",
     show_default=True,
 )
 @optgroup.option(
     "--order",
-    type=click.IntRange(1,100, clamp=True),
+    type=click.IntRange(1, 100, clamp=True),
     help="markov chain order",
     default=4,
     show_default=True,
@@ -112,38 +116,42 @@ gc_out = $meta_out.".feature"
     "--order_non",
     type=int,
     help="order for non-coding parameters",
-    default = 2,
+    default=2,
     show_default=True,
 )
 @optgroup.option(
     "--gcode",
-    type=click.Choice(["11","4","1"]),
+    type=click.Choice(["11", "4", "1"]),
     help="genetic code.  See https://www.ncbi.nlm.nih.gov/Taxonomy/Utils/wprintgc.cgi for codes.  Currently, only tables 1, 4, and 11 are allowed.",
     default=1,
     show_default=True,
 )
 @optgroup.option(
     "--motif",
-    type=click.Choice(['0','1']),
+    type=click.Choice(["0", "1"]),
     help="iterative search for a sequence motif associated with CDS start",
     show_default=True,
-    default=1
+    default=1,
 )
 @optgroup.option(
-    "--width", 
+    "--width",
     type=click.IntRange(3, 100),
-    help="motif width",show_default=True,default=1,
+    help="motif width",
+    show_default=True,
+    default=1,
 )
 @optgroup.option(
     "--prestart",
-    type=click.IntRange(0,100),
-    help="length of sequence upstream of translation initiation site that presumably includes the motif",show_default=True,default=6
+    type=click.IntRange(0, 100),
+    help="length of sequence upstream of translation initiation site that presumably includes the motif",
+    show_default=True,
+    default=6,
 )
 @optgroup.option(
     "--fixmotif",
     type=bool,
     is_flag=True,
-    help="the motif is located at a fixed position with regard to the start; motif could overlap start codon. if this option is on, it changes the meaning of the --prestart option which in this case will define the distance from start codon to motif start",
+    help="the motif is located at a fixed position with regard to the start motif could overlap start codon. if this option is on, it changes the meaning of the --prestart option which in this case will define the distance from start codon to motif start",
     show_default=True,
     default=True,
 )
@@ -167,30 +175,36 @@ gc_out = $meta_out.".feature"
 @optgroup.option(
     "--par",
     type=str,
-    help="custom parameters for GeneMarkS (default is selected based on gcode value: 'par_<gcode>.default' )",show_default=True,
+    help="custom parameters for GeneMarkS (default is selected based on gcode value: 'par_<gcode>.default' )",
+    show_default=True,
 )
 @optgroup.option(
     "--gibbs",
-    type=click.Choice(['1','3']),
+    type=click.Choice(["1", "3"]),
     default=3,
-    help="version of Gibbs sampler software (default: $gibbs_version; supported versions: 1 and 3 )" ,show_default=True,
+    help="version of Gibbs sampler software (default: 3 supported versions: 1 and 3 )",
+    show_default=True,
 )
 @optgroup.option("--test", is_flag=True, default=False, help="installation test")
 @optgroup.option(
     "--identity",
-    type=click.FloatRange(min = 0, max = 1, clamp = False),
+    type=click.FloatRange(min=0, max=1, clamp=False),
     default=0.99,
-    help="identity level assigned for termination of iterations",show_default=True,
+    help="identity level assigned for termination of iterations",
+    show_default=True,
 )
 @optgroup.option(
     "--maxitr",
     type=int,
-    help="maximum number of iterations (default: $maxitr; supported in range: >= 1)",show_default=True,default=10,
+    help="maximum number of iterations (default: 10 supported in range: >= 1)",
+    show_default=True,
+    default=10,
 )
-@optgroup.option("--verbose", is_flag=True, default=False, show_default=True,)
-@optgroup.option("--version", is_flag=True, default=False,show_default=True,)
-@click.argument('input', type=click.File('rb'))
+@optgroup.option("--verbose", is_flag=True, default=False, show_default=True)
+@optgroup.option("--version", is_flag=True, default=False, show_default=True)
+@click.argument("input", type=click.File("rb"))
 @click.help_option(show_default=True)
+@Log(verbose)
 def main(
     sequence_file_name: str,
     outputformat: Optional[str] = None,
@@ -227,92 +241,106 @@ def main(
         bins = 1
         filter = 0
         order = 2
-        order_non=2
-        offover = '0'
-        gcode="11"
-        fixmotif="0"
-        prestart=40
-        width=6
-        fixmotif=0
+        order_non = 2
+        offover = "0"
+        gcode = "11"
+        fixmotif = "0"
+        prestart = 40
+        width = 6
+        fixmotif = 0
     if version:
         print(f"{__version__}")
-    
+    if verbose:
+        # TODO: add actual logging
+        # log = logging.basicConfig(filename='gmst.log', level=logging.INFO)
+        pass
     pass
 
 
 def cluster(feature_f, clusters):  # $gc_out, $bins
     gc_hash = dict()
     cut_off_points = []
-    # not sure yet my ($min_GC, $max_GC, $one_third, $two_third, $one_half); # is this a tuple?
     num_of_seq = 0
     total_length = 0
     header_to_cod_GC = dict()
 
-    with open(feature_f, 'r') as GC:
-        while (<GC>):
-            if ($_ !~ /^>(.*?)\t(\d+)\s+(\d+)/);
-                my $header = $1;
-                my $length = $2;
-                my $GC = $3;
-            elif($header =~ /^(.*?)\t/):
-                $header = $1;
-            $header_to_cod_GC{$header} = $GC;
-            $num_of_seq ++;
-            $total_length += $length;
-            $gc_hash{$GC} += $length;
+    with open(feature_f, "r") as GC:
+        # read in probuild output, line by line.  Should be fasta input.
+        for line in GC:
+            # if the line is a fasta header in the form of '>(Reference sequence name)\t(number) (number)
+            text = re.match(pattern="^>(.*?)\t(\d+)\s+(\d+)", string=line)
+            if text:
+                header = text.group(1)  # Reference name
+                length = text.group(2)  # length of sequence?
+                GC = text.group(3)  # not sure, GC count?
+                header_re = re.match(
+                    pattern="^(.*?)\t", string=line
+                )  # Dont get this one - didn't we already extract just this capture group?
+                if header_re:
+                    header = re.match(1)
+                header_to_cod_GC[header] = GC
+                num_of_seq += 1
+                total_length += length
+                gc_hash[GC] += length
 
-def check_args(func):
-    def wrapper(*args, **kwargs):
+    sorted_GC = {
+        _: gc_hash[_] for _ in sorted(gc_hash)
+    }  # sort the gc_hash dictionary by keys
+    min_GC = sorted_GC[0]
+    max_GC = sorted_GC[-1]
+    print(f"min_GC={min_GC} max_GC={max_GC} total_seq_length={total_length}\n")
 
+    previous = 0
+    for key in sorted_GC:
+        gc_hash[key] += previous
 
-def accepts(*types):
-    def check_accepts(f):
-        assert outputformat in ("LST", "GTF"), print(f"Error: format {outputformat} is not supported")
-        # if type(order) not int and len(order) > 2:
-        #     print(f"Error: Markov chain order {order} is not supported")
-        #     exit
-        # if gcode not in ("1", "4", "11"):
-        #     print(f"Error: genetic code {gcode} is not supported")
-        #     exit
-        # if motif not in (0, 1):
-        #     print( "Error: in value of motif option")
-        #     exit
-        # if clean not in (0, 1):
-        #     print("Error: in value of clean option")
-        #     exit
-        # if filterseq not in (0, 1):
-        #     print("Error: in value of filter option")
-        #     exit
-        # if fixmotif not in (0, 1):
-        #     print("Error: in value of fixmotif option")
-        #     exit
-        # if offover not in (0, 1):
-        #     print("Error: in value of offover option")
-        #     exit
-        # if bins not in ("0","1","2","3"):
-        #     print("Error: in value of bin option")
-        #     exit
-        # if width !~ /^\d+$/ ):
-        #     print("Error: in value of motif width option")
-        #     exit
-        # if prestart !~ /^\d+$/ ):
-        #     print("Error: in value of prestart option")
-        #     exit
-        # if (identity !~ /^\d?\.?\d+$/ )||identity > 1 )):
-        #     print("Error: in value of identity option")
-        #     exit
-        # if maxitr !~ /^\d+$/ ):
-        #     print("Error: in value of maximum number of itteration")
-        #     exit
-        # if STRAND !~ /\b$strand\b/ ):
-        #     print("Error: strand [$strand] is not supported")
-        #     exit
-        # if gibbs_version != 1)&&($gibbs_version != 3))
-        #     print("Error: in specification of Gibbs version")
-        #     exit
-        new_f.__name__ = f.__name__
-        return new_f
-    return check_accepts
+        if previous < total_length / 3 and gc_hash[key] >= total_length / 3:
+            one_third = key
+        if previous < total_length / 3 * 2 and gc_hash[key] >= total_length / 3 * 2:
+            two_third = key
+        if previous < total_length / 2 and gc_hash[key] >= total_length / 2:
+            one_half = key
+        previous = gc_hash[key]
+        # TODO: uncomment when we have logging fixed
+        # log.info(f"({one_third})->({gc_hash[one_third]})\n")
+        # log.info(f"({one_half})->({gc_hash[one_half]})\n")
+        # log.info(f"({two_third})->({gc_hash[two_third]})\n")
+
+    if clusters == 0:
+        # cluster number is not specified by user
+        # automatically choose cluster number.
+        if two_third - one_third > 3:
+            clusters = 3
+        else:
+            clusters = 1
+    if clusters == 3:
+        if (
+            (two_third - one_third) < 1
+            or (max_GC - two_third) < 1
+            or (one_third - min_GC) < 1
+        ):
+            # &Log( "Total number of sequences is not enough for training in 3 clusters!\n" )
+            clusters = 1
+        else:
+            if gc_hash[one_third] > MIN_LENGTH:
+                cut_off_points.extend((min_GC, one_third, two_third, max_GC))
+            else:
+                # &Log( "Total length of sequences is not enough for training in 3 clusters!\n" )
+                clusters = 2
+
+    if clusters == 2:
+        if gc_hash[one_half] > MIN_LENGTH:
+            cut_off_points.extend((min_GC, one_half, max_GC))
+        else:
+            # &Log( "Total length of sequences is not enough for training in 2 clusters!\n" )
+            pass
+
+    if clusters == 1:
+        cut_off_points.extend((min_GC, max_GC))
+    return (clusters, cut_off_points, header_to_cod_GC)
+
 
 if __name__ == "__main__":
+    if "--verbose" in sys.argv:
+        verbose = True
     sys.exit(main())  # pragma: no cover
