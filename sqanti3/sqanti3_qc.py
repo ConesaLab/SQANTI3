@@ -19,6 +19,7 @@ from scipy import mean
 from collections import defaultdict, Counter, namedtuple, Iterable
 from csv import DictWriter, DictReader
 from multiprocessing import Process
+import pygmst
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -99,8 +100,8 @@ MINIMAP2_CMD = (
 )
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
-GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
-GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
+# GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
+# GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
 
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
 GFFREAD_PROG = "gffread"
@@ -801,18 +802,19 @@ def correctionPlusORFpred(args, genome_dict):
     else:
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
-        cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
-        try:
-            subprocess.run(
-                cmd,
-                shell=True,
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        except subprocess.CalledProcessError as error:
-            print(error, subprocess.PIPE)
-            sys.exit(-1)
+        pygmst.gmst(seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct")
+        # cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
+        # try:
+        #     subprocess.run(
+        #         cmd,
+        #         shell=True,
+        #         check=True,
+        #         stdout=subprocess.PIPE,
+        #         stderr=subprocess.PIPE,
+        #     )
+        # except subprocess.CalledProcessError as error:
+        #     print(error, subprocess.PIPE)
+        #     sys.exit(-1)
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
         with open(corrORF, "w") as f:
@@ -834,9 +836,7 @@ def correctionPlusORFpred(args, genome_dict):
                     # must modify both the sequence ID and the sequence
                     orf_length -= pos
                     cds_start += pos * 3
-                    newid = "{0}|{1}_aa|{2}|{3}|{4}".format(
-                        id_pre, orf_length, orf_strand, cds_start, cds_end
-                    )
+                    newid = f"{id_pre}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
                     newseq = str(r.seq)[pos:]
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=newid
@@ -847,7 +847,7 @@ def correctionPlusORFpred(args, genome_dict):
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=r.id
                     )
-                    f.write(">{0}\n{1}\n".format(new_rec.description, new_rec.seq))
+                    f.write(f">{new_rec.description}\n{new_rec.seq}\n")
 
     if len(orfDict) == 0:
         print(

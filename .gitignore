@@ -137,3 +137,4 @@ dmypy.json
 sqanti3/test.pl
 sqanti3/utilities/gmst/logger.py
 sqanti3/utilities/gmst/test.py
+**/.DS_Store
