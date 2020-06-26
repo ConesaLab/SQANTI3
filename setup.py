@@ -41,7 +41,7 @@ setup(
     entry_points={
         "console_scripts": [
             "sqanti3_qc = sqanti3.sqanti3_qc:main",
-            "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter.py:main",
+            "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter:main",
         ]
     },
     packages=find_packages(),

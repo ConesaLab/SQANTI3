@@ -32,23 +32,17 @@ RUN bash /opt/Miniconda3.sh -b -p /opt/miniconda3 && \
     conda init bash && \
     conda clean -a
 
+ENV LC_ALL=C
 ENV PATH=/opt/miniconda3/envs/sqanti3/bin:/opt/miniconda3/envs/sqanti3/utilities:/SQANTI3:$PATH
 ENV PYTHONPATH=/opt/miniconda3/envs/sqanti3/lib/python3.7/site-packages/
 
-RUN git clone https://github.com/Magdoll/cDNA_Cupcake.git /opt/cDNA_Cupcake && \
-    cd /opt/cDNA_Cupcake && python setup.py build && python setup.py install
+# ADD http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred /opt/gtfToGenePred/gtfToGenePred
+# ENV PATH=/opt/gtfToGenePred:$PATH
 
-ADD . /opt/SQANTI3/
-
-ADD http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred /opt/SQANTI3/utilities/gtfToGenePred
-RUN chmod +x /opt/SQANTI3/utilities/gtfToGenePred
-
+COPY . /opt/sqanti3
+RUN /opt/miniconda3/envs/sqanti3/bin/pip install -e /opt/sqanti3
 # cleanup
-RUN apt remove -y \
-        build-essential \
-        git \
-        wget \
-        curl && \
+RUN apt clean && \
     apt autoremove -y && \
     # rm -rf /include
     rm -rf /opt/Miniconda3-latest-Linux-x86_64.sh && \
@@ -56,10 +50,4 @@ RUN apt remove -y \
     rm -rf /opt/SQANTI3/.git && \
     rm -fr /opt/sqanti3_env.yml
 
-RUN chmod +x /opt/SQANTI3/sqanti3_qc.py
-
-ENV LC_ALL=C
-ENV PATH=/opt/miniconda3/envs/SQANTI3.env/bin:/opt/miniconda3/envs/SQANTI3.env/utilities:/opt/SQANTI3:$PATH
-ENV PYTHONPATH=/opt/miniconda3/envs/SQANTI3.env/lib/python3.7/site-packages:/opt/cDNA_Cupcake:/opt/cDNA_Cupcake/sequence/
-
-ENTRYPOINT [ "/opt/SQANTI3/sqanti3_qc.py" ]
+ENTRYPOINT [ "sqanti3_qc" ]

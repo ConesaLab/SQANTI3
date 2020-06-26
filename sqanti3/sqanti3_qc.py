@@ -23,8 +23,8 @@ import pygmst
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
-from utilities.rt_switching import rts
-from utilities.indels_annot import calc_indels_from_sam
+from sqanti3.utilities.rt_switching import rts
+from sqanti3.utilities.indels_annot import calc_indels_from_sam
 
 
 try:
@@ -103,6 +103,7 @@ DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 # GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
 # GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
 
+GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
