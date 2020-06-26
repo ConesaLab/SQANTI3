@@ -35,7 +35,7 @@ RUN bash /opt/Miniconda3.sh -b -p /opt/miniconda3 && \
 ENV PATH=/opt/miniconda3/envs/sqanti3/bin:/opt/miniconda3/envs/sqanti3/utilities:/SQANTI3:$PATH
 ENV PYTHONPATH=/opt/miniconda3/envs/sqanti3/lib/python3.7/site-packages/
 
-RUN git clone https://github.com/Magdoll/cDNA_Cupcake.git /opt/cDNA_Cupcake && \
+RUN git clone https://github.com/milescsmith/cDNA_Cupcake.git /opt/cDNA_Cupcake && \
     cd /opt/cDNA_Cupcake && python setup.py build && python setup.py install
 
 ADD . /opt/SQANTI3/
