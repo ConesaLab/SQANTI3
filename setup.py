@@ -13,7 +13,7 @@ except ImportError:  # Deps not yet installed
 
 setup(
     name="SQANTI3",
-    version="1.3.0",
+    version="1.3.2",
     description="Quality Control of Long-Read Defined Transcriptomes",
     long_description=Path("README.rst").read_text("utf-8"),
     url="https://github.com/ConesaLab/SQANTI3",
