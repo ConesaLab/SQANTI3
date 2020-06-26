@@ -41,4 +41,9 @@ dependencies:
   - biopython=1.76
   - bcbiogff=0.6.6
   - gffread=0.11.7
-  - r-tidyr==1.1.0
+  - r-tidyr=1.1.0
+  - numpy=1.18.1
+  - ucsc-gtftogenepred=377
+  - pip:
+    - git+https://github.com/milescsmith/cDNA_Cupcake.git@module
+    - git+https://github.com/milescsmith/pygmst.git@0.4.3
