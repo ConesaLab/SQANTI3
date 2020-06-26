@@ -23,8 +23,8 @@ import pygmst
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
-from utilities.rt_switching import rts
-from utilities.indels_annot import calc_indels_from_sam
+from sqanti3.utilities.rt_switching import rts
+from sqanti3.utilities.indels_annot import calc_indels_from_sam
 
 
 try:
@@ -899,7 +899,7 @@ def reference_parser(args, genome_chroms):
                 "-geneNameAsName2",
             ]
         try:
-            result = subprocess.run(cmd.split(), capture_output=True)
+            result = subprocess.run(cmd, capture_output=True)
         except subprocess.CalledProcessError as error:
             print(error, file=subprocess.STDERR)
             sys.exit(-1)
