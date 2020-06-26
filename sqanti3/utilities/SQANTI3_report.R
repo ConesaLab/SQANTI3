@@ -19,7 +19,7 @@ report.file <- paste(report.prefix, "sqanti_report.pdf", sep = "_")
 class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep = "")
 #********************** Packages (install if not found)
 
-list_of_packages <- c("ggplot2", "scales", "tidyr", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify")
+list_of_packages <- c("ggplot2", "scales", "tidy", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify")
 req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[, "Package"])]
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if ("NOISeq" %in% req_packages) BiocManager::install("NOISeq")
