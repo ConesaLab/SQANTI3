@@ -979,9 +979,7 @@ def checkFeatureInCDS(
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
                     if not ex in allExonsSQ:
-                        return (
-                            False
-                        )  # end in another exons and we don't have that intermediate in SQ
+                        return False  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
 

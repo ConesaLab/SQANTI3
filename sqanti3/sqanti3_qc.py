@@ -23,8 +23,8 @@ import pygmst
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
-from .utilities.rt_switching import rts
-from .utilities.indels_annot import calc_indels_from_sam
+from utilities.rt_switching import rts
+from utilities.indels_annot import calc_indels_from_sam
 
 
 try:
@@ -381,11 +381,11 @@ class myQueryTranscripts:
         self.CDS_end = CDS_end
         self.coding = coding
         self.CDS_genomic_start = (
-            CDS_genomic_start
-        )  # 1-based genomic coordinate of CDS start - strand aware
+            CDS_genomic_start  # 1-based genomic coordinate of CDS start - strand aware
+        )
         self.CDS_genomic_end = (
-            CDS_genomic_end
-        )  # 1-based genomic coordinate of CDS end - strand aware
+            CDS_genomic_end  # 1-based genomic coordinate of CDS end - strand aware
+        )
         self.is_NMD = is_NMD  # (TRUE,FALSE) for NMD if is coding, otherwise "NA"
         self.FL = FL  # count for a single sample
         self.FL_dict = FL_dict  # dict of sample -> FL count
@@ -406,13 +406,9 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = (
-            dist_polya_site
-        )  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = (
-            polyA_dist
-        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -548,12 +544,10 @@ class myQueryProteins:
     def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = (
-            cds_end
-        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
-            None
-        )  # 1-based genomic start of ORF, if - strand, is greater than end
+            None  # 1-based genomic start of ORF, if - strand, is greater than end
+        )
         self.cds_genomic_end = None  # 1-based genomic end of ORF
         self.proteinID = proteinID
 
@@ -700,14 +694,19 @@ def correctionPlusORFpred(args, genome_dict):
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(args.genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
+            print(f"corrSAM: {corrSAM}")
+            print(f"corrFASTA: {corrFASTA}")
+            print(f"corrGTF: {corrGTF}")
+            print(f"args.genome: {args.genome}")
+
             convert_sam_to_gff3(
                 corrSAM,
                 corrGTF + ".tmp",
                 source=os.path.basename(args.genome).split(".")[0],
             )  # convert SAM to GFF3
-            cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
+            cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -T -o {corrGTF}"
             if subprocess.check_call(cmd, shell=True) != 0:
-                print("ERROR running cmd: {0}".format(cmd), file=sys.stderr)
+                print(f"ERROR running cmd: {cmd}", file=sys.stderr)
                 sys.exit(-1)
         else:
             print(
@@ -802,7 +801,10 @@ def correctionPlusORFpred(args, genome_dict):
     else:
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
-        pygmst.gmst(seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct")
+        print(corrFASTA)
+        pygmst.gmst(
+            seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct"
+        )
         # cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
         # try:
         #     subprocess.run(
@@ -836,12 +838,14 @@ def correctionPlusORFpred(args, genome_dict):
                     # must modify both the sequence ID and the sequence
                     orf_length -= pos
                     cds_start += pos * 3
-                    newid = f"{id_pre}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
+                    newid = (
+                        f"{id_pre}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
+                    )
                     newseq = str(r.seq)[pos:]
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=newid
                     )
-                    f.write(">{0}\n{1}\n".format(newid, newseq))
+                    f.write(f">{newid}\n{newseq}\n")
                 else:
                     new_rec = r
                     orfDict[r.id] = myQueryProteins(
@@ -872,7 +876,7 @@ def reference_parser(args, genome_chroms):
     print("**** Parsing Reference Transcriptome....", file=sys.stdout)
 
     if os.path.exists(referenceFiles):
-        print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
+        print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
     else:
         ## gtf to genePred
         if not args.genename:
@@ -895,9 +899,9 @@ def reference_parser(args, genome_chroms):
                 "-geneNameAsName2",
             ]
         try:
-            subprocess.check_call(cmd, shell=True, check=True)
+            result = subprocess.run(cmd.split(), capture_output=True)
         except subprocess.CalledProcessError as error:
-            print(error, file=subprocess.STDOUT)
+            print(error, file=subprocess.STDERR)
             sys.exit(-1)
 
     ## parse reference annotation
@@ -972,12 +976,10 @@ def isoforms_parser(args):
     # gtf to genePred
     cmd = (
         GTF2GENEPRED_PROG
-        + " {0} {1} -genePredExt -allErrors -ignoreGroupsWithoutExons".format(
-            corrGTF, queryFile
-        )
+        + f" {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
     )
     if subprocess.check_call(cmd, shell=True) != 0:
-        print("ERROR running cmd: {0}".format(cmd), file=sys.stderr)
+        print(f"ERROR running cmd: {cmd}", file=sys.stderr)
         sys.exit(-1)
 
     isoforms_list = defaultdict(lambda: [])  # chr --> list to be sorted later
@@ -992,7 +994,7 @@ def isoforms_parser(args):
 
 
 def STARcov_parser(
-    coverageFiles
+    coverageFiles,
 ):  # just valid with unstrand-specific RNA-seq protocols.
     """
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
@@ -1003,10 +1005,9 @@ def STARcov_parser(
     else:
         cov_files = coverageFiles.split(",")
 
+    newline = "\n"
     print(
-        "Input pattern: {0}. The following files found and to be read as junctions:\n{1}".format(
-            coverageFiles, "\n".join(cov_files)
-        ),
+        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:\n{newline.join(cov_files)}",
         file=sys.stderr,
     )
 
@@ -1035,9 +1036,7 @@ def STARcov_parser(
                 )
             all_read += 1
     print(
-        "{0} junctions read. {1} junctions added to both strands because no strand information from STAR.".format(
-            all_read, undefined_strand_count
-        ),
+        f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR.",
         file=sys.stderr,
     )
 
@@ -1391,9 +1390,7 @@ def transcriptsKnownSpliceSites(
                         "super",
                         "nomatch",
                     ):
-                        raise Exception(
-                            "Unknown match category {0}!".format(match_type)
-                        )
+                        raise Exception(f"Unknown match category {match_type}!")
 
                     diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
                     # has_overlap = gene_overlap(isoform_hit.genes[-1], ref.gene) if len(isoform_hit.genes) >= 1 else Fals
@@ -1848,9 +1845,7 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
         else:
             # hits one or more genes on the opposite strand
             isoforms_hit.str_class = "antisense"
-            isoforms_hit.genes = [
-                "novelGene_{g}_AS".format(g=g) for g in isoforms_hit.AS_genes
-            ]
+            isoforms_hit.genes = [f"novelGene_{g}_AS" for g in isoforms_hit.AS_genes]
     else:
         # (Liz) used to put NNC here - now just genic
         isoforms_hit.str_class = "genic"
@@ -2349,9 +2344,13 @@ def run(args):
     orfDict = correctionPlusORFpred(args, genome_dict)
 
     ## parse reference id (GTF) to dicts
-    refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(
-        args, list(genome_dict.keys())
-    )
+    (
+        refs_1exon_by_chr,
+        refs_exons_by_chr,
+        junctions_by_chr,
+        junctions_by_gene,
+        start_ends_by_gene,
+    ) = reference_parser(args, list(genome_dict.keys()))
 
     ## parse query isoforms
     isoforms_by_chr = isoforms_parser(args)
@@ -2379,9 +2378,7 @@ def run(args):
         orfDict,
     )
 
-    print(
-        "Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout
-    )
+    print(f"Number of classified isoforms: {len(isoforms_info)}", file=sys.stdout)
 
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF + ".cds.gff")
     # os.rename(corrGTF+'.cds.gff', corrGTF)
@@ -2566,15 +2563,12 @@ def run(args):
     ## Generating report
     if not args.skip_report:
         print("**** Generating SQANTI3 report....", file=sys.stderr)
-        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d}".format(
-            d=utilitiesPath,
-            f=RSCRIPT_REPORT,
-            c=outputClassPath,
-            j=outputJuncPath,
-            p=args.doc,
+        cmd = (
+            RSCRIPTPATH
+            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {args.doc} {utilitiesPath}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
-            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
+            print(f"ERROR running command: {cmd}", file=sys.stderr)
             sys.exit(-1)
     stop3 = timeit.default_timer()
 
@@ -2591,29 +2585,16 @@ def run(args):
             ISOANNOT_CMD = (
                 "python "
                 + ISOANNOT_PROG
-                + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(
-                    g=corrGTF,
-                    c=outputClassPath,
-                    j=outputJuncPath,
-                    t=args.gff3,
-                    d=args.dir,
-                    o=args.output,
-                )
+                + f" {corrGTF} {outputClassPath} {outputJuncPath} -gff3 {args.gff3} -d {args.dir} -o {args.output}"
             )
         else:
             ISOANNOT_CMD = (
                 "python "
                 + ISOANNOT_PROG
-                + " {g} {c} {j} -d {d} -o {o}".format(
-                    g=corrGTF,
-                    c=outputClassPath,
-                    j=outputJuncPath,
-                    d=args.dir,
-                    o=args.output,
-                )
+                + f" {corrGTF} {outputClassPath} {outputJuncPath} -d {args.dir} -o {args.output}"
             )
         if subprocess.check_call(ISOANNOT_CMD, shell=True) != 0:
-            print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
+            print(f"ERROR running command: {ISOANNOT_CMD}", file=sys.stderr)
             sys.exit(-1)
 
 
@@ -2653,7 +2634,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = raw[3]
             else:
                 newid = r.id.split()[0]  # Ensembl fasta header
-        f.write(">{0}\n{1}\n".format(newid, r.seq))
+        f.write(f">{newid}\n{r.seq}\n")
     f.close()
     return f.name
 
@@ -2798,7 +2779,7 @@ def split_input_run(args):
 
     pools = []
     for i, (d, x) in enumerate(split_outs):
-        print("launching worker on on {0}....".format(x))
+        print(f"launching worker on on {x}....")
         args2 = copy.deepcopy(args)
         args2.isoforms = x
         args2.novel_gene_prefix = str(i)
@@ -2860,15 +2841,12 @@ def combine_split_runs(args, split_dirs):
 
     if not args.skip_report:
         print("**** Generating SQANTI3 report....", file=sys.stderr)
-        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d}".format(
-            d=utilitiesPath,
-            f=RSCRIPT_REPORT,
-            c=outputClassPath,
-            j=outputJuncPath,
-            p=args.doc,
+        cmd = (
+            RSCRIPTPATH
+            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {args.doc} {utilitiesPath}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
-            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
+            print(f"ERROR running command: {cmd}", file=sys.stderr)
             sys.exit(-1)
 
 
@@ -3104,14 +3082,14 @@ def main():
         print("Cleaning up isoform IDs...", file=sys.stderr)
         args.isoforms = rename_isoform_seqids(args.isoforms, args.force_id_ignore)
         print(
-            "Cleaned up isoform fasta file written to: {0}".format(args.isoforms),
+            f"Cleaned up isoform fasta file written to: {args.isoforms}",
             file=sys.stderr,
         )
 
     args.annotation = os.path.abspath(args.annotation)
     if not os.path.isfile(args.annotation):
         print(
-            "ERROR: Annotation doesn't exist. Abort!".format(args.annotation),
+            f"ERROR: Annotation {args.annotation} doesn't exist. Abort!",
             file=sys.stderr,
         )
         sys.exit()
@@ -3131,7 +3109,7 @@ def main():
     args.novel_gene_prefix = None
     # Print out parameters so can be put into report PDF later
     args.doc = os.path.join(os.path.abspath(args.dir), args.output + ".params.txt")
-    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    print(f"Write arguments to {args.doc}...", file=sys.stdout)
     with open(args.doc, "w") as f:
         f.write("Version\t" + __version__ + "\n")
         f.write("Input\t" + os.path.basename(args.isoforms) + "\n")
