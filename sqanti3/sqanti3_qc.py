@@ -900,7 +900,7 @@ def reference_parser(args, genome_chroms):
                 "-geneNameAsName2",
             ]
         try:
-            result = subprocess.run(cmd.split(), capture_output=True)
+            result = subprocess.run(cmd, capture_output=True)
         except subprocess.CalledProcessError as error:
             print(error, file=subprocess.STDERR)
             sys.exit(-1)
