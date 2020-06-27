@@ -104,13 +104,13 @@ DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 # GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
 
 GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
-GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
-GFFREAD_PROG = "gffread"
+# GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
+GFFREAD_PROG = distutils.spawn.find_executable("gtfToGenePred")
 
-if distutils.spawn.find_executable(GTF2GENEPRED_PROG) is None:
+if GTF2GENEPRED_PROG is None:
     print(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!", file=sys.stderr)
     sys.exit(-1)
-if distutils.spawn.find_executable(GFFREAD_PROG) is None:
+if GFFREAD_PROG is None:
     print(f"Cannot find executable {GFFREAD_PROG}. Abort!", file=sys.stderr)
     sys.exit(-1)
 
