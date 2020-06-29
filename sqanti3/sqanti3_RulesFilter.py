@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 __author__ = "etseng@pacb.com"
 __version__ = "7.3.2"  # Python 3.7 syntax!
 
@@ -277,9 +278,7 @@ def main():
 
     args.sqanti_class = os.path.abspath(args.sqanti_class)
     if not os.path.isfile(args.sqanti_class):
-        print(
-            f"ERROR: {args.sqanti_class} doesn't exist. Abort!", file=sys.stderr,
-        )
+        print(f"ERROR: {args.sqanti_class} doesn't exist. Abort!", file=sys.stderr)
         sys.exit(-1)
 
     if not os.path.exists(args.isoforms):

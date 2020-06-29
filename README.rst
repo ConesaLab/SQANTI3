@@ -163,7 +163,7 @@ just need to activate the conda environment of SQANTI3 and run it!
 ::
 
    wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <path_to>/SQANTI3/utilities/
-   chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred 
+   chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred
 
 (5) If you don’t already have
     `cDNA_Cupcake <https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install>`__
@@ -301,7 +301,7 @@ that corresponds just to those polished sequences that map to chromosome
                         --fl_count chr13_FL.abundances.txt \
                         -c chr13_SR_support.star.SJ.out.tab \
                         --isoAnnotLite --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
-                        
+
 
 If ``--aligner_choice=minimap2``, the minimap2 parameter used currently
 is: ``minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf``.
@@ -534,15 +534,15 @@ The current filtering rules are as follow:
 -  If a transcript is not FSM, then it is kept only if all of below are
    true:
 
-   -  
+   -
 
       (1) 3’ end is reliable.
 
-   -  
+   -
 
       (2) does not have a junction that is labeled as RTSwitching.
 
-   -  
+   -
 
       (3) all junctions are either canonical or has short read coverage
           above ``-c`` threshold.
