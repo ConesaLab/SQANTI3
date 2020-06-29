@@ -11,13 +11,13 @@ New features implemented in SQANTI3 not available in previous versions are:
 
 * IsoAnnotLite implemented to generate tappAS compatible gff3 files. Gff3 output may incorporate functional annotation labels for model species supported by tappAS.
 * CAGE peak definitions: CAGE peak will only be associated to a transcript when located upstream of the transcript stariting site. This option requires CAGE peak data.
-* Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
+* Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`.
 * Accepts several Short Reads expression files at the same time or as an expression matrix.
 * New plots:
     *  Saturation curves (number of transcripts detected as a function of the sequencing depth)
     *  Distance to CAGE (if any).
     *  Reference transcript redundance (number of FSM and ISM with the same reference transcript match)
-* Installation provided as a Conda yml environment file  
+* Installation provided as a Conda yml environment file
 
 ## SQANTI3 HowTos
 
@@ -30,7 +30,7 @@ New features implemented in SQANTI3 not available in previous versions are:
 * <a href="#explain">SQANTI3 Output Explanation</a>
     * <a href="#class">Classification Output Explanation</a>
     * <a href="#junction">Junction Output Explanation</a>
-   
+
 
 ![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
@@ -47,7 +47,7 @@ New features implemented in SQANTI3 not available in previous versions are:
 ## Prerequisites
 
 * Perl
-* Minimap2 
+* Minimap2
 * Python (3.7)
 
 ### Python-related libraries
@@ -81,7 +81,7 @@ export PATH=$HOME/anacondaPy37/bin:$PATH
 conda -V
 conda update conda
 ```
-(1)  Download or clone the SQANTI3 repository. 
+(1)  Download or clone the SQANTI3 repository.
 
 ```
  git clone https://github.com/ConesaLab/SQANTI3.git
@@ -105,7 +105,7 @@ source activate SQANTI3.env
 
 ```
 wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <path_to>/SQANTI3/utilities/
-chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred 
+chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred
 ```
 
 (5) If you don't already have [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#install) installed, you can do that now. First, check that you have already activated the `SQANTI3.env` environment and then proceed with the following commands:
@@ -144,7 +144,7 @@ This are the minimal files that you will need to run SQANTI3:
 
 #### Optional inputs:
 
-* CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). 
+* CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/).
 
 * [Intropolis](https://github.com/nellore/intropolis/blob/master/README.md) Junction BED file. In previous versions of SQANTI, it was provided a version of [Intropolis for hg38 genome, modified into STAR junction format](https://github.com/Magdoll/images_public/tree/master/SQANTI2_support_data) which is still valid.
 
@@ -179,7 +179,7 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
 If you don't feel like running the ORF prediction part, use `--skipORF`. Just know that all your transcripts will be annotated as non-coding.
 If you have short read data, you can run STAR to get the junction file (usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf)) and supply it to SQANTI3 as is. If you have several samples, it is recommended to provide them as separated `*SJ.out.tab` files.
 
-By way of example, the following command was used to run SQANTI3 with th `example` data. The input files are a subdivision of the [Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data) that corresponds just to those polished sequences that map to chromosome 13. 
+By way of example, the following command was used to run SQANTI3 with th `example` data. The input files are a subdivision of the [Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data) that corresponds just to those polished sequences that map to chromosome 13.
 
 ```
 python sqanti3_qc.py test_chr13_seqs.fasta \
@@ -190,7 +190,7 @@ python sqanti3_qc.py test_chr13_seqs.fasta \
                      --fl_count chr13_FL.abundances.txt \
                      -c chr13_SR_support.star.SJ.out.tab \
                      --isoAnnotLite --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
-                     
+
 ```
 
 
@@ -201,9 +201,9 @@ If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT al
 If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide its path through `-x` option.
 
 
-There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger. 
+There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger.
 If your input is GTF (using `--gtf` option), the `-t` option has no effect.
-The second is `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI3 in parallel before combining them. 
+The second is `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI3 in parallel before combining them.
 Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
 
 
@@ -211,7 +211,7 @@ Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
 ### SQANTI3 Quality Control Output
 
 
-You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `melanoma_chr13_classification.txt` and `melanoma_chr13_junctions.txt` of the same folder as input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well, so check out <a href="#Updates">the updates section</a> 
+You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `melanoma_chr13_classification.txt` and `melanoma_chr13_junctions.txt` of the same folder as input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well, so check out <a href="#Updates">the updates section</a>
 
 Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#explain">below</a>.
 
@@ -250,13 +250,13 @@ PB.4.1  8       7.5117e-03
 
 A multi-sample FL Count file produced by the [chain_samples.py](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step#chain) script in Cupcake will have the following format:
 
-| superPBID | sample1 | sample2 | 
+| superPBID | sample1 | sample2 |
 | --------- | ------- | ------- |
 | PB.1.2 | 3 | NA |
 | PB.2.1 | 2 | NA |
 | PB.3.1 | 2 | 2 |
 | PB.3.2 | 5 | 3 |
-| PB.3.3 | 5 | 2 | 
+| PB.3.3 | 5 | 2 |
 
 This is a tab-delimited file.
 
@@ -287,7 +287,7 @@ FL_TPM(PB.X.Y,sample1) = ------------------------------------- x 10^6
                                total FL count in sample1
 ```
 
-Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `_classification_TPM.txt`. Please, do not mix up `_classification_TPM.txt`  and `_classification.txt` files. The one used in subsequent scripts (filtering, future isoAnnot, etc.) will be the `_classification.txt` one. 
+Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `_classification_TPM.txt`. Please, do not mix up `_classification_TPM.txt`  and `_classification.txt` files. The one used in subsequent scripts (filtering, future isoAnnot, etc.) will be the `_classification.txt` one.
 
 
 <a name="exp"/>
@@ -335,7 +335,7 @@ PB.100.2        PB.100  226     81.11   20.18   2.26    9.47    100.00  16.84   
 ### Filtering Isoforms using SQANTI3 output and a pre-defined rules
 
 
-I've made a lightweight filtering script based on SQANTI3 output that filters for two things: (a) intra-priming and (b) short read junction support.  
+I've made a lightweight filtering script based on SQANTI3 output that filters for two things: (a) intra-priming and (b) short read junction support.
 
 The script usage is:
 
@@ -352,8 +352,8 @@ python sqanti3_RulesFilter.py [classification] [fasta] [sam] [gtf]
          [-a INTRAPRIMING] [-c MIN_COV] [-m MAX_DIST_TO_KNOWN_END]
 ```
 
-where `-a` determines the fraction of genomic 'A's above which the isoform will be filtered. The default is `-a 0.6`. 
-`-r` is another option for looking at genomic 'A's that looks at the immediate run-A length. The default is `-r 6`. 
+where `-a` determines the fraction of genomic 'A's above which the isoform will be filtered. The default is `-a 0.6`.
+`-r` is another option for looking at genomic 'A's that looks at the immediate run-A length. The default is `-r 6`.
 
 `-m` sets the maximum distance to an annotated 3' end (the `diff_to_gene_TTS` field in classification output) to offset the intrapriming rule.
 
@@ -371,7 +371,7 @@ python sqanti3_RulesFilter.py test_classification.txt \
 The current filtering rules are as follow:
 
 * If a transcript is FSM, then it is kept unless the 3' end is unreliable (intrapriming).
-* If a transcript is not FSM, then it is kept only if all of below are true: 
+* If a transcript is not FSM, then it is kept only if all of below are true:
     * (1) 3' end is reliable.
     * (2) does not have a junction that is labeled as RTSwitching.
     * (3) all junctions are either canonical or has short read coverage above `-c` threshold.
@@ -392,7 +392,7 @@ SQANTI/SQANTI2/SQANTI3 categorize each isoform by finding the best matching refe
 
 * NNC (*Novel Not in Catalog*): the query isoform does not have a FSM or ISM match, and has at least one donor or acceptor site that is not annotated.
 
-* *Antisense*: the query isoform does not have overlap a same-strand reference gene but is anti-sense to an annotated gene. 
+* *Antisense*: the query isoform does not have overlap a same-strand reference gene but is anti-sense to an annotated gene.
 
 * *Genic Intron*: the query isoform is completely contained within an annotated intron.
 
@@ -407,7 +407,7 @@ Some of the classifications have further subtypes (the `subtype`) field in SQANT
 
 ![ISM_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_ism_subcat_SQ3.png)
 
-Novel isoforms are subtyped based on whether they use a combination of known junctions (junctions are pairs of <donor>,<acceptor> sites), a combination of known splice sites (the individual donor and acceptor sites are known, but at least combination is novel), or at least one splice site (donor or acceptor) is novel. 
+Novel isoforms are subtyped based on whether they use a combination of known junctions (junctions are pairs of <donor>,<acceptor> sites), a combination of known splice sites (the individual donor and acceptor sites are known, but at least combination is novel), or at least one splice site (donor or acceptor) is novel.
 
 ![NIC_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_nic_nnc_subcat_SQ3.png)
 
@@ -431,7 +431,7 @@ The output `_classification.txt` has the following fields:
 12. `diff_to_TTS`: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of reference.
 13. `diff_to_gene_TSS`: distance of query isoform 5' start to the closest start end of *any* transcripts of the matching gene. This field is different from `diff_to_TSS` since it's looking at all annotated starts of a gene. Negative value means query starts downstream of reference.
 14. `diff_to_gene_TTS`: distance of query isoform 3' end to the closest end of *any* transcripts of the matching gene. Negative value means query ends upstream of reference.
-13. `subcategory`: additional splicing categorization, separated by semi-colons. Categories include: `mono-exon`, `multi-exon`. Intron rentention is marked with `intron_retention`. 
+13. `subcategory`: additional splicing categorization, separated by semi-colons. Categories include: `mono-exon`, `multi-exon`. Intron rentention is marked with `intron_retention`.
 14. `RTS_stage`: TRUE if one of the junctions could be a RT switching artifact.
 15. `all_canonical`: TRUE if all junctions have canonical splice sites.
 16. `min_sample_cov`: sample with minimum coverage.
@@ -447,7 +447,7 @@ The output `_classification.txt` has the following fields:
 26. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
 27. `FSM_class`: ignore this field for now.
 28. `ORF_length`: predicted ORF length.
-29. `CDS_length`: predicted CDS length. 
+29. `CDS_length`: predicted CDS length.
 30. `CDS_start`: CDS start.
 31. `CDS_end`: CDS end.
 32. `CDS_genomic_start`: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.
@@ -456,9 +456,9 @@ The output `_classification.txt` has the following fields:
 35. `perc_A_downstreamTTS`: percent of genomic "A"s in the downstream 20 bp window. If this number if high (say > 0.8), the 3' end site of this isoform is probably not reliable.
 36. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
 37. `dist_peak`: distance to closest TSS based on CAGE Peak data. Negative means upstream of TSS and positive means downstream of TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
-38. `within_peak`: TRUE if the PacBio transcript start site is within a CAGE Peak. 
+38. `within_peak`: TRUE if the PacBio transcript start site is within a CAGE Peak.
 39. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
-40. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
+40. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream.
 
 
 <a name="junction"/>
@@ -466,7 +466,7 @@ The output `_classification.txt` has the following fields:
 ### Junction Output Explanation
 
 
-THe `.junctions.txt` file shows every junction for every PB isoform. NOTE because of this the *same* junction might appear multiple times if they are shared by multiple PB isoforms. 
+THe `.junctions.txt` file shows every junction for every PB isoform. NOTE because of this the *same* junction might appear multiple times if they are shared by multiple PB isoforms.
 
 1. `isoform`: Isoform ID.
 2. `junction_number`: The i-th junction of the isoform.
@@ -486,4 +486,3 @@ THe `.junctions.txt` file shows every junction for every PB isoform. NOTE becaus
 16. `indel_near_junct`: TRUE if there is alignment indel error near the junction site, indicating potential junction incorrectness.
 17. `sample_with_cov`: If `--coverage` (short read junction coverage info) is provided, shows the number of samples (cov files) that have short read that support this junction.
 18. `total_coverage`: Total number of short read support from all samples that cover this junction.
-

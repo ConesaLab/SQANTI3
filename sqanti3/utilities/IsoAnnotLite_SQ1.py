@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
 import argparse
@@ -981,7 +982,9 @@ def checkFeatureInCDS(
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
                     if ex not in allExonsSQ:
-                        return False  # end in another exons and we don't have that intermediate in SQ
+                        return (
+                            False
+                        )  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
 
@@ -1292,7 +1295,7 @@ def updateGTF(filename, filenameMod):
                                     + ", using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
-                                #break
+                                # break
 
                         elif fields[1] == "MOBIDB_LITE":
                             if fields[2] == "DISORDER":

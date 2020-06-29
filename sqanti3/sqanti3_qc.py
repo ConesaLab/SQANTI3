@@ -27,7 +27,6 @@ from multiprocessing import Process
 
 import numpy as np
 import pygmst
-
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
@@ -38,6 +37,7 @@ sys.path.insert(0, utilitiesPath)
 try:
     # from Bio.Seq import Seq
     from Bio import SeqIO
+
     # from Bio.SeqRecord import SeqRecord
 except ImportError:
     print(
@@ -69,6 +69,7 @@ try:
     from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
     from cupcake.sequence.STAR import STARJunctionReader
     from cupcake.sequence.BED import LazyBEDPointReader
+
     # import cupcake.sequence.coordinate_mapper as cordmap
 except ImportError:
     print(
@@ -79,6 +80,7 @@ except ImportError:
 
 try:
     from cupcake.cupcake.tofu.compare_junctions import compare_junctions
+
     # from cupcake.cupcake.tofu.filter_away_subset import read_count_file
     # from cupcake.sequence.BioReaders import GMAPSAMReader
     from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
@@ -401,9 +403,13 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = (
+            dist_polya_site
+        )  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = (
+            polyA_dist
+        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -537,7 +543,9 @@ class myQueryProteins:
     def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = (
+            cds_end
+        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -674,9 +682,7 @@ def correctionPlusORFpred(args, genome_dict):
                         cpus=n_cpu, dir=args.gmap_index, i=args.isoforms, o=corrSAM
                     )
                 try:
-                    subprocess.run(
-                        cmd, shell=True, check=True,
-                    )
+                    subprocess.run(cmd, shell=True, check=True)
                 except subprocess.CalledProcessError as error:
                     print(f"{error}\n {error.output}")
                     sys.exit(-1)
@@ -1285,10 +1291,7 @@ def transcriptsKnownSpliceSites(
         seqAdownTTS=seq_downTTS,
     )
 
-    ##***************************************##
-    ########### SPLICED TRANSCRIPTS ###########
-    ##***************************************##
-
+    # SPLICED TRANSCRIPTS
     cat_ranking = {
         "full-splice_match": 5,
         "incomplete-splice_match": 4,
@@ -1628,9 +1631,7 @@ def transcriptsKnownSpliceSites(
                 isoform_hit.genes.append(t.rGene)
                 cur_start, cur_end = min(cur_start, t.rStart), max(cur_end, t.rEnd)
 
-    ##***************************************####
-    ########### UNSPLICED TRANSCRIPTS ###########
-    ##***************************************####
+    # UNSPLICED TRANSCRIPTS
     else:  # single exon id
         if trec.chrom in refs_1exon_by_chr:
             for ref in refs_1exon_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
@@ -1791,9 +1792,9 @@ def novelIsoformsKnownGenes(
         )
 
         # (junction index) --> number of refs that have this junction
-        junction_ref_hit = dict(
-            (i, all_ref_junctions.count(junc)) for i, junc in enumerate(trec.junctions)
-        )
+        junction_ref_hit = {
+            i: all_ref_junctions.count(junc) for i, junc in enumerate(trec.junctions)
+        }
 
         # if the same query junction appears in more than one of the hit references, it is not a fusion
         if max(junction_ref_hit.values()) > 1:
@@ -2284,12 +2285,12 @@ def FLcount_parser(fl_count_filename):
                 file=sys.stderr,
             )
             sys.exit(-1)
-        d = dict((r["pbid"], r) for r in reader)
+        d = {r["pbid"]: r for r in reader}
     elif type == "MULTI_CHAIN":
-        d = dict((r["superPBID"], r) for r in reader)
+        d = {r["superPBID"]: r for r in reader}
         flag_single_sample = False
     elif type == "MULTI_DEMUX":
-        d = dict((r["id"], r) for r in reader)
+        d = {r["id"]: r for r in reader}
         flag_single_sample = False
     else:
         print(
@@ -2331,7 +2332,7 @@ def run(args):
     print("**** Parsing provided files....", file=sys.stdout)
     print(f"Reading genome fasta {args.genome}....", file=sys.stdout)
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
-    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), "fasta"))
+    genome_dict = {r.name: r for r in SeqIO.parse(open(args.genome), "fasta")}
 
     # correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     orfDict = correctionPlusORFpred(args, genome_dict)

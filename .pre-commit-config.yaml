@@ -1,0 +1,36 @@
+repos:
+-   repo: https://github.com/psf/black
+    rev: 19.3b0
+    hooks:
+    - id: black
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v2.4.4
+    hooks:
+    - id: pyupgrade
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    - id: end-of-file-fixer
+    - id: trailing-whitespace
+    - id: check-case-conflict
+    - id: check-executables-have-shebangs
+    - id: check-ast
+    - id: detect-private-key
+    - id: check-merge-conflict
+    - id: check-json
+    - id: check-toml
+    - id: check-yaml
+    - id: no-commit-to-branch
+      args: [--branch, staging, --branch, master]
+-   repo: https://github.com/pre-commit/mirrors-isort
+    rev: master  # Use the revision sha / tag you want to point at
+    hooks:
+    - id: isort
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: master
+    hooks:
+    - id: mypy
+-   repo: https://gitlab.com/pycqa/flake8
+    rev: '3.8.3'  # pick a git hash / tag to point to
+    hooks:
+    -   id: flake8

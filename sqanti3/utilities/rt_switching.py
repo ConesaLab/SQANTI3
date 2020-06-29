@@ -384,4 +384,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("Reading genome fasta into dict...", file=sys.stderr)
-    genome_dict = dict((r.id, r) for r in SeqIO.parse(open(args.mmfaFilepath), "fasta"))
+    genome_dict = {r.id: r for r in SeqIO.parse(open(args.mmfaFilepath), "fasta")}
