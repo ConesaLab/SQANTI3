@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+from collections import Counter, defaultdict
+from csv import DictWriter
+
 import pysam
-from collections import defaultdict, Counter
-from csv import DictReader, DictWriter
 from bx.intervals import Interval
 
 """
@@ -56,7 +57,7 @@ def calc_indels_from_sam(samFile):
         if read.is_unmapped:
             continue
         cigarLine = read.cigar
-        ## reading splice junctions and storing information
+        # reading splice junctions and storing information
         pos_start = read.pos  # 0-based start
         spliceSites = []  # list of splice junctions (Interval(donor, acceptor))
 
@@ -67,7 +68,7 @@ def calc_indels_from_sam(samFile):
                     spliceSites.append(Interval(pos_start, pos_end))
                 pos_start = pos_end
 
-        ## reading indels, comparing with splice junctions and writing information
+        # reading indels, comparing with splice junctions and writing information
         pos_start = read.pos  # 0-based start
 
         for (cigarType, cigarLength) in cigarLine:

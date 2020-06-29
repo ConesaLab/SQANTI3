@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import os, re, sys, time, subprocess, argparse, pdb
-from collections import namedtuple, Counter, defaultdict
+import argparse
+import os
+import sys
+from collections import Counter, namedtuple
 from csv import DictReader, DictWriter
 
 from Bio import SeqIO
@@ -13,7 +15,7 @@ PATSEQLEN = (
 )
 
 
-#### Function to check splice junctions for possible RT switching
+# Function to check splice junctions for possible RT switching
 
 #
 # Load splice junctions

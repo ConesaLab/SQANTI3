@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 import sys
+from pathlib import Path
+
+from setuptools import find_packages, setup
 
 if sys.version_info < (3,):
     sys.exit("SQANTI3 requires Python >= 3.7")
-from pathlib import Path
-from setuptools import setup, find_packages
 
 try:
     from sqanti3 import __author__, __email__
@@ -22,7 +23,8 @@ setup(
     license="GPL3",
     python_requires=">=3.7",
     install_requires=[
-        l.strip() for l in Path("requirements.txt").read_text("utf-8").splitlines()
+        line.strip()
+        for line in Path("requirements.txt").read_text("utf-8").splitlines()
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

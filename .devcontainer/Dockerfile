@@ -27,7 +27,17 @@ RUN apt-get update --fix-missing && \
       git-core \
       python-dev \
       ssh \
+      r-base \
       vim && \
    apt-get clean && \
    rm -rf /tmp/downloaded_packages/* && \
    rm -rf /var/lib/apt/lists/*
+
+COPY ./ /opt/sqanti/
+RUN pip install /opt/sqanti
+
+ADD http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred /usr/local/bin/gtfToGenePred
+RUN chmod +x /usr/local/bin/gtfToGenePred
+
+RUN Rscript -e "install.libraries(c('tidyverse', 'ggplotify', 'scales', 'gridextra', 'BiocManager'), repos='http://cran.us.r-project.org')"
+RUN Rscript -e "BiocManager::install('noiseq')"

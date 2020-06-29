@@ -1,7 +1,17 @@
 __author__ = "etseng@pacb.com"
 __version__ = "7.3.2"  # Python 3.7 syntax!
 
+import argparse
+import distutils.spawn
+import os
+import subprocess
+import sys
 from argparse import Namespace
+from csv import DictReader, DictWriter
+
+from Bio import SeqIO
+from cupcake.sequence.BioReaders import GMAPSAMReader
+from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 
 """
 Lightweight filtering of SQANTI by using .classification.txt output
@@ -12,18 +22,12 @@ The isoform is NNC, does not have intrapriming/or polyA motif, not RT-switching,
 The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
 """
 
-import os, sys, argparse, subprocess
-import distutils.spawn
-from csv import DictReader, DictWriter
-from Bio import SeqIO
-from cupcake.cupcake.io.BioReaders import GMAPSAMReader
-from cupcake.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
 
-if os.system(RSCRIPTPATH + " --version") != 0:
+if RSCRIPTPATH is None or os.system(RSCRIPTPATH + " --version") != 0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
 

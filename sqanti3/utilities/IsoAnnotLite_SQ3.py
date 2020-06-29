@@ -2,9 +2,8 @@
 
 import argparse
 import math
-import sys
 import os
-import bisect
+import sys
 
 # Global Variables
 USE_GFF3 = False
@@ -22,6 +21,7 @@ CLASS_COLUMN_NAME = [
     "CDS_start",
     "CDS_end",
 ]
+
 
 # Functions
 def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
@@ -51,13 +51,13 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             column not in fields[CLASS_COLUMN_USED[index]]
         ):  # if now in the correct possition...
             print(
-                'File classification does not have the correct structure. The column "'
-                + column
-                + '" is not in the possition '
-                + str(CLASS_COLUMN_USED[index])
-                + ' in the classification file. We have found the column "'
-                + str(fields[CLASS_COLUMN_USED[index]])
-                + '".'
+                f'File classification does not have the correct structure. The column "'
+                f"{column}"
+                f" is not in the possition "
+                f"{str(CLASS_COLUMN_USED[index])}"
+                f" in the classification file. We have found the column "
+                f"{str(fields[CLASS_COLUMN_USED[index]])}"
+                f"."
             )
             sys.exit()
         else:
@@ -978,7 +978,7 @@ def checkFeatureInCDS(
                                 return True
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
-                    if not ex in allExonsSQ:
+                    if ex not in allExonsSQ:
                         return False  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
@@ -1290,7 +1290,7 @@ def updateGTF(filename, filenameMod):
                                     + ", using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
-                                ##break
+                                #break
 
                         elif fields[1] == "MOBIDB_LITE":
                             if fields[2] == "DISORDER":
@@ -1629,11 +1629,11 @@ def updateGTF(filename, filenameMod):
                                 addPosType(res, line, "N")
                             else:
                                 print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                    f"IsoAnnotLite can not identify the feature "
+                                    f"{str(fields[2])}"
+                                    f" in source "
+                                    f"{str(fields[1])}"
+                                    f", using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1667,7 +1667,7 @@ def readGFFandGetData(filenameMod):
     dcProtFeatures = {}
     dcTranscriptAttributes = {}
 
-    dcTransID = {}
+    # dcTransID = {}
 
     with open(filenameMod, "r") as f:
         # process all entries - no header line in file

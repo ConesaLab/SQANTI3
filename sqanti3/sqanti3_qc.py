@@ -7,30 +7,38 @@
 __author__ = "etseng@pacb.com"
 __version__ = "1.0.0"  # Python 3.7
 
-import os, re, sys, subprocess, timeit, glob, copy
-import shutil
-import distutils.spawn
-import itertools
-import bisect
 import argparse
+import bisect
+import copy
+import distutils.spawn
+import glob
+import itertools
 import math
-import numpy as np
-from scipy import mean
-from collections import defaultdict, Counter, namedtuple, Iterable
-from csv import DictWriter, DictReader
+import os
+import re
+import shutil
+import subprocess
+import sys
+import timeit
+from collections import Counter, defaultdict, namedtuple
+from collections.abc import Iterable
+from csv import DictReader, DictWriter
 from multiprocessing import Process
+
+import numpy as np
 import pygmst
+
+from sqanti3.utilities.indels_annot import calc_indels_from_sam
+from sqanti3.utilities.rt_switching import rts
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
-from sqanti3.utilities.rt_switching import rts
-from sqanti3.utilities.indels_annot import calc_indels_from_sam
 
 
 try:
-    from Bio.Seq import Seq
+    # from Bio.Seq import Seq
     from Bio import SeqIO
-    from Bio.SeqRecord import SeqRecord
+    # from Bio.SeqRecord import SeqRecord
 except ImportError:
     print(
         "Unable to import Biopython! Please make sure Biopython is installed.",
@@ -47,21 +55,21 @@ except ImportError:
     )
     sys.exit(-1)
 
-try:
-    from BCBio import GFF as BCBio_GFF
-except ImportError:
-    print(
-        "Unable to import BCBio! Please make sure bcbiogff is installed.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
+# try:
+#     from BCBio import GFF as BCBio_GFF
+# except ImportError:
+#     print(
+#         "Unable to import BCBio! Please make sure bcbiogff is installed.",
+#         file=sys.stderr,
+#     )
+#     sys.exit(-1)
 
 try:
     from cupcake.sequence.err_correct_w_genome import err_correct
     from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
     from cupcake.sequence.STAR import STARJunctionReader
     from cupcake.sequence.BED import LazyBEDPointReader
-    import cupcake.sequence.coordinate_mapper as cordmap
+    # import cupcake.sequence.coordinate_mapper as cordmap
 except ImportError:
     print(
         "Unable to import err_correct_w_genome or sam_to_gff3.py! Please make sure cDNA_Cupcake/sequence/ is in $PYTHONPATH.",
@@ -71,27 +79,15 @@ except ImportError:
 
 try:
     from cupcake.cupcake.tofu.compare_junctions import compare_junctions
-    from cupcake.cupcake.tofu.filter_away_subset import read_count_file
-    from cupcake.cupcake.io.BioReaders import GMAPSAMReader
-    from cupcake.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+    # from cupcake.cupcake.tofu.filter_away_subset import read_count_file
+    # from cupcake.sequence.BioReaders import GMAPSAMReader
+    from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 except ImportError:
     print(
         "Unable to import cupcake.tofu! Please make sure you install cupcake.",
         file=sys.stderr,
     )
     sys.exit(-1)
-
-# check cupcake version
-import cupcake
-
-v1, v2, _ = [int(x) for x in cupcake.__version__.split(".")]
-if v1 < 8 and v2 < 6:
-    print(
-        f"Cupcake version must be 8.6 or higher! Got {cupcake.__version__} instead.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
-
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
@@ -114,11 +110,9 @@ if GFFREAD_PROG is None:
     print(f"Cannot find executable {GFFREAD_PROG}. Abort!", file=sys.stderr)
     sys.exit(-1)
 
-
-seqid_rex1 = re.compile("PB\.(\d+)\.(\d+)$")
-seqid_rex2 = re.compile("PB\.(\d+)\.(\d+)\|\S+")
-seqid_fusion = re.compile("PBfusion\.(\d+)")
-
+seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
+seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
+seqid_fusion = re.compile(r"PBfusion\.(\d+)")
 
 FIELDS_JUNC = [
     "isoform",
@@ -195,7 +189,7 @@ FIELDS_CLASS = [
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
 
-if os.system(RSCRIPTPATH + " --version") != 0:
+if RSCRIPTPATH is None or os.system(RSCRIPTPATH + " --version") != 0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
 
@@ -440,52 +434,50 @@ class myQueryTranscripts:
             return "NA"
 
     def __str__(self):
+        tab = "\t"
         return (
-            "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s"
-            % (
-                self.chrom,
-                self.strand,
-                str(self.length),
-                str(self.num_exons),
-                str(self.str_class),
-                "_".join(set(self.genes)),
-                self.id,
-                str(self.refLen),
-                str(self.refExons),
-                str(self.tss_diff),
-                str(self.tts_diff),
-                self.subtype,
-                self.RT_switching,
-                self.canonical,
-                str(self.min_samp_cov),
-                str(self.min_cov),
-                str(self.min_cov_pos),
-                str(self.sd),
-                str(self.FL),
-                str(self.nIndels),
-                str(self.nIndelsJunc),
-                self.bite,
-                str(self.isoExp),
-                str(self.geneExp),
-                str(self.ratioExp()),
-                self.FSM_class,
-                self.coding,
-                str(self.ORFlen),
-                str(self.CDSlen()),
-                str(self.CDS_start),
-                str(self.CDS_end),
-                str(self.CDS_genomic_start),
-                str(self.CDS_genomic_end),
-                str(self.is_NMD),
-                str(self.percAdownTTS),
-                str(self.seqAdownTTS),
-                str(self.dist_cage),
-                str(self.within_cage),
-                str(self.dist_polya_site),
-                str(self.within_polya_site),
-                str(self.polyA_motif),
-                str(self.polyA_dist),
-            )
+            f"{self.chrom}{tab}"
+            f"{self.strand}{tab}"
+            f"{str(self.length)}{tab}"
+            f"{str(self.num_exons)}{tab}"
+            f"{str(self.str_class)}{tab}"
+            f"{'_'.join(set(self.genes))}{tab}"
+            f"{self.id}{tab}"
+            f"{str(self.refLen)}{tab}"
+            f"{str(self.refExons)}{tab}"
+            f"{str(self.tss_diff)}{tab}"
+            f"{str(self.tts_diff)}{tab}"
+            f"{self.subtype}{tab}"
+            f"{self.RT_switching}{tab}"
+            f"{self.canonical}{tab}"
+            f"{str(self.min_samp_cov)}{tab}"
+            f"{str(self.min_cov)}{tab}"
+            f"{str(self.min_cov_pos)}{tab}"
+            f"{str(self.sd)}{tab}"
+            f"{str(self.FL)}{tab}"
+            f"{str(self.nIndels)}{tab}"
+            f"{str(self.nIndelsJunc)}{tab}"
+            f"{self.bite}{tab}"
+            f"{str(self.isoExp)}{tab}"
+            f"{str(self.geneExp)}{tab}"
+            f"{str(self.ratioExp())}{tab}"
+            f"{self.FSM_class}{tab}"
+            f"{self.coding}{tab}"
+            f"{str(self.ORFlen)}{tab}"
+            f"{str(self.CDSlen())}{tab}"
+            f"{str(self.CDS_start)}{tab}"
+            f"{str(self.CDS_end)}{tab}"
+            f"{str(self.CDS_genomic_start)}{tab}"
+            f"{str(self.CDS_genomic_end)}{tab}"
+            f"{str(self.is_NMD)}{tab}"
+            f"{str(self.percAdownTTS)}{tab}"
+            f"{str(self.seqAdownTTS)}{tab}"
+            f"{str(self.dist_cage)}{tab}"
+            f"{str(self.within_cage)}{tab}"
+            f"{str(self.dist_polya_site)}{tab}"
+            f"{str(self.within_polya_site)}{tab}"
+            f"{str(self.polyA_motif)}{tab}"
+            f"{str(self.polyA_dist)}{tab}"
         )
 
     def as_dict(self):
@@ -682,8 +674,8 @@ def correctionPlusORFpred(args, genome_dict):
                         cpus=n_cpu, dir=args.gmap_index, i=args.isoforms, o=corrSAM
                     )
                 try:
-                    sp = subprocess.run(
-                        cmd, shell=True, check=True, capture_output=True
+                    subprocess.run(
+                        cmd, shell=True, check=True,
                     )
                 except subprocess.CalledProcessError as error:
                     print(f"{error}\n {error.output}")
@@ -775,7 +767,7 @@ def correctionPlusORFpred(args, genome_dict):
         os.makedirs(gmst_dir)
 
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
-    gmst_rex = re.compile("(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)")
+    gmst_rex = re.compile(r"(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)")
     orfDict = {}  # GMST seq id --> myQueryProteins object
     if args.skipORF:
         print(
@@ -879,7 +871,7 @@ def reference_parser(args, genome_chroms):
     if os.path.exists(referenceFiles):
         print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
     else:
-        ## gtf to genePred
+        # gtf to genePred
         if not args.genename:
             cmd = [
                 GTF2GENEPRED_PROG,
@@ -900,12 +892,12 @@ def reference_parser(args, genome_chroms):
                 "-geneNameAsName2",
             ]
         try:
-            result = subprocess.run(cmd, capture_output=True)
+            subprocess.run(cmd, capture_output=True)
         except subprocess.CalledProcessError as error:
             print(error, file=subprocess.STDERR)
             sys.exit(-1)
 
-    ## parse reference annotation
+    # parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
     # 2. separately store single exon and multi-exon references
     refs_1exon_by_chr = defaultdict(lambda: IntervalTree())  #
@@ -1001,7 +993,7 @@ def STARcov_parser(
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
     :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
     """
-    if os.path.isdir(coverageFiles) == True:
+    if os.path.isdir(coverageFiles) is True:
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
     else:
         cov_files = coverageFiles.split(",")
@@ -1080,7 +1072,7 @@ def expression_parser(expressionFile):
     :return: dict of PBID --> TPM
     Include the possibility of providing an expression matrix --> first column must be "ID"
     """
-    if os.path.isdir(expressionFile) == True:
+    if os.path.isdir(expressionFile) is True:
         exp_paths = [
             os.path.join(expressionFile, fn) for fn in next(os.walk(expressionFile))[2]
         ]
@@ -1127,7 +1119,7 @@ def expression_parser(expressionFile):
     if len(exp_paths) > 1:
         for k in exp_all:
             exp_all[k] = list(flatten(exp_all[k]))
-            exp_dict[k] = mean(exp_all[k])
+            exp_dict[k] = np.mean(exp_all[k])
         return exp_dict
     else:
         exp_dict = exp_all
@@ -2005,7 +1997,7 @@ def isoformClassification(
     orfDict,
 ):
 
-    ## read coverage files if provided
+    # read coverage files if provided
 
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
@@ -2341,10 +2333,10 @@ def run(args):
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), "fasta"))
 
-    ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
+    # correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     orfDict = correctionPlusORFpred(args, genome_dict)
 
-    ## parse reference id (GTF) to dicts
+    # parse reference id (GTF) to dicts
     (
         refs_1exon_by_chr,
         refs_exons_by_chr,
@@ -2353,10 +2345,10 @@ def run(args):
         start_ends_by_gene,
     ) = reference_parser(args, list(genome_dict.keys()))
 
-    ## parse query isoforms
+    # parse query isoforms
     isoforms_by_chr = isoforms_parser(args)
 
-    ## Run indel computation if sam exists
+    # Run indel computation if sam exists
     # indelsJunc: dict of pbid --> list of junctions near indel (in Interval format)
     # indelsTotal: dict of pbid --> total indels count
     if os.path.exists(corrSAM):
@@ -2384,7 +2376,7 @@ def run(args):
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF + ".cds.gff")
     # os.rename(corrGTF+'.cds.gff', corrGTF)
 
-    ## RT-switching computation
+    # RT-switching computation
     print("**** RT-switching computation....", file=sys.stderr)
 
     # RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
@@ -2395,7 +2387,7 @@ def run(args):
         else:
             isoforms_info[pbid].RT_switching = "FALSE"
 
-    ## FSM classification
+    # FSM classification
     geneFSM_dict = defaultdict(lambda: [])
     for iso in isoforms_info:
         gene = isoforms_info[
@@ -2404,7 +2396,7 @@ def run(args):
         geneFSM_dict[gene].append(isoforms_info[iso].str_class)
 
     fields_class_cur = FIELDS_CLASS
-    ## FL count file
+    # FL count file
     if args.fl_count:
         if not os.path.exists(args.fl_count):
             print(f"FL count file {args.fl_count} does not exist!", file=sys.stderr)
@@ -2443,7 +2435,7 @@ def run(args):
     else:
         print("Full-length read abundance files not provided.", file=sys.stderr)
 
-    ## Isoform expression information
+    # Isoform expression information
     if args.expression:
         print("**** Reading Isoform Expression Information.", file=sys.stderr)
         exp_dict = expression_parser(args.expression)
@@ -2465,7 +2457,7 @@ def run(args):
         gene_exp_dict = None
         print("Isoforms expression files not provided.", file=sys.stderr)
 
-    ## Adding indel, FSM class and expression information
+    # Adding indel, FSM class and expression information
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()
         if exp_dict is not None and gene_exp_dict is not None:
@@ -2485,7 +2477,7 @@ def run(args):
             else:
                 isoforms_info[iso].nIndels = 0
 
-    ## Read junction files and create attributes per id
+    # Read junction files and create attributes per id
     # Read the junction information to fill in several remaining unfilled fields in classification
     # (1) "canonical": is "canonical" if all junctions are canonical, otherwise "non_canonical"
     # (2) "bite": is TRUE if any of the junction "bite_junction" field is TRUE
@@ -2537,7 +2529,7 @@ def run(args):
     for pbid, covs in sj_covs_by_isoform.items():
         isoforms_info[pbid].sd = pstdev(covs)
 
-    #### Printing output file:
+    # Printing output file:
     print("**** Writing output files....", file=sys.stderr)
 
     # sort isoform keys
@@ -2561,7 +2553,7 @@ def run(args):
                     r["RTS_junction"] = "FALSE"
             fout_junc.writerow(r)
 
-    ## Generating report
+    # Generating report
     if not args.skip_report:
         print("**** Generating SQANTI3 report....", file=sys.stderr)
         cmd = (
@@ -2579,7 +2571,7 @@ def run(args):
 
     print(f"SQANTI3 complete in {stop3 - start3} sec.", file=sys.stderr)
 
-    ### IsoAnnot Lite implementation
+    # IsoAnnot Lite implementation
     ISOANNOT_PROG = os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
     if args.isoAnnotLite:
         if args.gff3:
@@ -3023,7 +3015,7 @@ def main():
             sys.exit(-1)
 
     if args.expression is not None:
-        if os.path.isdir(args.expression) == True:
+        if os.path.isdir(args.expression) is True:
             print(
                 f"Expression files located in {args.expression} folder", file=sys.stderr
             )
@@ -3099,7 +3091,7 @@ def main():
     #    args.sense = "sense_force" if args.sense else "auto"
     # elif args.aligner_choice == "minimap2":
     #    args.sense = "f" if args.sense else "b"
-    ## (Liz) turned off option for --sense, always TRUE
+    # (Liz) turned off option for --sense, always TRUE
     if args.aligner_choice == "gmap":
         args.sense = "sense_force"
     elif args.aligner_choice == "minimap2":

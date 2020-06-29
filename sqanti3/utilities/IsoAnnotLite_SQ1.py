@@ -2,9 +2,10 @@
 
 import argparse
 import math
-import sys
 import os
-import bisect
+import sys
+
+# import bisect
 
 # Global Variables
 USE_GFF3 = False
@@ -22,6 +23,7 @@ CLASS_COLUMN_NAME = [
     "CDS_start",
     "CDS_end",
 ]
+
 
 # Functions
 def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
@@ -51,13 +53,13 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             column not in fields[CLASS_COLUMN_USED[index]]
         ):  # if now in the correct possition...
             print(
-                'File classification does not have the correct structure. The column "'
-                + column
-                + '" is not in the possition '
-                + str(CLASS_COLUMN_USED[index])
-                + ' in the classification file. We have found the column "'
-                + str(fields[CLASS_COLUMN_USED[index]])
-                + '".'
+                "File classification does not have the correct structure. The column '"
+                f"{column}"
+                f"' is not in the possition "
+                f"{str(CLASS_COLUMN_USED[index])}"
+                f" in the classification file. We have found the column '"
+                f"{str(fields[CLASS_COLUMN_USED[index]])}"
+                f"'."
             )
             sys.exit()
         else:
@@ -978,7 +980,7 @@ def checkFeatureInCDS(
                                 return True
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
-                    if not ex in allExonsSQ:
+                    if ex not in allExonsSQ:
                         return False  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
@@ -1290,7 +1292,7 @@ def updateGTF(filename, filenameMod):
                                     + ", using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
-                                ##break
+                                #break
 
                         elif fields[1] == "MOBIDB_LITE":
                             if fields[2] == "DISORDER":
@@ -1667,7 +1669,7 @@ def readGFFandGetData(filenameMod):
     dcProtFeatures = {}
     dcTranscriptAttributes = {}
 
-    dcTransID = {}
+    # dcTransID = {}
 
     with open(filenameMod, "r") as f:
         # process all entries - no header line in file
@@ -1881,9 +1883,9 @@ def main():
     global version
     # arguments
     parser = argparse.ArgumentParser(
-        description="IsoAnnotLite "
-        + str(version)
-        + ": Transform SQANTI 3 output files to generate GFF3 to tappAS."
+        description=f"IsoAnnotLite "
+        f"{str(version)}"
+        f": Transform SQANTI 3 output files to generate GFF3 to tappAS."
     )
     parser.add_argument(
         "corrected", help="\t\t*_corrected.gtf file from SQANTI 3 output."
