@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 __author__ = "etseng@pacb.com"
-__version__ = "7.3.2"  # Python 3.7 syntax!
 
 import argparse
 import distutils.spawn
@@ -14,6 +13,7 @@ from Bio import SeqIO
 from cupcake.sequence.BioReaders import GMAPSAMReader
 from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 
+from . import __version__
 """
 Lightweight filtering of SQANTI by using .classification.txt output
 
@@ -258,7 +258,7 @@ def main():
         "--version",
         help="Display program version number.",
         action="version",
-        version="SQANTI3 " + str(__version__),
+        version=f"SQANTI3 {__version__}",
     )
 
     args: Namespace = parser.parse_args()

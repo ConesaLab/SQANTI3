@@ -40,12 +40,7 @@ from setuptools_scm import get_version
 
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
-
-try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed
-    pass
+from . import __version__
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -2807,7 +2802,7 @@ def main():
     )
     parser.add_argument(
         "isoforms",
-        help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
+         help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
     )
     parser.add_argument("annotation", help="\t\tReference annotation file (GTF format)")
     parser.add_argument("genome", help="\t\tReference genome (Fasta format)")
@@ -2927,7 +2922,7 @@ def main():
         "--version",
         help="Display program version number.",
         action="version",
-        version=f"{get_version(root='..', relative_to=__file__)}",
+        version=f"{__version__}",
     )
     parser.add_argument(
         "--skip_report", action="store_true", default=False, help=argparse.SUPPRESS
