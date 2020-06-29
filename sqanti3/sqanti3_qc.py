@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__ = "etseng@pacb.com"
-__version__ = "1.0.0"  # Python 3.7
+# __version__ = "1.0.0"  # Python 3.7
 
 import argparse
 import bisect
@@ -25,10 +25,18 @@ from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
 
+from pkg_resources import DistributionNotFound, get_distribution
+
 import numpy as np
 import pygmst
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
+
+try:
+    __version__ = get_distribution(__name__).version
+except DistributionNotFound:
+    # package is not installed
+    pass
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
