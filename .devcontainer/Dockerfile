@@ -34,7 +34,7 @@ RUN apt-get update --fix-missing && \
    rm -rf /var/lib/apt/lists/*
 
 COPY ./ /opt/sqanti/
-RUN pip install /opt/sqanti
+RUN pip install -r requirements-dev.txt
 
 ADD http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred /usr/local/bin/gtfToGenePred
 RUN chmod +x /usr/local/bin/gtfToGenePred

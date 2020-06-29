@@ -4,7 +4,7 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-if sys.version_info < (3,):
+if sys.version_info < (3, 7):
     sys.exit("SQANTI3 requires Python >= 3.7")
 
 try:
@@ -14,7 +14,9 @@ except ImportError:  # Deps not yet installed
 
 setup(
     name="SQANTI3",
-    version="1.3.3",
+    # version="1.3.3",
+    use_scm_version=True,
+    setup_requires=["setuptools_scm"],
     description="Quality Control of Long-Read Defined Transcriptomes",
     long_description=Path("README.rst").read_text("utf-8"),
     url="https://github.com/ConesaLab/SQANTI3",
