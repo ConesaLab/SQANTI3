@@ -25,10 +25,19 @@ from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
 
-from pkg_resources import DistributionNotFound, get_distribution
-
 import numpy as np
 import pygmst
+from Bio import SeqIO
+from bx.intervals import Interval, IntervalTree
+from cupcake.cupcake.tofu.compare_junctions import compare_junctions
+from cupcake.sequence.BED import LazyBEDPointReader
+from cupcake.sequence.err_correct_w_genome import err_correct
+from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
+from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
+from cupcake.sequence.STAR import STARJunctionReader
+from pkg_resources import DistributionNotFound, get_distribution
+from setuptools_scm import get_version
+
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
@@ -41,63 +50,6 @@ except DistributionNotFound:
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
 
-
-try:
-    # from Bio.Seq import Seq
-    from Bio import SeqIO
-
-    # from Bio.SeqRecord import SeqRecord
-except ImportError:
-    print(
-        "Unable to import Biopython! Please make sure Biopython is installed.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
-
-try:
-    from bx.intervals import Interval, IntervalTree
-except ImportError:
-    print(
-        "Unable to import bx-python! Please make sure bx-python is installed.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
-
-# try:
-#     from BCBio import GFF as BCBio_GFF
-# except ImportError:
-#     print(
-#         "Unable to import BCBio! Please make sure bcbiogff is installed.",
-#         file=sys.stderr,
-#     )
-#     sys.exit(-1)
-
-try:
-    from cupcake.sequence.err_correct_w_genome import err_correct
-    from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
-    from cupcake.sequence.STAR import STARJunctionReader
-    from cupcake.sequence.BED import LazyBEDPointReader
-
-    # import cupcake.sequence.coordinate_mapper as cordmap
-except ImportError:
-    print(
-        "Unable to import err_correct_w_genome or sam_to_gff3.py! Please make sure cDNA_Cupcake/sequence/ is in $PYTHONPATH.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
-
-try:
-    from cupcake.cupcake.tofu.compare_junctions import compare_junctions
-
-    # from cupcake.cupcake.tofu.filter_away_subset import read_count_file
-    # from cupcake.sequence.BioReaders import GMAPSAMReader
-    from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
-except ImportError:
-    print(
-        "Unable to import cupcake.tofu! Please make sure you install cupcake.",
-        file=sys.stderr,
-    )
-    sys.exit(-1)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
@@ -411,13 +363,9 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = (
-            dist_polya_site
-        )  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = (
-            polyA_dist
-        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -551,9 +499,7 @@ class myQueryProteins:
     def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = (
-            cds_end
-        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -2981,7 +2927,7 @@ def main():
         "--version",
         help="Display program version number.",
         action="version",
-        version="SQANTI3 " + str(__version__),
+        version=f"{get_version(root='..', relative_to=__file__)}",
     )
     parser.add_argument(
         "--skip_report", action="store_true", default=False, help=argparse.SUPPRESS

@@ -14,7 +14,7 @@ except ImportError:  # Deps not yet installed
 
 setup(
     name="SQANTI3",
-    # version="1.3.3",
+    version="1.3.9",
     use_scm_version=True,
     setup_requires=["setuptools_scm"],
     description="Quality Control of Long-Read Defined Transcriptomes",
