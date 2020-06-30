@@ -58,7 +58,7 @@ DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
 GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 # GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
-GFFREAD_PROG = distutils.spawn.find_executable("gtfToGenePred")
+GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 
 if GTF2GENEPRED_PROG is None:
     print(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!", file=sys.stderr)
