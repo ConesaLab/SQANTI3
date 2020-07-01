@@ -139,3 +139,4 @@ sqanti3/utilities/gmst/logger.py
 sqanti3/utilities/gmst/test.py
 **/.DS_Store
 .Rhistory
+sqanti3/version.py

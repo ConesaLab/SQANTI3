@@ -26,6 +26,9 @@ exclude = '''
 )
 '''
 
+[tool.setuptools_scm]
+write_to = "sqanti3/version.py"
+
 [tool.poetry]
 name = "SQANTI3"
 version = "1.2.0"
