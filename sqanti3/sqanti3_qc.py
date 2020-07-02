@@ -5,7 +5,6 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__ = "etseng@pacb.com"
-# __version__ = "1.0.0"  # Python 3.7
 
 import argparse
 import bisect
@@ -36,11 +35,17 @@ from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 from cupcake.sequence.STAR import STARJunctionReader
 from pkg_resources import DistributionNotFound, get_distribution
-from setuptools_scm import get_version
 
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
-from . import __version__
+
+try:
+    from importlib import metadata
+except ImportError:
+    # Running on pre-3.8 Python; use importlib-metadata package
+    import importlib_metadata as metadata
+
+__version__ = metadata.version('SQANTI3')
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -751,20 +756,8 @@ def correctionPlusORFpred(args, genome_dict):
         os.chdir(args.dir)
         print(corrFASTA)
         pygmst.gmst(
-            seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct"
+            seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct", verbose=3,
         )
-        # cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
-        # try:
-        #     subprocess.run(
-        #         cmd,
-        #         shell=True,
-        #         check=True,
-        #         stdout=subprocess.PIPE,
-        #         stderr=subprocess.PIPE,
-        #     )
-        # except subprocess.CalledProcessError as error:
-        #     print(error, subprocess.PIPE)
-        #     sys.exit(-1)
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
         with open(corrORF, "w") as f:

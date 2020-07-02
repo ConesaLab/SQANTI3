@@ -8,14 +8,13 @@ if sys.version_info < (3, 7):
     sys.exit("SQANTI3 requires Python >= 3.7")
 
 try:
-    from sqanti3 import __author__, __email__
+    from sqanti3 import __author__, __email__, __version__
 except ImportError:  # Deps not yet installed
     __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
 
 setup(
     name="SQANTI3",
-    use_scm_version=True,
-    setup_requires=["setuptools_scm"],
+    version=__version__,
     description="Quality Control of Long-Read Defined Transcriptomes",
     long_description=Path("README.rst").read_text("utf-8"),
     url="https://github.com/ConesaLab/SQANTI3",
@@ -24,8 +23,9 @@ setup(
     license="GPL3",
     python_requires=">=3.7",
     install_requires=[
-        line.strip()
-        for line in Path("requirements.txt").read_text("utf-8").splitlines()
+        'importlib-metadata ~= 1.0 ; python_version < "3.8"',
+        [line.strip()
+        for line in Path("requirements.txt").read_text("utf-8").splitlines()]
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

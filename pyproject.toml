@@ -1,6 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "cython>=0.29", "numpy>=1.18"]
-build-backend = 'setuptools.build_meta'
+requires = ["setuptools>=42", "wheel", "cython>=0.29", "numpy>=1.18"]
 
 [tool.black]
 line-length = 88
@@ -25,9 +24,6 @@ exclude = '''
                      # the root of the project
 )
 '''
-
-[tool.setuptools_scm]
-write_to = "sqanti3/version.py"
 
 [tool.poetry]
 name = "SQANTI3"
