@@ -7,4 +7,4 @@ biopython ~= 1.7
 numpy ~= 1.18
 bcbio-gff ~= 0.6
 cupcake @ git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-pygmst @ git+https://github.com/milescsmith/pygmst.git@0.4.15
+pygmst @ git+https://github.com/milescsmith/pygmst.git
