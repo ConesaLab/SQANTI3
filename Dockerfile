@@ -40,7 +40,7 @@ ENV PYTHONPATH=/opt/miniconda3/envs/sqanti3/lib/python3.7/site-packages/
 # ENV PATH=/opt/gtfToGenePred:$PATH
 
 RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/pygmst.git@0.4.14
+RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/pygmst.git
 
 COPY . /opt/sqanti3
 RUN /opt/miniconda3/envs/sqanti3/bin/pip install -e /opt/sqanti3
