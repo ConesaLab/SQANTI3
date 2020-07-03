@@ -1,5 +1,5 @@
-import unittest
 import logging
+import unittest
 
 try:
     from importlib import metadata
@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.CRITICAL)
 
 class TestVersion(unittest.TestCase):
     def test_version(self):
-        print(metadata.version('SQANTI3'))
+        print(metadata.version("SQANTI3"))
 
 
 if __name__ == "__main__":
