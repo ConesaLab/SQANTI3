@@ -44,6 +44,4 @@ dependencies:
   - numpy=1.18.1
   - ucsc-gtftogenepred=377
   - pip:
-    - git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-    - git+https://github.com/milescsmith/pygmst.git@0.4.3
     - zest.releaser>=6.21
