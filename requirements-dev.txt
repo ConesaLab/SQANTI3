@@ -14,3 +14,4 @@ flakehell ~= 0.5
 black
 pre-commit
 ipython
+tox

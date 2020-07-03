@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-# SQANTI: Structural and Quality Annotation of Novel Transcript Isoforms
-# Authors: Lorena de la Fuente, Hector del Risco, Cecile Pereira and Manuel Tardaguila
-# Modified by Liz (etseng@pacb.com) as SQANTI2/3 versions
-# Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__ = "etseng@pacb.com"
 
@@ -34,18 +30,11 @@ from cupcake.sequence.err_correct_w_genome import err_correct
 from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 from cupcake.sequence.STAR import STARJunctionReader
-from pkg_resources import DistributionNotFound, get_distribution
-
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-try:
-    from importlib import metadata
-except ImportError:
-    # Running on pre-3.8 Python; use importlib-metadata package
-    import importlib_metadata as metadata
-
-__version__ = metadata.version('SQANTI3')
+with open(os.path.join("src", "sqanti3", "__about__.py")) as f:
+    exec(f.read())
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -66,10 +55,10 @@ GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 
 if GTF2GENEPRED_PROG is None:
-    print(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!", file=sys.stderr)
+    print(f"Cannot find executable gtfToGenePred. Abort!", file=sys.stderr)
     sys.exit(-1)
 if GFFREAD_PROG is None:
-    print(f"Cannot find executable {GFFREAD_PROG}. Abort!", file=sys.stderr)
+    print(f"Cannot find executable gffread. Abort!", file=sys.stderr)
     sys.exit(-1)
 
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
@@ -363,9 +352,13 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = (
+            dist_polya_site
+        )  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = (
+            polyA_dist
+        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -499,7 +492,9 @@ class myQueryProteins:
     def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = (
+            cds_end
+        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -756,7 +751,12 @@ def correctionPlusORFpred(args, genome_dict):
         os.chdir(args.dir)
         print(corrFASTA)
         pygmst.gmst(
-            seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct", verbose=3,
+            seqfile=corrFASTA,
+            output=gmst_pre,
+            faa=True,
+            fnn=True,
+            strand="direct",
+            verbose=3,
         )
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
@@ -2795,7 +2795,7 @@ def main():
     )
     parser.add_argument(
         "isoforms",
-         help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
+        help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
     )
     parser.add_argument("annotation", help="\t\tReference annotation file (GTF format)")
     parser.add_argument("genome", help="\t\tReference genome (Fasta format)")

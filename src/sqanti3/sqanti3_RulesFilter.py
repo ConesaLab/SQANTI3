@@ -14,6 +14,7 @@ from cupcake.sequence.BioReaders import GMAPSAMReader
 from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 
 from . import __version__
+
 """
 Lightweight filtering of SQANTI by using .classification.txt output
 

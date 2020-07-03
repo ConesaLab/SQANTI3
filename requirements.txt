@@ -1,32 +1,3 @@
-# appdirs ~= 1.4
-# cfgv ~= 3.1
-# decorator ~= 4.4
-# distlib ~= 0.3
-# filelock ~= 3.0
-# identify ~= 1.4
-# importlib-metadata ~= 1.6
-# joblib ~= 0.15
-# networkx ~= 2.4
-# nodeenv ~= 1.4
-# pyyaml ~= 5.3
-# threadpoolctl ~= 2.1
-# toml ~= 0.10
-# virtualenv ~= 20.0
-# zipp ~= 3.1
-# scikit-learn ~= 0.23
-# scipy ~= 1.4
-# pandas ~= 1.0
-# pyvcf ~= 0.6
-# cython ~= 0.29
-# pysam ~= 0.16
-# psutil ~= 5.7
-# bx-python ~= 0.8
-# biopython ~= 1.7
-# bcbio-gff ~= 0.6
-# numpy ~= 1.18
-# cupcake @ git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-# pygmst @ git+https://github.com/milescsmith/pygmst.git@0.4.4
-
 argparse ~= 1.1
 importlib-metadata ~= 1.6
 toml ~= 0.10
@@ -36,5 +7,4 @@ biopython ~= 1.7
 numpy ~= 1.18
 bcbio-gff ~= 0.6
 cupcake @ git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-pygmst @ git+https://github.com/milescsmith/pygmst.git@0.4.12
-zest.releaser ~= 6.21
+pygmst @ git+https://github.com/milescsmith/pygmst.git@0.4.15
