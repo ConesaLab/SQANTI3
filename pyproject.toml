@@ -83,10 +83,6 @@ pygmst = { git = "https://github.com/milescsmith/pygmst.git" }
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 
-# [build-system]
-# requires = ["poetry>=0.12"]
-# build-backend = "poetry.masonry.api"
-
 [tool.flakehell.plugins]
 pycodestyle = ["+*", "-F401", "-E501", "-C901", "-E401", "-E203", "-W503"]
 pyflakes = ["+*"]

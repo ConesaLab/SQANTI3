@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os.path as osp
 import sys
 from pathlib import Path
 
@@ -7,10 +8,9 @@ from setuptools import find_packages, setup
 if sys.version_info < (3, 7):
     sys.exit("SQANTI3 requires Python >= 3.7")
 
-try:
-    from sqanti3 import __author__, __email__, __version__
-except ImportError:  # Deps not yet installed
-    __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
+with open(osp.join("src", "sqanti3", "__about__.py")) as f:
+    exec(f.read())
+
 
 setup(
     name="SQANTI3",
@@ -23,9 +23,8 @@ setup(
     license="GPL3",
     python_requires=">=3.7",
     install_requires=[
-        'importlib-metadata ~= 1.0 ; python_version < "3.8"',
-        [line.strip()
-        for line in Path("requirements.txt").read_text("utf-8").splitlines()]
+        line.strip()
+        for line in Path("requirements.txt").read_text("utf-8").splitlines()
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -47,8 +46,8 @@ setup(
             "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter:main",
         ]
     },
-    packages=find_packages(),
-    package_dir={"sqanti3": "sqanti3"},
+    packages=find_packages(where="src"),
+    package_dir={"sqanti3": "src/sqanti3"},
     package_data={
         "": [
             "sqanti3/example/*.*",
