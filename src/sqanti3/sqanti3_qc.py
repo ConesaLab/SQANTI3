@@ -21,7 +21,7 @@ from csv import DictReader, DictWriter
 from multiprocessing import Process
 
 import numpy as np
-import pygmst
+from pygmst.pygmst import gmst
 from Bio import SeqIO
 from bx.intervals import Interval, IntervalTree
 from cupcake.cupcake.tofu.compare_junctions import compare_junctions
@@ -33,8 +33,7 @@ from cupcake.sequence.STAR import STARJunctionReader
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-with open(os.path.join("src", "sqanti3", "__about__.py")) as f:
-    exec(f.read())
+from .__about__ import __version__
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -750,7 +749,7 @@ def correctionPlusORFpred(args, genome_dict):
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
         print(corrFASTA)
-        pygmst.gmst(
+        gmst(
             seqfile=corrFASTA,
             output=gmst_pre,
             faa=True,

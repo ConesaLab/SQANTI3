@@ -23,4 +23,4 @@ r"""*Single-source version number for* ``sqanti3``.
 """
 
 __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
-__version__ = '1.3.16'
+__version__ = '1.3.17'
