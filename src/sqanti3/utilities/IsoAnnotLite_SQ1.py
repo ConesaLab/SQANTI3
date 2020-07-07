@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
-import argparse
+#import argparse
+import click
 import math
 import os
 import sys
+import time
 
 # import bisect
 
@@ -54,7 +56,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             column not in fields[CLASS_COLUMN_USED[index]]
         ):  # if now in the correct possition...
             print(
-                "File classification does not have the correct structure. The column '"
+                f"File classification does not have the correct structure. The column '"
                 f"{column}"
                 f"' is not in the possition "
                 f"{str(CLASS_COLUMN_USED[index])}"
@@ -1881,72 +1883,71 @@ def generateFinalGFF3(
 # -GFF3 de referencia
 
 
+@click.command()
+@click.option(
+    "--gff3",
+    type=str,
+    default=None,
+    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
+    )
+@click.argument(
+    "corrected",
+    type=str,
+    required=False, help="*_corrected.gtf file from SQANTI 3 output.")
+@click.argument(
+    "classification",
+    type=str,
+    required=False, help="*_classification.txt file from SQANTI 3 output.")
+@click.argument(
+    "junctions",
+    type=str,
+    required=False, help="*_junctions.txt file from SQANTI 3 output.")
+@click.help_option(show_default=True)
 def main():
+    """
+    IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
+    """
     global USE_GFF3
     global version
     # arguments
-    parser = argparse.ArgumentParser(
-        description=f"IsoAnnotLite "
-        f"{str(version)}"
-        f": Transform SQANTI 3 output files to generate GFF3 to tappAS."
-    )
-    parser.add_argument(
-        "corrected", help="\t\t*_corrected.gtf file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "classification", help="\t\t*_classification.txt file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "junction", help="\t\t*_junctions.txt file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "-gff3",
-        help="\t\ttappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3).",
-        required=False,
-    )
-
-    args = parser.parse_args()
-
+    
     # path and prefix for output files
-    args.corrected = os.path.abspath(args.corrected)
-    if not os.path.isfile(args.corrected):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.corrected))
+    corrected = os.path.abspath(corrected)
+    if not os.path.isfile(corrected):
+        sys.stderr.write(f"ERROR: '{corrected}' doesn't exist")
         sys.exit()
 
-    args.classification = os.path.abspath(args.classification)
-    if not os.path.isfile(args.classification):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.classification))
+    classification = os.path.abspath(classification)
+    if not os.path.isfile(classification):
+        sys.stderr.write(f"ERROR: '{classification}' doesn't exist")
         sys.exit()
 
-    args.junction = os.path.abspath(args.junction)
-    if not os.path.isfile(args.junction):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.junction))
+    junctions = os.path.abspath(junctions)
+    if not os.path.isfile(junctions):
+        sys.stderr.write(f"ERROR: '{junctions}' doesn't exist")
         sys.exit()
 
-    if args.gff3:
+    if gff3:
         USE_GFF3 = True
-        args.gff3 = os.path.abspath(args.gff3)
-        if not os.path.isfile(args.gff3):
-            sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.gff3))
+        gff3 = os.path.abspath(gff3)
+        if not os.path.isfile(gff3):
+            sys.stderr.write(f"ERROR: '{gff3}' doesn't exist")
             sys.exit()
+    run(corrected=corrected, classification=classification, junctions=junctions, gff3=gff3)
 
+def run(
+    corrected:str,
+    classification:str,
+    junctions:str,
+    gff3: Optional[str]) -> None:
     # Running functionality
     sys.stdout.write("\n\nRunning IsoAnnot Lite " + str(version) + "...\n")
-    run(args)
-
-
-def run(args):
-    import time
-
-    global USE_GFF3
 
     t1 = time.time()
     # corrected = input("Enter your file name for \"corrected.gtf\" file from SQANTI 3 (with extension): ")
-    gtf = args.corrected
+    gtf = corrected
     # classification = input("Enter your file name for \"classification.txt\" file from SQANTI 3 (with extension): ")
-    classification = args.classification
     # junctions = input("Enter your file name for \"junctions.txt\" file from SQANTI 3 (with extension): ")
-    junctions = args.junction
     # GFF3 download from tappAS.org/downloads
 
     ########################
@@ -1954,11 +1955,9 @@ def run(args):
     ########################
 
     if USE_GFF3:
-        gff3 = args.gff3
-
         # File names
         filename = "tappAS_annot_from_SQANTI3.gff3"
-        filenameMod = filename[:-5] + "_mod" + filename[-5:]
+        filenameMod = f"{filename[:-5]}_mod{filename[-5:]}"
 
         #################
         # START PROCESS #
@@ -2047,8 +2046,7 @@ def run(args):
         )
 
         t2 = time.time()
-        time = t2 - t1
-        print("Time used to generate new GFF3: " + "%.2f" % time + " seconds.\n")
+        print(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
 
         print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
 
@@ -2059,7 +2057,7 @@ def run(args):
     else:
         # File names
         filename = "tappAS_annotation_from_SQANTI3.gff3"
-        filenameMod = filename[:-5] + "_mod" + filename[-5:]
+        filenameMod = f"{filename[:-5]}_mod{filename[-5:]}"
 
         #################
         # START PROCESS #
@@ -2107,7 +2105,7 @@ def run(args):
 
         t2 = time.time()
         time = t2 - t1
-        print("Time used to generate new GFF3: " + "%.2f" % time + " seconds.\n")
+        print(f"Time used to generate new GFF3: {(t2-t1):%.2f} seconds.")
 
         print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
 
