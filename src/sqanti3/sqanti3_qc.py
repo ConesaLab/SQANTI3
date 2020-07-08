@@ -1927,7 +1927,14 @@ def write_junctionInfo(
 
 
 def isoformClassification(
-    args,
+    coverage,
+    cage_peak,
+    polyA_peak,
+    polyA_motif_list,
+    phyloP_bed,
+    sites,
+    window,
+    novel_gene_prefix,
     isoforms_by_chr,
     refs_1exon_by_chr,
     refs_exons_by_chr,
@@ -2301,7 +2308,14 @@ def run(args):
 
     # isoform classification + intra-priming + id and junction characterization
     isoforms_info = isoformClassification(
-        args,
+        args.coverage,
+        args.cage_peak,
+        args.polyA_peak,
+        args.polyA_motif_list,
+        args.phyloP_bed,
+        args.sites,
+        args.window,
+        args.novel_gene_prefix,
         isoforms_by_chr,
         refs_1exon_by_chr,
         refs_exons_by_chr,
