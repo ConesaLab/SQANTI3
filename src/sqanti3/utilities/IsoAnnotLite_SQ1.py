@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
-#import argparse
+# import argparse
 import click
 import math
 import os
@@ -984,9 +984,7 @@ def checkFeatureInCDS(
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
                     if ex not in allExonsSQ:
-                        return (
-                            False
-                        )  # end in another exons and we don't have that intermediate in SQ
+                        return False  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
 
@@ -1889,19 +1887,25 @@ def generateFinalGFF3(
     type=str,
     default=None,
     help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
-    )
+)
 @click.argument(
     "corrected",
     type=str,
-    required=False, help="*_corrected.gtf file from SQANTI 3 output.")
+    required=False,
+    help="*_corrected.gtf file from SQANTI 3 output.",
+)
 @click.argument(
     "classification",
     type=str,
-    required=False, help="*_classification.txt file from SQANTI 3 output.")
+    required=False,
+    help="*_classification.txt file from SQANTI 3 output.",
+)
 @click.argument(
     "junctions",
     type=str,
-    required=False, help="*_junctions.txt file from SQANTI 3 output.")
+    required=False,
+    help="*_junctions.txt file from SQANTI 3 output.",
+)
 @click.help_option(show_default=True)
 def main():
     """
@@ -1910,7 +1914,7 @@ def main():
     global USE_GFF3
     global version
     # arguments
-    
+
     # path and prefix for output files
     corrected = os.path.abspath(corrected)
     if not os.path.isfile(corrected):
@@ -1933,13 +1937,17 @@ def main():
         if not os.path.isfile(gff3):
             sys.stderr.write(f"ERROR: '{gff3}' doesn't exist")
             sys.exit()
-    run(corrected=corrected, classification=classification, junctions=junctions, gff3=gff3)
+    run(
+        corrected=corrected,
+        classification=classification,
+        junctions=junctions,
+        gff3=gff3,
+    )
+
 
 def run(
-    corrected:str,
-    classification:str,
-    junctions:str,
-    gff3: Optional[str]) -> None:
+    corrected: str, classification: str, junctions: str, gff3: Optional[str]
+) -> None:
     # Running functionality
     sys.stdout.write("\n\nRunning IsoAnnot Lite " + str(version) + "...\n")
 

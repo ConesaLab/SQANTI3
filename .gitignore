@@ -139,3 +139,6 @@ sqanti3/utilities/gmst/logger.py
 sqanti3/utilities/gmst/test.py
 **/.DS_Store
 .Rhistory
+._.DS_Store
+._mypy.ini
+._tox.ini

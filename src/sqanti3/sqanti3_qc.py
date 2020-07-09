@@ -19,6 +19,7 @@ from collections import Counter, defaultdict, namedtuple
 from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
+import logging
 
 import numpy as np
 from pygmst.pygmst import gmst
@@ -38,6 +39,13 @@ from .__about__ import __version__
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
 
+logging.basicConfig(
+    filename="./sqanti3_isoformclass.log",
+    filemode="w",
+    level=logging.DEBUG,
+    format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+    datefmt="%m-%d %H:%M",
+)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
@@ -351,13 +359,9 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = (
-            dist_polya_site
-        )  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = (
-            polyA_dist
-        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -491,9 +495,7 @@ class myQueryProteins:
     def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = (
-            cds_end
-        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -1945,34 +1947,40 @@ def isoformClassification(
     indelsJunc,
     orfDict,
 ):
-
+    # logger = logging.getLogger('sqanti3')
+    # logger.setLevel(logging.DEBUG)
+    # fh = logging.FileHandler('sqanti3_isoformClass.log')
+    # fh.setLevel(logging.DEBUG)
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # fh.setFormatter(formatter)
+    # logger.addHandler(fh)
     # read coverage files if provided
 
-    if args.coverage is not None:
+    if coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
-        SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
+        SJcovNames, SJcovInfo = STARcov_parser(coverage)
         fields_junc_cur = FIELDS_JUNC + SJcovNames  # add the samples to the header
     else:
         SJcovNames, SJcovInfo = None, None
         print("Splice Junction Coverage files not provided.", file=sys.stdout)
         fields_junc_cur = FIELDS_JUNC
 
-    if args.cage_peak is not None:
+    if cage_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)
-        cage_peak_obj = CAGEPeak(args.cage_peak)
+        cage_peak_obj = CAGEPeak(cage_peak)
     else:
         cage_peak_obj = None
 
-    if args.polyA_peak is not None:
+    if polyA_peak is not None:
         print("**** Reading polyA Peak data.", file=sys.stdout)
-        polya_peak_obj = PolyAPeak(args.polyA_peak)
+        polya_peak_obj = PolyAPeak(polyA_peak)
     else:
         polya_peak_obj = None
 
-    if args.polyA_motif_list is not None:
+    if polyA_motif_list is not None:
         print("**** Reading PolyA motif list.", file=sys.stdout)
-        polyA_motif_list = []
-        for line in open(args.polyA_motif_list):
+        polyA_motifs = []
+        for line in open(polyA_motif_list):
             x = line.strip().upper().replace("U", "A")
             if any(s not in ("A", "T", "C", "G") for s in x):
                 print(
@@ -1980,20 +1988,20 @@ def isoformClassification(
                     file=sys.stderr,
                 )
                 sys.exit(-1)
-            polyA_motif_list.append(x)
+            polyA_motifs.append(x)
     else:
-        polyA_motif_list = None
+        polyA_motifs = None
 
-    if args.phyloP_bed is not None:
+    if phyloP_bed is not None:
         print("**** Reading PhyloP BED file.", file=sys.stdout)
-        phyloP_reader = LazyBEDPointReader(args.phyloP_bed)
+        phyloP_reader = LazyBEDPointReader(phyloP_bed)
     else:
         phyloP_reader = None
 
     # running classification
     print("**** Performing Classification of Isoforms....", file=sys.stdout)
 
-    accepted_canonical_sites = list(args.sites.split(","))
+    accepted_canonical_sites = list(sites.split(","))
 
     handle_class = open(outputClassPath + "_tmp", "w")
     fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter="\t")
@@ -2016,7 +2024,7 @@ def isoformClassification(
                 start_ends_by_gene,
                 rec,
                 genome_dict,
-                nPolyA=args.window,
+                nPolyA=window,
             )
 
             if isoform_hit.str_class in ("anyKnownJunction", "anyKnownSpliceSite"):
@@ -2048,11 +2056,11 @@ def isoformClassification(
             if isoform_hit.str_class in ("intergenic", "genic_intron"):
                 # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
                 if (
-                    args.novel_gene_prefix is not None
+                    novel_gene_prefix is not None
                 ):  # used by splits to not have redundant novelGene IDs
                     isoform_hit.genes = [
                         "novelGene_"
-                        + str(args.novel_gene_prefix)
+                        + str(novel_gene_prefix)
                         + "_"
                         + str(novel_gene_index)
                     ]
@@ -2088,11 +2096,11 @@ def isoformClassification(
                 isoform_hit.dist_polya_site = dist_polya_site
 
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
-            if polyA_motif_list is not None:
+            if polyA_motifs is not None:
                 if rec.strand == "+":
                     polyA_motif, polyA_dist = find_polyA_motif(
                         str(genome_dict[rec.chrom][rec.txEnd - 50 : rec.txEnd].seq),
-                        polyA_motif_list,
+                        polyA_motifs,
                     )
                 else:
                     polyA_motif, polyA_dist = find_polyA_motif(
@@ -2101,7 +2109,7 @@ def isoformClassification(
                             .reverse_complement()
                             .seq
                         ),
-                        polyA_motif_list,
+                        polyA_motifs,
                     )
                 isoform_hit.polyA_motif = polyA_motif
                 isoform_hit.polyA_dist = polyA_dist
@@ -2130,9 +2138,20 @@ def isoformClassification(
                 orfDict[rec.id].cds_genomic_start = (
                     m[orfDict[rec.id].cds_start - 1] + 1
                 )  # make it 1-based
-                orfDict[rec.id].cds_genomic_end = (
-                    m[orfDict[rec.id].cds_end - 1] + 1
-                )  # make it 1-based
+                try:
+                    orfDict[rec.id].cds_genomic_end = (
+                        m[orfDict[rec.id].cds_end - 1] + 1
+                    )  # make it 1-based
+                except:
+                    newline = "\n"
+                    logging.debug(
+                        f"orfDict: {orfDict}",
+                        f"rec.id: {rec.id}",
+                        f"m: {m}",
+                        f"orfDict.keys(): {newline.join(orfDict.keys())}",
+                    )
+                    logging.shutdown()
+                    sys.exit(-1)
 
                 isoform_hit.CDS_genomic_start = orfDict[rec.id].cds_genomic_start
                 isoform_hit.CDS_genomic_end = orfDict[rec.id].cds_genomic_end
@@ -2276,7 +2295,6 @@ def run(args):
     outputClassPath, outputJuncPath = get_class_junc_filenames(args)
 
     start3 = timeit.default_timer()
-
     print("**** Parsing provided files....", file=sys.stdout)
     print(f"Reading genome fasta {args.genome}....", file=sys.stdout)
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
