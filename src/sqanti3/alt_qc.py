@@ -36,7 +36,7 @@ from cupcake.sequence.STAR import STARJunctionReader
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-from .__about__ import __version__
+from sqanti3.__about__ import __version__
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -53,16 +53,6 @@ GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
-
-if GTF2GENEPRED_PROG is None:
-    logging.error(f"Cannot find executable gtfToGenePred. Abort!")
-    sys.exit(-1)
-if GFFREAD_PROG is None:
-    logging.error(f"Cannot find executable gffread. Abort!")
-    sys.exit(-1)
-if RSCRIPTPATH is None or os.system(RSCRIPTPATH + " --version") != 0:
-    logging.error("Rscript executable not found! Abort!")
-    sys.exit(-1)
 
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
 seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
@@ -349,9 +339,13 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = (
+            dist_polya_site
+        )  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = (
+            polyA_dist
+        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -487,7 +481,9 @@ class myQueryProteins:
     ):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = (
+            cds_end
+        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -617,7 +613,7 @@ def correctionPlusORFpred(
                 elif aligner_choice == "minimap2":
                     logging.info("****Aligning reads with Minimap2...")
                     cmd = MINIMAP2_CMD.format(
-                        cpus=n_cpu, sense=sense, g=genome, i=isoforms, o=corrSAM,
+                        cpus=n_cpu, sense=sense, g=genome, i=isoforms, o=corrSAM
                     )
                 elif aligner_choice == "deSALT":
                     logging.info("****Aligning reads with deSALT...")
@@ -2834,13 +2830,17 @@ def combine_split_runs(args, split_dirs):
             sys.exit(-1)
 
 
+def print_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(f"sqanti3_qc: {__version__}")
+    ctx.exit()
+
+
 @click.command()
-@click.option(
-    "isoforms",
-    help='Isoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
-)
-@click.option("annotation", help="Reference annotation file (GTF format)")
-@click.option("genome", help="Reference genome (Fasta format)")
+@click.argument("isoforms")
+@click.argument("annotation")
+@click.argument("genome")
 @click.option(
     "--min_ref_len",
     type=int,
@@ -2854,14 +2854,16 @@ def combine_split_runs(args, split_dirs):
     help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)",
 )
 @click.option(
-    "--aligner_choice", choices=["minimap2", "deSALT", "gmap"], default="minimap2"
+    "--aligner_choice",
+    type=click.Choice(["minimap2", "deSALT", "gmap"]),
+    default="minimap2",
 )
 @click.option("--cage_peak", help="FANTOM5 Cage Peak (BED format, optional)")
 @click.option("--polyA_motif_list", help="Ranked list of polyA motifs (text, optional)")
 @click.option("--polyA_peak", help="PolyA Peak (BED format, optional)")
 @click.option("--phyloP_bed", help="PhyloP BED for conservation score (BED, optional)")
 @click.option(
-    "--skipORF", default=False, is_flag=True, help="Skip ORF prediction (to save time)",
+    "--skipORF", default=False, is_flag=True, help="Skip ORF prediction (to save time)"
 )
 @click.option(
     "--is_fusion",
@@ -2935,14 +2937,10 @@ def combine_split_runs(args, split_dirs):
     is_flag=True,
 )
 @click.option(
-    "-fl", "--fl_count", help="Full-length PacBio abundance file", required=False,
+    "-fl", "--fl_count", help="Full-length PacBio abundance file", required=False
 )
 @click.option(
-    "-v",
-    "--version",
-    help="Display program version number.",
-    action="version",
-    version=f"{__version__}",
+    "--version", is_flag=True, callback=print_version, expose_value=False, is_eager=True
 )
 @click.option("--skip_report", is_flag=True, default=False)
 @click.option(
@@ -2959,7 +2957,18 @@ def combine_split_runs(args, split_dirs):
 )
 @click.help_option(show_default=True)
 def main():
-    """Structural and Quality Annotation of Novel Transcript Isoforms"""
+    """Structural and Quality Annotation of Novel Transcript Isoforms
+
+    \b
+    Parameters:
+    -----------
+    isoforms:
+        FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf
+    annotation:
+        Reference annotation file in GTF format
+    genome:
+        Reference genome in fasta format
+    """
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
