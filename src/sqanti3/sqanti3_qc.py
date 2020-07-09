@@ -571,7 +571,7 @@ def correctionPlusORFpred(
     chunks: int,
     gtf: str,
     aligner_choice: str,
-    # sense: str,
+    sense: str,
     isoforms: str,
     is_fusion: bool,
     skipORF: bool,
@@ -606,7 +606,7 @@ def correctionPlusORFpred(
                         cpus=n_cpu,
                         dir=os.path.dirname(gmap_index),
                         name=os.path.basename(gmap_index),
-                        # sense=sense,
+                        sense=sense,
                         i=isoforms,
                         o=corrSAM,
                     )
@@ -614,7 +614,7 @@ def correctionPlusORFpred(
                     logging.info("Aligning reads with Minimap2...")
                     cmd = MINIMAP2_CMD.format(
                         cpus=n_cpu,
-                        # sense=sense,
+                        sense=sense,
                         g=genome,
                         i=isoforms,
                         o=corrSAM,
@@ -2266,6 +2266,7 @@ def sqanti3_qc(
     skipORF,
     is_fusion,
     gtf,
+    sense,
     expression,
     gmap_index,
     cpus,
@@ -2303,7 +2304,7 @@ def sqanti3_qc(
         chunks,
         gtf,
         aligner_choice,
-        # sense,
+        sense,
         isoforms,
         is_fusion,
         skipORF,
@@ -3179,21 +3180,21 @@ def main(
     logging.info(f"Write arguments to {doc}...")
     newline = "\n"
     tab = "\t"
+    output = (
+        f"Version{tab}{__version__}{newline}"
+        f"Input{tab}{os.path.basename(isoforms)}{newline}"
+        f"Annotation{tab}{os.path.basename(annotation)}{newline}"
+        f"Genome{tab}{os.path.basename(genome)}{newline}"
+        f"Aligner{tab}{aligner_choice}{newline}"
+        f"FLCount{tab}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{newline}"
+        f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
+        f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
+        f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
+        f"PolyA{tab}{os.path.basename(polyA_motif_list) if polyA_motif_list is not None else 'NA'}{newline}"
+        f"PolyAPeak{tab}{os.path.basename(polyA_peak) if polyA_peak is not None else 'NA'}{newline}"
+        f"IsFusion{tab}{str(is_fusion)}{newline}"
+    )
     with open(doc, "w") as f:
-        output = (
-            f"Version{tab}{__version__}{newline}"
-            f"Input{tab}{os.path.basename(isoforms)}{newline}"
-            f"Annotation{tab}{os.path.basename(annotation)}{newline}"
-            f"Genome{tab}{os.path.basename(genome)}{newline}"
-            f"Aligner{tab}{aligner_choice}{newline}"
-            f"FLCount{tab}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{newline}"
-            f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
-            f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
-            f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
-            f"PolyA{tab}{os.path.basename(polyA_motif_list) if polyA_motif_list is not None else 'NA'}{newline}"
-            f"PolyAPeak{tab}{os.path.basename(polyA_peak) if polyA_peak is not None else 'NA'}{newline}"
-            f"IsFusion{tab}{str(is_fusion)}{newline}"
-        )
         f.write(output)
 
     # Running functionality
