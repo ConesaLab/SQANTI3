@@ -2,7 +2,8 @@
 
 __author__ = "etseng@pacb.com"
 
-import argparse
+# import argparse
+import click
 import bisect
 import copy
 import distutils.spawn
@@ -19,11 +20,12 @@ from collections import Counter, defaultdict, namedtuple
 from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
+from typing import Tuple, Dict, List, Optional
 import logging
 
 import numpy as np
 from pygmst.pygmst import gmst
-from Bio import SeqIO
+from Bio import SeqIO, SeqRecord
 from bx.intervals import Interval, IntervalTree
 from cupcake.cupcake.tofu.compare_junctions import compare_junctions
 from cupcake.sequence.BED import LazyBEDPointReader
@@ -39,14 +41,6 @@ from sqanti3.__about__ import __version__
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
 
-logging.basicConfig(
-    filename="./sqanti3_isoformclass.log",
-    filemode="w",
-    level=logging.DEBUG,
-    format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-    datefmt="%m-%d %H:%M",
-)
-
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
 MINIMAP2_CMD = (
@@ -54,19 +48,10 @@ MINIMAP2_CMD = (
 )
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
-# GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
-# GMST_CMD = "perl " + GMSP_PROG + " --strand direct --faa --fnn --output {o} {i}"
-
 GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
-# GTF2GENEPRED_PROG = os.path.join(utilitiesPath, "gtfToGenePred")
 GFFREAD_PROG = distutils.spawn.find_executable("gffread")
-
-if GTF2GENEPRED_PROG is None:
-    print(f"Cannot find executable gtfToGenePred. Abort!", file=sys.stderr)
-    sys.exit(-1)
-if GFFREAD_PROG is None:
-    print(f"Cannot find executable gffread. Abort!", file=sys.stderr)
-    sys.exit(-1)
+RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
+RSCRIPT_REPORT = "SQANTI3_report.R"
 
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
 seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
@@ -143,15 +128,6 @@ FIELDS_CLASS = [
     "polyA_motif",
     "polyA_dist",
 ]
-
-RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
-RSCRIPT_REPORT = "SQANTI3_report.R"
-
-if RSCRIPTPATH is None or os.system(RSCRIPTPATH + " --version") != 0:
-    print("Rscript executable not found! Abort!", file=sys.stderr)
-    sys.exit(-1)
-
-SPLIT_ROOT_DIR = "splits/"
 
 
 class genePredReader(object):
@@ -359,13 +335,9 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = (
-            dist_polya_site
-        )  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = (
-            polyA_dist
-        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -397,8 +369,7 @@ class myQueryTranscripts:
 
     def __str__(self):
         tab = "\t"
-        return (
-            f"{self.chrom}{tab}"
+        stringrep = (
             f"{self.strand}{tab}"
             f"{str(self.length)}{tab}"
             f"{str(self.num_exons)}{tab}"
@@ -441,6 +412,7 @@ class myQueryTranscripts:
             f"{str(self.polyA_motif)}{tab}"
             f"{str(self.polyA_dist)}{tab}"
         )
+        return stringrep
 
     def as_dict(self):
         d = {
@@ -496,12 +468,12 @@ class myQueryTranscripts:
 
 
 class myQueryProteins:
-    def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
+    def __init__(
+        self, cds_start: int, cds_end: int, orf_length: int, proteinID: str = "NA"
+    ):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = (
-            cds_end
-        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -519,9 +491,8 @@ def rewrite_sam_for_fusion_ids(sam_filename):
         else:
             raw = line.strip().split("\t")
             if not raw[0].startswith("PBfusion."):
-                print(
-                    f"Expecting fusion ID format `PBfusion.X` but saw {raw[0]} instead. Abort!",
-                    file=sys.stderr,
+                logging.error(
+                    f"Expecting fusion ID format `PBfusion.X` but saw {raw[0]} instead. Abort!"
                 )
                 sys.exit(-1)
             seen_id_counter[raw[0]] += 1
@@ -567,9 +538,13 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
             write_collapseGFF_format(f, r)
 
 
-def get_corr_filenames(args, dir=None):
-    d = dir if dir is not None else args.dir
-    corrPathPrefix = os.path.join(d, args.output)
+def get_corr_filenames(
+    output: str, analysis_directory: str, directory: Optional[str] = None
+) -> Tuple[str, str, str, str]:
+    if directory is None:
+        directory = analysis_directory
+
+    corrPathPrefix = os.path.join(directory, output)
     corrGTF = corrPathPrefix + "_corrected.gtf"
     corrSAM = corrPathPrefix + "_corrected.sam"
     corrFASTA = corrPathPrefix + "_corrected.fasta"
@@ -577,122 +552,131 @@ def get_corr_filenames(args, dir=None):
     return corrGTF, corrSAM, corrFASTA, corrORF
 
 
-def get_class_junc_filenames(args, dir=None):
-    d = dir if dir is not None else args.dir
-    outputPathPrefix = os.path.join(d, args.output)
+def get_class_junc_filenames(
+    output: str, analysis_directory: str, directory: Optional[str] = None
+) -> Tuple[str, str]:
+    if directory is None:
+        directory = analysis_directory
+
+    outputPathPrefix = os.path.join(directory, output)
     outputClassPath = outputPathPrefix + "_classification.txt"
     outputJuncPath = outputPathPrefix + "_junctions.txt"
     return outputClassPath, outputJuncPath
 
 
-def correctionPlusORFpred(args, genome_dict):
+def correctionPlusORFpred(
+    output: str,
+    directory: str,
+    cpus: int,
+    chunks: int,
+    gtf: str,
+    aligner_choice: str,
+    # sense: str,
+    isoforms: str,
+    is_fusion: bool,
+    skipORF: bool,
+    genome_dict: Dict[str, SeqRecord.SeqRecord],
+    genome: str = None,
+    gmap_index: str = None,
+) -> Dict[str, myQueryProteins]:
     """
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
     """
-    global corrORF
-    global corrGTF
-    global corrSAM
-    global corrFASTA
+    # global corrORF
+    # global corrGTF
+    # global corrSAM
+    # global corrFASTA
 
-    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
 
-    n_cpu = max(1, args.cpus // args.chunks)
+    n_cpu = max(1, cpus // chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
     #         IF sequence is provided, align as SAM then correct with genome
     if os.path.exists(corrFASTA):
-        print(
-            f"Error corrected FASTA {corrFASTA} already exists. Using it...",
-            file=sys.stderr,
-        )
+        logging.info(f"Error corrected FASTA {corrFASTA} already exists. Using it...")
     else:
-        if not args.gtf:
+        if not gtf:
             if os.path.exists(corrSAM):
-                print(
-                    f"Aligned SAM {corrSAM} already exists. Using it...",
-                    file=sys.stderr,
-                )
+                logging.info(f"Aligned SAM {corrSAM} already exists. Using it...")
             else:
-                if args.aligner_choice == "gmap":
-                    print("****Aligning reads with GMAP...", file=sys.stdout)
+                if aligner_choice == "gmap":
+                    logging.info("Aligning reads with GMAP...")
                     cmd = GMAP_CMD.format(
                         cpus=n_cpu,
-                        dir=os.path.dirname(args.gmap_index),
-                        name=os.path.basename(args.gmap_index),
-                        sense=args.sense,
-                        i=args.isoforms,
+                        dir=os.path.dirname(gmap_index),
+                        name=os.path.basename(gmap_index),
+                        # sense=sense,
+                        i=isoforms,
                         o=corrSAM,
                     )
-                elif args.aligner_choice == "minimap2":
-                    print("****Aligning reads with Minimap2...", file=sys.stdout)
+                elif aligner_choice == "minimap2":
+                    logging.info("Aligning reads with Minimap2...")
                     cmd = MINIMAP2_CMD.format(
                         cpus=n_cpu,
-                        sense=args.sense,
-                        g=args.genome,
-                        i=args.isoforms,
+                        # sense=sense,
+                        g=genome,
+                        i=isoforms,
                         o=corrSAM,
                     )
-                elif args.aligner_choice == "deSALT":
-                    print("****Aligning reads with deSALT...", file=sys.stdout)
+                elif aligner_choice == "deSALT":
+                    logging.info("Aligning reads with deSALT...")
                     cmd = DESALT_CMD.format(
-                        cpus=n_cpu, dir=args.gmap_index, i=args.isoforms, o=corrSAM
+                        cpus=n_cpu, dir=gmap_index, i=isoforms, o=corrSAM
                     )
                 try:
-                    subprocess.run(cmd, shell=True, check=True)
+                    subprocess.run(cmd.split(), check=True)
                 except subprocess.CalledProcessError as error:
-                    print(f"{error}\n {error.output}")
+                    logging.error(f"{error}: {error.output}")
                     sys.exit(-1)
 
             # if is fusion - go in and change the IDs to reflect PBfusion.X.1, PBfusion.X.2...
-            if args.is_fusion:
+            if is_fusion:
                 corrSAM = rewrite_sam_for_fusion_ids(corrSAM)
             # error correct the genome (input: corrSAM, output: corrFASTA)
-            err_correct(args.genome, corrSAM, corrFASTA, genome_dict=genome_dict)
+            err_correct(
+                genome_file=genome,
+                sam_file=corrSAM,
+                output_err_corrected_fasta=corrFASTA,
+                genome_dict=genome_dict,
+            )
             # convert SAM to GFF --> GTF
-            print(f"corrSAM: {corrSAM}")
-            print(f"corrFASTA: {corrFASTA}")
-            print(f"corrGTF: {corrGTF}")
-            print(f"args.genome: {args.genome}")
+            logging.info(f"corrSAM: {corrSAM}")
+            logging.info(f"corrFASTA: {corrFASTA}")
+            logging.info(f"corrGTF: {corrGTF}")
+            logging.info(f"genome: {genome}")
 
             convert_sam_to_gff3(
-                corrSAM,
-                corrGTF + ".tmp",
-                source=os.path.basename(args.genome).split(".")[0],
+                sam_filename=corrSAM,
+                output_gff3=f"{corrGTF}.tmp",
+                source=os.path.basename(genome).split(".")[0],
             )  # convert SAM to GFF3
             cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -T -o {corrGTF}"
-            if subprocess.check_call(cmd, shell=True) != 0:
-                print(f"ERROR running cmd: {cmd}", file=sys.stderr)
+            if subprocess.check_call(cmd.split()) != 0:
+                logging.error(f"running cmd: {cmd}")
                 sys.exit(-1)
         else:
-            print(
-                "Skipping aligning of sequences because GTF file was provided.",
-                file=sys.stdout,
+            logging.info(
+                "Skipping aligning of sequences because GTF file was provided."
             )
 
             ind = 0
-            with open(args.isoforms, "r") as isoforms_gtf:
+            with open(isoforms, "r") as isoforms_gtf:
                 for line in isoforms_gtf:
                     if line[0] != "#" and len(line.split("\t")) != 9:
-                        sys.stderr.write(
-                            "\nERROR: input isoforms file with not GTF format.\n"
-                        )
+                        logging.error("ERROR: input isoforms file with not GTF format.")
                         sys.exit()
                     elif len(line.split("\t")) == 9:
                         ind += 1
                 if ind == 0:
-                    print(
-                        f"WARNING: GTF has {args.isoforms} no annotation lines.",
-                        file=sys.stderr,
-                    )
+                    logging.warning(f"WARNING: GTF has {isoforms} no annotation lines.")
 
             # GFF to GTF (in case the user provides gff instead of gtf)
-            corrGTF_tpm = corrGTF + ".tmp"
+            corrGTF_tpm = f"{corrGTF}.tmp"
             try:
-                subprocess.run([GFFREAD_PROG, args.isoforms, "-T", "-o", corrGTF_tpm])
+                subprocess.run([GFFREAD_PROG, isoforms, "-T", "-o", corrGTF_tpm])
             except (RuntimeError, TypeError, NameError):
-                sys.stderr.write(
-                    "ERROR: File %s without GTF/GFF format.\n" % args.isoforms
-                )
+                logging.error(f"File {isoforms} without GTF/GFF format.")
                 raise SystemExit(1)
 
             # check if gtf chromosomes inside genome file
@@ -703,9 +687,8 @@ def correctionPlusORFpred(args, genome_dict):
                             chrom = line.split("\t")[0]
                             type = line.split("\t")[2]
                             if chrom not in list(genome_dict.keys()):
-                                sys.stderr.write(
-                                    '\nERROR: gtf "%s" chromosome not found in genome reference file.\n'
-                                    % (chrom)
+                                logging.error(
+                                    f"gtf '{chrom}' chromosome not found in genome reference file."
                                 )
                                 sys.exit()
                             elif type in ("transcript", "exon"):
@@ -713,17 +696,17 @@ def correctionPlusORFpred(args, genome_dict):
             os.remove(corrGTF_tpm)
 
             if not os.path.exists(corrSAM):
-                sys.stdout.write(
-                    "\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n"
+                logging.info(
+                    "Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input)."
                 )
 
             # GTF to FASTA
-            subprocess.run([GFFREAD_PROG, corrGTF, "-g", args.genome, "-w", corrFASTA])
+            subprocess.run([GFFREAD_PROG, corrGTF, "-g", genome, "-w", corrFASTA])
 
     # ORF generation
-    print("**** Predicting ORF sequences...", file=sys.stdout)
+    logging.info("Predicting ORF sequences...")
 
-    gmst_dir = os.path.join(os.path.abspath(args.dir), "GMST")
+    gmst_dir = os.path.join(os.path.abspath(directory), "GMST")
     gmst_pre = os.path.join(gmst_dir, "GMST_tmp")
     if not os.path.exists(gmst_dir):
         os.makedirs(gmst_dir)
@@ -731,20 +714,18 @@ def correctionPlusORFpred(args, genome_dict):
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
     gmst_rex = re.compile(r"(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)")
     orfDict = {}  # GMST seq id --> myQueryProteins object
-    if args.skipORF:
-        print(
-            "WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!",
-            file=sys.stderr,
+    if skipORF:
+        logging.warning(
+            "WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!"
         )
     elif os.path.exists(corrORF):
-        print(f"ORF file {corrORF} already exists. Using it....", file=sys.stderr)
+        logging.info(f"ORF file {corrORF} already exists. Using it....")
         for r in SeqIO.parse(open(corrORF), "fasta"):
             # now process ORFs into myQueryProtein objects
             m = gmst_rex.match(r.description)
             if m is None:
-                print(
-                    f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!",
-                    file=sys.stderr,
+                logging.error(
+                    f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!"
                 )
                 sys.exit(-1)
             orf_length = int(m.group(2))
@@ -755,25 +736,17 @@ def correctionPlusORFpred(args, genome_dict):
             )
     else:
         cur_dir = os.path.abspath(os.getcwd())
-        os.chdir(args.dir)
-        print(corrFASTA)
-        gmst(
-            seqfile=corrFASTA,
-            output=gmst_pre,
-            faa=True,
-            fnn=True,
-            strand="direct",
-            verbose=3,
-        )
+        os.chdir(directory)
+        logging.info(corrFASTA)
+        gmst(seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct")
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
         with open(corrORF, "w") as f:
             for r in SeqIO.parse(open(gmst_pre + ".faa"), "fasta"):
                 m = gmst_rex.match(r.description)
                 if m is None:
-                    print(
-                        f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!",
-                        file=sys.stderr,
+                    logging.error(
+                        f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!"
                     )
                     sys.exit(-1)
                 id_pre = m.group(1)
@@ -802,35 +775,38 @@ def correctionPlusORFpred(args, genome_dict):
                     f.write(f">{new_rec.description}\n{new_rec.seq}\n")
 
     if len(orfDict) == 0:
-        print(
-            "WARNING: All input isoforms were predicted as non-coding", file=sys.stderr
-        )
+        logging.warning("WARNING: All input isoforms were predicted as non-coding")
 
     return orfDict
 
 
-def reference_parser(args, genome_chroms):
+def reference_parser(
+    directory: str,
+    output: str,
+    genename: str,
+    annotation: str,
+    min_ref_len: int,
+    genome_chroms: str,
+):  # -> Tuple[Dict, Dict, Dict, Dict, Dict]: # not sure exactly what the outputs are yet
     """
     Read the reference GTF file
     :param args:
     :param genome_chroms: list of chromosome names from the genome fasta, used for sanity checking
     :return: (refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene)
     """
-    global referenceFiles
+    # global referenceFiles
 
-    referenceFiles = os.path.join(
-        args.dir, "refAnnotation_" + args.output + ".genePred"
-    )
-    print("**** Parsing Reference Transcriptome....", file=sys.stdout)
+    referenceFiles = os.path.join(directory, "refAnnotation_" + output + ".genePred")
+    logging.info("Parsing Reference Transcriptome....")
 
     if os.path.exists(referenceFiles):
-        print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
+        logging.info(f"{referenceFiles} already exists. Using it.")
     else:
         # gtf to genePred
-        if not args.genename:
+        if not genename:
             cmd = [
                 GTF2GENEPRED_PROG,
-                args.annotation,
+                annotation,
                 referenceFiles,
                 "-genePredExt",
                 "-allErrors",
@@ -839,7 +815,7 @@ def reference_parser(args, genome_chroms):
         else:
             cmd = [
                 GTF2GENEPRED_PROG,
-                args.annotation,
+                annotation,
                 referenceFiles,
                 "-genePredExt",
                 "-allErrors",
@@ -849,7 +825,7 @@ def reference_parser(args, genome_chroms):
         try:
             subprocess.run(cmd, capture_output=True)
         except subprocess.CalledProcessError as error:
-            print(error, file=subprocess.STDERR)
+            logging.error(error)
             sys.exit(-1)
 
     # parse reference annotation
@@ -868,7 +844,7 @@ def reference_parser(args, genome_chroms):
     known_5_3_by_gene = defaultdict(lambda: {"begin": set(), "end": set()})
 
     for r in genePredReader(referenceFiles):
-        if r.length < args.min_ref_len:
+        if r.length < min_ref_len:
             continue  # ignore miRNAs
         if r.exonCount == 1:
             refs_1exon_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
@@ -889,9 +865,8 @@ def reference_parser(args, genome_chroms):
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
-        print(
-            f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n",
-            file=sys.stderr,
+        logging.warning(
+            f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n"
         )
 
     # convert the content of junctions_by_chr to sorted list
@@ -904,22 +879,21 @@ def reference_parser(args, genome_chroms):
         junctions_by_chr[k]["da_pairs"].sort()
 
     return (
-        dict(refs_1exon_by_chr),
-        dict(refs_exons_by_chr),
-        dict(junctions_by_chr),
-        dict(junctions_by_gene),
-        dict(known_5_3_by_gene),
+        dict(refs_1exon_by_chr),  # Dict[str, ]
+        dict(refs_exons_by_chr),  # Dict[str, ]
+        dict(junctions_by_chr),  # Dict[str, ]
+        dict(junctions_by_gene),  # Dict[str, ]
+        dict(known_5_3_by_gene),  # Dict[str, ]
     )
 
 
-def isoforms_parser(args):
+def isoforms_parser(corrGTF: str) -> Tuple[List[str], str]:
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
-    global queryFile
     queryFile = os.path.splitext(corrGTF)[0] + ".genePred"
 
-    print("**** Parsing Isoforms....", file=sys.stderr)
+    logging.info("Parsing Isoforms....")
 
     # gtf to genePred
     cmd = (
@@ -927,7 +901,7 @@ def isoforms_parser(args):
         + f" {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
     )
     if subprocess.check_call(cmd, shell=True) != 0:
-        print(f"ERROR running cmd: {cmd}", file=sys.stderr)
+        logging.error(f"running cmd: {cmd}")
         sys.exit(-1)
 
     isoforms_list = defaultdict(lambda: [])  # chr --> list to be sorted later
@@ -938,7 +912,7 @@ def isoforms_parser(args):
     for k in isoforms_list:
         isoforms_list[k].sort(key=lambda r: r.txStart)
 
-    return isoforms_list
+    return isoforms_list, queryFile
 
 
 def STARcov_parser(
@@ -954,9 +928,8 @@ def STARcov_parser(
         cov_files = coverageFiles.split(",")
 
     newline = "\n"
-    print(
-        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:\n{newline.join(cov_files)}",
-        file=sys.stderr,
+    logging.info(
+        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:\n{newline.join(cov_files)}"
     )
 
     cov_by_chrom_strand = defaultdict(
@@ -983,9 +956,8 @@ def STARcov_parser(
                     r.unique_count + r.multi_count
                 )
             all_read += 1
-    print(
-        f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR.",
-        file=sys.stderr,
+    logging.info(
+        f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR."
     )
 
     return samples, cov_by_chrom_strand
@@ -1038,26 +1010,24 @@ def expression_parser(expressionFile):
     for exp_file in exp_paths:
         reader = DictReader(open(exp_file), delimiter="\t")
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
-            print(
-                "Detected Kallisto expression format. Using 'target_id' and 'tpm' field.",
-                file=sys.stderr,
+            logging.info(
+                "Detected Kallisto expression format. Using 'target_id' and 'tpm' field."
             )
             name_id, name_tpm = "target_id", "tpm"
         elif all(k in reader.fieldnames for k in EXP_RSEM_HEADERS):
-            print(
-                "Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.",
-                file=sys.stderr,
+            logging.info(
+                "Detected RSEM expression format. Using 'transcript_id' and 'TPM' field."
             )
             name_id, name_tpm = "transcript_id", "TPM"
         elif reader.fieldnames[0] == "ID":
-            print("Detected expression matrix format")
+            logging.info("Detected expression matrix format")
             ismatrix = True
             name_id = "ID"
         else:
-            print(
-                f"Expected Kallisto or RSEM file format from {expressionFile}. Abort!",
-                file=sys.stderr,
+            logging.error(
+                f"Expected Kallisto or RSEM file format from {expressionFile}. Abort!"
             )
+            sys.exit(-1)
         exp_sample = {}
         if ismatrix:
             for r in reader:
@@ -1942,7 +1912,6 @@ def isoformClassification(
     phyloP_bed,
     sites,
     window,
-    novel_gene_prefix,
     isoforms_by_chr,
     refs_1exon_by_chr,
     refs_exons_by_chr,
@@ -1952,60 +1921,51 @@ def isoformClassification(
     genome_dict,
     indelsJunc,
     orfDict,
+    outputClassPath,
+    outputJuncPath,
 ):
-    # logger = logging.getLogger('sqanti3')
-    # logger.setLevel(logging.DEBUG)
-    # fh = logging.FileHandler('sqanti3_isoformClass.log')
-    # fh.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # fh.setFormatter(formatter)
-    # logger.addHandler(fh)
-    # read coverage files if provided
-
+    novel_gene_prefix = None
     if coverage is not None:
-        print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
+        logging.info("Reading Splice Junctions coverage files.")
         SJcovNames, SJcovInfo = STARcov_parser(coverage)
         fields_junc_cur = FIELDS_JUNC + SJcovNames  # add the samples to the header
     else:
         SJcovNames, SJcovInfo = None, None
-        print("Splice Junction Coverage files not provided.", file=sys.stdout)
+        logging.info("Splice Junction Coverage files not provided.")
         fields_junc_cur = FIELDS_JUNC
 
     if cage_peak is not None:
-        print("**** Reading CAGE Peak data.", file=sys.stdout)
+        logging.info("Reading CAGE Peak data.")
         cage_peak_obj = CAGEPeak(cage_peak)
     else:
         cage_peak_obj = None
 
     if polyA_peak is not None:
-        print("**** Reading polyA Peak data.", file=sys.stdout)
+        logging.info("Reading polyA Peak data.")
         polya_peak_obj = PolyAPeak(polyA_peak)
     else:
         polya_peak_obj = None
 
     if polyA_motif_list is not None:
-        print("**** Reading PolyA motif list.", file=sys.stdout)
+        logging.info("Reading PolyA motif list.")
         polyA_motifs = []
         for line in open(polyA_motif_list):
             x = line.strip().upper().replace("U", "A")
             if any(s not in ("A", "T", "C", "G") for s in x):
-                print(
-                    f"PolyA motif must be A/T/C/G only! Saw: {x}. Abort!",
-                    file=sys.stderr,
-                )
+                logging.error(f"PolyA motif must be A/T/C/G only! Saw: {x}. Abort!")
                 sys.exit(-1)
             polyA_motifs.append(x)
     else:
         polyA_motifs = None
 
     if phyloP_bed is not None:
-        print("**** Reading PhyloP BED file.", file=sys.stdout)
+        logging.info("Reading PhyloP BED file.")
         phyloP_reader = LazyBEDPointReader(phyloP_bed)
     else:
         phyloP_reader = None
 
     # running classification
-    print("**** Performing Classification of Isoforms....", file=sys.stdout)
+    logging.info("Performing Classification of Isoforms....")
 
     accepted_canonical_sites = list(sites.split(","))
 
@@ -2148,7 +2108,7 @@ def isoformClassification(
                     orfDict[rec.id].cds_genomic_end = (
                         m[orfDict[rec.id].cds_end - 1] + 1
                     )  # make it 1-based
-                except:
+                except KeyError:
                     newline = "\n"
                     logging.debug(
                         f"orfDict: {orfDict}",
@@ -2253,9 +2213,8 @@ def FLcount_parser(fl_count_filename):
     count_header = reader.fieldnames
     if type == "SINGLE_SAMPLE":
         if "count_fl" not in count_header:
-            print(
-                f"Expected `count_fl` field in count file {fl_count_filename}. Abort!",
-                file=sys.stderr,
+            logging.error(
+                f"Expected `count_fl` field in count file {fl_count_filename}. Abort!"
             )
             sys.exit(-1)
         d = {r["pbid"]: r for r in reader}
@@ -2266,9 +2225,8 @@ def FLcount_parser(fl_count_filename):
         d = {r["id"]: r for r in reader}
         flag_single_sample = False
     else:
-        print(
-            f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!",
-            file=sys.stderr,
+        logging.error(
+            f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!"
         )
         sys.exit(-1)
     f.close()
@@ -2294,20 +2252,65 @@ def FLcount_parser(fl_count_filename):
     return samples, fl_count_dict
 
 
-def run(args):
-    global outputClassPath
-    global outputJuncPath
+def sqanti3_qc(
+    isoforms,
+    annotation,
+    genome,
+    min_ref_len,
+    force_id_ignore,
+    aligner_choice,
+    cage_peak,
+    polyA_motif_list,
+    polyA_peak,
+    phyloP_bed,
+    skipORF,
+    is_fusion,
+    gtf,
+    expression,
+    gmap_index,
+    cpus,
+    chunks,
+    output,
+    directory,
+    coverage,
+    sites,
+    window,
+    genename,
+    fl_count,
+    version,
+    skip_report,
+    isoAnnotLite,
+    gff3,
+    doc,
+):
+    # global outputClassPath # NO! NO GLOBALS if we can help it!  There lies madness and Perl.
+    # global outputJuncPath
 
-    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
-
+    outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
+    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
     start3 = timeit.default_timer()
-    print("**** Parsing provided files....", file=sys.stdout)
-    print(f"Reading genome fasta {args.genome}....", file=sys.stdout)
+
+    logging.info("Parsing provided files....")
+    logging.info(f"Reading genome fasta {genome}....")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
-    genome_dict = {r.name: r for r in SeqIO.parse(open(args.genome), "fasta")}
+    genome_dict = {r.name: r for r in SeqIO.parse(open(genome), "fasta")}
 
     # correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
-    orfDict = correctionPlusORFpred(args, genome_dict)
+    orfDict = correctionPlusORFpred(
+        output,
+        directory,
+        cpus,
+        chunks,
+        gtf,
+        aligner_choice,
+        # sense,
+        isoforms,
+        is_fusion,
+        skipORF,
+        genome_dict,
+        genome,
+        gmap_index,
+    )
 
     # parse reference id (GTF) to dicts
     (
@@ -2316,10 +2319,17 @@ def run(args):
         junctions_by_chr,
         junctions_by_gene,
         start_ends_by_gene,
-    ) = reference_parser(args, list(genome_dict.keys()))
+    ) = reference_parser(
+        directory=directory,
+        output=output,
+        genename=genename,
+        annotation=annotation,
+        min_ref_len=min_ref_len,
+        genome_chroms=list(genome_dict.keys()),
+    )
 
     # parse query isoforms
-    isoforms_by_chr = isoforms_parser(args)
+    isoforms_by_chr, queryFile = isoforms_parser(corrGTF)
 
     # Run indel computation if sam exists
     # indelsJunc: dict of pbid --> list of junctions near indel (in Interval format)
@@ -2332,14 +2342,13 @@ def run(args):
 
     # isoform classification + intra-priming + id and junction characterization
     isoforms_info = isoformClassification(
-        args.coverage,
-        args.cage_peak,
-        args.polyA_peak,
-        args.polyA_motif_list,
-        args.phyloP_bed,
-        args.sites,
-        args.window,
-        args.novel_gene_prefix,
+        coverage,
+        cage_peak,
+        polyA_peak,
+        polyA_motif_list,
+        phyloP_bed,
+        sites,
+        window,
         isoforms_by_chr,
         refs_1exon_by_chr,
         refs_exons_by_chr,
@@ -2349,18 +2358,20 @@ def run(args):
         genome_dict,
         indelsJunc,
         orfDict,
+        outputClassPath,
+        outputJuncPath,
     )
 
-    print(f"Number of classified isoforms: {len(isoforms_info)}", file=sys.stdout)
+    logging.info(f"Number of classified isoforms: {len(isoforms_info)}")
 
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF + ".cds.gff")
     # os.rename(corrGTF+'.cds.gff', corrGTF)
 
     # RT-switching computation
-    print("**** RT-switching computation....", file=sys.stderr)
+    logging.info("RT-switching computation....")
 
     # RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
-    RTS_info = rts([outputJuncPath + "_tmp", args.genome, "-a"], genome_dict)
+    RTS_info = rts([outputJuncPath + "_tmp", genome, "-a"], genome_dict)
     for pbid in isoforms_info:
         if pbid in RTS_info and len(RTS_info[pbid]) > 0:
             isoforms_info[pbid].RT_switching = "TRUE"
@@ -2377,55 +2388,51 @@ def run(args):
 
     fields_class_cur = FIELDS_CLASS
     # FL count file
-    if args.fl_count:
-        if not os.path.exists(args.fl_count):
-            print(f"FL count file {args.fl_count} does not exist!", file=sys.stderr)
+    if fl_count:
+        if not os.path.exists(fl_count):
+            logging.error(f"FL count file {fl_count} does not exist!")
             sys.exit(-1)
-        print("**** Reading Full-length read abundance files...", file=sys.stderr)
-        fl_samples, fl_count_dict = FLcount_parser(args.fl_count)
+        logging.info("Reading Full-length read abundance files...")
+        fl_samples, fl_count_dict = FLcount_parser(fl_count)
         for pbid in fl_count_dict:
             if pbid not in isoforms_info:
-                print(
-                    f"WARNING: {pbid} found in FL count file but not in input fasta.",
-                    file=sys.stderr,
+                logging.info(
+                    f"WARNING: {pbid} found in FL count file but not in input fasta."
                 )
         if len(fl_samples) == 1:  # single sample from PacBio
-            print("Single-sample PacBio FL count format detected.", file=sys.stderr)
+            logging.info("Single-sample PacBio FL count format detected.")
             for iso in isoforms_info:
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL = fl_count_dict[iso]
                 else:
-                    print(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0.",
-                        file=sys.stderr,
+                    logging.info(
+                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL = 0
         else:  # multi-sample
-            print("Multi-sample PacBio FL count format detected.", file=sys.stderr)
+            logging.info("Multi-sample PacBio FL count format detected.")
             fields_class_cur = FIELDS_CLASS + ["FL." + s for s in fl_samples]
             for iso in isoforms_info:
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL_dict = fl_count_dict[iso]
                 else:
-                    print(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0.",
-                        file=sys.stderr,
+                    logging.info(
+                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     else:
-        print("Full-length read abundance files not provided.", file=sys.stderr)
+        logging.info("Full-length read abundance files not provided.")
 
     # Isoform expression information
-    if args.expression:
-        print("**** Reading Isoform Expression Information.", file=sys.stderr)
-        exp_dict = expression_parser(args.expression)
+    if expression:
+        logging.info("Reading Isoform Expression Information.")
+        exp_dict = expression_parser(expression)
         gene_exp_dict = {}
         for iso in isoforms_info:
             if iso not in exp_dict:
                 exp_dict[iso] = 0
-                print(
-                    f"WARNING: isoform {iso} not found in expression matrix. Assigning TPM of 0.",
-                    file=sys.stderr,
+                logging.info(
+                    f"WARNING: isoform {iso} not found in expression matrix. Assigning TPM of 0."
                 )
             gene = isoforms_info[iso].geneName()
             if gene not in gene_exp_dict:
@@ -2435,7 +2442,7 @@ def run(args):
     else:
         exp_dict = None
         gene_exp_dict = None
-        print("Isoforms expression files not provided.", file=sys.stderr)
+        logging.info("Isoforms expression files not provided.")
 
     # Adding indel, FSM class and expression information
     for iso in isoforms_info:
@@ -2510,7 +2517,7 @@ def run(args):
         isoforms_info[pbid].sd = pstdev(covs)
 
     # Printing output file:
-    print("**** Writing output files....", file=sys.stderr)
+    logging.info("Writing output files....")
 
     # sort isoform keys
     iso_keys = list(isoforms_info.keys())
@@ -2534,40 +2541,40 @@ def run(args):
             fout_junc.writerow(r)
 
     # Generating report
-    if not args.skip_report:
-        print("**** Generating SQANTI3 report....", file=sys.stderr)
+    if not skip_report:
+        logging.info("Generating SQANTI3 report....")
         cmd = (
             RSCRIPTPATH
-            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {args.doc} {utilitiesPath}"
+            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {doc} {utilitiesPath}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
-            print(f"ERROR running command: {cmd}", file=sys.stderr)
+            logging.error(f"running command: {cmd}")
             sys.exit(-1)
     stop3 = timeit.default_timer()
 
-    print("Removing temporary files....", file=sys.stderr)
+    logging.info("Removing temporary files....")
     os.remove(outputClassPath + "_tmp")
     os.remove(outputJuncPath + "_tmp")
 
-    print(f"SQANTI3 complete in {stop3 - start3} sec.", file=sys.stderr)
+    logging.info(f"SQANTI3 complete in {stop3 - start3} sec.")
 
     # IsoAnnot Lite implementation
     ISOANNOT_PROG = os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
-    if args.isoAnnotLite:
-        if args.gff3:
+    if isoAnnotLite:
+        if gff3:
             ISOANNOT_CMD = (
                 "python "
                 + ISOANNOT_PROG
-                + f" {corrGTF} {outputClassPath} {outputJuncPath} -gff3 {args.gff3} -d {args.dir} -o {args.output}"
+                + f" {corrGTF} {outputClassPath} {outputJuncPath} -gff3 {gff3} -d {directory} -o {output}"
             )
         else:
             ISOANNOT_CMD = (
                 "python "
                 + ISOANNOT_PROG
-                + f" {corrGTF} {outputClassPath} {outputJuncPath} -d {args.dir} -o {args.output}"
+                + f" {corrGTF} {outputClassPath} {outputJuncPath} -d {directory} -o {output}"
             )
         if subprocess.check_call(ISOANNOT_CMD, shell=True) != 0:
-            print(f"ERROR running command: {ISOANNOT_CMD}", file=sys.stderr)
+            logging.error(f"running command: {ISOANNOT_CMD}")
             sys.exit(-1)
 
 
@@ -2592,9 +2599,8 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
         m2 = seqid_rex2.match(r.id)
         m3 = seqid_fusion.match(r.id)
         if not force_id_ignore and (m1 is None and m2 is None and m3 is None):
-            print(
-                f"Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw {r.id} instead. Abort!",
-                file=sys.stderr,
+            logging.error(
+                f"Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw {r.id} instead. Abort!"
             )
             sys.exit(-1)
         if r.id.startswith("PB.") or r.id.startswith(
@@ -2702,48 +2708,43 @@ class PolyAPeak:
             return True, min_dist
 
 
-def split_input_run(args):
-    if os.path.exists(SPLIT_ROOT_DIR):
-        print(
-            f"WARNING: {SPLIT_ROOT_DIR} directory already exists! Abort!",
-            file=sys.stderr,
-        )
+def split_input_run(gtf, isoforms, chunks, arguments):
+    if os.path.exists("splits/"):
+        logging.error("'splits/' directory already exists! Abort!")
         sys.exit(-1)
     else:
-        os.makedirs(SPLIT_ROOT_DIR)
+        os.makedirs("splits/")
 
-    if args.gtf:
-        recs = [r for r in collapseGFFReader(args.isoforms)]
+    if gtf:
+        recs = [r for r in collapseGFFReader(isoforms)]
         n = len(recs)
-        chunk_size = n // args.chunks + (n % args.chunks > 0)
+        chunk_size = n // chunks + (n % chunks > 0)
         split_outs = []
         # pdb.set_trace()
-        for i in range(args.chunks):
+        for i in range(chunks):
             if i * chunk_size >= n:
                 break
-            d = os.path.join(SPLIT_ROOT_DIR, str(i))
+            d = os.path.join("splits/", str(i))
             os.makedirs(d)
             f = open(
-                os.path.join(d, os.path.basename(args.isoforms) + ".split" + str(i)),
-                "w",
+                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w",
             )
             for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
                 write_collapseGFF_format(f, recs[j])
             f.close()
             split_outs.append((os.path.abspath(d), f.name))
     else:
-        recs = [r for r in SeqIO.parse(open(args.isoforms), "fasta")]
+        recs = [r for r in SeqIO.parse(open(isoforms), "fasta")]
         n = len(recs)
-        chunk_size = n // args.chunks + (n % args.chunks > 0)
+        chunk_size = n // chunks + (n % chunks > 0)
         split_outs = []
-        for i in range(args.chunks):
+        for i in range(chunks):
             if i * chunk_size >= n:
                 break
-            d = os.path.join(SPLIT_ROOT_DIR, str(i))
+            d = os.path.join("splits/", str(i))
             os.makedirs(d)
             f = open(
-                os.path.join(d, os.path.basename(args.isoforms) + ".split" + str(i)),
-                "w",
+                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w",
             )
             for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
                 SeqIO.write(recs[j], f, "fasta")
@@ -2752,13 +2753,13 @@ def split_input_run(args):
 
     pools = []
     for i, (d, x) in enumerate(split_outs):
-        print(f"launching worker on on {x}....")
-        args2 = copy.deepcopy(args)
-        args2.isoforms = x
-        args2.novel_gene_prefix = str(i)
-        args2.dir = d
-        args2.skip_report = True
-        p = Process(target=run, args=(args2,))
+        logging.info(f"launching worker on {x}...")
+        args2 = copy.deepcopy(arguments)
+        args2["isoforms"] = x
+        args2["novel_gene_prefix"] = str(i)
+        args2["directory"] = d
+        args2["skip_report"] = True
+        p = Process(target=multi_sqanti3_qc, args=args2)
         p.start()
         pools.append(p)
 
@@ -2767,15 +2768,15 @@ def split_input_run(args):
     return [d for (d, x) in split_outs]
 
 
-def combine_split_runs(args, split_dirs):
+def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
     Then write out the PDF report
     """
-    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
-    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
+    outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
 
-    if not args.skipORF:
+    if not skipORF:
         f_faa = open(corrORF, "w")
     f_fasta = open(corrFASTA, "w")
     f_gtf = open(corrGTF, "w")
@@ -2783,9 +2784,9 @@ def combine_split_runs(args, split_dirs):
     f_junc = open(outputJuncPath, "w")
 
     for i, split_d in enumerate(split_dirs):
-        _gtf, _sam, _fasta, _orf = get_corr_filenames(args, split_d)
-        _class, _junc = get_class_junc_filenames(args, split_d)
-        if not args.skipORF:
+        _gtf, _sam, _fasta, _orf = get_corr_filenames(output, split_d)
+        _class, _junc = get_class_junc_filenames(output, split_d)
+        if not skipORF:
             with open(_orf) as h:
                 f_faa.write(h.read())
         with open(_gtf) as h:
@@ -2809,338 +2810,475 @@ def combine_split_runs(args, split_dirs):
     f_gtf.close()
     f_class.close()
     f_junc.close()
-    if not args.skipORF:
+    if not skipORF:
         f_faa.close()
 
-    if not args.skip_report:
-        print("**** Generating SQANTI3 report....", file=sys.stderr)
+    if not skip_report:
+        logging.info("Generating SQANTI3 report....")
         cmd = (
             RSCRIPTPATH
-            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {args.doc} {utilitiesPath}"
+            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {doc} {utilitiesPath}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
-            print(f"ERROR running command: {cmd}", file=sys.stderr)
+            logging.error(f"running command: {cmd}")
             sys.exit(-1)
 
 
-def main():
-    global utilitiesPath
+def print_version(ctx, param, value):
+    if not value or ctx.resilient_parsing:
+        return
+    click.echo(f"sqanti3_qc: {__version__}")
+    ctx.exit()
 
-    # arguments
-    parser = argparse.ArgumentParser(
-        description="Structural and Quality Annotation of Novel Transcript Isoforms"
-    )
-    parser.add_argument(
-        "isoforms",
-        help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf',
-    )
-    parser.add_argument("annotation", help="\t\tReference annotation file (GTF format)")
-    parser.add_argument("genome", help="\t\tReference genome (Fasta format)")
-    parser.add_argument(
-        "--min_ref_len",
-        type=int,
-        default=200,
-        help="\t\tMinimum reference transcript length (default: 200 bp)",
-    )
-    parser.add_argument(
-        "--force_id_ignore",
-        action="store_true",
-        default=False,
-        help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)",
-    )
-    parser.add_argument(
-        "--aligner_choice", choices=["minimap2", "deSALT", "gmap"], default="minimap2"
-    )
-    parser.add_argument(
-        "--cage_peak", help="\t\tFANTOM5 Cage Peak (BED format, optional)"
-    )
-    parser.add_argument(
-        "--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)"
-    )
-    parser.add_argument("--polyA_peak", help="\t\tPolyA Peak (BED format, optional)")
-    parser.add_argument(
-        "--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)"
-    )
-    parser.add_argument(
-        "--skipORF",
-        default=False,
-        action="store_true",
-        help="\t\tSkip ORF prediction (to save time)",
-    )
-    parser.add_argument(
-        "--is_fusion",
-        default=False,
-        action="store_true",
-        help="\t\tInput are fusion isoforms, must supply GTF as input using --gtf",
-    )
-    parser.add_argument(
-        "-g",
-        "--gtf",
-        help="\t\tUse when running SQANTI by using as input a gtf of isoforms",
-        action="store_true",
-    )
-    parser.add_argument(
-        "-e",
-        "--expression",
-        help="\t\tExpression matrix (supported: Kallisto tsv)",
-        required=False,
-    )
-    parser.add_argument(
-        "-x",
-        "--gmap_index",
-        help="\t\tPath and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.",
-    )
-    parser.add_argument(
-        "-t",
-        "--cpus",
-        default=10,
-        type=int,
-        help="\t\tNumber of threads used during alignment by aligners. (default: 10)",
-    )
-    parser.add_argument(
-        "-n",
-        "--chunks",
-        default=1,
-        type=int,
-        help="\t\tNumber of chunks to split SQANTI3 analysis in for speed up (default: 1).",
-    )
-    # parser.add_argument('-z', '--sense', help='\t\tOption that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences', required=False, action='store_true')
-    parser.add_argument(
-        "-o", "--output", help="\t\tPrefix for output files.", required=False
-    )
-    parser.add_argument(
-        "-d",
-        "--dir",
-        help="\t\tDirectory for output files. Default: Directory where the script was run.",
-        required=False,
-    )
-    parser.add_argument(
-        "-c",
-        "--coverage",
-        help='\t\tJunction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").',
-        required=False,
-    )
-    parser.add_argument(
-        "-s",
-        "--sites",
-        default="ATAC,GCAG,GTAG",
-        help="\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.",
-        required=False,
-    )
-    parser.add_argument(
-        "-w",
-        "--window",
-        default="20",
-        help="\t\tSize of the window in the genomic DNA screened for Adenine content downstream of TTS",
-        required=False,
-        type=int,
-    )
-    parser.add_argument(
-        "--genename",
-        help="\t\tUse gene_name tag from GTF to define genes. Default: gene_id used to define genes",
-        default=False,
-        action="store_true",
-    )
-    parser.add_argument(
-        "-fl",
-        "--fl_count",
-        help="\t\tFull-length PacBio abundance file",
-        required=False,
-    )
-    parser.add_argument(
-        "-v",
-        "--version",
-        help="Display program version number.",
-        action="version",
-        version=f"{__version__}",
-    )
-    parser.add_argument(
-        "--skip_report", action="store_true", default=False, help=argparse.SUPPRESS
-    )
-    parser.add_argument(
-        "--isoAnnotLite",
-        help="\t\tRun isoAnnot Lite to output a tappAS-compatible gff3 file",
-        required=False,
-        action="store_true",
-        default=False,
-    )
-    parser.add_argument(
-        "--gff3",
-        help="\t\tPrecomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes",
-        required=False,
-    )
 
-    args = parser.parse_args()
+@click.command()
+@click.argument("isoforms", required=True)
+@click.argument("annotation", required=True)
+@click.argument("genome", required=True)
+@click.option(
+    "--min_ref_len",
+    help="Minimum reference transcript length",
+    type=int,
+    default=200,
+    show_default=True,
+)
+@click.option(
+    "--force_id_ignore",
+    help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)",
+    type=bool,
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "--aligner_choice",
+    type=click.Choice(["minimap2", "deSALT", "gmap"]),
+    default="minimap2",
+    show_default=True,
+)
+@click.option("--cage_peak", help="FANTOM5 Cage Peak (BED format, optional)", type=str)
+@click.option(
+    "--polyA_motif_list", help="Ranked list of polyA motifs (text, optional)", type=str
+)
+@click.option("--polyA_peak", help="PolyA Peak (BED format, optional)", type=str)
+@click.option(
+    "--phyloP_bed", help="PhyloP BED for conservation score (BED, optional)", type=str
+)
+@click.option(
+    "--skipORF",
+    help="Skip ORF prediction (to save time)",
+    type=bool,
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "--is_fusion",
+    help="Input are fusion isoforms, must supply GTF as input using --gtf",
+    type=bool,
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-g",
+    "--gtf",
+    help="Use when running SQANTI by using as input a gtf of isoforms",
+    type=bool,
+    default=False,
+    show_default=True,
+    is_flag=True,
+)
+@click.option(
+    "-e",
+    "--expression",
+    help="Expression matrix (supported: Kallisto tsv)",
+    type=str,
+    default=None,
+    required=False,
+    show_default=False,
+)
+@click.option(
+    "-x",
+    "--gmap_index",
+    help="Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.",
+    type=str,
+    default=None,
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "-t",
+    "--cpus",
+    help="Number of threads used during alignment by aligners.",
+    type=int,
+    default=10,
+    show_default=True,
+)
+@click.option(
+    "-n",
+    "--chunks",
+    help="Number of chunks to split SQANTI3 analysis in for speed up.",
+    type=int,
+    default=1,
+    show_default=True,
+)
+@click.option(
+    "-o",
+    "--output",
+    help="Prefix for output files.",
+    type=str,
+    default=None,
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "-d",
+    "--directory",
+    help="Directory for output files. Default: Directory where the script was run.",
+    type=str,
+    default=None,
+    show_default=True,
+    required=False,
+)
+@click.option(
+    "-c",
+    "--coverage",
+    help='Junction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").',
+    type=str,
+    default=None,
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "-s",
+    "--sites",
+    help="Set of splice sites to be considered as canonical (comma-separated list of splice sites).",
+    default="ATAC,GCAG,GTAG",
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "-w",
+    "--window",
+    help="Size of the window in the genomic DNA screened for Adenine content downstream of TTS",
+    type=int,
+    default="20",
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "--genename",
+    help="Use gene_name tag from GTF to define genes. Otherwise, gene_id used to define genes",
+    type=bool,
+    default=False,
+    show_default=False,
+    is_flag=True,
+)
+@click.option(
+    "-fl",
+    "--fl_count",
+    help="Full-length PacBio abundance file",
+    type=str,
+    default=None,
+    show_default=False,
+    required=False,
+)
+@click.option(
+    "--version",
+    help="Show version and quit",
+    type=bool,
+    default=False,
+    show_default=False,
+    is_flag=True,
+    callback=print_version,
+    expose_value=False,
+    is_eager=True,
+)
+@click.option(
+    "--skip_report",
+    help="Do not prepare pdf report.",
+    type=bool,
+    default=False,
+    show_default=False,
+    is_flag=True,
+)
+@click.option(
+    "--isoAnnotLite",
+    help="Run isoAnnot Lite to output a tappAS-compatible gff3 file",
+    type=bool,
+    default=False,
+    show_default=False,
+    is_flag=True,
+    required=False,
+)
+@click.option(
+    "--gff3",
+    help="Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes",
+    type=bool,
+    default=False,
+    show_default=False,
+    is_flag=True,
+    required=False,
+)
+@click.help_option(show_default=False)
+def main(
+    isoforms: str,
+    annotation: str,
+    genome: str,
+    min_ref_len: int = 200,
+    force_id_ignore: bool = False,
+    aligner_choice: str = "minimap2",
+    cage_peak: Optional[str] = None,
+    polyA_motif_list: Optional[str] = None,
+    polyA_peak: Optional[str] = None,
+    phyloP_bed: Optional[str] = None,
+    skipORF: bool = False,
+    is_fusion: bool = False,
+    gtf: bool = False,
+    expression: Optional[str] = None,
+    gmap_index: Optional[str] = None,
+    cpus: int = 10,
+    chunks: int = 1,
+    output: Optional[str] = None,
+    directory: Optional[str] = None,
+    coverage: Optional[str] = None,
+    sites: List[str] = ["ATAC", "GCAG", "GTAG"],
+    window: int = 20,
+    genename: bool = False,
+    fl_count: Optional[str] = None,
+    version: bool = False,
+    skip_report: bool = False,
+    isoAnnotLite: bool = False,
+    gff3: bool = False,
+) -> None:
+    """Structural and Quality Annotation of Novel Transcript Isoforms
 
-    if args.is_fusion:
-        print(
-            "WARNING: Currently if --is_fusion is used, no ORFs will be predicted.",
-            file=sys.stderr,
-        )
-        args.skipORF = True
-        if not args.gtf:
-            print(
-                "ERROR: if --is_fusion is on, must supply GTF as input and use --gtf!",
-                file=sys.stderr,
+    \b
+    Parameters:
+    -----------
+    isoforms:
+        FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf
+    annotation:
+        Reference annotation file in GTF format
+    genome:
+        Reference genome in fasta format
+    """
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler("sqanti3.log")
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
+    if GTF2GENEPRED_PROG is None:
+        logging.error("Cannot find gtf2genepred. Abort!")
+        sys.exit(-1)
+    if GFFREAD_PROG is None:
+        logging.error("Cannot find gffread. Abort!")
+        sys.exit(-1)
+    if RSCRIPTPATH:
+        logging.error("Cannot find Rscript. Abort!")
+        sys.exit(-1)
+
+    if is_fusion:
+        logging.warning("Currently if --is_fusion is used, no ORFs will be predicted.")
+        skipORF = True
+        if not gtf:
+            logging.error(
+                "if --is_fusion is on, must supply GTF as input and use --gtf!"
             )
             sys.exit(-1)
 
-    if args.gff3 is not None:
-        args.gff3 = os.path.abspath(args.gff3)
-        if not os.path.isfile(args.gff3):
-            print(
-                f"ERROR: Precomputed tappAS GFF3 annoation file {args.genome} doesn't exist. Abort!",
-                file=sys.stderr,
+    if gff3:
+        gff3 = os.path.abspath(gff3)
+        if not os.path.isfile(gff3):
+            logging.error(
+                f"Precomputed tappAS GFF3 annoation file {genome} doesn't exist. Abort!"
             )
             sys.exit(-1)
 
-    if args.expression is not None:
-        if os.path.isdir(args.expression) is True:
-            print(
-                f"Expression files located in {args.expression} folder", file=sys.stderr
-            )
+    if expression:
+        if os.path.isdir(expression):
+            logging.info(f"Expression files located in {expression} folder")
         else:
-            for f in args.expression.split(","):
+            for f in expression.split(","):
                 if not os.path.exists(f):
-                    print(f"Expression file {f} not found. Abort!", file=sys.stderr)
+                    logging.error(f"Expression file {f} not found. Abort!")
                     sys.exit(-1)
 
     # path and prefix for output files
-    if args.output is None:
-        args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
+    if output is None:
+        output = os.path.splitext(os.path.basename(isoforms))[0]
 
-    if args.dir is None:
-        args.dir = os.getcwd()
+    if directory is None:
+        directory = os.getcwd()
     else:
-        args.dir = os.path.abspath(args.dir)
-        if os.path.isdir(args.dir):
-            print(
-                f"WARNING: output directory {args.dir} already exists. Overwriting!",
-                file=sys.stderr,
+        directory = os.path.abspath(directory)
+        if os.path.isdir(directory):
+            logging.warning(
+                f"Output directory {directory} already exists. Overwriting!"
             )
         else:
-            os.makedirs(args.dir)
+            os.makedirs(directory)
 
-    args.genome = os.path.abspath(args.genome)
-    if not os.path.isfile(args.genome):
-        print(
-            f"ERROR: genome fasta {args.genome} doesn't exist. Abort!", file=sys.stderr
-        )
+    genome = os.path.abspath(genome)
+    if not os.path.isfile(genome):
+        logging.error(f"Genome fasta {genome} doesn't exist. Abort!")
         sys.exit()
 
-    args.isoforms = os.path.abspath(args.isoforms)
-    if not os.path.isfile(args.isoforms):
-        print(
-            f"ERROR: Input isoforms {args.isoforms} doesn't exist. Abort!",
-            file=sys.stderr,
-        )
+    isoforms = os.path.abspath(isoforms)
+    if not os.path.isfile(isoforms):
+        logging.error(f"Input isoforms {isoforms} doesn't exist. Abort!")
         sys.exit()
 
-    if not args.gtf:
-        if args.aligner_choice == "gmap":
-            if not os.path.isdir(os.path.abspath(args.gmap_index)):
-                print(
-                    f"GMAP index {args.gmap_index} doesn't exist! Abort.",
-                    file=sys.stderr,
-                )
+    if not gtf:
+        if aligner_choice == "gmap":
+            if not os.path.isdir(os.path.abspath(gmap_index)):
+                logging.error(f"GMAP index {gmap_index} doesn't exist! Abort.")
                 sys.exit()
-        elif args.aligner_choice == "deSALT":
-            if not os.path.isdir(os.path.abspath(args.gmap_index)):
-                print(
-                    f"deSALT index {args.gmap_index} doesn't exist! Abort.",
-                    file=sys.stderr,
-                )
+        elif aligner_choice == "deSALT":
+            if not os.path.isdir(os.path.abspath(gmap_index)):
+                logging.error(f"deSALT index {gmap_index} doesn't exist! Abort.")
                 sys.exit()
 
-        print("Cleaning up isoform IDs...", file=sys.stderr)
-        args.isoforms = rename_isoform_seqids(args.isoforms, args.force_id_ignore)
-        print(
-            f"Cleaned up isoform fasta file written to: {args.isoforms}",
-            file=sys.stderr,
-        )
+        logging.info("Cleaning up isoform IDs...")
+        isoforms = rename_isoform_seqids(isoforms, force_id_ignore)
+        logging.info(f"Cleaned up isoform fasta file written to: {isoforms}")
 
-    args.annotation = os.path.abspath(args.annotation)
-    if not os.path.isfile(args.annotation):
-        print(
-            f"ERROR: Annotation {args.annotation} doesn't exist. Abort!",
-            file=sys.stderr,
-        )
+    annotation = os.path.abspath(annotation)
+    if not os.path.isfile(annotation):
+        logging.error(f"Annotation {annotation} doesn't exist. Abort!")
         sys.exit()
 
-    # if args.aligner_choice == "gmap":
-    #    args.sense = "sense_force" if args.sense else "auto"
-    # elif args.aligner_choice == "minimap2":
-    #    args.sense = "f" if args.sense else "b"
+    # if aligner_choice == "gmap":
+    #    sense = "sense_force" if sense else "auto"
+    # elif aligner_choice == "minimap2":
+    #    sense = "f" if sense else "b"
     # (Liz) turned off option for --sense, always TRUE
-    if args.aligner_choice == "gmap":
-        args.sense = "sense_force"
-    elif args.aligner_choice == "minimap2":
-        args.sense = "f"
-    # elif args.aligner_choice == "deSALT":  #deSALT does not support this yet
-    #    args.sense = "--trans-strand"
+    if aligner_choice == "gmap":
+        sense = "sense_force"
+    elif aligner_choice == "minimap2":
+        sense = "f"
+    # elif aligner_choice == "deSALT":  #deSALT does not support this yet
+    #    sense = "--trans-strand"
 
-    args.novel_gene_prefix = None
     # Print out parameters so can be put into report PDF later
-    args.doc = os.path.join(os.path.abspath(args.dir), args.output + ".params.txt")
-    print(f"Write arguments to {args.doc}...", file=sys.stdout)
-    with open(args.doc, "w") as f:
-        f.write("Version\t" + __version__ + "\n")
-        f.write("Input\t" + os.path.basename(args.isoforms) + "\n")
-        f.write("Annotation\t" + os.path.basename(args.annotation) + "\n")
-        f.write("Genome\t" + os.path.basename(args.genome) + "\n")
-        f.write("Aligner\t" + args.aligner_choice + "\n")
-        f.write(
-            "FLCount\t"
-            + (os.path.basename(args.fl_count) if args.fl_count is not None else "NA")
-            + "\n"
+    doc = os.path.join(os.path.abspath(directory), f"{output}.params.txt")
+    logging.info(f"Write arguments to {doc}...")
+    newline = "\n"
+    tab = "\t"
+    with open(doc, "w") as f:
+        output = (
+            f"Version{tab}{__version__}{newline}"
+            f"Input{tab}{os.path.basename(isoforms)}{newline}"
+            f"Annotation{tab}{os.path.basename(annotation)}{newline}"
+            f"Genome{tab}{os.path.basename(genome)}{newline}"
+            f"Aligner{tab}{aligner_choice}{newline}"
+            f"FLCount{tab}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{newline}"
+            f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
+            f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
+            f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
+            f"PolyA{tab}{os.path.basename(polyA_motif_list) if polyA_motif_list is not None else 'NA'}{newline}"
+            f"PolyAPeak{tab}{os.path.basename(polyA_peak) if polyA_peak is not None else 'NA'}{newline}"
+            f"IsFusion{tab}{str(is_fusion)}{newline}"
         )
-        f.write(
-            "Expression\t"
-            + (
-                os.path.basename(args.expression)
-                if args.expression is not None
-                else "NA"
-            )
-            + "\n"
-        )
-        f.write(
-            "Junction\t"
-            + (os.path.basename(args.coverage) if args.coverage is not None else "NA")
-            + "\n"
-        )
-        f.write(
-            "CagePeak\t"
-            + (os.path.basename(args.cage_peak) if args.cage_peak is not None else "NA")
-            + "\n"
-        )
-        f.write(
-            "PolyA\t"
-            + (
-                os.path.basename(args.polyA_motif_list)
-                if args.polyA_motif_list is not None
-                else "NA"
-            )
-            + "\n"
-        )
-        f.write(
-            "PolyAPeak\t"
-            + (
-                os.path.basename(args.polyA_peak)
-                if args.polyA_peak is not None
-                else "NA"
-            )
-            + "\n"
-        )
-        f.write("IsFusion\t" + str(args.is_fusion) + "\n")
+        f.write(output)
 
     # Running functionality
-    print("**** Running SQANTI3...", file=sys.stdout)
-    if args.chunks == 1:
-        run(args)
+    logging.info("Running SQANTI3...")
+    if chunks == 1:
+        sqanti3_qc(
+            isoforms=isoforms,
+            annotation=annotation,
+            genome=genome,
+            min_ref_len=min_ref_len,
+            force_id_ignore=force_id_ignore,
+            aligner_choice=aligner_choice,
+            cage_peak=cage_peak,
+            polyA_motif_list=polyA_motif_list,
+            polyA_peak=polyA_peak,
+            phyloP_bed=phyloP_bed,
+            skipORF=skipORF,
+            is_fusion=is_fusion,
+            gtf=gtf,
+            sense=sense,
+            expression=expression,
+            gmap_index=gmap_index,
+            cpus=cpus,
+            chunks=chunks,
+            output=output,
+            directory=directory,
+            coverage=coverage,
+            sites=sites,
+            window=window,
+            genename=genename,
+            fl_count=fl_count,
+            version=version,
+            skip_report=skip_report,
+            isoAnnotLite=isoAnnotLite,
+            gff3=gff3,
+            doc=doc,
+        )
     else:
-        split_dirs = split_input_run(args)
-        combine_split_runs(args, split_dirs)
-        shutil.rmtree(SPLIT_ROOT_DIR)
+        args = {
+            "isoforms": isoforms,
+            "annotation": annotation,
+            "genome": genome,
+            "min_ref_len": min_ref_len,
+            "force_id_ignore": force_id_ignore,
+            "aligner_choice": aligner_choice,
+            "cage_peak": cage_peak,
+            "polyA_motif_list": polyA_motif_list,
+            "polyA_peak": polyA_peak,
+            "phyloP_bed": phyloP_bed,
+            "skipORF": skipORF,
+            "is_fusion": is_fusion,
+            "gtf": gtf,
+            "sense": sense,
+            "expression": expression,
+            "gmap_index": gmap_index,
+            "cpus": cpus,
+            "chunks": chunks,
+            "output": output,
+            "directory": directory,
+            "coverage": coverage,
+            "sites": sites,
+            "window": window,
+            "genename": genename,
+            "fl_count": fl_count,
+            "version": version,
+            "skip_report": skip_report,
+            "isoAnnotLite": isoAnnotLite,
+            "gff3": gff3,
+        }
+        split_dirs = split_input_run(
+            gtf=gtf, isoforms=isoforms, chunks=chunks, arguments=args
+        )
+        combine_split_runs(
+            output=output,
+            directory=directory,
+            skipORF=skipORF,
+            skip_report=skip_report,
+            doc=doc,
+            split_dirs=split_dirs,
+        )
+        shutil.rmtree("splits/")
+
+
+def multi_sqanti3_qc(arguments):
+    return sqanti3_qc(**arguments)
 
 
 if __name__ == "__main__":
