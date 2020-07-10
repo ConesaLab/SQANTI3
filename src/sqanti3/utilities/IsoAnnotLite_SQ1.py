@@ -8,11 +8,11 @@ import os
 import sys
 import time
 from typing import Optional
+import logging
 
 # import bisect
 
 # Global Variables
-USE_GFF3 = False
 version = 1.5
 CLASS_COLUMN_USED = [0, 1, 2, 3, 5, 6, 7, 28, 30, 31]
 CLASS_COLUMN_NAME = [
@@ -56,14 +56,12 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
         if (
             column not in fields[CLASS_COLUMN_USED[index]]
         ):  # if now in the correct possition...
-            print(
-                f"File classification does not have the correct structure. The column '"
-                f"{column}"
-                f"' is not in the possition "
+            logging.info(
+                f"File classification does not have the correct structure. "
+                f" The column '{column}' is not in the possition "
                 f"{str(CLASS_COLUMN_USED[index])}"
                 f" in the classification file. We have found the column '"
-                f"{str(fields[CLASS_COLUMN_USED[index]])}"
-                f"'."
+                f"{str(fields[CLASS_COLUMN_USED[index]])}'."
             )
             sys.exit()
         else:
@@ -314,7 +312,9 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 )
             )
         else:
-            print("File corrected doesn't have the correct number of columns (9).")
+            logging.error(
+                "File corrected doesn't have the correct number of columns (9)."
+            )
     f.close()
 
     # add junctions
@@ -419,7 +419,7 @@ def readGFF(gff3):
                         }
                     )
         else:
-            print("File GFF3 doesn't have the correct number of columns (9).")
+            logging.error("File GFF3 doesn't have the correct number of columns (9).")
 
     sorted(dc_GFF3exonsTrans.keys())
     return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
@@ -837,7 +837,7 @@ def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
         end = 0
         for exon in allExons:
             if totalDiff < 0:
-                print("The difference can't be negative.")
+                logging.error("The difference can't be negative.")
                 bnegative = True
                 break
 
@@ -1094,7 +1094,7 @@ def mappingFeatures(
             continue
 
         perct = transcriptsAnnotated / len(dc_SQexons) * 100
-        print("\t" + "%.2f" % perct + " % of transcripts annotated...", end="\r")
+        logging.info(f"{perct:.2f}% of transcripts annotated...")
 
         #######################
         # IF FULL-SPLICED-MATCH#
@@ -1206,16 +1206,12 @@ def mappingFeatures(
         transcriptsAnnotated = transcriptsAnnotated + 1
     f.close()
 
-    print(
-        "\n\n\t·Annoted a total of "
-        + str(featuresAnnotated)
-        + " annotation features from reference GFF3 file."
+    logging.info(
+        f"Annoted a total of {str(featuresAnnotated)} annotation features from reference GFF3 file."
     )
     perct = featuresAnnotated / totalAnotations * 100
-    print(
-        "\t·Annoted a total of "
-        + "%.2f" % perct
-        + " % of the reference GFF3 file annotations.\n\n"
+    logging.info(
+        f"Annoted a total of {perct:%.2f}% of the reference GFF3 file annotations."
     )
 
 
@@ -1261,19 +1257,15 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "protein":
                                 addPosType(res, line, "P")
                             else:
-                                print(line)
+                                logging.info(line)
                                 break
 
                         elif fields[1] == "COILS":
                             if fields[2] == "COILED":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1288,12 +1280,8 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("eco"):
                                 addPosType(res, line, "N")  # Fran tomato annot
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1302,12 +1290,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DISORDER":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1316,12 +1300,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "NMD":
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1334,12 +1314,8 @@ def updateGTF(filename, filenameMod):
                             ) or fields[2].startswith("RNA_binding_"):
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1350,12 +1326,8 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("CLAN", "clan"):
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1364,12 +1336,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "FunctionalImpact":
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1378,12 +1346,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("PATHWAY", "pathway", "Pathway"):
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1392,12 +1356,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "repeat":
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1406,12 +1366,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "SIGNAL":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1420,12 +1376,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "TRANSMEM":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1443,12 +1395,8 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "3UTRmotif":
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1476,12 +1424,8 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "NON_STD":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1490,12 +1434,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "MOTIF":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1504,12 +1444,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("miRNA", "miRNA_Binding"):
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1520,12 +1456,8 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("3UTRmotif", "3'UTRmotif"):
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1534,12 +1466,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "pathway":
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1548,12 +1476,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("pathway", "Pathway"):
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
@@ -1562,12 +1486,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1576,12 +1496,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1590,12 +1506,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1604,12 +1516,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "miRNA":
                                 addPosType(res, line, "T")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using T type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
                                 # break
@@ -1618,12 +1526,8 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "Complex":
                                 addPosType(res, line, "P")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using P type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
                                 # break
@@ -1634,29 +1538,21 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("A.thaliana"):
                                 addPosType(res, line, "N")
                             else:
-                                print(
-                                    "IsoAnnotLite can not identify the feature "
-                                    + str(fields[2])
-                                    + " in source "
-                                    + str(fields[1])
-                                    + ", using N type to annotate."
+                                logging.info(
+                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
 
                         else:
-                            print(
-                                "IsoAnnotLite can not identify the source "
-                                + str(fields[1])
-                                + ", in line:\n"
-                                + line
-                                + "\nUSing N type to annotate."
+                            logging.info(
+                                f"IsoAnnotLite can not identify the source {str(fields[1])}, in line: {line}. Using N type to annotate."
                             )
                             addPosType(res, line, "N")
                             # break
 
                     else:
-                        print("Error in line (has not 9 fields):\n" + line)
+                        logging.error(f"Error in line (has not 9 fields): {line}")
                         break
 
         res.close()
@@ -1883,12 +1779,6 @@ def generateFinalGFF3(
 
 
 @click.command()
-@click.option(
-    "--gff3",
-    type=str,
-    default=None,
-    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
-)
 @click.argument(
     "corrected",
     type=str,
@@ -1907,33 +1797,58 @@ def generateFinalGFF3(
     required=False,
     help="*_junctions.txt file from SQANTI 3 output.",
 )
+@click.option(
+    "--gff3",
+    type=str,
+    default=None,
+    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
+)
 @click.help_option(show_default=True)
-def main(gff3: Optional[str], corrected: str, classification: str, junctions: str):
+def main(
+    corrected: str, classification: str, junctions: str, gff3: Optional[str] = None,
+):
     """
     IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
     """
 
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler("IsoAnnotLite_SQ1.log")
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    fh.setFormatter(formatter)
+    # add the handlers to logger
+    logger.addHandler(ch)
+    logger.addHandler(fh)
+
     # path and prefix for output files
     corrected = os.path.abspath(corrected)
     if not os.path.isfile(corrected):
-        sys.stderr.write(f"ERROR: '{corrected}' doesn't exist")
+        logging.error(f"ERROR: '{corrected}' doesn't exist")
         sys.exit()
 
     classification = os.path.abspath(classification)
     if not os.path.isfile(classification):
-        sys.stderr.write(f"ERROR: '{classification}' doesn't exist")
+        logging.error(f"ERROR: '{classification}' doesn't exist")
         sys.exit()
 
     junctions = os.path.abspath(junctions)
     if not os.path.isfile(junctions):
-        sys.stderr.write(f"ERROR: '{junctions}' doesn't exist")
+        logging.error(f"ERROR: '{junctions}' doesn't exist")
         sys.exit()
 
     if gff3:
-        USE_GFF3 = True
         gff3 = os.path.abspath(gff3)
         if not os.path.isfile(gff3):
-            sys.stderr.write(f"ERROR: '{gff3}' doesn't exist")
+            logging.error(f"ERROR: '{gff3}' doesn't exist")
             sys.exit()
     isoannot(
         corrected=corrected,
@@ -1944,10 +1859,10 @@ def main(gff3: Optional[str], corrected: str, classification: str, junctions: st
 
 
 def isoannot(
-    corrected: str, classification: str, junctions: str, gff3: Optional[str]
+    corrected: str, classification: str, junctions: str, gff3: Optional[str] = None
 ) -> None:
     # Running functionality
-    sys.stdout.write("\n\nRunning IsoAnnot Lite " + str(version) + "...\n")
+    logging.info(f"Running IsoAnnot Lite {str(version)}...")
 
     t1 = time.time()
     # corrected = input("Enter your file name for \"corrected.gtf\" file from SQANTI 3 (with extension): ")
@@ -1960,7 +1875,7 @@ def isoannot(
     # MAPPING SQANTI FILES #
     ########################
 
-    if USE_GFF3:
+    if gff3:
         # File names
         filename = "tappAS_annot_from_SQANTI3.gff3"
         filenameMod = f"{filename[:-5]}_mod{filename[-5:]}"
@@ -1968,7 +1883,7 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
+        logging.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
 
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
@@ -1977,7 +1892,7 @@ def isoannot(
             gtf, classification, junctions, filename
         )
 
-        print("Reading reference annotation file and creating data variables...")
+        logging.info("Reading reference annotation file and creating data variables...")
         # dc_GFF3 = {trans : [[start,end,line], [start,end,line], ...]}
         # dc_GFF3exonsTrans = {start : [trans, trans, ...]}
         # dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
@@ -1992,20 +1907,22 @@ def isoannot(
             gff3
         )  # dc_GFF3exons is sorted
 
-        print("Transforming CDS local positions to genomic position...")
+        logging.info("Transforming CDS local positions to genomic position...")
         # Transformar características a posiciones genómicas //revisar
         dc_SQcoding = transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand)
         dc_GFF3coding = transformCDStoGenomic(
             dc_GFF3coding, dc_GFF3transExons, dc_GFF3strand
         )
 
-        print("Transforming feature local positions to genomic position in GFF3...")
+        logging.info(
+            "Transforming feature local positions to genomic position in GFF3..."
+        )
         # Transformar características a posiciones genómicas //revisar
         dc_GFF3_Genomic = transformTransFeaturesToGenomic(
             dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
         )
 
-        print("Mapping transcript features betweeen GFFs...")
+        logging.info("Mapping transcript features betweeen GFFs...")
         mappingFeatures(
             dc_SQexons,
             dc_SQcoding,
@@ -2017,10 +1934,10 @@ def isoannot(
             filename,
         )  # edit tappAS_annotation_from_Sqanti file
 
-        print("Adding extra information to GFF3 columns...")
+        logging.info("Adding extra information to GFF3 columns...")
         updateGTF(filename, filenameMod)
 
-        print("Reading GFF3 to sort it correctly...")
+        logging.info("Reading GFF3 to sort it correctly...")
         (
             dcTrans,
             dcExon,
@@ -2038,7 +1955,7 @@ def isoannot(
 
         dcTransFeatures = transformTransFeaturesToLocale(dcTransFeatures, dc_SQexons)
 
-        print("Generating final GFF3...")
+        logging.info("Generating final GFF3...")
         generateFinalGFF3(
             dcTrans,
             dcExon,
@@ -2052,9 +1969,9 @@ def isoannot(
         )
 
         t2 = time.time()
-        print(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
+        logging.info(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
 
-        print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
+        logging.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
 
     #####################
     # JUST SQANTI FILES #
@@ -2068,7 +1985,7 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
+        logging.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
 
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
@@ -2077,10 +1994,10 @@ def isoannot(
             gtf, classification, junctions, filename
         )
 
-        print("Adding extra information to relative columns...")
+        logging.info("Adding extra information to relative columns...")
         updateGTF(filename, filenameMod)
 
-        print("Reading GFF3 to sort it correctly...")
+        logging.info("Reading GFF3 to sort it correctly...")
         (
             dcTrans,
             dcExon,
@@ -2096,7 +2013,7 @@ def isoannot(
         os.remove(filename)
         os.remove(filenameMod)
 
-        print("Generating final GFF3...")
+        logging.info("Generating final GFF3...")
         generateFinalGFF3(
             dcTrans,
             dcExon,
@@ -2110,9 +2027,9 @@ def isoannot(
         )
 
         t2 = time.time()
-        print(f"Time used to generate new GFF3: {(t2-t1):%.2f} seconds.")
+        logging.info(f"Time used to generate new GFF3: {(t2-t1):%.2f} seconds.")
 
-        print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
+        logging.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
 
 
 if __name__ == "__main__":

@@ -613,11 +613,7 @@ def correctionPlusORFpred(
                 elif aligner_choice == "minimap2":
                     logging.info("Aligning reads with Minimap2...")
                     cmd = MINIMAP2_CMD.format(
-                        cpus=n_cpu,
-                        sense=sense,
-                        g=genome,
-                        i=isoforms,
-                        o=corrSAM,
+                        cpus=n_cpu, sense=sense, g=genome, i=isoforms, o=corrSAM,
                     )
                 elif aligner_choice == "deSALT":
                     logging.info("Aligning reads with deSALT...")
