@@ -7,6 +7,7 @@ import math
 import os
 import sys
 import time
+from typing import Optional
 
 # import bisect
 
@@ -1907,13 +1908,10 @@ def generateFinalGFF3(
     help="*_junctions.txt file from SQANTI 3 output.",
 )
 @click.help_option(show_default=True)
-def main():
+def main(gff3: Optional[str], corrected: str, classification: str, junctions: str):
     """
     IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
     """
-    global USE_GFF3
-    global version
-    # arguments
 
     # path and prefix for output files
     corrected = os.path.abspath(corrected)
@@ -1937,7 +1935,7 @@ def main():
         if not os.path.isfile(gff3):
             sys.stderr.write(f"ERROR: '{gff3}' doesn't exist")
             sys.exit()
-    run(
+    isoannot(
         corrected=corrected,
         classification=classification,
         junctions=junctions,
@@ -1945,7 +1943,7 @@ def main():
     )
 
 
-def run(
+def isoannot(
     corrected: str, classification: str, junctions: str, gff3: Optional[str]
 ) -> None:
     # Running functionality
@@ -2112,7 +2110,6 @@ def run(
         )
 
         t2 = time.time()
-        time = t2 - t1
         print(f"Time used to generate new GFF3: {(t2-t1):%.2f} seconds.")
 
         print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")

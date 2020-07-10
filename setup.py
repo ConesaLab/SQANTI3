@@ -8,8 +8,12 @@ from setuptools import find_packages, setup
 if sys.version_info < (3, 7):
     sys.exit("SQANTI3 requires Python >= 3.7")
 
-with open(osp.join("src", "sqanti3", "__about__.py")) as f:
-    exec(f.read())
+try:
+    with open(osp.join("src", "sqanti3", "__about__.py")) as f:
+        exec(f.read())
+except:
+    __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
+    __version__ = "1.3.17"
 
 
 setup(

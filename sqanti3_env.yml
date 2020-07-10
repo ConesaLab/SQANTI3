@@ -37,7 +37,7 @@ dependencies:
   - pysam=0.16.0
   - psutil=5.7.0
   - bx-python=0.8.8
-  - biopython=1.76
+  - biopython>=1.7
   - bcbiogff=0.6.6
   - gffread=0.11.7
   - r-tidyr=1.1.0
