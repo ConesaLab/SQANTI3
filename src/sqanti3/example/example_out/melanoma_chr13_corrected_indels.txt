@@ -1,2 +1,0 @@
-isoform	indelStart	indelEnd	nt	nearJunction	junctionStart	junctionEnd	indelType
-PB.3267.1	112884795	112884795	1	TRUE	112884734	112884793	insertion

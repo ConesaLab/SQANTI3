@@ -2,13 +2,12 @@
 
 __author__ = "etseng@pacb.com"
 
-# import argparse
-import click
 import bisect
 import copy
 import distutils.spawn
 import glob
 import itertools
+import logging
 import math
 import os
 import re
@@ -20,11 +19,12 @@ from collections import Counter, defaultdict, namedtuple
 from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
-from typing import Tuple, Dict, List, Optional
-import logging
+from typing import Dict, List, Optional, Tuple
+
+# import argparse
+import click
 
 import numpy as np
-from pygmst.pygmst import gmst
 from Bio import SeqIO, SeqRecord
 from bx.intervals import Interval, IntervalTree
 from cupcake.cupcake.tofu.compare_junctions import compare_junctions
@@ -33,10 +33,10 @@ from cupcake.sequence.err_correct_w_genome import err_correct
 from cupcake.sequence.GFF import collapseGFFReader, write_collapseGFF_format
 from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 from cupcake.sequence.STAR import STARJunctionReader
+from pygmst.pygmst import gmst
+from sqanti3.__about__ import __version__
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
-
-from sqanti3.__about__ import __version__
 
 utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
 sys.path.insert(0, utilitiesPath)
@@ -621,7 +621,7 @@ def correctionPlusORFpred(
                         cpus=n_cpu, dir=gmap_index, i=isoforms, o=corrSAM
                     )
                 try:
-                    subprocess.run(cmd.split(), check=True)
+                    subprocess.run(cmd, shell=True, check=True)
                 except subprocess.CalledProcessError as error:
                     logging.error(f"{error}: {error.output}")
                     sys.exit(-1)
@@ -2107,13 +2107,14 @@ def isoformClassification(
                 except KeyError:
                     newline = "\n"
                     logging.debug(
-                        f"orfDict: {orfDict}",
-                        f"rec.id: {rec.id}",
-                        f"m: {m}",
-                        f"orfDict.keys(): {newline.join(orfDict.keys())}",
+                        f"Problem with transcript {rec.id}{newline}"
+                        f"GeneMark mapped the end of the cds due to a cds "
+                        f"length of {orfDict[rec.id].cds_end} "
+                        f"outside range{newline}."
+                        f"Setting the end of the cds to the end of the{newline}"
+                        f"mapped gene: {rec.exons[-1].end}"
                     )
-                    logging.shutdown()
-                    sys.exit(-1)
+                    orfDict[rec.id].cds_genomic_end = rec.exons[-1].end
 
                 isoform_hit.CDS_genomic_start = orfDict[rec.id].cds_genomic_start
                 isoform_hit.CDS_genomic_end = orfDict[rec.id].cds_genomic_end
@@ -2280,15 +2281,13 @@ def sqanti3_qc(
     gff3,
     doc,
 ):
-    # global outputClassPath # NO! NO GLOBALS if we can help it!  There lies madness and Perl.
-    # global outputJuncPath
 
+    start3 = timeit.default_timer()
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
-    start3 = timeit.default_timer()
 
-    logging.info("Parsing provided files....")
-    logging.info(f"Reading genome fasta {genome}....")
+    logging.info("Parsing provided files...")
+    logging.info(f"Reading genome fasta {genome}...")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = {r.name: r for r in SeqIO.parse(open(genome), "fasta")}
 
@@ -3027,10 +3026,10 @@ def main(
     force_id_ignore: bool = False,
     aligner_choice: str = "minimap2",
     cage_peak: Optional[str] = None,
-    polyA_motif_list: Optional[str] = None,
-    polyA_peak: Optional[str] = None,
-    phyloP_bed: Optional[str] = None,
-    skipORF: bool = False,
+    polya_motif_list: Optional[str] = None,
+    polya_peak: Optional[str] = None,
+    phylop_bed: Optional[str] = None,
+    skiporf: bool = False,
     is_fusion: bool = False,
     gtf: bool = False,
     expression: Optional[str] = None,
@@ -3040,13 +3039,13 @@ def main(
     output: Optional[str] = None,
     directory: Optional[str] = None,
     coverage: Optional[str] = None,
-    sites: List[str] = ["ATAC", "GCAG", "GTAG"],
+    sites: str = "ATAC,GCAG,GTAG",
     window: int = 20,
     genename: bool = False,
     fl_count: Optional[str] = None,
     version: bool = False,
     skip_report: bool = False,
-    isoAnnotLite: bool = False,
+    isoannotlite: bool = False,
     gff3: bool = False,
 ) -> None:
     """Structural and Quality Annotation of Novel Transcript Isoforms
@@ -3062,10 +3061,10 @@ def main(
         Reference genome in fasta format
     """
     logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     # create file handler which logs even debug messages
     fh = logging.FileHandler("sqanti3.log")
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.INFO)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
@@ -3076,7 +3075,7 @@ def main(
     ch.setFormatter(formatter)
     fh.setFormatter(formatter)
     # add the handlers to logger
-    logger.addHandler(ch)
+    # logger.addHandler(ch)
     logger.addHandler(fh)
 
     if GTF2GENEPRED_PROG is None:
@@ -3085,13 +3084,13 @@ def main(
     if GFFREAD_PROG is None:
         logging.error("Cannot find gffread. Abort!")
         sys.exit(-1)
-    if RSCRIPTPATH:
+    if RSCRIPTPATH is None:
         logging.error("Cannot find Rscript. Abort!")
         sys.exit(-1)
 
     if is_fusion:
         logging.warning("Currently if --is_fusion is used, no ORFs will be predicted.")
-        skipORF = True
+        skiporf = True
         if not gtf:
             logging.error(
                 "if --is_fusion is on, must supply GTF as input and use --gtf!"
@@ -3176,7 +3175,7 @@ def main(
     logging.info(f"Write arguments to {doc}...")
     newline = "\n"
     tab = "\t"
-    output = (
+    doc_output = (
         f"Version{tab}{__version__}{newline}"
         f"Input{tab}{os.path.basename(isoforms)}{newline}"
         f"Annotation{tab}{os.path.basename(annotation)}{newline}"
@@ -3186,12 +3185,12 @@ def main(
         f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
         f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
         f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
-        f"PolyA{tab}{os.path.basename(polyA_motif_list) if polyA_motif_list is not None else 'NA'}{newline}"
-        f"PolyAPeak{tab}{os.path.basename(polyA_peak) if polyA_peak is not None else 'NA'}{newline}"
+        f"PolyA{tab}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{newline}"
+        f"PolyAPeak{tab}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{newline}"
         f"IsFusion{tab}{str(is_fusion)}{newline}"
     )
     with open(doc, "w") as f:
-        f.write(output)
+        f.write(doc_output)
 
     # Running functionality
     logging.info("Running SQANTI3...")
@@ -3204,10 +3203,10 @@ def main(
             force_id_ignore=force_id_ignore,
             aligner_choice=aligner_choice,
             cage_peak=cage_peak,
-            polyA_motif_list=polyA_motif_list,
-            polyA_peak=polyA_peak,
-            phyloP_bed=phyloP_bed,
-            skipORF=skipORF,
+            polyA_motif_list=polya_motif_list,
+            polyA_peak=polya_peak,
+            phyloP_bed=phylop_bed,
+            skipORF=skiporf,
             is_fusion=is_fusion,
             gtf=gtf,
             sense=sense,
@@ -3224,7 +3223,7 @@ def main(
             fl_count=fl_count,
             version=version,
             skip_report=skip_report,
-            isoAnnotLite=isoAnnotLite,
+            isoAnnotLite=isoannotlite,
             gff3=gff3,
             doc=doc,
         )
@@ -3237,10 +3236,10 @@ def main(
             "force_id_ignore": force_id_ignore,
             "aligner_choice": aligner_choice,
             "cage_peak": cage_peak,
-            "polyA_motif_list": polyA_motif_list,
-            "polyA_peak": polyA_peak,
-            "phyloP_bed": phyloP_bed,
-            "skipORF": skipORF,
+            "polyA_motif_list": polya_motif_list,
+            "polyA_peak": polya_peak,
+            "phyloP_bed": phylop_bed,
+            "skipORF": skiporf,
             "is_fusion": is_fusion,
             "gtf": gtf,
             "sense": sense,
@@ -3257,7 +3256,7 @@ def main(
             "fl_count": fl_count,
             "version": version,
             "skip_report": skip_report,
-            "isoAnnotLite": isoAnnotLite,
+            "isoAnnotLite": isoannotlite,
             "gff3": gff3,
         }
         split_dirs = split_input_run(

@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
-# import argparse
-import click
+import logging
 import math
 import os
 import sys
 import time
 from typing import Optional
-import logging
+
+# import argparse
+import click
 
 # import bisect
 

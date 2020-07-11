@@ -22,7 +22,7 @@ class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep = "")
 
 list_of_packages <- c("ggplot2", "scales", "tidy", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify")
 req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[, "Package"])]
-if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager", repo = "http://cran.rstudio.com/")
 if ("NOISeq" %in% req_packages) BiocManager::install("NOISeq")
 req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[, "Package"])]
 if (length(req_packages)) install.packages(req_packages, repo = "http://cran.rstudio.com/")
