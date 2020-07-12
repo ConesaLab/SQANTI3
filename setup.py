@@ -8,8 +8,12 @@ from setuptools import find_packages, setup
 if sys.version_info < (3, 7):
     sys.exit("SQANTI3 requires Python >= 3.7")
 
-with open(osp.join("src", "sqanti3", "__about__.py")) as f:
-    exec(f.read())
+try:
+    with open(osp.join("src", "sqanti3", "__about__.py")) as f:
+        exec(f.read())
+except:
+    __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
+    __version__ = "1.4.0"
 
 
 setup(
@@ -44,16 +48,11 @@ setup(
         "console_scripts": [
             "sqanti3_qc = sqanti3.sqanti3_qc:main",
             "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter:main",
+            "IsoAnnotateLite = sqanti3.utilities.IsoAnnotateLite_SQ1:main",
         ]
     },
     packages=find_packages(where="src"),
     package_dir={"sqanti3": "src/sqanti3"},
-    package_data={
-        "": [
-            "sqanti3/example/*.*",
-            "sqanti3/utilities/gmst/*.*",
-            "sqanti3/utilities/*.*",
-        ]
-    },
+    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/*.*",]},
     keywords=["isoseq", "rnaseq", "pacbio", "long reads"],
 )
