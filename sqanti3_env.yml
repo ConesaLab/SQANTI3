@@ -5,11 +5,10 @@ channels:
   - defaults
 dependencies:
   - r-base=4.0.1
-  - r-ggplot2=3.3.1
+  - r-tidyverse=1.2.1
   - r-ggplotify=0.0.5
   - r-scales=1.1.1
   - r-gridextra=2.3
-  - r-dplyr=1.0.0
   - bioconductor-noiseq=2.31.0
   - python=3.7.6
   - appdirs=1.4.3

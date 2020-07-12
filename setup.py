@@ -13,7 +13,7 @@ try:
         exec(f.read())
 except:
     __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
-    __version__ = "1.3.17"
+    __version__ = "1.4.0"
 
 
 setup(
@@ -53,12 +53,6 @@ setup(
     },
     packages=find_packages(where="src"),
     package_dir={"sqanti3": "src/sqanti3"},
-    package_data={
-        "": [
-            "sqanti3/example/*.*",
-            "sqanti3/utilities/gmst/*.*",
-            "sqanti3/utilities/*.*",
-        ]
-    },
+    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/*.*",]},
     keywords=["isoseq", "rnaseq", "pacbio", "long reads"],
 )
