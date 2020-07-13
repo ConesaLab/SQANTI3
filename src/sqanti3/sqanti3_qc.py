@@ -53,6 +53,9 @@ GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
 
+NEWLINE = "\n"
+TAB = "\t"
+
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
 seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
 seqid_fusion = re.compile(r"PBfusion\.(\d+)")
@@ -368,49 +371,49 @@ class myQueryTranscripts:
             return "NA"
 
     def __str__(self):
-        tab = "\t"
+
         stringrep = (
-            f"{self.strand}{tab}"
-            f"{str(self.length)}{tab}"
-            f"{str(self.num_exons)}{tab}"
-            f"{str(self.str_class)}{tab}"
-            f"{'_'.join(set(self.genes))}{tab}"
-            f"{self.id}{tab}"
-            f"{str(self.refLen)}{tab}"
-            f"{str(self.refExons)}{tab}"
-            f"{str(self.tss_diff)}{tab}"
-            f"{str(self.tts_diff)}{tab}"
-            f"{self.subtype}{tab}"
-            f"{self.RT_switching}{tab}"
-            f"{self.canonical}{tab}"
-            f"{str(self.min_samp_cov)}{tab}"
-            f"{str(self.min_cov)}{tab}"
-            f"{str(self.min_cov_pos)}{tab}"
-            f"{str(self.sd)}{tab}"
-            f"{str(self.FL)}{tab}"
-            f"{str(self.nIndels)}{tab}"
-            f"{str(self.nIndelsJunc)}{tab}"
-            f"{self.bite}{tab}"
-            f"{str(self.isoExp)}{tab}"
-            f"{str(self.geneExp)}{tab}"
-            f"{str(self.ratioExp())}{tab}"
-            f"{self.FSM_class}{tab}"
-            f"{self.coding}{tab}"
-            f"{str(self.ORFlen)}{tab}"
-            f"{str(self.CDSlen())}{tab}"
-            f"{str(self.CDS_start)}{tab}"
-            f"{str(self.CDS_end)}{tab}"
-            f"{str(self.CDS_genomic_start)}{tab}"
-            f"{str(self.CDS_genomic_end)}{tab}"
-            f"{str(self.is_NMD)}{tab}"
-            f"{str(self.percAdownTTS)}{tab}"
-            f"{str(self.seqAdownTTS)}{tab}"
-            f"{str(self.dist_cage)}{tab}"
-            f"{str(self.within_cage)}{tab}"
-            f"{str(self.dist_polya_site)}{tab}"
-            f"{str(self.within_polya_site)}{tab}"
-            f"{str(self.polyA_motif)}{tab}"
-            f"{str(self.polyA_dist)}{tab}"
+            f"{self.strand}{TAB}"
+            f"{str(self.length)}{TAB}"
+            f"{str(self.num_exons)}{TAB}"
+            f"{str(self.str_class)}{TAB}"
+            f"{'_'.join(set(self.genes))}{TAB}"
+            f"{self.id}{TAB}"
+            f"{str(self.refLen)}{TAB}"
+            f"{str(self.refExons)}{TAB}"
+            f"{str(self.tss_diff)}{TAB}"
+            f"{str(self.tts_diff)}{TAB}"
+            f"{self.subtype}{TAB}"
+            f"{self.RT_switching}{TAB}"
+            f"{self.canonical}{TAB}"
+            f"{str(self.min_samp_cov)}{TAB}"
+            f"{str(self.min_cov)}{TAB}"
+            f"{str(self.min_cov_pos)}{TAB}"
+            f"{str(self.sd)}{TAB}"
+            f"{str(self.FL)}{TAB}"
+            f"{str(self.nIndels)}{TAB}"
+            f"{str(self.nIndelsJunc)}{TAB}"
+            f"{self.bite}{TAB}"
+            f"{str(self.isoExp)}{TAB}"
+            f"{str(self.geneExp)}{TAB}"
+            f"{str(self.ratioExp())}{TAB}"
+            f"{self.FSM_class}{TAB}"
+            f"{self.coding}{TAB}"
+            f"{str(self.ORFlen)}{TAB}"
+            f"{str(self.CDSlen())}{TAB}"
+            f"{str(self.CDS_start)}{TAB}"
+            f"{str(self.CDS_end)}{TAB}"
+            f"{str(self.CDS_genomic_start)}{TAB}"
+            f"{str(self.CDS_genomic_end)}{TAB}"
+            f"{str(self.is_NMD)}{TAB}"
+            f"{str(self.percAdownTTS)}{TAB}"
+            f"{str(self.seqAdownTTS)}{TAB}"
+            f"{str(self.dist_cage)}{TAB}"
+            f"{str(self.within_cage)}{TAB}"
+            f"{str(self.dist_polya_site)}{TAB}"
+            f"{str(self.within_polya_site)}{TAB}"
+            f"{str(self.polyA_motif)}{TAB}"
+            f"{str(self.polyA_dist)}{TAB}"
         )
         return stringrep
 
@@ -664,7 +667,7 @@ def correctionPlusORFpred(
                     elif len(line.split("\t")) == 9:
                         ind += 1
                 if ind == 0:
-                    logger.warning(f"WARNING: GTF has {isoforms} no annotation lines.")
+                    logger.warning(f"GTF has {isoforms} no annotation lines.")
 
             # GFF to GTF (in case the user provides gff instead of gtf)
             corrGTF_tpm = f"{corrGTF}.tmp"
@@ -762,13 +765,13 @@ def correctionPlusORFpred(
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=newid
                     )
-                    f.write(f">{newid}\n{newseq}\n")
+                    f.write(f">{newid}{NEWLINE}{newseq}{NEWLINE}")
                 else:
                     new_rec = r
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=r.id
                     )
-                    f.write(f">{new_rec.description}\n{new_rec.seq}\n")
+                    f.write(f">{new_rec.description}{NEWLINE}{new_rec.seq}{NEWLINE}")
 
     if len(orfDict) == 0:
         logger.warning("All input isoforms were predicted as non-coding")
@@ -864,7 +867,7 @@ def reference_parser(
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
         logger.warning(
-            f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n"
+            f"ref annotation contains chromosomes not in genome: {','.join(diff)}{NEWLINE}"
         )
 
     # convert the content of junctions_by_chr to sorted list
@@ -930,9 +933,8 @@ def STARcov_parser(
         cov_files = coverageFiles.split(",")
     logger.debug(cov_files)
 
-    newline = "\n"
     logger.info(
-        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:\n{newline.join(cov_files)}"
+        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:{NEWLINE.join(cov_files)}"
     )
 
     cov_by_chrom_strand = defaultdict(
@@ -2119,13 +2121,13 @@ def isoformClassification(
                         m[orfDict[rec.id].cds_end - 1] + 1
                     )  # make it 1-based
                 except KeyError:
-                    newline = "\n"
+
                     logger.debug(
-                        f"Problem with transcript {rec.id}{newline}"
+                        f"Problem with transcript {rec.id}{NEWLINE}"
                         f"GeneMark mapped the end of the cds due to a cds "
                         f"length of {orfDict[rec.id].cds_end} "
-                        f"outside range{newline}."
-                        f"Setting the end of the cds to the end of the{newline}"
+                        f"outside range{NEWLINE}."
+                        f"Setting the end of the cds to the end of the{NEWLINE}"
                         f"mapped gene: {rec.exons[-1].end}"
                     )
                     orfDict[rec.id].cds_genomic_end = rec.exons[-1].end
@@ -2408,17 +2410,15 @@ def sqanti3_qc(
         fl_samples, fl_count_dict = FLcount_parser(fl_count)
         for pbid in fl_count_dict:
             if pbid not in isoforms_info:
-                logger.info(
-                    f"WARNING: {pbid} found in FL count file but not in input fasta."
-                )
+                logger.warning(f"{pbid} found in FL count file but not in input fasta.")
         if len(fl_samples) == 1:  # single sample from PacBio
             logger.info("Single-sample PacBio FL count format detected.")
             for iso in isoforms_info:
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL = fl_count_dict[iso]
                 else:
-                    logger.info(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
+                    logger.warning(
+                        f"{iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL = 0
         else:  # multi-sample
@@ -2428,8 +2428,8 @@ def sqanti3_qc(
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL_dict = fl_count_dict[iso]
                 else:
-                    logger.info(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
+                    logger.warning(
+                        f"{iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     else:
@@ -2443,8 +2443,8 @@ def sqanti3_qc(
         for iso in isoforms_info:
             if iso not in exp_dict:
                 exp_dict[iso] = 0
-                logger.info(
-                    f"WARNING: isoform {iso} not found in expression matrix. Assigning TPM of 0."
+                logger.warning(
+                    f"isoform {iso} not found in expression matrix. Assigning TPM of 0."
                 )
             gene = isoforms_info[iso].geneName()
             if gene not in gene_exp_dict:
@@ -2626,7 +2626,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = raw[3]
             else:
                 newid = r.id.split()[0]  # Ensembl fasta header
-        f.write(f">{newid}\n{r.seq}\n")
+        f.write(f">{newid}{NEWLINE}{r.seq}{NEWLINE}")
     f.close()
     return f.name
 
@@ -3081,9 +3081,9 @@ def main(
     """
     logger = logging.getLogger(__name__)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    logger.setLevel(logging.CRITICAL)
+    logger.setLevel(logging.DEBUG)
 
-    fh = logging.FileHandler(filename="sqanti3.log")
+    fh = logging.FileHandler(filename="sqanti3_qc.log")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -3189,21 +3189,19 @@ def main(
     # Print out parameters so can be put into report PDF later
     doc = os.path.join(os.path.abspath(directory), f"{output}.params.txt")
     logger.info(f"Write arguments to {doc}...")
-    newline = "\n"
-    tab = "\t"
     doc_output = (
-        f"Version{tab}{__version__}{newline}"
-        f"Input{tab}{os.path.basename(isoforms)}{newline}"
-        f"Annotation{tab}{os.path.basename(annotation)}{newline}"
-        f"Genome{tab}{os.path.basename(genome)}{newline}"
-        f"Aligner{tab}{aligner_choice}{newline}"
-        f"FLCount{tab}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{newline}"
-        f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
-        f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
-        f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
-        f"PolyA{tab}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{newline}"
-        f"PolyAPeak{tab}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{newline}"
-        f"IsFusion{tab}{str(is_fusion)}{newline}"
+        f"Version{TAB}{__version__}{NEWLINE}"
+        f"Input{TAB}{os.path.basename(isoforms)}{NEWLINE}"
+        f"Annotation{TAB}{os.path.basename(annotation)}{NEWLINE}"
+        f"Genome{TAB}{os.path.basename(genome)}{NEWLINE}"
+        f"Aligner{TAB}{aligner_choice}{NEWLINE}"
+        f"FLCount{TAB}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{NEWLINE}"
+        f"Expression{TAB}{os.path.basename(expression) if expression is not None else 'NA'}{NEWLINE}"
+        f"Junction{TAB}{os.path.basename(coverage) if coverage is not None else 'NA'}{NEWLINE}"
+        f"CagePeak{TAB}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{NEWLINE}"
+        f"PolyA{TAB}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{NEWLINE}"
+        f"PolyAPeak{TAB}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{NEWLINE}"
+        f"IsFusion{TAB}{str(is_fusion)}{NEWLINE}"
     )
     logger.debug(doc_output)
     with open(doc, "w") as doc_file:
