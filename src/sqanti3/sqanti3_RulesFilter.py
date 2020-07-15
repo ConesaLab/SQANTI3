@@ -208,13 +208,6 @@ def sqanti_filter_lite(
         sys.exit(-1)
 
 
-def print_version(ctx, param, value):
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"sqanti3_RulesFilter: {__version__}")
-    ctx.exit()
-
-
 @click.command()
 @click.argument("sqanti_class")
 @click.argument("isoforms")
@@ -292,17 +285,7 @@ def print_version(ctx, param, value):
     show_default=True,
     is_flag=True,
 )
-@click.option(
-    "--version",
-    help="Show version and quit",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
-    callback=print_version,
-    expose_value=False,
-    is_eager=True,
-)
+@click.version_option()
 @click.help_option(show_default=False)
 def main(
     sqanti_class: str,
@@ -318,7 +301,6 @@ def main(
     skipgtf: bool = False,
     skipfafq: bool = False,
     skipjunction: bool = False,
-    version: bool = False,
 ) -> None:
     """"Filtering of Isoforms based on SQANTI3 attributes
     

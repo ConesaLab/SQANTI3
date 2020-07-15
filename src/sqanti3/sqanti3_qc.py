@@ -2037,13 +2037,10 @@ def isoformClassification(
                     novel_gene_prefix is not None
                 ):  # used by splits to not have redundant novelGene IDs
                     isoform_hit.genes = [
-                        "novelGene_"
-                        + str(novel_gene_prefix)
-                        + "_"
-                        + str(novel_gene_index)
+                        f"novelGene_{str(novel_gene_prefix)}_{(novel_gene_index)}"
                     ]
                 else:
-                    isoform_hit.genes = ["novelGene_" + str(novel_gene_index)]
+                    isoform_hit.genes = [f"novelGene_{str(novel_gene_index)}"]
                 isoform_hit.transcripts = ["novel"]
                 novel_gene_index += 1
 
@@ -2293,7 +2290,6 @@ def sqanti3_qc(
     window: int,
     genename: bool,
     fl_count: Optional[str],
-    version: bool,
     skip_report: bool,
     isoAnnotLite: bool,
     gff3: Optional[str],
@@ -2840,13 +2836,6 @@ def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs)
             sys.exit(-1)
 
 
-def print_version(ctx, param, value):
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"sqanti3_qc: {__version__}")
-    ctx.exit()
-
-
 @click.command()
 @click.argument("isoforms", required=True)
 @click.argument("annotation", required=True)
@@ -3001,17 +2990,6 @@ def print_version(ctx, param, value):
     required=False,
 )
 @click.option(
-    "--version",
-    help="Show version and quit",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
-    callback=print_version,
-    expose_value=False,
-    is_eager=True,
-)
-@click.option(
     "--skip_report",
     help="Do not prepare pdf report.",
     type=bool,
@@ -3036,6 +3014,7 @@ def print_version(ctx, param, value):
     show_default=False,
     required=False,
 )
+@click.version_option()
 @click.help_option(show_default=False)
 def main(
     isoforms: str,
@@ -3062,7 +3041,6 @@ def main(
     window: int = 20,
     genename: bool = False,
     fl_count: Optional[str] = None,
-    version: bool = False,
     skip_report: bool = False,
     isoannotlite: bool = False,
     gff3: Optional[str] = None,
@@ -3266,7 +3244,6 @@ def main(
             window=window,
             genename=genename,
             fl_count=fl_count,
-            version=version,
             skip_report=skip_report,
             isoAnnotLite=isoannotlite,
             gff3=gff3,
@@ -3299,7 +3276,6 @@ def main(
             "window": window,
             "genename": genename,
             "fl_count": fl_count,
-            "version": version,
             "skip_report": skip_report,
             "isoAnnotLite": isoannotlite,
             "gff3": gff3,

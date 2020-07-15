@@ -48,7 +48,7 @@ setup(
         "console_scripts": [
             "sqanti3_qc = sqanti3.sqanti3_qc:main",
             "sqanti3_RulesFilter = sqanti3.sqanti3_RulesFilter:main",
-            "IsoAnnotateLite = sqanti3.utilities.IsoAnnotateLite_SQ1:main",
+            "IsoAnnotLite = sqanti3.utilities.IsoAnnotLite_SQ1:main",
         ]
     },
     packages=find_packages(where="src"),
