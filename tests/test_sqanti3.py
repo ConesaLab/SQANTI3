@@ -97,7 +97,6 @@ class TestSqanti3_qc(unittest.TestCase):
                 sites="ATAC,GCAG,GTAG",
                 window=20,
                 genename=False,
-                version=False,
                 skip_report=True,
                 isoAnnotLite=False,
                 gff3=None,

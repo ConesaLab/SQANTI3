@@ -3212,7 +3212,6 @@ def main(
     logger.debug(f"window: {window}")
     logger.debug(f"genename: {genename}")
     logger.debug(f"fl_count: {fl_count}")
-    logger.debug(f"version: {version}")
     logger.debug(f"skip_report: {skip_report}")
     logger.debug(f"isoAnnotLite: {isoannotlite}")
     logger.debug(f"gff3: {gff3}")
