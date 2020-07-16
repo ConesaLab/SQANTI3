@@ -8,3 +8,5 @@ numpy ~= 1.18
 bcbio-gff ~= 0.6
 cupcake @ git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
 pygmst @ git+https://github.com/milescsmith/pygmst.git
+gtfparse @ git+https://github.com/milescsmith/gtfparse.git@1.3.5
+pandas ~=1.0.5

@@ -155,7 +155,7 @@ def sqanti_filter_lite(
         writer = DictWriter(f, reader.fieldnames, delimiter="\t")
         writer.writeheader()
         for r in reader:
-            if r['isoform'] in seqids_to_keep:
+            if r["isoform"] in seqids_to_keep:
                 writer.writerow(r)
         logger.info(f"Output written to: {f.name}")
 
@@ -169,7 +169,7 @@ def sqanti_filter_lite(
             writer = DictWriter(f, reader.fieldnames, delimiter="\t")
             writer.writeheader()
             for r in reader:
-                if r['isoform'] in seqids_to_keep:
+                if r["isoform"] in seqids_to_keep:
                     writer.writerow(r)
             logger.info(f"Output written to: {f.name}")
 
@@ -200,9 +200,7 @@ def sqanti_filter_lite(
         logger.info(f"Output written to: {f.name}")
 
     logger.info("Generating SQANTI3 report...")
-    cmd = (
-        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {'mock'} {utilitiesPath}"
-    )
+    cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {'mock'} {utilitiesPath}"
     if subprocess.check_call(cmd, shell=True) != 0:
         logger.error(f"Running command failed: {cmd}")
         sys.exit(-1)
