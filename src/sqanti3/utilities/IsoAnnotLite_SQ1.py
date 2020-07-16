@@ -6,156 +6,192 @@ import math
 import os
 import sys
 import time
-from typing import Optional
+from typing import Optional, Tuple, Dict, List
+from tqdm import tqdm
 
 # import argparse
 import click
+import gtfparse
+import pandas as pd
 
 # import bisect
 
 # Global Variables
 version = 1.5
-CLASS_COLUMN_USED = [0, 1, 2, 3, 5, 6, 7, 28, 30, 31]
-CLASS_COLUMN_NAME = [
-    "isoform",
-    "chrom",
-    "strand",
-    "length",
-    "structural_category",
-    "associated_gene",
-    "associated_transcript",
-    "ORF_length",
-    "CDS_start",
-    "CDS_end",
-]
 
+
+NEWLINE = "\n"
+TAB = "\t"
 
 # Functions
-def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
-    res = open(filename, "w+")
+def createGTFFromSqanti(
+    file_exons: str, file_trans: str, file_junct: str, filename: str
+) -> Tuple[
+    Dict[str, List[str]], Dict[str, List[str]], Dict[str, List[str]], Dict[str, str]
+]:
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     source = "tappAS"
-    feature = ""
-    start = ""
-    end = ""
     aux = "."
-    strand = ""
-    desc = ""
 
-    dc_coding = {}
-    dc_gene = {}
-    dc_SQstrand = {}
-    f = open(file_trans)
+    dc_coding: Dict[str, List[str]] = {}
+    dc_gene: Dict[str, List[str]] = {}
+    dc_SQstrand: Dict[str, str] = {}
 
-    # check header
-    global CLASS_COLUMN_USED
-    global CLASS_COLUMN_NAME
+    logger.debug(f"reading classification file {file_trans}")
+    classification_df = pd.read_csv(file_trans, delimiter="\t")
 
-    header = next(f)
-    fields = header.split("\t")
-    index = 0
-    for column in CLASS_COLUMN_NAME:  # check all the columns we used
-        if (
-            column not in fields[CLASS_COLUMN_USED[index]]
-        ):  # if now in the correct possition...
-            logging.info(
-                f"File classification does not have the correct structure. "
-                f" The column '{column}' is not in the possition "
-                f"{str(CLASS_COLUMN_USED[index])}"
-                f" in the classification file. We have found the column '"
-                f"{str(fields[CLASS_COLUMN_USED[index]])}'."
-            )
-            sys.exit()
-        else:
-            index = index + 1
+    CLASS_COLUMN_NAMES = [
+        "isoform",
+        "chrom",
+        "strand",
+        "length",
+        "structural_category",
+        "associated_gene",
+        "associated_transcript",
+        "ORF_length",
+        "CDS_start",
+        "CDS_end",
+    ]
 
+    # feel like this is why you don't roll out your own GTF parser
+    # why are column names hardcoded to a particular position?
+    # just use a pd.dataframe
+    missing_names = [
+        _ for _ in CLASS_COLUMN_NAMES if _ not in classification_df.columns
+    ]
+
+    if missing_names:
+        logger.info(
+            f"File classification does not have the necessary fields. "
+            f"The columns {','.join(missing_names)} were not found in the "
+            f"in the classification file."
+        )
+        sys.exit()
+
+    # res = pd.DataFrame(
+    #     columns=[
+    #         "seqname",
+    #         "source",
+    #         "feature",
+    #         "start",
+    #         "end",
+    #         "score",
+    #         "strand",
+    #         "frame",
+    #         "attribute",
+    #     ]
+    # )
+
+    # so, weird trick - it is *really* slow to append to a list or dataframe
+    # however, you can add on to a dictionary really quickly.
+    # also, you can easily convert a dictionary to a dataframe.
+    # so,
+    res = dict()
+    i = 0
+    # with open(filename, "w+") as res:
+    # TODO: vectorize this
     # add transcript, gene and CDS
-    for line in f:
-        fields = line.split("\t")
-
+    for row in tqdm(classification_df.itertuples(), total=len(classification_df)):
         # trans
-        transcript = fields[0]
+        transcript = row.isoform  # fields[0]
         # source
         feature = "transcript"
         start = "1"
-        end = fields[3]
+        end = row.length  # fields[3]
         # aux
-        strand = fields[2]
+        strand = row.strand  # fields[2]
 
         dc_SQstrand.update({str(transcript): strand})  # saving strand
 
-        desc = "ID=" + fields[7] + "; primary_class=" + fields[5] + "\n"
-        res.write(
-            "\t".join([transcript, source, feature, start, end, aux, strand, aux, desc])
-        )
+        desc = f"ID={row.associated_transcript}; primary_class={row.structural_category}{NEWLINE}"  # desc = "ID="+fields[7]+"; primary_class="+fields[5]+"\n"
+        res[i] = {
+            "seqname": transcript,
+            "source": source,
+            "feature": feature,
+            "start": str(int(start)),
+            "end": str(int(end)),
+            "score": aux,
+            "strand": strand,
+            "frame": aux,
+            "attribute": desc,
+        }
+
         # gene
-        transcript = fields[0]
+        transcript = row.isoform
         # source
         feature = "gene"
         start = "1"
-        end = fields[3]
+        end = row.length
         # aux
-        strand = fields[2]
-        desc = "ID=" + fields[6] + "; Name=" + fields[6] + "; Desc=" + fields[6] + "\n"
-        res.write(
-            "\t".join([transcript, source, feature, start, end, aux, strand, aux, desc])
-        )
+        strand = row.strand
+        desc = f"ID={row.associated_gene}; Name={row.associated_gene}; Desc={row.associated_gene}{NEWLINE}"
+
+        i += 1
+        res[i] = {
+            "seqname": transcript,
+            "source": source,
+            "feature": feature,
+            "start": str(int(start)),
+            "end": str(int(end)),
+            "score": aux,
+            "strand": strand,
+            "frame": aux,
+            "attribute": desc,
+        }
+
         # CDS
-        transcript = fields[0]
+        transcript = row.isoform
         # source
         feature = "CDS"
-        start = fields[30]  # 30
-        end = fields[31]  # 31
+        start = row.CDS_start  # 30
+        end = row.CDS_end  # 31
         # aux
-        strand = fields[2]
-        desc = (
-            "ID=Protein_"
-            + transcript
-            + "; Name=Protein_"
-            + transcript
-            + "; Desc=Protein_"
-            + transcript
-            + "\n"
-        )
-        if start != "NA":
-            res.write(
-                "\t".join(
-                    [transcript, source, feature, start, end, aux, strand, aux, desc]
-                )
-            )
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        source,
-                        "protein",
-                        "1",
-                        str(int(math.ceil((int(end) - int(start) - 1) / 3))),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
-        else:
-            res.write(
-                "\t".join(
-                    [transcript, source, feature, ".", ".", aux, strand, aux, desc]
-                )
-            )
+        strand = row.strand
+        desc = f"ID=Protein_{transcript}; Name=Protein_{transcript}; Desc=Protein_{transcript}{NEWLINE}"
+        if start != "NA" and not pd.isnull(start):
+            prot_length = int(math.ceil((int(end) - int(start) - 1) / 3))
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": source,
+                "feature": feature,
+                "start": str(int(start)),
+                "end": str(int(end)),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": source,
+                "feature": "protein",
+                "start": "1",
+                "end": str(prot_length),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
+
+            # res.write("\t".join([transcript,source, feature, str(int(start)), str(int(end)), aux, strand, aux, desc]))
+            # res.write("\t".join([transcript,source,"protein","1",str(prot_length),aux,strand,aux,desc]))
+        # else:
+        # res.write("\t".join([transcript, source, feature, ".", ".", aux, strand, aux, desc]))
+
         # genomic
-        desc = "Chr=" + fields[1] + "\n"
+        desc = f"Chr={row.chrom}{NEWLINE}"
 
         # Gene
-        gene = fields[6]
-        category = fields[5]
-        transAssociated = fields[7]
+        gene = row.associated_gene
+        category = row.structural_category
+        transAssociated = row.associated_gene
 
         if transAssociated.startswith("ENS"):
-            transAssociated = transAssociated.split(
-                "."
-            )  # ENSMUS213123.1 -> #ENSMUS213123
-            transAssociated = transAssociated[0]
+            transAssociated = transAssociated.split(".")[
+                0
+            ]  # ENSMUS213123.1 -> #ENSMUS213123
 
         if not dc_gene.get(transcript):
             dc_gene.update({str(transcript): [gene, category, transAssociated]})
@@ -168,9 +204,9 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             )
 
         # Coding Dictionary
-        CDSstart = fields[30]  # 30
-        CDSend = fields[31]  # 31
-        orf = fields[28]  # 28
+        CDSstart = row.CDS_start  # 30
+        CDSend = row.CDS_end  # 31
+        orf = row.ORF_length  # 28
 
         if not dc_coding.get(transcript):
             dc_coding.update({str(transcript): [CDSstart, CDSend, orf]})
@@ -179,172 +215,198 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 {str(transcript): dc_coding.get(transcript) + [CDSstart, CDSend, orf]}
             )
 
-        res.write(
-            "\t".join([transcript, source, "genomic", "1", "1", aux, strand, aux, desc])
-        )
+        i += 1
+        res[i] = {
+            "seqname": transcript,
+            "source": source,
+            "feature": "genomic",
+            "start": "1",
+            "end": "1",
+            "score": aux,
+            "strand": strand,
+            "frame": aux,
+            "attribute": desc,
+        }
 
         # Write TranscriptAttributes
         sourceAux = "TranscriptAttributes"
-        lengthTranscript = fields[3]
-        if not CDSstart == "NA":
+        lengthTranscript = row.length
+        if not CDSstart == "NA" and not pd.isnull(row.CDS_start):
             # 3'UTR
             feature = "3UTR_Length"
             start = int(CDSend) + 1
             end = lengthTranscript
             desc = "ID=3UTR_Length; Name=3UTR_Length; Desc=3UTR_Length\n"
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        sourceAux,
-                        feature,
-                        str(start),
-                        str(end),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": sourceAux,
+                "feature": feature,
+                "start": str(int(start)),
+                "end": str(int(end)),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
+
             # 5'UTR
             feature = "5UTR_Length"
             start = 1
-            end = int(fields[30]) - 1 + 1  # 30
+            end = int(row.CDS_start) - 1 + 1  # 30
             desc = "ID=5UTR_Length; Name=5UTR_Length; Desc=5UTR_Length\n"
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        sourceAux,
-                        feature,
-                        str(start),
-                        str(end),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": sourceAux,
+                "feature": feature,
+                "start": str(int(start)),
+                "end": str(int(end)),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
+
             # CDS
             feature = "CDS"
             start = CDSstart
             end = CDSend
             desc = "ID=CDS; Name=CDS; Desc=CDS\n"
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        sourceAux,
-                        feature,
-                        str(start),
-                        str(end),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": sourceAux,
+                "feature": feature,
+                "start": str(int(start)),
+                "end": str(int(end)),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
+
             # polyA
             feature = "polyA_Site"
             start = lengthTranscript
             end = lengthTranscript
             desc = "ID=polyA_Site; Name=polyA_Site; Desc=polyA_Site\n"
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        sourceAux,
-                        feature,
-                        str(start),
-                        str(end),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
+            i += 1
+            res[i] = {
+                "seqname": transcript,
+                "source": sourceAux,
+                "feature": feature,
+                "start": str(int(start)),
+                "end": str(int(end)),
+                "score": aux,
+                "strand": strand,
+                "frame": aux,
+                "attribute": desc,
+            }
 
-    f.close()
-
-    f = open(file_exons)
-    dc_exons = {}
+    dc_exons: Dict[str, List[str]] = {}
     # add exons
-    for line in f:
-        fields = line.split("\t")
-        if len(fields) == 9:
-            transcript = fields[8].split('"')[1].strip()
-            # source
-            feature = fields[2]
-            if feature == "transcript":  # just want exons
-                continue
+    logger.debug(f"reading exon file {file_exons}")
+    exons_df = gtfparse.read_gtf(file_exons)
 
-            start = int(fields[3])
-            end = int(fields[4])
-            # aux
-            strand = fields[6]
-            # desc = fields[8]
-            desc = "Chr=" + str(fields[0]) + "\n"
+    for row in tqdm(exons_df.itertuples(), total=len(exons_df)):
+        transcript = row.transcript_id
+        # source
+        feature = row.feature
+        if feature == "transcript":  # just want exons
+            continue
 
-            # Exons Dictionary
-            if not dc_exons.get(transcript):
-                dc_exons.update({str(transcript): [[start, end]]})
-            else:
-                dc_exons.update(
-                    {str(transcript): dc_exons.get(transcript) + [[start, end]]}
-                )
+        start = row.start
+        end = row.end
+        # aux
+        strand = row.strand
+        # desc = fields[8]
+        desc = f"Chr={str(row.seqname)}{NEWLINE}"
 
-            res.write(
-                "\t".join(
-                    [
-                        transcript,
-                        source,
-                        feature,
-                        str(start),
-                        str(end),
-                        aux,
-                        strand,
-                        aux,
-                        desc,
-                    ]
-                )
-            )
+        # Exons Dictionary
+        if not dc_exons.get(transcript):
+            dc_exons.update({str(transcript): [[start, end]]})
         else:
-            logging.error(
-                "File corrected doesn't have the correct number of columns (9)."
+            dc_exons.update(
+                {str(transcript): dc_exons.get(transcript) + [[start, end]]}
             )
-    f.close()
+        i += 1
+        res[i] = {
+            "seqname": transcript,
+            "source": source,
+            "feature": feature,
+            "start": str(int(start)),
+            "end": str(int(end)),
+            "score": aux,
+            "strand": strand,
+            "frame": aux,
+            "attribute": desc,
+        }
 
     # add junctions
-    f = open(file_junct)
+    logger.debug(f"reading junctions file {file_junct}")
+    junct_df = pd.read_csv(file_junct, delimiter="\t")
     # header
-    header = next(f)
-    for line in f:
-        fields = line.split("\t")
-        # Junctions file can have a dvierse number of columns, not only 19 but 0-14 are allways the same
-        transcript = fields[0]
+    for row in tqdm(junct_df.itertuples(), total=len(junct_df)):
+        transcript = row.isoform
         # source
         feature = "splice_junction"
-        start = fields[4]
-        end = fields[5]
+        start = row.genomic_start_coord
+        end = row.genomic_end_coord
         # aux
-        strand = fields[2]
-        desc = "ID=" + fields[3] + "_" + fields[14] + "; Chr=" + fields[1] + "\n"
+        strand = row.strand
+        desc = f"ID={row.junction_number}_{row.canonical}; Chr={row.chrom}{NEWLINE}"
+        i += 1
+        res[i] = {
+            "seqname": transcript,
+            "source": source,
+            "feature": feature,
+            "start": str(int(start)),
+            "end": str(int(end)),
+            "score": aux,
+            "strand": strand,
+            "frame": aux,
+            "attribute": desc,
+        }
 
-        res.write(
-            "\t".join([transcript, source, feature, start, end, aux, strand, aux, desc])
-        )
-    f.close()
-    res.close()
-
+    logger.debug(f"length of dictionary: {len(res)}")
+    logger.debug("converting dictionary to dataframe")
+    results_df = pd.DataFrame.from_dict(
+        res,
+        orient="index",
+        columns=[
+            "seqname",
+            "source",
+            "feature",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "frame",
+            "attribute",
+        ],
+    )
+    results_df["attribute"] = results_df["attribute"].apply(lambda x: x.rstrip('\n'))
+    logger.debug(f"results_df shape: {results_df.shape}")
+    logger.debug(f"writing to new gtf {filename}")
+    #gtfparse.df_to_gtf(df=results_df, filename=filename) # this is really slow.  no idea why
+    results_df.to_csv(path_or_buf=filename, sep="\t", header=False, index=False, columns=[
+            "seqname",
+            "source",
+            "feature",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "frame",
+            "attribute",
+        ])
     return dc_exons, dc_coding, dc_gene, dc_SQstrand
 
 
 def readGFF(gff3):
-    f = open(gff3)
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
+    f = gtfparse.read_gtf(gff3)
     # create dictionary for each transcript and dictionary for exons
     dc_GFF3 = {}
     dc_GFF3exonsTrans = {}
@@ -352,7 +414,7 @@ def readGFF(gff3):
     dc_GFF3coding = {}
     dc_GFF3strand = {}
     for line in f:
-        fields = line.split("\t")
+
         if len(fields) == 9:
             # feature (transcript, gene, exons...)
             transcript = fields[0]
@@ -423,23 +485,26 @@ def readGFF(gff3):
             logging.error("File GFF3 doesn't have the correct number of columns (9).")
 
     sorted(dc_GFF3exonsTrans.keys())
-    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
+    return (dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand)
 
 
-def unique(list1):
-    # intilize a null list
-    unique_list = []
+# This does not appear to ever be called?
+# even if it is, it is essentially the same as list(set(list()))
+# def unique(list1):
+#     # intilize a null list
+#     unique_list = []
 
-    # traverse for all elements
-    for x in list1:
-        # check if exists in unique_list or not
-        if x not in unique_list:
-            unique_list.append(x)
+#     # traverse for all elements
+#     for x in list1:
+#         # check if exists in unique_list or not
+#         if x not in unique_list:
+#             unique_list.append(x)
 
 
 def transformTransFeaturesToGenomic(
     dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
 ):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     newdc_GFF3 = {}
     bnegative = False
 
@@ -595,6 +660,7 @@ def transformTransFeaturesToGenomic(
 
 
 def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     dc_newGFF3 = {}
     for trans in dc_GFF3.keys():
         annot = dc_GFF3.get(trans)
@@ -670,9 +736,9 @@ def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
                         + "\t"
                         + fields[2]
                         + "\t"
-                        + str(start)
+                        + str(int(start))
                         + "\t"
-                        + str(end)
+                        + str(int(end))
                         + "\t"
                         + fields[5]
                         + "\t"
@@ -697,6 +763,7 @@ def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
 
 
 def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     dc_newGFF3 = {}
     for trans in dc_GFF3.keys():
         annot = dc_GFF3.get(trans)
@@ -782,9 +849,9 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
                     + "\t"
                     + fields[2]
                     + "\t"
-                    + str(start)
+                    + str(int(start))
                     + "\t"
-                    + str(end)
+                    + str(int(end))
                     + "\t"
                     + fields[5]
                     + "\t"
@@ -807,6 +874,7 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
 
 
 def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     newdc_coding = {}
     bnegative = False
 
@@ -1083,6 +1151,7 @@ def mappingFeatures(
     dc_GFF3coding,
     filename,
 ):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     f = open(filename, "a+")
     print("\n")
     transcriptsAnnotated = 0
@@ -1095,7 +1164,7 @@ def mappingFeatures(
             continue
 
         perct = transcriptsAnnotated / len(dc_SQexons) * 100
-        logging.info(f"{perct:.2f}% of transcripts annotated...")
+        logger.info(f"{perct:.2f}% of transcripts annotated...")
 
         #######################
         # IF FULL-SPLICED-MATCH#
@@ -1207,11 +1276,11 @@ def mappingFeatures(
         transcriptsAnnotated = transcriptsAnnotated + 1
     f.close()
 
-    logging.info(
+    logger.info(
         f"Annoted a total of {str(featuresAnnotated)} annotation features from reference GFF3 file."
     )
     perct = featuresAnnotated / totalAnotations * 100
-    logging.info(
+    logger.info(
         f"Annoted a total of {perct:%.2f}% of the reference GFF3 file annotations."
     )
 
@@ -1225,6 +1294,7 @@ def addPosType(res, line, posType):
 
 
 def updateGTF(filename, filenameMod):
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
     # open new file
     res = open(filenameMod, "w")
     # open annotation file and process all data
@@ -1258,14 +1328,14 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "protein":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(line)
+                                logger.info(line)
                                 break
 
                         elif fields[1] == "COILS":
                             if fields[2] == "COILED":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1281,7 +1351,7 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("eco"):
                                 addPosType(res, line, "N")  # Fran tomato annot
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1291,7 +1361,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DISORDER":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1301,7 +1371,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "NMD":
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1315,7 +1385,7 @@ def updateGTF(filename, filenameMod):
                             ) or fields[2].startswith("RNA_binding_"):
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1327,7 +1397,7 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("CLAN", "clan"):
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1337,7 +1407,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "FunctionalImpact":
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1347,7 +1417,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("PATHWAY", "pathway", "Pathway"):
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1357,7 +1427,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "repeat":
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1367,7 +1437,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "SIGNAL":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1377,7 +1447,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "TRANSMEM":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1396,7 +1466,7 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "3UTRmotif":
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1425,7 +1495,7 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] == "NON_STD":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1435,7 +1505,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "MOTIF":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1445,7 +1515,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("miRNA", "miRNA_Binding"):
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1457,7 +1527,7 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("3UTRmotif", "3'UTRmotif"):
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1467,7 +1537,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "pathway":
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1477,7 +1547,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] in ("pathway", "Pathway"):
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
@@ -1487,7 +1557,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1497,7 +1567,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1507,7 +1577,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "DOMAIN":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1517,7 +1587,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "miRNA":
                                 addPosType(res, line, "T")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
                                 )
                                 addPosType(res, line, "T")
@@ -1527,7 +1597,7 @@ def updateGTF(filename, filenameMod):
                             if fields[2] == "Complex":
                                 addPosType(res, line, "P")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
                                 )
                                 addPosType(res, line, "P")
@@ -1539,14 +1609,14 @@ def updateGTF(filename, filenameMod):
                             elif fields[2] in ("A.thaliana"):
                                 addPosType(res, line, "N")
                             else:
-                                logging.info(
+                                logger.info(
                                     f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
                                 )
                                 addPosType(res, line, "N")
                                 # break
 
                         else:
-                            logging.info(
+                            logger.info(
                                 f"IsoAnnotLite can not identify the source {str(fields[1])}, in line: {line}. Using N type to annotate."
                             )
                             addPosType(res, line, "N")
@@ -1717,153 +1787,61 @@ def generateFinalGFF3(
     filename,
 ):
     # open new file
-    res = open(filename, "w")
-    strand = ""
-    for SQtrans in dcTrans.keys():
-        t = dcTrans.get(SQtrans)
-        strand = t[0].split("\t")
-        strand = strand[6]
-        if t:
-            for line in t:
-                res.write(line)
+    with open(filename, "w") as res:
+        for SQtrans in dcTrans.keys():
+            t = dcTrans.get(SQtrans)
+            strand = t[0].split("\t")[6]
 
-        tf = dcTransFeatures.get(SQtrans)
-        if tf:
-            for line in tf:
-                res.write(line)
-
-        g = dcGenomic.get(SQtrans)
-        if g:
-            for line in g:
-                res.write(line)
-
-        e = dcExon.get(SQtrans)
-        if e:
-            if strand == "+":
-                for line in e:
+            if t:
+                for line in t:
                     res.write(line)
-            else:
-                for i in range(len(e) - 1, -1, -1):
-                    res.write(e[i])
 
-        sj = dcSpliceJunctions.get(SQtrans)
-        if sj:
-            for line in sj:
-                res.write(line)
+            tf = dcTransFeatures.get(SQtrans)
+            if tf:
+                for line in tf:
+                    res.write(line)
 
-        p = dcProt.get(SQtrans)
-        if p:
-            for line in p:
-                res.write(line)
+            g = dcGenomic.get(SQtrans)
+            if g:
+                for line in g:
+                    res.write(line)
 
-        pf = dcProtFeatures.get(SQtrans)
-        if pf:
-            for line in pf:
-                res.write(line)
+            e = dcExon.get(SQtrans)
+            if e:
+                if strand == "+":
+                    for line in e:
+                        res.write(line)
+                else:
+                    for i in range(len(e) - 1, -1, -1):
+                        res.write(e[i])
 
-        ta = dcTranscriptAttributes.get(SQtrans)
-        if ta:
-            for line in ta:
-                res.write(line)
+            sj = dcSpliceJunctions.get(SQtrans)
+            if sj:
+                for line in sj:
+                    res.write(line)
 
-    res.close()
+            p = dcProt.get(SQtrans)
+            if p:
+                for line in p:
+                    res.write(line)
 
+            pf = dcProtFeatures.get(SQtrans)
+            if pf:
+                for line in pf:
+                    res.write(line)
 
-############
-# Parámetros
-############
-
-# -GTF de SQANTI3
-# -Classification de SQANTI3
-# -Junctions de SQANTI3
-# -GFF3 de referencia
-
-
-@click.command()
-@click.argument(
-    "corrected",
-    type=str,
-    required=False,
-    help="*_corrected.gtf file from SQANTI 3 output.",
-)
-@click.argument(
-    "classification",
-    type=str,
-    required=False,
-    help="*_classification.txt file from SQANTI 3 output.",
-)
-@click.argument(
-    "junctions",
-    type=str,
-    required=False,
-    help="*_junctions.txt file from SQANTI 3 output.",
-)
-@click.option(
-    "--gff3",
-    type=str,
-    default=None,
-    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
-)
-@click.help_option(show_default=True)
-def main(
-    corrected: str, classification: str, junctions: str, gff3: Optional[str] = None,
-):
-    """
-    IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
-    """
-
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler("IsoAnnotLite_SQ1.log")
-    fh.setLevel(logging.DEBUG)
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
-    # path and prefix for output files
-    corrected = os.path.abspath(corrected)
-    if not os.path.isfile(corrected):
-        logging.error(f"ERROR: '{corrected}' doesn't exist")
-        sys.exit()
-
-    classification = os.path.abspath(classification)
-    if not os.path.isfile(classification):
-        logging.error(f"ERROR: '{classification}' doesn't exist")
-        sys.exit()
-
-    junctions = os.path.abspath(junctions)
-    if not os.path.isfile(junctions):
-        logging.error(f"ERROR: '{junctions}' doesn't exist")
-        sys.exit()
-
-    if gff3:
-        gff3 = os.path.abspath(gff3)
-        if not os.path.isfile(gff3):
-            logging.error(f"ERROR: '{gff3}' doesn't exist")
-            sys.exit()
-    isoannot(
-        corrected=corrected,
-        classification=classification,
-        junctions=junctions,
-        gff3=gff3,
-    )
+            ta = dcTranscriptAttributes.get(SQtrans)
+            if ta:
+                for line in ta:
+                    res.write(line)
 
 
 def isoannot(
     corrected: str, classification: str, junctions: str, gff3: Optional[str] = None
 ) -> None:
     # Running functionality
-    logging.info(f"Running IsoAnnot Lite {str(version)}...")
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
+    logger.info(f"Running IsoAnnot Lite {str(version)}...")
 
     t1 = time.time()
     # corrected = input("Enter your file name for \"corrected.gtf\" file from SQANTI 3 (with extension): ")
@@ -1884,16 +1862,19 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        logging.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
+        logger.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
 
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         # dc_SQtransGene = {trans : [gene, category, transAssociated]}
         dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand = createGTFFromSqanti(
-            gtf, classification, junctions, filename
+            file_exons=gtf,
+            file_trans=classification,
+            file_junct=junctions,
+            filename=filename,
         )
 
-        logging.info("Reading reference annotation file and creating data variables...")
+        logger.info("Reading reference annotation file and creating data variables...")
         # dc_GFF3 = {trans : [[start,end,line], [start,end,line], ...]}
         # dc_GFF3exonsTrans = {start : [trans, trans, ...]}
         # dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
@@ -1908,14 +1889,14 @@ def isoannot(
             gff3
         )  # dc_GFF3exons is sorted
 
-        logging.info("Transforming CDS local positions to genomic position...")
+        logger.info("Transforming CDS local positions to genomic position...")
         # Transformar características a posiciones genómicas //revisar
         dc_SQcoding = transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand)
         dc_GFF3coding = transformCDStoGenomic(
             dc_GFF3coding, dc_GFF3transExons, dc_GFF3strand
         )
 
-        logging.info(
+        logger.info(
             "Transforming feature local positions to genomic position in GFF3..."
         )
         # Transformar características a posiciones genómicas //revisar
@@ -1923,7 +1904,7 @@ def isoannot(
             dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
         )
 
-        logging.info("Mapping transcript features betweeen GFFs...")
+        logger.info("Mapping transcript features betweeen GFFs...")
         mappingFeatures(
             dc_SQexons,
             dc_SQcoding,
@@ -1935,10 +1916,10 @@ def isoannot(
             filename,
         )  # edit tappAS_annotation_from_Sqanti file
 
-        logging.info("Adding extra information to GFF3 columns...")
+        logger.info("Adding extra information to GFF3 columns...")
         updateGTF(filename, filenameMod)
 
-        logging.info("Reading GFF3 to sort it correctly...")
+        logger.info("Reading GFF3 to sort it correctly...")
         (
             dcTrans,
             dcExon,
@@ -1956,7 +1937,7 @@ def isoannot(
 
         dcTransFeatures = transformTransFeaturesToLocale(dcTransFeatures, dc_SQexons)
 
-        logging.info("Generating final GFF3...")
+        logger.info("Generating final GFF3...")
         generateFinalGFF3(
             dcTrans,
             dcExon,
@@ -1970,9 +1951,9 @@ def isoannot(
         )
 
         t2 = time.time()
-        logging.info(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
+        logger.info(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
 
-        logging.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
+        logger.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
 
     #####################
     # JUST SQANTI FILES #
@@ -1986,7 +1967,7 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        logging.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
+        logger.info("Reading SQANTI 3 Files and creating an auxiliary GFF...")
 
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
@@ -1995,10 +1976,10 @@ def isoannot(
             gtf, classification, junctions, filename
         )
 
-        logging.info("Adding extra information to relative columns...")
+        logger.info("Adding extra information to relative columns...")
         updateGTF(filename, filenameMod)
 
-        logging.info("Reading GFF3 to sort it correctly...")
+        logger.info("Reading GFF3 to sort it correctly...")
         (
             dcTrans,
             dcExon,
@@ -2014,7 +1995,7 @@ def isoannot(
         os.remove(filename)
         os.remove(filenameMod)
 
-        logging.info("Generating final GFF3...")
+        logger.info("Generating final GFF3...")
         generateFinalGFF3(
             dcTrans,
             dcExon,
@@ -2028,9 +2009,106 @@ def isoannot(
         )
 
         t2 = time.time()
-        logging.info(f"Time used to generate new GFF3: {(t2-t1):%.2f} seconds.")
+        logger.info(f"Time used to generate new GFF3: {(t2-t1):.2f} seconds.")
 
-        logging.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
+        logger.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
+
+
+@click.command()
+@click.argument(
+    "corrected", type=str,
+)
+@click.argument(
+    "classification", type=str,
+)
+@click.argument(
+    "junctions", type=str,
+)
+@click.option(
+    "--gff3",
+    type=str,
+    default=None,
+    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice(["info", "debug"]),
+    default="info",
+    help="Debug option - what level of logging should be displayed on the console",
+)
+@click.version_option()
+@click.help_option(show_default=True)
+def main(
+    corrected: str,
+    classification: str,
+    junctions: str,
+    gff3: Optional[str] = None,
+    loglevel=str,
+) -> None:
+    """
+    IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
+
+    \b
+    Parameters:
+    -----------
+    corrected:
+        *_corrected.gtf file from SQANTI 3 output
+    classification:
+        *_classification.txt file from SQANTI 3 output
+    junctions:
+        *_junctions.txt file from SQANTI 3 output
+    """
+    # for handler in logging.root.handlers[:]:
+    #     logging.root.removeHandler(handler)
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    fh = logging.FileHandler(filename="isoannotlite_sq1.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    st = logging.StreamHandler()
+    if loglevel == "debug":
+        st.setLevel(logging.DEBUG)
+    else:
+        st.setLevel(logging.INFO)
+    st.setFormatter(formatter)
+    logger.addHandler(st)
+
+    logger.info(
+        f"writing log file to {os.path.join(os.getcwd(), 'isoannotlite_sq1.log')}"
+    )
+    # path and prefix for output files
+    corrected = os.path.abspath(corrected)
+    if not os.path.isfile(corrected):
+        logging.error(f"'{corrected}' doesn't exist")
+        sys.exit()
+
+    classification = os.path.abspath(classification)
+    if not os.path.isfile(classification):
+        logging.error(f"'{classification}' doesn't exist")
+        sys.exit()
+
+    junctions = os.path.abspath(junctions)
+    if not os.path.isfile(junctions):
+        logging.error(f"'{junctions}' doesn't exist")
+        sys.exit()
+
+    if gff3:
+        gff3 = os.path.abspath(gff3)
+        if not os.path.isfile(gff3):
+            logging.error(f"'{gff3}' doesn't exist")
+            sys.exit()
+    isoannot(
+        corrected=corrected,
+        classification=classification,
+        junctions=junctions,
+        gff3=gff3,
+    )
+    logging.shutdown()
 
 
 if __name__ == "__main__":
