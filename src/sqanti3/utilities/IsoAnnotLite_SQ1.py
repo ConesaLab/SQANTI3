@@ -68,28 +68,14 @@ def createGTFFromSqanti(
         )
         sys.exit()
 
-    # res = pd.DataFrame(
-    #     columns=[
-    #         "seqname",
-    #         "source",
-    #         "feature",
-    #         "start",
-    #         "end",
-    #         "score",
-    #         "strand",
-    #         "frame",
-    #         "attribute",
-    #     ]
-    # )
-
     # so, weird trick - it is *really* slow to append to a list or dataframe
     # however, you can add on to a dictionary really quickly.
     # also, you can easily convert a dictionary to a dataframe.
     # so,
     res = dict()
     i = 0
-    # with open(filename, "w+") as res:
-    # TODO: vectorize this
+
+    # TODO: vectorize this?
     # add transcript, gene and CDS
     for row in tqdm(classification_df.itertuples(), total=len(classification_df)):
         # trans
@@ -101,7 +87,7 @@ def createGTFFromSqanti(
         # aux
         strand = row.strand  # fields[2]
 
-        dc_SQstrand.update({str(transcript): strand})  # saving strand
+        dc_SQstrand[str(transcript)] = strand  # saving strand
 
         desc = f"ID={row.associated_transcript}; primary_class={row.structural_category}{NEWLINE}"  # desc = "ID="+fields[7]+"; primary_class="+fields[5]+"\n"
         res[i] = {
@@ -193,27 +179,20 @@ def createGTFFromSqanti(
                 0
             ]  # ENSMUS213123.1 -> #ENSMUS213123
 
-        if not dc_gene.get(transcript):
-            dc_gene.update({str(transcript): [gene, category, transAssociated]})
+        if transcript not in dc_gene:
+            dc_gene[str(transcript)] = [gene, category, transAssociated]
         else:
-            dc_gene.update(
-                {
-                    str(transcript): dc_gene.get(transcript)
-                    + [gene, category, transAssociated]
-                }
-            )
+            dc_gene[str(transcript)] = dc_gene[transcript] + [gene, category, transAssociated]
 
         # Coding Dictionary
         CDSstart = row.CDS_start  # 30
         CDSend = row.CDS_end  # 31
         orf = row.ORF_length  # 28
 
-        if not dc_coding.get(transcript):
-            dc_coding.update({str(transcript): [CDSstart, CDSend, orf]})
+        if transcript not in dc_coding:
+            dc_coding[str(transcript)] =  [CDSstart, CDSend, orf]
         else:
-            dc_coding.update(
-                {str(transcript): dc_coding.get(transcript) + [CDSstart, CDSend, orf]}
-            )
+            dc_coding[str(transcript)]: dc_coding[transcript] + [CDSstart, CDSend, orf]
 
         i += 1
         res[i] = {
@@ -324,12 +303,10 @@ def createGTFFromSqanti(
         desc = f"Chr={str(row.seqname)}{NEWLINE}"
 
         # Exons Dictionary
-        if not dc_exons.get(transcript):
-            dc_exons.update({str(transcript): [[start, end]]})
+        if transcript not in dc_exons:
+            dc_exons[str(transcript)] = [[start, end]]
         else:
-            dc_exons.update(
-                {str(transcript): dc_exons.get(transcript) + [[start, end]]}
-            )
+            dc_exons[str(transcript)] = dc_exons[transcript] + [[start, end]]
         i += 1
         res[i] = {
             "seqname": transcript,
@@ -404,101 +381,74 @@ def createGTFFromSqanti(
     return dc_exons, dc_coding, dc_gene, dc_SQstrand
 
 
-def readGFF(gff3):
+def readGFF(gff3: str) -> Tuple[Dict[str, List[str]], Dict[int, str], Dict[str, List[int]], Dict[str, List[int]], Dict[str, str]]:
     logger = logging.getLogger("IsoAnnotLite_SQ1")
-    f = gtfparse.read_gtf(gff3)
+    f = gtfparse.parse_gtf(gff3)
     # create dictionary for each transcript and dictionary for exons
     dc_GFF3 = {}
     dc_GFF3exonsTrans = {}
     dc_GFF3transExons = {}
     dc_GFF3coding = {}
     dc_GFF3strand = {}
-    for line in f:
+    try:
+        assert len(f.columns) == 9
+    except AssertionError:
+        logging.exception(f"File {gff3} doesn't have the correct number of columns.  It should have 9, but actually has {len(f.columns)}.")
+        
+    for line in f.itertuples():
 
-        if len(fields) == 9:
-            # feature (transcript, gene, exons...)
-            transcript = fields[0]
-            feature = fields[2]
-            start = fields[3]
-            end = fields[4]
-            strand = fields[6]
+        # feature (transcript, gene, exons...)
+        transcript = line.seqname
+        feature = line.feature
+        start = line.start
+        end = line.end
+        strand = line.strand
 
-            if not strand == ".":
-                dc_GFF3strand.update({str(transcript): strand})  # saving strand
+        if strand != ".":
+            dc_GFF3strand[str(transcript)] = strand  # saving strand
 
-            text = fields[8].split(" ")
-            if not text[-1].endswith("\n"):
-                line = line + "\n"
+        attributes = [_.strip() for _ in attributes.split(';')]
+        if not attributes[-1].endswith("\n"):
+            line = line + "\n"
 
-            if feature == "exon":
-                if not dc_GFF3transExons.get(str(transcript)):
-                    dc_GFF3transExons.update(
-                        {str(transcript): [[int(start), int(end)]]}
-                    )
-                else:
-                    dc_GFF3transExons.update(
-                        {
-                            str(transcript): dc_GFF3transExons.get(str(transcript))
-                            + [[int(start), int(end)]]
-                        }
-                    )
-
-                if not dc_GFF3exonsTrans.get(int(start)):
-                    dc_GFF3exonsTrans.update({int(start): [transcript]})
-                else:
-                    dc_GFF3exonsTrans.update(
-                        {int(start): dc_GFF3exonsTrans.get(int(start)) + [transcript]}
-                    )
-            elif feature == "CDS":
-                if not dc_GFF3coding.get(str(transcript)):
-                    dc_GFF3coding.update(
-                        {str(transcript): [int(start), int(end)]}
-                    )  # not int bc can be NA
-                else:
-                    dc_GFF3coding.update(
-                        {
-                            str(transcript): dc_GFF3coding.get(str(transcript))
-                            + [int(start), int(end)]
-                        }
-                    )
-
-            elif feature in [
-                "splice_junction",
-                "transcript",
-                "gene",
-                "protein",
-                "genomic",
-            ]:
-                continue
-
+        if feature == "exon":
+            if str(transcript) not in dc_GFF3transExons:
+                dc_GFF3transExons[str(transcript)] = [[int(start), int(end)]]
             else:
-                if not dc_GFF3.get(transcript):
-                    dc_GFF3.update({str(transcript): [[start, end, line]]})
-                else:
-                    dc_GFF3.update(
-                        {
-                            str(transcript): dc_GFF3.get(transcript)
-                            + [[start, end, line]]
-                        }
-                    )
+                dc_GFF3transExons[str(transcript)] = dc_GFF3transExons[str(transcript)]
+                        + [[int(start), int(end)]]
+
+            if int(start) not in dc_GFF3exonsTrans:
+                dc_GFF3exonsTrans[int(start)] = [transcript]
+            else:
+                dc_GFF3exonsTrans[int(start)] = dc_GFF3exonsTrans[int(start)] + [transcript]
+        elif feature == "CDS":
+            if str(transcript) not in dc_GFF3coding:
+                dc_GFF3coding[str(transcript)] = [int(start), int(end)]
+            else:
+                dc_GFF3coding[str(transcript)] = dc_GFF3coding[str(transcript)]
+                        + [int(start), int(end)]
+
+        elif feature in [
+            "splice_junction",
+            "transcript",
+            "gene",
+            "protein",
+            "genomic",
+        ]:
+            continue
         else:
-            logging.error("File GFF3 doesn't have the correct number of columns (9).")
+            line_rep = (f"{line.seqname}{tab}{line.source}{tab}{line.feature}{tab}"
+                    f"{line.start}{tab}{line.end}{tab}{line.score}{tab}"
+                    f"{line.score}{tab}{line.strand}{tab}{line.frame}{tab}"
+                    f"{line.attribute}{newline}")
+            if transcript not in dc_GFF3:
+                dc_GFF3[str(transcript)] = [[start, end, line_rep]]
+            else:
+                dc_GFF3[str(transcript)] = dc_GFF3[transcript] + [[start, end, line_rep]]
 
     sorted(dc_GFF3exonsTrans.keys())
     return (dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand)
-
-
-# This does not appear to ever be called?
-# even if it is, it is essentially the same as list(set(list()))
-# def unique(list1):
-#     # intilize a null list
-#     unique_list = []
-
-#     # traverse for all elements
-#     for x in list1:
-#         # check if exists in unique_list or not
-#         if x not in unique_list:
-#             unique_list.append(x)
 
 
 def transformTransFeaturesToGenomic(
@@ -509,15 +459,15 @@ def transformTransFeaturesToGenomic(
     bnegative = False
 
     for trans in dc_GFF3transExons.keys():
-        if not dc_GFF3.get(trans):
+        if trans not in dc_GFF3:
             continue
-        annot = dc_GFF3.get(trans)
+        annot = dc_GFF3[trans]
         for values in annot:
             bProt = False
             line = values[2]
             fields = line.split("\t")
             text = fields[8].split(" ")
-            strand = dc_GFF3strand.get(trans)
+            strand = dc_GFF3strand[trans]
 
             start = 0
             end = 0
@@ -532,18 +482,18 @@ def transformTransFeaturesToGenomic(
                 end = int(fields[4])
                 bProt = True
             else:
-                if not newdc_GFF3.get(trans):
-                    newdc_GFF3.update({str(trans): [values]})
+                if trans not in newdc_GFF3:
+                    newdc_GFF3[str(trans)] = [values]
                     continue
                 else:
-                    newdc_GFF3.update({str(trans): newdc_GFF3.get(trans) + [values]})
+                    newdc_GFF3[str(trans)] = newdc_GFF3[trans] + [values]
                     continue
 
             totalDiff = end - start
             if not bProt:
-                allExons = dc_GFF3transExons.get(trans)
+                allExons = dc_GFF3transExons[trans]
             else:
-                allExons = dc_GFF3coding.get(trans)
+                allExons = dc_GFF3coding[trans]
                 if not allExons:
                     continue
 
@@ -626,32 +576,24 @@ def transformTransFeaturesToGenomic(
                                 + "\t"
                                 + fields[8]
                             )
-                        if not newdc_GFF3.get(trans):
-                            newdc_GFF3.update({str(trans): [[startG, endG, newline]]})
+                        if trans not in newdc_GFF3:
+                            newdc_GFF3[str(trans)] = [[startG, endG, newline]]
                             break
                         else:
-                            newdc_GFF3.update(
-                                {
-                                    str(trans): newdc_GFF3.get(trans)
+                            newdc_GFF3[str(trans)] = newdc_GFF3[trans]
                                     + [[startG, endG, newline]]
-                                }
-                            )
                             break
                     else:
                         if strand == "-":
                             aux = startG
                             startG = endG
                             endG = aux
-                        if not newdc_GFF3.get(trans):
-                            newdc_GFF3.update({str(trans): [[startG, endG, values[2]]]})
+                        if trans not in newdc_GFF3:
+                            newdc_GFF3[str(trans)] = [[startG, endG, values[2]]]
                             break
                         else:
-                            newdc_GFF3.update(
-                                {
-                                    str(trans): newdc_GFF3.get(trans)
+                            newdc_GFF3[str(trans)] = newdc_GFF3[trans]
                                     + [[startG, endG, values[2]]]
-                                }
-                            )
                             break
             if bnegative:
                 break
@@ -663,12 +605,12 @@ def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     dc_newGFF3 = {}
     for trans in dc_GFF3.keys():
-        annot = dc_GFF3.get(trans)
+        annot = dc_GFF3[trans]
         line = annot[0]
         line = line.split("\t")
         strand = line[6]
 
-        exons = dc_SQexons.get(trans)
+        exons = dc_SQexons[trans]
         if strand == "+":
             exons = sorted(exons)
         else:
@@ -748,17 +690,15 @@ def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
                         + "\t"
                         + fields[8]
                     )
-                    if not dc_newGFF3.get(trans):
-                        dc_newGFF3.update({str(trans): [newline]})
+                    if trans not in dc_newGFF3:
+                        dc_newGFF3[str(trans)] = [newline]
                     else:
-                        dc_newGFF3.update(
-                            {str(trans): dc_newGFF3.get(trans) + [newline]}
-                        )
+                        dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [newline]
             else:
-                if not dc_newGFF3.get(trans):
-                    dc_newGFF3.update({str(trans): [line]})
+                if trans not in dc_newGFF3:
+                    dc_newGFF3[str(trans)] = [line]
                 else:
-                    dc_newGFF3.update({str(trans): dc_newGFF3.get(trans) + [line]})
+                    dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [line]
     return dc_newGFF3
 
 
@@ -766,24 +706,24 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     dc_newGFF3 = {}
     for trans in dc_GFF3.keys():
-        annot = dc_GFF3.get(trans)
+        annot = dc_GFF3[trans]
         line = annot[0]
         line = line.split("\t")
         strand = line[6]
 
-        exons = dc_SQexons.get(trans)
+        exons = dc_SQexons[trans]
         if strand == "+":
             exons = sorted(exons)
         else:
             exons = sorted(exons, reverse=True)
 
-        annot = dc_GFF3.get(trans)
+        annot = dc_GFF3[trans]
 
         start = 0
         end = 0
-        if not dc_SQcoding.get(trans):
+        if trans not in dc_SQcoding:
             continue
-        startcoding = dc_SQcoding.get(trans)[0]
+        startcoding = dc_SQcoding[trans][0]
         startcoding = startcoding[0]
         if startcoding == "NA":
             continue
@@ -861,15 +801,15 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
                     + "\t"
                     + fields[8]
                 )
-                if not dc_newGFF3.get(trans):
-                    dc_newGFF3.update({str(trans): [newline]})
+                if trans not in dc_newGFF3:
+                    dc_newGFF3[str(trans)] = [newline]
                 else:
-                    dc_newGFF3.update({str(trans): dc_newGFF3.get(trans) + [newline]})
+                    dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [newline]
             else:
-                if not dc_newGFF3.get(trans):
-                    dc_newGFF3.update({str(trans): [line]})
+                if trans not in dc_newGFF3:
+                    dc_newGFF3[str(trans)] = [line]
                 else:
-                    dc_newGFF3.update({str(trans): dc_newGFF3.get(trans) + [line]})
+                    dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [line]
     return dc_newGFF3
 
 
@@ -881,22 +821,22 @@ def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
     for trans in dc_SQcoding.keys():
         newCDS = []
         aux = []
-        CDS = dc_SQcoding.get(trans)
+        CDS = dc_SQcoding[trans]
 
         if CDS[0] == "NA":
-            if not newdc_coding.get(str(trans)):
-                newdc_coding.update({str(trans): [CDS]})
+            if str(trans) not in newdc_coding:
+                newdc_coding[str(trans)] = [CDS]
             else:
-                newdc_coding.update({str(trans): newdc_coding.get(str(trans)) + [CDS]})
+                newdc_coding[str(trans)] = newdc_coding[str(trans)] + [CDS]
             continue
 
         totalDiff = int(CDS[1]) - int(CDS[0])
 
-        allExons = dc_SQexons.get(trans)
+        allExons = dc_SQexons[trans]
         if not allExons:
             continue
 
-        if dc_SQstrand.get(trans) == "+":
+        if dc_SQstrand[trans] == "+":
             allExons = sorted(allExons)
         else:
             allExons = sorted(allExons, reverse=True)
@@ -937,12 +877,10 @@ def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
                     totalDiff = totalDiff - (exon[1] - start + 1)
 
             if bend:
-                if not newdc_coding.get(str(trans)):
-                    newdc_coding.update({str(trans): newCDS})
+                if str(trans) not in newdc_coding:
+                    newdc_coding[str(trans)] = newCDS
                 else:
-                    newdc_coding.update(
-                        {str(trans): newdc_coding.get(str(trans)) + newCDS}
-                    )
+                    newdc_coding[str(trans)] = newdc_coding[str(trans)] + newCDS
                 break
         if bnegative:
             break
@@ -955,18 +893,18 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
     semicoding = True
     total_semi = 0
     total_annot = 0
-    if dc_SQcoding.get(transSQ) and dc_GFF3coding.get(transGFF3):
-        if not dc_SQcoding.get(transSQ)[0][0] == "NA":
+    if transSQ in dc_SQcoding and transGFF3 in dc_GFF3coding:
+        if transSQ not in dc_SQcoding[0][0] == "NA":
             # Tenemos rango de intervalos en los exones:
             #   Si coinciden todos es coding
             #   Si coinciden todos menos sub exons (inicio o final) es semicoding
-            allExonsGFF3 = dc_GFF3coding.get(transGFF3)
+            allExonsGFF3 = dc_GFF3coding[transGFF3]
             if strand == "+":
                 allExonsGFF3 = sorted(allExonsGFF3)
             else:
                 allExonsGFF3 = sorted(allExonsGFF3, reverse=True)
             for ex in allExonsGFF3:
-                allExonsSQ = dc_SQcoding.get(transSQ)
+                allExonsSQ = dc_SQcoding[transSQ]
                 if strand == "+":
                     allExonsSQ = sorted(allExonsSQ)
                 else:
@@ -1002,9 +940,7 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
                             semicoding = True
                             break
 
-        if total_annot == len(dc_GFF3coding.get(transGFF3)) and not dc_GFF3coding.get(
-            transGFF3
-        ):
+        if total_annot == len(dc_GFF3coding[transGFF3]) and transGFF3 not in dc_GFF3coding:
             coding = True
         elif total_annot > 0 or total_semi > 0:
             semicoding = True
@@ -1019,15 +955,15 @@ def checkFeatureInCDS(
 ):
     bstart = False
     if (
-        not dc_SQcoding.get(transSQ)[0] == "NA"
-        and dc_SQcoding.get(transSQ)
-        and dc_GFF3coding.get(transGFF3)
+        not dc_SQcoding[transSQ][0] == "NA"
+        and transSQ in dc_SQcoding
+        and transGFF3 in dc_GFF3coding
     ):
         # Tenemos rango de intervalos en los exones:
         #   Si coinciden todos es coding
         #   Si coinciden todos menos sub exons (inicio o final) es semicoding
-        allExonsGFF3 = dc_GFF3coding.get(transGFF3)
-        allExonsSQ = dc_SQcoding.get(transSQ)
+        allExonsGFF3 = dc_GFF3coding[transGFF3]
+        allExonsSQ = dc_SQcoding[transSQ]
 
         if strand == "+":
             allExonsGFF3 = sorted(allExonsGFF3)
@@ -1089,12 +1025,12 @@ def checkFeatureInTranscript(
 ):
     bstart = False
     bnotMiddleExon = False
-    if dc_SQexons.get(transSQ) and dc_GFF3transExons.get(transGFF3):
+    if transSQ in dc_SQexons and transGFF3 in dc_GFF3transExons:
         # Tenemos rango de intervalos en los exones:
         #   Si coinciden todos es coding
         #   Si coinciden todos menos sub exons (inicio o final) es semicoding
-        allExonsGFF3 = dc_GFF3transExons.get(transGFF3)
-        allExonsSQ = dc_SQexons.get(transSQ)
+        allExonsGFF3 = dc_GFF3transExons[transGFF3]
+        allExonsSQ = dc_SQexons[transSQ]
         if strand == "+":
             allExonsGFF3 = sorted(allExonsGFF3)
             allExonsSQ = sorted(allExonsSQ)
@@ -1160,7 +1096,7 @@ def mappingFeatures(
     for transSQ in dc_SQexons.keys():
 
         # Be carefully - not all tranSQ must be in SQtransGene
-        if not dc_SQtransGene.get(str(transSQ)):
+        if str(transSQ) not in dc_SQtransGene:
             continue
 
         perct = transcriptsAnnotated / len(dc_SQexons) * 100
@@ -1169,18 +1105,18 @@ def mappingFeatures(
         #######################
         # IF FULL-SPLICED-MATCH#
         #######################
-        infoGenomic = dc_SQtransGene.get(transSQ)
+        infoGenomic = dc_SQtransGene[transSQ]
         transGFF3 = infoGenomic[2]
 
         ###########################
         # IF NOT FULL-SPLICED-MATCH#
         ###########################
         val = ""
-        if dc_GFF3.get(transGFF3):  # Novel Transcript won't be annoted
-            val = dc_GFF3.get(transGFF3)
-        elif dc_GFF3.get(transSQ):
+        if transGFF3 in dc_GFF3:  # Novel Transcript won't be annoted
+            val = transGFF3 in dc_GFF3
+        elif transSQ in dc_GFF3.get():
             transGFF3 = transSQ
-            val = dc_GFF3.get(transGFF3)
+            val = dc_GFF3[transGFF3]
         else:
             continue
 
@@ -1191,7 +1127,7 @@ def mappingFeatures(
             dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand
         )
 
-        for values in dc_GFF3.get(transGFF3):
+        for values in dc_GFF3[transGFF3]:
             fields = values[2].split("\t")
             text = fields[8].split(" ")
             strand = fields[6]
@@ -1659,109 +1595,52 @@ def readGFFandGetData(filenameMod):
 
                         if fields[1] == "tappAS":
                             if fields[2] in ["transcript", "gene", "CDS"]:
-                                if not dcTrans.get(str(transcript)):
-                                    dcTrans.update({str(transcript): [line]})
+                                if str(transcript) not in dcTrans:
+                                    dcTrans[str(transcript)] = [line]
                                 else:
-                                    dcTrans.update(
-                                        {
-                                            str(transcript): dcTrans.get(
-                                                str(transcript)
-                                            )
-                                            + [line]
-                                        }
-                                    )
-                                # extra dcTransID
-                                # if not dcTransID.get(str(transcriptID)):
-                                #    dcTransID.update({str(transcriptID) : [line]})
-                                # else:
-                                #    dcTransID.update({str(transcriptID) : dcTransID.get(str(transcriptID)) + [line]})
+                                    dcTrans[str(transcript)] = dcTrans[str(transcript)] + [line]
                             elif fields[2] in ["exon"]:
-                                if not dcExon.get(str(transcript)):
-                                    dcExon.update({str(transcript): [line]})
+                                if str(transcript) not in dcExon:
+                                    dcExon[str(transcript)] = [line]
                                 else:
-                                    dcExon.update(
-                                        {
-                                            str(transcript): dcExon.get(str(transcript))
-                                            + [line]
-                                        }
-                                    )
+                                    dcExon[str(transcript)] = dcExon[str(transcript)] + [line]
                             elif fields[2] in ["genomic"]:
-                                if not dcGenomic.get(str(transcript)):
-                                    dcGenomic.update({str(transcript): [line]})
+                                if str(transcript) not in dcGenomic:
+                                    dcGenomic[str(transcript)] = [line]
                                 else:
-                                    dcGenomic.update(
-                                        {
-                                            str(transcript): dcGenomic.get(
-                                                str(transcript)
-                                            )
-                                            + [line]
-                                        }
-                                    )
+                                    dcGenomic[str(transcript)] dcGenomic[str(transcript)] + [line]
                             elif fields[2] in ["splice_junction"]:
-                                if not dcSpliceJunctions.get(str(transcript)):
-                                    dcSpliceJunctions.update({str(transcript): [line]})
+                                if str(transcript) not in dcSpliceJunctions:
+                                    dcSpliceJunctions[str(transcript)] = [line]
                                 else:
-                                    dcSpliceJunctions.update(
-                                        {
-                                            str(transcript): dcSpliceJunctions.get(
-                                                str(transcript)
-                                            )
-                                            + [line]
-                                        }
-                                    )
+                                    dcSpliceJunctions[str(transcript)] = dcSpliceJunctions[str(transcript)] + [line]
                             elif fields[2] in ["protein"]:
-                                if not dcProt.get(str(transcript)):
-                                    dcProt.update({str(transcript): [line]})
+                                if str(transcript) not in dcProt:
+                                    dcProt[str(transcript)] = [line]
                                 else:
-                                    dcProt.update(
-                                        {
-                                            str(transcript): dcProt.get(str(transcript))
-                                            + [line]
-                                        }
-                                    )
+                                    dcProt[str(transcript)] = dcProt[str(transcript)] + [line]
                         # Transcript Information
                         elif fields[1] == "TranscriptAttributes":
-                            if not dcTranscriptAttributes.get(str(transcript)):
-                                dcTranscriptAttributes.update({str(transcript): [line]})
+                            if str(transcript) not in dcTranscriptAttributes:
+                                dcTranscriptAttributes[str(transcript)] = [line]
                             else:
-                                dcTranscriptAttributes.update(
-                                    {
-                                        str(transcript): dcTranscriptAttributes.get(
-                                            str(transcript)
-                                        )
-                                        + [line]
-                                    }
-                                )
+                                dcTranscriptAttributes[str(transcript)] = dcTranscriptAttributes[str(transcript)] + [line]
                         # Feature information
                         else:
                             if text[-1].endswith("T\n"):
-                                if not dcTransFeatures.get(str(transcript)):
-                                    dcTransFeatures.update({str(transcript): [line]})
+                                if str(transcript) not in dcTransFeatures:
+                                    dcTransFeatures[str(transcript)] = [line]
                                 else:
-                                    dcTransFeatures.update(
-                                        {
-                                            str(transcript): dcTransFeatures.get(
-                                                str(transcript)
-                                            )
-                                            + [line]
-                                        }
-                                    )
+                                    dcTransFeatures[str(transcript)] = dcTransFeatures[str(transcript)] + [line]
                             elif (
                                 text[-1].endswith("P\n")
                                 or text[-1].endswith("G\n")
                                 or text[-1].endswith("N\n")
                             ):
-                                if not dcProtFeatures.get(str(transcript)):
-                                    dcProtFeatures.update({str(transcript): [line]})
+                                if str(transcript) not in dcProtFeatures:
+                                    dcProtFeatures[str(transcript)] = [line]
                                 else:
-                                    dcProtFeatures.update(
-                                        {
-                                            str(transcript): dcProtFeatures.get(
-                                                str(transcript)
-                                            )
-                                            + [line]
-                                        }
-                                    )
+                                    dcProtFeatures[str(transcript)] = dcProtFeatures[str(transcript)] + [line]
 
     return (
         dcTrans,
@@ -1788,25 +1667,25 @@ def generateFinalGFF3(
 ):
     # open new file
     with open(filename, "w") as res:
-        for SQtrans in dcTrans.keys():
-            t = dcTrans.get(SQtrans)
-            strand = t[0].split("\t")[6]
+        for SQtrans in dcTrans:
+            t = dcTrans[SQtrans]
+            strand = t[0].split("\t")[6] # why are we doing this?  does someone not understand dictionaries or pd.Series?
 
             if t:
                 for line in t:
                     res.write(line)
 
-            tf = dcTransFeatures.get(SQtrans)
+            tf = dcTransFeatures[SQtrans]
             if tf:
                 for line in tf:
                     res.write(line)
 
-            g = dcGenomic.get(SQtrans)
+            g = dcGenomic[SQtrans]
             if g:
                 for line in g:
                     res.write(line)
 
-            e = dcExon.get(SQtrans)
+            e = dcExon[SQtrans]
             if e:
                 if strand == "+":
                     for line in e:
@@ -1815,22 +1694,22 @@ def generateFinalGFF3(
                     for i in range(len(e) - 1, -1, -1):
                         res.write(e[i])
 
-            sj = dcSpliceJunctions.get(SQtrans)
+            sj = dcSpliceJunctions[SQtrans]
             if sj:
                 for line in sj:
                     res.write(line)
 
-            p = dcProt.get(SQtrans)
+            p = dcProt[SQtrans]
             if p:
                 for line in p:
                     res.write(line)
 
-            pf = dcProtFeatures.get(SQtrans)
+            pf = dcProtFeatures[SQtrans]
             if pf:
                 for line in pf:
                     res.write(line)
 
-            ta = dcTranscriptAttributes.get(SQtrans)
+            ta = dcTranscriptAttributes[SQtrans]
             if ta:
                 for line in ta:
                     res.write(line)
