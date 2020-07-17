@@ -53,9 +53,6 @@ def createGTFFromSqanti(
         "CDS_end",
     ]
 
-    # feel like this is why you don't roll out your own GTF parser
-    # why are column names hardcoded to a particular position?
-    # just use a pd.dataframe
     missing_names = [
         _ for _ in CLASS_COLUMN_NAMES if _ not in classification_df.columns
     ]
@@ -404,6 +401,8 @@ def readGFF(
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     f = gtfparse.parse_gtf(gff3)
     # create dictionary for each transcript and dictionary for exons
+    
+    # So, like can't we just filter the dataframe and skip all this?
     dc_GFF3 = {}
     dc_GFF3exonsTrans = {}
     dc_GFF3transExons = {}
@@ -415,6 +414,7 @@ def readGFF(
         logging.exception(
             f"File {gff3} doesn't have the correct number of columns.  It should have 9, but actually has {len(f.columns)}."
         )
+
 
     for line in f.itertuples():
 
@@ -428,7 +428,7 @@ def readGFF(
         if strand != ".":
             dc_GFF3strand[str(transcript)] = strand  # saving strand
 
-        attributes = [_.strip() for _ in line.attributes.split(";")]
+        attributes = [_.strip() for _ in line.attribute.split(";")]
         if not attributes[-1].endswith("\n"):
             line = line + "\n"
 
@@ -1256,347 +1256,307 @@ def mappingFeatures(
 
 
 # UPDATE GFF3 - new columns information
-def addPosType(res, line, posType):
-    if line.endswith(";"):
-        res.write(line + " PosType=" + posType + "\n")
-    else:
-        res.write(line[:-1] + "; PosType=" + posType + "\n")
+# def addPosType(res, line, posType):
+#     if line.endswith(";"):
+#         res.write(line + " PosType=" + posType + "\n")
+#     else:
+#         res.write(line[:-1] + "; PosType=" + posType + "\n")
 
-
+#f.groupby('seqname')[['start','end']].apply(lambda x: x.values.tolist()).to_dict()
 def updateGTF(filename, filenameMod):
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     # open new file
-    res = open(filenameMod, "w")
+    res = dict()
     # open annotation file and process all data
-    with open(filename, "r") as f:
+    f = gtfparse.parse_gtf(filename)
         # process all entries - no header line in file
-        for line in f:
-            if len(line) == 0:
-                break
+    try:
+        assert len(f.columns) == 9
+    except AssertionError:
+        logging.exception(
+            f"File {filename} has an incorrect number of columns.  It should have 9, but actually has {len(f.columns)}."
+        )
+
+    #for i, line in enumerate(tqdm(f.iterrows(), total=len(f))):
+    def process_line(line: pd.Series) -> pd.Series:
+        line.attribute = line.attribute.replace("; ",";").rstrip(";")
+        
+        if not line.attribute.split(";")[-1].startswith("PosType"):
+
+            if line.source == "tappAS":
+                if line.feature in ("transcript","gene","CDS"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                elif line.feature in ("genomic","G","exon", "G","splice_junction"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=G"
+                elif line.feature == "protein":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(line)
+            elif line.source == "COILS":
+                if line.feature == "COILED":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+            elif line.source == "GeneOntology":
+                if line.feature in ("C", "cellular_component", "F", "molecular_function","P", "biological_process","eco"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source == "MOBIDB_LITE":
+                if line.feature == "DISORDER":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using P type to annotate."
+                    )
+                    
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "NMD":
+                if line.feature == "NMD":
+                    
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
+                    )
+                    
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source in ("PAR-CLIP", "PAR-clip"):
+                if line.feature in (
+                    "RNA_binding",
+                    "RNA_Binding_Protein",
+                    "RBP_Binding",
+                ) or line.feature.startswith("RNA_binding_"):
+                    
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "PFAM":
+                if line.feature == "DOMAIN":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                elif line.feature in ("CLAN", "clan"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source == "Provean":
+                if line.feature == "FunctionalImpact":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source in ("REACTOME", "Reactome"):
+                if line.feature in ("PATHWAY", "pathway", "Pathway"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source == "RepeatMasker":
+                if line.feature == "repeat":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "SIGNALP_EUK":
+                if line.feature == "SIGNAL":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "TMHMM":
+                if line.feature == "TRANSMEM":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "TranscriptAttributes":
+                line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "UTRsite":
+                if line.feature in ("uORF","5UTRmotif","PAS","3UTRmotif"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source in (
+                "UniProtKB/Swiss-Prot_Phosphosite",
+                "Swissprot_Phosphosite",
+            ):
+                if line.feature in ("ACT_SITE", "BINDING", "PTM", "MOTIF", "MOTIF", "COILED", "TRANSMEM","COMPBIAS","INTRAMEM","NON_STD",):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source in ("cNLS_mapper", "NLS_mapper"):
+                if line.feature == "MOTIF":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source in ("miRWalk", "mirWalk"):
+                if line.feature in ("miRNA", "miRNA_Binding"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "scanForMotifs":
+                if line.feature == "PAS":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                elif line.feature in ("3UTRmotif", "3'UTRmotif"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "MetaCyc":
+                if line.feature == "pathway":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                    
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source == "KEGG":
+                if line.feature in ("pathway", "Pathway"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                    
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
+            elif line.source == "SUPERFAMILY":
+                if line.feature == "DOMAIN":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "SMART":
+                if line.feature == "DOMAIN":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "TIGRFAM":
+                if line.feature == "DOMAIN":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "psRNATarget":
+                if line.feature == "miRNA":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=T"
+
+            elif line.source == "CORUM":
+                if line.feature == "Complex":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=P"
+
+            elif line.source == "Orthologues":
+                if line.feature == "S.tuberosum":
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                elif line.feature in ("A.thaliana"):
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+                else:
+                    logger.info(
+                        f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
+                    )
+                    line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
+
             else:
-                if line and line[0] != "#":
-                    fields = line.split("\t")
-                    if len(fields) == 9:
+                logger.info(
+                    f"IsoAnnotLite can not identify the source {str(line.source)}, in line: {line}; using N type to annotate."
+                )
+                line.attribute = line.attribute.replace("; ",";").rstrip(";") + ";PosType=N"
 
-                        text = fields[8].split(" ")
-                        if text[-1].startswith("PosType"):
-                            res.write(line)
-
-                        elif fields[1] == "tappAS":
-                            if fields[2] == "transcript":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "gene":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "CDS":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "genomic":
-                                addPosType(res, line, "G")
-                            elif fields[2] == "exon":
-                                addPosType(res, line, "G")
-                            elif fields[2] == "splice_junction":
-                                addPosType(res, line, "G")
-                            elif fields[2] == "protein":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(line)
-                                break
-
-                        elif fields[1] == "COILS":
-                            if fields[2] == "COILED":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "GeneOntology":
-                            if fields[2] in ("C", "cellular_component"):
-                                addPosType(res, line, "N")
-                            elif fields[2] in ("F", "molecular_function"):
-                                addPosType(res, line, "N")
-                            elif fields[2] in ("P", "biological_process"):
-                                addPosType(res, line, "N")
-                            elif fields[2] in ("eco"):
-                                addPosType(res, line, "N")  # Fran tomato annot
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] == "MOBIDB_LITE":
-                            if fields[2] == "DISORDER":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature {str(fields[2])} in source {str(fields[1])}, using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "NMD":
-                            if fields[2] == "NMD":
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] in ("PAR-CLIP", "PAR-clip"):
-                            if fields[2] in (
-                                "RNA_binding",
-                                "RNA_Binding_Protein",
-                                "RBP_Binding",
-                            ) or fields[2].startswith("RNA_binding_"):
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] == "PFAM":
-                            if fields[2] == "DOMAIN":
-                                addPosType(res, line, "P")
-                            elif fields[2] in ("CLAN", "clan"):
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] == "Provean":
-                            if fields[2] == "FunctionalImpact":
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] in ("REACTOME", "Reactome"):
-                            if fields[2] in ("PATHWAY", "pathway", "Pathway"):
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] == "RepeatMasker":
-                            if fields[2] == "repeat":
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] == "SIGNALP_EUK":
-                            if fields[2] == "SIGNAL":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "TMHMM":
-                            if fields[2] == "TRANSMEM":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "TranscriptAttributes":
-                            addPosType(res, line, "T")
-
-                        elif fields[1] == "UTRsite":
-                            if fields[2] == "uORF":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "5UTRmotif":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "PAS":
-                                addPosType(res, line, "T")
-                            elif fields[2] == "3UTRmotif":
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] in (
-                            "UniProtKB/Swiss-Prot_Phosphosite",
-                            "Swissprot_Phosphosite",
-                        ):
-                            if fields[2] == "ACT_SITE":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "BINDING":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "PTM":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "MOTIF":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "COILED":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "TRANSMEM":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "COMPBIAS":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "INTRAMEM":
-                                addPosType(res, line, "P")
-                            elif fields[2] == "NON_STD":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] in ("cNLS_mapper", "NLS_mapper"):
-                            if fields[2] == "MOTIF":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] in ("miRWalk", "mirWalk"):
-                            if fields[2] in ("miRNA", "miRNA_Binding"):
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] == "scanForMotifs":
-                            if fields[2] == "PAS":
-                                addPosType(res, line, "T")
-                            elif fields[2] in ("3UTRmotif", "3'UTRmotif"):
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] == "MetaCyc":
-                            if fields[2] == "pathway":
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] == "KEGG":
-                            if fields[2] in ("pathway", "Pathway"):
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        elif fields[1] == "SUPERFAMILY":
-                            if fields[2] == "DOMAIN":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "SMART":
-                            if fields[2] == "DOMAIN":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "TIGRFAM":
-                            if fields[2] == "DOMAIN":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "psRNATarget":
-                            if fields[2] == "miRNA":
-                                addPosType(res, line, "T")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])}, using T type to annotate."
-                                )
-                                addPosType(res, line, "T")
-                                # break
-
-                        elif fields[1] == "CORUM":
-                            if fields[2] == "Complex":
-                                addPosType(res, line, "P")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using P type to annotate."
-                                )
-                                addPosType(res, line, "P")
-                                # break
-
-                        elif fields[1] == "Orthologues":
-                            if fields[2] == "S.tuberosum":
-                                addPosType(res, line, "N")
-                            elif fields[2] in ("A.thaliana"):
-                                addPosType(res, line, "N")
-                            else:
-                                logger.info(
-                                    f"IsoAnnotLite can not identify the feature  {str(fields[2])} in source {str(fields[1])} using N type to annotate."
-                                )
-                                addPosType(res, line, "N")
-                                # break
-
-                        else:
-                            logger.info(
-                                f"IsoAnnotLite can not identify the source {str(fields[1])}, in line: {line}. Using N type to annotate."
-                            )
-                            addPosType(res, line, "N")
-                            # break
-
-                    else:
-                        logging.error(f"Error in line (has not 9 fields): {line}")
-                        break
-
-        res.close()
+            # break
+        return line
+    
+    tqdm.pandas()
+    f.progress_apply(process_line, axis='columns')
+    f.to_csv(
+        path_or_buf=filenameMod,
+        sep="\t",
+        header=False,
+        index=False,
+        columns=[
+            "seqname",
+            "source",
+            "feature",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "frame",
+            "attribute",
+        ],
+    )
 
 
 def readGFFandGetData(filenameMod):
