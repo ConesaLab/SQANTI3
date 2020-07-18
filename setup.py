@@ -30,6 +30,9 @@ setup(
         line.strip()
         for line in Path("requirements.txt").read_text("utf-8").splitlines()
     ],
+    extra_requires={
+        "parallel": ["swifter~=0.3"],
+    }
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
