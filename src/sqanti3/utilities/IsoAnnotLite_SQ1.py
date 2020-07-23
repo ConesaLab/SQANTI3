@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
+# reference for what we are ripping out:
+#dc_SQexons = {trans : [[start,end], [start,end]...]}
+#dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
+#dc_SQtransGene = {trans : [gene, category, transAssociated]}
+#dc_GFF3 = {trans : [[start,end,line], [start,end,line], ...]}
+#dc_GFF3exonsTrans = {start : [trans, trans, ...]}
+#dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
+#dc_GFF3coding = {trans : [CDSstart, CDSend]}
 import logging
 import math
 import os
@@ -244,8 +252,8 @@ def createGTFFromSqanti(
                 "seqname": transcript,
                 "source": sourceAux,
                 "feature": feature,
-                "start": str(int(start)),
-                "end": str(int(end)),
+                "start": start,
+                "end": end,
                 "score": aux,
                 "strand": strand,
                 "frame": aux,
@@ -576,105 +584,123 @@ def transformTransFeaturesToGenomic(
     return newdc_GFF3
 
 
-def transformTransFeaturesToLocale(dc_GFF3, dc_SQexons):
+def transformTransFeaturesToLocale(annot_df: pd.DataFrame, dc_SQexons):
+    """
+    Not sure I entirely understand what this function is doing and
+    since I don't have good test data for it, it is difficult to tell
+    if it is working correctly
+    """
     logger = logging.getLogger("IsoAnnotLite_SQ1")
-    dc_newGFF3 = {}
-    for trans in dc_GFF3.keys():
-        annot = dc_GFF3[trans]
-        line = annot[0]
-        line = line.split("\t")
-        strand = line[6]
+    excluded_features = [
+        "exon",
+        "CDS",
+        "splice_junction",
+        "transcript",
+        "gene",
+        "protein",
+        "genomic",
+    ]
 
-        exons = dc_SQexons[trans]
-        if strand == "+":
-            exons = sorted(exons)
+    xfeat_df = annot_df[~annot_df["feature"].isin(excluded_features)].copy()
+    exons_df = annot_df[annot_df["feature"].isin(["exon"])].copy()
+
+    i = 0
+    for isoform in xfeat_df["seqname"].unique():
+        gene = annot_df[annot_df['seqname'] == isoform][annot_df['feature'] == "gene"].iloc[0,] # on the off chance there's one weird entry with multiple "genes" matching the isoform name
+        annot = xfeat_df[xfeat_df["seqname"] == isoform]
+
+        exons = exons_df[exons_df["seqname"] == isoform]
+        if gene.strand == "+":
+            exons = exons.sort_values(by = start, ascending = True)
         else:
-            exons = sorted(exons, reverse=True)
+            exons = exons.sort_values(by = start, ascending = False)
         start = 0
         end = 0
         for line in annot:
-            fields = line.split("\t")
-            text = fields[8].split(" ")
-            if fields[1] == "tappAS":
+            attributes = dict(
+                i.split("=") for i in line.attribute.split(";")
+            )  # to put them back together, ';'.join(f'{k}={v}' for k,v in alfa.items())
+            if line.source == "tappAS":
                 continue
 
-            elif text[-1].endswith("T\n"):
-
-                if strand == "+":
-                    startG = fields[3]
-                    endG = fields[4]
+            elif attributes["PosType"] == "T":
+                if line.strand == "+":
+                    startG = line.start                                             # the start position of the gene
+                    endG = line.end                                                 # end position of the gene
                 else:
-                    startG = fields[4]
-                    endG = fields[3]
-                bstart = False
-                bend = False
-                distance = 0  # other exons
-                for ex in exons:
-                    if not startG == "." or not endG == ".":
+                    startG = line.end
+                    endG = line.start
+                bstart = False                                                      # indicator of whether we found the start
+                bend = False                                                        # indicater of whether we found the end
+                distance = 0  # other exons                                         # total transcript distance
+                
+                for ex in exons.itertuples():                                       # for each exon
+                    if not startG == "." or not endG == ".":                        # assuming we even had positional info
                         # SEARCH FOR START
                         if (
-                            int(startG) >= int(ex[0])
-                            and int(startG) <= int(ex[1])
-                            and not bstart
+                            startG >= ex.start                                      # if gene start is greater than or equal to the start of this exon
+                            and startG <= ex.end                                    #       and the gene start is less than or equal to the end of this exon
+                            and not bstart                                          #       and we haven't yet found the start of this transcript?
                         ):  # start
-                            start = (int(startG) - int(ex[0]) + 1) + distance
-                            bstart = True
-                            if int(endG) >= int(ex[0]) and int(endG) <= int(ex[1]):
-                                end = start + (int(endG) - int(startG) + 1) - 1
-                                bend = True
-                                break
-                            else:
-                                distance = int(ex[1]) - int(startG) + 1
-                                continue
+                            start = (startG - ex.start + 1) + distance              #   start is the gene start minus the start of this exon plus 1 plus the total transcript length
+                            bstart = True                                           #   now we've found the start
+                            if endG >= ex.start and endG <= ex.end:                 #   if the end of the gene is greater than or equal to the exon start and less than or equal to the exon end
+                                end = start + (endG - startG + 1) - 1               #       end is the start from three lines above plus the gene end minus the gene start plus 1 minus 1
+                                bend = True                                         #       We found the end.  We did it people!
+                                break                                               #       Now lets stop looking
+                            else:                                                   #   otherwise
+                                distance = ex.end - startG + 1                      #       increase the distance to the end of this exon minus the gene start plus 1
+                                continue                                            #       keep looking for the end
 
-                        elif not bstart:
-                            distance = distance + (int(ex[1]) - int(ex[0]) + 1)
+                        elif not bstart:                                            # if instead we just haven't found the start
+                            distance += (ex.end - ex.start + 1)                     #    increase the distance by the length of this exon plus one
 
                         # SEARCH FOR END
-                        if bstart:
-                            if int(endG) >= int(ex[0]) and int(endG) <= int(ex[1]):
-                                end = (
-                                    (int(endG) - int(ex[0]) + 1) + distance + start - 1
-                                )
-                                bend = True
-                                break
-                            else:
-                                distance = distance + (int(ex[1]) - int(ex[0]) + 1)
-                    else:
-                        start = startG
-                        end = endG
-                        bend = True
+                        if bstart:                                                  # If we've found the start
+                            if endG >= ex.start and endG <= ex.end:                 #   If the gene end is greater than the exon start and less than the exon end
+                                end = endG - ex.start + 1 + distance + start - 1    #       the end is the gene end minus this exon's start plus 1 plus the distance plus our determined start minus 1
+                                bend = True                                         #       And we've found the end!
+                                break                                               #       Good job everybody!
+                            else:                                                   #   Otherwise,
+                                distance += + (ex.end - ex.start + 1)               #       Ratchet up the disance by the length of the exon plus 1
+                    else:                                                           # Otherwise
+                        start = startG                                              #   just set the start to the gene start
+                        end = endG                                                  #   and the end to the gene end
+                        bend = True                                                 #   yeah, sure, we found the end
                         break
                 if bend:  # to be sure in full-spliced match cases
-                    NEWLINE = (
-                        fields[0]
-                        + "\t"
-                        + fields[1]
-                        + "\t"
-                        + fields[2]
-                        + "\t"
-                        + str(int(start))
-                        + "\t"
-                        + str(int(end))
-                        + "\t"
-                        + fields[5]
-                        + "\t"
-                        + fields[6]
-                        + "\t"
-                        + fields[7]
-                        + "\t"
-                        + fields[8]
-                    )
-                    if trans not in dc_newGFF3:
-                        dc_newGFF3[str(trans)] = [NEWLINE]
-                    else:
-                        dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [NEWLINE]
-            else:
-                if trans not in dc_newGFF3:
-                    dc_newGFF3[str(trans)] = [line]
-                else:
-                    dc_newGFF3[str(trans)] = dc_newGFF3[trans] + [line]
-    return dc_newGFF3
+                    NEWLINE = {
+                        "seqname": line.start,
+                        "source": line.source,
+                        "feature": line.feature,
+                        "start": start,
+                        "end": end,
+                        "score": line.score,
+                        "strand": line.strand,
+                        "frame": line.frame,
+                        "attribute": line.attribute,
+                    }
+                    newGFF3_dict[i] = NEWLINE
+                    i += 1
+
+                newGFF3_dict[i] = line
+                i += 1
+    newGFF3_df = pd.DataFrame.from_dict(
+        newGFF3_dict,
+        orient="index",
+        columns=[
+            "seqname",
+            "source",
+            "feature",
+            "start",
+            "end",
+            "score",
+            "strand",
+            "frame",
+            "attribute",
+        ],
+    )
+    return newGFF3_df
 
 
 def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
@@ -793,7 +819,7 @@ def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
     newdc_coding = {}
     bnegative = False
 
-    for trans in dc_SQcoding.keys():
+    for trans in dc_SQcoding:
         newCDS = []
         aux = []
         CDS = dc_SQcoding[trans]
@@ -1199,7 +1225,7 @@ def mappingFeatures(
     )
 
 
-def updateGTF(gtf_df: pd.DataFrame) -> pd.DataFrame:
+def updateGTF(annot_df: pd.DataFrame) -> pd.DataFrame:
     # this works, but I think we could do it more succinctly
     # by splitting the attributes column into a dictionary
     # and modifing just the 'PosType' value
@@ -1213,44 +1239,35 @@ def updateGTF(gtf_df: pd.DataFrame) -> pd.DataFrame:
     # open annotation file and process all data
     # process all entries - no header line in file
     try:
-        assert len(gtf_df.columns) == 9
+        assert len(annot_df.columns) == 9
     except AssertionError:
         logging.exception(
-            f"File {gtf_df} has an incorrect number of columns.  It should have 9, but actually has {len(gtf_Df.columns)}."
+            f"File {annot_df} has an incorrect number of columns.  It should have 9, but actually has {len(annot_df.columns)}."
         )
 
-    def process_line(line: pd.Series) -> pd.Series:
-        line.attribute = line.attribute.replace("; ", ";").rstrip(";")
+    annot_df["attribute"] = annot_df["attribute"].replace("; ", ";").str.rstrip(";")
 
-        if not line.attribute.split(";")[-1].startswith("PosType"):
+    def process_line(line: pd.Series) -> pd.Series:
+
+        if "PosType" not in line.attribute:
 
             if line.source == "tappAS":
                 if line.feature in ("transcript", "gene", "CDS"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 elif line.feature in ("genomic", "G", "exon", "G", "splice_junction"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=G"
-                    )
+                    line.attribute["PosType"] = "G"
                 elif line.feature == "protein":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(line)
             elif line.source == "COILS":
                 if line.feature == "COILED":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
             elif line.source == "GeneOntology":
                 if line.feature in (
                     "C",
@@ -1261,163 +1278,108 @@ def updateGTF(gtf_df: pd.DataFrame) -> pd.DataFrame:
                     "biological_process",
                     "eco",
                 ):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source == "MOBIDB_LITE":
                 if line.feature == "DISORDER":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature {str(line.feature)} in source {str(line.source)}, using P type to annotate."
                     )
 
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "NMD":
                 if line.feature == "NMD":
-
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
                     )
-
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source in ("PAR-CLIP", "PAR-clip"):
-                if line.feature in (
-                    "RNA_binding",
-                    "RNA_Binding_Protein",
-                    "RBP_Binding",
-                ) or line.feature.startswith("RNA_binding_"):
-
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                if line.feature.lower().startswith("rna_binding"):
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source == "PFAM":
                 if line.feature == "DOMAIN":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 elif line.feature in ("CLAN", "clan"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source == "Provean":
                 if line.feature == "FunctionalImpact":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source in ("REACTOME", "Reactome"):
                 if line.feature in ("PATHWAY", "pathway", "Pathway"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source == "RepeatMasker":
                 if line.feature == "repeat":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source == "SIGNALP_EUK":
                 if line.feature == "SIGNAL":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "TMHMM":
                 if line.feature == "TRANSMEM":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "TranscriptAttributes":
-                line.attribute = (
-                    line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                )
+                line.attribute["PosType"] = "T"
 
             elif line.source == "UTRsite":
                 if line.feature in ("uORF", "5UTRmotif", "PAS", "3UTRmotif"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}, using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source in (
                 "UniProtKB/Swiss-Prot_Phosphosite",
@@ -1434,169 +1396,117 @@ def updateGTF(gtf_df: pd.DataFrame) -> pd.DataFrame:
                     "INTRAMEM",
                     "NON_STD",
                 ):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)} using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source in ("cNLS_mapper", "NLS_mapper"):
                 if line.feature == "MOTIF":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source in ("miRWalk", "mirWalk"):
                 if line.feature in ("miRNA", "miRNA_Binding"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source == "scanForMotifs":
                 if line.feature == "PAS":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 elif line.feature in ("3UTRmotif", "3'UTRmotif"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source == "MetaCyc":
                 if line.feature == "pathway":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source == "KEGG":
                 if line.feature in ("pathway", "Pathway"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             elif line.source == "SUPERFAMILY":
                 if line.feature == "DOMAIN":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "SMART":
                 if line.feature == "DOMAIN":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "TIGRFAM":
                 if line.feature == "DOMAIN":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "psRNATarget":
                 if line.feature == "miRNA":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using T type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=T"
-                    )
+                    line.attribute["PosType"] = "T"
 
             elif line.source == "CORUM":
                 if line.feature == "Complex":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using P type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=P"
-                    )
+                    line.attribute["PosType"] = "P"
 
             elif line.source == "Orthologues":
                 if line.feature == "S.tuberosum":
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 elif line.feature in ("A.thaliana"):
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
                 else:
                     logger.info(
                         f"IsoAnnotLite can not identify the feature  {str(line.feature)} in source {str(line.source)}; using N type to annotate."
                     )
-                    line.attribute = (
-                        line.attribute.replace("; ", ";").rstrip(";") + ";PosType=N"
-                    )
+                    line.attribute["PosType"] = "N"
 
             else:
                 logger.info(
@@ -1609,23 +1519,45 @@ def updateGTF(gtf_df: pd.DataFrame) -> pd.DataFrame:
             # break
         return line
 
-        tqdm.pandas()
+    needs_postype = annot_df[~annot_df["attribute"].str.contains("PosType")].copy()
+    has_postype = annot_df[annot_df["attribute"].str.contains("PosType")].copy()
+
+    tqdm.pandas()
     try:
         import swifter
+
         logger.info("swifter library found, updating features in parallel")
-        gtf_df.swifter.progress_bar(True).apply(process_line, axis="columns")
+        needs_postype["attribute"] = (
+            needs_postype["attribute"]
+            .swifter.progress_bar(True)
+            .apply(lambda x: dict(item.split("=") for item in x.split(";")))
+        )
+        needs_postype.swifter.progress_bar(True).apply(process_line, axis="columns")
+        needs_postype["attribute"] = (
+            needs_postype["attribute"]
+            .swifter.progress_bar(True)
+            .apply(lambda x: ";".join(f"{k}={v}" for k, v in x.items()))
+        )
     except ImportError:
-        logger.info("swifter library not found, updating features using a single thread")
-        gtf_df.progress_apply(process_line, axis="columns")
+        logger.info(
+            "swifter library not found, updating features using a single thread"
+        )
+        needs_postype["attribute"] = needs_postype["attribute"].apply(
+            lambda x: dict(item.split("=") for item in x.split(";"))
+        )
+        needs_postype.progress_apply(process_line, axis="columns")
+        needs_postype["attribute"] = needs_postype["attribute"].apply(
+            lambda x: ";".join(f"{k}={v}" for k, v in x.items())
+        )
 
-    return gtf_df
+    new_annot_df = pd.concat([needs_postype, has_postype], axis=0).sort_index()
+
+    return new_annot_df
 
 
-def sort_annotation(
-    gtf_df: pd.DataFrame,
-) -> pd.DataFrame:
-    gtf_df["feature"] = pd.Categorical(
-        gtf_df["feature"],
+def sort_annotation(annot_df: pd.DataFrame,) -> pd.DataFrame:
+    annot_df["feature"] = pd.Categorical(
+        annot_df["feature"],
         categories=[
             "gene",
             "transcript",
@@ -1678,8 +1610,8 @@ def sort_annotation(
         ],
         ordered=True,
     )
-    gtf_df["source"] = pd.Categorical(
-        gtf_df["source"],
+    annot_df["source"] = pd.Categorical(
+        annot_df["source"],
         categories=[
             "tappAS",
             "TranscriptAttributes",
@@ -1711,14 +1643,16 @@ def sort_annotation(
         ],
         ordered=True,
     )
-    gtf_df["gene_number"] = gtf_df["seqname"].apply(lambda x: int(x.split(".")[1]))
-    gtf_df["isoform_number"] = gtf_df["seqname"].apply(
+    annot_df["gene_number"] = annot_df["seqname"].apply(lambda x: int(x.split(".")[1]))
+    annot_df["isoform_number"] = annot_df["seqname"].apply(
         lambda x: int(x.split(".")[2].split("_")[0])
     )
-    gtf_df = gtf_df.sort_values(
-        by=["gene_number", "isoform_number", "source", "feature"]
-    ).drop(labels=["gene_number", "isoform_number"], axis="columns").reset_index(drop=True)
-    return gtf_df
+    annot_df = (
+        annot_df.sort_values(by=["gene_number", "isoform_number", "source", "feature"])
+        .drop(labels=["gene_number", "isoform_number"], axis="columns")
+        .reset_index(drop=True)
+    )
+    return annot_df
 
 
 def isoannot(
@@ -1742,7 +1676,7 @@ def isoannot(
     ########################
     # MAPPING SQANTI FILES #
     ########################
-    
+
     # yeah, no, I'm not fucking around with a bunch of lists by indices
     # how are you supposed to keep track of what `fields[2]` is?
     # we can do this with pandas better
@@ -1759,16 +1693,15 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        
 
         logger.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
 
         logger.info("Reading reference annotation file and creating data variables...")
-        gtf_df = gtfparse.parse_gtf(gff3)
+        annot_df = gtfparse.parse_gtf(gff3)
 
         logger.info("Transforming CDS local positions to genomic position...")
         # Transformar características a posiciones genómicas //revisar
-        gtf_df = transformCDStoGenomic(gtf_df)
+        annot_df = transformCDStoGenomic(annot_df)
 
         logger.info(
             "Transforming feature local positions to genomic position in GFF3..."
@@ -1779,11 +1712,10 @@ def isoannot(
         )
 
         logger.info("Mapping transcript features betweeen GFFs...")
-        gtf_df = mappingFeatures(gtf_df
-        )  # edit tappAS_annotation_from_Sqanti file
+        annot_df = mappingFeatures(annot_df)  # edit tappAS_annotation_from_Sqanti file
 
         logger.info("Adding extra information to GFF3 columns...")
-        updateGTF(gtf_df, filename, filenameMod)
+        updateGTF(annot_df, filename, filenameMod)
 
         logger.info("Reading GFF3 to sort it correctly...")
         (
@@ -1840,17 +1772,15 @@ def isoannot(
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         # dc_SQtransGene = {trans : [gene, category, transAssociated]}
-        gtf_df = createGTFFromSqanti(
-            gtf, classification, junctions
-        )
+        annot_df = createGTFFromSqanti(gtf, classification, junctions)
 
         logger.info("Adding extra information to relative columns...")
-        gtf_df = updateGTF(gtf_df)
+        annot_df = updateGTF(annot_df)
 
         logger.info("Generating final GFF3...")
-        gtf_df = sort_annotation(gtf_df)
+        annot_df = sort_annotation(annot_df)
         logger.info(f"Writing annotation to {filename}")
-        gtf_df.to_csv(
+        annot_df.to_csv(
             path_or_buf=filename,
             sep="\t",
             header=False,
