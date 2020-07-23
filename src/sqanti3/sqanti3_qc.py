@@ -20,6 +20,7 @@ from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
 from typing import Dict, List, Optional, Tuple, Sequence
+from contextlib import contextmanager
 
 # import argparse
 import click
@@ -485,7 +486,7 @@ class myQueryProteins:
 
 
 def rewrite_sam_for_fusion_ids(sam_filename):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     seen_id_counter = Counter()
 
     f = open(sam_filename + ".tmp", "w")
@@ -587,7 +588,7 @@ def correctionPlusORFpred(
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
 
     n_cpu = max(1, cpus // chunks)
@@ -794,7 +795,7 @@ def reference_parser(
     :return: (refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene)
     """
     # global referenceFiles
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     referenceFiles = os.path.join(directory, "refAnnotation_" + output + ".genePred")
     logger.info("Parsing Reference Transcriptome....")
@@ -892,7 +893,7 @@ def isoforms_parser(corrGTF: str) -> Tuple[List[str], str]:
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     queryFile = os.path.splitext(corrGTF)[0] + ".genePred"
 
     logger.info("Parsing Isoforms....")
@@ -925,7 +926,7 @@ def STARcov_parser(
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
     :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     if os.path.isdir(coverageFiles) is True:
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
@@ -1004,7 +1005,7 @@ def expression_parser(expressionFile):
     :return: dict of PBID --> TPM
     Include the possibility of providing an expression matrix --> first column must be "ID"
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     if os.path.isdir(expressionFile) is True:
         exp_paths = [
@@ -1934,7 +1935,7 @@ def isoformClassification(
     outputClassPath,
     outputJuncPath,
 ):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     novel_gene_prefix = None
     if coverage is not None:
@@ -2195,7 +2196,7 @@ def FLcount_parser(fl_count_filename: str) -> Tuple[Sequence[str], Dict[str, int
     //chain-based
     superPBID<tab>sample1<tab>sample2
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     fl_count_dict = {}
     samples = ["NA"]
@@ -2295,7 +2296,7 @@ def sqanti3_qc(
     gff3: Optional[str],
     doc: str,
 ) -> None:
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     start3 = timeit.default_timer()
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
@@ -2597,7 +2598,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     :param input_fasta: Could be either fasta or fastq, autodetect.
     :return: output fasta with the cleaned up sequence ID, is_fusion flag
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     type = "fasta"
     with open(input_fasta) as h:
         if h.readline().startswith("@"):
@@ -2718,7 +2719,7 @@ class PolyAPeak:
 
 
 def split_input_run(gtf, isoforms, chunks, arguments):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     if os.path.exists("splits/"):
         logger.error("'splits/' directory already exists! Abort!")
         sys.exit(-1)
@@ -2778,52 +2779,47 @@ def split_input_run(gtf, isoforms, chunks, arguments):
     return [d for (d, x) in split_outs]
 
 
+@contextmanager
+def dummy_with():
+    yield None
+
+
 def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
     Then write out the PDF report
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
 
-    if not skipORF:
-        f_faa = open(corrORF, "w")
-    f_fasta = open(corrFASTA, "w")
-    f_gtf = open(corrGTF, "w")
-    f_class = open(outputClassPath, "w")
-    f_junc = open(outputJuncPath, "w")
-
-    for i, split_d in enumerate(split_dirs):
-        _gtf, _sam, _fasta, _orf = get_corr_filenames(output, split_d)
-        _class, _junc = get_class_junc_filenames(output, split_d)
-        if not skipORF:
-            with open(_orf) as h:
-                f_faa.write(h.read())
-        with open(_gtf) as h:
-            f_gtf.write(h.read())
-        with open(_fasta) as h:
-            f_fasta.write(h.read())
-        with open(_class) as h:
-            if i == 0:
-                f_class.write(h.readline())
-            else:
-                h.readline()
-            f_class.write(h.read())
-        with open(_junc) as h:
-            if i == 0:
-                f_junc.write(h.readline())
-            else:
-                h.readline()
-            f_junc.write(h.read())
-
-    f_fasta.close()
-    f_gtf.close()
-    f_class.close()
-    f_junc.close()
-    if not skipORF:
-        f_faa.close()
+    with open(corrORF, "w") if not skipORF else dummy_with() as f_aa:
+        with open(corrFASTA, "w") as f_fasta, open(corrGTF, "w") as f_gtf, open(
+            outputClassPath, "w"
+        ) as f_class, open(outputJuncPath, "w") as f_junc:
+            for i, split_d in enumerate(split_dirs):
+                _gtf, _sam, _fasta, _orf = get_corr_filenames(output, split_d)
+                _class, _junc = get_class_junc_filenames(output, split_d)
+                if not skipORF:
+                    with open(_orf) as h:
+                        f_faa.write(h.read())
+                with open(_gtf) as h:
+                    f_gtf.write(h.read())
+                with open(_fasta) as h:
+                    f_fasta.write(h.read())
+                with open(_class) as h:
+                    if i == 0:
+                        f_class.write(h.readline())
+                    else:
+                        h.readline()
+                    f_class.write(h.read())
+                with open(_junc) as h:
+                    if i == 0:
+                        f_junc.write(h.readline())
+                    else:
+                        h.readline()
+                    f_junc.write(h.read())
 
     if not skip_report:
         logger.info("Generating SQANTI3 report....")
@@ -3057,9 +3053,10 @@ def main(
     genome:
         Reference genome in fasta format
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     logger.setLevel(logging.DEBUG)
+    logger.propagate = False
 
     fh = logging.FileHandler(filename="sqanti3_qc.log")
     fh.setLevel(logging.DEBUG)
