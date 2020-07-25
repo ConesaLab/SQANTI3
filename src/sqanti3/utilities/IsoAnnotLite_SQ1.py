@@ -33,14 +33,27 @@ TAB = "\t"
 
 # Functions
 def createGTFFromSqanti(
-    file_exons: str, file_trans: str, file_junct: str
+    exons_gtf: str, transcript_classification: str, junctions: str
 ) -> pd.DataFrame:
+    """ Create a real GTF from the output of sqanti3_qc.
+
+    Params:
+    -------
+    exons_gtf : `str`
+    transcript_classification : `str`
+    junctions : `str`
+    
+    Returns:
+    --------
+    :class:`~pandas.DataFrame`
+
+    """
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     source = "tappAS"
     aux = "."
 
-    logger.debug(f"reading classification file {file_trans}")
-    classification_df = pd.read_csv(file_trans, delimiter="\t")
+    logger.debug(f"reading classification file {transcript_classification}")
+    classification_df = pd.read_csv(transcript_classification, delimiter="\t")
 
     CLASS_COLUMN_NAMES = [
         "isoform",
@@ -107,7 +120,7 @@ def createGTFFromSqanti(
         end = row.length
         # aux
         strand = row.strand
-        desc = f"ID={row.associated_gene}; Name={row.associated_gene}; Desc={row.associated_gene}{NEWLINE}"
+        desc = f"ID={row.associated_gene};Name={row.associated_gene};Desc={row.associated_gene}{NEWLINE}"
 
         i += 1
         res[i] = {
@@ -130,7 +143,7 @@ def createGTFFromSqanti(
         end = row.CDS_end  # 31
         # aux
         strand = row.strand
-        desc = f"ID=Protein_{transcript}; Name=Protein_{transcript}; Desc=Protein_{transcript}{NEWLINE}"
+        desc = f"ID=Protein_{transcript};Name=Protein_{transcript};Desc=Protein_{transcript}{NEWLINE}"
         if start != "NA" and not pd.isnull(start):
             prot_length = int(math.ceil((int(end) - int(start) - 1) / 3))
             i += 1
@@ -192,7 +205,7 @@ def createGTFFromSqanti(
             feature = "3UTR_Length"
             start = int(CDSend) + 1
             end = lengthTranscript
-            desc = "ID=3UTR_Length; Name=3UTR_Length; Desc=3UTR_Length\n"
+            desc = "ID=3UTR_Length;Name=3UTR_Length;Desc=3UTR_Length\n"
             i += 1
             res[i] = {
                 "seqname": transcript,
@@ -210,7 +223,7 @@ def createGTFFromSqanti(
             feature = "5UTR_Length"
             start = 1
             end = int(row.CDS_start) - 1 + 1  # 30
-            desc = "ID=5UTR_Length; Name=5UTR_Length; Desc=5UTR_Length\n"
+            desc = "ID=5UTR_Length;Name=5UTR_Length;Desc=5UTR_Length\n"
             i += 1
             res[i] = {
                 "seqname": transcript,
@@ -228,7 +241,7 @@ def createGTFFromSqanti(
             feature = "CDS"
             start = CDSstart
             end = CDSend
-            desc = "ID=CDS; Name=CDS; Desc=CDS\n"
+            desc = "ID=CDS;Name=CDS;Desc=CDS\n"
             i += 1
             res[i] = {
                 "seqname": transcript,
@@ -246,7 +259,7 @@ def createGTFFromSqanti(
             feature = "polyA_Site"
             start = lengthTranscript
             end = lengthTranscript
-            desc = "ID=polyA_Site; Name=polyA_Site; Desc=polyA_Site\n"
+            desc = "ID=polyA_Site;Name=polyA_Site;Desc=polyA_Site\n"
             i += 1
             res[i] = {
                 "seqname": transcript,
@@ -261,8 +274,8 @@ def createGTFFromSqanti(
             }
 
     # add exons
-    logger.debug(f"reading exon file {file_exons}")
-    exons_df = gtfparse.read_gtf(file_exons)
+    logger.debug(f"reading exon file {exons_gtf}")
+    exons_df = gtfparse.read_gtf(exons_gtf)
 
     for row in tqdm(exons_df.itertuples(), total=len(exons_df)):
         transcript = row.transcript_id
@@ -293,8 +306,8 @@ def createGTFFromSqanti(
         }
 
     # add junctions
-    logger.debug(f"reading junctions file {file_junct}")
-    junct_df = pd.read_csv(file_junct, delimiter="\t")
+    logger.debug(f"reading junctions file {junctions}")
+    junct_df = pd.read_csv(junctions, delimiter="\t")
     # header
     for row in tqdm(junct_df.itertuples(), total=len(junct_df)):
         transcript = row.isoform
@@ -304,7 +317,7 @@ def createGTFFromSqanti(
         end = row.genomic_end_coord
         # aux
         strand = row.strand
-        desc = f"ID={row.junction_number}_{row.canonical}; Chr={row.chrom}{NEWLINE}"
+        desc = f"ID={row.junction_number}_{row.canonical};Chr={row.chrom}{NEWLINE}"
         i += 1
         res[i] = {
             "seqname": transcript,
@@ -339,6 +352,7 @@ def createGTFFromSqanti(
     logger.debug(f"results_df shape: {results_df.shape}")
     return results_df
 
+# we don't need this because we are not going to roll our own gtf parser
 
 # def readGFF(
 #     gff3: str,
@@ -433,16 +447,25 @@ def createGTFFromSqanti(
 
 
 def transformTransFeaturesToGenomic(
-    dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
-):
+    annot_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Convert start and end coordinates for transcript-type entries to
+    absolute genomic coordinates
+
+    \b
+    Params:
+        annot_df: `pd.DataFrame`
+
+    """
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     newdc_GFF3 = {}
     bnegative = False
 
-    for trans in dc_GFF3transExons.keys():
-        if trans not in dc_GFF3:
-            continue
-        annot = dc_GFF3[trans]
+    gff3_df = annot_df[~annot_df["feature"].isin(["exon", "CDS","splice_junction","transcript","gene","protein","genomic"])]
+
+    for trans in annot_df[annot_df['feature'] == "exon"]["seqname"].unique():
+        annot = gff3_df[gff3_df["seqname"] == trans]
         for values in annot:
             bProt = False
             line = values[2]
@@ -584,7 +607,7 @@ def transformTransFeaturesToGenomic(
     return newdc_GFF3
 
 
-def transformTransFeaturesToLocale(annot_df: pd.DataFrame, dc_SQexons):
+def transformTransFeaturesToLocale(annot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Not sure I entirely understand what this function is doing and
     since I don't have good test data for it, it is difficult to tell
@@ -815,6 +838,10 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
 
 
 def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
+
+    # dc_SQcoding = {trans: [CDSstart, CDSend, orf]}
+    # dc_SQexons = {trans: [[start,end], [start,end], ...]}
+    # dcSQstrand = {trans: strand}
     logger = logging.getLogger("IsoAnnotLite_SQ1")
     newdc_coding = {}
     bnegative = False
@@ -955,20 +982,18 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
 
 
 def checkFeatureInCDS(
-    dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end, strand
-):
+    annot_df: pd.DataFrame,
+    isoform: str,
+    start: int,
+    end: int,
+    strand: str
+) -> bool:
     bstart = False
-    if (
-        not dc_SQcoding[transSQ][0] == "NA"
-        and transSQ in dc_SQcoding
-        and transGFF3 in dc_GFF3coding
-    ):
+    if "CDS" in annot_df[annot_df["seqname"] == isoform]["feature"].to_list():
         # Tenemos rango de intervalos en los exones:
         #   Si coinciden todos es coding
         #   Si coinciden todos menos sub exons (inicio o final) es semicoding
-        allExonsGFF3 = dc_GFF3coding[transGFF3]
-        allExonsSQ = dc_SQcoding[transSQ]
-
+       
         if strand == "+":
             allExonsGFF3 = sorted(allExonsGFF3)
             allExonsGFF3 = sorted(allExonsSQ)
@@ -1682,76 +1707,80 @@ def isoannot(
     # we can do this with pandas better
 
     if gff3:
-        # File names
-        if output:
-            filename = output
-        else:
-            filename = "tappAS_annot_from_SQANTI3.gff3"
+        pass
+        # # File names
+        # if output:
+        #     filename = output
+        # else:
+        #     filename = "tappAS_annot_from_SQANTI3.gff3"
 
-        filenameMod = f"{filename[:-5]}_mod{filename[-5:]}"
+        # filenameMod = f"{filename[:-5]}_mod{filename[-5:]}"
 
-        #################
-        # START PROCESS #
-        #################
+        # #################
+        # # START PROCESS #
+        # #################
 
-        logger.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
+        # logger.info("Reading SQANTI 3 Files and creating an auxiliar GFF...")
 
-        logger.info("Reading reference annotation file and creating data variables...")
-        annot_df = gtfparse.parse_gtf(gff3)
+        # logger.info("Reading reference annotation file and creating data variables...")
+        # annot_df = gtfparse.parse_gtf(gff3)
 
-        logger.info("Transforming CDS local positions to genomic position...")
-        # Transformar características a posiciones genómicas //revisar
-        annot_df = transformCDStoGenomic(annot_df)
+        # logger.info("Transforming CDS local positions to genomic position...")
+        # # Transformar características a posiciones genómicas //revisar
+        
+        # # TODO: rewrite transformCDStoGenomic()
+        # annot_df = transformCDStoGenomic(annot_df)
 
-        logger.info(
-            "Transforming feature local positions to genomic position in GFF3..."
-        )
-        # Transformar características a posiciones genómicas //revisar
-        dc_GFF3_Genomic = transformTransFeaturesToGenomic(
-            dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
-        )
+        # logger.info(
+        #     "Transforming feature local positions to genomic position in GFF3..."
+        # )
+        # # Transformar características a posiciones genómicas //revisar
+        # # TODO: rewrite
+        # dc_GFF3_Genomic = transformTransFeaturesToGenomic(
+        #     dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand
+        # )
 
-        logger.info("Mapping transcript features betweeen GFFs...")
-        annot_df = mappingFeatures(annot_df)  # edit tappAS_annotation_from_Sqanti file
+        # logger.info("Mapping transcript features betweeen GFFs...")
+        # # TODO: rewrite
+        # annot_df = mappingFeatures(annot_df)  # edit tappAS_annotation_from_Sqanti file
 
-        logger.info("Adding extra information to GFF3 columns...")
-        updateGTF(annot_df, filename, filenameMod)
+        # logger.info("Adding extra information to GFF3 columns...")
+        # updateGTF(annot_df, filename, filenameMod)
 
-        logger.info("Reading GFF3 to sort it correctly...")
-        (
-            dcTrans,
-            dcExon,
-            dcTransFeatures,
-            dcGenomic,
-            dcSpliceJunctions,
-            dcProt,
-            dcProtFeatures,
-            dcTranscriptAttributes,
-        ) = readGFFandGetData(filenameMod)
+        # # logger.info("Reading GFF3 to sort it correctly...")
+        # # (
+        # #     dcTrans,
+        # #     dcExon,
+        # #     dcTransFeatures,
+        # #     dcGenomic,
+        # #     dcSpliceJunctions,
+        # #     dcProt,
+        # #     dcProtFeatures,
+        # #     dcTranscriptAttributes,
+        # # ) = readGFFandGetData(filenameMod)
 
-        # Remove old files
-        os.remove(filename)
-        os.remove(filenameMod)
+        # # Remove old files
+        
+        # annot_df = transformTransFeaturesToLocale(dcTransFeatures)
 
-        dcTransFeatures = transformTransFeaturesToLocale(dcTransFeatures, dc_SQexons)
+        # logger.info("Generating final GFF3...")
+        # # I think I must have eliminated this function?
+        # generateFinalGFF3(
+        #     dcTrans,
+        #     dcExon,
+        #     dcTransFeatures,
+        #     dcGenomic,
+        #     dcSpliceJunctions,
+        #     dcProt,
+        #     dcProtFeatures,
+        #     dcTranscriptAttributes,
+        #     filename,
+        # )
 
-        logger.info("Generating final GFF3...")
-        generateFinalGFF3(
-            dcTrans,
-            dcExon,
-            dcTransFeatures,
-            dcGenomic,
-            dcSpliceJunctions,
-            dcProt,
-            dcProtFeatures,
-            dcTranscriptAttributes,
-            filename,
-        )
+        # t2 = time.time()
+        # logger.info(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
 
-        t2 = time.time()
-        logger.info(f"Time used to generate new GFF3: {(t2 - t1):%.2f} seconds.")
-
-        logger.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
+        # logger.info(f"Exportation complete. Your GFF3 result is: '{filename}'")
 
     #####################
     # JUST SQANTI FILES #
