@@ -485,6 +485,26 @@ class myQueryProteins:
         self.proteinID = proteinID
 
 
+def setup_logging(name: Optional[str] = None):
+    logger = logging.getLogger("sqanti3_qc")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    if name:
+        fh = logging.FileHandler(filename=name)
+    else:
+        fh = logging.FileHandler(filename=f"{__name__}.log)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    st = logging.StreamHandler()
+    st.setLevel(logging.INFO)
+    st.setFormatter(formatter)
+    logger.addHandler(st)
+
+
 def rewrite_sam_for_fusion_ids(sam_filename):
     logger = logging.getLogger("sqanti3_qc")
     seen_id_counter = Counter()
@@ -3053,20 +3073,7 @@ def main(
     genome:
         Reference genome in fasta format
     """
-    logger = logging.getLogger("sqanti3_qc")
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-
-    fh = logging.FileHandler(filename="sqanti3_qc.log")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    st = logging.StreamHandler()
-    st.setLevel(logging.INFO)
-    st.setFormatter(formatter)
-    logger.addHandler(st)
+    setup_logging("sqanti3_qc.log")
 
     if GTF2GENEPRED_PROG is None:
         logger.error("Cannot find gtf2genepred. Abort!")
@@ -3091,7 +3098,7 @@ def main(
         gff3 = os.path.abspath(gff3)
         if not os.path.isfile(gff3):
             logger.error(
-                f"Precomputed tappAS GFF3 annoation file {genome} doesn't exist. Abort!"
+                f"Precomputed tappAS GFF3 annoation file {gff3} doesn't exist. Abort!"
             )
             sys.exit(-1)
 
