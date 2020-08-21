@@ -76,6 +76,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb
 
 # IPython
 profile_default/
@@ -142,3 +143,4 @@ sqanti3/utilities/gmst/test.py
 ._.DS_Store
 ._mypy.ini
 ._tox.ini
+Untitled.ipynb

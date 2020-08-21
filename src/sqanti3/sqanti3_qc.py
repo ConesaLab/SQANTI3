@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylama:ignore=E501,C901
 
 __author__ = "etseng@pacb.com"
 
@@ -8,7 +9,6 @@ import distutils.spawn
 import glob
 import itertools
 import logging
-import math
 import os
 import re
 import shutil
@@ -20,6 +20,7 @@ from collections.abc import Iterable
 from csv import DictReader, DictWriter
 from multiprocessing import Process
 from typing import Dict, List, Optional, Tuple, Sequence
+from contextlib import contextmanager
 
 # import argparse
 import click
@@ -52,6 +53,9 @@ GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
+
+NEWLINE = "\n"
+TAB = "\t"
 
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
 seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
@@ -368,49 +372,49 @@ class myQueryTranscripts:
             return "NA"
 
     def __str__(self):
-        tab = "\t"
+
         stringrep = (
-            f"{self.strand}{tab}"
-            f"{str(self.length)}{tab}"
-            f"{str(self.num_exons)}{tab}"
-            f"{str(self.str_class)}{tab}"
-            f"{'_'.join(set(self.genes))}{tab}"
-            f"{self.id}{tab}"
-            f"{str(self.refLen)}{tab}"
-            f"{str(self.refExons)}{tab}"
-            f"{str(self.tss_diff)}{tab}"
-            f"{str(self.tts_diff)}{tab}"
-            f"{self.subtype}{tab}"
-            f"{self.RT_switching}{tab}"
-            f"{self.canonical}{tab}"
-            f"{str(self.min_samp_cov)}{tab}"
-            f"{str(self.min_cov)}{tab}"
-            f"{str(self.min_cov_pos)}{tab}"
-            f"{str(self.sd)}{tab}"
-            f"{str(self.FL)}{tab}"
-            f"{str(self.nIndels)}{tab}"
-            f"{str(self.nIndelsJunc)}{tab}"
-            f"{self.bite}{tab}"
-            f"{str(self.isoExp)}{tab}"
-            f"{str(self.geneExp)}{tab}"
-            f"{str(self.ratioExp())}{tab}"
-            f"{self.FSM_class}{tab}"
-            f"{self.coding}{tab}"
-            f"{str(self.ORFlen)}{tab}"
-            f"{str(self.CDSlen())}{tab}"
-            f"{str(self.CDS_start)}{tab}"
-            f"{str(self.CDS_end)}{tab}"
-            f"{str(self.CDS_genomic_start)}{tab}"
-            f"{str(self.CDS_genomic_end)}{tab}"
-            f"{str(self.is_NMD)}{tab}"
-            f"{str(self.percAdownTTS)}{tab}"
-            f"{str(self.seqAdownTTS)}{tab}"
-            f"{str(self.dist_cage)}{tab}"
-            f"{str(self.within_cage)}{tab}"
-            f"{str(self.dist_polya_site)}{tab}"
-            f"{str(self.within_polya_site)}{tab}"
-            f"{str(self.polyA_motif)}{tab}"
-            f"{str(self.polyA_dist)}{tab}"
+            f"{self.strand}{TAB}"
+            f"{str(self.length)}{TAB}"
+            f"{str(self.num_exons)}{TAB}"
+            f"{str(self.str_class)}{TAB}"
+            f"{'_'.join(set(self.genes))}{TAB}"
+            f"{self.id}{TAB}"
+            f"{str(self.refLen)}{TAB}"
+            f"{str(self.refExons)}{TAB}"
+            f"{str(self.tss_diff)}{TAB}"
+            f"{str(self.tts_diff)}{TAB}"
+            f"{self.subtype}{TAB}"
+            f"{self.RT_switching}{TAB}"
+            f"{self.canonical}{TAB}"
+            f"{str(self.min_samp_cov)}{TAB}"
+            f"{str(self.min_cov)}{TAB}"
+            f"{str(self.min_cov_pos)}{TAB}"
+            f"{str(self.sd)}{TAB}"
+            f"{str(self.FL)}{TAB}"
+            f"{str(self.nIndels)}{TAB}"
+            f"{str(self.nIndelsJunc)}{TAB}"
+            f"{self.bite}{TAB}"
+            f"{str(self.isoExp)}{TAB}"
+            f"{str(self.geneExp)}{TAB}"
+            f"{str(self.ratioExp())}{TAB}"
+            f"{self.FSM_class}{TAB}"
+            f"{self.coding}{TAB}"
+            f"{str(self.ORFlen)}{TAB}"
+            f"{str(self.CDSlen())}{TAB}"
+            f"{str(self.CDS_start)}{TAB}"
+            f"{str(self.CDS_end)}{TAB}"
+            f"{str(self.CDS_genomic_start)}{TAB}"
+            f"{str(self.CDS_genomic_end)}{TAB}"
+            f"{str(self.is_NMD)}{TAB}"
+            f"{str(self.percAdownTTS)}{TAB}"
+            f"{str(self.seqAdownTTS)}{TAB}"
+            f"{str(self.dist_cage)}{TAB}"
+            f"{str(self.within_cage)}{TAB}"
+            f"{str(self.dist_polya_site)}{TAB}"
+            f"{str(self.within_polya_site)}{TAB}"
+            f"{str(self.polyA_motif)}{TAB}"
+            f"{str(self.polyA_dist)}{TAB}"
         )
         return stringrep
 
@@ -481,8 +485,28 @@ class myQueryProteins:
         self.proteinID = proteinID
 
 
+def setup_logging(name: Optional[str] = None):
+    logger = logging.getLogger("sqanti3_qc")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    if name:
+        fh = logging.FileHandler(filename=name)
+    else:
+        fh = logging.FileHandler(filename=f"{__name__}.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    st = logging.StreamHandler()
+    st.setLevel(logging.INFO)
+    st.setFormatter(formatter)
+    logger.addHandler(st)
+
+
 def rewrite_sam_for_fusion_ids(sam_filename):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     seen_id_counter = Counter()
 
     f = open(sam_filename + ".tmp", "w")
@@ -584,7 +608,7 @@ def correctionPlusORFpred(
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
     """
 
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
 
     n_cpu = max(1, cpus // chunks)
@@ -664,7 +688,7 @@ def correctionPlusORFpred(
                     elif len(line.split("\t")) == 9:
                         ind += 1
                 if ind == 0:
-                    logger.warning(f"WARNING: GTF has {isoforms} no annotation lines.")
+                    logger.warning(f"GTF has {isoforms} no annotation lines.")
 
             # GFF to GTF (in case the user provides gff instead of gtf)
             corrGTF_tpm = f"{corrGTF}.tmp"
@@ -762,13 +786,13 @@ def correctionPlusORFpred(
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=newid
                     )
-                    f.write(f">{newid}\n{newseq}\n")
+                    f.write(f">{newid}{NEWLINE}{newseq}{NEWLINE}")
                 else:
                     new_rec = r
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=r.id
                     )
-                    f.write(f">{new_rec.description}\n{new_rec.seq}\n")
+                    f.write(f">{new_rec.description}{NEWLINE}{new_rec.seq}{NEWLINE}")
 
     if len(orfDict) == 0:
         logger.warning("All input isoforms were predicted as non-coding")
@@ -791,7 +815,7 @@ def reference_parser(
     :return: (refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene)
     """
     # global referenceFiles
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     referenceFiles = os.path.join(directory, "refAnnotation_" + output + ".genePred")
     logger.info("Parsing Reference Transcriptome....")
@@ -864,7 +888,7 @@ def reference_parser(
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
         logger.warning(
-            f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n"
+            f"ref annotation contains chromosomes not in genome: {','.join(diff)}{NEWLINE}"
         )
 
     # convert the content of junctions_by_chr to sorted list
@@ -889,7 +913,7 @@ def isoforms_parser(corrGTF: str) -> Tuple[List[str], str]:
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     queryFile = os.path.splitext(corrGTF)[0] + ".genePred"
 
     logger.info("Parsing Isoforms....")
@@ -922,7 +946,7 @@ def STARcov_parser(
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
     :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     if os.path.isdir(coverageFiles) is True:
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
@@ -930,9 +954,8 @@ def STARcov_parser(
         cov_files = coverageFiles.split(",")
     logger.debug(cov_files)
 
-    newline = "\n"
     logger.info(
-        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:\n{newline.join(cov_files)}"
+        f"Input pattern: {coverageFiles}. The following files found and to be read as junctions:{NEWLINE.join(cov_files)}"
     )
 
     cov_by_chrom_strand = defaultdict(
@@ -1002,7 +1025,7 @@ def expression_parser(expressionFile):
     :return: dict of PBID --> TPM
     Include the possibility of providing an expression matrix --> first column must be "ID"
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     if os.path.isdir(expressionFile) is True:
         exp_paths = [
@@ -1932,7 +1955,7 @@ def isoformClassification(
     outputClassPath,
     outputJuncPath,
 ):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     novel_gene_prefix = None
     if coverage is not None:
@@ -2035,13 +2058,10 @@ def isoformClassification(
                     novel_gene_prefix is not None
                 ):  # used by splits to not have redundant novelGene IDs
                     isoform_hit.genes = [
-                        "novelGene_"
-                        + str(novel_gene_prefix)
-                        + "_"
-                        + str(novel_gene_index)
+                        f"novelGene_{str(novel_gene_prefix)}_{(novel_gene_index)}"
                     ]
                 else:
-                    isoform_hit.genes = ["novelGene_" + str(novel_gene_index)]
+                    isoform_hit.genes = [f"novelGene_{str(novel_gene_index)}"]
                 isoform_hit.transcripts = ["novel"]
                 novel_gene_index += 1
 
@@ -2119,13 +2139,13 @@ def isoformClassification(
                         m[orfDict[rec.id].cds_end - 1] + 1
                     )  # make it 1-based
                 except KeyError:
-                    newline = "\n"
+
                     logger.debug(
-                        f"Problem with transcript {rec.id}{newline}"
+                        f"Problem with transcript {rec.id}{NEWLINE}"
                         f"GeneMark mapped the end of the cds due to a cds "
                         f"length of {orfDict[rec.id].cds_end} "
-                        f"outside range{newline}."
-                        f"Setting the end of the cds to the end of the{newline}"
+                        f"outside range{NEWLINE}."
+                        f"Setting the end of the cds to the end of the{NEWLINE}"
                         f"mapped gene: {rec.exons[-1].end}"
                     )
                     orfDict[rec.id].cds_genomic_end = rec.exons[-1].end
@@ -2155,14 +2175,6 @@ def isoformClassification(
     handle_class.close()
     handle_junc.close()
     return isoforms_info
-
-
-def pstdev(data: Sequence[int]) -> float:
-    """Calculates the population standard deviation."""
-    n = len(data)
-    mean = sum(data) * 1.0 / n  # mean
-    var = sum(pow(x - mean, 2) for x in data) / n  # variance
-    return math.sqrt(var)  # standard deviation
 
 
 def find_polyA_motif(genome_seq: str, polyA_motif_list: List[str]) -> Tuple[str, str]:
@@ -2196,7 +2208,7 @@ def FLcount_parser(fl_count_filename: str) -> Tuple[Sequence[str], Dict[str, int
     //chain-based
     superPBID<tab>sample1<tab>sample2
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     fl_count_dict = {}
     samples = ["NA"]
@@ -2291,13 +2303,12 @@ def sqanti3_qc(
     window: int,
     genename: bool,
     fl_count: Optional[str],
-    version: bool,
     skip_report: bool,
     isoAnnotLite: bool,
     gff3: Optional[str],
     doc: str,
 ) -> None:
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     start3 = timeit.default_timer()
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
@@ -2408,17 +2419,15 @@ def sqanti3_qc(
         fl_samples, fl_count_dict = FLcount_parser(fl_count)
         for pbid in fl_count_dict:
             if pbid not in isoforms_info:
-                logger.info(
-                    f"WARNING: {pbid} found in FL count file but not in input fasta."
-                )
+                logger.warning(f"{pbid} found in FL count file but not in input fasta.")
         if len(fl_samples) == 1:  # single sample from PacBio
             logger.info("Single-sample PacBio FL count format detected.")
             for iso in isoforms_info:
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL = fl_count_dict[iso]
                 else:
-                    logger.info(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
+                    logger.warning(
+                        f"{iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL = 0
         else:  # multi-sample
@@ -2428,8 +2437,8 @@ def sqanti3_qc(
                 if iso in fl_count_dict:
                     isoforms_info[iso].FL_dict = fl_count_dict[iso]
                 else:
-                    logger.info(
-                        f"WARNING: {iso} not found in FL count file. Assign count as 0."
+                    logger.warning(
+                        f"{iso} not found in FL count file. Assign count as 0."
                     )
                     isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     else:
@@ -2443,8 +2452,8 @@ def sqanti3_qc(
         for iso in isoforms_info:
             if iso not in exp_dict:
                 exp_dict[iso] = 0
-                logger.info(
-                    f"WARNING: isoform {iso} not found in expression matrix. Assigning TPM of 0."
+                logger.warning(
+                    f"isoform {iso} not found in expression matrix. Assigning TPM of 0."
                 )
             gene = isoforms_info[iso].geneName()
             if gene not in gene_exp_dict:
@@ -2526,7 +2535,7 @@ def sqanti3_qc(
                 isoforms_info[r["isoform"]].min_cov_pos = r["junction_number"]
 
     for pbid, covs in sj_covs_by_isoform.items():
-        isoforms_info[pbid].sd = pstdev(covs)
+        isoforms_info[pbid].sd = np.std(covs)
 
     # Printing output file:
     logger.info("Writing output files....")
@@ -2601,7 +2610,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     :param input_fasta: Could be either fasta or fastq, autodetect.
     :return: output fasta with the cleaned up sequence ID, is_fusion flag
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     type = "fasta"
     with open(input_fasta) as h:
         if h.readline().startswith("@"):
@@ -2626,7 +2635,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = raw[3]
             else:
                 newid = r.id.split()[0]  # Ensembl fasta header
-        f.write(f">{newid}\n{r.seq}\n")
+        f.write(f">{newid}{NEWLINE}{r.seq}{NEWLINE}")
     f.close()
     return f.name
 
@@ -2722,7 +2731,7 @@ class PolyAPeak:
 
 
 def split_input_run(gtf, isoforms, chunks, arguments):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
     if os.path.exists("splits/"):
         logger.error("'splits/' directory already exists! Abort!")
         sys.exit(-1)
@@ -2782,52 +2791,47 @@ def split_input_run(gtf, isoforms, chunks, arguments):
     return [d for (d, x) in split_outs]
 
 
+@contextmanager
+def dummy_with():
+    yield None
+
+
 def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
     Then write out the PDF report
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("sqanti3_qc")
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
 
-    if not skipORF:
-        f_faa = open(corrORF, "w")
-    f_fasta = open(corrFASTA, "w")
-    f_gtf = open(corrGTF, "w")
-    f_class = open(outputClassPath, "w")
-    f_junc = open(outputJuncPath, "w")
-
-    for i, split_d in enumerate(split_dirs):
-        _gtf, _sam, _fasta, _orf = get_corr_filenames(output, split_d)
-        _class, _junc = get_class_junc_filenames(output, split_d)
-        if not skipORF:
-            with open(_orf) as h:
-                f_faa.write(h.read())
-        with open(_gtf) as h:
-            f_gtf.write(h.read())
-        with open(_fasta) as h:
-            f_fasta.write(h.read())
-        with open(_class) as h:
-            if i == 0:
-                f_class.write(h.readline())
-            else:
-                h.readline()
-            f_class.write(h.read())
-        with open(_junc) as h:
-            if i == 0:
-                f_junc.write(h.readline())
-            else:
-                h.readline()
-            f_junc.write(h.read())
-
-    f_fasta.close()
-    f_gtf.close()
-    f_class.close()
-    f_junc.close()
-    if not skipORF:
-        f_faa.close()
+    with open(corrORF, "w") if not skipORF else dummy_with() as f_faa:
+        with open(corrFASTA, "w") as f_fasta, open(corrGTF, "w") as f_gtf, open(
+            outputClassPath, "w"
+        ) as f_class, open(outputJuncPath, "w") as f_junc:
+            for i, split_d in enumerate(split_dirs):
+                _gtf, _sam, _fasta, _orf = get_corr_filenames(output, split_d)
+                _class, _junc = get_class_junc_filenames(output, split_d)
+                if not skipORF:
+                    with open(_orf) as h:
+                        f_faa.write(h.read())
+                with open(_gtf) as h:
+                    f_gtf.write(h.read())
+                with open(_fasta) as h:
+                    f_fasta.write(h.read())
+                with open(_class) as h:
+                    if i == 0:
+                        f_class.write(h.readline())
+                    else:
+                        h.readline()
+                    f_class.write(h.read())
+                with open(_junc) as h:
+                    if i == 0:
+                        f_junc.write(h.readline())
+                    else:
+                        h.readline()
+                    f_junc.write(h.read())
 
     if not skip_report:
         logger.info("Generating SQANTI3 report....")
@@ -2838,13 +2842,6 @@ def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs)
         if subprocess.check_call(cmd, shell=True) != 0:
             logger.error(f"running command: {cmd}")
             sys.exit(-1)
-
-
-def print_version(ctx, param, value):
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo(f"sqanti3_qc: {__version__}")
-    ctx.exit()
 
 
 @click.command()
@@ -3001,17 +2998,6 @@ def print_version(ctx, param, value):
     required=False,
 )
 @click.option(
-    "--version",
-    help="Show version and quit",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
-    callback=print_version,
-    expose_value=False,
-    is_eager=True,
-)
-@click.option(
     "--skip_report",
     help="Do not prepare pdf report.",
     type=bool,
@@ -3036,6 +3022,7 @@ def print_version(ctx, param, value):
     show_default=False,
     required=False,
 )
+@click.version_option()
 @click.help_option(show_default=False)
 def main(
     isoforms: str,
@@ -3062,7 +3049,6 @@ def main(
     window: int = 20,
     genename: bool = False,
     fl_count: Optional[str] = None,
-    version: bool = False,
     skip_report: bool = False,
     isoannotlite: bool = False,
     gff3: Optional[str] = None,
@@ -3079,19 +3065,8 @@ def main(
     genome:
         Reference genome in fasta format
     """
-    logger = logging.getLogger(__name__)
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    logger.setLevel(logging.CRITICAL)
-
-    fh = logging.FileHandler(filename="sqanti3.log")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    st = logging.StreamHandler()
-    st.setLevel(logging.INFO)
-    st.setFormatter(formatter)
-    logger.addHandler(st)
+    setup_logging("sqanti3_qc.log")
+    logger = logging.getLogger("sqanti3_qc")
 
     if GTF2GENEPRED_PROG is None:
         logger.error("Cannot find gtf2genepred. Abort!")
@@ -3116,7 +3091,7 @@ def main(
         gff3 = os.path.abspath(gff3)
         if not os.path.isfile(gff3):
             logger.error(
-                f"Precomputed tappAS GFF3 annoation file {genome} doesn't exist. Abort!"
+                f"Precomputed tappAS GFF3 annoation file {gff3} doesn't exist. Abort!"
             )
             sys.exit(-1)
 
@@ -3189,21 +3164,19 @@ def main(
     # Print out parameters so can be put into report PDF later
     doc = os.path.join(os.path.abspath(directory), f"{output}.params.txt")
     logger.info(f"Write arguments to {doc}...")
-    newline = "\n"
-    tab = "\t"
     doc_output = (
-        f"Version{tab}{__version__}{newline}"
-        f"Input{tab}{os.path.basename(isoforms)}{newline}"
-        f"Annotation{tab}{os.path.basename(annotation)}{newline}"
-        f"Genome{tab}{os.path.basename(genome)}{newline}"
-        f"Aligner{tab}{aligner_choice}{newline}"
-        f"FLCount{tab}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{newline}"
-        f"Expression{tab}{os.path.basename(expression) if expression is not None else 'NA'}{newline}"
-        f"Junction{tab}{os.path.basename(coverage) if coverage is not None else 'NA'}{newline}"
-        f"CagePeak{tab}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{newline}"
-        f"PolyA{tab}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{newline}"
-        f"PolyAPeak{tab}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{newline}"
-        f"IsFusion{tab}{str(is_fusion)}{newline}"
+        f"Version{TAB}{__version__}{NEWLINE}"
+        f"Input{TAB}{os.path.basename(isoforms)}{NEWLINE}"
+        f"Annotation{TAB}{os.path.basename(annotation)}{NEWLINE}"
+        f"Genome{TAB}{os.path.basename(genome)}{NEWLINE}"
+        f"Aligner{TAB}{aligner_choice}{NEWLINE}"
+        f"FLCount{TAB}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{NEWLINE}"
+        f"Expression{TAB}{os.path.basename(expression) if expression is not None else 'NA'}{NEWLINE}"
+        f"Junction{TAB}{os.path.basename(coverage) if coverage is not None else 'NA'}{NEWLINE}"
+        f"CagePeak{TAB}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{NEWLINE}"
+        f"PolyA{TAB}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{NEWLINE}"
+        f"PolyAPeak{TAB}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{NEWLINE}"
+        f"IsFusion{TAB}{str(is_fusion)}{NEWLINE}"
     )
     logger.debug(doc_output)
     with open(doc, "w") as doc_file:
@@ -3236,7 +3209,6 @@ def main(
     logger.debug(f"window: {window}")
     logger.debug(f"genename: {genename}")
     logger.debug(f"fl_count: {fl_count}")
-    logger.debug(f"version: {version}")
     logger.debug(f"skip_report: {skip_report}")
     logger.debug(f"isoAnnotLite: {isoannotlite}")
     logger.debug(f"gff3: {gff3}")
@@ -3268,7 +3240,6 @@ def main(
             window=window,
             genename=genename,
             fl_count=fl_count,
-            version=version,
             skip_report=skip_report,
             isoAnnotLite=isoannotlite,
             gff3=gff3,
@@ -3301,7 +3272,6 @@ def main(
             "window": window,
             "genename": genename,
             "fl_count": fl_count,
-            "version": version,
             "skip_report": skip_report,
             "isoAnnotLite": isoannotlite,
             "gff3": gff3,
