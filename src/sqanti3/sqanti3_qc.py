@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylama:ignore=E501,C901
 
 __author__ = "etseng@pacb.com"
 
@@ -8,7 +9,6 @@ import distutils.spawn
 import glob
 import itertools
 import logging
-import math
 import os
 import re
 import shutil
@@ -494,7 +494,7 @@ def setup_logging(name: Optional[str] = None):
     if name:
         fh = logging.FileHandler(filename=name)
     else:
-        fh = logging.FileHandler(filename=f"{__name__}.log)
+        fh = logging.FileHandler(filename=f"{__name__}.log")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
@@ -2177,14 +2177,6 @@ def isoformClassification(
     return isoforms_info
 
 
-def pstdev(data: Sequence[int]) -> float:
-    """Calculates the population standard deviation."""
-    n = len(data)
-    mean = sum(data) * 1.0 / n  # mean
-    var = sum(pow(x - mean, 2) for x in data) / n  # variance
-    return math.sqrt(var)  # standard deviation
-
-
 def find_polyA_motif(genome_seq: str, polyA_motif_list: List[str]) -> Tuple[str, str]:
     """
     :param genome_seq: genomic sequence to search polyA motifs from, must already be oriented
@@ -2543,7 +2535,7 @@ def sqanti3_qc(
                 isoforms_info[r["isoform"]].min_cov_pos = r["junction_number"]
 
     for pbid, covs in sj_covs_by_isoform.items():
-        isoforms_info[pbid].sd = pstdev(covs)
+        isoforms_info[pbid].sd = np.std(covs)
 
     # Printing output file:
     logger.info("Writing output files....")
@@ -2814,7 +2806,7 @@ def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs)
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(output, directory)
     outputClassPath, outputJuncPath = get_class_junc_filenames(output, directory)
 
-    with open(corrORF, "w") if not skipORF else dummy_with() as f_aa:
+    with open(corrORF, "w") if not skipORF else dummy_with() as f_faa:
         with open(corrFASTA, "w") as f_fasta, open(corrGTF, "w") as f_gtf, open(
             outputClassPath, "w"
         ) as f_class, open(outputJuncPath, "w") as f_junc:
@@ -3074,6 +3066,7 @@ def main(
         Reference genome in fasta format
     """
     setup_logging("sqanti3_qc.log")
+    logger = logging.getLogger("sqanti3_qc")
 
     if GTF2GENEPRED_PROG is None:
         logger.error("Cannot find gtf2genepred. Abort!")
