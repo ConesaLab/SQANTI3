@@ -39,8 +39,8 @@ from sqanti3.__about__ import __version__
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
-sys.path.insert(0, utilitiesPath)
+UTILITIESPATH = os.path.join(os.path.dirname(sqanti3.__file__), "/utilities")
+sys.path.insert(0, UTILITIESPATH)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
@@ -52,7 +52,9 @@ DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 GTF2GENEPRED_PROG = distutils.spawn.find_executable("gtfToGenePred")
 GFFREAD_PROG = distutils.spawn.find_executable("gffread")
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
-RSCRIPT_REPORT = "SQANTI3_report.R"
+RSCRIPT_REPORT = os.path.join(UTILITIESPATH, "SQANTI3_report.R")
+
+ISOANNOT_PROG = os.path.join(UTILITIESPATH, "IsoAnnotLite_SQ3.py")
 
 NEWLINE = "\n"
 TAB = "\t"
@@ -339,9 +341,13 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = (
+            dist_polya_site
+        )  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = (
+            polyA_dist
+        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -477,7 +483,9 @@ class myQueryProteins:
     ):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = (
+            cds_end
+        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -635,7 +643,7 @@ def correctionPlusORFpred(
                 elif aligner_choice == "minimap2":
                     logger.info("Aligning reads with Minimap2...")
                     cmd = MINIMAP2_CMD.format(
-                        cpus=n_cpu, sense=sense, g=genome, i=isoforms, o=corrSAM,
+                        cpus=n_cpu, sense=sense, g=genome, i=isoforms, o=corrSAM
                     )
                 elif aligner_choice == "deSALT":
                     logger.info("Aligning reads with deSALT...")
@@ -2565,8 +2573,8 @@ def sqanti3_qc(
     if not skip_report:
         logger.info("Generating SQANTI3 report....")
         cmd = (
-            f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} "
-            f"{outputClassPath} {outputJuncPath} {doc} {utilitiesPath}"
+            f"{RSCRIPTPATH} {RSCRIPT_REPORT} "
+            f"{outputClassPath} {outputJuncPath} {doc} {UTILITIESPATH}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
             logger.error(f"running command: {cmd}")
@@ -2580,7 +2588,8 @@ def sqanti3_qc(
     logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
 
     # IsoAnnot Lite implementation
-    ISOANNOT_PROG = os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
+    # TODO why run this as a script when we can just call the functions from
+    # within python?
     if isoAnnotLite:
         if gff3:
             ISOANNOT_CMD = (
@@ -2750,7 +2759,7 @@ def split_input_run(gtf, isoforms, chunks, arguments):
             d = os.path.join("splits/", str(i))
             os.makedirs(d)
             f = open(
-                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w",
+                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w"
             )
             for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
                 write_collapseGFF_format(f, recs[j])
@@ -2767,7 +2776,7 @@ def split_input_run(gtf, isoforms, chunks, arguments):
             d = os.path.join("splits/", str(i))
             os.makedirs(d)
             f = open(
-                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w",
+                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w"
             )
             for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
                 SeqIO.write(recs[j], f, "fasta")
@@ -2837,7 +2846,7 @@ def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs)
         logger.info("Generating SQANTI3 report....")
         cmd = (
             RSCRIPTPATH
-            + f" {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {doc} {utilitiesPath}"
+            + f" {RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {doc} {UTILITIESPATH}"
         )
         if subprocess.check_call(cmd, shell=True) != 0:
             logger.error(f"running command: {cmd}")

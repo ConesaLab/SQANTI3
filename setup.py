@@ -30,7 +30,7 @@ setup(
         line.strip()
         for line in Path("requirements.txt").read_text("utf-8").splitlines()
     ],
-    extra_requires={"parallel": ["swifter~=0.3"],},
+    extra_requires={"parallel": ["swifter~=0.3"]},
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -54,6 +54,6 @@ setup(
     },
     packages=find_packages(where="src"),
     package_dir={"sqanti3": "src/sqanti3"},
-    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/*.*",]},
+    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/*.*"]},
     keywords=["isoseq", "rnaseq", "pacbio", "long reads"],
 )
