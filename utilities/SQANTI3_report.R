@@ -105,7 +105,7 @@ xaxislabelsF1 <- c("FSM", "ISM", "NIC", "NNC", "Genic\nGenomic",  "Antisense", "
 legendLabelF1 <- levels(as.factor(data.class$coding));
 
 data.class$structural_category = factor(data.class$structural_category,
-                                        labels = xaxislabelsF1, 
+                                        labels = xaxislabelsF1,
                                         levels = xaxislevelsF1,
                                         ordered=TRUE)
 
@@ -144,7 +144,7 @@ mytheme <- theme_classic(base_family = "Helvetica") +
         axis.text.y  = element_text(vjust=0.5, size=13) ) +
   theme(legend.text = element_text(size = 10), legend.title = element_text(size=11), legend.key.size = unit(0.5, "cm")) +
   theme(plot.title = element_text(lineheight=.4, size=13)) +
-  theme(plot.margin = unit(c(2.5,1,1,1), "cm")) 
+  theme(plot.margin = unit(c(2.5,1,1,1), "cm"))
 
 # Create a new attribute called "novelGene"
 
@@ -193,13 +193,13 @@ if (!all(is.na(data.class$gene_exp))){
 colnames(isoPerGene)[ncol(isoPerGene)] <- "nIso"
 
 
-isoPerGene$FSM_class2 = factor(isoPerGene$FSM_class, 
-                               levels = c("A", "B", "C"), 
-                               labels = c("MonoIsoform Gene", "MultiIsoform Genes\nwithout expression\nof a FSM", "MultiIsoform Genes\nexpressing at least\none FSM"), 
+isoPerGene$FSM_class2 = factor(isoPerGene$FSM_class,
+                               levels = c("A", "B", "C"),
+                               labels = c("MonoIsoform Gene", "MultiIsoform Genes\nwithout expression\nof a FSM", "MultiIsoform Genes\nexpressing at least\none FSM"),
                                ordered=TRUE)
 
-isoPerGene$novelGene = factor(isoPerGene$novelGene, 
-                              levels = c("Annotated Genes", "Novel Genes"), 
+isoPerGene$novelGene = factor(isoPerGene$novelGene,
+                              levels = c("Annotated Genes", "Novel Genes"),
                               ordered=TRUE)
 
 isoPerGene$nIsoCat =cut(isoPerGene$nIso, breaks = c(0,1,3,5,max(isoPerGene$nIso)+1), labels = c("1", "2-3", "4-5", ">=6"))
@@ -220,7 +220,7 @@ if (!all(is.na(data.class$FL))){
 if (length(FL_multisample_indices)>0){
   FL_multisample_names <- substring(colnames(data.class)[FL_multisample_indices],4)
   FL_TPM_multisample_names <- c();
-  
+
   for (i in 1:length(FL_multisample_indices)) {
     j <- FL_multisample_indices[i]
     name <- paste("FL_TPM", FL_multisample_names[i], sep='.')
@@ -253,7 +253,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     df_new$sample <- FL_multisample_names[i];
     df.length_by_sample <- rbind(df.length_by_sample, df_new);
   }
-  
+
   p.length.all.sample <- ggplot(df.length_by_sample, aes(x=length, color=sample)) +
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
@@ -261,7 +261,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     labs(x="Transcript Length", y="Count", title="Transcript Lengths, By Sample") +
     theme(legend.position="top") +
     mytheme
-  
+
   p.length.exon.sample <- ggplot(df.length_by_sample, aes(x=length, color=sample, lty=exonCat)) +
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
@@ -274,7 +274,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
 p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
-  scale_color_manual(values = myPalette) + 
+  scale_color_manual(values = myPalette) +
   labs(x="Transcript Length", y="Count", title="Transcript Lengths, by structural category") +
   theme(legend.position="top") +
   mytheme
@@ -305,44 +305,44 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   scale_y_continuous(labels = percent, expand = c(0,0), limits = c(0,1)) +
   geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25)  +
   scale_x_discrete(drop=FALSE) +
-  scale_alpha_manual(values=c(1,0.3), 
-                     name = "Coding prediction", 
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Coding prediction",
                      labels = legendLabelF1)+
-  scale_fill_manual(values = myPalette, guide='none') + 
-  xlab("") + 
+  scale_fill_manual(values = myPalette, guide='none') +
+  xlab("") +
   ylab("% Transcripts") +
-  mytheme + 
+  mytheme +
   geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
   ggtitle("Isoform distribution across structural categories\n\n" ) +
   theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
-  theme(legend.justification=c(1,1), legend.position=c(1,1)) 
+  theme(legend.justification=c(1,1), legend.position=c(1,1))
 
 #**** PLOTS 2-3: refLength and refExons for ISM and FSM transcripts. Plot if any ISM or FSM transcript
 
 if (nrow(data.FSMISM) > 0) {
-  
+
   p2 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=ref_length/1000, fill=structural_category)) +
     geom_boxplot(color="black", size=0.3, outlier.size = 0.2) + mytheme +
     scale_fill_manual(values = myPalette) +
     scale_x_discrete(drop = TRUE) +
     guides(fill=FALSE) +
-    xlab("") +  
+    xlab("") +
     ylab("Matched Reference Length (in kb)") +
     labs(title="Length Distribution of Matched Reference Transcripts\n\n\n",
          subtitle="Applicable only to FSM and ISM categories\n\n")
-  
+
   p3 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=ref_exons, fill=structural_category)) +
     geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
     scale_x_discrete(drop = TRUE) +
-    xlab("") +  
+    xlab("") +
     ylab("Matched reference exon count") +
     scale_fill_manual(values = myPalette) +
     guides(fill=FALSE) +
     mytheme +
     labs(title="Exon Count Distribution of Matched Reference Transcripts\n\n\n",
          subtitle="Applicable only to FSM and ISM categories\n\n")
-  
+
 }
 
 #****  PLOT 4: Transcript lengths by category
@@ -353,10 +353,10 @@ p4 <- ggplot(data=data.class, aes(x=structural_category, y=length, fill=structur
   ylab("Transcript Length (bp)") +
   scale_fill_manual(values = myPalette) +
   guides(fill=FALSE) +
-  mytheme  + theme(axis.text.x = element_text(angle = 45)) + 
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
   ggtitle("Transcript Lengths by Structural Classification\n\n" ) +
-  theme(axis.title.x=element_blank()) 
+  theme(axis.title.x=element_blank())
 
 
 ##**** PLOT 5: Exon counts by category
@@ -367,7 +367,7 @@ p5 <- ggplot(data=data.class, aes(x=structural_category, y=exons, fill=structura
   scale_x_discrete(drop=FALSE) +
   scale_fill_manual(values = myPalette) +
   guides(fill=FALSE) +
-  mytheme  + theme(axis.text.x = element_text(angle = 45)) + 
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
   ggtitle("Exon Counts by Structural Classification\n\n" ) +
   theme(axis.title.x=element_blank())
@@ -379,12 +379,12 @@ p6 <- ggplot(data=data.class, aes(x=novelGene)) +
   geom_bar(position="fill",aes(y = (..count..)/sum(..count..), fill=exonCat), color="black", size=0.3, width=0.5) +
   scale_x_discrete(drop=FALSE) +
   scale_y_continuous(labels = percent, expand = c(0,0)) +
-  scale_fill_manual(name = "Transcript type", 
+  scale_fill_manual(name = "Transcript type",
                     values = myPalette[c(2:5)]) +
-  ylab("% Transcripts ") +  
+  ylab("% Transcripts ") +
   mytheme +
-  theme(axis.title.x=element_blank()) + 
-  theme(legend.position="bottom") +   
+  theme(axis.title.x=element_blank()) +
+  theme(legend.position="bottom") +
   ggtitle("Distribution of Mono- vs Multi-Exon Transcripts\n\n" )
 
 # p7: Distribution of Number of Isoforms, separated by Novel vs Annotated Genes
@@ -411,7 +411,7 @@ data.class.byLen$structural_category <- factor(data.class.byLen$structural_categ
 
 p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(structural_category))) +
   geom_bar(stat='identity', color="black", size=0.3, width=0.85) +
-  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") + 
+  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") +
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
@@ -420,10 +420,10 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
 
 p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor(structural_category))) +
   geom_bar(stat='identity', color ="black", size=0.3, width=0.85) +
-  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") + 
+  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") +
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
-  theme(legend.position="bottom") + 
+  theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   labs(x="Transcript Length (in kb)", y="Percentages", title="Classifications by Transcript Length, normalized")
 
@@ -437,7 +437,7 @@ if (!all(is.na(data.class$iso_exp))){
     ylab("log2(TPM+1)") +
     scale_fill_manual(values = myPalette) +
     guides(fill=FALSE) +
-    mytheme  + theme(axis.text.x = element_text(angle = 45)) + 
+    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Structural Category\n\n" )
@@ -454,7 +454,7 @@ if (!all(is.na(data.class$FL))){
     scale_fill_manual(values = myPalette) +
     guides(fill=FALSE) +
     mytheme +
-    theme(axis.text.x = element_text(angle = 45)) + 
+    theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
     ggtitle("FL Count (normalized) by Structural Category\n\n" )
@@ -467,7 +467,7 @@ if (!all(is.na(data.class$iso_exp))){
   p10 <- ggplot(data=isoPerGene, aes(x=novelGene, y=log2(geneExp+1), fill=novelGene)) +
     geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
     scale_x_discrete(drop=FALSE) +
-    xlab("Structural Classification") +  
+    xlab("Structural Classification") +
     ylab("log2(Gene_TPM+1)") +
     scale_fill_manual(values = myPalette[c(3:4)]) +
     guides(fill=FALSE) +
@@ -1859,340 +1859,6 @@ if (!all(is.na(data.class$FL))) {
 #}
 
 
-###** Output plots
-
-pdf(file=report.file, width = 6.5, height = 6.5)
-
-
-#cover
-grid.newpage()
-cover <- textGrob("SQANTI3 report",
-                  gp=gpar(fontface="italic", fontsize=40, col="orangered"))
-grid.draw(cover)
-
-# TABLE 1: Number of isoforms in each structural category
-
-freqCat <- as.data.frame(table(data.class$structural_category))
-#freqCat$ranking = order(freqCat$Freq,decreasing = T)
-table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# Isoforms"))
-title1 <- textGrob("Characterization of transcripts\n based on splice junctions", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
-gt1 <- gTree(children=gList(table1, title1))
-
-
-# TABLE 2: Number of Novel vs Known Genes
-freqCat = as.data.frame(table(isoPerGene$novelGene))
-table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# Genes"))
-title2 <- textGrob("Gene classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
-gt2 <- gTree(children=gList(table2, title2))
-
-
-# TABLE 3: Junction Classification
-
-uniq_sj_count <- nrow(uniqJunc)
-
-freqCat <- as.data.frame(table(uniqJunc$SJ_type))
-freqCat$Var1 <- gsub(" ", "", freqCat$Var1)
-freqCat$Var1 <- gsub("\n", " ", freqCat$Var1)
-freqCat$Frac <- round(freqCat$Freq*100 / uniq_sj_count, 2)
-table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# SJs","Percent"))
-title2 <- textGrob("Splice Junction Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -5)
-gt3 <- gTree(children=gList(table2, title2))
-
-
-# TABLE 4: Summary number of Unique Isoforms and Unique Genes
-nGenes = nrow(isoPerGene)
-nIso = nrow(data.class)
-sn = paste("Unique Genes: ", nGenes, "\n", "Unique Isoforms: ", nIso)
-gt4 <- textGrob(sn, gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-
-
-# Plot Table 1 and Table 2
-grid.arrange(gt4,gt2,gt3,gt1, layout_matrix = cbind(c(1,2,3),c(1,4,4)))
-
-
-s <- textGrob("Gene Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-grid.arrange(s)
-print(p0)
-print(p7)
-print(p6)
-print(p.classByLen.a)
-print(p.classByLen.b)
-
-if (!all(is.na(data.class$iso_exp))){
-  print(p10)
-}
-if (!all(is.na(data.class$FL))){
-  print(p11)
-}
-
-# PLOT length of isoforms
-# p.length.all: length of all isoforms, regardless of category
-# p.length.cat: length of isoforms, by category
-# p.length.exon: length of isoforms, mono- vs mult-exon
-# (optional) p.length.all.sample: length of all isoforms by sample
-print(p.length.all)
-print(p.length.cat)
-print(p.length.exon)
-if (length(FL_multisample_indices)>0) {
-  print(p.length.all.sample)
-  print(p.length.exon.sample)
-}
-
-# 2. general parameters by structual categories
-s <- textGrob("Structural Isoform Characterization\nby Splice Junctions", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-grid.arrange(s)
-print(p1)
-print(p4)
-print(p5)
-if (!all(is.na(data.class$iso_exp))){
-  print(p8)
-}
-if (!all(is.na(data.class$FL))){
-  print(p9)
-}
-
-
-# (optional) p.FL_TPM_sample.by_cat
-# (optional) p.FL_TMP_sample.by_length
-#if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<4 ) {
-if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
-  data.class$length_cat <- "<1kb"
-  data.class[data.class$length>=1000,"length_cat"] <- "1-3kb"
-  data.class[data.class$length>=3000&data.class$length<5000,"length_cat"] <- "3-5kb"
-  data.class[data.class$length>=5000&data.class$length<10000,"length_cat"] <- "5-10kb"
-  data.class[data.class$length>10000,"length_cat"] <- ">10kb"
-  
-  for (i in 1:(length(FL_TPM_multisample_names)-1)) {
-    j1 <- FL_TPM_multisample_names[i]
-    j1_log10 <- paste(FL_TPM_multisample_names[i], "_log10", sep='')
-    n1 <- FL_multisample_names[i]
-    for (i2 in (i+1):length(FL_multisample_names)) {
-      j2 <- FL_TPM_multisample_names[i2]
-      j2_log10 <- paste(FL_TPM_multisample_names[i2], "_log10", sep='')
-      n2 <- FL_multisample_names[i2]
-      
-      print(paste("Printing FL TPM for sample", j1, "vs", j2, "...."))
-      
-      max_j1j2 <- floor(max(data.class[,j1_log10], data.class[,j2_log10])) + 1
-      pearson <- round(cor(data.class[,j1], data.class[,j2], method="pearson"), 2)
-      p.tmp <- ggplot(data.class, aes_string(j1_log10, j2_log10, color="structural_category")) +
-        geom_point(alpha=0.3) +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2)) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp)
-      ggsave(paste("Rplot.",n1,"vs",n2,".by_cat.png",sep=''), p.tmp, width=8, height=6)
-      
-      data.class.gene <- group_by(data.class, by=associated_gene) %>% dplyr::summarise(n=dplyr::n(), sum1=sum(!!sym(j1)), sum2=sum(!!sym(j2)))
-      pearson <- round(cor(data.class.gene$sum1, data.class.gene$sum2, method="pearson"), 2)
-      p.tmp.gene <- ggplot(data.class.gene, aes(x=log10(sum1), y=log10(sum2))) +
-        geom_point(alpha=0.3, color='orange') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        xlab(j1) +
-        ylab(j2) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, ", grouped by gene")) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.gene)
-      ggsave(paste("Rplot.",n1,"vs",n2,".summed_by_gene.png",sep=''), p.tmp.gene, width=8, height=6)
-      
-      
-      data.class.tmp <- subset(data.class,length_cat=="<1kb")
-      pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
-      p.tmp.le1k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
-        geom_point(alpha=0.3, color='orange') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, "< 1kb only"))+
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.le1k)
-      ggsave(paste("Rplot.",n1,"vs",n2,".le1k.png",sep=''), p.tmp.le1k, width=8, height=6)
-      
-      data.class.tmp <- subset(data.class,length_cat=="1-3kb")
-      pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
-      p.tmp.1to3k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
-        geom_point(alpha=0.3, color='purple') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, "1-3kb only")) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.1to3k)
-      ggsave(paste("Rplot.",n1,"vs",n2,".1to3k.png",sep=''), p.tmp.1to3k, width=8, height=6)
-      
-      data.class.tmp <- subset(data.class,length_cat=="3-5kb")
-      pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
-      p.tmp.3to5k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
-        geom_point(alpha=0.3, color='royalblue4') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, "3-5kb only")) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.3to5k)
-      ggsave(paste("Rplot.",n1,"vs",n2,".3to5k.png",sep=''), p.tmp.3to5k, width=8, height=6)
-      
-      data.class.tmp <- subset(data.class,length_cat=="5-10kb")
-      pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
-      p.tmp.5to10k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
-        geom_point(alpha=0.3, color='hotpink4') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, "5-10 kb only")) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.5to10k)
-      ggsave(paste("Rplot.",n1,"vs",n2,".5to10k.png",sep=''), p.tmp.5to10k, width=8, height=6)
-      
-      data.class.tmp <- subset(data.class,length_cat==">10kb")
-      pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
-      p.tmp.ge10k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
-        geom_point(alpha=0.3, color='darkolivegreen4') +
-        annotate("text", x=max_j1j2-0.5, y=max_j1j2-0.5, label=paste("Pearson:", pearson)) +
-        xlim(c(0, max_j1j2)) +
-        ylim(c(0, max_j1j2)) +
-        labs(title=paste("FL TPM (log10 scale)", n1, "vs", n2, ">10 kb only")) +
-        guides(fill=FALSE) +
-        mytheme
-      print(p.tmp.ge10k)
-      ggsave(paste("Rplot.",n1,"vs",n2,".ge10k.png",sep=''), p.tmp.ge10k, width=8, height=6)
-      
-      
-      #grid.arrange(p.tmp.le1k, p.tmp.1to3k, p.tmp.3to5k, p.tmp.5to10k, p.tmp.ge10k, ncol=2)
-      
-    }
-  }
-}
-
-#
-if (nrow(data.FSM) > 0 ) {
-  print(p2)
-  print(p3)
-}
-if (!all(is.na(data.class$gene_exp))){
-  if (nrow(data.class[data.class$structural_category=="NNC",])!=0){
-    print(p12)
-  }
-}
-#if (!all(is.na(data.class$gene_exp))){
-#    if (nrow(data.class[data.class$structural_category=="NNC",])!=0 & nrow(data.class[data.class$structural_category=="FSM",])!=0 ){]
-#        print(p13)
-#        print(p13.c)
-#    }
-#}
-
-
-#3. splice junction
-
-s <- textGrob("Splice Junction Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-grid.arrange(s)
-print(p23.a)
-print(p23.b)
-#   print(p24)
-#   print(p25)
-#   print(p26)
-#
-#   if (!all(is.na(data.junction$total_coverage)) & !all(is.na(data.class$iso_exp))){
-#     print(pn1.2)
-#   }
-#
-
-if (!all(is.na(data.junction$total_coverage))) {
-  print(pn4.a)
-  print(pn4.b)
-}
-
-if (sum(data.junction$RTS_junction=='TRUE') > 0) {
-  print(p29.a)
-  print(p29.b)
-}
-
-
-s <- textGrob("Comparison with Annotated TSS and PolyA Sites", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-grid.arrange(s)
-if (nrow(data.FSM) > 0) {
-  print(p21.a)
-  print(p21.b)
-  print(p22.a)
-  print(p22.b)
-}
-
-if (nrow(data.ISM) > 0) {
-  print(p21.dist3.ISM.a)
-  print(p21.dist3.ISM.b)
-  print(p22.dist5.ISM.a)
-  print(p22.dist5.ISM.b)
-}
-
-if (sum(!is.na(data.class$polyA_dist)) > 10) {
-  print(p.polyA_dist)
-}
-
-
-
-
-
-
-# PLOT pn1.2: Splice Junction relative coverage (if coverage and expression provided)
-##### NEEDS TRANSCRIPT_COORD VALUES IN JUNCTIONS FILE (???)
-
-#if (nrow(data.junction) > 0){
-#  if (!all(is.na(data.junction$total_coverage)) & !all(is.na(data.class$iso_exp))){
-
-#   data.junction$isoExp = data.class[data.junction$isoform, "iso_exp"]
-
-#    total = aggregate(cbind(total_coverage,isoExp,transcript_coord) ~ junctionLabel, data = data.junction,
-#                      FUN = function(x) c(mn = sum(x), n = min(x) ) )
-
-#    total$relCov = total$total_coverage[,"n"] / total$isoExp[,"mn"]
-#    total$minTSS = total$transcript_coord[,"n"]
-
-#    uniqJunc = unique(data.junction[,c("junctionLabel", "canonical_known", "total_coverage")])
-#    uniqJunc$notCov = uniqJunc$total_coverage == 0
-
-#    uniqueJunc_nonCov = as.data.frame(table(uniqJunc[uniqJunc$totalCoverage==0,"canonical_known"])/table(uniqJunc$canonical_known)*100)
-
-#    uniqJunc2 = merge(total, uniqJunc, by=1)
-#    uniqJunc2$TSSrange =cut(uniqJunc2$minTSS, breaks = c(0,40,80,120,160,200,10000000), labels = c("0-40", "41-80", "81-120", "121-160", "161-200",">200"))
-
-
-
-# calculate total expression associated to each unique junction
-#    sumExpPerJunc = tapply(data.junction$isoExp, data.junction$junctionLabel, sum)
-
-#    data.junction$sumIsoExp = sumExpPerJunc[data.junction$junctionLabel]
-
-#    data.junction$relCov = data.junction$total_coverage / data.junction$sumIsoExp
-
-#    max_dist = max(data.junction$transcript_coord) +1
-
-#    data.junction$TSSrange = cut(data.junction$transcript_coord, breaks = c(0,20,40,60,80,100,120,140,160,180,200,max_dist), labels = c("0-20", "21-40","41-80","61-80", "81-100","101-120", "121-140","141-160", "161-180", "181-200", ">200"))
-
-#    pn1.2 <-ggplot(data=data.junction[data.junction$relCov<1,], aes(y=relCov,x=TSSrange,fill=canonical_known)) +
-#      geom_boxplot(outlier.size = 0.2, size=0.3) +
-#      scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
-#      ylab("Relative coverage") +
-#      xlab("# TSS distance range") +
-#      mytheme_bw +
-#      theme(legend.position="bottom", legend.title=element_blank())  +
-#      ggtitle( "Relative Coverage of junctions\n\n\n") +
-#      theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
-
-
-#  }else{    uniqJunc = unique(data.junction[,c("junctionLabel", "canonical_known")])
-#  }
-#}
-
 
 ###** Output plots
 
@@ -2565,6 +2231,6 @@ print(p28)
 
 dev.off()
 
-print("SQANTI2 report successfully generated!")
+print("SQANTI3 report successfully generated!")
 
 
