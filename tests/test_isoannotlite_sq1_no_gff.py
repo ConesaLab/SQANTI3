@@ -5,11 +5,6 @@ import unittest
 from sqanti3.utilities.IsoAnnotLite_SQ1 import isoannot
 import tempfile
 
-try:
-    from importlib import metadata
-except ImportError:
-    # Running on pre-3.8 Python; use importlib-metadata package
-    import importlib_metadata as metadata
 
 logging.basicConfig(level=logging.CRITICAL)
 
@@ -31,8 +26,7 @@ class TestIsoAnnotLite_SQ1(unittest.TestCase):
             msg="Cannot find 'test_data/test_rep_corrected.gtf'",
         )
         self.assertTrue(
-            exists(self.junctions),
-            msg="Cannot find 'test_data/test_rep_junctions.txt'",
+            exists(self.junctions), msg="Cannot find 'test_data/test_rep_junctions.txt'"
         )
 
     def test_isoannot(self):
