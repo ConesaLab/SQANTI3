@@ -6,3 +6,26 @@ include *.rst
 include *.txt
 include *.yml
 include Dockerfile
+recursive-include src/utilities *
+# added by check_manifest.py
+include *.yaml
+include LICENSE
+include mypy.ini
+include tox.ini
+recursive-include notebooks *.fq
+recursive-include notebooks *.json
+recursive-include notebooks *.py
+recursive-include src *.R
+recursive-include tests *.bed
+recursive-include tests *.fnn
+recursive-include tests *.genePred
+recursive-include tests *.gff
+recursive-include tests *.json
+recursive-include tests *.list
+recursive-include tests *.mod
+recursive-include tests *.pdf
+recursive-include tests *.py
+recursive-include tests *.results
+recursive-include tests *.tab
+recursive-include tests *.tsv
+recursive-include tests *.txt
