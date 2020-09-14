@@ -2143,90 +2143,20 @@ def generateFinalGFF3(
     res.close()
 
 
-############
-# Parámetros
-############
-
-# -GTF de SQANTI3
-# -Classification de SQANTI3
-# -Junctions de SQANTI3
-# -GFF3 de referencia
-
-
-def main():
-    global USE_GFF3
-    global version
-    # arguments
-    parser = argparse.ArgumentParser(
-        description="IsoAnnotLite "
-        + str(version)
-        + ": Transform SQANTI 3 output files to generate GFF3 to tappAS."
-    )
-    parser.add_argument(
-        "corrected", help="\t\t*_corrected.gtf file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "classification", help="\t\t*_classification.txt file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "junction", help="\t\t*_junctions.txt file from SQANTI 3 output."
-    )
-    parser.add_argument(
-        "-gff3",
-        help="\t\ttappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3).",
-        required=False,
-    )
-
-    args = parser.parse_args()
-
-    # path and prefix for output files
-    args.corrected = os.path.abspath(args.corrected)
-    if not os.path.isfile(args.corrected):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.corrected))
-        sys.exit()
-
-    args.classification = os.path.abspath(args.classification)
-    if not os.path.isfile(args.classification):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.classification))
-        sys.exit()
-
-    args.junction = os.path.abspath(args.junction)
-    if not os.path.isfile(args.junction):
-        sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.junction))
-        sys.exit()
-
-    if args.gff3:
-        USE_GFF3 = True
-        args.gff3 = os.path.abspath(args.gff3)
-        if not os.path.isfile(args.gff3):
-            sys.stderr.write("ERROR: '%s' doesn't exist\n" % (args.gff3))
-            sys.exit()
-
-    # Running functionality
-    sys.stdout.write("\n\nRunning IsoAnnot Lite " + str(version) + "...\n")
-    run(args)
-
-
-def run(args):
-    import time
+def isoannot(
+    gtf: str,
+    classification: str,
+    junctions: str,
+    output: Optional[str] = None,
+    gff3: Optional[str] = None,
+) -> None:
 
     global USE_GFF3
-
-    t1 = time.time()
-    # corrected = input("Enter your file name for \"corrected.gtf\" file from SQANTI 3 (with extension): ")
-    gtf = args.corrected
-    # classification = input("Enter your file name for \"classification.txt\" file from SQANTI 3 (with extension): ")
-    classification = args.classification
-    # junctions = input("Enter your file name for \"junctions.txt\" file from SQANTI 3 (with extension): ")
-    junctions = args.junction
-    # GFF3 download from tappAS.org/downloads
-
     ########################
     # MAPPING SQANTI FILES #
     ########################
 
-    if USE_GFF3:
-        gff3 = args.gff3
+    if gff3:
 
         # File names
         filename = "tappAS_annot_from_SQANTI3.gff3"
@@ -2305,10 +2235,6 @@ def run(args):
             filename,
         )
 
-        t2 = time.time()
-        time = t2 - t1
-        print("Time used to generate new GFF3: " + "%.2f" % time + " seconds.\n")
-
         print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
 
     #####################
@@ -2357,12 +2283,102 @@ def run(args):
             filename,
         )
 
-        t2 = time.time()
-        time = t2 - t1
-        print("Time used to generate new GFF3: " + "%.2f" % time + " seconds.\n")
-
         print("Exportation complete.\nYour GFF3 result is: '" + filename + "'\n")
 
+
+@click.command()
+@click.argument("corrected", type=str)
+@click.argument("classification", type=str)
+@click.argument("junctions", type=str)
+@click.option(
+    "--gff3",
+    type=str,
+    default=None,
+    help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
+)
+@click.option(
+    "--output", type=str, default=None, help="path and name to use for output gtf"
+)
+@click.option(
+    "--loglevel",
+    type=click.Choice(["info", "debug"]),
+    default="info",
+    help="Debug option - what level of logging should be displayed on the console?",
+    show_default=True,
+)
+@click.version_option()
+@click.help_option(show_default=True)
+def main(
+    corrected: str,
+    classification: str,
+    junctions: str,
+    gff3: Optional[str] = None,
+    output: Optional[str] = None,
+    loglevel: str = None,
+) -> None:
+    """
+    IsoAnnotLite: Transform SQANTI 3 output files to generate GFF3 to tappAS.
+    \b
+    Parameters:
+    -----------
+    corrected:
+        *_corrected.gtf file from SQANTI 3 output
+    classification:
+        *_classification.txt file from SQANTI 3 output
+    junctions:
+        *_junctions.txt file from SQANTI 3 output
+    """
+
+    logger = logging.getLogger("IsoAnnotLite_SQ1")
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    fh = logging.FileHandler(filename="isoannotlite_sq1.log")
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    st = logging.StreamHandler()
+    if loglevel == "debug":
+        st.setLevel(logging.DEBUG)
+    else:
+        st.setLevel(logging.INFO)
+    st.setFormatter(formatter)
+    logger.addHandler(st)
+
+    logger.info(
+        f"writing log file to {os.path.join(os.getcwd(), 'isoannotlite_sq1.log')}"
+    )
+
+    if not os.path.isfile(corrected):
+        logging.error(f"'{corrected}' doesn't exist")
+        sys.exit()
+
+    classification = os.path.abspath(classification)
+    if not os.path.isfile(classification):
+        logging.error(f"'{classification}' doesn't exist")
+        sys.exit()
+
+    junctions = os.path.abspath(junctions)
+    if not os.path.isfile(junctions):
+        logging.error(f"'{junctions}' doesn't exist")
+        sys.exit()
+
+    if gff3:
+        gff3 = os.path.abspath(gff3)
+        if not os.path.isfile(gff3):
+            logging.error(f"'{gff3}' doesn't exist")
+            sys.exit()
+    
+    isoannot(
+        corrected=corrected,
+        classification=classification,
+        junctions=junctions,
+        gff3=gff3,
+        output=output,
+    )
+    logging.shutdown()
 
 if __name__ == "__main__":
     main()
