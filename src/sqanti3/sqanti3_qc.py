@@ -39,7 +39,7 @@ from sqanti3.__about__ import __version__
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-UTILITIESPATH = os.path.join(os.path.dirname(sqanti3.__file__), "/utilities")
+UTILITIESPATH = os.path.join(os.path.dirname(__file__), "/utilities")
 sys.path.insert(0, UTILITIESPATH)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"

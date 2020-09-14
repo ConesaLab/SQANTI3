@@ -13,11 +13,11 @@ try:
         exec(f.read())
 except:
     __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
-    __version__ = "1.4.0"
+    __version__ = "1.4.4"
 
 
 setup(
-    name="SQANTI3",
+    name="sqanti3",
     version=__version__,
     description="Quality Control of Long-Read Defined Transcriptomes",
     long_description=Path("README.rst").read_text("utf-8"),

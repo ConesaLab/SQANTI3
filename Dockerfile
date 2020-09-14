@@ -23,14 +23,15 @@ RUN apt update && \
     apt-get autoclean
 
 ADD sqanti3_env.yml /opt/sqanti3_env.yml
-ADD https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh /opt/Miniconda3.sh
-RUN bash /opt/Miniconda3.sh -b -p /opt/miniconda3 && \
-    # git clone https://github.com/milescsmith/SQANTI3.git /opt/SQANTI3 && \
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /opt/Miniconda3.sh && \
+    bash /opt/Miniconda3.sh -b -p /opt/miniconda3 && \
     eval "$(/opt/miniconda3/bin/conda shell.bash hook)" && \
-    # it seems this yaml need some fresh packages
-    conda env create -f /opt/sqanti3_env.yml && \
+    conda install -y -c conda-forge mamba && \
+#     # it seems this yaml need some fresh packages
+    mamba env create -f /opt/sqanti3_env.yml && \
     conda init bash && \
-    conda clean -a
+    mamba clean -a && \
+    rm -rf /opt/Miniconda3-latest-Linux-x86_64.sh
 
 ENV LC_ALL=C
 ENV PATH=/opt/miniconda3/envs/sqanti3/bin:/opt/miniconda3/envs/sqanti3/utilities:/SQANTI3:$PATH
@@ -39,16 +40,16 @@ ENV PYTHONPATH=/opt/miniconda3/envs/sqanti3/lib/python3.7/site-packages/
 # ADD http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred /opt/gtfToGenePred/gtfToGenePred
 # ENV PATH=/opt/gtfToGenePred:$PATH
 
-RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/cDNA_Cupcake.git@prune
-RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/pygmst.git
+RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/cDNA_Cupcake.git@12.2.9 && \
+    /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/pygmst.git@0.4.18
+# RUN /opt/miniconda3/envs/sqanti3/bin/pip install git+https://github.com/milescsmith/SQANTI3.git
 
 COPY . /opt/sqanti3
-RUN /opt/miniconda3/envs/sqanti3/bin/pip install -e /opt/sqanti3
+RUN /opt/miniconda3/envs/sqanti3/bin/pip install /opt/sqanti3
 # cleanup
 RUN apt clean && \
     apt autoremove -y && \
     # rm -rf /include
-    rm -rf /opt/Miniconda3-latest-Linux-x86_64.sh && \
     rm -rf /opt/cDNA_Cupcake/.git && \
     rm -rf /opt/SQANTI3/.git && \
     rm -fr /opt/sqanti3_env.yml
