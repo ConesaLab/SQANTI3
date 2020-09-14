@@ -2,13 +2,13 @@
 # Script to generate a GFF3 file from SQANTI3 output and using a tappAS GFF3 as reference.
 
 # reference for what we are ripping out:
-#dc_SQexons = {trans : [[start,end], [start,end]...]}
-#dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
-#dc_SQtransGene = {trans : [gene, category, transAssociated]}
-#dc_GFF3 = {trans : [[start,end,line], [start,end,line], ...]}
-#dc_GFF3exonsTrans = {start : [trans, trans, ...]}
-#dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
-#dc_GFF3coding = {trans : [CDSstart, CDSend]}
+# dc_SQexons = {trans : [[start,end], [start,end]...]}
+# dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
+# dc_SQtransGene = {trans : [gene, category, transAssociated]}
+# dc_GFF3 = {trans : [[start,end,line], [start,end,line], ...]}
+# dc_GFF3exonsTrans = {start : [trans, trans, ...]}
+# dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
+# dc_GFF3coding = {trans : [CDSstart, CDSend]}
 import logging
 import math
 import os
@@ -352,6 +352,7 @@ def createGTFFromSqanti(
     logger.debug(f"results_df shape: {results_df.shape}")
     return results_df
 
+
 # we don't need this because we are not going to roll our own gtf parser
 
 # def readGFF(
@@ -446,9 +447,7 @@ def createGTFFromSqanti(
 #     return (dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand)
 
 
-def transformTransFeaturesToGenomic(
-    annot_df: pd.DataFrame
-) -> pd.DataFrame:
+def transformTransFeaturesToGenomic(annot_df: pd.DataFrame) -> pd.DataFrame:
     """
     Convert start and end coordinates for transcript-type entries to
     absolute genomic coordinates
@@ -462,9 +461,21 @@ def transformTransFeaturesToGenomic(
     newdc_GFF3 = {}
     bnegative = False
 
-    gff3_df = annot_df[~annot_df["feature"].isin(["exon", "CDS","splice_junction","transcript","gene","protein","genomic"])]
+    gff3_df = annot_df[
+        ~annot_df["feature"].isin(
+            [
+                "exon",
+                "CDS",
+                "splice_junction",
+                "transcript",
+                "gene",
+                "protein",
+                "genomic",
+            ]
+        )
+    ]
 
-    for trans in annot_df[annot_df['feature'] == "exon"]["seqname"].unique():
+    for trans in annot_df[annot_df["feature"] == "exon"]["seqname"].unique():
         annot = gff3_df[gff3_df["seqname"] == trans]
         for values in annot:
             bProt = False
@@ -629,14 +640,18 @@ def transformTransFeaturesToLocale(annot_df: pd.DataFrame) -> pd.DataFrame:
 
     i = 0
     for isoform in xfeat_df["seqname"].unique():
-        gene = annot_df[annot_df['seqname'] == isoform][annot_df['feature'] == "gene"].iloc[0,] # on the off chance there's one weird entry with multiple "genes" matching the isoform name
+        gene = annot_df[annot_df["seqname"] == isoform][
+            annot_df["feature"] == "gene"
+        ].iloc[
+            0,
+        ]  # on the off chance there's one weird entry with multiple "genes" matching the isoform name
         annot = xfeat_df[xfeat_df["seqname"] == isoform]
 
         exons = exons_df[exons_df["seqname"] == isoform]
         if gene.strand == "+":
-            exons = exons.sort_values(by = start, ascending = True)
+            exons = exons.sort_values(by=start, ascending=True)
         else:
-            exons = exons.sort_values(by = start, ascending = False)
+            exons = exons.sort_values(by=start, ascending=False)
         start = 0
         end = 0
         for line in annot:
@@ -648,48 +663,72 @@ def transformTransFeaturesToLocale(annot_df: pd.DataFrame) -> pd.DataFrame:
 
             elif attributes["PosType"] == "T":
                 if line.strand == "+":
-                    startG = line.start                                             # the start position of the gene
-                    endG = line.end                                                 # end position of the gene
+                    startG = line.start  # the start position of the gene
+                    endG = line.end  # end position of the gene
                 else:
                     startG = line.end
                     endG = line.start
-                bstart = False                                                      # indicator of whether we found the start
-                bend = False                                                        # indicater of whether we found the end
-                distance = 0  # other exons                                         # total transcript distance
-                
-                for ex in exons.itertuples():                                       # for each exon
-                    if not startG == "." or not endG == ".":                        # assuming we even had positional info
+                bstart = False  # indicator of whether we found the start
+                bend = False  # indicater of whether we found the end
+                distance = (
+                    0
+                )  # other exons                                         # total transcript distance
+
+                for ex in exons.itertuples():  # for each exon
+                    if (
+                        not startG == "." or not endG == "."
+                    ):  # assuming we even had positional info
                         # SEARCH FOR START
                         if (
-                            startG >= ex.start                                      # if gene start is greater than or equal to the start of this exon
-                            and startG <= ex.end                                    #       and the gene start is less than or equal to the end of this exon
-                            and not bstart                                          #       and we haven't yet found the start of this transcript?
+                            startG
+                            >= ex.start  # if gene start is greater than or equal to the start of this exon
+                            and startG
+                            <= ex.end  #       and the gene start is less than or equal to the end of this exon
+                            and not bstart  #       and we haven't yet found the start of this transcript?
                         ):  # start
-                            start = (startG - ex.start + 1) + distance              #   start is the gene start minus the start of this exon plus 1 plus the total transcript length
-                            bstart = True                                           #   now we've found the start
-                            if endG >= ex.start and endG <= ex.end:                 #   if the end of the gene is greater than or equal to the exon start and less than or equal to the exon end
-                                end = start + (endG - startG + 1) - 1               #       end is the start from three lines above plus the gene end minus the gene start plus 1 minus 1
-                                bend = True                                         #       We found the end.  We did it people!
-                                break                                               #       Now lets stop looking
-                            else:                                                   #   otherwise
-                                distance = ex.end - startG + 1                      #       increase the distance to the end of this exon minus the gene start plus 1
-                                continue                                            #       keep looking for the end
+                            start = (
+                                startG - ex.start + 1
+                            ) + distance  #   start is the gene start minus the start of this exon plus 1 plus the total transcript length
+                            bstart = True  #   now we've found the start
+                            if (
+                                endG >= ex.start and endG <= ex.end
+                            ):  #   if the end of the gene is greater than or equal to the exon start and less than or equal to the exon end
+                                end = (
+                                    start + (endG - startG + 1) - 1
+                                )  #       end is the start from three lines above plus the gene end minus the gene start plus 1 minus 1
+                                bend = (
+                                    True
+                                )  #       We found the end.  We did it people!
+                                break  #       Now lets stop looking
+                            else:  #   otherwise
+                                distance = (
+                                    ex.end - startG + 1
+                                )  #       increase the distance to the end of this exon minus the gene start plus 1
+                                continue  #       keep looking for the end
 
-                        elif not bstart:                                            # if instead we just haven't found the start
-                            distance += (ex.end - ex.start + 1)                     #    increase the distance by the length of this exon plus one
+                        elif not bstart:  # if instead we just haven't found the start
+                            distance += (
+                                ex.end - ex.start + 1
+                            )  #    increase the distance by the length of this exon plus one
 
                         # SEARCH FOR END
-                        if bstart:                                                  # If we've found the start
-                            if endG >= ex.start and endG <= ex.end:                 #   If the gene end is greater than the exon start and less than the exon end
-                                end = endG - ex.start + 1 + distance + start - 1    #       the end is the gene end minus this exon's start plus 1 plus the distance plus our determined start minus 1
-                                bend = True                                         #       And we've found the end!
-                                break                                               #       Good job everybody!
-                            else:                                                   #   Otherwise,
-                                distance += + (ex.end - ex.start + 1)               #       Ratchet up the disance by the length of the exon plus 1
-                    else:                                                           # Otherwise
-                        start = startG                                              #   just set the start to the gene start
-                        end = endG                                                  #   and the end to the gene end
-                        bend = True                                                 #   yeah, sure, we found the end
+                        if bstart:  # If we've found the start
+                            if (
+                                endG >= ex.start and endG <= ex.end
+                            ):  #   If the gene end is greater than the exon start and less than the exon end
+                                end = (
+                                    endG - ex.start + 1 + distance + start - 1
+                                )  #       the end is the gene end minus this exon's start plus 1 plus the distance plus our determined start minus 1
+                                bend = True  #       And we've found the end!
+                                break  #       Good job everybody!
+                            else:  #   Otherwise,
+                                distance += +(
+                                    ex.end - ex.start + 1
+                                )  #       Ratchet up the disance by the length of the exon plus 1
+                    else:  # Otherwise
+                        start = startG  #   just set the start to the gene start
+                        end = endG  #   and the end to the gene end
+                        bend = True  #   yeah, sure, we found the end
                         break
                 if bend:  # to be sure in full-spliced match cases
                     NEWLINE = {
@@ -982,18 +1021,14 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
 
 
 def checkFeatureInCDS(
-    annot_df: pd.DataFrame,
-    isoform: str,
-    start: int,
-    end: int,
-    strand: str
+    annot_df: pd.DataFrame, isoform: str, start: int, end: int, strand: str
 ) -> bool:
     bstart = False
     if "CDS" in annot_df[annot_df["seqname"] == isoform]["feature"].to_list():
         # Tenemos rango de intervalos en los exones:
         #   Si coinciden todos es coding
         #   Si coinciden todos menos sub exons (inicio o final) es semicoding
-       
+
         if strand == "+":
             allExonsGFF3 = sorted(allExonsGFF3)
             allExonsGFF3 = sorted(allExonsSQ)
@@ -1019,7 +1054,9 @@ def checkFeatureInCDS(
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
                     if ex not in allExonsSQ:
-                        return False  # end in another exons and we don't have that intermediate in SQ
+                        return (
+                            False
+                        )  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
 
@@ -1727,7 +1764,7 @@ def isoannot(
 
         # logger.info("Transforming CDS local positions to genomic position...")
         # # Transformar características a posiciones genómicas //revisar
-        
+
         # # TODO: rewrite transformCDStoGenomic()
         # annot_df = transformCDStoGenomic(annot_df)
 
@@ -1760,7 +1797,7 @@ def isoannot(
         # # ) = readGFFandGetData(filenameMod)
 
         # # Remove old files
-        
+
         # annot_df = transformTransFeaturesToLocale(dcTransFeatures)
 
         # logger.info("Generating final GFF3...")
@@ -1833,15 +1870,9 @@ def isoannot(
 
 
 @click.command()
-@click.argument(
-    "corrected", type=str,
-)
-@click.argument(
-    "classification", type=str,
-)
-@click.argument(
-    "junctions", type=str,
-)
+@click.argument("corrected", type=str)
+@click.argument("classification", type=str)
+@click.argument("junctions", type=str)
 @click.option(
     "--gff3",
     type=str,
@@ -1849,7 +1880,7 @@ def isoannot(
     help="tappAS GFF3 file to map its annotation to your SQANTI 3 data (only if you use the same reference genome in SQANTI 3)",
 )
 @click.option(
-    "--output", type=str, default=None, help="path and name to use for output gtf",
+    "--output", type=str, default=None, help="path and name to use for output gtf"
 )
 @click.option(
     "--loglevel",
