@@ -135,6 +135,8 @@ dmypy.json
 *.fasta
 *.faa
 *.gtf
+*.gff3
+*.fa.gz
 *.sam
 *.params.txt
 sqanti3/test.pl
