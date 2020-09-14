@@ -18,6 +18,7 @@ from typing import Optional
 import logging
 
 from sqanti3.__about__ import __version__
+from sqanti3 import __path__ as sqpath
 
 """
 Lightweight filtering of SQANTI by using .classification.txt output
@@ -29,13 +30,11 @@ The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA
 """
 
 
-utilitiesPath = os.path.dirname(os.path.realpath(__file__)) + "/utilities/"
+UTILITIESPATH = f"{sqpath[0]}{os.sep}utilities"
 RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = "SQANTI3_report.R"
 
 # necessary for use in f-strings since \n and \t do not work
-NEWLINE = "\n"
-TAB = "\t"
 
 CATEGORY_DICT = {
     "full-splice_match": "FSM",
@@ -77,11 +76,11 @@ def sqanti_filter_lite(
 
     with open(f"{prefix}.filtered_lite_reasons.txt", "w") as fcsv:
         header = (
-            f"# classification: {sqanti_class}{NEWLINE}"
-            f"# isoform: {isoforms}{NEWLINE}"
-            f"# intrapriming cutoff: {intrapriming}{NEWLINE}"
-            f"# min_cov cutoff: {min_cov}{NEWLINE}"
-            f"filtered_isoform,reason{NEWLINE}"
+            f"# classification: {sqanti_class}\n"
+            f"# isoform: {isoforms}\n"
+            f"# intrapriming cutoff: {intrapriming}\n"
+            f"# min_cov cutoff: {min_cov}\n"
+            f"filtered_isoform,reason\n"
         )
         fcsv.write(header)
 
@@ -135,7 +134,7 @@ def sqanti_filter_lite(
             if not filter_flag:
                 seqids_to_keep.add(r["isoform"])
             else:
-                fcsv.write(f"{r['isoform']},{filter_msg}{NEWLINE}")
+                fcsv.write(f"{r['isoform']},{filter_msg}\n")
 
     logger.info(
         f"{total_count} isoforms read from {sqanti_class}. {len(seqids_to_keep)} to be kept."
@@ -188,7 +187,7 @@ def sqanti_filter_lite(
             f.write(reader.header)
             for r in reader:
                 if r.qID in seqids_to_keep:
-                    f.write(f"{r.record_line}{NEWLINE}")
+                    f.write(f"{r.record_line}\n")
             logger.info(f"Output written to: {f.name}")
 
     if faa is not None:
@@ -196,11 +195,11 @@ def sqanti_filter_lite(
         with open(outputFAA, "w") as f:
             for r in SeqIO.parse(open(faa), "fasta"):
                 if r.id in seqids_to_keep:
-                    f.write(f">{r.description}{NEWLINE}{r.seq}{NEWLINE}")
+                    f.write(f">{r.description}\n{r.seq}\n")
         logger.info(f"Output written to: {f.name}")
 
     logger.info("Generating SQANTI3 report...")
-    cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {'mock'} {utilitiesPath}"
+    cmd = f"{RSCRIPTPATH} {UTILITIESPATH}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {'mock'} {UTILITIESPATH}"
     if subprocess.check_call(cmd, shell=True) != 0:
         logger.error(f"Running command failed: {cmd}")
         sys.exit(-1)

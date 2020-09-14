@@ -13,7 +13,7 @@ try:
         exec(f.read())
 except:
     __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
-    __version__ = "1.4.4"
+    __version__ = "1.4.5"
 
 
 setup(
@@ -44,7 +44,6 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
     # extras_require=dict(doc=["sphinx", "sphinx_rtd_theme", "sphinx_autodoc_typehints"]),
-    include_package_data=True,
     entry_points={
         "console_scripts": [
             "sqanti3_qc = sqanti3.sqanti3_qc:main",
@@ -54,6 +53,7 @@ setup(
     },
     packages=find_packages(where="src"),
     package_dir={"sqanti3": "src/sqanti3"},
-    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/*.*"]},
+    package_data={"": ["tests/example/*.*", "src/sqanti3/utilities/"]},
+    include_package_data=True,
     keywords=["isoseq", "rnaseq", "pacbio", "long reads"],
 )
