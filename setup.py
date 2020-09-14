@@ -13,7 +13,7 @@ try:
         exec(f.read())
 except:
     __author__ = __email__ = ("fraparp1@upv.edu.es", "pedsalga@upv.edu.es")
-    __version__ = "1.4.5"
+    __version__ = "1.4.6"
 
 
 setup(
