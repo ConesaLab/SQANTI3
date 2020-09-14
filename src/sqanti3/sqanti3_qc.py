@@ -36,10 +36,11 @@ from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 from cupcake.sequence.STAR import STARJunctionReader
 from pygmst.pygmst import gmst
 from sqanti3.__about__ import __version__
+from sqanti3 import __path__ as sqpath
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
 
-UTILITIESPATH = os.path.join(os.path.dirname(__file__), "/utilities")
+UTILITIESPATH = f"{sqpath[0]}{os.sep}utilities"
 sys.path.insert(0, UTILITIESPATH)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
@@ -55,9 +56,6 @@ RSCRIPTPATH = distutils.spawn.find_executable("Rscript")
 RSCRIPT_REPORT = os.path.join(UTILITIESPATH, "SQANTI3_report.R")
 
 ISOANNOT_PROG = os.path.join(UTILITIESPATH, "IsoAnnotLite_SQ3.py")
-
-NEWLINE = "\n"
-TAB = "\t"
 
 seqid_rex1 = re.compile(r"PB\.(\d+)\.(\d+)$")
 seqid_rex2 = re.compile(r"PB\.(\d+)\.(\d+)\|\S+")
@@ -380,47 +378,47 @@ class myQueryTranscripts:
     def __str__(self):
 
         stringrep = (
-            f"{self.strand}{TAB}"
-            f"{str(self.length)}{TAB}"
-            f"{str(self.num_exons)}{TAB}"
-            f"{str(self.str_class)}{TAB}"
-            f"{'_'.join(set(self.genes))}{TAB}"
-            f"{self.id}{TAB}"
-            f"{str(self.refLen)}{TAB}"
-            f"{str(self.refExons)}{TAB}"
-            f"{str(self.tss_diff)}{TAB}"
-            f"{str(self.tts_diff)}{TAB}"
-            f"{self.subtype}{TAB}"
-            f"{self.RT_switching}{TAB}"
-            f"{self.canonical}{TAB}"
-            f"{str(self.min_samp_cov)}{TAB}"
-            f"{str(self.min_cov)}{TAB}"
-            f"{str(self.min_cov_pos)}{TAB}"
-            f"{str(self.sd)}{TAB}"
-            f"{str(self.FL)}{TAB}"
-            f"{str(self.nIndels)}{TAB}"
-            f"{str(self.nIndelsJunc)}{TAB}"
-            f"{self.bite}{TAB}"
-            f"{str(self.isoExp)}{TAB}"
-            f"{str(self.geneExp)}{TAB}"
-            f"{str(self.ratioExp())}{TAB}"
-            f"{self.FSM_class}{TAB}"
-            f"{self.coding}{TAB}"
-            f"{str(self.ORFlen)}{TAB}"
-            f"{str(self.CDSlen())}{TAB}"
-            f"{str(self.CDS_start)}{TAB}"
-            f"{str(self.CDS_end)}{TAB}"
-            f"{str(self.CDS_genomic_start)}{TAB}"
-            f"{str(self.CDS_genomic_end)}{TAB}"
-            f"{str(self.is_NMD)}{TAB}"
-            f"{str(self.percAdownTTS)}{TAB}"
-            f"{str(self.seqAdownTTS)}{TAB}"
-            f"{str(self.dist_cage)}{TAB}"
-            f"{str(self.within_cage)}{TAB}"
-            f"{str(self.dist_polya_site)}{TAB}"
-            f"{str(self.within_polya_site)}{TAB}"
-            f"{str(self.polyA_motif)}{TAB}"
-            f"{str(self.polyA_dist)}{TAB}"
+            f"{self.strand}\t"
+            f"{str(self.length)}\t"
+            f"{str(self.num_exons)}\t"
+            f"{str(self.str_class)}\t"
+            f"{'_'.join(set(self.genes))}\t"
+            f"{self.id}\t"
+            f"{str(self.refLen)}\t"
+            f"{str(self.refExons)}\t"
+            f"{str(self.tss_diff)}\t"
+            f"{str(self.tts_diff)}\t"
+            f"{self.subtype}\t"
+            f"{self.RT_switching}\t"
+            f"{self.canonical}\t"
+            f"{str(self.min_samp_cov)}\t"
+            f"{str(self.min_cov)}\t"
+            f"{str(self.min_cov_pos)}\t"
+            f"{str(self.sd)}\t"
+            f"{str(self.FL)}\t"
+            f"{str(self.nIndels)}\t"
+            f"{str(self.nIndelsJunc)}\t"
+            f"{self.bite}\t"
+            f"{str(self.isoExp)}\t"
+            f"{str(self.geneExp)}\t"
+            f"{str(self.ratioExp())}\t"
+            f"{self.FSM_class}\t"
+            f"{self.coding}\t"
+            f"{str(self.ORFlen)}\t"
+            f"{str(self.CDSlen())}\t"
+            f"{str(self.CDS_start)}\t"
+            f"{str(self.CDS_end)}\t"
+            f"{str(self.CDS_genomic_start)}\t"
+            f"{str(self.CDS_genomic_end)}\t"
+            f"{str(self.is_NMD)}\t"
+            f"{str(self.percAdownTTS)}\t"
+            f"{str(self.seqAdownTTS)}\t"
+            f"{str(self.dist_cage)}\t"
+            f"{str(self.within_cage)}\t"
+            f"{str(self.dist_polya_site)}\t"
+            f"{str(self.within_polya_site)}\t"
+            f"{str(self.polyA_motif)}\t"
+            f"{str(self.polyA_dist)}\t"
         )
         return stringrep
 
@@ -794,13 +792,13 @@ def correctionPlusORFpred(
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=newid
                     )
-                    f.write(f">{newid}{NEWLINE}{newseq}{NEWLINE}")
+                    f.write(f">{newid}\n{newseq}\n")
                 else:
                     new_rec = r
                     orfDict[r.id] = myQueryProteins(
                         cds_start, cds_end, orf_length, proteinID=r.id
                     )
-                    f.write(f">{new_rec.description}{NEWLINE}{new_rec.seq}{NEWLINE}")
+                    f.write(f">{new_rec.description}\n{new_rec.seq}\n")
 
     if len(orfDict) == 0:
         logger.warning("All input isoforms were predicted as non-coding")
@@ -896,7 +894,7 @@ def reference_parser(
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
         logger.warning(
-            f"ref annotation contains chromosomes not in genome: {','.join(diff)}{NEWLINE}"
+            f"ref annotation contains chromosomes not in genome: {','.join(diff)}\n"
         )
 
     # convert the content of junctions_by_chr to sorted list
@@ -2149,11 +2147,11 @@ def isoformClassification(
                 except KeyError:
 
                     logger.debug(
-                        f"Problem with transcript {rec.id}{NEWLINE}"
+                        f"Problem with transcript {rec.id}\n"
                         f"GeneMark mapped the end of the cds due to a cds "
                         f"length of {orfDict[rec.id].cds_end} "
-                        f"outside range{NEWLINE}."
-                        f"Setting the end of the cds to the end of the{NEWLINE}"
+                        f"outside range\n."
+                        f"Setting the end of the cds to the end of the\n"
                         f"mapped gene: {rec.exons[-1].end}"
                     )
                     orfDict[rec.id].cds_genomic_end = rec.exons[-1].end
@@ -2644,7 +2642,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = raw[3]
             else:
                 newid = r.id.split()[0]  # Ensembl fasta header
-        f.write(f">{newid}{NEWLINE}{r.seq}{NEWLINE}")
+        f.write(f">{newid}\n{r.seq}\n")
     f.close()
     return f.name
 
@@ -3174,18 +3172,18 @@ def main(
     doc = os.path.join(os.path.abspath(directory), f"{output}.params.txt")
     logger.info(f"Write arguments to {doc}...")
     doc_output = (
-        f"Version{TAB}{__version__}{NEWLINE}"
-        f"Input{TAB}{os.path.basename(isoforms)}{NEWLINE}"
-        f"Annotation{TAB}{os.path.basename(annotation)}{NEWLINE}"
-        f"Genome{TAB}{os.path.basename(genome)}{NEWLINE}"
-        f"Aligner{TAB}{aligner_choice}{NEWLINE}"
-        f"FLCount{TAB}{os.path.basename(fl_count) if fl_count is not None else 'NA'}{NEWLINE}"
-        f"Expression{TAB}{os.path.basename(expression) if expression is not None else 'NA'}{NEWLINE}"
-        f"Junction{TAB}{os.path.basename(coverage) if coverage is not None else 'NA'}{NEWLINE}"
-        f"CagePeak{TAB}{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}{NEWLINE}"
-        f"PolyA{TAB}{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}{NEWLINE}"
-        f"PolyAPeak{TAB}{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}{NEWLINE}"
-        f"IsFusion{TAB}{str(is_fusion)}{NEWLINE}"
+        f"Version\t{__version__}\n"
+        f"Input\t{os.path.basename(isoforms)}\n"
+        f"Annotation\t{os.path.basename(annotation)}\n"
+        f"Genome\t{os.path.basename(genome)}\n"
+        f"Aligner\t{aligner_choice}\n"
+        f"FLCount\t{os.path.basename(fl_count) if fl_count is not None else 'NA'}\n"
+        f"Expression\t{os.path.basename(expression) if expression is not None else 'NA'}\n"
+        f"Junction\t{os.path.basename(coverage) if coverage is not None else 'NA'}\n"
+        f"CagePeak\t{os.path.basename(cage_peak) if cage_peak is not None else 'NA'}\n"
+        f"PolyA\t{os.path.basename(polya_motif_list) if polya_motif_list is not None else 'NA'}\n"
+        f"PolyAPeak\t{os.path.basename(polya_peak) if polya_peak is not None else 'NA'}\n"
+        f"IsFusion\t{str(is_fusion)}\n"
     )
     logger.debug(doc_output)
     with open(doc, "w") as doc_file:

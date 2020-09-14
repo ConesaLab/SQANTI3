@@ -99,7 +99,7 @@ def createGTFFromSqanti(
         # aux
         strand = row.strand  # fields[2]
 
-        desc = f"ID={row.associated_transcript}; primary_class={row.structural_category}{NEWLINE}"  # desc = "ID="+fields[7]+"; primary_class="+fields[5]+"\n"
+        desc = f"ID={row.associated_transcript}; primary_class={row.structural_category}\n"  # desc = "ID="+fields[7]+"; primary_class="+fields[5]+"\n"
         res[i] = {
             "seqname": transcript,
             "source": source,
@@ -120,7 +120,7 @@ def createGTFFromSqanti(
         end = row.length
         # aux
         strand = row.strand
-        desc = f"ID={row.associated_gene};Name={row.associated_gene};Desc={row.associated_gene}{NEWLINE}"
+        desc = f"ID={row.associated_gene};Name={row.associated_gene};Desc={row.associated_gene}\n"
 
         i += 1
         res[i] = {
@@ -143,7 +143,7 @@ def createGTFFromSqanti(
         end = row.CDS_end  # 31
         # aux
         strand = row.strand
-        desc = f"ID=Protein_{transcript};Name=Protein_{transcript};Desc=Protein_{transcript}{NEWLINE}"
+        desc = f"ID=Protein_{transcript};Name=Protein_{transcript};Desc=Protein_{transcript}\n"
         if start != "NA" and not pd.isnull(start):
             prot_length = int(math.ceil((int(end) - int(start) - 1) / 3))
             i += 1
@@ -177,7 +177,7 @@ def createGTFFromSqanti(
         # res.write("\t".join([transcript, source, feature, ".", ".", aux, strand, aux, desc]))
 
         # genomic
-        desc = f"Chr={row.chrom}{NEWLINE}"
+        desc = f"Chr={row.chrom}\n"
 
         # Coding Dictionary
         CDSstart = row.CDS_start  # 30
@@ -289,7 +289,7 @@ def createGTFFromSqanti(
         # aux
         strand = row.strand
         # desc = fields[8]
-        desc = f"Chr={str(row.seqname)}{NEWLINE}"
+        desc = f"Chr={str(row.seqname)}\n"
 
         # Exons Dictionary
         i += 1
@@ -317,7 +317,7 @@ def createGTFFromSqanti(
         end = row.genomic_end_coord
         # aux
         strand = row.strand
-        desc = f"ID={row.junction_number}_{row.canonical};Chr={row.chrom}{NEWLINE}"
+        desc = f"ID={row.junction_number}_{row.canonical};Chr={row.chrom}\n"
         i += 1
         res[i] = {
             "seqname": transcript,
@@ -431,10 +431,10 @@ def createGTFFromSqanti(
 
 #         else:
 #             line_rep = (
-#                 f"{line.seqname}{TAB}{line.source}{TAB}{line.feature}{TAB}"
-#                 f"{line.start}{TAB}{line.end}{TAB}{line.score}{TAB}"
-#                 f"{line.score}{TAB}{line.strand}{TAB}{line.frame}{TAB}"
-#                 f"{line.attribute}{NEWLINE}"
+#                 f"{line.seqname}\t{line.source}\t{line.feature}\t"
+#                 f"{line.start}\t{line.end}\t{line.score}\t"
+#                 f"{line.score}\t{line.strand}\t{line.frame}\t"
+#                 f"{line.attribute}\n"
 #             )
 #             if transcript not in dc_GFF3:
 #                 dc_GFF3[str(transcript)] = [[start, end, line_rep]]
