@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 09/07/2020 (v1.0)   SQANTI3 release!
+Last Updated: 09/15/2020 (v1.1)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -37,6 +37,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2020.09.15 - updated to v1.1. Fixed report script `_classification_TPM.txt` linebreak issue. rarefaction disabled for now.
 
 2020.09.07 - updated to v1.0. Fixed SQANTI3 report missing figures (ex: intrapriming).
 

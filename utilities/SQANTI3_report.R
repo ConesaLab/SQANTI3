@@ -12,7 +12,7 @@
 args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 junc.file <- args[2]
-utilities.path <- args[4]
+#utilities.path <- args[4]
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1];
 report.file <- paste(report.prefix, "sqanti_report.pdf", sep="_");
@@ -37,9 +37,9 @@ library(grid)
 library(dplyr)
 library(NOISeq)
 
-source(paste(utilities.path, "plot.rarefaction.R", sep = "/"))
-source(paste(utilities.path, "LR.rarefaction.R", sep = "/"))
-source(paste(utilities.path, "NewReadData.R", sep = "/"))
+#source(paste(utilities.path, "plot.rarefaction.R", sep = "/"))
+#source(paste(utilities.path, "LR.rarefaction.R", sep = "/"))
+#source(paste(utilities.path, "NewReadData.R", sep = "/"))
 
 # ***********************
 # ***********************
@@ -108,6 +108,7 @@ data.class$structural_category = factor(data.class$structural_category,
                                         labels = xaxislabelsF1,
                                         levels = xaxislevelsF1,
                                         ordered=TRUE)
+
 
 data.FSMISM <- subset(data.class, structural_category %in% c('FSM', 'ISM'))
 data.FSM <- subset(data.class, (structural_category=="FSM" & exons>1))
@@ -230,7 +231,15 @@ if (length(FL_multisample_indices)>0){
     data.class[,name] <- data.class[j]*(10**6)/total_fl
     data.class[,name2] <- log10(data.class[j]*(10**6)/total_fl + 1)
   }
-  write.table(data.class, class.file2, quote=F, sep = "\t");
+  data.class$structural_category = factor(data.class$structural_category,
+                                        labels = xaxislevelsF1,
+                                        levels = xaxislabelsF1,
+                                        ordered=TRUE)
+  write.table(data.class, class.file2, quote=F, sep = "\t", row.names = FALSE);
+  data.class$structural_category = factor(data.class$structural_category,
+                                        labels = xaxislabelsF1,
+                                        levels = xaxislevelsF1,
+                                        ordered=TRUE)
 }
 
 ########################################
@@ -1787,24 +1796,24 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
 
 #### Rarefraction plots
-if (!all(is.na(data.class$FL))) {
-  FL.counts <- as.matrix(data.class$FL)
-  rownames(FL.counts) <- data.class$isoform
-  colnames(FL.counts) <- "FL"
-  myfactors <- data.frame(sample = c("FL"))
-  rownames(myfactors) = colnames(FL.counts)
-  mybiotype=as.matrix(data.class$coding)
-  rownames(mybiotype)=data.class$isoform
-  mycategory=as.matrix(data.class$structural_category)
-  rownames(mycategory)=data.class$isoform
-  mydata = readData(data = FL.counts, factors = myfactors, biotype = mybiotype, category=mycategory)
-
-  rarefact <- LR.rarefaction(mydata , samples = 1)
-  rar1 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 1, depth.increase = 2, break.by = "category"))
-  rar2 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 2, depth.increase = 2, break.by = "category"))
-  rar3 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 3, depth.increase = 2, break.by = "category"))
-  rar5 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 5, depth.increase = 2, break.by = "category"))
-}
+#if (!all(is.na(data.class$FL))) {
+#  FL.counts <- as.matrix(data.class$FL)
+#  rownames(FL.counts) <- data.class$isoform
+#  colnames(FL.counts) <- "FL"
+#  myfactors <- data.frame(sample = c("FL"))
+#  rownames(myfactors) = colnames(FL.counts)
+#  mybiotype=as.matrix(data.class$coding)
+#  rownames(mybiotype)=data.class$isoform
+#  mycategory=as.matrix(data.class$structural_category)
+#  rownames(mycategory)=data.class$isoform
+#  mydata = readData(data = FL.counts, factors = myfactors, biotype = mybiotype, category=mycategory)
+#
+#  rarefact <- LR.rarefaction(mydata , samples = 1)
+#  rar1 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 1, depth.increase = 2, break.by = "category"))
+#  rar2 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 2, depth.increase = 2, break.by = "category"))
+#  rar3 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 3, depth.increase = 2, break.by = "category"))
+#  rar5 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 5, depth.increase = 2, break.by = "category"))
+#}
 
 
 
@@ -2204,18 +2213,18 @@ print(p30)
 print(p31)
 print(p32)
 
-if (!all(is.na(data.class$FL))) {
-  s <- textGrob("Saturation curves", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-  grid.arrange(s)
-  print(rar1[[1]])
-  print(rar1[[2]])
-  print(rar2[[1]])
-  print(rar2[[2]])
-  print(rar3[[1]])
-  print(rar3[[2]])
-  print(rar5[[1]])
-  print(rar5[[2]])
-}
+#if (!all(is.na(data.class$FL))) {
+#  s <- textGrob("Saturation curves", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+#  grid.arrange(s)
+#  print(rar1[[1]])
+#  print(rar1[[2]])
+#  print(rar2[[1]])
+#  print(rar2[[2]])
+#  print(rar3[[1]])
+#  print(rar3[[2]])
+#  print(rar5[[1]])
+#  print(rar5[[2]])
+#}
 
 s <- textGrob("Quality Controls", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
