@@ -1,3 +1,13 @@
+# 2020-09-15: 1.4.7
+
+## Fixes
+* IsoAnnotLite_SQ1.py now works properly.
+
+## Changes
+* Update README.md to reflect using Miniconda to install or using the Docker
+container
+
+
 # 2020-09-14: 1.4.6
 
 ## Changes

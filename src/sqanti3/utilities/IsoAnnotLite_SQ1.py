@@ -284,7 +284,7 @@ class gtf_fields:
             f"{self.score}\t"
             f"{self.strand}\t"
             f"{self.frame}\t"
-            f"{self.attribute}\n"
+            f"{self.attribute}"
         )
 
     def to_dict(self):
@@ -307,12 +307,12 @@ class gtf_fields:
 
     def write(self, filename, mode="a"):
         with open(filename, mode) as output:
-            output.write(str(self))
+            output.write(str(self).rstrip("\n")+"\n") # this makes sure we only only use one newline char
 
 
 # Functions
 def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
-    res = open(filename, "w+")
+    res = filename
 
     desc = ""
 
@@ -321,31 +321,31 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
     dc_SQstrand = {}
     f = open(file_trans)
 
-    # check header
-    global CLASS_COLUMN_USED
-    global CLASS_COLUMN_NAME
-
     header = next(f)
     fields = header.split("\t")
     index = 0
-    for column in CLASS_COLUMN_NAME:  # check all the columns we used
-        if (
-            column not in fields[CLASS_COLUMN_USED[index]]
-        ):  # if now in the correct possition...
-            logging.info(
-                f"File classification does not have the correct structure. "
-                f" The column '{column}' is not in the possition "
-                f"{str(CLASS_COLUMN_USED[index])}"
-                f" in the classification file. We have found the column '"
-                f"{str(fields[CLASS_COLUMN_USED[index]])}'."
-            )
-            sys.exit()
-        else:
-            index = index + 1
+    # for column in CLASS_COLUMN_NAME:  # check all the columns we used
+    #     if (
+    #         column not in fields[CLASS_COLUMN_USED[index]]
+    #     ):  # if now in the correct possition...
+    #         logging.info(
+    #             f"File classification does not have the correct structure. "
+    #             f" The column '{column}' is not in the possition "
+    #             f"{str(CLASS_COLUMN_USED[index])}"
+    #             f" in the classification file. We have found the column '"
+    #             f"{str(fields[CLASS_COLUMN_USED[index]])}'."
+    #         )
+    #         sys.exit()
+    #     else:
+    #         index = index + 1
 
     # add transcript, gene and CDS
     for line in f:
-        fields = transcriptAnnotation(line)
+        try:
+            fields = transcriptAnnotation(line)
+        except IndexError:
+            print(line.split("\t"))
+            sys.exit(-1)
 
         ### Create transcript entry
         transcript_entry = gtf_fields(
@@ -358,11 +358,11 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             strand=fields.strand,
             frame=".",
             attribute=f"ID={fields.associated_transcript};"
-            f"primary_class={fields.structural_category}\n",
+            f"primary_class={fields.structural_category}",
         )
 
         dc_SQstrand.update(
-            {str(transcript_entry.transcript): transcript_entry.strand}
+            {transcript_entry.seqname: transcript_entry.strand}
         )  # saving strand
 
         transcript_entry.write(res)
@@ -379,7 +379,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             frame=".",
             attribute=f"ID={fields.associated_gene};"
             f"Name={fields.associated_gene};"
-            f"Desc={fields.associated_gene}\n",
+            f"Desc={fields.associated_gene}",
         )
 
         gene_entry.write(res)
@@ -399,7 +399,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 frame=".",
                 attribute=f"ID=Protein_{fields.isoform};"
                 f"Name=Protein_{fields.isoform};"
-                f"Desc=Protein_{fields.isoform}\n",
+                f"Desc=Protein_{fields.isoform}",
             )
 
             protein_entry = gtf_fields(
@@ -415,7 +415,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 frame=".",
                 attribute=f"ID=Protein_{cds_entry.seqname};"
                 f"Name=Protein_{cds_entry.seqname};"
-                f"Desc=Protein_{cds_entry.seqname}\n",
+                f"Desc=Protein_{cds_entry.seqname}",
             )
             cds_entry.write(res)
             protein_entry.write(res)
@@ -431,14 +431,14 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 frame=".",
                 attribute=f"ID=Protein_{fields.isoform};"
                 f"Name=Protein_{fields.isoform};"
-                f"Desc=Protein_{fields.isoform}\n",
+                f"Desc=Protein_{fields.isoform}",
             )
             cds_entry.write(res)
 
         ### Add an entry to the gene dictionary
         # Gene
         genomic_entry = gtf_fields(
-            seqname=fields.associated_gene,
+            seqname=fields.isoform,
             source="tappAS",
             feature="genomic",
             start="1",
@@ -446,7 +446,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             score=".",
             strand=fields.strand,
             frame=".",
-            attribute=f"Chr={fields.chrom};\n",
+            attribute=f"Chr={fields.chrom}",
         )
 
         category = fields.structural_category
@@ -455,10 +455,10 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
             pattern=r"\.\d+$", repl="", string=fields.associated_transcript
         )
 
-        if genomic_entry.seqname not in dc_gene:
+        if fields.isoform not in dc_gene:
             dc_gene.update(
                 {
-                    str(genomic_entry.seqname): [
+                    fields.isoform: [
                         fields.associated_gene,
                         fields.structural_category,
                         transAssociated,
@@ -468,7 +468,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
         else:
             dc_gene.update(
                 {
-                    str(genomic_entry.seqname): dc_gene[genomic_entry.seqname]
+                    fields.isoform: dc_gene[fields.isoform]
                     + [
                         fields.associated_gene,
                         fields.structural_category,
@@ -506,7 +506,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 score=".",
                 strand=fields.strand,
                 frame=".",
-                attribute="ID=3UTR_Length; Name=3UTR_Length; Desc=3UTR_Length\n",
+                attribute="ID=3UTR_Length; Name=3UTR_Length; Desc=3UTR_Length",
             )
 
             tp_utr.write(res)
@@ -521,7 +521,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 score=".",
                 strand=fields.strand,
                 frame=".",
-                attribute="ID=5UTR_Length;Name=5UTR_Length;Desc=5UTR_Length\n",
+                attribute="ID=5UTR_Length;Name=5UTR_Length;Desc=5UTR_Length",
             )
 
             fp_utr.write(res)
@@ -536,10 +536,10 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 score=".",
                 strand=fields.strand,
                 frame=".",
-                attribute="ID=CDS;Name=CDS;Desc=CDS\n",
+                attribute="ID=CDS;Name=CDS;Desc=CDS",
             )
 
-            res.write(str(cds))
+            cds.write(res)
 
             # polyA
             polyA = gtf_fields(
@@ -551,62 +551,60 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, filename):
                 score=".",
                 strand=fields.strand,
                 frame=".",
-                attribute="ID=polyA_Site;Name=polyA_Site;Desc=polyA_Site\n",
+                attribute="ID=polyA_Site;Name=polyA_Site;Desc=polyA_Site",
             )
 
-            res.write(str(polyA))
+            polyA.write(res)
 
     f.close()
 
-    exons = gtfparse.parse_gtf_and_expand_attributes(gtf)
-    exons = exons[exons[:, "feature"] == "exon"]
+    exons = gtfparse.parse_gtf_and_expand_attributes(file_exons)
+    exons = exons[exons["feature"] == "exon"]
     dc_exons = {}
     # add exons
-    for exon in exons:
-        fields = gtf_fields(
-            seqname=exon.seqname,
-            source=exon.source,
-            feature=exon.feature,
-            start=exon.start,
-            end=exon.end,
+    for line in exons.itertuples():
+        exon = gtf_fields(
+            seqname=line.seqname,
+            source=line.source,
+            feature=line.feature,
+            start=line.start,
+            end=line.end,
             score=".",
-            strand=exon.strand,
+            strand=line.strand,
             frame=".",
-            attribute=f"Chr={exon.seqname}",
+            attribute=f"Chr={line.seqname}",
         )
 
         # Exons Dictionary
-        if not dc_exons.get(exon.gene_id):
-            dc_exons.update({exon.gene_id: [[exon.start, exon.end]]})
+        if not dc_exons.get(line.gene_id):
+            dc_exons.update({line.gene_id: [[exon.start, exon.end]]})
         else:
             dc_exons.update(
-                {exon.gene_id: dc_exons.get(exon.gene_id) + [[exon.start, exon.end]]}
+                {line.gene_id: dc_exons.get(line.gene_id) + [[exon.start, exon.end]]}
             )
 
-        res.write(str(fields))
+        exon.write(res)
 
     # add junctions
     junctions = pd.read_csv(file_junct, delimiter="\t")
     # header
 
-    for line in junctions.iterrows():
+    for line in junctions.itertuples():
 
         # Junctions file can have a dvierse number of columns, not only 19 but 0-14 are allways the same
         junct = gtf_fields(
-            seqname=line[1].isoform,
+            seqname=line.isoform,
             source="tappAS",
             feature="splice_junction",
-            start=line[1].genomic_start_coord,
-            end=line[1].genomic_end_coord,
+            start=line.genomic_start_coord,
+            end=line.genomic_end_coord,
             score=".",
-            strand=line[1].strand,
+            strand=line.strand,
             frame=".",
-            attribute=f"ID={line[1].junction_number}_{line[1].canonical};Chr={line[1].chrom}\n",
+            attribute=f"ID={line.junction_number}_{line.canonical};Chr={line.chrom}",
         )
 
-        res.write(str(junct))
-
-    res.close()
+        junct.write(res)
 
     return dc_exons, dc_coding, dc_gene, dc_SQstrand
 
@@ -2165,7 +2163,7 @@ def isoannot(
         #################
         # START PROCESS #
         #################
-        print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
+        print("\nReading SQANTI 3 Files and creating an auxiliary GFF...")
 
         # dc_SQexons = {trans : [[start,end], [start,end]...]}
         # dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
@@ -2372,7 +2370,7 @@ def main(
             sys.exit()
     
     isoannot(
-        corrected=corrected,
+        gtf=corrected,
         classification=classification,
         junctions=junctions,
         gff3=gff3,
