@@ -40,8 +40,6 @@ New features implemented in SQANTI3 not available in previous versions are:
 
 2020.05.12 - SQANTI3 first release.
 
-
-
 <a name="Prerequisites"/>
 
 ! Note: Due to a dependency on [GMST](http://exon.gatech.edu/GeneMark/) for ORF
@@ -77,8 +75,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 
 ## Installing dependencies
 
-We recommend using Anaconda (or, specifically, [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
-to substantially facilitate installation of all Python dependencies.
+We recommend using Anaconda (or, specifically, [Miniconda](https://docs.conda.io/en/latest/miniconda.html))
+to facilitate installation of all dependencies.
 Alternatively, you can use the Docker container. Please
 follow the steps here to ensure an error-free installation. All the
 dependencies will be installed automatically in a conda environment. The
@@ -110,12 +108,16 @@ activate the environment:
 conda activate sqanti3
 ```
 
-    - Alternatively, `sqanti3_qc` can be rn from a Docker container:
+  - Alternatively, `sqanti3_qc` can be run from a Docker container:
 
 ```
-docker run -it --mount target=/opt/refs,source=<path_to_refs>,type=bind milescsmith/sqanti3 sqanti3_qc [OPTIONS] ISOFORMS ANNOTATION GENOME
+docker \
+   run \
+   -it \
+   --mount target=/opt/refs,source=<path_to_refs>,type=bind \
+   milescsmith/sqanti3 \
+   sqanti3_qc [OPTIONS] ISOFORMS ANNOTATION GENOME
 ```
-
 
 <a name="Running"/>
 
@@ -123,7 +125,7 @@ docker run -it --mount target=/opt/refs,source=<path_to_refs>,type=bind milescsm
 
 #### Minimum Input to SQANTI3 QC
 
-This are the minimal files that you will need to run SQANTI3:
+These are the minimal files needed to run SQANTI3:
 
 *   **Long read-defined transcriptome**. It can be obtained from any of the 
 available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or
@@ -181,18 +183,85 @@ For more information about tappAS functionalities visit its
 The script usage is:
 
 ```
-python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
-                     [--aligner_choice {minimap2,deSALT,gmap}]
-                     [--cage_peak CAGE_PEAK]
-                     [--polyA_motif_list POLYA_MOTIF_LIST]
-                     [--polyA_peak POLYA_PEAK] [--phyloP_bed PHYLOP_BED]
-                     [--skipORF] [--is_fusion] [-g] [-e EXPRESSION]
-                     [-x GMAP_INDEX] [-t CPUS] [-n CHUNKS] [-o OUTPUT]
-                     [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
-                     [--genename] [-fl FL_COUNT] [-v] [--isoAnnotLite]
-                     [--gff3 GFF3]
-                     isoforms annotation genome
+Usage: sqanti3_qc [OPTIONS] ISOFORMS ANNOTATION GENOME
 
+  Structural and Quality Annotation of Novel Transcript Isoforms
+
+  Parameters:
+  -----------
+  isoforms:
+      FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf
+  annotation:
+      Reference annotation file in GTF format
+  genome:
+      Reference genome in fasta format
+
+Options:
+  --min_ref_len INTEGER           Minimum reference transcript length
+                                  [default: 200]
+
+  --force_id_ignore               Allow the usage of transcript IDs non
+                                  related with PacBio's nomenclature (PB.X.Y)
+                                  [default: False]
+
+  --aligner_choice [minimap2|deSALT|gmap]
+                                  [default: minimap2]
+  --cage_peak TEXT                FANTOM5 Cage Peak (BED format, optional)
+  --polyA_motif_list TEXT         Ranked list of polyA motifs (text, optional)
+  --polyA_peak TEXT               PolyA Peak (BED format, optional)
+  --phyloP_bed TEXT               PhyloP BED for conservation score (BED,
+                                  optional)
+
+  --skipORF                       Skip ORF prediction (to save time)
+                                  [default: False]
+
+  --is_fusion                     Input are fusion isoforms, must supply GTF
+                                  as input using --gtf  [default: False]
+
+  -g, --gtf                       Use when running SQANTI by using as input a
+                                  gtf of isoforms  [default: False]
+
+  -e, --expression TEXT           Expression matrix (supported: Kallisto tsv)
+  -x, --gmap_index TEXT           Path and prefix of the reference index
+                                  created by gmap_build. Mandatory if using
+                                  GMAP unless -g option is specified.
+
+  -t, --cpus INTEGER              Number of threads used during alignment by
+                                  aligners.  [default: 10]
+
+  -n, --chunks INTEGER            Number of chunks to split SQANTI3 analysis
+                                  in for speed up.  [default: 1]
+
+  -o, --output TEXT               Prefix for output files.
+  -d, --directory TEXT            Directory for output files. Default:
+                                  Directory where the script was run.
+
+  -c, --coverage TEXT             Junction coverage files (provide a single
+                                  file or a file pattern, ex:
+                                  "mydir/*.junctions").
+
+  -s, --sites TEXT                Set of splice sites to be considered as
+                                  canonical (comma-separated list of splice
+                                  sites).
+
+  -w, --window INTEGER            Size of the window in the genomic DNA
+                                  screened for Adenine content downstream of
+                                  TTS
+
+  --genename                      Use gene_name tag from GTF to define genes.
+                                  Otherwise, gene_id used to define genes
+
+  -fl, --fl_count TEXT            Full-length PacBio abundance file
+  --skip_report                   Do not prepare pdf report.
+  --isoAnnotLite                  Run isoAnnot Lite to output a tappAS-
+                                  compatible gff3 file
+
+  --gff3 TEXT                     Precomputed tappAS species specific GFF3
+                                  file. It will serve as reference to transfer
+                                  functional attributes
+
+  --version                       Show the version and exit.
+  --help                          Show this message and exit.
 ```
 
 If you don't feel like running the ORF prediction part, use `--skipORF`. Just
@@ -211,30 +280,41 @@ that corresponds just to those polished sequences that map to chromosome 13.
 sqanti3_qc test_chr13_seqs.fasta \
     Homo_sapiens.GRCh38.86.chr13.gtf \
     Homo_sapiens.GRCh38.dna.chromosome.13.fa \
-    --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif_list  polyA.list \
+    --cage_peak hg38.cage_peaks.chr13.bed \
+    --polyA_motif_list  polyA.list \
     --expression rsemQuantification.chr13.isoforms.results \
     --fl_count chr13_FL.abundances.txt \
-    -c chr13_SR_support.star.SJ.out.tab \
-    --isoAnnotLite --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
+    --coverage chr13_SR_support.star.SJ.out.tab \
+    --isoAnnotLite \
+    --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
 
 ```
 
-
-If `--aligner_choice=minimap2`, the minimap2 parameter used currently is:
+If `--aligner_choice=minimap2`, the correct parameters are:
 ```
-minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`.
-```
-
-If `--aligner_choice=deSALT`, the deSALT parameter used currently is:
-```
-deSALT aln -x ccs`.
+minimap2 \
+   -ax splice \
+   --secondary=no \
+   -C5 -O6,24 -B4 -uf
 ```
 
-If `--aligner_choice=gmap`, the GMAP parameter used currently is:
+If `--aligner_choice=deSALT`, the correct parameters are:
 ```
-gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force `.
+deSALT aln -x ccs
 ```
-Remember to build the GMAP index of the genome previously and provide its
+
+If `--aligner_choice=gmap`, the correct parameters are:
+```
+gmap \
+   --cross-species \
+   -n 1 \
+   --max-intronlength-middle=2000000 \
+   --max-intronlength-ends=2000000 \
+   -L 3000000 \
+   -f samse \
+   -z sense_force
+```
+Remember to build a GMAP index of the genome to provide its
 path through `-x` option.
 
 
@@ -400,50 +480,85 @@ PB.100.2        PB.100  226     81.11   20.18   2.26    9.47    100.00  16.84   
 
 ### Filtering Isoforms using SQANTI3 output and a pre-defined rules
 
-
-I've made a lightweight filtering script based on SQANTI3 output that filters
-for two things: (a) intra-priming and (b) short read junction support.
+A lightweight filtering script named `sqanti3_RulesFilter` based on
+SQANTI3 output is provided that filters for two things:
+   a. intra-priming
+   b. short read junction support.
 
 The script usage is:
-
 ```
-usage: sqanti3_RulesFilter [-h] [--sam SAM] [--faa FAA] [-a INTRAPRIMING]
-                           [-r RUNALENGTH] [-m MAX_DIST_TO_KNOWN_END]
-                           [-c MIN_COV] [--filter_mono_exonic] [--skipGTF]
-                           [--skipFaFq] [--skipJunction] [-v]
-                           sqanti_class isoforms gtf_file
+Usage: sqanti3_RulesFilter [OPTIONS] SQANTI_CLASS ISOFORMS ANNOTATION
 
-sqanti3_RulesFilter.py: error: the following arguments are required: sqanti_class, isoforms, gtf_file
+  "Filtering of Isoforms based on SQANTI3 attributes
 
-sqanti3_RulesFilter [classification] [fasta] [sam] [gtf]
-                    [-a INTRAPRIMING] [-c MIN_COV]
-                    [-m MAX_DIST_TO_KNOWN_END]
+  Parameters:
+  -----------
+  sqanti_class:
+      SQANTI classification output file
+  isoforms:
+      fasta/fastq isoform file to be filtered by SQANTI3
+  annotation:
+      GTF matching the input fasta/fastq
+
+Options:
+  --sam TEXT                      (Optional) SAM alignment of the input
+                                  fasta/fastq
+
+  --faa TEXT                      (Optional) ORF prediction faa file to be
+                                  filtered by SQANTI3
+
+  -a, --intrapriming FLOAT RANGE  Adenine percentage at genomic 3' end to flag
+                                  an isoform as intra-priming  [default: 0.6]
+
+  -r, --runAlength INTEGER RANGE  Continuous run-A length at genomic 3' end to
+                                  flag an isoform as intra-priming  [default:
+                                  6]
+
+  -m, --max_dist_to_known_end INTEGER
+                                  Maximum distance to an annotated 3' end to
+                                  preserve as a valid 3' end and not filter
+                                  out  [default: 50]
+
+  -c, --min_cov INTEGER           Minimum junction coverage for each isoform
+                                  (only used if min_cov field is not 'NA')
+                                  [default: 3]
+
+  --filter_mono_exonic            Filter out all mono-exonic transcripts
+                                  [default: False]
+
+  --skipGTF                       Skip output of GTF  [default: False]
+  --skipFaFq                      Skip output of isoform fasta/fastq
+                                  [default: False]
+
+  --skipJunction                  Skip output of junctions file  [default:
+                                  False]
+
+  --version                       Show the version and exit.
+  --help                          Show this message and exit.
 ```
 
-where `-a` determines the fraction of genomic 'A's above which the isoform will be filtered. The default is `-a 0.6`.
-`-r` is another option for looking at genomic 'A's that looks at the immediate run-A length. The default is `-r 6`.
-
-`-m` sets the maximum distance to an annotated 3' end (the `diff_to_gene_TTS` field in classification output) to offset the intrapriming rule.
-
-`-c` is the filter for the minimum short read junction support (looking at the `min_cov` field in `_classification.txt`), and can only be used if you have short read data.
-
+where 
+   - `-a` determines the fraction of genomic 'A's above which the isoform will be filtered. The default is `-a 0.6`.
+   - `-r` is another option for looking at genomic 'A's that looks at the immediate run-A length. The default is `-r 6`.
+   - `-m` sets the maximum distance to an annotated 3' end (the `diff_to_gene_TTS` field in classification output) to offset the intrapriming rule.
+   - `-c` is the filter for the minimum short read junction support (looking at the `min_cov` field in `_classification.txt`), and can only be used if you have short read data.
 
 For example:
 
 ```
-python sqanti3_RulesFilter.py test_classification.txt \
-                         test.renamed_corrected.fasta \
-                         test.gtf
+sqanti3_RulesFilter \
+   test_classification.txt \
+   test.renamed_corrected.fasta \
+   test.gtf
 ```
 
 The current filtering rules are as follow:
 
 * If a transcript is FSM, then it is kept unless the 3' end is unreliable (intrapriming).
 * If a transcript is not FSM, then it is kept only if all of below are true:
-    * (1) 3' end is reliable.
-    * (2) does not have a junction that is labeled as RTSwitching.
-    * (3) all junctions are either canonical or has short read coverage above `-c` threshold.
-
+  1. 3' end is reliable.
+  2. does not have a junction that is labeled as RTSwitching.
+  3. all junctions are either canonical or has short read coverage above `-c` threshold.
 
 <a name="explain"/>
 
@@ -528,13 +643,14 @@ The output `_classification.txt` has the following fields:
 39. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
 40. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream.
 
-
 <a name="junction"/>
 
 ### Junction Output Explanation
 
 
-THe `.junctions.txt` file shows every junction for every PB isoform. NOTE because of this the *same* junction might appear multiple times if they are shared by multiple PB isoforms.
+THe `.junctions.txt` file shows every junction for every PB isoform.
+NOTE because of this the *same* junction might appear multiple times
+if they are shared by multiple PB isoforms.
 
 1. `isoform`: Isoform ID.
 2. `junction_number`: The i-th junction of the isoform.
