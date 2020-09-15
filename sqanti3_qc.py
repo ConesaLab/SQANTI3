@@ -16,7 +16,8 @@ import argparse
 import math
 import numpy as np
 from scipy import mean
-from collections import defaultdict, Counter, namedtuple, Iterable
+from collections import defaultdict, Counter, namedtuple
+from collections.abc import Iterable
 from csv import DictWriter, DictReader
 from multiprocessing import Process
 
@@ -769,7 +770,6 @@ def mergeDict(dict1, dict2):
     return dict3
 
 def flatten(lis):
-
      for item in lis:
          if isinstance(item, Iterable) and not isinstance(item, str):
              for x in flatten(item):
