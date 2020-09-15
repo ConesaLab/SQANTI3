@@ -482,8 +482,8 @@ PB.100.2        PB.100  226     81.11   20.18   2.26    9.47    100.00  16.84   
 
 A lightweight filtering script named `sqanti3_RulesFilter` based on
 SQANTI3 output is provided that filters for two things:
-   a. intra-priming
-   b. short read junction support.
+   1. intra-priming
+   2. short read junction support.
 
 The script usage is:
 ```
