@@ -39,6 +39,7 @@ from sqanti3.__about__ import __version__
 from sqanti3 import __path__ as sqpath
 from sqanti3.utilities.indels_annot import calc_indels_from_sam
 from sqanti3.utilities.rt_switching import rts
+from sqanti3.utilities import IsoAnnotLite_SQ1
 
 UTILITIESPATH = f"{sqpath[0]}{os.sep}utilities"
 sys.path.insert(0, UTILITIESPATH)
@@ -2311,8 +2312,8 @@ def sqanti3_qc(
     fl_count: Optional[str],
     skip_report: bool,
     isoAnnotLite: bool,
-    gff3: Optional[str],
     doc: str,
+    gff3: Optional[str] = None,
 ) -> None:
     logger = logging.getLogger("sqanti3_qc")
     start3 = timeit.default_timer()
@@ -2544,7 +2545,7 @@ def sqanti3_qc(
         isoforms_info[pbid].sd = np.std(covs)
 
     # Printing output file:
-    logger.info("Writing output files....")
+    logger.info("Writing output files...")
 
     # sort isoform keys
     iso_keys = list(isoforms_info.keys())
@@ -2569,7 +2570,7 @@ def sqanti3_qc(
 
     # Generating report
     if not skip_report:
-        logger.info("Generating SQANTI3 report....")
+        logger.info("Generating SQANTI3 report...")
         cmd = (
             f"{RSCRIPTPATH} {RSCRIPT_REPORT} "
             f"{outputClassPath} {outputJuncPath} {doc} {UTILITIESPATH}"
@@ -2589,20 +2590,11 @@ def sqanti3_qc(
     # TODO why run this as a script when we can just call the functions from
     # within python?
     if isoAnnotLite:
-        if gff3:
-            ISOANNOT_CMD = (
-                "python "
-                + ISOANNOT_PROG
-                + f" {corrGTF} {outputClassPath} {outputJuncPath} -gff3 {gff3} -d {directory} -o {output}"
-            )
-        else:
-            ISOANNOT_CMD = (
-                "python "
-                + ISOANNOT_PROG
-                + f" {corrGTF} {outputClassPath} {outputJuncPath} -d {directory} -o {output}"
-            )
-        if subprocess.check_call(ISOANNOT_CMD, shell=True) != 0:
-            logger.error(f"running command: {ISOANNOT_CMD}")
+        try:
+            IsoAnnotLite_SQ1.main(corrected = corrGTF, classification = outputClassPath, junctions = outputJuncPath, gff3 = gff3, output = output)
+        except:
+            logger.error("running command: IsoAnnotLite_SQ1")
+            logger.error(f"corrected = {corrGTF}, classification = {outputClassPath}, junctions = {outputJuncPath}, gff3 = {gff3}, output = {output}")
             sys.exit(-1)
 
 

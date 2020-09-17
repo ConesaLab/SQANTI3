@@ -5,6 +5,11 @@
   the implicit requirement that previously existed (where it assumed you were
   running the script in the directory of sqanti3_qc's output) to make running
   sqanti3_RulesFilter in pipelines clearer.
+* sqanti3_qc now calls IsoAnnotLite_SQ1 directly instead of running it as a 
+  script
+* Incorporate commits [5e52b85](https://github.com/ConesaLab/SQANTI3/commit/5e52b85fc62474557b45618e054b07dfef580eb1)
+  and [c10d715](https://github.com/ConesaLab/SQANTI3/commit/c10d7159288f4e7525eb7572f22e7d1812624741)
+  from upstream
 
 # 2020-09-15: 1.4.7
 
