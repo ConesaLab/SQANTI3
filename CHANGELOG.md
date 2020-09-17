@@ -1,3 +1,11 @@
+# 2020-09-17: 1.4.8
+
+## Changes
+* sqanti3_RulesFilter now has an explicit required `junctions` argument, replacing
+  the implicit requirement that previously existed (where it assumed you were
+  running the script in the directory of sqanti3_qc's output) to make running
+  sqanti3_RulesFilter in pipelines clearer.
+
 # 2020-09-15: 1.4.7
 
 ## Fixes
