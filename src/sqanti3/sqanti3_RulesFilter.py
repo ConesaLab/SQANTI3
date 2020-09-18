@@ -290,6 +290,7 @@ def main(
     sqanti_class: str,
     isoforms: str,
     annotation: str,
+    junctions: str,
     sam: Optional[str] = None,
     faa: Optional[str] = None,
     intrapriming: float = 0.6,
