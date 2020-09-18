@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 2020-09-15 (v1.4.7)
+Last Updated: 2020-09-18 (v1.4.9)
 
 ## What is SQANTI3?
 
