@@ -47,7 +47,7 @@ sys.path.insert(0, UTILITIESPATH)
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 # MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
 MINIMAP2_CMD = (
-    "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {i} > {o}"
+    "minimap2 -ax splice --secondary=no -C5 -u {sense} -t {cpus} {g} {i} > {o}"
 )
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 
@@ -340,13 +340,9 @@ class myQueryTranscripts:
         self.dist_cage = dist_cage
         self.within_cage = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = (
-            dist_polya_site
-        )  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
-        self.polyA_dist = (
-            polyA_dist
-        )  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
@@ -482,9 +478,7 @@ class myQueryProteins:
     ):
         self.orf_length = orf_length
         self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = (
-            cds_end
-        )  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
@@ -2591,10 +2585,18 @@ def sqanti3_qc(
     # within python?
     if isoAnnotLite:
         try:
-            IsoAnnotLite_SQ1.main(corrected = corrGTF, classification = outputClassPath, junctions = outputJuncPath, gff3 = gff3, output = output)
+            IsoAnnotLite_SQ1.main(
+                corrected=corrGTF,
+                classification=outputClassPath,
+                junctions=outputJuncPath,
+                gff3=gff3,
+                output=output,
+            )
         except:
             logger.error("running command: IsoAnnotLite_SQ1")
-            logger.error(f"corrected = {corrGTF}, classification = {outputClassPath}, junctions = {outputJuncPath}, gff3 = {gff3}, output = {output}")
+            logger.error(
+                f"corrected = {corrGTF}, classification = {outputClassPath}, junctions = {outputJuncPath}, gff3 = {gff3}, output = {output}"
+            )
             sys.exit(-1)
 
 

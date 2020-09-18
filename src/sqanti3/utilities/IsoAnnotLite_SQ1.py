@@ -307,7 +307,9 @@ class gtf_fields:
 
     def write(self, filename, mode="a"):
         with open(filename, mode) as output:
-            output.write(str(self).rstrip("\n")+"\n") # this makes sure we only only use one newline char
+            output.write(
+                str(self).rstrip("\n") + "\n"
+            )  # this makes sure we only only use one newline char
 
 
 # Functions
@@ -1252,9 +1254,7 @@ def checkFeatureInCDS(
                         return False  # doesnt find the feture in same exon
                 else:  # in next exon
                     if not ex in allExonsSQ:
-                        return (
-                            False
-                        )  # end in another exons and we don't have that intermediate in SQ
+                        return False  # end in another exons and we don't have that intermediate in SQ
                     else:
                         continue
 
@@ -2177,7 +2177,13 @@ def isoannot(
         # dc_GFF3exonsTrans = {start : [trans, trans, ...]}
         # dc_GFF3transExons = {trans : [[start,end], [start,end]...]}
         # dc_GFF3coding = {trans : [CDSstart, CDSend]}
-        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand = readGFF(
+        (
+            dc_GFF3,
+            dc_GFF3exonsTrans,
+            dc_GFF3transExons,
+            dc_GFF3coding,
+            dc_GFF3strand,
+        ) = readGFF(
             gff3
         )  # dc_GFF3exons is sorted
 
@@ -2210,9 +2216,16 @@ def isoannot(
         updateGTF(filename, filenameMod)
 
         print("Reading GFF3 to sort it correctly...")
-        dcTrans, dcExon, dcTransFeatures, dcGenomic, dcSpliceJunctions, dcProt, dcProtFeatures, dcTranscriptAttributes = readGFFandGetData(
-            filenameMod
-        )
+        (
+            dcTrans,
+            dcExon,
+            dcTransFeatures,
+            dcGenomic,
+            dcSpliceJunctions,
+            dcProt,
+            dcProtFeatures,
+            dcTranscriptAttributes,
+        ) = readGFFandGetData(filenameMod)
 
         # Remove old files
         os.remove(filename)
@@ -2260,9 +2273,16 @@ def isoannot(
         updateGTF(filename, filenameMod)
 
         print("Reading GFF3 to sort it correctly...")
-        dcTrans, dcExon, dcTransFeatures, dcGenomic, dcSpliceJunctions, dcProt, dcProtFeatures, dcTranscriptAttributes = readGFFandGetData(
-            filenameMod
-        )
+        (
+            dcTrans,
+            dcExon,
+            dcTransFeatures,
+            dcGenomic,
+            dcSpliceJunctions,
+            dcProt,
+            dcProtFeatures,
+            dcTranscriptAttributes,
+        ) = readGFFandGetData(filenameMod)
 
         # Remove old files
         os.remove(filename)
@@ -2368,7 +2388,7 @@ def main(
         if not os.path.isfile(gff3):
             logging.error(f"'{gff3}' doesn't exist")
             sys.exit()
-    
+
     isoannot(
         gtf=corrected,
         classification=classification,
@@ -2377,6 +2397,7 @@ def main(
         output=output,
     )
     logging.shutdown()
+
 
 if __name__ == "__main__":
     main()

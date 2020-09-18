@@ -162,10 +162,7 @@ def sqanti_filter_lite(
     if not skipJunction:
         outputJuncPath = f"{prefix}.filtered_lite_junctions.txt"
         with open(outputJuncPath, "w") as f:
-            reader = DictReader(
-                open(junctions),
-                delimiter="\t",
-            )
+            reader = DictReader(open(junctions), delimiter="\t",)
             writer = DictWriter(f, reader.fieldnames, delimiter="\t")
             writer.writeheader()
             for r in reader:
