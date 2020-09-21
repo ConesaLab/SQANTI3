@@ -30,7 +30,7 @@ New features implemented in SQANTI3 not available in previous versions are:
 * <a href="#explain">SQANTI3 Output Explanation</a>
     * <a href="#class">Classification Output Explanation</a>
     * <a href="#junction">Junction Output Explanation</a>
-
+   
 
 ![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
