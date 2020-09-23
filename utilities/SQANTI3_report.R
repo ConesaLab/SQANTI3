@@ -5,7 +5,7 @@
 
 
 ### Author: Lorena de la Fuente, Elizabeth Tseng & Francisco J Pardo-Palacios
-### Date: 05/15/2020
+### Last Modified: 09/23/2020 by etseng@pacb.com
 
 #********************** Taking arguments from python script
 
@@ -592,15 +592,15 @@ if (!all(is.na(data.class$gene_exp))){
 }
 
 if (nrow(data.FSM) > 0) {
-  
+
   diff_max <- max(max(abs(data.FSM$diff_to_TSS)), max(abs(data.FSM$diff_to_TTS)));
   diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 50), diff_max+1);
   data.FSM$diffTTSCat = cut(-(data.FSM$diff_to_TTS), breaks = diff_breaks);
   data.FSM$diffTSSCat = cut(-(data.FSM$diff_to_TSS), breaks = diff_breaks);
-  
+
   max_height <- max(max(table(data.FSM$diffTSSCat)), max(table(data.FSM$diffTTSCat)));
   max_height <- (max_height %/% 10+1) * 10;
-  
+
   # plot histogram of distance to polyA site, Y-axis absolute count
   if (!all(is.na(data.FSM$polyA_motif))){
   p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
@@ -614,7 +614,7 @@ if (nrow(data.FSM) > 0) {
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  
+
   p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..) , alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
     scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
@@ -630,7 +630,7 @@ if (nrow(data.FSM) > 0) {
     p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
       geom_bar(fill=myPalette[4], color="black", size=0.3 ) +
       scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-      mytheme + 
+      mytheme +
       scale_x_discrete(drop=F) +
       ylab("Number of FSM Transcripts") +
       xlab("Distance to Annotated Polyadenylation Site (bp)") +
@@ -651,8 +651,8 @@ if (nrow(data.FSM) > 0) {
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.justification=c(1,1), legend.position=c(1,1))
 }
-  
-  
+
+
   # plot histogram of distance to start site, Y-axis absolute count
   if (!all(is.na(data.FSM$within_cage_peak))){
   p22.a <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
@@ -1096,13 +1096,20 @@ if (nrow(data.junction) > 0){
   t3.RTS <- t3.RTS[-which(t3.RTS$structural_category=="ISM"),]
   t3.RTS$perc <- t3.RTS$count.x / t3.RTS$count.y * 100
   t3.RTS <- subset(t3.RTS, RTS_stage=='TRUE');
-  t3.RTS$Var="RT switching"
+  n_t3.RTS <- dim(t3.RTS)[1];
+  if (n_t3.RTS > 0) {
+	  t3.RTS$Var <- "RT switching"
+  }
   
   t1.SJ <- group_by(x, structural_category, all_canonical) %>% dplyr::summarise(count=dplyr::n())
   t3.SJ <- merge(t1.SJ, t2.RTS, by="structural_category")
   t3.SJ$perc <- t3.SJ$count.x / t3.SJ$count.y * 100
   t3.SJ <- subset(t3.SJ, all_canonical=='non_canonical');
-  t3.SJ$Var="Non canonical"
+  n_t3.SJ <- dim(t3.SJ)[1];
+  if (n_t3.SJ > 0) {
+	  t3.SJ$Var <- "Non canonical"
+  }
+
   if (!all(is.na(x$predicted_NMD))){
     x[which(x$predicted_NMD=="TRUE"),"predicted_NMD"]="Predicted NMD"
     x[which(x$predicted_NMD=="FALSE"),"predicted_NMD"]="Not NMD predicted"
@@ -1153,7 +1160,8 @@ if (nrow(data.junction) > 0){
     theme(legend.position="bottom", axis.title.x = element_blank()) +
     ggtitle("Incidence of Non-Canonical Junctions\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
-  if (!all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))){
+
+  if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))){
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
       geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), nudge_y=1.1) +
@@ -1179,7 +1187,7 @@ if (nrow(data.junction) > 0){
       ggtitle( "Quality control attributes across structural categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
     
-  }else if (all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
+  }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
@@ -1193,7 +1201,7 @@ if (nrow(data.junction) > 0){
       guides(fill = guide_legend(title = "QC Attributes") )
     
     
-  }else if (all(is.na(x$min_cov)) & !all(is.na(x$predicted_NMD))){
+  }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & !all(is.na(x$predicted_NMD))){
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
       geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
@@ -1215,7 +1223,7 @@ if (nrow(data.junction) > 0){
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality control attributes across structural categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
-  }else{
+  }else if (n_t3.SJ>0 & n_t3.RTS>0) {
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
       geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
@@ -2233,10 +2241,12 @@ print(p28.SJ)
 if (!all(is.na(data.class$min_cov))) {
   print(p28.Cov)
 }
-if (!all(is.na(data.class$predicted_NMD))) {
+if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
   print(p28.NMD)
 }
-print(p28)
+if (n_t3.SJ>0 & n_t3.RTS>0) {
+  print(p28)
+}
 
 dev.off()
 
