@@ -212,7 +212,7 @@ def main():
         print("ERROR: {0} doesn't exist. Abort!".format(args.faa), file=sys.stderr)
         sys.exit(-1)
 
-    print("\nRunning SQANTI2 filtering...\n", file=sys.stdout)
+    print("\nRunning SQANTI3 filtering...\n", file=sys.stdout)
 
     sqanti_filter_lite(args)
 

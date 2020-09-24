@@ -730,12 +730,14 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
     :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
     """
-    if os.path.isdir(coverageFiles)==True:
+    if os.path.isdir(coverageFiles):
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
-    else:
+    elif coverageFiles.count(',') > 0:
         cov_files = coverageFiles.split(",")
+    else:
+        cov_files = glob.glob(coverageFiles)
 
-    print("Input pattern: {0}. The following files found and to be read as junctions:\n{1}".format(\
+    print("Input pattern: {0}.\nThe following files found and to be read as junctions:\n{1}".format(\
         coverageFiles, "\n".join(cov_files) ), file=sys.stderr)
 
     cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
@@ -2157,7 +2159,7 @@ def main():
     #parser.add_argument('-z', '--sense', help='\t\tOption that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences', required=False, action='store_true')
     parser.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     parser.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
-    parser.add_argument('-c','--coverage', help='\t\tJunction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").', required=False)
+    parser.add_argument('-c','--coverage', help='\t\tJunction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").', required=False)
     parser.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     parser.add_argument('-w','--window', default="20", help='\t\tSize of the window in the genomic DNA screened for Adenine content downstream of TTS', required=False, type=int)
     parser.add_argument('--genename', help='\t\tUse gene_name tag from GTF to define genes. Default: gene_id used to define genes', default=False, action='store_true')
