@@ -1100,7 +1100,7 @@ if (nrow(data.junction) > 0){
   if (n_t3.RTS > 0) {
 	  t3.RTS$Var <- "RT switching"
   }
-  
+
   t1.SJ <- group_by(x, structural_category, all_canonical) %>% dplyr::summarise(count=dplyr::n())
   t3.SJ <- merge(t1.SJ, t2.RTS, by="structural_category")
   t3.SJ$perc <- t3.SJ$count.x / t3.SJ$count.y * 100
@@ -1138,7 +1138,7 @@ if (nrow(data.junction) > 0){
   #  theme(legend.position="bottom", axis.title.x = element_blank()) +
   #  ggtitle("Incidence of Non-Canonical Junctions\n\n") +
   #  guides(fill = guide_legend(title = "QC Attributes") )
-  
+
   p28.RTS <- ggplot(t3.RTS, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[11], color="black") +
     geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), nudge_y=1.1) +
@@ -1149,7 +1149,7 @@ if (nrow(data.junction) > 0){
     theme(legend.position="bottom", axis.title.x = element_blank()) +
     ggtitle("Incidence of RT-switching\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
-  
+
   p28.SJ <- ggplot(t3.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[9] ,color="black") +
     geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=1.1) +
@@ -1172,35 +1172,35 @@ if (nrow(data.junction) > 0){
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle("Incidence of SJ without SR coverage Junctions\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
-    
-    
+
+
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
-    
+
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% Transcripts") + 
+      ylab("% Transcripts") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality control attributes across structural categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
-    
+
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,11)]) +
-      ylab("% Transcripts") + 
+      ylab("% Transcripts") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality control attributes across structural categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
-    
-    
+
+
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & !all(is.na(x$predicted_NMD))){
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
@@ -1217,7 +1217,7 @@ if (nrow(data.junction) > 0){
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,5,11)]) +
-      ylab("% Transcripts") + 
+      ylab("% Transcripts") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
@@ -1249,14 +1249,14 @@ if (nrow(data.junction) > 0){
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,10,5,11)]) +
-      ylab("% Transcripts") + 
+      ylab("% Transcripts") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality control attributes across structural categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
   }
-  
+
 }
 
 
@@ -1316,19 +1316,19 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   names(ism_per_transcript)[3]<-"ISM_per_tr"
   fsm_per_transcript=data.FSM %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
   names(fsm_per_transcript)[3]<-"FSM_per_tr"
-  
+
   iso_per_knownTr=merge(x = fsm_per_transcript , y=ism_per_transcript, by = "associated_transcript", all=T)
   iso_per_knownTr$ISM_per_tr[is.na(iso_per_knownTr$ISM_per_tr)] <- 0
   iso_per_knownTr$FSM_per_tr[is.na(iso_per_knownTr$FSM_per_tr)] <- 0
-  
+
   iso_per_knownTr$total_iso=apply(iso_per_knownTr, 1 , function(X) as.integer(X[3]) + as.integer(X[5]) )
   #iso_per_knownTr$FSM_per_tr[is.na(iso_per_knownTr$FSM_per_tr)] <- 0
   #iso_per_knownTr$ISM_per_tr[is.na(iso_per_knownTr$ISM_per_tr)] <- 0
   #iso_per_knownTr$perc_FSM=apply(iso_per_knownTr, 1 , function(X) (as.numeric(X[3]) / as.numeric(X[6]) ) )
   #iso_per_knownTr$perc_FSM[is.na(iso_per_knownTr$perc_FSM)] <- 0
-  #iso_per_knownTr$perc_FSM_range=cut(iso_per_knownTr$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1), 
+  #iso_per_knownTr$perc_FSM_range=cut(iso_per_knownTr$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1),
   #                                   labels = c("FSM<=20% ", "20%<FSM<=40%", "40%<FSM<=60%", "60%<FSM<=80%","FSM>80%"))
-  
+
   #
   iso_per_knownTr$FSM_cat=NA
   iso_per_knownTr$FSM_cat=apply(iso_per_knownTr,1, function(X){
@@ -1339,14 +1339,14 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     }else{
       return("NULL")
     }})
-  
+
   iso_per_knownTr$FSM_bin=apply(iso_per_knownTr,1, function(X){
     if(as.numeric(X["FSM_per_tr"])<8){
       return(as.character(X["FSM_per_tr"]))
     }else{
       return("8+")
     }})
-  
+
   iso_per_knownTr$ISM_cat=NA
   iso_per_knownTr$ISM_cat=apply(iso_per_knownTr,1, function(X){
     if(as.numeric(X["ISM_per_tr"])==1){
@@ -1356,15 +1356,15 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     }else{
       return("NULL")
     }})
-  
+
   iso_per_knownTr$ISM_bin=apply(iso_per_knownTr,1, function(X){
     if(as.numeric(X["ISM_per_tr"])<8){
       return(as.character(X["ISM_per_tr"]))
     }else{
       return("8+")
     }})
- 
-  
+
+
   iso_per_knownTr$total_cat=NA
   iso_per_knownTr$total_cat=apply(iso_per_knownTr,1, function(X){
     if(as.numeric(X["total_iso"])==1){
@@ -1374,7 +1374,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-  
+
   iso_per_knownTr$total_bin=apply(iso_per_knownTr,1, function(X){
     if(as.numeric(X["total_iso"])<8){
       return(as.character(X["total_iso"]))
@@ -1384,9 +1384,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   iso_per_knownTr$FSM_cat=factor(iso_per_knownTr$FSM_cat, levels=c("Unique", "Multiple"))
   iso_per_knownTr$ISM_cat=factor(iso_per_knownTr$ISM_cat, levels=c("Unique", "Multiple"))
   iso_per_knownTr$total_cat=factor(iso_per_knownTr$total_cat, levels=c("Unique", "Multiple"))
-  
+
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$FSM_cat!="NULL"),"FSM_cat"]))+10
-  new.1.FSM <- ggplot(iso_per_knownTr[which(iso_per_knownTr$FSM_cat!="NULL"),])+ 
+  new.1.FSM <- ggplot(iso_per_knownTr[which(iso_per_knownTr$FSM_cat!="NULL"),])+
     geom_bar(aes(x=FSM_cat, fill=FSM_bin), color = "black", width = 0.5) +
     mytheme+
     geom_text(aes(x = FSM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1396,9 +1396,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
          y="Count of Reference Transcripts",
          title="Reference transcript redundance",
          subtitle="Only FSM")
-  
+
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$ISM_cat!="NULL"),"ISM_cat"]))+10
-  new.1.ISM <- ggplot(iso_per_knownTr[which(iso_per_knownTr$ISM_cat!="NULL"),])+ 
+  new.1.ISM <- ggplot(iso_per_knownTr[which(iso_per_knownTr$ISM_cat!="NULL"),])+
     geom_bar(aes(x=ISM_cat, fill=ISM_bin), color = "black", width = 0.5) +
     mytheme+
     geom_text(aes(x = ISM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1408,9 +1408,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
          y="Count of Reference Transcripts",
          title="Reference transcript redundance",
          subtitle="Only ISM")
-  
+
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$total_cat!="NULL"),"total_cat"]))+10
-  new.1.total <- ggplot(iso_per_knownTr[which(iso_per_knownTr$total_cat!="NULL"),])+ 
+  new.1.total <- ggplot(iso_per_knownTr[which(iso_per_knownTr$total_cat!="NULL"),])+
     geom_bar(aes(x=total_cat, fill=total_bin), color = "black", width = 0.5) +
     mytheme+
     geom_text(aes(x = total_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1420,35 +1420,35 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
          y="Count of Reference Transcripts",
          title="Reference transcript redundance",
          subtitle="FSM+ISM")
- 
+
   #new.1.p<-ggplot(iso_per_knownTr, aes(x=total_iso, fill=factor(perc_FSM_range))) +
   #  geom_histogram(binwidth = 1 , col="white") +
   #  scale_x_continuous(breaks = seq(0,max_num_iso,1)) +
-  #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") + 
+  #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
   #  mytheme+theme(axis.title.x=element_text()) +
   #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
   #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
   #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.")
-  
+
   #### Now only with cage + isoforms
   if (!all(is.na(data.class$dist_to_cage_peak))) {
     ism_per_transcript_cage=data.ISM[which(data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
     fsm_per_transcript_cage=data.FSM[which(data.FSM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_cage)[3]<-"FSM_per_tr"
-    
+
     iso_per_knownTr_cage=merge(x = fsm_per_transcript_cage , y=ism_per_transcript_cage, by = "associated_transcript", all=T)
     iso_per_knownTr_cage$ISM_per_tr[is.na(iso_per_knownTr_cage$ISM_per_tr)] <- 0
     iso_per_knownTr_cage$FSM_per_tr[is.na(iso_per_knownTr_cage$FSM_per_tr)] <- 0
-    
+
     iso_per_knownTr_cage$total_iso=apply(iso_per_knownTr_cage, 1 , function(X) as.integer(X[3]) + as.integer(X[5]) )
     #iso_per_knownTr_cage$perc_FSM=apply(iso_per_knownTr_cage, 1 , function(X) (as.numeric(X[3]) / as.numeric(X[6]) ) )
     #iso_per_knownTr_cage$perc_FSM[is.na(iso_per_knownTr_cage$perc_FSM)] <- 0
-    #iso_per_knownTr_cage$perc_FSM_range=cut(iso_per_knownTr_cage$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1), 
+    #iso_per_knownTr_cage$perc_FSM_range=cut(iso_per_knownTr_cage$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1),
     #                                        labels = c("FSM<=20% ", "20%<FSM<=40%", "40%<FSM<=60%", "60%<FSM<=80%","FSM>80%"))
     #max_num_iso_cage=max(iso_per_knownTr_cage$total_iso)
-    
+
     iso_per_knownTr_cage$FSM_cat=NA
     iso_per_knownTr_cage$FSM_cat=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["FSM_per_tr"])==1){
@@ -1458,14 +1458,14 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage$FSM_bin=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["FSM_per_tr"])<8){
         return(as.character(X["FSM_per_tr"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_cage$ISM_cat=NA
     iso_per_knownTr_cage$ISM_cat=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["ISM_per_tr"])==1){
@@ -1475,15 +1475,15 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage$ISM_bin=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["ISM_per_tr"])<8){
         return(as.character(X["ISM_per_tr"]))
       }else{
         return("8+")
       }})
-    
-    
+
+
     iso_per_knownTr_cage$total_cat=NA
     iso_per_knownTr_cage$total_cat=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["total_iso"])==1){
@@ -1493,21 +1493,21 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage$total_bin=apply(iso_per_knownTr_cage,1, function(X){
       if(as.numeric(X["total_iso"])<8){
         return(as.character(X["total_iso"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_cage$FSM_cat=factor(iso_per_knownTr_cage$FSM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_cage$ISM_cat=factor(iso_per_knownTr_cage$ISM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_cage$total_cat=factor(iso_per_knownTr_cage$total_cat, levels=c("Unique", "Multiple"))
-    
-    
+
+
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$FSM_cat!="NULL"),"FSM_cat"]))+10
-    new.2.FSM <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$FSM_cat!="NULL"),])+ 
+    new.2.FSM <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$FSM_cat!="NULL"),])+
       geom_bar(aes(x=FSM_cat, fill=FSM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = FSM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1517,9 +1517,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only FSM with CAGE support")
-    
+
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$ISM_cat!="NULL"),"ISM_cat"]))+10
-    new.2.ISM <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$ISM_cat!="NULL"),])+ 
+    new.2.ISM <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$ISM_cat!="NULL"),])+
       geom_bar(aes(x=ISM_cat, fill=ISM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = ISM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1529,9 +1529,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only ISM with CAGE support")
-    
+
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$total_cat!="NULL"),"total_cat"]))+10
-    new.2.total <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$total_cat!="NULL"),])+ 
+    new.2.total <- ggplot(iso_per_knownTr_cage[which(iso_per_knownTr_cage$total_cat!="NULL"),])+
       geom_bar(aes(x=total_cat, fill=total_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = total_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1541,11 +1541,11 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="FSM+ISM with CAGE support")
-    
+
     #new.2.p<-ggplot(iso_per_knownTr_cage, aes(x=total_iso, fill=factor(perc_FSM_range))) +
     #  geom_histogram(binwidth = 1, col="white") +
     #  scale_x_continuous(breaks = seq(0,max_num_iso_cage,1)) +
-    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") + 
+    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
@@ -1553,24 +1553,24 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
   }
-    
+
   ### Now only with polyA motif = T isoforms
   if (!all(is.na(data.class$polyA_motif))) {
     ism_per_transcript_polya=data.ISM[which(!is.na(data.ISM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_polya)[3]<-"ISM_per_tr"
     fsm_per_transcript_polya=data.FSM[which(!is.na(data.FSM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_polya)[3]<-"FSM_per_tr"
-    
+
     iso_per_knownTr_polya=merge(x = fsm_per_transcript_polya , y=ism_per_transcript_polya, by = "associated_transcript", all=T)
     iso_per_knownTr_polya$ISM_per_tr[is.na(iso_per_knownTr_polya$ISM_per_tr)] <- 0
     iso_per_knownTr_polya$FSM_per_tr[is.na(iso_per_knownTr_polya$FSM_per_tr)] <- 0
     iso_per_knownTr_polya$total_iso=apply(iso_per_knownTr_polya, 1 , function(X) as.integer(X[3]) + as.integer(X[5]) )
     #iso_per_knownTr_polya$perc_FSM=apply(iso_per_knownTr_polya, 1 , function(X) (as.numeric(X[3]) / as.numeric(X[6]) ) )
     #iso_per_knownTr_polya$perc_FSM[is.na(iso_per_knownTr_polya$perc_FSM)] <- 0
-    #iso_per_knownTr_polya$perc_FSM_range=cut(iso_per_knownTr_polya$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1), 
+    #iso_per_knownTr_polya$perc_FSM_range=cut(iso_per_knownTr_polya$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1),
     #                                         labels = c("FSM<=20% ", "20%<FSM<=40%", "40%<FSM<=60%", "60%<FSM<=80%","FSM>80%"))
     #max_num_iso_polya=max(iso_per_knownTr_polya$total_iso)
-    
+
     iso_per_knownTr_polya$FSM_cat=NA
     iso_per_knownTr_polya$FSM_cat=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["FSM_per_tr"])==1){
@@ -1580,14 +1580,14 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_polya$FSM_bin=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["FSM_per_tr"])<8){
         return(as.character(X["FSM_per_tr"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_polya$ISM_cat=NA
     iso_per_knownTr_polya$ISM_cat=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["ISM_per_tr"])==1){
@@ -1597,15 +1597,15 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_polya$ISM_bin=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["ISM_per_tr"])<8){
         return(as.character(X["ISM_per_tr"]))
       }else{
         return("8+")
       }})
-    
-    
+
+
     iso_per_knownTr_polya$total_cat=NA
     iso_per_knownTr_polya$total_cat=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["total_iso"])==1){
@@ -1615,20 +1615,20 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_polya$total_bin=apply(iso_per_knownTr_polya,1, function(X){
       if(as.numeric(X["total_iso"])<8){
         return(as.character(X["total_iso"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_polya$FSM_cat=factor(iso_per_knownTr_polya$FSM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_polya$ISM_cat=factor(iso_per_knownTr_polya$ISM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_polya$total_cat=factor(iso_per_knownTr_polya$total_cat, levels=c("Unique", "Multiple"))
-    
+
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$FSM_cat!="NULL"),"FSM_cat"]))+10
-    new.3.FSM <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$FSM_cat!="NULL"),])+ 
+    new.3.FSM <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$FSM_cat!="NULL"),])+
       geom_bar(aes(x=FSM_cat, fill=FSM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = FSM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1638,9 +1638,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only FSM with a polyA motif found")
-    
+
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
-    new.3.ISM <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$ISM_cat!="NULL"),])+ 
+    new.3.ISM <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$ISM_cat!="NULL"),])+
       geom_bar(aes(x=ISM_cat, fill=ISM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = ISM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1650,9 +1650,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only ISM with a polyA motif found")
-    
+
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$total_cat!="NULL"),"total_cat"]))+10
-    new.3.total <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$total_cat!="NULL"),])+ 
+    new.3.total <- ggplot(iso_per_knownTr_polya[which(iso_per_knownTr_polya$total_cat!="NULL"),])+
       geom_bar(aes(x=total_cat, fill=total_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = total_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1662,38 +1662,38 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="FSM+ISM with a polyA motif found")
-    
+
     #new.3.p<-ggplot(iso_per_knownTr_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
     #  geom_histogram(binwidth = 1, col="white") +
     #  scale_x_continuous(breaks = seq(0,max_num_iso_polya,1)) +
-    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") + 
+    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
     #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
-    
+
   }
-    
-  
+
+
   #### Now with just isoforms polyA and Cage +
   if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_cage_peak))) {
     ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
     fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_cage_polya)[3]<-"FSM_per_tr"
-    
+
     iso_per_knownTr_cage_polya=merge(x = fsm_per_transcript_cage_polya , y=ism_per_transcript_cage_polya, by = "associated_transcript", all=T)
     iso_per_knownTr_cage_polya$ISM_per_tr[is.na(iso_per_knownTr_cage_polya$ISM_per_tr)] <- 0
     iso_per_knownTr_cage_polya$FSM_per_tr[is.na(iso_per_knownTr_cage_polya$FSM_per_tr)] <- 0
     iso_per_knownTr_cage_polya$total_iso=apply(iso_per_knownTr_cage_polya, 1 , function(X) as.integer(X[3]) + as.integer(X[5]) )
     #iso_per_knownTr_cage_polya$perc_FSM=apply(iso_per_knownTr_cage_polya, 1 , function(X) (as.numeric(X[3]) / as.numeric(X[6]) ) )
     #iso_per_knownTr_cage_polya$perc_FSM[is.na(iso_per_knownTr_cage_polya$perc_FSM)] <- 0
-    #iso_per_knownTr_cage_polya$perc_FSM_range=cut(iso_per_knownTr_cage_polya$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1), 
+    #iso_per_knownTr_cage_polya$perc_FSM_range=cut(iso_per_knownTr_cage_polya$perc_FSM, breaks = c(-0.1,0.2,0.4,0.6,0.8,1),
     #                                              labels = c("FSM<=20% ", "20%<FSM<=40%", "40%<FSM<=60%", "60%<FSM<=80%","FSM>80%"))
     #max_num_iso_cage_polya=max(iso_per_knownTr_cage_polya$total_iso)
-    
+
     iso_per_knownTr_cage_polya$FSM_cat=NA
     iso_per_knownTr_cage_polya$FSM_cat=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["FSM_per_tr"])==1){
@@ -1703,14 +1703,14 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage_polya$FSM_bin=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["FSM_per_tr"])<8){
         return(as.character(X["FSM_per_tr"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_cage_polya$ISM_cat=NA
     iso_per_knownTr_cage_polya$ISM_cat=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["ISM_per_tr"])==1){
@@ -1720,15 +1720,15 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage_polya$ISM_bin=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["ISM_per_tr"])<8){
         return(as.character(X["ISM_per_tr"]))
       }else{
         return("8+")
       }})
-    
-    
+
+
     iso_per_knownTr_cage_polya$total_cat=NA
     iso_per_knownTr_cage_polya$total_cat=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["total_iso"])==1){
@@ -1738,20 +1738,20 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       }else{
         return("NULL")
       }})
-    
+
     iso_per_knownTr_cage_polya$total_bin=apply(iso_per_knownTr_cage_polya,1, function(X){
       if(as.numeric(X["total_iso"])<8){
         return(as.character(X["total_iso"]))
       }else{
         return("8+")
       }})
-    
+
     iso_per_knownTr_cage_polya$FSM_cat=factor(iso_per_knownTr_cage_polya$FSM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_cage_polya$ISM_cat=factor(iso_per_knownTr_cage_polya$ISM_cat, levels=c("Unique", "Multiple"))
     iso_per_knownTr_cage_polya$total_cat=factor(iso_per_knownTr_cage_polya$total_cat, levels=c("Unique", "Multiple"))
-    
+
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$FSM_cat!="NULL"),"FSM_cat"]))+10
-    new.4.FSM <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$FSM_cat!="NULL"),])+ 
+    new.4.FSM <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$FSM_cat!="NULL"),])+
       geom_bar(aes(x=FSM_cat, fill=FSM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = FSM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1761,9 +1761,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only FSM with CAGE support and polyA motif")
-    
+
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
-    new.4.ISM <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$ISM_cat!="NULL"),])+ 
+    new.4.ISM <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$ISM_cat!="NULL"),])+
       geom_bar(aes(x=ISM_cat, fill=ISM_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = ISM_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1773,9 +1773,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="Only ISM with CAGE support and polyA motif")
-    
+
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$total_cat!="NULL"),"total_cat"]))+10
-    new.4.total <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$total_cat!="NULL"),])+ 
+    new.4.total <- ggplot(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$total_cat!="NULL"),])+
       geom_bar(aes(x=total_cat, fill=total_bin), color = "black", width = 0.5) +
       mytheme+
       geom_text(aes(x = total_cat, label = stat(count)), stat = "count", vjust = -0.5) +
@@ -1785,20 +1785,20 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
            y="Count of Reference Transcripts",
            title="Reference transcript redundance",
            subtitle="FSM+ISM with CAGE support and polyA motif")
-    
+
     #new.4.p<-ggplot(iso_per_knownTr_cage_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
     #  geom_histogram(binwidth = 1, col="white") +
     #  scale_x_continuous(breaks = seq(0,max_num_iso_cage_polya,1)) +
-    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") + 
+    #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
     #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
-    
+
   }
- 
+
 }
 
 
@@ -1830,36 +1830,36 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
 #if (nrow(data.junction) > 0){
 #  if (!all(is.na(data.junction$total_coverage)) & !all(is.na(data.class$iso_exp))){
-    
+
 #   data.junction$isoExp = data.class[data.junction$isoform, "iso_exp"]
-    
+
 #    total = aggregate(cbind(total_coverage,isoExp,transcript_coord) ~ junctionLabel, data = data.junction,
 #                      FUN = function(x) c(mn = sum(x), n = min(x) ) )
-    
+
 #    total$relCov = total$total_coverage[,"n"] / total$isoExp[,"mn"]
 #    total$minTSS = total$transcript_coord[,"n"]
-    
+
 #    uniqJunc = unique(data.junction[,c("junctionLabel", "canonical_known", "total_coverage")])
 #    uniqJunc$notCov = uniqJunc$total_coverage == 0
-    
+
 #    uniqueJunc_nonCov = as.data.frame(table(uniqJunc[uniqJunc$totalCoverage==0,"canonical_known"])/table(uniqJunc$canonical_known)*100)
-    
+
 #    uniqJunc2 = merge(total, uniqJunc, by=1)
 #    uniqJunc2$TSSrange =cut(uniqJunc2$minTSS, breaks = c(0,40,80,120,160,200,10000000), labels = c("0-40", "41-80", "81-120", "121-160", "161-200",">200"))
-    
-    
-    
+
+
+
     # calculate total expression associated to each unique junction
 #    sumExpPerJunc = tapply(data.junction$isoExp, data.junction$junctionLabel, sum)
-    
+
 #    data.junction$sumIsoExp = sumExpPerJunc[data.junction$junctionLabel]
-    
+
 #    data.junction$relCov = data.junction$total_coverage / data.junction$sumIsoExp
-    
+
 #    max_dist = max(data.junction$transcript_coord) +1
-    
+
 #    data.junction$TSSrange = cut(data.junction$transcript_coord, breaks = c(0,20,40,60,80,100,120,140,160,180,200,max_dist), labels = c("0-20", "21-40","41-80","61-80", "81-100","101-120", "121-140","141-160", "161-180", "181-200", ">200"))
-    
+
 #    pn1.2 <-ggplot(data=data.junction[data.junction$relCov<1,], aes(y=relCov,x=TSSrange,fill=canonical_known)) +
 #      geom_boxplot(outlier.size = 0.2, size=0.3) +
 #      scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
@@ -1869,8 +1869,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 #      theme(legend.position="bottom", legend.title=element_blank())  +
 #      ggtitle( "Relative Coverage of junctions\n\n\n") +
 #      theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
-    
-    
+
+
 #  }else{    uniqJunc = unique(data.junction[,c("junctionLabel", "canonical_known")])
 #  }
 #}
@@ -1979,7 +1979,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
   data.class[data.class$length>=3000&data.class$length<5000,"length_cat"] <- "3-5kb"
   data.class[data.class$length>=5000&data.class$length<10000,"length_cat"] <- "5-10kb"
   data.class[data.class$length>10000,"length_cat"] <- ">10kb"
-  
+
   for (i in 1:(length(FL_TPM_multisample_names)-1)) {
     j1 <- FL_TPM_multisample_names[i]
     j1_log10 <- paste(FL_TPM_multisample_names[i], "_log10", sep='')
@@ -1988,9 +1988,9 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
       j2 <- FL_TPM_multisample_names[i2]
       j2_log10 <- paste(FL_TPM_multisample_names[i2], "_log10", sep='')
       n2 <- FL_multisample_names[i2]
-      
+
       print(paste("Printing FL TPM for sample", j1, "vs", j2, "...."))
-      
+
       max_j1j2 <- floor(max(data.class[,j1_log10], data.class[,j2_log10])) + 1
       pearson <- round(cor(data.class[,j1], data.class[,j2], method="pearson"), 2)
       p.tmp <- ggplot(data.class, aes_string(j1_log10, j2_log10, color="structural_category")) +
@@ -2003,7 +2003,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp)
       ggsave(paste("Rplot.",n1,"vs",n2,".by_cat.png",sep=''), p.tmp, width=8, height=6)
-      
+
       data.class.gene <- group_by(data.class, by=associated_gene) %>% dplyr::summarise(n=dplyr::n(), sum1=sum(!!sym(j1)), sum2=sum(!!sym(j2)))
       pearson <- round(cor(data.class.gene$sum1, data.class.gene$sum2, method="pearson"), 2)
       p.tmp.gene <- ggplot(data.class.gene, aes(x=log10(sum1), y=log10(sum2))) +
@@ -2018,8 +2018,8 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.gene)
       ggsave(paste("Rplot.",n1,"vs",n2,".summed_by_gene.png",sep=''), p.tmp.gene, width=8, height=6)
-      
-      
+
+
       data.class.tmp <- subset(data.class,length_cat=="<1kb")
       pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
       p.tmp.le1k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
@@ -2032,7 +2032,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.le1k)
       ggsave(paste("Rplot.",n1,"vs",n2,".le1k.png",sep=''), p.tmp.le1k, width=8, height=6)
-      
+
       data.class.tmp <- subset(data.class,length_cat=="1-3kb")
       pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
       p.tmp.1to3k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
@@ -2045,7 +2045,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.1to3k)
       ggsave(paste("Rplot.",n1,"vs",n2,".1to3k.png",sep=''), p.tmp.1to3k, width=8, height=6)
-      
+
       data.class.tmp <- subset(data.class,length_cat=="3-5kb")
       pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
       p.tmp.3to5k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
@@ -2058,7 +2058,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.3to5k)
       ggsave(paste("Rplot.",n1,"vs",n2,".3to5k.png",sep=''), p.tmp.3to5k, width=8, height=6)
-      
+
       data.class.tmp <- subset(data.class,length_cat=="5-10kb")
       pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
       p.tmp.5to10k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
@@ -2071,7 +2071,7 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.5to10k)
       ggsave(paste("Rplot.",n1,"vs",n2,".5to10k.png",sep=''), p.tmp.5to10k, width=8, height=6)
-      
+
       data.class.tmp <- subset(data.class,length_cat==">10kb")
       pearson <- round(cor(data.class.tmp[,j1], data.class.tmp[,j2], method="pearson"), 2)
       p.tmp.ge10k <- ggplot(data.class.tmp, aes_string(j1_log10, j2_log10)) +
@@ -2084,10 +2084,10 @@ if (length(FL_multisample_indices)>0 & length(FL_multisample_indices)<0 ) {
         mytheme
       print(p.tmp.ge10k)
       ggsave(paste("Rplot.",n1,"vs",n2,".ge10k.png",sep=''), p.tmp.ge10k, width=8, height=6)
-      
-      
+
+
       #grid.arrange(p.tmp.le1k, p.tmp.1to3k, p.tmp.3to5k, p.tmp.5to10k, p.tmp.ge10k, ncol=2)
-      
+
     }
   }
 }
@@ -2154,24 +2154,24 @@ if (nrow(data.ISM) > 0) {
 
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
   print(p.polyA_dist)
-  
+
   # PLOT polyA motif ranking, distance from 3' end
   df.polyA <- as.data.frame(group_by(data.class, by=structural_category) %>%
                               dplyr::summarise(count=dplyr::n(),
                                                polyA_detected=sum(!is.na(polyA_motif)),
                                                polyA_detected_perc=round(polyA_detected*100/count)))
-  
+
   table.polyA <- tableGrob(df.polyA, rows = NULL, cols = c("Category","Count","polyA\nDetected","%"))
   title.polyA <- textGrob("Number of polyA Motifs Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-10)
   gt.polyA <- gTree(children=gList(table.polyA, title.polyA))
-  
-  
+
+
   df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
   df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
   table.polyA_freq <- tableGrob(df.polyA_freq, rows = NULL, cols = c("Motif", "Count", "%"))
   title.polyA_freq <- textGrob("Frequency of polyA motifs", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
   gt.polyA_freq <- gTree(children=gList(title.polyA_freq, table.polyA_freq))
-  
+
   grid.arrange(gt.polyA, gt.polyA_freq, ncol=2)
 }
 
@@ -2238,7 +2238,7 @@ s <- textGrob("Quality Controls", gp=gpar(fontface="italic", fontsize=17), vjust
 grid.arrange(s)
 print(p28.RTS)
 print(p28.SJ)
-if (!all(is.na(data.class$min_cov))) {
+if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(data.class$min_cov))) {
   print(p28.Cov)
 }
 if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
@@ -2251,5 +2251,4 @@ if (n_t3.SJ>0 & n_t3.RTS>0) {
 dev.off()
 
 print("SQANTI3 report successfully generated!")
-
 
