@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 09/24/2020 (v1.3)   SQANTI3 release!
+Last Updated: 12/2/2020 (v1.4)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -24,6 +24,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 * <a href="#install">Setting up SQANTI3</a>
     * <a href="#Prerequisites"> Prerequisites
 * <a href="#Running">Running SQANTI3 Quality Control</a>
+    * <a href="#cage">Incorporating CAGE peak data</a>
+    * <a href="#polya">Incorporating polyA site data or polyA motif list</a>
     * <a href="#flcount">Single or Multi-Sample FL Count Plotting</a>
     * <a href="#exp">Short Read Expression</a>
 * <a href="#filter">Filtering Isoforms using SQANTI3</a>
@@ -222,6 +224,60 @@ Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
 You can look at the [example_out](https://github.com/ConesaLab/SQANTI3/tree/master/example/example_out) subfolder for a sample output. The PDF file shows all the figures drawn using R script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R), taking the `melanoma_chr13_classification.txt` and `melanoma_chr13_junctions.txt` of the same folder as input. If you know R well, you are free to modify the R script to add new figures! We will be constantly adding new figures as well, so check out <a href="#Updates">the updates section</a> 
 
 Detailed explanation of `_classification.txt` and `_junctions.txt` <a href="#explain">below</a>.
+
+
+<a name="cage"/>
+
+### Incorporating CAGE peak data
+
+CAGE peak data must be provided in BED file format where:
+- column 1 is chromosome (chr1, chr2...)
+- column 2 is 0-based start coordinate
+- column 3 is 1-based end coordinate
+- column 5 is strand information 
+
+For human and mouse, you can download [refTSS](http://reftss.clst.riken.jp/reftss/Main_Page) BED files.
+
+Provide the CAGE peak BED file with the `--cage_peak` parameter in `sqanti3_qc.py`.
+
+Distance to the closest CAGE peak signal is the `dist_peak` and `within_peak` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
+
+<a name="polya"/>
+
+### Incorporating polyA site data or polyA motif list
+
+
+PolyA site data must be provided in BED file format where:
+- column 1 is chromosome (chr1, chr2...)
+- column 2 is 0-based start coordinate
+- column 3 is 1-based end coordinate
+- column 5 is strand information 
+
+For human, mouse, and worm, you can download the [Atlas BED files](https://polyasite.unibas.ch/atlas#2).
+
+Note however that the chromosomes in the BED files are missing the "chr" prefix!  
+You can modify the downloaded bed file as shown below:
+
+```
+sed -i 's/^/chr/' atlas.clusters.2.0.GRCh38.96.bed
+```
+ 
+Provide the PolyA site BED file with the `--polyA_peak` parameter in `sqanti3_qc.py`.
+
+Distance to the closest PolyA site is the `dist_to_polya_site` and `within_polya_site` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
+
+In addition, you can also provide a polyA motif list in the form of a text file. 
+For example, the common polyA motifs for human are shown [here](https://github.com/ConesaLab/SQANTI3/blob/master/example/polyA.list)
+
+Provide the PolyA site BED file with the `--polyA_motif_list` parameter in `sqanti3_qc.py`.
+
+Distance to the closest PolyA site is the `polyA_motif` and `polyA_dist` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
 
 
 <a name="flcount"/>
