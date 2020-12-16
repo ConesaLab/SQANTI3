@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 12/10/2020 (v1.4)   SQANTI3 release!
+Last Updated: 12/16/2020 (v1.4)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -138,7 +138,6 @@ Before starting any SQANTI3 run, remember that you need to activate the SQANTI3 
 ```
 $ source activate SQANTI3.env
 (SQANTI3.env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
-(SQANTI3.env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/
 ```
 
 #### Minimum Input to SQANTI3 QC
@@ -182,7 +181,7 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
                      [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
                      [--genename] [-fl FL_COUNT] [-v] [--isoAnnotLite]
                      [--gff3 GFF3]
-                     [--gtf] isoform_gtf annotation genome
+                     isoforms annotation genome
 
 ```
 
@@ -192,7 +191,7 @@ If you have short read data, you can run STAR to get the junction file (usually 
 By way of example, the following command was used to run SQANTI3 with th `example` data. The input files are a subdivision of the [Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data) that corresponds just to those polished sequences that map to chromosome 13. 
 
 ```
-python sqanti3_qc.py --gtf input.gtf \
+python sqanti3_qc.py test_chr13_seqs.fasta \
                      Homo_sapiens.GRCh38.86.chr13.gtf \
                      Homo_sapiens.GRCh38.dna.chromosome.13.fa \
                      --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif_list  polyA.list \
@@ -203,9 +202,19 @@ python sqanti3_qc.py --gtf input.gtf \
                      
 ```
 
-We recommend always using an input GFF3/GTF file that you can get from running, say, [Cupcake collapse](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse) or from running Iso-Seq Mapping through SMRTLink.
 
-The parameter `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI3 in parallel before combining them. 
+If `--aligner_choice=minimap2`, the minimap2 parameter used currently is: `minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`.
+
+If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT aln -x ccs`.
+
+If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide its path through `-x` option.
+
+
+There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger. 
+If your input is GTF (using `--gtf` option), the `-t` option has no effect.
+The second is `-n` (`--chunks`) that chunks the input (GTF or fasta) into chunks and run SQANTI3 in parallel before combining them. 
+Note that if you have `-t 30 -n 10`, then each chunk gets (30/10=3) CPUs.
+
 
 
 ### SQANTI3 Quality Control Output
