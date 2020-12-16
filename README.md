@@ -195,24 +195,21 @@ If you have short read data, you can run STAR to get the junction file (usually 
 By way of example, the following command was used to run SQANTI3 with th `example` data. The input files are a subdivision of the [Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data) that corresponds just to those polished sequences that map to chromosome 13. 
 
 ```
-python sqanti3_qc.py test_chr13_seqs.fasta \
-                     Homo_sapiens.GRCh38.86.chr13.gtf \
-                     Homo_sapiens.GRCh38.dna.chromosome.13.fa \
+python sqanti3_qc.py --gtf input.gtf \
+                     gencode.v35.annotation.gtf \
+                     hg38.fa \
                      --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif_list  polyA.list \
                      --expression rsemQuantification.chr13.isoforms.results \
-                     --fl_count chr13_FL.abundances.txt \
-                     -c chr13_SR_support.star.SJ.out.tab \
-                     --isoAnnotLite --gff3 tappAS.Homo_sapiens_GRCh38_Ensembl_86.chr13.gff3
+                     --fl_count input.abundances.txt \
+                     -c star.SJ.out.tab \
+                     --isoAnnotLite --gff3 tappAS.input.gff3
                      
 ```
 
 
-If `--aligner_choice=minimap2`, the minimap2 parameter used currently is: `minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -uf`.
+It is *highly recommended* that you run SQANTI3 using an input GFF3/GTF (adding the `--gtf` option in front) instead of input fasta/fastq.
 
-If `--aligner_choice=deSALT`, the deSALT parameter used currently is: `deSALT aln -x ccs`.
-
-If `--aligner_choice=gmap`, the GMAP parameter used currently is: `gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -z sense_force ` . Remember to build the GMAP index of the genome previously and provide its path through `-x` option.
-
+You can obtain the input GFF3/GTF using [Cupcake collapse](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse)
 
 There are two options related to parallelization. The first is `-t` (`--cpus`) that designates the number of CPUs used by the aliger. 
 If your input is GTF (using `--gtf` option), the `-t` option has no effect.
