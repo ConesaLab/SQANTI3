@@ -1301,16 +1301,19 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
     if len(isoforms_hit.genes) == 0:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
-        if len(isoforms_hit.AS_genes) == 0 and trec.chrom in junctions_by_chr:
-            # no hit even on opp strand
-            # see if it is completely contained within a junction
-            da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
-            i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
-            while i < len(da_pairs) and da_pairs[i][0] <= trec.txStart:
-                if da_pairs[i][0] <= trec.txStart <= trec.txStart <= da_pairs[i][1]:
-                    isoforms_hit.str_class = "genic_intron"
-                    break
-                i += 1
+        if len(isoforms_hit.AS_genes) == 0:
+            if trec.chrom in junctions_by_chr:
+                # no hit even on opp strand
+                # see if it is completely contained within a junction
+                da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
+                i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
+                while i < len(da_pairs) and da_pairs[i][0] <= trec.txStart:
+                    if da_pairs[i][0] <= trec.txStart <= trec.txStart <= da_pairs[i][1]:
+                        isoforms_hit.str_class = "genic_intron"
+                        break
+                    i += 1
+            else:
+                pass # remain intergenic
         else:
             # hits one or more genes on the opposite strand
             isoforms_hit.str_class = "antisense"
