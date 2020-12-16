@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 12/16/2020 (v1.4)   SQANTI3 release!
+Last Updated: 12/16/2020 (v1.5)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -39,6 +39,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2020.12.16 - updated to v1.5. Fixed mono-exonic mis-classification of antisense in edge cases.
 
 2020.09.24 - updated to v1.3. Fixed minor printing bug in `SQANTI3_report.R`. Also `sqanti_qc3.py` supports file patterns again for coverage junction file input.
 
