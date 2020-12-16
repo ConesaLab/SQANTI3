@@ -203,7 +203,17 @@ isoPerGene$novelGene = factor(isoPerGene$novelGene,
                               levels = c("Annotated Genes", "Novel Genes"),
                               ordered=TRUE)
 
-isoPerGene$nIsoCat =cut(isoPerGene$nIso, breaks = c(0,1,3,5,max(isoPerGene$nIso)+1), labels = c("1", "2-3", "4-5", ">=6"))
+max_iso_per_gene <- max(isoPerGene$nIso)
+if (max_iso_per_gene >= 6) {
+    isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1,3,5,max_iso_per_gene+1), labels = c("1", "2-3", "4-5", ">=6"));
+} else if (max_iso_per_gene >= 5) {
+    isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1,3,5), labels = c("1", "2-3", "4-5"));
+} else if (max_iso_per_gene >= 3) {
+    isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1,3), labels = c("1", "2-3"));
+} else {
+    isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1), labels = c("1"));
+}
+
 # see if there are multple FL samples
 FL_multisample_indices <- which(substring(colnames(data.class), 1,3)=="FL.")
 
