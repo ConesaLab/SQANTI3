@@ -1,4 +1,4 @@
-name: sqanti3
+#name: sqanti3
 channels:
   - conda-forge
   - bioconda
