@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 2020-09-21 (v1.5.0)
+Last Updated: 12/16/2020 (v1.6)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -24,6 +24,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 * <a href="#install">Setting up SQANTI3</a>
     * <a href="#Prerequisites"> Prerequisites
 * <a href="#Running">Running SQANTI3 Quality Control</a>
+    * <a href="#cage">Incorporating CAGE peak data</a>
+    * <a href="#polya">Incorporating polyA site data or polyA motif list</a>
     * <a href="#flcount">Single or Multi-Sample FL Count Plotting</a>
     * <a href="#exp">Short Read Expression</a>
 * <a href="#filter">Filtering Isoforms using SQANTI3</a>
@@ -37,6 +39,18 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2020.12.16 - updated to v1.6. Fixed `SQANTI3_report.R` num isoforms per gene plotting error.
+
+2020.12.16 - updated to v1.5. Fixed mono-exonic mis-classification of antisense in edge cases.
+
+2020.09.24 - updated to v1.3. Fixed minor printing bug in `SQANTI3_report.R`. Also `sqanti_qc3.py` supports file patterns again for coverage junction file input.
+
+2020.09.23 - updated to v1.2. Fixed `SQANTI3_report.R` bug when there are no non-canonical junctions.
+
+2020.09.15 - updated to v1.1. Fixed report script `_classification_TPM.txt` linebreak issue. rarefaction disabled for now.
+
+2020.09.07 - updated to v1.0. Fixed SQANTI3 report missing figures (ex: intrapriming).
 
 2020.05.12 - SQANTI3 first release.
 
@@ -122,6 +136,13 @@ docker \
 <a name="Running"/>
 
 ## Running SQANTI3 Quality Control (please read completely specially when planning to use tappAS for downstream analysis)
+
+Before starting any SQANTI3 run, remember that you need to activate the SQANTI3 environment and add `cDNA_Cupcake/sequence` to `$PYTHONPATH`.
+
+```
+$ source activate SQANTI3.env
+(SQANTI3.env)-bash-4.1$ export PYTHONPATH=$PYTHONPATH:<path_to>/cDNA_Cupcake/sequence/
+```
 
 #### Minimum Input to SQANTI3 QC
 
@@ -263,19 +284,15 @@ Options:
   --version                       Show the version and exit.
   --help                          Show this message and exit.
 ```
-
-If you don't feel like running the ORF prediction part, use `--skipORF`. Just
-know that all your transcripts will be annotated as non-coding.
-If you have short read data, you can run STAR to get the junction file
-(usually called `SJ.out.tab`, see [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf))
-and supply it to SQANTI3 as is. If you have several samples, it is recommended
-to provide them as separated `*SJ.out.tab` files.
-
-By way of example, the following command was used to run SQANTI3 with the
-`example` data. The input files are a subdivision of the 
-[Melanoma Cancer Cell Line IsoSeq Data](https://github.com/PacificBiosciences/DevNet/wiki/Melanoma--Cancer-Cell-Line-Iso-Seq-Data)
-that corresponds just to those polished sequences that map to chromosome 13.
-
+python sqanti3_qc.py --gtf input.gtf \
+                     gencode.v35.annotation.gtf \
+                     hg38.fa \
+                     --cage_peak hg38.cage_peaks.chr13.bed --polyA_motif_list  polyA.list \
+                     --expression rsemQuantification.chr13.isoforms.results \
+                     --fl_count input.abundances.txt \
+                     -c star.SJ.out.tab \
+                     --isoAnnotLite --gff3 tappAS.input.gff3
+                     
 ```
 sqanti3_qc test_chr13_seqs.fasta \
     Homo_sapiens.GRCh38.86.chr13.gtf \
@@ -290,33 +307,9 @@ sqanti3_qc test_chr13_seqs.fasta \
 
 ```
 
-If `--aligner_choice=minimap2`, the correct parameters are:
-```
-minimap2 \
-   -ax splice \
-   --secondary=no \
-   -C5 -O6,24 -B4 -uf
-```
+It is *highly recommended* that you run SQANTI3 using an input GFF3/GTF (adding the `--gtf` option in front) instead of input fasta/fastq.
 
-If `--aligner_choice=deSALT`, the correct parameters are:
-```
-deSALT aln -x ccs
-```
-
-If `--aligner_choice=gmap`, the correct parameters are:
-```
-gmap \
-   --cross-species \
-   -n 1 \
-   --max-intronlength-middle=2000000 \
-   --max-intronlength-ends=2000000 \
-   -L 3000000 \
-   -f samse \
-   -z sense_force
-```
-Remember to build a GMAP index of the genome to provide its
-path through `-x` option.
-
+You can obtain the input GFF3/GTF using [Cupcake collapse](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake:-supporting-scripts-for-Iso-Seq-after-clustering-step#collapse)
 
 There are two options related to parallelization. The first is `-t` (`--cpus`)
 that designates the number of CPUs used by the aliger.
@@ -338,6 +331,60 @@ so check out <a href="#Updates">the updates section</a>
 
 Detailed explanation of `_classification.txt` and `_junctions.txt`
 <a href="#explain">below</a>.
+
+
+<a name="cage"/>
+
+### Incorporating CAGE peak data
+
+CAGE peak data must be provided in BED file format where:
+- column 1 is chromosome (chr1, chr2...)
+- column 2 is 0-based start coordinate
+- column 3 is 1-based end coordinate
+- column 5 is strand information 
+
+For human and mouse, you can download [refTSS](http://reftss.clst.riken.jp/reftss/Main_Page) BED files.
+
+Provide the CAGE peak BED file with the `--cage_peak` parameter in `sqanti3_qc.py`.
+
+Distance to the closest CAGE peak signal is the `dist_peak` and `within_peak` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
+
+<a name="polya"/>
+
+### Incorporating polyA site data or polyA motif list
+
+
+PolyA site data must be provided in BED file format where:
+- column 1 is chromosome (chr1, chr2...)
+- column 2 is 0-based start coordinate
+- column 3 is 1-based end coordinate
+- column 5 is strand information 
+
+For human, mouse, and worm, you can download the [Atlas BED files](https://polyasite.unibas.ch/atlas#2).
+
+Note however that the chromosomes in the BED files are missing the "chr" prefix!  
+You can modify the downloaded bed file as shown below:
+
+```
+sed -i 's/^/chr/' atlas.clusters.2.0.GRCh38.96.bed
+```
+ 
+Provide the PolyA site BED file with the `--polyA_peak` parameter in `sqanti3_qc.py`.
+
+Distance to the closest PolyA site is the `dist_to_polya_site` and `within_polya_site` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
+
+In addition, you can also provide a polyA motif list in the form of a text file. 
+For example, the common polyA motifs for human are shown [here](https://github.com/ConesaLab/SQANTI3/blob/master/example/polyA.list)
+
+Provide the PolyA site BED file with the `--polyA_motif_list` parameter in `sqanti3_qc.py`.
+
+Distance to the closest PolyA site is the `polyA_motif` and `polyA_dist` columns in the output `.classification.txt` file. 
+See [here](https://github.com/ConesaLab/SQANTI3#classification-output-explanation) for more info.
+
 
 
 <a name="flcount"/>

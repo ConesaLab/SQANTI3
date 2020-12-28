@@ -5,8 +5,9 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '1.0.0'  # Python 3.7
+__version__ = '2.0.0'  # Python 3.7
 
+import pdb
 import os, re, sys, subprocess, timeit, glob, copy
 import shutil
 import distutils.spawn
@@ -21,7 +22,7 @@ from collections.abc import Iterable
 from csv import DictWriter, DictReader
 from multiprocessing import Process
 
-utilitiesPath =  os.path.dirname(os.path.realpath(__file__))+"/utilities/" 
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
 from rt_switching import rts
 from indels_annot import calc_indels_from_sam
@@ -95,7 +96,7 @@ if distutils.spawn.find_executable(GFFREAD_PROG) is None:
 
 seqid_rex1 = re.compile('PB\.(\d+)\.(\d+)$')
 seqid_rex2 = re.compile('PB\.(\d+)\.(\d+)\|\S+')
-seqid_fusion = re.compile("PBfusion\.(\d+)")
+seqid_fusion = re.compile("PBfusion\.(\d+)\.(\d+)\S*")
 
 
 FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
@@ -116,7 +117,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
                 'dist_to_cage_peak', 'within_cage_peak',
                 'dist_to_polya_site', 'within_polya_site',
-                'polyA_motif', 'polyA_dist']
+                'polyA_motif', 'polyA_dist', 'ORF_seq']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 RSCRIPT_REPORT = 'SQANTI3_report.R'
@@ -216,7 +217,9 @@ class myQueryTranscripts:
                  min_cov_pos ="NA", min_samp_cov="NA", sd ="NA", FL ="NA", FL_dict={},
                  nIndels ="NA", nIndelsJunc ="NA", proteinID=None,
                  ORFlen="NA", CDS_start="NA", CDS_end="NA",
-                 CDS_genomic_start="NA", CDS_genomic_end="NA", is_NMD="NA",
+                 CDS_genomic_start="NA", CDS_genomic_end="NA", 
+                 ORFseq="NA",
+                 is_NMD="NA",
                  isoExp ="NA", geneExp ="NA", coding ="non_coding",
                  refLen ="NA", refExons ="NA",
                  refStart = "NA", refEnd = "NA",
@@ -249,6 +252,7 @@ class myQueryTranscripts:
         self.sd 	     = sd
         self.proteinID   = proteinID
         self.ORFlen      = ORFlen
+        self.ORFseq      = ORFseq
         self.CDS_start   = CDS_start
         self.CDS_end     = CDS_end
         self.coding      = coding
@@ -363,6 +367,7 @@ class myQueryTranscripts:
          'FSM_class': self.FSM_class,
          'coding': self.coding,
          'ORF_length': self.ORFlen,
+         'ORF_seq': self.ORFseq,
          'CDS_length': self.CDSlen(),
          'CDS_start': self.CDS_start,
          'CDS_end': self.CDS_end,
@@ -384,34 +389,14 @@ class myQueryTranscripts:
 
 class myQueryProteins:
 
-    def __init__(self, cds_start, cds_end, orf_length, proteinID="NA"):
+    def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
         self.orf_length  = orf_length
         self.cds_start   = cds_start       # 1-based start on transcript
         self.cds_end     = cds_end         # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = None      # 1-based genomic start of ORF, if - strand, is greater than end
         self.cds_genomic_end = None        # 1-based genomic end of ORF
+        self.orf_seq     = orf_seq
         self.proteinID   = proteinID
-
-
-def rewrite_sam_for_fusion_ids(sam_filename):
-    seen_id_counter = Counter()
-
-    f = open(sam_filename+'.tmp', 'w')
-    for line in open(sam_filename):
-        if line.startswith('@'):
-            f.write(line)
-        else:
-            raw = line.strip().split('\t')
-            if not raw[0].startswith('PBfusion.'):
-                print("Expecting fusion ID format `PBfusion.X` but saw {0} instead. Abort!".format(raw[0]), file=sys.stderr)
-                sys.exit(-1)
-            seen_id_counter[raw[0]] += 1
-            raw[0] = raw[0] + '.' + str(seen_id_counter[raw[0]])
-            f.write("\t".join(raw) + '\n')
-    f.close()
-    os.rename(f.name, sam_filename)
-    return sam_filename
-
 
 def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
     """
@@ -508,9 +493,6 @@ def correctionPlusORFpred(args, genome_dict):
                     print("ERROR running alignment cmd: {0}".format(cmd), file=sys.stderr)
                     sys.exit(-1)
 
-            # if is fusion - go in and change the IDs to reflect PBfusion.X.1, PBfusion.X.2...
-            if args.is_fusion:
-                corrSAM = rewrite_sam_for_fusion_ids(corrSAM)
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(args.genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
@@ -587,11 +569,15 @@ def correctionPlusORFpred(args, genome_dict):
             orf_length = int(m.group(2))
             cds_start = int(m.group(4))
             cds_end = int(m.group(5))
-            orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, proteinID=r.id)
+            orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
     else:
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
-        cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
+        if args.orf_input is not None:
+            print("Running ORF prediction of input on {0}...".format(args.orf_input))
+            cmd = GMST_CMD.format(i=os.path.realpath(args.orf_input), o=gmst_pre)
+        else:
+            cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
         if subprocess.check_call(cmd, shell=True, cwd=gmst_dir)!=0:
             print("ERROR running GMST cmd: {0}".format(cmd), file=sys.stderr)
             sys.exit(-1)
@@ -615,11 +601,11 @@ def correctionPlusORFpred(args, genome_dict):
                     cds_start += pos*3
                     newid = "{0}|{1}_aa|{2}|{3}|{4}".format(id_pre, orf_length, orf_strand, cds_start, cds_end)
                     newseq = str(r.seq)[pos:]
-                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, proteinID=newid)
+                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=newid)
                     f.write(">{0}\n{1}\n".format(newid, newseq))
                 else:
                     new_rec = r
-                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, proteinID=r.id)
+                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
                     f.write(">{0}\n{1}\n".format(new_rec.description, new_rec.seq))
 
     if len(orfDict) == 0:
@@ -663,7 +649,7 @@ def reference_parser(args, genome_chroms):
     known_5_3_by_gene = defaultdict(lambda: {'begin':set(), 'end': set()})
 
     for r in genePredReader(referenceFiles):
-        if r.length < args.min_ref_len: continue # ignore miRNAs
+        if r.length < args.min_ref_len and not args.is_fusion: continue # ignore miRNAs
         if r.exonCount == 1:
             refs_1exon_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
             known_5_3_by_gene[r.gene]['begin'].add(r.txStart)
@@ -730,12 +716,14 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
     :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
     """
-    if os.path.isdir(coverageFiles)==True:
+    if os.path.isdir(coverageFiles):
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
-    else:
+    elif coverageFiles.count(',') > 0:
         cov_files = coverageFiles.split(",")
+    else:
+        cov_files = glob.glob(coverageFiles)
 
-    print("Input pattern: {0}. The following files found and to be read as junctions:\n{1}".format(\
+    print("Input pattern: {0}.\nThe following files found and to be read as junctions:\n{1}".format(\
         coverageFiles, "\n".join(cov_files) ), file=sys.stderr)
 
     cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
@@ -1313,16 +1301,19 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
     if len(isoforms_hit.genes) == 0:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
-        if len(isoforms_hit.AS_genes) == 0 and trec.chrom in junctions_by_chr:
-            # no hit even on opp strand
-            # see if it is completely contained within a junction
-            da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
-            i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
-            while i < len(da_pairs) and da_pairs[i][0] <= trec.txStart:
-                if da_pairs[i][0] <= trec.txStart <= trec.txStart <= da_pairs[i][1]:
-                    isoforms_hit.str_class = "genic_intron"
-                    break
-                i += 1
+        if len(isoforms_hit.AS_genes) == 0:
+            if trec.chrom in junctions_by_chr:
+                # no hit even on opp strand
+                # see if it is completely contained within a junction
+                da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
+                i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
+                while i < len(da_pairs) and da_pairs[i][0] <= trec.txStart:
+                    if da_pairs[i][0] <= trec.txStart <= trec.txStart <= da_pairs[i][1]:
+                        isoforms_hit.str_class = "genic_intron"
+                        break
+                    i += 1
+            else:
+                pass # remain intergenic
         else:
             # hits one or more genes on the opposite strand
             isoforms_hit.str_class = "antisense"
@@ -1425,10 +1416,32 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
         fout.writerow(qj)
 
 
+def get_fusion_component(fusion_gtf):
+    components = defaultdict(lambda: {})
+    for r in collapseGFFReader(fusion_gtf):
+        m = seqid_fusion.match(r.seqid)
+        gene, iso = int(m.group(1)), int(m.group(2))
+        components[gene][iso] = sum(e.end-e.start for e in r.ref_exons)
+
+    result = {}
+    for gene, comp in components.items():
+        comp = list(comp.items())
+        comp.sort(key=lambda x: x[0])  # now comp is (<isoform indx>, <length>)
+        _iso, _len = comp[0]
+        _acc = _len
+        result["PBfusion.{0}.{1}".format(gene, _iso)] = (1, _len)
+        for _iso, _len in comp[1:]:
+            result["PBfusion.{0}.{1}".format(gene, _iso)] = (_acc+1, _acc+_len)
+            _acc += _len
+    return result
+
+
 def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict):
+    if args.is_fusion: # read GFF to get fusion components
+        # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
+        fusion_components = get_fusion_component(args.isoforms)
 
     ## read coverage files if provided
-
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
         SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
@@ -1539,12 +1552,40 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                 isoform_hit.polyA_dist = polyA_dist
 
             # Fill in ORF/coding info and NMD detection
-            if rec.id in orfDict:
+            if args.is_fusion:
+                #pdb.set_trace()
+                # fusion - special case handling, need to see which part of the ORF this segment falls on
+                fusion_gene = 'PBfusion.' + str(seqid_fusion.match(rec.id).group(1))
+                rec_component_start, rec_component_end = fusion_components[rec.id]
+                rec_len = rec_component_end - rec_component_start + 1
+                if fusion_gene in orfDict:
+                    orf_start, orf_end = orfDict[fusion_gene].cds_start, orfDict[fusion_gene].cds_end
+                    if orf_start <= rec_component_start < orf_end:
+                        isoform_hit.CDS_start = 1
+                        isoform_hit.CDS_end = min(rec_len, orf_end - rec_component_start + 1)
+                        isoform_hit.ORFlen = (isoform_hit.CDS_end - isoform_hit.CDS_start)/3
+                        _s = (rec_component_start-orf_start)//3
+                        _e = min(int(_s+isoform_hit.ORFlen), len(orfDict[fusion_gene].orf_seq))
+                        isoform_hit.ORFseq = orfDict[fusion_gene].orf_seq[_s:_e]
+                        isoform_hit.coding = "coding"
+                    elif rec_component_start <= orf_start < rec_component_end:
+                        isoform_hit.CDS_start = orf_start - rec_component_start
+                        if orf_end >= rec_component_end:
+                            isoform_hit.CDS_end = rec_component_end - rec_component_start + 1
+                        else:
+                            isoform_hit.CDS_end = orf_end - rec_component_start + 1
+                        isoform_hit.ORFlen = (isoform_hit.CDS_end - isoform_hit.CDS_start) / 3
+                        _e = min(int(isoform_hit.ORFlen), len(orfDict[fusion_gene].orf_seq))
+                        isoform_hit.ORFseq = orfDict[fusion_gene].orf_seq[:_e]
+                        isoform_hit.coding = "coding"
+            elif rec.id in orfDict:  # this will never be true for fusion, so the above code seg runs instead
                 isoform_hit.coding = "coding"
                 isoform_hit.ORFlen = orfDict[rec.id].orf_length
                 isoform_hit.CDS_start = orfDict[rec.id].cds_start  # 1-based start
                 isoform_hit.CDS_end = orfDict[rec.id].cds_end      # 1-based end
+                isoform_hit.ORFseq  = orfDict[rec.id].orf_seq
 
+            if isoform_hit.coding == "coding":
                 m = {} # transcript coord (0-based) --> genomic coord (0-based)
                 if rec.strand == '+':
                     i = 0
@@ -1559,20 +1600,22 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                             m[rec.length-i-1] = c
                             i += 1
 
-                orfDict[rec.id].cds_genomic_start = m[orfDict[rec.id].cds_start-1] + 1  # make it 1-based
-                orfDict[rec.id].cds_genomic_end   = m[orfDict[rec.id].cds_end-1] + 1    # make it 1-based
+                isoform_hit.CDS_genomic_start = m[isoform_hit.CDS_start-1] + 1  # make it 1-based
+                # NOTE: if using --orf_input, it is possible to see discrepancy between the exon structure
+                # provided by GFF and the input ORF. For now, just shorten it
+                isoform_hit.CDS_genomic_end = m[min(isoform_hit.CDS_end-1, max(m))] + 1    # make it 1-based
+                #orfDict[rec.id].cds_genomic_start = m[orfDict[rec.id].cds_start-1] + 1  # make it 1-based
+                #orfDict[rec.id].cds_genomic_end   = m[orfDict[rec.id].cds_end-1] + 1    # make it 1-based
 
-                isoform_hit.CDS_genomic_start = orfDict[rec.id].cds_genomic_start
-                isoform_hit.CDS_genomic_end = orfDict[rec.id].cds_genomic_end
-                if orfDict[rec.id].cds_genomic_start is None: # likely SAM CIGAR mapping issue coming from aligner
-                    continue # we have to skip the NMD
+
+            if isoform_hit.CDS_genomic_end!='NA':
                 # NMD detection
                 # if + strand, see if CDS stop is before the last junction
                 if len(rec.junctions) > 0:
                     if rec.strand == '+':
-                        dist_to_last_junc = orfDict[rec.id].cds_genomic_end - rec.junctions[-1][0]
+                        dist_to_last_junc = isoform_hit.CDS_genomic_end - rec.junctions[-1][0]
                     else: # - strand
-                        dist_to_last_junc = rec.junctions[0][1] - orfDict[rec.id].cds_genomic_end
+                        dist_to_last_junc = rec.junctions[0][1] - isoform_hit.CDS_genomic_end
                     isoform_hit.is_NMD = "TRUE" if dist_to_last_junc < 0 else "FALSE"
 
             isoforms_info[rec.id] = isoform_hit
@@ -2137,7 +2180,7 @@ def main():
 
     #arguments
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
-    parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ or gtf format; By default "FASTA/FASTQ". For GTF, use --gtf')
+    parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ) or GTF format. Recommend provide GTF format with the --gtf option.')
     parser.add_argument('annotation', help='\t\tReference annotation file (GTF format)')
     parser.add_argument('genome', help='\t\tReference genome (Fasta format)')
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
@@ -2149,6 +2192,7 @@ def main():
     parser.add_argument("--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)")
     parser.add_argument("--skipORF", default=False, action="store_true", help="\t\tSkip ORF prediction (to save time)")
     parser.add_argument("--is_fusion", default=False, action="store_true", help="\t\tInput are fusion isoforms, must supply GTF as input using --gtf")
+    parser.add_argument("--orf_input", help="\t\tInput fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
     parser.add_argument('-g', '--gtf', help='\t\tUse when running SQANTI by using as input a gtf of isoforms', action='store_true')
     parser.add_argument('-e','--expression', help='\t\tExpression matrix (supported: Kallisto tsv)', required=False)
     parser.add_argument('-x','--gmap_index', help='\t\tPath and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
@@ -2157,7 +2201,7 @@ def main():
     #parser.add_argument('-z', '--sense', help='\t\tOption that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences', required=False, action='store_true')
     parser.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     parser.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
-    parser.add_argument('-c','--coverage', help='\t\tJunction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").', required=False)
+    parser.add_argument('-c','--coverage', help='\t\tJunction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").', required=False)
     parser.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     parser.add_argument('-w','--window', default="20", help='\t\tSize of the window in the genomic DNA screened for Adenine content downstream of TTS', required=False, type=int)
     parser.add_argument('--genename', help='\t\tUse gene_name tag from GTF to define genes. Default: gene_id used to define genes', default=False, action='store_true')
@@ -2171,8 +2215,9 @@ def main():
     args = parser.parse_args()
 
     if args.is_fusion:
-        print("WARNING: Currently if --is_fusion is used, no ORFs will be predicted.", file=sys.stderr)
-        args.skipORF = True
+        if args.orf_input is None:
+            print("WARNING: Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!", file=sys.stderr)
+            args.skipORF = True
         if not args.gtf:
             print("ERROR: if --is_fusion is on, must supply GTF as input and use --gtf!", file=sys.stderr)
             sys.exit(-1)
