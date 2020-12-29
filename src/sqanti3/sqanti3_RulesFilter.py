@@ -37,33 +37,33 @@ RSCRIPT_REPORT = "SQANTI3_report.R"
 # necessary for use in f-strings since \n and \t do not work
 
 CATEGORY_DICT = {
-    "full-splice_match": "FSM",
+    "full-splice_match"      : "FSM",
     "incomplete-splice_match": "ISM",
-    "novel_in_catalog": "NIC",
-    "novel_not_in_catalog": "NNC",
-    "antisense": "AS",
-    "intergenic": "intergenic",
-    "genic_intron": "intron",
-    "genic": "genic",
-    "fusion": "fusion",
+    "novel_in_catalog"       : "NIC",
+    "novel_not_in_catalog"   : "NNC",
+    "antisense"              : "AS",
+    "intergenic"             : "intergenic",
+    "genic_intron"           : "intron",
+    "genic"                  : "genic",
+    "fusion"                 : "fusion",
 }
 
 
 def sqanti_filter_lite(
-    sqanti_class: str,
-    isoforms: str,
-    annotation: str,
-    junctions: str,
-    sam: Optional[str],
-    faa: Optional[str],
-    intrapriming: float,
-    runAlength: int,
+    sqanti_class         : str,
+    isoforms             : str,
+    annotation           : str,
+    junctions            : str,
+    sam                  : Optional[str],
+    faa                  : Optional[str],
+    intrapriming         : float,
+    runAlength           : int,
     max_dist_to_known_end: int,
-    min_cov: int,
-    filter_mono_exonic: bool,
-    skipGTF: bool,
-    skipFaFq: bool,
-    skipJunction: bool,
+    min_cov              : int,
+    filter_mono_exonic   : bool,
+    skipGTF              : bool,
+    skipFaFq             : bool,
+    skipJunction         : bool,
 ) -> None:
 
     logger = logging.getLogger(__name__)
@@ -97,10 +97,10 @@ def sqanti_filter_lite(
                 if r["seq_A_downstream_TTS"][runA] != "A":
                     break
                 runA += 1
-            calc_min_cov = float(r["min_cov"]) if r["min_cov"] != "NA" else None
-            num_exon = int(r["exons"])
-            is_RTS = r["RTS_stage"] == "TRUE"
-            is_canonical = r["all_canonical"] == "canonical"
+            calc_min_cov  = float(r["min_cov"]) if r["min_cov"] != "NA" else None
+            num_exon      = int(r["exons"])
+            is_RTS        = r["RTS_stage"] == "TRUE"
+            is_canonical  = r["all_canonical"] == "canonical"
             is_monoexonic = num_exon == 1
 
             cat = CATEGORY_DICT[r["structural_category"]]
@@ -210,94 +210,95 @@ def sqanti_filter_lite(
 @click.argument("junctions")
 @click.option(
     "--sam",
-    help="(Optional) SAM alignment of the input fasta/fastq",
-    type=str,
-    default=None,
+    help         = "(Optional) SAM alignment of the input fasta/fastq",
+    type         = str,
+    default      = None,
 )
 @click.option(
-    "--faa", help="(Optional) ORF prediction faa file to be filtered by SQANTI3"
+    "--faa",
+    help         = "(Optional) ORF prediction faa file to be filtered by SQANTI3"
 )
 @click.option(
     "-a",
     "--intrapriming",
-    help="Adenine percentage at genomic 3' end to flag an isoform as intra-priming",
-    type=click.FloatRange(min=0.25, max=1.0),
-    default=0.6,
-    show_default=True,
+    help         = "Adenine percentage at genomic 3' end to flag an isoform as intra-priming",
+    type         = click.FloatRange(min = 0.25, max = 1.0),
+    default      = 0.6,
+    show_default = True,
 )
 @click.option(
     "-r",
     "--runAlength",
-    help="Continuous run-A length at genomic 3' end to flag an isoform as intra-priming",
-    type=click.IntRange(min=4, max=21),
-    default=6,
-    show_default=True,
+    help         = "Continuous run-A length at genomic 3' end to flag an isoform as intra-priming",
+    type         = click.IntRange(min = 4, max = 21),
+    default      = 6,
+    show_default = True,
 )
 @click.option(
     "-m",
     "--max_dist_to_known_end",
-    help="Maximum distance to an annotated 3' end to preserve as a valid 3' end and not filter out",
-    type=int,
-    default=50,
-    show_default=True,
+    help         = "Maximum distance to an annotated 3' end to preserve as a valid 3' end and not filter out",
+    type         = int,
+    default      = 50,
+    show_default = True,
 )
 @click.option(
     "-c",
     "--min_cov",
-    help="Minimum junction coverage for each isoform (only used if min_cov field is not 'NA')",
-    type=int,
-    default=3,
-    show_default=True,
+    help         = "Minimum junction coverage for each isoform (only used if min_cov field is not 'NA')",
+    type         = int,
+    default      = 3,
+    show_default = True,
 )
 @click.option(
     "--filter_mono_exonic",
-    help="Filter out all mono-exonic transcripts",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Filter out all mono-exonic transcripts",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "--skipGTF",
-    help="Skip output of GTF",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Skip output of GTF",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "--skipFaFq",
-    help="Skip output of isoform fasta/fastq",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Skip output of isoform fasta/fastq",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "--skipJunction",
-    help="Skip output of junctions file",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Skip output of junctions file",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.version_option()
 @click.help_option(show_default=False)
 def main(
-    sqanti_class: str,
-    isoforms: str,
-    annotation: str,
-    junctions: str,
-    sam: Optional[str] = None,
-    faa: Optional[str] = None,
-    intrapriming: float = 0.6,
-    runalength: int = 6,
-    max_dist_to_known_end: int = 50,
-    min_cov: int = 3,
-    filter_mono_exonic: bool = False,
-    skipgtf: bool = False,
-    skipfafq: bool = False,
-    skipjunction: bool = False,
+    sqanti_class         : str,
+    isoforms             : str,
+    annotation           : str,
+    junctions            : str,
+    sam                  : Optional[str] = None,
+    faa                  : Optional[str] = None,
+    intrapriming         : float         = 0.6,
+    runalength           : int           = 6,
+    max_dist_to_known_end: int           = 50,
+    min_cov              : int           = 3,
+    filter_mono_exonic   : bool          = False,
+    skipgtf              : bool          = False,
+    skipfafq             : bool          = False,
+    skipjunction         : bool          = False,
 ) -> None:
     """"Filtering of Isoforms based on SQANTI3 attributes
     
@@ -371,20 +372,20 @@ def main(
     logger.info("Running SQANTI2 filtering...")
 
     sqanti_filter_lite(
-        sqanti_class=sqanti_class,
-        isoforms=isoforms,
-        annotation=annotation,
-        junctions=junctions,
-        sam=sam,
-        faa=faa,
-        intrapriming=intrapriming,
-        runAlength=runalength,
-        max_dist_to_known_end=max_dist_to_known_end,
-        min_cov=min_cov,
-        filter_mono_exonic=filter_mono_exonic,
-        skipGTF=skipgtf,
-        skipFaFq=skipfafq,
-        skipJunction=skipjunction,
+        sqanti_class          = sqanti_class,
+        isoforms              = isoforms,
+        annotation            = annotation,
+        junctions             = junctions,
+        sam                   = sam,
+        faa                   = faa,
+        intrapriming          = intrapriming,
+        runAlength            = runalength,
+        max_dist_to_known_end = max_dist_to_known_end,
+        min_cov               = min_cov,
+        filter_mono_exonic    = filter_mono_exonic,
+        skipGTF               = skipgtf,
+        skipFaFq              = skipfafq,
+        skipJunction          = skipjunction,
     )
 
 

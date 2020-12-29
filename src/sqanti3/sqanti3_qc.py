@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # pylama:ignore=E501,C901
+# SQANTI: Structural and Quality Annotation of Novel Transcript Isoforms
+# Authors: Lorena de la Fuente, Hector del Risco, Cecile Pereira and Manuel Tardaguila
+# Modified by Liz (etseng@pacb.com) as SQANTI2/3 versions
+# Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
-__author__ = "etseng@pacb.com"
+__author__  = "etseng@pacb.com"
+__version__ = '2.0.0'  # Python 3.7
 
 import bisect
 import copy
@@ -45,7 +50,6 @@ UTILITIESPATH = f"{sqpath[0]}{os.sep}utilities"
 sys.path.insert(0, UTILITIESPATH)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
-# MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
 MINIMAP2_CMD = (
     "minimap2 -ax splice --secondary=no -C5 -u {sense} -t {cpus} {g} {i} > {o}"
 )
@@ -164,17 +168,17 @@ class genePredRecord(object):
         exonEnds,
         gene=None,
     ):
-        self.id = id
-        self.chrom = chrom
-        self.strand = strand
-        self.txStart = txStart  # 1-based start
-        self.txEnd = txEnd  # 1-based end
-        self.cdsStart = cdsStart  # 1-based start
-        self.cdsEnd = cdsEnd  # 1-based end
-        self.exonCount = exonCount
-        self.exonStarts = exonStarts  # 0-based starts
-        self.exonEnds = exonEnds  # 1-based ends
-        self.gene = gene
+        self.id         = id
+        self.chrom      = chrom
+        self.strand     = strand
+        self.txStart    = txStart    # 1-based start
+        self.txEnd      = txEnd      # 1-based end
+        self.cdsStart   = cdsStart   # 1-based start
+        self.cdsEnd     = cdsEnd     # 1-based end
+        self.exonCount  = exonCount
+        self.exonStarts = exonStarts # 0-based starts
+        self.exonEnds   = exonEnds   # 1-based ends
+        self.gene       = gene
 
         self.length = 0
         self.exons = []
@@ -268,6 +272,7 @@ class myQueryTranscripts:
         CDS_end="NA",
         CDS_genomic_start="NA",
         CDS_genomic_end="NA",
+        ORFseq="NA",
         is_NMD="NA",
         isoExp="NA",
         geneExp="NA",
@@ -289,71 +294,72 @@ class myQueryTranscripts:
         polyA_dist="NA",
     ):
 
-        self.id = id
-        self.tss_diff = tss_diff  # distance to TSS of best matching ref
-        self.tts_diff = tts_diff  # distance to TTS of best matching ref
-        self.tss_gene_diff = "NA"  # min distance to TSS of all genes matching the ref
-        self.tts_gene_diff = "NA"  # min distance to TTS of all genes matching the ref
-        self.genes = genes if genes is not None else []
-        self.AS_genes = set()  # ref genes that are hit on the opposite strand
-        self.transcripts = transcripts if transcripts is not None else []
-        self.num_exons = num_exons
-        self.length = length
-        self.str_class = str_class  # structural classification of the isoform
-        self.chrom = chrom
-        self.strand = strand
-        self.subtype = subtype
-        self.RT_switching = RT_switching
-        self.canonical = canonical
-        self.min_samp_cov = min_samp_cov
-        self.min_cov = min_cov
-        self.min_cov_pos = min_cov_pos
-        self.sd = sd
-        self.proteinID = proteinID
-        self.ORFlen = ORFlen
-        self.CDS_start = CDS_start
-        self.CDS_end = CDS_end
-        self.coding = coding
+        self.id                = id
+        self.tss_diff          = tss_diff  # distance to TSS of best matching ref
+        self.tts_diff          = tts_diff  # distance to TTS of best matching ref
+        self.tss_gene_diff     = "NA"  # min distance to TSS of all genes matching the ref
+        self.tts_gene_diff     = "NA"  # min distance to TTS of all genes matching the ref
+        self.genes             = genes if genes is not None else []
+        self.AS_genes          = set()  # ref genes that are hit on the opposite strand
+        self.transcripts       = transcripts if transcripts is not None else []
+        self.num_exons         = num_exons
+        self.length            = length
+        self.str_class         = str_class  # structural classification of the isoform
+        self.chrom             = chrom
+        self.strand            = strand
+        self.subtype           = subtype
+        self.RT_switching      = RT_switching
+        self.canonical         = canonical
+        self.min_samp_cov      = min_samp_cov
+        self.min_cov           = min_cov
+        self.min_cov_pos       = min_cov_pos
+        self.sd                = sd
+        self.proteinID         = proteinID
+        self.ORFlen            = ORFlen
+        self.ORFseq            = ORFseq
+        self.CDS_start         = CDS_start
+        self.CDS_end           = CDS_end
+        self.coding            = coding
         self.CDS_genomic_start = (
             CDS_genomic_start  # 1-based genomic coordinate of CDS start - strand aware
         )
-        self.CDS_genomic_end = (
+        self.CDS_genomic_end   = (
             CDS_genomic_end  # 1-based genomic coordinate of CDS end - strand aware
         )
-        self.is_NMD = is_NMD  # (TRUE,FALSE) for NMD if is coding, otherwise "NA"
-        self.FL = FL  # count for a single sample
-        self.FL_dict = FL_dict  # dict of sample -> FL count
-        self.nIndels = nIndels
-        self.nIndelsJunc = nIndelsJunc
-        self.isoExp = isoExp
-        self.geneExp = geneExp
-        self.refLen = refLen
-        self.refExons = refExons
-        self.refStart = refStart
-        self.refEnd = refEnd
-        self.q_splicesite_hit = q_splicesite_hit
-        self.q_exon_overlap = q_exon_overlap
-        self.FSM_class = FSM_class
-        self.bite = bite
-        self.percAdownTTS = percAdownTTS
-        self.seqAdownTTS = seqAdownTTS
-        self.dist_cage = dist_cage
-        self.within_cage = within_cage
+        self.is_NMD            = is_NMD  # (TRUE,FALSE) for NMD if is coding, otherwise "NA"
+        self.FL                = FL  # count for a single sample
+        self.FL_dict           = FL_dict  # dict of sample -> FL count
+        self.nIndels           = nIndels
+        self.nIndelsJunc       = nIndelsJunc
+        self.isoExp            = isoExp
+        self.geneExp           = geneExp
+        self.refLen            = refLen
+        self.refExons          = refExons
+        self.refStart          = refStart
+        self.refEnd            = refEnd
+        self.q_splicesite_hit  = q_splicesite_hit
+        self.q_exon_overlap    = q_exon_overlap
+        self.FSM_class         = FSM_class
+        self.bite              = bite
+        self.percAdownTTS      = percAdownTTS
+        self.seqAdownTTS       = seqAdownTTS
+        self.dist_cage         = dist_cage
+        self.within_cage       = within_cage
         self.within_polya_site = within_polya_site
-        self.dist_polya_site = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
-        self.polyA_motif = polyA_motif
-        self.polyA_dist = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.dist_polya_site   = dist_polya_site  # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.polyA_motif       = polyA_motif
+        self.polyA_dist        = polyA_dist  # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
 
     def get_total_diff(self):
         return abs(self.tss_diff) + abs(self.tts_diff)
 
     def modify(self, ref_transcript, ref_gene, tss_diff, tts_diff, refLen, refExons):
         self.transcripts = [ref_transcript]
-        self.genes = [ref_gene]
-        self.tss_diff = tss_diff
-        self.tts_diff = tts_diff
-        self.refLen = refLen
-        self.refExons = refExons
+        self.genes       = [ref_gene]
+        self.tss_diff    = tss_diff
+        self.tts_diff    = tts_diff
+        self.refLen      = refLen
+        self.refExons    = refExons
 
     def geneName(self):
         geneName = "_".join(set(self.genes))
@@ -421,51 +427,52 @@ class myQueryTranscripts:
 
     def as_dict(self):
         d = {
-            "isoform": self.id,
-            "chrom": self.chrom,
-            "strand": self.strand,
-            "length": self.length,
-            "exons": self.num_exons,
-            "structural_category": self.str_class,
-            "associated_gene": "_".join(set(self.genes)),
+            "isoform"              : self.id,
+            "chrom"                : self.chrom,
+            "strand"               : self.strand,
+            "length"               : self.length,
+            "exons"                : self.num_exons,
+            "structural_category"  : self.str_class,
+            "associated_gene"      : "_".join(set(self.genes)),
             "associated_transcript": "_".join(set(self.transcripts)),
-            "ref_length": self.refLen,
-            "ref_exons": self.refExons,
-            "diff_to_TSS": self.tss_diff,
-            "diff_to_TTS": self.tts_diff,
-            "diff_to_gene_TSS": self.tss_gene_diff,
-            "diff_to_gene_TTS": self.tts_gene_diff,
-            "subcategory": self.subtype,
-            "RTS_stage": self.RT_switching,
-            "all_canonical": self.canonical,
-            "min_sample_cov": self.min_samp_cov,
-            "min_cov": self.min_cov,
-            "min_cov_pos": self.min_cov_pos,
-            "sd_cov": self.sd,
-            "FL": self.FL,
-            "n_indels": self.nIndels,
-            "n_indels_junc": self.nIndelsJunc,
-            "bite": self.bite,
-            "iso_exp": self.isoExp,
-            "gene_exp": self.geneExp,
-            "ratio_exp": self.ratioExp(),
-            "FSM_class": self.FSM_class,
-            "coding": self.coding,
-            "ORF_length": self.ORFlen,
-            "CDS_length": self.CDSlen(),
-            "CDS_start": self.CDS_start,
-            "CDS_end": self.CDS_end,
-            "CDS_genomic_start": self.CDS_genomic_start,
-            "CDS_genomic_end": self.CDS_genomic_end,
-            "predicted_NMD": self.is_NMD,
+            "ref_length"           : self.refLen,
+            "ref_exons"            : self.refExons,
+            "diff_to_TSS"          : self.tss_diff,
+            "diff_to_TTS"          : self.tts_diff,
+            "diff_to_gene_TSS"     : self.tss_gene_diff,
+            "diff_to_gene_TTS"     : self.tts_gene_diff,
+            "subcategory"          : self.subtype,
+            "RTS_stage"            : self.RT_switching,
+            "all_canonical"        : self.canonical,
+            "min_sample_cov"       : self.min_samp_cov,
+            "min_cov"              : self.min_cov,
+            "min_cov_pos"          : self.min_cov_pos,
+            "sd_cov"               : self.sd,
+            "FL"                   : self.FL,
+            "n_indels"             : self.nIndels,
+            "n_indels_junc"        : self.nIndelsJunc,
+            "bite"                 : self.bite,
+            "iso_exp"              : self.isoExp,
+            "gene_exp"             : self.geneExp,
+            "ratio_exp"            : self.ratioExp(),
+            "FSM_class"            : self.FSM_class,
+            "coding"               : self.coding,
+            "ORF_length"           : self.ORFlen,
+            "ORF_seq"              : self.ORFseq,
+            "CDS_length"           : self.CDSlen(),
+            "CDS_start"            : self.CDS_start,
+            "CDS_end"              : self.CDS_end,
+            "CDS_genomic_start"    : self.CDS_genomic_start,
+            "CDS_genomic_end"      : self.CDS_genomic_end,
+            "predicted_NMD"        : self.is_NMD,
             "perc_A_downstream_TTS": self.percAdownTTS,
-            "seq_A_downstream_TTS": self.seqAdownTTS,
-            "dist_to_cage_peak": self.dist_cage,
-            "within_cage_peak": self.within_cage,
-            "dist_to_polya_site": self.dist_polya_site,
-            "within_polya_site": self.within_polya_site,
-            "polyA_motif": self.polyA_motif,
-            "polyA_dist": self.polyA_dist,
+            "seq_A_downstream_TTS" : self.seqAdownTTS,
+            "dist_to_cage_peak"    : self.dist_cage,
+            "within_cage_peak"     : self.within_cage,
+            "dist_to_polya_site"   : self.dist_polya_site,
+            "within_polya_site"    : self.within_polya_site,
+            "polyA_motif"          : self.polyA_motif,
+            "polyA_dist"           : self.polyA_dist,
         }
         for sample, count in self.FL_dict.items():
             d["FL." + sample] = count
@@ -476,19 +483,20 @@ class myQueryProteins:
     def __init__(
         self, cds_start: int, cds_end: int, orf_length: int, proteinID: str = "NA"
     ):
-        self.orf_length = orf_length
-        self.cds_start = cds_start  # 1-based start on transcript
-        self.cds_end = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
+        self.orf_length        = orf_length
+        self.cds_start         = cds_start  # 1-based start on transcript
+        self.cds_end           = cds_end  # 1-based end on transcript (stop codon), ORF is seq[cds_start-1: cds_end].translate()
         self.cds_genomic_start = (
             None  # 1-based genomic start of ORF, if - strand, is greater than end
         )
-        self.cds_genomic_end = None  # 1-based genomic end of ORF
-        self.proteinID = proteinID
+        self.cds_genomic_end   = None  # 1-based genomic end of ORF
+        self.orf_seq           = orf_seq
+        self.proteinID         = proteinID
 
 
 def setup_logging(name: Optional[str] = None):
-    logger = logging.getLogger("sqanti3_qc")
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    logger           = logging.getLogger("sqanti3_qc")
+    formatter        = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
 
@@ -507,7 +515,7 @@ def setup_logging(name: Optional[str] = None):
 
 
 def rewrite_sam_for_fusion_ids(sam_filename):
-    logger = logging.getLogger("sqanti3_qc")
+    logger          = logging.getLogger("sqanti3_qc")
     seen_id_counter = Counter()
 
     f = open(sam_filename + ".tmp", "w")
@@ -568,13 +576,13 @@ def get_corr_filenames(
     output: str, analysis_directory: str, directory: Optional[str] = None
 ) -> Tuple[str, str, str, str]:
     if directory is None:
-        directory = analysis_directory
+        directory  = analysis_directory
 
     corrPathPrefix = os.path.join(directory, output)
-    corrGTF = corrPathPrefix + "_corrected.gtf"
-    corrSAM = corrPathPrefix + "_corrected.sam"
-    corrFASTA = corrPathPrefix + "_corrected.fasta"
-    corrORF = corrPathPrefix + "_corrected.faa"
+    corrGTF        = f"{corrPathPrefix}_corrected.gtf"
+    corrSAM        = f"{corrPathPrefix}_corrected.sam"
+    corrFASTA      = f"{corrPathPrefix}_corrected.fasta"
+    corrORF        = f"{corrPathPrefix}_corrected.faa"
     return corrGTF, corrSAM, corrFASTA, corrORF
 
 
@@ -604,6 +612,7 @@ def correctionPlusORFpred(
     genome_dict: Dict[str, SeqRecord.SeqRecord],
     genome: str = None,
     gmap_index: str = None,
+    orf_input: str = None,
 ) -> Dict[str, myQueryProteins]:
     """
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
@@ -743,23 +752,27 @@ def correctionPlusORFpred(
         logger.info(f"ORF file {corrORF} already exists. Using it....")
         for r in SeqIO.parse(open(corrORF), "fasta"):
             # now process ORFs into myQueryProtein objects
-            m = gmst_rex.match(r.description)
+            m             = gmst_rex.match(r.description)
             if m is None:
                 logger.error(
                     f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!"
                 )
                 sys.exit(-1)
-            orf_length = int(m.group(2))
-            cds_start = int(m.group(4))
-            cds_end = int(m.group(5))
+            orf_length    = int(m.group(2))
+            cds_start     = int(m.group(4))
+            cds_end       = int(m.group(5))
             orfDict[r.id] = myQueryProteins(
-                cds_start, cds_end, orf_length, proteinID=r.id
+                cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id
             )
     else:
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(directory)
         logger.info(corrFASTA)
-        gmst(seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct")
+        if orf_input is not None:
+            logger.info(f"Running ORF predction on {orf_input}")
+            gmst(seqfile=orf_input, output=gmst_pre, faa=True, fnn=True, strand="direct")
+        else:
+            gmst(seqfile=corrFASTA, output=gmst_pre, faa=True, fnn=True, strand="direct")
         os.chdir(cur_dir)
         # Modifying ORF sequences by removing sequence before ATG
         with open(corrORF, "w") as f:
@@ -785,13 +798,13 @@ def correctionPlusORFpred(
                     )
                     newseq = str(r.seq)[pos:]
                     orfDict[r.id] = myQueryProteins(
-                        cds_start, cds_end, orf_length, proteinID=newid
+                        cds_start, cds_end, orf_length, str(r.seq), proteinID=newid
                     )
                     f.write(f">{newid}\n{newseq}\n")
                 else:
                     new_rec = r
                     orfDict[r.id] = myQueryProteins(
-                        cds_start, cds_end, orf_length, proteinID=r.id
+                        cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id
                     )
                     f.write(f">{new_rec.description}\n{new_rec.seq}\n")
 
@@ -818,7 +831,7 @@ def reference_parser(
     # global referenceFiles
     logger = logging.getLogger("sqanti3_qc")
 
-    referenceFiles = os.path.join(directory, "refAnnotation_" + output + ".genePred")
+    referenceFiles = os.path.join(directory, f"refAnnotation_{output}.genePred")
     logger.info("Parsing Reference Transcriptome....")
 
     if os.path.exists(referenceFiles):
@@ -867,7 +880,7 @@ def reference_parser(
     known_5_3_by_gene = defaultdict(lambda: {"begin": set(), "end": set()})
 
     for r in genePredReader(referenceFiles):
-        if r.length < min_ref_len:
+        if r.length < min_ref_len and not args.is_fusion:
             continue  # ignore miRNAs
         if r.exonCount == 1:
             refs_1exon_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
@@ -904,7 +917,7 @@ def reference_parser(
     return (
         dict(refs_1exon_by_chr),  # Dict[str, ]
         dict(refs_exons_by_chr),  # Dict[str, ]
-        dict(junctions_by_chr),  # Dict[str, ]
+        dict(junctions_by_chr),   # Dict[str, ]
         dict(junctions_by_gene),  # Dict[str, ]
         dict(known_5_3_by_gene),  # Dict[str, ]
     )
@@ -950,9 +963,11 @@ def STARcov_parser(
     logger = logging.getLogger("sqanti3_qc")
 
     if os.path.isdir(coverageFiles) is True:
-        cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
-    else:
+        cov_files = glob.glob(f"{coverageFiles}/*SJ.out.tab")
+    elif coverageFiles.count(",") > 0:
         cov_files = coverageFiles.split(",")
+    else:
+        cov_files = glob.glob(coverageFiles)
     logger.debug(cov_files)
 
     logger.info(
@@ -1921,12 +1936,10 @@ def write_junctionInfo(
             "indel_near_junct": indel_near_junction,
             "phyloP_start": phyloP_start,
             "phyloP_end": phyloP_end,
-            "sample_with_cov": sum(cov != 0 for cov in sample_cov.values())
+            "sample_with_cov": np.sum(cov for cov in sample_cov.values() if cov != 0)
             if covInf is not None
             else "NA",
-            "total_coverage": sum(flatten(sample_cov.values()))
-            if covInf is not None
-            else "NA",
+            "total_coverage": np.sum(sample_cov.values()) if covInf is not None else "NA",
         }
 
         if covInf is not None:
@@ -1935,7 +1948,24 @@ def write_junctionInfo(
 
         fout.writerow(qj)
 
+def get_fusion_component(fusion_gtf):
+    components = defaultdict(lambda: {})
+    for r in collapseGFFReader(fusion_gtf):
+        m = seqid_fusion.match(r.seqid)
+        gene, iso = int(m.group(1)), int(m.group(2))
+        components[gene][iso] = np.sum([e.end - e.start for e in r.ref_exons])
 
+    result = {}
+    for gene, comp in components.items():
+        comp = list(comp.items())
+        comp.sort(key=lambda x: x[0])  # now comp is (<isoform indx>, <length>)
+        _iso, _len = comp[0]
+        _acc = _len
+        result["PBfusion.{0}.{1}".format(gene, _iso)] = (1, _len)
+        for _iso, _len in comp[1:]:
+            result["PBfusion.{0}.{1}".format(gene, _iso)] = (_acc + 1, _acc + _len)
+            _acc += _len
+    return result
 def isoformClassification(
     coverage,
     cage_peak,
@@ -2003,12 +2033,12 @@ def isoformClassification(
 
     accepted_canonical_sites = list(sites.split(","))
 
-    handle_class = open(outputClassPath + "_tmp", "w")
+    handle_class = open(f"{outputClassPath}_tmp", "w")
     fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter="\t")
     fout_class.writeheader()
 
     # outputJuncPath = outputPathPrefix+"_junctions.txt"
-    handle_junc = open(outputJuncPath + "_tmp", "w")
+    handle_junc = open(f"{outputJuncPath}_tmp", "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter="\t")
     fout_junc.writeheader()
 
@@ -2090,7 +2120,7 @@ def isoformClassification(
                         rec.chrom, rec.strand, rec.txEnd
                     )
                 isoform_hit.within_polya_site = within_polya_site
-                isoform_hit.dist_polya_site = dist_polya_site
+                isoform_hit.dist_polya_site   = dist_polya_site
 
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
             if polyA_motifs is not None:
@@ -2112,12 +2142,58 @@ def isoformClassification(
                 isoform_hit.polyA_dist = polyA_dist
 
             # Fill in ORF/coding info and NMD detection
-            if rec.id in orfDict:
-                isoform_hit.coding = "coding"
-                isoform_hit.ORFlen = orfDict[rec.id].orf_length
+            if is_fusion:
+                # pdb.set_trace()
+                # fusion - special case handling, need to see which part of the ORF this segment falls on
+                fusion_gene = f"PBfusion.{str(seqid_fusion.match(rec.id).group(1))}""
+                rec_component_start, rec_component_end = fusion_components[rec.id]
+                rec_len = rec_component_end - rec_component_start + 1
+                if fusion_gene in orfDict:
+                    orf_start, orf_end = (
+                        orfDict[fusion_gene].cds_start,
+                        orfDict[fusion_gene].cds_end,
+                    )
+                    if orf_start <= rec_component_start < orf_end:
+                        isoform_hit.CDS_start = 1
+                        isoform_hit.CDS_end   = min(
+                            rec_len, orf_end - rec_component_start + 1
+                        )
+                        isoform_hit.ORFlen = (
+                            isoform_hit.CDS_end - isoform_hit.CDS_start
+                        ) / 3
+                        _s = (rec_component_start - orf_start) // 3
+                        _e = min(
+                            int(_s + isoform_hit.ORFlen),
+                            len(orfDict[fusion_gene].orf_seq),
+                        )
+                        isoform_hit.ORFseq = orfDict[fusion_gene].orf_seq[_s:_e]
+                        isoform_hit.coding = "coding"
+                    elif rec_component_start <= orf_start < rec_component_end:
+                        isoform_hit.CDS_start = orf_start - rec_component_start
+                        if orf_end >= rec_component_end:
+                            isoform_hit.CDS_end = (
+                                rec_component_end - rec_component_start + 1
+                            )
+                        else:
+                            isoform_hit.CDS_end = orf_end - rec_component_start + 1
+                        isoform_hit.ORFlen = (
+                            isoform_hit.CDS_end - isoform_hit.CDS_start
+                        ) / 3
+                        _e = min(
+                            int(isoform_hit.ORFlen), len(orfDict[fusion_gene].orf_seq)
+                        )
+                        isoform_hit.ORFseq = orfDict[fusion_gene].orf_seq[:_e]
+                        isoform_hit.coding = "coding"
+            elif (
+                rec.id in orfDict
+            ):  # this will never be true for fusion, so the above code seg runs instead
+                isoform_hit.coding    = "coding"
+                isoform_hit.ORFlen    = orfDict[rec.id].orf_length
                 isoform_hit.CDS_start = orfDict[rec.id].cds_start  # 1-based start
-                isoform_hit.CDS_end = orfDict[rec.id].cds_end  # 1-based end
+                isoform_hit.CDS_end   = orfDict[rec.id].cds_end  # 1-based end
+                isoform_hit.ORFseq    = orfDict[rec.id].orf_seq
 
+            if isoform_hit.coding == "coding":
                 m = {}  # transcript coord (0-based) --> genomic coord (0-based)
                 if rec.strand == "+":
                     i = 0
@@ -2132,12 +2208,14 @@ def isoformClassification(
                             m[rec.length - i - 1] = c
                             i += 1
 
-                orfDict[rec.id].cds_genomic_start = (
-                    m[orfDict[rec.id].cds_start - 1] + 1
-                )  # make it 1-based
                 try:
-                    orfDict[rec.id].cds_genomic_end = (
-                        m[orfDict[rec.id].cds_end - 1] + 1
+                    isoform_hit.CDS_genomic_start = (
+                        m[isoform_hit.CDS_start - 1] + 1
+                    ) # make it 1-based
+                    # NOTE: if using --orf_input, it is possible to see discrepancy between the exon structure
+                    # provided by GFF and the input ORF. For now, just shorten it
+                    isoform_hit.CDS_genomic_end = (
+                        m[min(isoform_hit.CDS_end - 1, max(m))] + 1
                     )  # make it 1-based
                 except KeyError:
 
@@ -2150,13 +2228,8 @@ def isoformClassification(
                         f"mapped gene: {rec.exons[-1].end}"
                     )
                     orfDict[rec.id].cds_genomic_end = rec.exons[-1].end
-
-                isoform_hit.CDS_genomic_start = orfDict[rec.id].cds_genomic_start
-                isoform_hit.CDS_genomic_end = orfDict[rec.id].cds_genomic_end
-                if (
-                    orfDict[rec.id].cds_genomic_start is None
-                ):  # likely SAM CIGAR mapping issue coming from aligner
-                    continue  # we have to skip the NMD
+            
+            if isoform_hit.CDS_genomic_end != "NA":
                 # NMD detection
                 # if + strand, see if CDS stop is before the last junction
                 if len(rec.junctions) > 0:
@@ -2279,35 +2352,35 @@ def FLcount_parser(fl_count_filename: str) -> Tuple[Sequence[str], Dict[str, int
 
 
 def sqanti3_qc(
-    isoforms: str,
-    annotation: str,
-    genome: str,
-    min_ref_len: int,
-    force_id_ignore: bool,
-    aligner_choice: str,
-    cage_peak: Optional[str],
+    isoforms        : str,
+    annotation      : str,
+    genome          : str,
+    min_ref_len     : int,
+    force_id_ignore : bool,
+    aligner_choice  : str,
+    cage_peak       : Optional[str],
     polyA_motif_list: Optional[str],
-    polyA_peak: Optional[str],
-    phyloP_bed: Optional[str],
-    skipORF: bool,
-    is_fusion: bool,
-    gtf: bool,
-    sense: str,
-    expression: Optional[str],
-    gmap_index: Optional[str],
-    cpus: int,
-    chunks: int,
-    output: str,
-    directory: str,
-    coverage: Optional[str],
-    sites: str,
-    window: int,
-    genename: bool,
-    fl_count: Optional[str],
-    skip_report: bool,
-    isoAnnotLite: bool,
-    doc: str,
-    gff3: Optional[str] = None,
+    polyA_peak      : Optional[str],
+    phyloP_bed      : Optional[str],
+    skipORF         : bool,
+    is_fusion       : bool,
+    gtf             : bool,
+    sense           : str,
+    expression      : Optional[str],
+    gmap_index      : Optional[str],
+    cpus            : int,
+    chunks          : int,
+    output          : str,
+    directory       : str,
+    coverage        : Optional[str],
+    sites           : str,
+    window          : int,
+    genename        : bool,
+    fl_count        : Optional[str],
+    skip_report     : bool,
+    isoAnnotLite    : bool,
+    doc             : str,
+    gff3            : Optional[str] = None,
 ) -> None:
     logger = logging.getLogger("sqanti3_qc")
     start3 = timeit.default_timer()
@@ -2344,12 +2417,12 @@ def sqanti3_qc(
         junctions_by_gene,
         start_ends_by_gene,
     ) = reference_parser(
-        directory=directory,
-        output=output,
-        genename=genename,
-        annotation=annotation,
-        min_ref_len=min_ref_len,
-        genome_chroms=list(genome_dict.keys()),
+        directory     = directory,
+        output        = output,
+        genename      = genename,
+        annotation    = annotation,
+        min_ref_len   = min_ref_len,
+        genome_chroms = list(genome_dict.keys()),
     )
 
     # parse query isoforms
@@ -2395,7 +2468,7 @@ def sqanti3_qc(
     logger.info("RT-switching computation....")
 
     # RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
-    RTS_info = rts([outputJuncPath + "_tmp", genome, "-a"], genome_dict)
+    RTS_info = rts([f"{outputJuncPath}_tmp", genome, "-a"], genome_dict)
     for pbid in isoforms_info:
         if pbid in RTS_info and len(RTS_info[pbid]) > 0:
             isoforms_info[pbid].RT_switching = "TRUE"
@@ -2586,11 +2659,11 @@ def sqanti3_qc(
     if isoAnnotLite:
         try:
             IsoAnnotLite_SQ1.main(
-                corrected=corrGTF,
-                classification=outputClassPath,
-                junctions=outputJuncPath,
-                gff3=gff3,
-                output=output,
+                corrected      = corrGTF,
+                classification = outputClassPath,
+                junctions      = outputJuncPath,
+                gff3           = gff3,
+                output         = output,
             )
         except:
             logger.error("running command: IsoAnnotLite_SQ1")
@@ -2652,12 +2725,12 @@ class CAGEPeak:
 
     def read_bed(self):
         for line in open(self.cage_bed_filename):
-            raw = line.strip().split()
-            chrom = raw[0]
+            raw    = line.strip().split()
+            chrom  = raw[0]
             start0 = int(raw[1])
-            end1 = int(raw[2])
+            end1   = int(raw[2])
             strand = raw[5]
-            tss0 = int(raw[6])
+            tss0   = int(raw[6])
             self.cage_peaks[(chrom, strand)].insert(start0, end1, (tss0, start0, end1))
 
     def find(self, chrom, strand, query, search_window=10000):
@@ -2768,7 +2841,7 @@ def split_input_run(gtf, isoforms, chunks, arguments):
             d = os.path.join("splits/", str(i))
             os.makedirs(d)
             f = open(
-                os.path.join(d, os.path.basename(isoforms) + ".split" + str(i)), "w"
+                os.path.join(d, f"{os.path.basename(isoforms)}.split{str(i)}"s), "w"
             )
             for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
                 SeqIO.write(recs[j], f, "fasta")
@@ -2851,208 +2924,223 @@ def combine_split_runs(output, directory, skipORF, skip_report, doc, split_dirs)
 @click.argument("genome", required=True)
 @click.option(
     "--min_ref_len",
-    help="Minimum reference transcript length",
-    type=int,
-    default=200,
-    show_default=True,
+    help         = "Minimum reference transcript length",
+    type         = int,
+    default      = 200,
+    show_default = True,
 )
 @click.option(
     "--force_id_ignore",
-    help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = " Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "--aligner_choice",
-    type=click.Choice(["minimap2", "deSALT", "gmap"]),
-    default="minimap2",
-    show_default=True,
+    type         = click.Choice(["minimap2", "deSALT", "gmap"]),
+    default      = "minimap2",
+    show_default = True,
 )
-@click.option("--cage_peak", help="FANTOM5 Cage Peak (BED format, optional)", type=str)
 @click.option(
-    "--polyA_motif_list", help="Ranked list of polyA motifs (text, optional)", type=str
+    "--cage_peak",
+    help         = "FANTOM5 Cage Peak (BED format, optional)",
+    type         = str)
+@click.option(
+    "--polyA_motif_list",
+    help         = "Ranked list of polyA motifs (text, optional)",
+    type         = str
 )
-@click.option("--polyA_peak", help="PolyA Peak (BED format, optional)", type=str)
 @click.option(
-    "--phyloP_bed", help="PhyloP BED for conservation score (BED, optional)", type=str
+    "--polyA_peak",
+    help         = "PolyA Peak (BED format, optional)",
+    type         = str
+  )
+@click.option(
+    "--phyloP_bed",
+    help         = "PhyloP BED for conservation score (BED, optional)",
+    type         = str
 )
 @click.option(
     "--skipORF",
-    help="Skip ORF prediction (to save time)",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Skip ORF prediction (to save time)",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "--is_fusion",
-    help="Input are fusion isoforms, must supply GTF as input using --gtf",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Input are fusion isoforms, must supply GTF as input using --gtf",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
+)
+@click.option(
+    "--orf_input",
+    help         = "Input FASTA to run ORF on. By default, ORF is run on genome-corrected FASTA -- this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.",
 )
 @click.option(
     "-g",
     "--gtf",
-    help="Use when running SQANTI by using as input a gtf of isoforms",
-    type=bool,
-    default=False,
-    show_default=True,
-    is_flag=True,
+    help         = "Use when running SQANTI by using as input a gtf of isoforms",
+    type         = bool,
+    default      = False,
+    show_default = True,
+    is_flag      = True,
 )
 @click.option(
     "-e",
     "--expression",
-    help="Expression matrix (supported: Kallisto tsv)",
-    type=str,
-    default=None,
-    required=False,
-    show_default=False,
+    help         = "Expression matrix (supported: Kallisto tsv)",
+    type         = str,
+    default      = None,
+    required     = False,
+    show_default = False,
 )
 @click.option(
     "-x",
     "--gmap_index",
-    help="Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.",
-    type=str,
-    default=None,
-    show_default=False,
-    required=False,
+    help         = "Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.",
+    type         = str,
+    default      = None,
+    show_default = False,
+    required     = False,
 )
 @click.option(
     "-t",
     "--cpus",
-    help="Number of threads used during alignment by aligners.",
-    type=int,
-    default=10,
-    show_default=True,
+    help         = "Number of threads used during alignment by aligners.",
+    type         = int,
+    default      = 10,
+    show_default = True,
 )
 @click.option(
     "-n",
     "--chunks",
-    help="Number of chunks to split SQANTI3 analysis in for speed up.",
-    type=int,
-    default=1,
-    show_default=True,
+    help         = "Number of chunks to split SQANTI3 analysis in for speed up.",
+    type         = int,
+    default      = 1,
+    show_default = True,
 )
 @click.option(
     "-o",
     "--output",
-    help="Prefix for output files.",
-    type=str,
-    default=None,
-    show_default=False,
-    required=False,
+    help         = "Prefix for output files.",
+    type         = str,
+    default      = None,
+    show_default = False,
+    required     = False,
 )
 @click.option(
     "-d",
     "--directory",
-    help="Directory for output files. Default: Directory where the script was run.",
-    type=str,
-    default=None,
-    show_default=True,
-    required=False,
+    help         = "Directory for output files. Default: Directory where the script was run.",
+    type         = str,
+    default      = None,
+    show_default = True,
+    required     = False,
 )
 @click.option(
     "-c",
     "--coverage",
-    help='Junction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").',
-    type=str,
-    default=None,
-    show_default=False,
-    required=False,
+    help         = 'Junction coverage files (provide a single file or a file pattern, ex: "mydir/*.junctions").',
+    type         = str,
+    default      = None,
+    show_default = False,
+    required     = False,
 )
 @click.option(
     "-s",
     "--sites",
-    help="Set of splice sites to be considered as canonical (comma-separated list of splice sites).",
-    default="ATAC,GCAG,GTAG",
-    show_default=False,
+    help         = "Set of splice sites to be considered as canonical (comma-separated list of splice sites).",
+    default      = "ATAC,GCAG,GTAG",
+    show_default = False,
     required=False,
 )
 @click.option(
     "-w",
     "--window",
-    help="Size of the window in the genomic DNA screened for Adenine content downstream of TTS",
-    type=int,
-    default="20",
-    show_default=False,
+    help         = "Size of the window in the genomic DNA screened for Adenine content downstream of TTS",
+    type         = int,
+    default      = "20",
+    show_default = False,
     required=False,
 )
 @click.option(
     "--genename",
-    help="Use gene_name tag from GTF to define genes. Otherwise, gene_id used to define genes",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
+    help         = "Use gene_name tag from GTF to define genes. Otherwise, gene_id used to define genes",
+    type         = bool,
+    default      = False,
+    show_default = False,
+    is_flag      = True,
 )
 @click.option(
     "-fl",
     "--fl_count",
-    help="Full-length PacBio abundance file",
-    type=str,
-    default=None,
-    show_default=False,
+    help         = "Full-length PacBio abundance file",
+    type         = str,
+    default      = None,
+    show_default = False,
     required=False,
 )
 @click.option(
     "--skip_report",
-    help="Do not prepare pdf report.",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
+    help         = "Do not prepare pdf report.",
+    type         = bool,
+    default      = False,
+    show_default = False,
+    is_flag      = True,
 )
 @click.option(
     "--isoAnnotLite",
-    help="Run isoAnnot Lite to output a tappAS-compatible gff3 file",
-    type=bool,
-    default=False,
-    show_default=False,
-    is_flag=True,
-    required=False,
+    help         = "Run isoAnnot Lite to output a tappAS-compatible gff3 file",
+    type         = bool,
+    default      = False,
+    show_default = False,
+    is_flag      = True,
+    required     = False,
 )
 @click.option(
     "--gff3",
-    help="Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes",
-    type=str,
-    default=None,
-    show_default=False,
-    required=False,
+    help         = "Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes",
+    type         = str,
+    default      = None,
+    show_default = False,
+    required     = False,
 )
 @click.version_option()
 @click.help_option(show_default=False)
 def main(
-    isoforms: str,
-    annotation: str,
-    genome: str,
-    min_ref_len: int = 200,
-    force_id_ignore: bool = False,
-    aligner_choice: str = "minimap2",
-    cage_peak: Optional[str] = None,
+    isoforms        : str,
+    annotation      : str,
+    genome          : str,
+    min_ref_len     : int           = 200,
+    force_id_ignore : bool          = False,
+    aligner_choice  : str           = "minimap2",
+    cage_peak       : Optional[str] = None,
     polya_motif_list: Optional[str] = None,
-    polya_peak: Optional[str] = None,
-    phylop_bed: Optional[str] = None,
-    skiporf: bool = False,
-    is_fusion: bool = False,
-    gtf: bool = False,
-    expression: Optional[str] = None,
-    gmap_index: Optional[str] = None,
-    cpus: int = 10,
-    chunks: int = 1,
-    output: Optional[str] = None,
-    directory: Optional[str] = None,
-    coverage: Optional[str] = None,
-    sites: str = "ATAC,GCAG,GTAG",
-    window: int = 20,
-    genename: bool = False,
-    fl_count: Optional[str] = None,
-    skip_report: bool = False,
-    isoannotlite: bool = False,
-    gff3: Optional[str] = None,
+    polya_peak      : Optional[str] = None,
+    phylop_bed      : Optional[str] = None,
+    skiporf         : bool          = False,
+    is_fusion       : bool          = False,
+    gtf             : bool          = False,
+    expression      : Optional[str] = None,
+    gmap_index      : Optional[str] = None,
+    cpus            : int           = 10,
+    chunks          : int           = 1,
+    output          : Optional[str] = None,
+    directory       : Optional[str] = None,
+    coverage        : Optional[str] = None,
+    sites           : str           = "ATAC,GCAG,GTAG",
+    window          : int           = 20,
+    genename        : bool          = False,
+    fl_count        : Optional[str] = None,
+    skip_report     : bool          = False,
+    isoannotlite    : bool          = False,
+    gff3            : Optional[str] = None,
 ) -> None:
     """Structural and Quality Annotation of Novel Transcript Isoforms
 
@@ -3080,8 +3168,9 @@ def main(
         sys.exit(-1)
 
     if is_fusion:
-        logger.warning("Currently if --is_fusion is used, no ORFs will be predicted.")
-        skiporf = True
+        if orf_input is None:
+            logger.warning("Currently if --is_fusion is used, no ORFs will be predicted.  Supply `--orf_input` if you want ORF to run!")
+            skiporf = True
         if not gtf:
             logger.error(
                 "if --is_fusion is on, must supply GTF as input and use --gtf!"
@@ -3185,108 +3274,111 @@ def main(
 
     # Running functionality
     logger.info("Running SQANTI3...")
-    logger.debug(f"isoforms: {isoforms}")
-    logger.debug(f"annotation: {annotation}")
-    logger.debug(f"genome: {genome}")
-    logger.debug(f"min_ref_len: {min_ref_len}")
-    logger.debug(f"force_id_ignore: {force_id_ignore}")
-    logger.debug(f"aligner_choice: {aligner_choice}")
-    logger.debug(f"cage_peak: {cage_peak}")
+    logger.debug(f"isoforms        : {isoforms}")
+    logger.debug(f"annotation      : {annotation}")
+    logger.debug(f"genome          : {genome}")
+    logger.debug(f"min_ref_len     : {min_ref_len}")
+    logger.debug(f"force_id_ignore : {force_id_ignore}")
+    logger.debug(f"aligner_choice  : {aligner_choice}")
+    logger.debug(f"cage_peak       : {cage_peak}")
     logger.debug(f"polyA_motif_list: {polya_motif_list}")
-    logger.debug(f"polyA_peak: {polya_peak}")
-    logger.debug(f"phyloP_bed: {phylop_bed}")
-    logger.debug(f"skipORF: {skiporf}")
-    logger.debug(f"is_fusion: {is_fusion}")
-    logger.debug(f"gtf: {gtf}")
-    logger.debug(f"sense: {sense}")
-    logger.debug(f"expression: {expression}")
-    logger.debug(f"gmap_index: {gmap_index}")
-    logger.debug(f"cpus: {cpus}")
-    logger.debug(f"chunks: {chunks}")
-    logger.debug(f"output: {output}")
-    logger.debug(f"directory: {directory}")
-    logger.debug(f"coverage: {coverage}")
-    logger.debug(f"sites: {sites}")
-    logger.debug(f"window: {window}")
-    logger.debug(f"genename: {genename}")
-    logger.debug(f"fl_count: {fl_count}")
-    logger.debug(f"skip_report: {skip_report}")
-    logger.debug(f"isoAnnotLite: {isoannotlite}")
-    logger.debug(f"gff3: {gff3}")
-    logger.debug(f"doc: {doc}")
+    logger.debug(f"polyA_peak      : {polya_peak}")
+    logger.debug(f"phyloP_bed      : {phylop_bed}")
+    logger.debug(f"skipORF         : {skiporf}")
+    logger.debug(f"is_fusion       : {is_fusion}")
+    logger.debug(f"gtf             : {gtf}")
+    logger.debug(f"sense           : {sense}")
+    logger.debug(f"expression      : {expression}")
+    logger.debug(f"gmap_index      : {gmap_index}")
+    logger.debug(f"cpus            : {cpus}")
+    logger.debug(f"chunks          : {chunks}")
+    logger.debug(f"output          : {output}")
+    logger.debug(f"directory       : {directory}")
+    logger.debug(f"coverage        : {coverage}")
+    logger.debug(f"sites           : {sites}")
+    logger.debug(f"window          : {window}")
+    logger.debug(f"genename        : {genename}")
+    logger.debug(f"fl_count        : {fl_count}")
+    logger.debug(f"skip_report     : {skip_report}")
+    logger.debug(f"isoAnnotLite    : {isoannotlite}")
+    logger.debug(f"gff3            : {gff3}")
+    logger.debug(f"doc             : {doc}")
     if chunks == 1:
         sqanti3_qc(
-            isoforms=isoforms,
-            annotation=annotation,
-            genome=genome,
-            min_ref_len=min_ref_len,
-            force_id_ignore=force_id_ignore,
-            aligner_choice=aligner_choice,
-            cage_peak=cage_peak,
-            polyA_motif_list=polya_motif_list,
-            polyA_peak=polya_peak,
-            phyloP_bed=phylop_bed,
-            skipORF=skiporf,
-            is_fusion=is_fusion,
-            gtf=gtf,
-            sense=sense,
-            expression=expression,
-            gmap_index=gmap_index,
-            cpus=cpus,
-            chunks=chunks,
-            output=output,
-            directory=directory,
-            coverage=coverage,
-            sites=sites,
-            window=window,
-            genename=genename,
-            fl_count=fl_count,
-            skip_report=skip_report,
-            isoAnnotLite=isoannotlite,
-            gff3=gff3,
-            doc=doc,
+            isoforms         = isoforms,
+            annotation       = annotation,
+            genome           = genome,
+            min_ref_len      = min_ref_len,
+            force_id_ignore  = force_id_ignore,
+            aligner_choice   = aligner_choice,
+            cage_peak        = cage_peak,
+            polyA_motif_list = polya_motif_list,
+            polyA_peak       = polya_peak,
+            phyloP_bed       = phylop_bed,
+            skipORF          = skiporf,
+            is_fusion        = is_fusion,
+            gtf              = gtf,
+            sense            = sense,
+            expression       = expression,
+            gmap_index       = gmap_index,
+            cpus             = cpus,
+            chunks           = chunks,
+            output           = output,
+            directory        = directory,
+            coverage         = coverage,
+            sites            = sites,
+            window           = window,
+            genename         = genename,
+            fl_count         = fl_count,
+            skip_report      = skip_report,
+            isoAnnotLite     = isoannotlite,
+            gff3             = gff3,
+            doc              = doc,
         )
     else:
         args = {
-            "isoforms": isoforms,
-            "annotation": annotation,
-            "genome": genome,
-            "min_ref_len": min_ref_len,
-            "force_id_ignore": force_id_ignore,
-            "aligner_choice": aligner_choice,
-            "cage_peak": cage_peak,
+            "isoforms"        : isoforms,
+            "annotation"      : annotation,
+            "genome"          : genome,
+            "min_ref_len"     : min_ref_len,
+            "force_id_ignore" : force_id_ignore,
+            "aligner_choice"  : aligner_choice,
+            "cage_peak"       : cage_peak,
             "polyA_motif_list": polya_motif_list,
-            "polyA_peak": polya_peak,
-            "phyloP_bed": phylop_bed,
-            "skipORF": skiporf,
-            "is_fusion": is_fusion,
-            "gtf": gtf,
-            "sense": sense,
-            "expression": expression,
-            "gmap_index": gmap_index,
-            "cpus": cpus,
-            "chunks": chunks,
-            "output": output,
-            "directory": directory,
-            "coverage": coverage,
-            "sites": sites,
-            "window": window,
-            "genename": genename,
-            "fl_count": fl_count,
-            "skip_report": skip_report,
-            "isoAnnotLite": isoannotlite,
-            "gff3": gff3,
+            "polyA_peak"      : polya_peak,
+            "phyloP_bed"      : phylop_bed,
+            "skipORF"         : skiporf,
+            "is_fusion"       : is_fusion,
+            "gtf"             : gtf,
+            "sense"           : sense,
+            "expression"      : expression,
+            "gmap_index"      : gmap_index,
+            "cpus"            : cpus,
+            "chunks"          : chunks,
+            "output"          : output,
+            "directory"       : directory,
+            "coverage"        : coverage,
+            "sites"           : sites,
+            "window"          : window,
+            "genename"        : genename,
+            "fl_count"        : fl_count,
+            "skip_report"     : skip_report,
+            "isoAnnotLite"    : isoannotlite,
+            "gff3"            : gff3,
         }
         split_dirs = split_input_run(
-            gtf=gtf, isoforms=isoforms, chunks=chunks, arguments=args
+            gtf      = gtf,
+            isoforms = isoforms,
+            chunks   = chunks,
+            arguments = args
         )
         combine_split_runs(
-            output=output,
-            directory=directory,
-            skipORF=skiporf,
-            skip_report=skip_report,
-            doc=doc,
-            split_dirs=split_dirs,
+            output      = output,
+            directory   = directory,
+            skipORF     = skiporf,
+            skip_report = skip_report,
+            doc         = doc,
+            split_dirs  = split_dirs,
         )
         shutil.rmtree("splits/")
 
