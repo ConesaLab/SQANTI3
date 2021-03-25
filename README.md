@@ -4,15 +4,22 @@ Last Updated: 12/16/2020 (v1.6)   SQANTI3 release!
 
 ## What is SQANTI3?
 
-SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/)) that merges features from SQANTI, ([code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)), together with new additions. SQANTI3 will continue as an integrated development aiming to  providing you the best characterization possible for your new long read-defined transcriptome. SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, that also includes IsoAnnot and tappAS.
+SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/)) 
+that merges features from SQANTI, ([code repository](https://github.com/ConesaLab/SQANTI)) and 
+SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)), together with new additions. 
+SQANTI3 will continue as an integrated development aiming to  providing you the best characterization 
+possible for your new long read-defined transcriptome. 
+
+SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) 
+framework, that also includes IsoAnnot and tappAS.
 
 
 New features implemented in SQANTI3 not available in previous versions are:
 
-* IsoAnnotLite implemented to generate tappAS compatible gff3 files. Gff3 output may incorporate functional annotation labels for model species supported by tappAS.
-* CAGE peak definitions: CAGE peak will only be associated to a transcript when located upstream of the transcript stariting site. This option requires CAGE peak data.
+* IsoAnnotLite implemented to generate tappAS compatible GFF3 files. GFF3 output may incorporate functional annotation labels for model species supported by tappAS.
+* CAGE peak definitions: CAGE peak will only be associated to a transcript when located upstream of the transcription start sites. This option requires CAGE peak data.
 * Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
-* Accepts several Short Reads expression files at the same time or as an expression matrix.
+* Accepts several short Reads expression files at the same time or as an expression matrix.
 * New plots:
     *  Saturation curves (number of transcripts detected as a function of the sequencing depth)
     *  Distance to CAGE (if any).
@@ -80,28 +87,43 @@ New features implemented in SQANTI3 not available in previous versions are:
 
 ### External scripts
 
-* gtfToGenePred
+* gtfToGenePred (can download from [UCSC utilities](https://hgdownload.soe.ucsc.edu/admin/exe/)
 
 <a name="install"/>
 
 ## Installing dependencies
 
-We recommend using Anaconda to substantially facilitate installation of all Python dependencies. Probably you already have Anaconda installed because you use [Iso-Seq3](https://github.com/PacificBiosciences/IsoSeq_SA3nUP/wiki/Tutorial:-Installing-and-Running-Iso-Seq-3-using-Conda) or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). Please, follow the steps here to ensure an error-free installation. All the dependencies will be installed automatically in a conda environment, except for cDNA_Cupcake (more details in step 5). The installation will be done just once. When the environment has been entirely built, you just need to activate the conda environment of SQANTI3 and run it!
+We recommend using Anaconda to substantially facilitate installation of all Python dependencies. 
+Probably you already have Anaconda installed because you use 
+[BioConda IsoSeq(3)](https://github.com/PacificBiosciences/IsoSeq) 
+or [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake/wiki/Cupcake-ToFU:-supporting-scripts-for-Iso-Seq-after-clustering-step). 
+Please, follow the steps here to ensure an error-free installation. 
+All the dependencies will be installed automatically in a conda environment, 
+except for cDNA_Cupcake (more details in step 5). 
+The installation will be done just once. When the environment has been entirely built, 
+you just need to activate the conda environment of SQANTI3 and run it!
 
-(0)  Make sure you have installed Anaconda and it is updated. Find here the generic Anaconda installation for [Linux environment](http://docs.continuum.io/anaconda/install/#linux-install). Currently only Linux environments are supported.
+(0)  Make sure you have installed Anaconda and it is updated. 
+Find here the generic Anaconda installation for [Linux environment](http://docs.continuum.io/anaconda/install/#linux-install). 
+Currently only Linux environments are supported.
 
 ```
 export PATH=$HOME/anacondaPy37/bin:$PATH
 conda -V
 conda update conda
 ```
+
 (1)  Download or clone the SQANTI3 repository. 
 
 ```
  git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
-(2) Move into the SQANTI3 folder and create a virutal environment with all the Python packages required for installation by running the `SQANTI3.conda_env.yml` script that you can find in the main folder. This script contains all the information necessary to install the required dependencies. Type `y` to agree to the interactive questions. You can change the name of the environment by using -n option. By default, the name of the environment will be **SQANTI3.env**.
+(2) Move into the SQANTI3 folder and create a virtual environment with all the Python packages 
+required for installation by running the `SQANTI3.conda_env.yml` script that you can find in the main folder. 
+This script contains all the information necessary to install the required dependencies. 
+Type `y` to agree to the interactive questions. You can change the name of the environment by using `-n` option. 
+By default, the name of the environment will be **SQANTI3.env**.
 
 ```
 cd SQANTI3
@@ -115,7 +137,10 @@ source activate SQANTI3.env
 (SQANTI3.env)$
 ```
 
-(4) You also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) that seems to have some issues with Python 3.7 (or openssl) when installed though conda. At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) and add it to the `SQANTI3/utilities` folder (and give it execute permissions):
+(4) You also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) 
+that seems to have some issues with Python 3.7 (or openssl) when installed though conda. 
+At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) 
+and add it to the `SQANTI3/utilities` folder (and give it execute permissions) or to your `PATH` variable:
 
 ```
 wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <path_to>/SQANTI3/utilities/
@@ -132,6 +157,7 @@ chmod +x <path_to>/SQANTI3/utilities/gtfToGenePred
 ```
 
 No installation for SQANTI3 itself is required. The scripts can be run directly.
+
 
 <a name="Running"/>
 
@@ -167,7 +193,7 @@ This are the minimal files that you will need to run SQANTI3:
 
 * Short read expression. See <a href="#exp">Short Read Expression section</a> to include short read expression (RSEM or Kallisto output files or a user-defined expression matrix).
 
-* tappAS-annotation file. A gff3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. When `--isoAnnotLite` option is activated and a gff3 tappAS-like is provided, SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/). You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). For more information about tappAS functionalities visit its [webpage](https://app.tappas.org/).
+* tappAS-annotation file. A GFF3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. When `--isoAnnotLite` option is activated and a gff3 tappAS-like is provided, SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/). You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). For more information about tappAS functionalities visit its [webpage](https://app.tappas.org/).
 
 
 #### Running SQANTI3 Quality Control script
