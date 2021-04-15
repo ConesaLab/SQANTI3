@@ -127,7 +127,7 @@ data.junction$SJ_type <- factor(data.junction$SJ_type, levels=c("known_canonical
 
 data.junction$structural_category = data.class[data.junction$isoform, "structural_category"]
 
-uniqJunc <- unique(data.junction[,c("junctionLabel", "SJ_type", "total_coverage")]);
+uniqJunc <- unique(data.junction[,c("junctionLabel", "SJ_type", "total_coverage_unique")]);
 uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction")]);
 
 ########## Generating plots
@@ -874,12 +874,12 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
 
 # PLOT pn4-5: Splice Junction Coverage (if coverage provided)
 
-if (!all(is.na(data.junction$total_coverage))){
+if (!all(is.na(data.junction$total_coverage_unique))){
   
-  uniqJuncCov <- unique(data.junction[,c("junctionLabel","SJ_type", "total_coverage")])
+  uniqJuncCov <- unique(data.junction[,c("junctionLabel","SJ_type", "total_coverage_unique")])
   
   e <- data.frame(table(uniqJuncCov$SJ_type))
-  f <- data.frame(table(uniqJuncCov[which(uniqJuncCov$total_coverage>0),"SJ_type"]))
+  f <- data.frame(table(uniqJuncCov[which(uniqJuncCov$total_coverage_unique>0),"SJ_type"]))
   
   
   df.juncSupport <- data.frame(type=e$Var1, count=e$Freq-f$Freq, name='Unsupported')

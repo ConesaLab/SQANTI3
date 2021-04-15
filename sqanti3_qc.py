@@ -1,11 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # SQANTI: Structural and Quality Annotation of Novel Transcript Isoforms
 # Authors: Lorena de la Fuente, Hector del Risco, Cecile Pereira and Manuel Tardaguila
 # Modified by Liz (etseng@pacb.com) as SQANTI2/3 versions
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '2.0.0'  # Python 3.7
+__version__ = '3.0'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -104,7 +104,7 @@ FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_c
                    'start_site_category', 'end_site_category', 'diff_to_Ref_start_site',
                    'diff_to_Ref_end_site', 'bite_junction', 'splice_site', 'canonical',
                    'RTS_junction', 'indel_near_junct',
-                   'phyloP_start', 'phyloP_end', 'sample_with_cov', "total_coverage"] #+coverage_header
+                   'phyloP_start', 'phyloP_end', 'sample_with_cov', "total_coverage_unique", "total_coverage_multi"] #+coverage_header
 
 FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_category',
                 'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
@@ -714,7 +714,7 @@ def isoforms_parser(args):
 def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq protocols.
     """
     :param coverageFiles: comma-separated list of STAR junction output files or a directory containing junction files
-    :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> unique reads supporting this junction}
+    :return: list of samples, dict of (chrom,strand) --> (0-based start, 1-based end) --> {dict of sample -> (uniq,multi) reads supporting this junction}
     """
     if os.path.isdir(coverageFiles):
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
@@ -726,7 +726,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     print("Input pattern: {0}.\nThe following files found and to be read as junctions:\n{1}".format(\
         coverageFiles, "\n".join(cov_files) ), file=sys.stderr)
 
-    cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+    cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: (0,0))))
     undefined_strand_count = 0
     all_read = 0
     samples = []
@@ -736,11 +736,11 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
         for r in STARJunctionReader(file):
             if r.strand == 'NA':
                 # undefined strand, so we put them in BOTH strands otherwise we'll lose all non-canonical junctions from STAR
-                cov_by_chrom_strand[(r.chrom, '+')][(r.start, r.end)][prefix] = r.unique_count + r.multi_count
-                cov_by_chrom_strand[(r.chrom, '-')][(r.start, r.end)][prefix] = r.unique_count + r.multi_count
+                cov_by_chrom_strand[(r.chrom, '+')][(r.start, r.end)][prefix] = (r.unique_count, r.multi_count)
+                cov_by_chrom_strand[(r.chrom, '-')][(r.start, r.end)][prefix] = (r.unique_count, r.multi_count)
                 undefined_strand_count += 1
             else:
-                cov_by_chrom_strand[(r.chrom, r.strand)][(r.start, r.end)][prefix] = r.unique_count + r.multi_count
+                cov_by_chrom_strand[(r.chrom, r.strand)][(r.start, r.end)][prefix] = (r.unique_count, r.multi_count)
             all_read += 1
     print("{0} junctions read. {1} junctions added to both strands because no strand information from STAR.".format(all_read, undefined_strand_count), file=sys.stderr)
 
@@ -1341,7 +1341,7 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
     :param indelInfo: indels near junction information, dict of pbid --> list of junctions near indel (in Interval format)
     :param genome_dict: genome fasta dict
     :param fout: DictWriter handle
-    :param covInf: (optional) junction coverage information, dict of (chrom,strand) -> (0-based start,1-based end) -> dict of {sample -> unique read count}
+    :param covInf: (optional) junction coverage information, dict of (chrom,strand) -> (0-based start,1-based end) -> dict of {sample -> (unique, multi) read count}
     :param covNames: (optional) list of sample names for the junction coverage information
     :param phyloP_reader: (optional) dict of (chrom,0-based coord) --> phyloP score
 
@@ -1376,9 +1376,10 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
         if indelInfo is not None:
             indel_near_junction = "TRUE" if (trec.id in indelInfo and Interval(d,a) in indelInfo[trec.id]) else "FALSE"
 
-        sample_cov = defaultdict(lambda: 0)  # sample -> unique count for this junction
+        sample_cov = defaultdict(lambda: (0,0))  # sample -> (unique, multi) count for this junction
         if covInf is not None:
             sample_cov = covInf[(trec.chrom, trec.strand)][(d,a)]
+        print(sample_cov)
 
         # if phyloP score dict exists, give the triplet score of (last base in donor exon), donor site -- similarly for acceptor
         phyloP_start, phyloP_end = 'NA', 'NA'
@@ -1406,12 +1407,15 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
               "indel_near_junct": indel_near_junction,
               "phyloP_start": phyloP_start,
               "phyloP_end": phyloP_end,
-              "sample_with_cov": sum(cov!=0 for cov in sample_cov.values()) if covInf is not None else "NA",
-              "total_coverage": sum(sample_cov.values()) if covInf is not None else "NA"}
+              "sample_with_cov": sum([cov_uniq>0 for (cov_uniq,cov_multi) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_unique": sum([cov_uniq for (cov_uniq,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_multi": sum([cov_multi for (cov_uniq,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA"}
 
         if covInf is not None:
             for sample in covNames:
-                qj[sample] = sample_cov[sample]
+                cov_uniq, cov_multi = sample_cov[sample]
+                qj[sample+'_unique'] = str(cov_uniq)
+                qj[sample+'_multi'] = str(cov_multi)
 
         fout.writerow(qj)
 
@@ -1445,7 +1449,9 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
         SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
-        fields_junc_cur = FIELDS_JUNC + SJcovNames # add the samples to the header
+        fields_junc_cur = FIELDS_JUNC # add the samples to the header
+        for name in SJcovNames:
+            fields_junc_cur += [name + '_unique', name + '_multi']
     else:
         SJcovNames, SJcovInfo = None, None
         print("Splice Junction Coverage files not provided.", file=sys.stdout)
@@ -1893,8 +1899,8 @@ def run(args):
             if (isoforms_info[r['isoform']].min_samp_cov == 'NA') or (isoforms_info[r['isoform']].min_samp_cov > sample_with_cov):
                 isoforms_info[r['isoform']].min_samp_cov = sample_with_cov
 
-        if r['total_coverage'] != 'NA':
-            total_cov = int(r['total_coverage'])
+        if r['total_coverage_unique'] != 'NA':
+            total_cov = int(r['total_coverage_unique'])
             sj_covs_by_isoform[r['isoform']].append(total_cov)
             if (isoforms_info[r['isoform']].min_cov == 'NA') or (isoforms_info[r['isoform']].min_cov > total_cov):
                 isoforms_info[r['isoform']].min_cov = total_cov
