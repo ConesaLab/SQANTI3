@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 __author__  = "etseng@pacb.com"
-__version__ = '7.3.2'   # Python 3.7 syntax!
+__version__ = '3.0'   # Python 3.7 syntax!
 
 """
 Lightweight filtering of SQANTI by using .classification.txt output

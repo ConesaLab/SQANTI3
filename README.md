@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 12/16/2020 (v1.6)   SQANTI3 release!
+Last Updated: 04/15/2021 (v3.0)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -46,6 +46,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2021.04.15 - updated to v3.0. Junction now reads unique/multi mapped read counts separately
 
 2020.12.16 - updated to v1.6. Fixed `SQANTI3_report.R` num isoforms per gene plotting error.
 
@@ -574,6 +576,6 @@ THe `.junctions.txt` file shows every junction for every PB isoform. NOTE becaus
 14. `splice_site`: Splice motif.
 15. `RTS_junction`: TRUE if junction is predicted to a template switching artifact.
 16. `indel_near_junct`: TRUE if there is alignment indel error near the junction site, indicating potential junction incorrectness.
-17. `sample_with_cov`: If `--coverage` (short read junction coverage info) is provided, shows the number of samples (cov files) that have short read that support this junction.
-18. `total_coverage`: Total number of short read support from all samples that cover this junction.
+17. `sample_with_cov`: If `--coverage` (short read junction coverage info) is provided, shows the number of samples (cov files) that have uniquely mapped short read that support this junction.
+18. `total_coverage_unique/multi`: Total number of uniquely or multi-mapped short read support from all samples that cover this junction.
 
