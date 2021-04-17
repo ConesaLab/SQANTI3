@@ -135,6 +135,11 @@ uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction"
 #*** Global plot parameters
 
 myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
+subcat.palette = c("alternative_3end"='#02314d','alternative_3end5end'='#0e5a87','alternative_5end'='#7ccdfc','reference_match'='#c4e1f2',
+                   "3prime_fragment"='#c4531d',"internal_fragment"='#e37744',  "5prime_fragment"='#e0936e', "combination_of_known_junctions"='#014d02',
+                   "combination_of_known_splicesites"='#048506',  "intron_retention"='#4abd4b', "no_combination_of_known_junctions"='#81eb82',
+                   "mono-exon_by_intron_retention"='#78ad78',"at_least_one_novel_splicesite"='#bbfabc',"mono-exon"='#686e68',"multi-exon"='#c0c4c0')
+
 
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
@@ -1285,14 +1290,14 @@ p30 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
   labs(title="Possible Intra-Priming by Structural Category\n\n",
        subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
   theme(axis.title.x=element_blank()) +
-  scale_fill_manual(values=myPalette, breaks=c("intron_retention", "3prime_fragment", "internal_fragment", "5prime_fragment",
-                                               "mono-exon", "multi-exon", "combination_of_known_junctions","combination_of_known_splicesites",
-                                               "no_combination_of_known_junctions", "mono-exon_by_intron_retention",
-                                               "at_least_one_novel_splicesite"),
-                    labels=c("Intron retention", "3' fragment", "Internal fragment", "5' fragment",
-                             "Mono-exon", "Multi-exon", "Combination of annotated junctions", "Combination of annotated splice sites",
-                             "Not combination of annotated junctions", "Mono-exon by intron retention",
-                             "At least one annotated donor/acceptor"), drop=F)
+  scale_fill_manual(values=subcat.palette, breaks=c("alternative_3end",'alternative_3end5end', "alternative_5end","reference_match",  
+                                                    "3prime_fragment","internal_fragment", "5prime_fragment","combination_of_known_junctions",
+                                                    "combination_of_known_splicesites", "intron_retention","no_combination_of_known_junctions", 
+                                                    "mono-exon_by_intron_retention", "at_least_one_novel_splicesite", "mono-exon", "multi-exon"),
+                    labels=c("Alterantive 3'UTR", "Alternative 3'5'UTR", "Alterantive 5'UTR", "Reference match", 
+                             "3' fragment", "Internal fragment", "5' fragment", "Combination of annotated junctions",
+                             "Combination of annotated splice sites", "Intron retention", "Not combination of annotated junctions",
+                             "Mono-exon by intron retention", "At least one annotated donor/acceptor", "Mono-exon", "Multi-exon"), drop=F)
 
 p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=exonCat)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
