@@ -15,7 +15,7 @@ ALL_AS_NOVELS = False
 INTRONIC = True
 STATS = False
 
-version = "2.6"
+version = "2.7"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
 CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
@@ -2184,7 +2184,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             transfGene = transfGene +  "\t\t·" + str(feat)+": annotated " + "%.2f" % (len(geneAnnotTranscriptCounts_dc.get(feat)[0].keys()) / totalTranscripts*100) + " % of transcripts (" + str(len(geneAnnotTranscriptCounts_dc.get(feat)[0].keys())) + " of " + str(totalTranscripts) + ") with at least one " + feat + " feature.\n"
 
 
-    featureLevelSection = "\n\n\tFEATURE-LEVEL SUMMARY"
+    featureLevelSection = "\n\tFEATURE-LEVEL SUMMARY"
     mTrans = ""
 
     realFeaturesAnnoted = 0
@@ -2245,49 +2245,52 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     if(anyNovelNotAnnot):
         print(m6_3)
 
-    #Transference section
-    print(featureTransferenceSection)
-    m7 = "\n\t\tTranscript Annotation:\n"
-    print(m7)
-    print(transfTrans)
-
-    m8 = "\t\tProtein Annotation:\n"
-    print(m8)
-    print(transfProt)
-
-    m9 = "\t\tGene Annotation:\n"
-    print(m9)
-    print(transfGene)
-
-    if STATS:
-        print(featureLevelSection)
+    if(percTranscriptsAnnotated!=0):
+        #Transference section
+        print(featureTransferenceSection)
         m7 = "\n\t\tTranscript Annotation:\n"
         print(m7)
-        print(mTrans)
+        print(transfTrans)
 
         m8 = "\t\tProtein Annotation:\n"
         print(m8)
-        print(mProt)
+        print(transfProt)
 
         m9 = "\t\tGene Annotation:\n"
         print(m9)
-        print(mGene)
+        print(transfGene)
 
-        # if(totalAnotations==0):
-        #     perct_annot = 0
-        # else:
-        #     perct_annot = featuresAnnotated/totalAnotations*100
+        if STATS:
+            print(featureLevelSection)
+            m7 = "\n\t\tTranscript Annotation:\n"
+            print(m7)
+            print(mTrans)
 
-        if(realTotalFeaturesChecked==0):
-            perct_annotReal = 0
+            m8 = "\t\tProtein Annotation:\n"
+            print(m8)
+            print(mProt)
+
+            m9 = "\t\tGene Annotation:\n"
+            print(m9)
+            print(mGene)
+
+            # if(totalAnotations==0):
+            #     perct_annot = 0
+            # else:
+            #     perct_annot = featuresAnnotated/totalAnotations*100
+
+            if(realTotalFeaturesChecked==0):
+                perct_annotReal = 0
+            else:
+                perct_annotReal = round(realFeaturesAnnoted/realTotalFeaturesChecked*100,2)
+
+            globalFeatures = "\t\tGlobal statistics:"
+            m10 = "\t\t·Annotated a total of " + "%.2f" % perct_annotReal + " % (" + str(realFeaturesAnnoted) + " of " + str(realTotalFeaturesChecked) + ") of features from the reference GFF3 file for the study transcripts."
+            print(globalFeatures)
+            print(m10 + "\n\n")
+
         else:
-            perct_annotReal = round(realFeaturesAnnoted/realTotalFeaturesChecked*100,2)
-
-        globalFeatures = "\t\tGlobal statistics:"
-        m10 = "\t\t·Annotated a total of " + "%.2f" % perct_annotReal + " % (" + str(realFeaturesAnnoted) + " of " + str(realTotalFeaturesChecked) + ") of features from the reference GFF3 file for the study transcripts."
-        print(globalFeatures)
-        print(m10 + "\n\n")
-
+            print("\n")
     else:
         print("\n")
 
@@ -2306,24 +2309,26 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             f.write("\n" + m6_2)
         if(anyTransWithoutFeatures):
             f.write("\n" + m6_3)
-        #transference
-        f.write (featureTransferenceSection)
-        f.write("\n" + m7 + "\n")
-        f.write(transfTrans + "\n")
-        f.write(m8 + "\n")
-        f.write(transfProt + "\n")
-        f.write(m9 + "\n")
-        f.write(transfGene + "\n")
-        if STATS:
-            f.write (featureLevelSection)
+
+        if(percTranscriptsAnnotated!=0):
+            #transference
+            f.write (featureTransferenceSection)
             f.write("\n" + m7 + "\n")
-            f.write(mTrans + "\n")
+            f.write(transfTrans + "\n")
             f.write(m8 + "\n")
-            f.write(mProt + "\n")
+            f.write(transfProt + "\n")
             f.write(m9 + "\n")
-            f.write(mGene + "\n")
-            f.write(globalFeatures)
-            f.write("\n" + m10)
+            f.write(transfGene + "\n")
+            if STATS:
+                f.write (featureLevelSection)
+                f.write("\n" + m7 + "\n")
+                f.write(mTrans + "\n")
+                f.write(m8 + "\n")
+                f.write(mProt + "\n")
+                f.write(m9 + "\n")
+                f.write(mGene + "\n")
+                f.write(globalFeatures)
+                f.write("\n" + m10)
     
 #UPDATE GFF3 - new columns information
 def addPosType(res, line, posType):
