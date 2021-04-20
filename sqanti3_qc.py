@@ -630,7 +630,7 @@ def reference_parser(args, genome_chroms):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
         ## gtf to genePred
-        if not args.genename:
+        if not (args.genename or args.isoAnnotLite):
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
         else:
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
@@ -2013,11 +2013,14 @@ def run(args):
 ### IsoAnnot Lite implementation
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
-def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outDir, outName, gff3_opt):
+def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, d=outDir, o=outName)
+        iso_out = os.path.join(os.path.dirname(correctedGTF),outName)
+        isoAnnot_sum = iso_out + ".isoAnnotLite_stats.txt"
+        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
     else:
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, d=outDir, o=outName)
+        iso_out = os.path.dirname(correctedGTF) + outName
+        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
         sys.exit(-1)
@@ -2385,7 +2388,7 @@ def main():
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
-            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
+            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
     else:
         split_dirs = split_input_run(args)
         combine_split_runs(args, split_dirs)
@@ -2393,7 +2396,7 @@ def main():
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
-            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
+            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
 
 
 if __name__ == "__main__":
