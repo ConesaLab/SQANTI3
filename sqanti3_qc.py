@@ -630,7 +630,7 @@ def reference_parser(args, genome_chroms):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
         ## gtf to genePred
-        if not args.genename:
+        if not (args.genename or args.isoAnnotLite):
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
         else:
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
