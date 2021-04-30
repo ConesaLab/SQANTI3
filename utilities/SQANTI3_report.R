@@ -139,8 +139,10 @@ subcat.palette = c("alternative_3end"='#02314d','alternative_3end5end'='#0e5a87'
                    "3prime_fragment"='#c4531d',"internal_fragment"='#e37744',  "5prime_fragment"='#e0936e', "combination_of_known_junctions"='#014d02',
                    "combination_of_known_splicesites"='#048506',  "intron_retention"='#4abd4b', "no_combination_of_known_junctions"='#81eb82',
                    "mono-exon_by_intron_retention"='#78ad78',"at_least_one_novel_splicesite"='#bbfabc',"mono-exon"='#686e68',"multi-exon"='#c0c4c0')
-
-
+cat.palette = c("full-splice_match"="#6BAED6", "incomplete-splice_match"="#FC8D59", "novel_in_catalog"="#78C679", 
+                "novel_not_in_catalog"="#EE6A50", "genic"="#969696", "antisense"="#66C2A4", "fusion"="goldenrod1",
+                "intergenic" = "darksalmon", "genic_intron"="#41B6C4")
+  
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
         axis.line.y = element_line(color="black", size = 0.4)) +
@@ -298,7 +300,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
 p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
-  scale_color_manual(values = myPalette) +
+  scale_color_manual(values = cat.palette) +
   labs(x="Transcript Length", y="Count", title="Transcript Lengths, by structural category") +
   theme(legend.position="top") +
   mytheme
@@ -332,7 +334,7 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   scale_alpha_manual(values=c(1,0.3),
                      name = "Coding prediction",
                      labels = legendLabelF1)+
-  scale_fill_manual(values = myPalette, guide='none') +
+  scale_fill_manual(values = cat.palette, guide='none') +
   xlab("") +
   ylab("% Transcripts") +
   mytheme +
@@ -375,7 +377,7 @@ p4 <- ggplot(data=data.class, aes(x=structural_category, y=length, fill=structur
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=FALSE) +
   ylab("Transcript Length (bp)") +
-  scale_fill_manual(values = myPalette) +
+  scale_fill_manual(values = cat.palette) +
   guides(fill=FALSE) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -389,7 +391,7 @@ p5 <- ggplot(data=data.class, aes(x=structural_category, y=exons, fill=structura
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   ylab("Number of exons") +
   scale_x_discrete(drop=FALSE) +
-  scale_fill_manual(values = myPalette) +
+  scale_fill_manual(values = cat.palette) +
   guides(fill=FALSE) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -435,7 +437,7 @@ data.class.byLen$structural_category <- factor(data.class.byLen$structural_categ
 
 p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(structural_category))) +
   geom_bar(stat='identity', color="black", size=0.3, width=0.85) +
-  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") +
+  scale_fill_manual(values = cat.palette, guide='none', name="Structural Category") +
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
@@ -444,7 +446,7 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
 
 p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor(structural_category))) +
   geom_bar(stat='identity', color ="black", size=0.3, width=0.85) +
-  scale_fill_manual(values = myPalette, guide='none', name="Structural Category") +
+  scale_fill_manual(values = cat.palette, guide='none', name="Structural Category") +
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   theme(legend.position="bottom") +
@@ -459,7 +461,7 @@ if (!all(is.na(data.class$iso_exp))){
     geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
     scale_x_discrete(drop=FALSE) +
     ylab("log2(TPM+1)") +
-    scale_fill_manual(values = myPalette) +
+    scale_fill_manual(values = cat.palette) +
     guides(fill=FALSE) +
     mytheme  + theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -475,7 +477,7 @@ if (!all(is.na(data.class$FL))){
     geom_boxplot(color="black", size=0.3, outlier.size=0.2) +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=FALSE) +
-    scale_fill_manual(values = myPalette) +
+    scale_fill_manual(values = cat.palette) +
     guides(fill=FALSE) +
     mytheme +
     theme(axis.text.x = element_text(angle = 45)) +
@@ -1092,6 +1094,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
     geom_freqpoly(binwidth=1) +
+    scale_fill_manual(values = cat.palette)+
     xlab("Distance of polyA motif from 3' end (bp)") +
     ylab("Count") +
     labs(title="Distance of detected polyA motif from 3' end")
