@@ -268,7 +268,7 @@ p.length.all <- ggplot(data.class, aes(x=length)) +
   geom_histogram(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(2:5)]) +
-  labs(x="Transcript Length", y="Count", title="Transcript Lengths, all transcripts") +
+  labs(x="Transcript Length", y="Count", title="All Transcript Lengths") +
   theme(legend.position="top") +
   mytheme
 
@@ -285,7 +285,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="Transcript Lengths, By Sample") +
+    labs(x="Transcript Length", y="Count", title="By Sample Transcript Lengths") +
     theme(legend.position="top") +
     mytheme
 
@@ -293,7 +293,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="Transcript Lengths, Mono- vs Multi-Exons, By Sample") +
+    labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons By Sample Transcript Lengths") +
     theme(legend.position="top") +
     mytheme
 }
@@ -302,7 +302,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_color_manual(values = cat.palette) +
-  labs(x="Transcript Length", y="Count", title="Transcript Lengths, by structural category") +
+  labs(x="Transcript Length", y="Count", title="By Structural Category Transcript Lengths") +
   theme(legend.position="top") +
   mytheme
 
@@ -310,7 +310,7 @@ p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(1:8)]) +
-  labs(x="Transcript Length", y="Count", title="Transcript Lengths, Mono- vs Multi-Exons") +
+  labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths") +
   theme(legend.position="top") +
   mytheme
 
@@ -428,7 +428,9 @@ p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
   theme(axis.title.x=element_blank()) +
   theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
-  ggtitle("Number of Isoforms per Gene, Known vs Novel Genes\n\n\n\n" )
+  labs(title="Number of Isoforms per Gene\n\n\n",
+       subtitle="Known vs Novel Genes\n\n")
+
 
 ##**** PLOT  absolute and normalized % of different categories with increasing transcript length
 # requires use of dplyr package
@@ -442,7 +444,7 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript Length (in kb)", y="Counts", title="Classifications by Transcript Length")
+  labs(x="Transcript Length (in kb)", y="Counts", title="Structural Categories by Transcript Length")
 
 
 p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor(structural_category))) +
@@ -452,7 +454,8 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript Length (in kb)", y="Percentages", title="Classifications by Transcript Length, normalized")
+  labs(x="Transcript Length (in kb)", y="Percentages", title="Structural Categories by Transcript Length\n\n\n",
+       subtitle="Normalized\n\n")
 
 
 
@@ -500,7 +503,7 @@ if (!all(is.na(data.class$iso_exp))){
     guides(fill=FALSE) +
     mytheme +
     theme(axis.title.x=element_blank()) +
-    ggtitle("Gene Expression, Annotated vs Novel\n\n" )
+    ggtitle("Annotated vs Novel Gene Expression\n\n" )
 }
 
 
