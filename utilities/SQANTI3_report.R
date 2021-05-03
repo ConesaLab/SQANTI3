@@ -1914,14 +1914,14 @@ grid.draw(cover)
 freqCat <- as.data.frame(table(data.class$structural_category))
 #freqCat$ranking = order(freqCat$Freq,decreasing = T)
 table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Isoforms, count"))
-title1 <- textGrob("Transcript Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+title1 <- textGrob("Transcript Classification\n", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
 gt1 <- gTree(children=gList(table1, title1))
 
 
 # TABLE 2: Number of Novel vs Known Genes
 freqCat = as.data.frame(table(isoPerGene$novelGene))
 table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Genes, count"))
-title2 <- textGrob("Gene Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+title2 <- textGrob("Gene Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3)
 gt2 <- gTree(children=gList(table2, title2))
 
 
@@ -2157,7 +2157,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
 }
 
 
-s <- textGrob("Comparison with Annotated TSS and TTS", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Comparison With Annotated TSS and TTS", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 if (nrow(data.FSM) > 0) {
   print(p21.a)
@@ -2214,7 +2214,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
 }
 
 
-s <- textGrob("Redundancy analysis", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Redundancy Analysis", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   print(new.1.FSM)
