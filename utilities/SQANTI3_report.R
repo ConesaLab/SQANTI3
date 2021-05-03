@@ -285,7 +285,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="By Sample Transcript Lengths") +
+    labs(x="Transcript Length", y="Count", title="Transcript Lengths By Sample") +
     theme(legend.position="top") +
     mytheme
 
@@ -293,7 +293,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons By Sample Transcript Lengths") +
+    labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths By Sample") +
     theme(legend.position="top") +
     mytheme
 }
@@ -302,7 +302,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_color_manual(values = cat.palette) +
-  labs(x="Transcript Length", y="Count", title="By Structural Category Transcript Lengths") +
+  labs(x="Transcript Length", y="Count", title="Transcript Lengths By Structural Category") +
   theme(legend.position="top") +
   mytheme
 
@@ -631,7 +631,7 @@ if (nrow(data.FSM) > 0) {
     scale_x_discrete(drop=F) +
     ylab("Number of FSM Transcripts")+
     xlab("Distance to Annotated Polyadenylation Site (bp)")+
-    labs(     title="Distance to Annotated Polyadenylation Site, FSM only\n\n",
+    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -643,7 +643,7 @@ if (nrow(data.FSM) > 0) {
     mytheme + labs(alpha = "polyA motif found") +
     ylab("Percent of FSM Transcripts")+
     xlab("Distance to Annotated Polyadenylation Site (bp)")+
-    labs(     title="Distance to Annotated Polyadenylation Site, FSM only\n\n",
+    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -655,7 +655,7 @@ if (nrow(data.FSM) > 0) {
       scale_x_discrete(drop=F) +
       ylab("Number of FSM Transcripts") +
       xlab("Distance to Annotated Polyadenylation Site (bp)") +
-      labs(     title="Distance to Annotated Polyadenylation Site, FSM only\n\n",
+      labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
                 subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -667,7 +667,7 @@ if (nrow(data.FSM) > 0) {
       mytheme  +
       ylab("Percent of FSM Transcripts")+
       xlab("Distance to Annotated Polyadenylation Site (bp)")+
-      labs(     title="Distance to Annotated Polyadenylation Site, FSM only\n\n",
+      labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
                 subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -683,7 +683,7 @@ if (nrow(data.FSM) > 0) {
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("Number of FSM Transcripts") +
     xlab("Distance to Annotated Transcription Start Site (bp)") +
-    labs(title="Distance to Annotated Transcription Start Site, FSM only\n\n",
+    labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -695,7 +695,7 @@ if (nrow(data.FSM) > 0) {
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("Percent of FSM Transcripts")+
     xlab("Distance to Annotated Transcription Start Site (bp)")+
-    labs(title="Distance to Annotated Transcription Start Site, FSM only\n\n",
+    labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -707,7 +707,7 @@ if (nrow(data.FSM) > 0) {
       mytheme + 
       ylab("Number of FSM Transcripts")+
       xlab("Distance to Annotated Transcription Start Site (bp)")+
-      labs(     title="Distance to Annotated Transcription Start Site, FSM only\n\n",
+      labs(     title="Distance to Annotated Transcription Start Site for FSM\n\n",
                 subtitle="Negative values indicate downstream of annotated TSS\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -720,7 +720,7 @@ if (nrow(data.FSM) > 0) {
       mytheme +
       ylab("Percent of FSM Transcripts")+
       xlab("Distance to Annotated Transcription Start Site (bp)")+
-      labs(title="Distance to Annotated Transcription Start Site, FSM only\n\n",
+      labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
            subtitle="Negative values indicate downstream of annotated TSS\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -744,7 +744,7 @@ if (nrow(data.ISM) > 0) {
     scale_x_discrete(drop=F) +
     ylab("Number of ISM Transcripts")+
     xlab("Distance to Annotated Polyadenylation Site (bp)")+
-    labs(     title="Distance to Annotated Polyadenylation Site, ISM only\n\n",
+    labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -757,7 +757,7 @@ if (nrow(data.ISM) > 0) {
     mytheme + labs(alpha = "polyA motif found") +
     ylab("Percent of ISM Transcripts")+
     xlab("Distance to Annotated Polyadenylation Site (bp)")+
-    labs(     title="Distance to Annotated Polyadenylation Site, ISM only\n\n",
+    labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -771,7 +771,7 @@ if (nrow(data.ISM) > 0) {
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("Number of FSM Transcripts")+
     xlab("Distance to Annotated Transcription Start Site (bp)")+
-    labs(     title="Distance to Annotated Transcription Start Site, ISM only\n\n",
+    labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
               subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -784,7 +784,7 @@ if (nrow(data.ISM) > 0) {
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("Percent of FSM Transcripts")+
     xlab("Distance to Annotated Transcription Start Site (bp) ")+
-    labs(title="Distance to Annotated Transcription Start Site, ISM only\n\n",
+    labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
@@ -854,7 +854,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
     geom_text(label=paste(round(df.RTS$perc),"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
     labs(x="", y="% RT-switching junctions") +
-    ggtitle("RT-switching, all junctions\n\n" ) +
+    ggtitle("RT-switching all junctions\n\n" ) +
     mytheme +
     guides(fill=FALSE) +
     scale_y_continuous(expand = c(0,0), limits = c(0,maxH)) +
@@ -1315,7 +1315,7 @@ p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
   theme(legend.position="bottom", legend.title=element_blank()) +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
-  labs(title = "Possible Intra-Priming, Mono- vs Multi-Exon\n\n",
+  labs(title = "Mono- vs Multi-Exon Possible Intra-Priming\n\n",
        subtitle = "Percent of genomic 'A's in downstream 20 bp\n\n") +
   theme(axis.title.x=element_blank())
 
@@ -1327,7 +1327,7 @@ p32 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
   theme(legend.position="bottom", legend.title=element_blank() ) +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
-  labs(title = "Possible Intra-Priming, Coding vs Non-Coding\n\n",
+  labs(title = "Coding vs Non-Coding Possible Intra-Priming\n\n",
        subtitle = "Percent of genomic 'A's in downstream 20 bp\n\n") +
   theme(axis.title.x=element_blank())
 
