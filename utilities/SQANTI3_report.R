@@ -268,7 +268,7 @@ p.length.all <- ggplot(data.class, aes(x=length)) +
   geom_histogram(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(2:5)]) +
-  labs(x="Transcript Length", y="Count", title="All Transcript Lengths") +
+  labs(x="Transcript length", y="Count", title="All Transcript Lengths") +
   theme(legend.position="top") +
   mytheme
 
@@ -285,7 +285,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="Transcript Lengths By Sample") +
+    labs(x="Transcript length", y="Count", title="Transcript Lengths By Sample") +
     theme(legend.position="top") +
     mytheme
 
@@ -293,7 +293,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths By Sample") +
+    labs(x="Transcript length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths By Sample") +
     theme(legend.position="top") +
     mytheme
 }
@@ -302,7 +302,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_color_manual(values = cat.palette) +
-  labs(x="Transcript Length", y="Count", title="Transcript Lengths By Structural Category") +
+  labs(x="Transcript length", y="Count", title="Transcript Lengths By Structural Category") +
   theme(legend.position="top") +
   mytheme
 
@@ -310,7 +310,7 @@ p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(1:8)]) +
-  labs(x="Transcript Length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths") +
+  labs(x="Transcript length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths") +
   theme(legend.position="top") +
   mytheme
 
@@ -322,7 +322,7 @@ p0 <- ggplot(isoPerGene, aes(x=nIsoCat, fill=nIsoCat)) +
   guides(fill=FALSE) +
   scale_y_continuous(labels = percent, expand = c(0,0)) +
   scale_fill_manual(values = myPalette[c(2:5)]) +
-  labs(x ="Isoforms Per Gene", title="Number of Isoforms per Gene\n\n\n", y = "% Genes") +
+  labs(x ="Isoforms per gene", title="Number of Isoforms per Gene\n\n\n", y = "% Genes") +
   mytheme
 
 #**** PLOT 1: Structural Classification
@@ -337,11 +337,11 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
                      labels = legendLabelF1)+
   scale_fill_manual(values = cat.palette, guide='none') +
   xlab("") +
-  ylab("% Transcripts") +
+  ylab("% transcripts") +
   mytheme +
   geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
-  ggtitle("Isoform distribution across structural categories\n\n" ) +
+  ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
   theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   theme(legend.justification=c(1,1), legend.position=c(1,1))
 
@@ -355,9 +355,9 @@ if (nrow(data.FSMISM) > 0) {
     scale_x_discrete(drop = TRUE) +
     guides(fill=FALSE) +
     xlab("") +
-    ylab("Matched Reference Length (in kb)") +
+    ylab("Matched reference length, kb") +
     labs(title="Length Distribution of Matched Reference Transcripts\n\n\n",
-         subtitle="Applicable only to FSM and ISM categories\n\n")
+         subtitle="Applicable Only to FSM and ISM Categories\n\n")
 
   p3 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=ref_exons, fill=structural_category)) +
     geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
@@ -368,7 +368,7 @@ if (nrow(data.FSMISM) > 0) {
     guides(fill=FALSE) +
     mytheme +
     labs(title="Exon Count Distribution of Matched Reference Transcripts\n\n\n",
-         subtitle="Applicable only to FSM and ISM categories\n\n")
+         subtitle="Applicable Only to FSM and ISM Categories\n\n")
 
 }
 
@@ -422,8 +422,8 @@ p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
   scale_x_discrete(drop=FALSE) +
   scale_fill_manual(name = "Isoforms Per Gene",
                     values = myPalette[c(2:5)]) +
-  ylab("% Genes ") +
-  xlab("Gene Type") +
+  ylab("Genes, %") +
+  xlab("Gene type") +
   mytheme +
   theme(axis.title.x=element_blank()) +
   theme(legend.position="bottom") +
@@ -444,7 +444,7 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript Length (in kb)", y="Counts", title="Structural Categories by Transcript Length")
+  labs(x="Transcript length, kb", y="Counts", title="Structural Categories by Transcript Length")
 
 
 p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor(structural_category))) +
@@ -454,7 +454,7 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript Length (in kb)", y="Percentages", title="Structural Categories by Transcript Length\n\n\n",
+  labs(x="Transcript length, kb", y="Percentages", title="Structural Categories by Transcript Length\n\n\n",
        subtitle="Normalized\n\n")
 
 
@@ -487,7 +487,7 @@ if (!all(is.na(data.class$FL))){
     theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
-    ggtitle("FL Count (normalized) by Structural Category\n\n" )
+    ggtitle("Normalized FL Count by Structural Category\n\n" )
 }
 
 
@@ -497,7 +497,7 @@ if (!all(is.na(data.class$iso_exp))){
   p10 <- ggplot(data=isoPerGene, aes(x=novelGene, y=log2(geneExp+1), fill=novelGene)) +
     geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
     scale_x_discrete(drop=FALSE) +
-    xlab("Structural Classification") +
+    xlab("Structural classification") +
     ylab("log2(Gene_TPM+1)") +
     scale_fill_manual(values = myPalette[c(3:4)]) +
     guides(fill=FALSE) +
@@ -524,7 +524,7 @@ if (!all(is.na(data.class$FL))){
     guides(fill=FALSE) +
     mytheme +
     theme(axis.title.x=element_blank()) +
-    ggtitle("Number of FL reads per Gene by type of gene annotation\n\n" )
+    ggtitle("Number of FL reads per Gene by Type of Gene Annotation\n\n" )
   
 }
 
@@ -553,7 +553,7 @@ if (!all(is.na(data.class$gene_exp))){
       guides(fill=FALSE) +
       mytheme +
       theme(axis.title.x=element_blank()) + 
-      ggtitle("Gene Expression between NNC and not NNC containing Genes\n\n" )
+      ggtitle("Gene Expression Between NNC and Not NNC Containing Genes\n\n" )
   }
 }
 
@@ -584,7 +584,7 @@ if (!all(is.na(data.class$gene_exp))){
       guides(fill=FALSE) +
       mytheme +
       theme(axis.title.x=element_blank()) +
-      ggtitle("Gene expression level in NNC/FSM containing genes\n\n" ) +
+      ggtitle("Gene Expression Level in NNC/FSM Containing Genes\n\n" ) +
       scale_x_discrete(breaks=c("Genes expressing\nboth NNC and\n FSM isoforms",
                                 "Genes expressing\n only FSM isoforms",
                                 "Genes expressing\n only NNC isoforms"),
@@ -601,7 +601,7 @@ if (!all(is.na(data.class$gene_exp))){
       guides(fill=FALSE) +
       mytheme +
       theme(axis.title.x=element_blank()) +
-      ggtitle("Transcript expression level in NNC/FSM containing genes\n\n" ) +
+      ggtitle("Transcript Expression Level in NNC/FSM Containing Genes\n\n" ) +
       scale_x_discrete(breaks=c("Genes expressing\nboth NNC and\n FSM isoforms",
                                 "Genes expressing\n only FSM isoforms",
                                 "Genes expressing\n only NNC isoforms"),
@@ -629,8 +629,8 @@ if (nrow(data.FSM) > 0) {
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme + labs(alpha = "polyA motif found") +
     scale_x_discrete(drop=F) +
-    ylab("Number of FSM Transcripts")+
-    xlab("Distance to Annotated Polyadenylation Site (bp)")+
+    ylab("Number of FSM transcripts")+
+    xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -641,8 +641,8 @@ if (nrow(data.FSM) > 0) {
     scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha = "polyA motif found") +
-    ylab("Percent of FSM Transcripts")+
-    xlab("Distance to Annotated Polyadenylation Site (bp)")+
+    ylab("FSM transcripts, %")+
+    xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -653,8 +653,8 @@ if (nrow(data.FSM) > 0) {
       scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
       mytheme +
       scale_x_discrete(drop=F) +
-      ylab("Number of FSM Transcripts") +
-      xlab("Distance to Annotated Polyadenylation Site (bp)") +
+      ylab("Number of FSM transcripts") +
+      xlab("Distance to annotated polyadenylation site, bp") +
       labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
                 subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -665,8 +665,8 @@ if (nrow(data.FSM) > 0) {
       scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
       scale_x_discrete(drop=F) +
       mytheme  +
-      ylab("Percent of FSM Transcripts")+
-      xlab("Distance to Annotated Polyadenylation Site (bp)")+
+      ylab("Percent of FSM transcripts")+
+      xlab("Distance to annotated polyadenylation site, bp")+
       labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
                 subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -681,8 +681,8 @@ if (nrow(data.FSM) > 0) {
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("Number of FSM Transcripts") +
-    xlab("Distance to Annotated Transcription Start Site (bp)") +
+    ylab("Number of FSM transcripts") +
+    xlab("Distance to annotated transcription start site, bp") +
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -693,8 +693,8 @@ if (nrow(data.FSM) > 0) {
     scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("Percent of FSM Transcripts")+
-    xlab("Distance to Annotated Transcription Start Site (bp)")+
+    ylab("FSM transcripts, %")+
+    xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -705,8 +705,8 @@ if (nrow(data.FSM) > 0) {
       scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
       scale_x_discrete(drop=F) +
       mytheme + 
-      ylab("Number of FSM Transcripts")+
-      xlab("Distance to Annotated Transcription Start Site (bp)")+
+      ylab("Number of FSM transcripts")+
+      xlab("Distance to annotated transcription start site, bp")+
       labs(     title="Distance to Annotated Transcription Start Site for FSM\n\n",
                 subtitle="Negative values indicate downstream of annotated TSS\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -718,8 +718,8 @@ if (nrow(data.FSM) > 0) {
       scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
       scale_x_discrete(drop=F) +
       mytheme +
-      ylab("Percent of FSM Transcripts")+
-      xlab("Distance to Annotated Transcription Start Site (bp)")+
+      ylab("FSM transcripts, %")+
+      xlab("Distance to annotated transcription start site, bp")+
       labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
            subtitle="Negative values indicate downstream of annotated TSS\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -742,8 +742,8 @@ if (nrow(data.ISM) > 0) {
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme + labs(alpha = "polyA motif found") +
     scale_x_discrete(drop=F) +
-    ylab("Number of ISM Transcripts")+
-    xlab("Distance to Annotated Polyadenylation Site (bp)")+
+    ylab("Number of ISM transcripts")+
+    xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -755,8 +755,8 @@ if (nrow(data.ISM) > 0) {
     scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha = "polyA motif found") +
-    ylab("Percent of ISM Transcripts")+
-    xlab("Distance to Annotated Polyadenylation Site (bp)")+
+    ylab("ISM transcripts, %")+
+    xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -769,8 +769,8 @@ if (nrow(data.ISM) > 0) {
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("Number of FSM Transcripts")+
-    xlab("Distance to Annotated Transcription Start Site (bp)")+
+    ylab("Number of FSM transcripts")+
+    xlab("Distance to annotated transcription start site, bp")+
     labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
               subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -782,8 +782,8 @@ if (nrow(data.ISM) > 0) {
     scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("Percent of FSM Transcripts")+
-    xlab("Distance to Annotated Transcription Start Site (bp) ")+
+    ylab("FSM transcripts, %")+
+    xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -809,7 +809,7 @@ if (nrow(data.junction) > 0){
     geom_bar(position="fill", aes(y = (..count..)/sum(..count..), fill=SJ_type), color="black",  size=0.3, width = 0.7) +
     scale_y_continuous(labels = percent, expand = c(0,0)) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
-    ylab("% of Splice Junctions") +
+    ylab("Splice junctions, %") +
     mytheme +
     guides(fill = guide_legend(keywidth = 0.7, keyheight = 0.3))+
     theme(legend.position="bottom", legend.title=element_blank())  +
@@ -853,8 +853,8 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
     geom_text(label=paste(round(df.RTS$perc),"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
-    labs(x="", y="% RT-switching junctions") +
-    ggtitle("RT-switching all junctions\n\n" ) +
+    labs(x="", y="RT-switching junctions, %") +
+    ggtitle("RT-Switching All Junctions\n\n" ) +
     mytheme +
     guides(fill=FALSE) +
     scale_y_continuous(expand = c(0,0), limits = c(0,maxH)) +
@@ -874,8 +874,8 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
     geom_text(label=paste(round(df.uniqRTS$perc),"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
-    labs(x="", y="% RT-switching junctions") +
-    ggtitle("RT-switching, unique junctions\n\n" ) +
+    labs(x="", y="RT-switching junctions, %") +
+    ggtitle("Unique Junctions RT-switching\n\n" ) +
     mytheme +
     guides(fill=FALSE) +
     scale_y_continuous(expand = c(0,0), limits = c(0,maxH)) +
@@ -900,7 +900,7 @@ if (!all(is.na(data.junction$total_coverage_unique))){
     geom_bar(stat='identity', color="black", size=0.3, width=0.7) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
     scale_y_continuous( expand = c(0,0)) +
-    labs(x='', y='# of Junctions', title='Unique junctions w/ or w/out short read coverage\n\n\n') +
+    labs(x='', y='Junctions, count', title='Unique Junctions w/ or w/out Short Read Coverage\n\n\n') +
     mytheme +
     theme(legend.position="bottom", legend.title=element_blank()) +
     guides(fill = guide_legend(title = "") )
@@ -916,8 +916,7 @@ if (!all(is.na(data.junction$total_coverage_unique))){
     geom_text(label=paste(round(df.SJcov$perc,1.05),"%",sep=''), nudge_y=1.5) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
     scale_y_continuous( expand = c(0,0), limits = c(0,maxP)) +
-    labs(x='', y='# of Junctions', title='Unique junctions w/out short read coverage (percentage)\n\n\n') +
-    ylab("% of Junctions") +
+    labs(x='', y="Junctions, %", title='Unique Junctions w/out Short Read Coverage\n\n\n') +
     mytheme +
     guides(fill=FALSE)
   
@@ -947,9 +946,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   #   scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
   #    mytheme  + facet_wrap(~structural_category , nrow=2)+
   #   scale_x_discrete(limits = c(-50,50)) +
-  #    ylab("Number of Transcripts")+
-  #    xlab("Distance to CAGE peak (bp)")+
-  #    labs(     title="Distance to CAGE peak",
+  #    ylab("Number of transcripts")+
+  #    xlab("Distance to CAGE peak, bp")+
+  #    labs(     title="Distance to CAGE Peak",
   #            subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
   #    theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -958,9 +957,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
     mytheme  +
     theme(legend.position="bottom") +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic FSM ",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic FSM ",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   cage_hist_FSM_perc=ggplot(data=data.FSM, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -970,9 +969,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     mytheme  +
     theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic FSM",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic FSM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -982,9 +981,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     mytheme  +
     theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   cage_hist_ISM_perc=ggplot(data=data.ISM, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -992,9 +991,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE Peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1004,9 +1003,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM 5prime fragments",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE peak of Multi-Exonic ISM 5' Fragments",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1015,9 +1014,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM 5prime fragments",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 5' Fragments",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1027,9 +1026,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM 3prime fragments",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 3' Fragments",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1038,9 +1037,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic ISM 3prime fragments",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 3' Fragments",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1053,9 +1052,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic NIC",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   cage_hist_NIC_perc=ggplot(data=data.NIC, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -1063,9 +1062,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic NIC",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1076,9 +1075,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Number of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic NNC",
+    ylab("Number of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   cage_hist_NNC_perc=ggplot(data=data.NNC, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -1086,9 +1085,9 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
-    ylab("Percentage of Transcripts")+
-    xlab("Distance to CAGE peak (bp)")+
-    labs(     title="Distance to CAGE peak of multi-exonic NNC",
+    ylab("Percentage of transcripts")+
+    xlab("Distance to CAGE peak, bp")+
+    labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
@@ -1099,9 +1098,9 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
     geom_freqpoly(binwidth=1) +
     scale_fill_manual(values = cat.palette)+
-    xlab("Distance of polyA motif from 3' end (bp)") +
+    xlab("Distance of polyA motif from 3' end, bp") +
     ylab("Count") +
-    labs(title="Distance of detected polyA motif from 3' end")
+    labs(title="Distance of Detected PolyA Motif From 3' end")
 }
 
 ### Bad quality control attributes
@@ -1154,7 +1153,7 @@ if (nrow(data.junction) > 0){
   #  geom_col(position='dodge', width = 0.7,  size=0.3, fill='lightblue', color="black") +
   #  geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.5) +
   #  scale_fill_manual(values = myPalette[11]) +
-  #  ylab("% of Isoforms") +
+  #  ylab("Isoforms, %") +
   #  xlab("") +
   #  mytheme +
   #  theme(legend.position="bottom", axis.title.x = element_blank()) +
@@ -1165,7 +1164,7 @@ if (nrow(data.junction) > 0){
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[11], color="black") +
     geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), nudge_y=1.1) +
     scale_fill_manual(values = myPalette[9:11]) +
-    ylab("% of Isoforms") +
+    ylab("Isoforms, %") +
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
@@ -1176,7 +1175,7 @@ if (nrow(data.junction) > 0){
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[9] ,color="black") +
     geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=1.1) +
     scale_fill_manual(values = myPalette[9:11]) +
-    ylab("% of Isoforms") +
+    ylab("Isoforms, %") +
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
@@ -1188,11 +1187,11 @@ if (nrow(data.junction) > 0){
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
       geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), nudge_y=1.1) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% of Isoforms") +
+      ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Incidence of SJ without SR coverage Junctions\n\n") +
+      ggtitle("Incidence of SJ Without SR Coverage Junctions\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
 
 
@@ -1202,11 +1201,11 @@ if (nrow(data.junction) > 0){
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% Transcripts") +
+      ylab("Transcripts, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Quality control attributes across structural categories\n\n" ) +
+      ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
 
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
@@ -1215,11 +1214,11 @@ if (nrow(data.junction) > 0){
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,11)]) +
-      ylab("% Transcripts") +
+      ylab("Transcripts, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Quality control attributes across structural categories\n\n" ) +
+      ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
 
 
@@ -1228,54 +1227,54 @@ if (nrow(data.junction) > 0){
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
       geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% of Isoforms") +
+      ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Incidence of NMD by structural category\n\n") +
+      ggtitle("Incidence of NMD by Structural Category\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,5,11)]) +
-      ylab("% Transcripts") +
+      ylab("Transcripts, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Quality control attributes across structural categories\n\n" ) +
+      ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
   }else if (n_t3.SJ>0 & n_t3.RTS>0) {
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
       geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% of Isoforms") +
+      ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Incidence of NMD by structural category\n\n") +
+      ggtitle("Incidence of NMD by Structural Category\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
       geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), nudge_y=1.1) +
       scale_fill_manual(values = myPalette[9:11]) +
-      ylab("% of Isoforms") +
+      ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Incidence of SJ without SR coverage Junctions\n\n") +
+      ggtitle("Incidence of SJ Without SR Coverage Junctions\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)],t3.Cov[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
       scale_fill_manual(values = myPalette[c(9,10,5,11)]) +
-      ylab("% Transcripts") +
+      ylab("Transcripts, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Quality control attributes across structural categories\n\n" ) +
+      ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
       guides(fill = guide_legend(title = "QC Attributes") )
   }
 
@@ -1288,8 +1287,8 @@ if (nrow(data.junction) > 0){
 p30 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   mytheme +
-  xlab("Structural Category") +
-  ylab("Percent 'A's (%) ") +
+  xlab("Structural category") +
+  ylab("'A's, %") +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(legend.position="bottom", legend.title=element_blank(), legend.direction = "horizontal", legend.box = "vertical") +
   guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
@@ -1311,7 +1310,7 @@ p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
   mytheme +
   scale_fill_manual(breaks=c("Mono-Exon", "Multi-Exon"),
                     labels=c("Mono-Exon Isoforms", "Multi-Exon Isoforms"), values=myPalette) +
-  ylab("Percent 'A's (%) ") +
+  ylab("'A's, %") +
   theme(legend.position="bottom", legend.title=element_blank()) +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -1323,7 +1322,7 @@ p32 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) + mytheme +
   scale_fill_manual(breaks=c("coding", "non_coding"),
                     labels=c("Coding Isoforms", "Non-Coding Isoforms"), values=myPalette[3:4]) +
-  ylab("Percent 'A's (%) ") +
+  ylab("'A's, % ") +
   theme(legend.position="bottom", legend.title=element_blank() ) +
   theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -1415,8 +1414,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
     scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
     labs(x="FSM per reference transcript",
-         y="Count of Reference Transcripts",
-         title="Reference transcript redundance",
+         y="Count of reference transcripts",
+         title="Reference Transcript Redundance",
          subtitle="Only FSM")
 
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1428,7 +1427,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
     labs(x="ISM per reference transcript",
          y="Count of Reference Transcripts",
-         title="Reference transcript redundance",
+         title="Reference Transcript Redundance",
          subtitle="Only ISM")
 
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$total_cat!="NULL"),"total_cat"]))+10
@@ -1439,8 +1438,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
     scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
     labs(x="FSM+ISM per reference transcript",
-         y="Count of Reference Transcripts",
-         title="Reference transcript redundance",
+         y="Count of reference transcripts",
+         title="Reference Transcript Redundance",
          subtitle="FSM+ISM")
 
   #new.1.p<-ggplot(iso_per_knownTr, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1450,8 +1449,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   #  mytheme+theme(axis.title.x=element_text()) +
   #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
-  #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
-  #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.")
+  #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
+  #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.")
 
   #### Now only with cage + isoforms
   if (!all(is.na(data.class$dist_to_cage_peak))) {
@@ -1536,8 +1535,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only FSM with CAGE support")
 
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1548,8 +1547,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only ISM with CAGE support")
 
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$total_cat!="NULL"),"total_cat"]))+10
@@ -1560,8 +1559,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="FSM+ISM with CAGE support")
 
     #new.2.p<-ggplot(iso_per_knownTr_cage, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1571,8 +1570,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     #  mytheme+theme(axis.title.x=element_text()) +
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
-    #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
-    #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
+    #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
+    #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
   }
 
@@ -1657,8 +1656,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only FSM with a polyA motif found")
 
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1669,8 +1668,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only ISM with a polyA motif found")
 
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$total_cat!="NULL"),"total_cat"]))+10
@@ -1681,8 +1680,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="FSM+ISM with a polyA motif found")
 
     #new.3.p<-ggplot(iso_per_knownTr_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1692,8 +1691,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     #  mytheme+theme(axis.title.x=element_text()) +
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
-    #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
-    #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
+    #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
+    #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
 
   }
@@ -1780,8 +1779,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only FSM with CAGE support and polyA motif")
 
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1792,8 +1791,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="Only ISM with CAGE support and polyA motif")
 
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$total_cat!="NULL"),"total_cat"]))+10
@@ -1804,8 +1803,8 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_y_continuous(breaks = pretty_breaks(6), limits = c(0,max_y)) +
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
-           y="Count of Reference Transcripts",
-           title="Reference transcript redundance",
+           y="Count of reference transcripts",
+           title="Reference Transcript Redundance",
            subtitle="FSM+ISM with CAGE support and polyA motif")
 
     #new.4.p<-ggplot(iso_per_knownTr_cage_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1816,7 +1815,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
-    #       y="Counts", title="Accumulation of FSM and ISM isoforms \n\n associated to the same reference transcript.",
+    #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
     #       subtitle="ONLY polyA motif and CAGE + isoforms")
 
   }
@@ -1889,7 +1888,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 #      xlab("# TSS distance range") +
 #      mytheme_bw +
 #      theme(legend.position="bottom", legend.title=element_blank())  +
-#      ggtitle( "Relative Coverage of junctions\n\n\n") +
+#      ggtitle( "Junctions Relative Coverage\n\n\n") +
 #      theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
 
 
@@ -1914,15 +1913,15 @@ grid.draw(cover)
 
 freqCat <- as.data.frame(table(data.class$structural_category))
 #freqCat$ranking = order(freqCat$Freq,decreasing = T)
-table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# Isoforms"))
-title1 <- textGrob("Transcript classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Isoforms, count"))
+title1 <- textGrob("Transcript Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
 gt1 <- gTree(children=gList(table1, title1))
 
 
 # TABLE 2: Number of Novel vs Known Genes
 freqCat = as.data.frame(table(isoPerGene$novelGene))
-table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# Genes"))
-title2 <- textGrob("Gene classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Genes, count"))
+title2 <- textGrob("Gene Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
 gt2 <- gTree(children=gList(table2, title2))
 
 
@@ -1934,7 +1933,7 @@ freqCat <- as.data.frame(table(uniqJunc$SJ_type))
 freqCat$Var1 <- gsub(" ", "", freqCat$Var1)
 freqCat$Var1 <- gsub("\n", " ", freqCat$Var1)
 freqCat$Frac <- round(freqCat$Freq*100 / uniq_sj_count, 2)
-table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# SJs","Percent"))
+table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","SJs, count","Percent"))
 title2 <- textGrob("Splice Junction Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -5)
 gt3 <- gTree(children=gList(table2, title2))
 
@@ -2191,7 +2190,7 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
   df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
   df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
   table.polyA_freq <- tableGrob(df.polyA_freq, rows = NULL, cols = c("Motif", "Count", "%"))
-  title.polyA_freq <- textGrob("Frequency of polyA motifs", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
+  title.polyA_freq <- textGrob("Frequency of PolyA Motifs", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
   gt.polyA_freq <- gTree(children=gList(title.polyA_freq, table.polyA_freq))
 
   grid.arrange(gt.polyA, gt.polyA_freq, ncol=2)
