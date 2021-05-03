@@ -146,13 +146,14 @@ cat.palette = c("full-splice_match"="#6BAED6", "incomplete-splice_match"="#FC8D5
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
         axis.line.y = element_line(color="black", size = 0.4)) +
-  theme(axis.title.x = element_text(size=14),
-        axis.text.x  = element_text(size=13),
-        axis.title.y = element_text(size=14),
-        axis.text.y  = element_text(vjust=0.5, size=13) ) +
-  theme(legend.text = element_text(size = 10), legend.title = element_text(size=11), legend.key.size = unit(0.5, "cm")) +
-  theme(plot.title = element_text(lineheight=.4, size=13)) +
+  theme(axis.title.x = element_text(size=13),
+        axis.text.x  = element_text(size=12),
+        axis.title.y = element_text(size=13),
+        axis.text.y  = element_text(vjust=0.5, size=12) ) +
+  theme(legend.text = element_text(size = 10), legend.title = element_text(size=12), legend.key.size = unit(0.5, "cm")) +
+  theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm"))
+
 
 # Create a new attribute called "novelGene"
 
@@ -1911,7 +1912,7 @@ grid.draw(cover)
 freqCat <- as.data.frame(table(data.class$structural_category))
 #freqCat$ranking = order(freqCat$Freq,decreasing = T)
 table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","# Isoforms"))
-title1 <- textGrob("Characterization of transcripts\n based on splice junctions", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+title1 <- textGrob("Transcript classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
 gt1 <- gTree(children=gList(table1, title1))
 
 
