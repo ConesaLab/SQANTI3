@@ -487,7 +487,7 @@ if (!all(is.na(data.class$FL))){
     theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
-    ggtitle("Normalized FL Count by Structural Category\n\n" )
+    ggtitle("Long Reads Count by Structural Category\n\n" )
 }
 
 
@@ -553,7 +553,7 @@ if (!all(is.na(data.class$gene_exp))){
       guides(fill=FALSE) +
       mytheme +
       theme(axis.title.x=element_blank()) + 
-      ggtitle("Gene Expression Between NNC and Not NNC Containing Genes\n\n" )
+      ggtitle("Gene Expression off NNC and not NNC containing Genes\n\n" )
   }
 }
 
@@ -1978,7 +1978,7 @@ if (length(FL_multisample_indices)>0) {
 }
 
 # 2. general parameters by structual categories
-s <- textGrob("Structural Isoform Characterization\nby Splice Junctions", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Structural Isoform Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 print(p1)
 print(p4)
@@ -2157,7 +2157,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
 }
 
 
-s <- textGrob("Comparison with Annotated TSS and PolyA Sites", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Comparison with Annotated TSS and TTS", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 if (nrow(data.FSM) > 0) {
   print(p21.a)
@@ -2214,7 +2214,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
 }
 
 
-s <- textGrob("Accumulation of FSM and ISM \n to the same reference transcript", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Redundancy analysis", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   print(new.1.FSM)
