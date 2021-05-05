@@ -285,7 +285,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript length", y="Count", title="Transcript Lengths By Sample") +
+    labs(x="Transcript length", y="Count", title="Transcript Lengths by Sample") +
     theme(legend.position="top") +
     mytheme
 
@@ -293,7 +293,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
     geom_freqpoly(binwidth=100) +
     guides(fill=FALSE) +
     scale_fill_manual(values = myPalette[c(2:5)]) +
-    labs(x="Transcript length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths By Sample") +
+    labs(x="Transcript length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths by Sample") +
     theme(legend.position="top") +
     mytheme
 }
@@ -302,7 +302,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_color_manual(values = cat.palette) +
-  labs(x="Transcript length", y="Count", title="Transcript Lengths By Structural Category") +
+  labs(x="Transcript length", y="Count", title="Transcript Lengths by Structural Category") +
   theme(legend.position="top") +
   mytheme
 
