@@ -335,15 +335,16 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   scale_alpha_manual(values=c(1,0.3),
                      name = "Coding prediction",
                      labels = legendLabelF1)+
-  scale_fill_manual(values = cat.palette, guide='none') +
   xlab("") +
   ylab("% transcripts") +
   mytheme +
   geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
+  scale_fill_manual(values = cat.palette, guide='none') +
   ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
   theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   theme(legend.justification=c(1,1), legend.position=c(1,1))
+  
 
 #**** PLOTS 2-3: refLength and refExons for ISM and FSM transcripts. Plot if any ISM or FSM transcript
 
