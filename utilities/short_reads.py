@@ -106,6 +106,6 @@ def wobbler(gtf, mapping_dir): #mapping_dir: a directory where bam files are loc
     #print('outside_TSS.counts.tsv files generated')
     #calculate ratios
     subprocess.call(["""paste inside_TSS.counts.tsv outside_TSS.counts.tsv | awk '{ print $1"\t"(($2+0.0001)/($4+0.0001)) }'>ratio_in_out_counts.tsv"""], shell=True)
-    os.system('rm pattern.txt temp.gtf in_exons.bed in_exons.sorted.bed out_exons.bed out_exons.sorted.bed chr_ordered.txt in_exons.sorted.2.bed out_exons.sorted.2.bed')
+    os.system('rm pattern.txt temp.gtf in_exons.bed in_exons.sorted.bed out_exons.bed out_exons.sorted.bed chr_ordered.txt in_exons.sorted.2.bed out_exons.sorted.2.bed inside_TSS.counts.tsv outside_TSS.counts.tsv')
     print('Temp files removed.\nRatios file "ratio_in_out_counts.tsv" generated!')
 
