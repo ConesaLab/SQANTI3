@@ -35,7 +35,6 @@ def star(genome, SR_fofn, output_dir):
         print('Index folder identified. Proceeding to mapping.')
     star_mapping(index_dir, SR_fofn, output_dir)
     return(mapping_dir)
-#star('/blue/conesa/share/SQANTI3_paper_results/GM12878/reference_files/GRCh38.primary_assembly.SIRV.ERCC.fasta', 'samples.fofn', '/blue/conesa/l.kondratova/sr_module/output')
 
 #def kallisto_index ():
 	
@@ -60,7 +59,6 @@ def kallisto_quantification(corrected_fasta, SR_fofn, output_dir):
 
 
 #gtf = get_corr_filenames(args, dir=None)[0]???
-#bam = sample_prefix # this is from star_mapping function???
 def wobbler(gtf, mapping_dir): #mapping_dir: a directory where bam files are located
     replicates = []
     for filename in os.listdir(mapping_dir):
@@ -111,4 +109,3 @@ def wobbler(gtf, mapping_dir): #mapping_dir: a directory where bam files are loc
     os.system('rm pattern.txt temp.gtf in_exons.bed in_exons.sorted.bed out_exons.bed out_exons.sorted.bed chr_ordered.txt in_exons.sorted.2.bed out_exons.sorted.2.bed')
     print('Temp files removed.\nRatios file "ratio_in_out_counts.tsv" generated!')
 
-wobbler('/blue/conesa/l.kondratova/SQANTI3/GM12878/SQANTI3_output/GM12878_sqanti3_corrected.gtf', '/blue/conesa/share/SQANTI3_paper_results/GM12878/STAR/') 
