@@ -1,4 +1,4 @@
-import os, subprocess, sys
+#import os, subprocess, sys
 
 def star_mapping(index_dir, SR_fofn, output_dir):
     mapping_dir = output_dir + '/STAR_mapping'
