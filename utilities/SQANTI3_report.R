@@ -139,10 +139,10 @@ subcat.palette = c("alternative_3end"='#02314d','alternative_3end5end'='#0e5a87'
                    "3prime_fragment"='#c4531d',"internal_fragment"='#e37744',  "5prime_fragment"='#e0936e', "combination_of_known_junctions"='#014d02',
                    "combination_of_known_splicesites"='#048506',  "intron_retention"='#4abd4b', "no_combination_of_known_junctions"='#81eb82',
                    "mono-exon_by_intron_retention"='#78ad78',"at_least_one_novel_splicesite"='#bbfabc',"mono-exon"='#686e68',"multi-exon"='#c0c4c0')
-cat.palette = c("full-splice_match"="#6BAED6", "incomplete-splice_match"="#FC8D59", "novel_in_catalog"="#78C679", 
-                "novel_not_in_catalog"="#EE6A50", "genic"="#969696", "antisense"="#66C2A4", "fusion"="goldenrod1",
-                "intergenic" = "darksalmon", "genic_intron"="#41B6C4")
-  
+cat.palette = c("FSM"="#6BAED6", "ISM"="#FC8D59", "NIC"="#78C679", 
+                "NNC"="#EE6A50", "Genic\nGenomic"="#969696", "Antisense"="#66C2A4", "Fusion"="goldenrod1",
+                "Intergenic" = "darksalmon", "Genic\nIntron"="#41B6C4")
+ 
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
         axis.line.y = element_line(color="black", size = 0.4)) +
@@ -1098,7 +1098,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
     geom_freqpoly(binwidth=1) +
-    scale_fill_manual(values = cat.palette)+
+    scale_fill_manual(values = myPalette)+
     xlab("Distance of polyA motif from 3' end, bp") +
     ylab("Count") +
     labs(title="Distance of Detected PolyA Motif From 3' end")
@@ -1174,7 +1174,7 @@ if (nrow(data.junction) > 0){
 
   p28.SJ <- ggplot(t3.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[9] ,color="black") +
-    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=1.1) +
+    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.02) + 
     scale_fill_manual(values = myPalette[9:11]) +
     ylab("Isoforms, %") +
     xlab("") +
@@ -1416,7 +1416,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
     labs(x="FSM per reference transcript",
          y="Count of reference transcripts",
-         title="Reference Transcript Redundance",
+         title="Reference Transcript Redundancy",
          subtitle="Only FSM")
 
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1428,7 +1428,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
     labs(x="ISM per reference transcript",
          y="Count of Reference Transcripts",
-         title="Reference Transcript Redundance",
+         title="Reference Transcript Redundancy",
          subtitle="Only ISM")
 
   max_y=max(table(iso_per_knownTr[which(iso_per_knownTr$total_cat!="NULL"),"total_cat"]))+10
@@ -1440,7 +1440,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
     scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
     labs(x="FSM+ISM per reference transcript",
          y="Count of reference transcripts",
-         title="Reference Transcript Redundance",
+         title="Reference Transcript Redundancy",
          subtitle="FSM+ISM")
 
   #new.1.p<-ggplot(iso_per_knownTr, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1537,7 +1537,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only FSM with CAGE support")
 
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1549,7 +1549,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only ISM with CAGE support")
 
     max_y=max(table(iso_per_knownTr_cage[which(iso_per_knownTr_cage$total_cat!="NULL"),"total_cat"]))+10
@@ -1561,7 +1561,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="FSM+ISM with CAGE support")
 
     #new.2.p<-ggplot(iso_per_knownTr_cage, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1658,7 +1658,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only FSM with a polyA motif found")
 
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1670,7 +1670,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only ISM with a polyA motif found")
 
     max_y=max(table(iso_per_knownTr_polya[which(iso_per_knownTr_polya$total_cat!="NULL"),"total_cat"]))+10
@@ -1682,7 +1682,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="FSM+ISM with a polyA motif found")
 
     #new.3.p<-ggplot(iso_per_knownTr_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -1781,7 +1781,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
       labs(x="FSM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only FSM with CAGE support and polyA motif")
 
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$ISM_cat!="NULL"),"ISM_cat"]))+10
@@ -1793,7 +1793,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
       labs(x="ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="Only ISM with CAGE support and polyA motif")
 
     max_y=max(table(iso_per_knownTr_cage_polya[which(iso_per_knownTr_cage_polya$total_cat!="NULL"),"total_cat"]))+10
@@ -1805,7 +1805,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
       scale_fill_brewer("Total FSM+ISM \nper reference", palette = "Greens") +
       labs(x="FSM+ISM per reference transcript",
            y="Count of reference transcripts",
-           title="Reference Transcript Redundance",
+           title="Reference Transcript Redundancy",
            subtitle="FSM+ISM with CAGE support and polyA motif")
 
     #new.4.p<-ggplot(iso_per_knownTr_cage_polya, aes(x=total_iso, fill=factor(perc_FSM_range))) +
@@ -2184,7 +2184,7 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
                                                polyA_detected_perc=round(polyA_detected*100/count)))
 
   table.polyA <- tableGrob(df.polyA, rows = NULL, cols = c("Category","Count","polyA\nDetected","%"))
-  title.polyA <- textGrob("Number of polyA Motifs Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-10)
+  title.polyA <- textGrob("Number of polyA Motifs Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-12)
   gt.polyA <- gTree(children=gList(table.polyA, title.polyA))
 
 
@@ -2198,7 +2198,7 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
 }
 
 if (!all(is.na(data.class$dist_to_cage_peak))) {
-  s <- textGrob("CAGE distances analysis", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+  s <- textGrob("CAGE Distances Analysis", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
   print(cage_hist_FSM)
   print(cage_hist_FSM_perc)
