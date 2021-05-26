@@ -15,7 +15,12 @@ framework, that also includes IsoAnnot and tappAS.
 
 
 New features implemented in SQANTI3 not available in previous versions are:
-
+* Short-reads processing pipeline included. Now, providing directly your short-read data (FASTA/FASTQ format), SQANTI3 will:
+    * Map them against the genome to identify SJ and calculate their coverage.
+    * Calculate the "ratio_TSS" value for each isoform of your transcriptome.
+    * If pair-end data is provided, isoform expression will be computed using kallisto.
+* New subcategories for FSM: Reference match, Alternative 3' UTR, Alternative 5' UTR and Alternative 5' and 3' UTRs.
+* IsoAnnotLite bugs fixed.
 * IsoAnnotLite implemented to generate tappAS compatible GFF3 files. GFF3 output may incorporate functional annotation labels for model species supported by tappAS.
 * CAGE peak definitions: CAGE peak will only be associated to a transcript when located upstream of the transcription start sites. This option requires CAGE peak data.
 * Updated `bite` definition and ISM subcategories `5prime_fragment` and `3prime_fragment`. 
@@ -72,11 +77,15 @@ New features implemented in SQANTI3 not available in previous versions are:
 * Perl
 * Minimap2 
 * Python (3.7)
+* kallisto
+* STAR
 
 ### Python-related libraries
 
 * pysam
+* pybedtools
 * psutil
+* pandas
 * bx-python
 * BioPython
 * BCBioGFF
@@ -85,11 +94,11 @@ New features implemented in SQANTI3 not available in previous versions are:
 ### R-related libraries
 
 * R (>= 3.4.0)
-* R packages (for `sqanti3_qc.py`): ggplot2, scales, reshape, gridExtra, grid, dplyr, NOISeq, ggplotify
+* R packages (for `sqanti3_qc.py`): ggplot2, scales, reshape, gridExtra, grid, dplyr, NOISeq, ggplotify, markdown
 
 ### External scripts
 
-* gtfToGenePred (can download from [UCSC utilities](https://hgdownload.soe.ucsc.edu/admin/exe/)
+* We have downloaded gtfToGenePred from [UCSC utilities](https://hgdownload.soe.ucsc.edu/admin/exe/) and gave execution permissions, so it is no longer necessary to do it after downloading SQANTI3.
 
 <a name="install"/>
 
@@ -115,9 +124,18 @@ conda -V
 conda update conda
 ```
 
-(1)  Download or clone the SQANTI3 repository. 
+(1)  Download the latest stable SQANTI3 [release](https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v3.0.tar.gz). As of April 15th 2021, the current version is v.3.0.
 
 ```
+## For general users
+wget //github.com/ConesaLab/SQANTI3/archive/refs/tags/v3.0.tar.gz
+tar -xvf v3.0.tar.gz
+```
+
+If you have intentions of contributing to the development of SQANTI3, please clone the developer version.
+
+```
+## For developers
  git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
@@ -142,7 +160,7 @@ source activate SQANTI3.env
 (4) You also need to install [gtfToGenePred](https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html) 
 that seems to have some issues with Python 3.7 (or openssl) when installed though conda. 
 At this point, the easiest solution is to download it from [UCSC Download Page](http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/) 
-and add it to the `SQANTI3/utilities` folder (and give it execute permissions) or to your `PATH` variable:
+and add it to the `SQANTI3/utilities` folder (and give it execute permissions) or to your `PATH` variable. For Linux, users we have already done that for you, you can skip this step. If you are planning to run SQANTI3 in a mac machine, please remove the `utilities/gtfToGenePred` script and download the mac version from [here](https://hgdownload.soe.ucsc.edu/admin/exe/macOSX.x86_64/).
 
 ```
 wget http://hgdownload.cse.ucsc.edu/admin/exe/linux.x86_64/gtfToGenePred -P <path_to>/SQANTI3/utilities/
@@ -185,15 +203,19 @@ This are the minimal files that you will need to run SQANTI3:
 
 #### Optional inputs:
 
-* CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). 
+* CAGE Peak data (from FANTOM5). In SQANTI2, it was provided a version of [CAGE Peak for hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) which was originally from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). Now, we recommend to use data from [refTSS](http://reftss.clst.riken.jp/reftss/Main_Page). Files can be found in their webpage. However, we have uploaded some versions of it at the `data/ref_TSS_annotation` folder and we will try to keep them updated for new genome releases.
 
 * [Intropolis](https://github.com/nellore/intropolis/blob/master/README.md) Junction BED file. In previous versions of SQANTI, it was provided a version of [Intropolis for hg38 genome, modified into STAR junction format](https://github.com/Magdoll/images_public/tree/master/SQANTI2_support_data) which is still valid.
 
-* polyA motif list. A ranked  list of polyA motifs to find upstream of the 3' end site. See [human polyA list](https://raw.githubusercontent.com/Magdoll/images_public/master/SQANTI2_support_data/human.polyA.list.txt) for an example.
+* polyA motif list. A ranked  list of polyA motifs to find upstream of the 3' end site. See [human polyA list](https://raw.githubusercontent.com/Magdoll/images_public/master/SQANTI2_support_data/human.polyA.list.txt) for an example. We have included a list of motifs that can be used for mouse and human data at the `data/polyA_motifs/` folder. Please, if you know which are the most likely polyA motifs for other type of organism/clade, we would highly appreciate if you let us know.
 
 * FL count information. See <a href="#flcount">FL count section</a> to include Iso-Seq FL count information for each isoform.
 
 * Short read expression. See <a href="#exp">Short Read Expression section</a> to include short read expression (RSEM or Kallisto output files or a user-defined expression matrix).
+
+* Short read files. Now it is possible to feed SQANTI3 with your matching RNA-Seq data (FASTA/FASTQ files) through the `--short_reads` argument. It will run STAR and kallisto for you to calculate automatically the coverage of the SJ, the isoform expression and also the `ratio_TSS`, a metric that quantifies the differences of mean coverage 100bp upstream and downstread the reported TSS. If you are going to activate this option, please be aware that it will need enough memory and processing resources for mapping and quantifying.
+
+* Short read BAMs. If you want to use your favorite mapper for SJ detection, you provide the coverage information through `-c` argument. However, to calculate `ratio_TSS`, we need some information about how your SR mapped against the genome. We will be able to calculate it if you input through the `--SR_bam` option your BAM files. 
 
 * tappAS-annotation file. A GFF3 file which contains functional annotations of a reference transcriptome (e.g. Ensembl) at the isoform level. When `--isoAnnotLite` option is activated and a gff3 tappAS-like is provided, SQANTI3 will run internally [isoAnnot Lite](https://isoannot.tappas.org/isoannot-lite/). You can find some of them in this [repository](http://app.tappas.org/resources/downloads/gffs/). For more information about tappAS functionalities visit its [webpage](https://app.tappas.org/).
 
@@ -211,8 +233,9 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
                      [--skipORF] [--is_fusion] [-g] [-e EXPRESSION]
                      [-x GMAP_INDEX] [-t CPUS] [-n CHUNKS] [-o OUTPUT]
                      [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
-                     [--genename] [-fl FL_COUNT] [-v] [--isoAnnotLite]
-                     [--gff3 GFF3]
+                     [--genename] [-fl FL_COUNT] [-v] [--skip_report]
+                     [--isoAnnotLite] [--gff3 GFF3] 
+                     [--short_reads] [--SR_bam]
                      isoforms annotation genome
 
 ```
@@ -551,6 +574,7 @@ The output `_classification.txt` has the following fields:
 38. `within_peak`: TRUE if the PacBio transcript start site is within a CAGE Peak. 
 39. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
 40. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
+41. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the average value of the ratios across the samples. This means that if an isoform have a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
 
 
 <a name="junction"/>
