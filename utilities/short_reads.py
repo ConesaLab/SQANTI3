@@ -181,8 +181,8 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
         if b == 0 :
             ratio_rep_df = merged['id']
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
-    ratio_rep_df['mean_ratio_TSS']=ratio_rep_df.mean(axis=1)
-    ratio_rep_df = ratio_rep_df[['id','mean_ratio_TSS']]
+    ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1)
+    ratio_rep_df = ratio_rep_df[['id','max_ratio_TSS']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
     os.system('rm {i} {o}'.format(i=inside_bed, o=outside_bed))
     print('Temp files removed.\n')
