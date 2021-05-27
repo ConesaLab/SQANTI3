@@ -1937,7 +1937,7 @@ def run(args):
                 print("WARNING: {0} found in ratio TSS file but not in input FASTA/GTF".format(iso), file=sys.stderr)
         for iso in isoforms_info:
             if iso in ratio_TSS_dict:
-                isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['mean_ratio_TSS']
+                isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['max_ratio_TSS']
             else:
                 print("WARNING: {0} not found in ratio TSS file. Assign count as 1.".format(iso), file=sys.stderr)
                 isoforms_info[iso].ratio_TSS = 1
