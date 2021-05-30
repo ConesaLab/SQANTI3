@@ -129,6 +129,11 @@ data.FSM <- subset(data.class, (structural_category=="FSM" & exons>1))
 data.ISM <- subset(data.class, (structural_category=="ISM" & exons>1))
 data.NNC <- subset(data.class, (structural_category=="NNC" & exons>1))
 data.NIC <- subset(data.class, (structural_category=="NIC" & exons>1))
+data.GenicGenomic <- subset(data.class, (structural_category=="Genic\nGenomic" & exons>1 ))
+data.Antisense <- subset(data.class, (structural_category=="Antisense" & exons>1))
+data.Fusion <- subset(data.class, (structural_category=="Fusion" & exons>1))
+data.Intergenic <- subset(data.class, (structural_category=="Intergenic" & exons>1))
+data.GenicIntron <- subset(data.class, (structural_category=="Genic\nIntron" & exons>1))
 
 # subcategories data sets
 #"FSM"
@@ -280,6 +285,18 @@ if (!all(is.na(data.class$FL))){
   data.class$FL_TPM <- data.class$FL*(10**6)/total_fl
 }
 
+if (!all(is.na(data.FSMISM$FL))){
+  total_fl <- sum(data.FSMISM$FL, na.rm=T)
+  #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
+  data.FSMISM$FL_TPM <- data.FSMISM$FL*(10**6)/total_fl
+}
+
+if (!all(is.na(data.other$FL))){
+  total_fl <- sum(data.other$FL, na.rm=T)
+  #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
+  data.other$FL_TPM <- data.other$FL*(10**6)/total_fl
+}
+
 
 if (length(FL_multisample_indices)>0){
   FL_multisample_names <- substring(colnames(data.class)[FL_multisample_indices],4)
@@ -373,15 +390,15 @@ p0 <- ggplot(isoPerGene, aes(x=nIsoCat, fill=nIsoCat)) +
 #**** PLOT 1: Structural Classification
 
 p1 <- ggplot(data=data.class, aes(x=structural_category)) +
-  geom_bar(aes(y = (..count..)/sum(..count..), alpha=coding, fill=structural_category), color="black", size=0.3, width=0.7) +
-  scale_y_continuous(labels = percent, expand = c(0,0), limits = c(0,1)) +
-  geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25)  +
+  geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=subcategory), color="black", size=0.3, width=0.7) +
+  scale_y_continuous(labels = function(x) format(x), expand = c(0,0), limits = c(0,100))+
+  #geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25)  +
   scale_x_discrete(drop=FALSE) +
   scale_alpha_manual(values=c(1,0.3),
                      name = "Coding prediction",
                      labels = legendLabelF1)+
   xlab("") +
-  ylab("% transcripts") +
+  ylab("Transcripts, %") +
   mytheme +
   geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -389,6 +406,41 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
   theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   theme(legend.justification=c(1,1), legend.position=c(1,1))
+
+p1.s.titles = list("Isoform Distribution Across FSM\n\n",
+                   "Isoform Distribution Across ISM\n\n",
+                   "Isoform Distribution Across NNC\n\n",
+                   "Isoform Distribution Across NIC\n\n",
+                   "Isoform Distribution Across Genic Genomic\n\n",
+                   "Isoform Distribution Across Antisense\n\n",
+                   "Isoform Distribution Across Fusion\n\n",
+                   "Isoform Distribution Across Intergenic\n\n",
+                   "Isoform Distribution Across Genic Intron\n\n")
+
+categories.list=list(data.FSM, data.ISM, data.NNC, data.NIC, data.GenicGenomic, data.Antisense, 
+                     data.Fusion, data.Intergenic, data.GenicIntron)
+
+p1.s.list = list()
+for(i in 1:length(categories.list)){
+  c<-data.frame(categories.list[i])
+  if (!(dim(c))[1]==0){
+    p1.s <- ggplot(data=c, aes(x=subcategory)) +
+      geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=subcategory), color="black", size=0.3, width=0.7) +
+      scale_y_continuous(labels = function(x) format(x), expand = c(0,0), limits = c(0,100))+
+      guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+      ylab("Transcripts, %") +
+      xlab("Subcategory") +
+      mytheme +
+      geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
+      theme(axis.text.x = element_blank()) +
+      scale_fill_manual(values = subcat.palette, drop=TRUE) +
+      ggtitle(p1.s.titles[i]) +
+      theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+            legend.direction = "horizontal", legend.box = "vertical")
+    #theme(legend.justification=c(1,1), legend.position=c(1,1))
+    p1.s.list[[i]] = p1.s
+  }
+}
   
 
 #**** PLOTS 2-3: refLength and refExons for ISM and FSM transcripts. Plot if any ISM or FSM transcript
@@ -431,6 +483,32 @@ p4 <- ggplot(data=data.class, aes(x=structural_category, y=length, fill=structur
   ggtitle("Transcript Lengths by Structural Classification\n\n" ) +
   theme(axis.title.x=element_blank())
 
+p4.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=length, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, aes(group=subcategory)) +
+  scale_x_discrete(drop=TRUE) +
+  ylab("Transcript Length (bp)") +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+        legend.direction = "horizontal", legend.box = "vertical") +
+  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  ggtitle("Transcript Lengths by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
+
+p4.s2 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  scale_x_discrete(drop=TRUE) +
+  ylab("Transcript Length (bp)") +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+        legend.direction = "horizontal", legend.box = "vertical") +
+  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  ggtitle("Transcript Lengths by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
+
 
 ##**** PLOT 5: Exon counts by category
 
@@ -444,6 +522,33 @@ p5 <- ggplot(data=data.class, aes(x=structural_category, y=exons, fill=structura
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
   ggtitle("Exon Counts by Structural Classification\n\n" ) +
   theme(axis.title.x=element_blank())
+
+p5.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=exons, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank()) +
+  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(axis.title.x=element_blank())+
+  ylab("Number of exons") +
+  scale_x_discrete(drop=TRUE) +
+  scale_fill_manual(values = subcat.palette) +
+  ggtitle("Exon Counts by Subcategory\n\n" )
+  
+
+p5.s2 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  ylab("Number of exons") +
+  scale_x_discrete(drop=TRUE) +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+        legend.direction = "horizontal", legend.box = "vertical")+
+  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  ggtitle("Exon Counts by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
+
 
 
 ##**** PLOT 6: Mono vs Multi-exon distribution for Known vs Novel Genes
@@ -518,6 +623,34 @@ if (!all(is.na(data.class$iso_exp))){
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Structural Category\n\n" )
 }
+if (!all(is.na(data.FSMISM$iso_exp))){
+  p8.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+    scale_x_discrete(drop=TRUE) +
+    ylab("log2(TPM+1)") +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+          legend.direction = "horizontal", legend.box = "vertical") +
+    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Transcript Expression by Subcategory\n\n" )
+}
+if (!all(is.na(data.other$iso_exp))){
+  p8.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+    scale_x_discrete(drop=TRUE) +
+    ylab("log2(TPM+1)") +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+          legend.direction = "horizontal", legend.box = "vertical") +
+    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Transcript Expression by Subcategory\n\n" )
+}
 
 
 # PLOT 9: FL number, if FL count provided
@@ -535,6 +668,39 @@ if (!all(is.na(data.class$FL))){
     theme(axis.title.x=element_blank()) +
     ggtitle("Long Reads Count by Structural Category\n\n" )
 }
+
+if (!all(is.na(data.FSMISM$FL))){
+  p9.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.2) +
+    ylab("log2(FL_TPM+1)") +
+    scale_x_discrete(drop=TRUE) +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme +
+    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+          legend.direction = "horizontal", legend.box = "vertical") +
+    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(axis.text.x = element_text(angle = 45)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Long Reads Count by Subcategory\n\n" )
+}
+
+if (!all(is.na(data.other$FL))){
+  p9.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.2) +
+    ylab("log2(FL_TPM+1)") +
+    scale_x_discrete(drop=TRUE) +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme +
+    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+          legend.direction = "horizontal", legend.box = "vertical") +
+    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(axis.text.x = element_text(angle = 45)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Long Reads Count by Subcategory\n\n" )
+}
+
 
 
 
@@ -2544,13 +2710,34 @@ if (length(FL_multisample_indices)>0) {
 s <- textGrob("Structural Isoform Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 print(p1)
+if (length(p1.s.list) > 0) {
+  for (i in 1:length(p1.s.list)) {
+    print(p1.s.list[i])
+  }
+}
 print(p4)
+print(p4.s1)
+print(p4.s2)
 print(p5)
+print(p5.s1)
+print(p5.s2)
 if (!all(is.na(data.class$iso_exp))){
   print(p8)
+  if (!all(is.na(data.FSMISM$iso_exp))){
+    print(p8.s1)
+  }
+  if (!all(is.na(data.other$iso_exp))){
+    print(p8.s2)
+  }
 }
 if (!all(is.na(data.class$FL))){
   print(p9)
+  if (!all(is.na(data.FSMISM$FL))){
+    print(p9.s1)
+  }
+  if (!all(is.na(data.other$FL))){
+    print(p9.s2)
+  }
 }
 
 
