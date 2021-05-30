@@ -390,7 +390,7 @@ p0 <- ggplot(isoPerGene, aes(x=nIsoCat, fill=nIsoCat)) +
 #**** PLOT 1: Structural Classification
 
 p1 <- ggplot(data=data.class, aes(x=structural_category)) +
-  geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=subcategory), color="black", size=0.3, width=0.7) +
+  geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=structural_category), color="black", size=0.3, width=0.7) +
   scale_y_continuous(labels = function(x) format(x), expand = c(0,0), limits = c(0,100))+
   #geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25)  +
   scale_x_discrete(drop=FALSE) +
@@ -435,9 +435,7 @@ for(i in 1:length(categories.list)){
       theme(axis.text.x = element_blank()) +
       scale_fill_manual(values = subcat.palette, drop=TRUE) +
       ggtitle(p1.s.titles[i]) +
-      theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-            legend.direction = "horizontal", legend.box = "vertical")
-    #theme(legend.justification=c(1,1), legend.position=c(1,1))
+      theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank())
     p1.s.list[[i]] = p1.s
   }
 }
