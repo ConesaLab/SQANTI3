@@ -1,111 +1,190 @@
 import os, subprocess, sys
+import pandas
+import pybedtools
+import re
+try:
+    from BCBio import GFF as BCBio_GFF
+except ImportError:
+    print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
+    sys.exit(-1)
 
-def star_mapping(index_dir, SR_fofn, output_dir):
+def star_mapping(index_dir, SR_fofn, output_dir, cpus): #added cpus argument for num of threads
     mapping_dir = output_dir + '/STAR_mapping'
     with open(SR_fofn) as fofn:
         for line in fofn:
-            files = line.split(' ')
-            sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
+            files = [x.strip() for x in line.split(' ')]
+            compressed = False
+            if files[0][-3:] == '.gz':
+                compressed = True
+            if compressed :
+                sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
+                sample_name = sample_name.split('.')[:-1][0]
+            else:
+                sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
             sample_prefix = mapping_dir + '/' + sample_name
-            if not os.path.exists(sample_prefix + 'Log.final.out'): #I am replacing $index_name_STAR with output_dir + /STAR_index (not shure if this is the right argument to replace)
+            if not os.path.exists(sample_prefix + 'Log.final.out'):
                 print('Mapping for ', sample_name, ': in progress...')
-                if len(files) == 1:
-                    mapping = subprocess.Popen(['STAR', '--runThreadN',  '8', '--twopassMode', 'Basic', '--genomeDir', index_dir, '--readFilesIn', files[0], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate'])
-                    mapping.wait()
-                    print('Mapping for ', sample_name, ': done.')
+                if not compressed:
+                    if len(files) == 1:
+                        print('Mapping for ', sample_name, ': done.')
+                        subprocess.call(['STAR', '--runThreadN',  str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--twopassMode', 'Basic'])
+                    else:
+                        print('Mapping for ', sample_name, ': done.')
+                        subprocess.call(['STAR', '--runThreadN', str(cpus),  '--genomeDir', index_dir, '--readFilesIn', files[0], files[1], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--twopassMode', 'Basic'])
                 else:
-                    mapping = subprocess.Popen(['STAR', '--runThreadN', '8', '--twopassMode', 'Basic', '--genomeDir', index_dir, '--readFilesIn', files[0], files[1], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate'])
-                    mapping.wait()
-                    print('Mapping for ', sample_name, ': done.')
+                    if len(files) == 1:
+                        print('Mapping for ', sample_name, ': done.')
+                        subprocess.call(['STAR', '--runThreadN',  str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--readFilesCommand', 'zcat', '--twopassMode', 'Basic'])
+                    else:
+                        print('Mapping for ', sample_name, ': done.')
+                        subprocess.call(['STAR', '--runThreadN', str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], files[1], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--readFilesCommand', 'zcat', '--twopassMode', 'Basic'])
 
-def star(genome, SR_fofn, output_dir):
-    fasta_genome = genome #should we check if it is fasta format?
-    index_dir = output_dir + '/STAR_index'
-    mapping_dir = output_dir + '/STAR_mapping'
-    print('START')
+
+def star(genome, SR_fofn, output_dir, cpus):
+    fasta_genome = genome #Fasta Format already checked
+    index_dir = output_dir + '/STAR_index/'
+    index_dir_o = index_dir + 'SAindex' 
+    mapping_dir = output_dir + '/STAR_mapping/'
+    print('START running STAR...')
     if not os.path.exists(mapping_dir):
         os.makedirs(mapping_dir)
     if not os.path.exists(index_dir):
         os.makedirs(index_dir)
-        print('Running indexing...')
-        indexing = subprocess.Popen(['STAR', '--runThreadN', '8', '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome], stdout=subprocess.PIPE)
-        indexing.wait()
-        print('Indexing done.')
+        if not os.path.exists(index_dir_o):
+            print('Running indexing...')
+            subprocess.call(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome])
+            print('Indexing done.')
     else:
-        print('Index folder identified. Proceeding to mapping.')
-    star_mapping(index_dir, SR_fofn, output_dir)
-    return(mapping_dir)
+        print('Index identified. Proceeding to mapping.')
+    star_mapping(index_dir, SR_fofn, output_dir, cpus)
+    return(mapping_dir, index_dir)
 
-#def kallisto_index ():
-	
-def kallisto_quantification(corrected_fasta, SR_fofn, output_dir):
+def kallisto_quantification(files,index,cpus, output_dir):
+    r1 = files[0].strip()
+    r2 = files[1].strip()
+    if files[0][-3:] == '.gz':
+        sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
+        sample_name = sample_name.split('.')[:-1][0]
+    else:
+        sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
+    out_prefix = output_dir + '/' + sample_name
+    abundance_file = out_prefix + '/abundance.tsv'
+    if not os.path.exists(abundance_file):
+        if not os.path.exists(out_prefix):
+            os.makedirs(out_prefix)
+        print('Running Kallisto quantification for {0} sample'.format(sample_name))
+        os.system('kallisto quant -i ' + index + ' -o ' + out_prefix + ' -b 100 -t ' + str(cpus) + ' ' + r1 + ' ' + r2)
+        #subprocess.call(['kallisto', 'quant', '-i', index, '-o', out_prefix, '-b', '100', '-t', str(cpus), r1, r2 ],shell=True)
+    else:
+        print("Kallisto quantification output {0} found. Using it...".format(abundance_file))
+    return(abundance_file)
+
+
+def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
     kallisto_output = output_dir + "/kallisto_output"
+    kallisto_index = kallisto_output + '/kallisto_corrected_fasta.idx'
+    expression_files = ''
     if not os.path.exists(kallisto_output):
         os.makedirs(kallisto_output)
-        kallisto_index = kallisto_output + '/kallisto_corrected_fasta.idx'
-        run_kallisto = subprocess.Popen(['kallisto', 'index', '-i', kallisto_index, corrected_fasta])
-        run_kallisto.wait()
-    if not os.path.exists(kallisto_output + '/abundance.tsv'):
-        os.makedirs(output_dir + '/STAR_mapping')
-        index_dir=output_dir + '/STAR_index'
-        star_mapping(index_dir, SR_fofn, output_dir)
-
+    if not os.path.exists(kallisto_index):
+        print('Running kallisto index {0} using as reference {1}'.format(kallisto_index, corrected_fasta))
+        os.system('kallisto index -i ' + kallisto_index + ' ' + corrected_fasta + ' --make-unique')
+        #subprocess.call(['kallisto', 'index', '-i', kallisto_index, corrected_fasta, '--make-unique'],shell=True)
+    with open(SR_fofn) as fofn:
+        for line in fofn:
+            files = line.split(' ')
+            if len(files)==2:
+                abundance = kallisto_quantification(files, kallisto_index, cpus, kallisto_output)
+            else:
+                print('SQANTI3 is only able to quantify isoforms using pair-end RNA-Seq data. Please check that your fofn contains the path to both read files in a space-separated format.')
+                sys.exit()
+            if len(expression_files)==0:
+                expression_files = abundance
+            else:
+                expression_files = expression_files + ',' + abundance
+    return(expression_files)
 
 
 #if args.SR_fofn and not args.coverage:
 #	import utilities/short_reads as sr
 #	print ('Short-read files provided.')
 #	args.coverage = sr.star(args.genome, args.SR_fofn, args.dir)
+def get_TSS_bed(corrected_gtf, chr_order):
+    limit_info = dict(gff_type=["transcript"])
+    out_directory=os.path.dirname(corrected_gtf)
+    tmp_in= out_directory + '/coverage_inside_TSS.bed_tmp'
+    tmp_out = out_directory + '/coverage_outside_TSS.bed_tmp'
+    in_handle=open(corrected_gtf)
+    with open(tmp_in,'w') as inside:
+        with open(tmp_out,'w') as outside:
+            for rec in BCBio_GFF.parse(in_handle, limit_info=limit_info, target_lines=1):
+                chr=rec.id
+                iso_id=rec.features[0].qualifiers["transcript_id"][0]
+                loc=str(rec.features[0].location)
+                loc=re.split('[\(\)\[\]\:]',loc)
+                loc=list(filter(None,loc))
+                strand=str(loc[2])
+                if strand=='+':
+                    start_in=int(loc[0])
+                    end_in=int(loc[0])+100
+                    start_out=int(loc[0])-101
+                    end_out=int(loc[0])-1
+                    if start_out<0:
+                        start_out=0
+                else:
+                    start_in=int(loc[1])-100
+                    end_in=int(loc[1])
+                    start_out=int(loc[1])+1
+                    end_out=int(loc[1])+101
+                if end_out<=0:
+                    print('{iso} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome'.format(iso=iso_id))
+                else:
+                    inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
+                    outside.write(chr + "\t" + str(start_out) + "\t" + str(end_out) + "\t" + iso_id + "\t0\t" + strand + "\n")
+        outside.close()
+    inside.close()
+    in_handle.close()
+    i = pybedtools.BedTool(tmp_in)
+    o = pybedtools.BedTool(tmp_out)
+    inside_sorted = out_directory + "/inside_TSS.bed" 
+    outside_sorted = out_directory + "/outside_TSS.bed"
+    i.sort(g=chr_order, output=inside_sorted)
+    o.sort(g=chr_order, output=outside_sorted) 
+    os.system("rm {i} {o}".format(i=tmp_in , o=tmp_out))
+    return(inside_sorted, outside_sorted)
 
+def get_bam_header(bam):
+    o_dir=os.path.dirname(bam)
+    out=o_dir + "/chr_order.txt"
+    os.system("samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out))
+    return(out)
 
-#gtf = get_corr_filenames(args, dir=None)[0]???
-def wobbler(gtf, mapping_dir): #mapping_dir: a directory where bam files are located
-    replicates = []
-    for filename in os.listdir(mapping_dir):
-        if filename.endswith('sorted.bam'):
-            replicates.append(filename)
-    print('Replicates identified: '+str(replicates))
-    os.system('grep -w "transcript" %s > temp.gtf' %gtf) 
-    subprocess.call(["""samtools view -H %s | grep @SQ | sed 's/@SQ\tSN:\|LN://g' > chr_ordered.txt""" %(mapping_dir+'/'+replicates[0])], shell=True)
-    subprocess.call(['cat chr_ordered.txt | cut -f1 > pattern.txt'], shell=True)
-    subprocess.call(["""cat temp.gtf | awk '{if ($7 == "+") print $1 "\t" $4 "\t" $4+100 "\t" $12 "\t0\t"$7 ; else print $1 "\t" $5-100 "\t" $5 "\t" $12 "\t0\t"$7 }'>%s""" %'in_exons.bed'], shell=True)
-    subprocess.call(["""cat temp.gtf | awk '{if ($7 == "+" && $4 < 101)  print $1 "\t1\t" $4 "\t" $12 "\t0\t"$7 ; else if ($7 == "+") print $1 "\t"$4-101"\t" $4 "\t" $12 "\t0\t"$7 ; else print $1 "\t" $5+1 "\t" $5+101 "\t" $12 "\t0\t"$7 }' > %s""" %'out_exons.bed'], shell=True)
-    sorted_bed = """sed s/';'//g %s | sed s/'"'//g | sort -k1,1 -k2,2n -k3,3n > %s"""
-    sorted_2_bed = 'while read -r line;  do grep $line -w %s >> %s; done < pattern.txt'
-    bedtools_coverage= 'bedtools coverage -a %s -b %s -sorted -s -counts -f 0.1 -g chr_ordered.txt > %s'
-    print('in/out_exons.bed files generated')
-    subprocess.call([sorted_bed %('in_exons.bed', 'in_exons.sorted.bed')], shell=True)
-    subprocess.call([sorted_bed %('out_exons.bed', 'out_exons.sorted.bed')], shell=True)
-    subprocess.call([sorted_2_bed %('in_exons.sorted.bed', 'in_exons.sorted.2.bed')], shell=True)
-    subprocess.call([sorted_2_bed %('out_exons.sorted.bed', 'out_exons.sorted.2.bed')], shell=True)
-    print('in/out_exons.sorted.bed files generated')
-    for i in ('in', 'out'):
-        for k in range(len(replicates)):
-            r=k+1
-            bam_file=mapping_dir+'/'+replicates[k]
-            subprocess.call([bedtools_coverage %(i+'_exons.sorted.2.bed', bam_file, "%sside_counts.rep%s.tsv"%(i, r))], shell=True)
-            subprocess.call(["""cut -f7 %sside_counts.rep%s.tsv > %sside.rep%s.temp.counts"""%(i,r,i,r)], shell=True)
-        subprocess.call(['paste *temp.counts > %sside.counts'%i], shell=True)
-        subprocess.call(['cut -f4 %sside_counts.rep%s.tsv > replicate.counts'%(i,r)], shell=True)
-        os.system('rm *temp.counts')
-        col='$1'
-        for k in range(len(replicates)):
-            if (k+2)<=len(replicates):
-                col = col+"+$%s"%str(k+2)
-            else:
-                break
-        cmd = """cat %sside.counts | awk '{ print (%s)/%s}'>average.counts"""
-        subprocess.call([cmd %(i, col, str(len(replicates)))], shell=True)
-        subprocess.call(['paste replicate.counts average.counts > %sside_TSS.counts.tsv'%i], shell=True)
-        os.system('rm %sside.counts average.counts'%i)
-        print('%sside_TSS.counts.tsv generated'%i)
-
-
-    #subprocess.call([counts %('in_exons.sorted.2.bed', bam, 'inside_TSS.counts.tsv')], shell=True)
-    #subprocess.call([counts %('out_exons.sorted.2.bed', bam, 'outside_TSS.counts.tsv')], shell=True)
-    #print('outside_TSS.counts.tsv files generated')
-    #calculate ratios
-    subprocess.call(["""paste inside_TSS.counts.tsv outside_TSS.counts.tsv | awk '{ print $1"\t"(($2+0.0001)/($4+0.0001)) }'>ratio_in_out_counts.tsv"""], shell=True)
-    os.system('rm pattern.txt temp.gtf in_exons.bed in_exons.sorted.bed out_exons.bed out_exons.sorted.bed chr_ordered.txt in_exons.sorted.2.bed out_exons.sorted.2.bed inside_TSS.counts.tsv outside_TSS.counts.tsv')
-    print('Temp files removed.\nRatios file "ratio_in_out_counts.tsv" generated!')
+def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order): 
+## the idea would be to first calculate the average coverage per sample for in and out beds. Calculate each ratio
+## average all the ratios and return it as a dictionary
+    print('BAM files identified: '+str(replicates))
+    out_TSS_file = os.path.dirname(inside_bed) + "/mean_ratio_TSS.tsv"
+    in_bed = pybedtools.BedTool(inside_bed)
+    out_bed = pybedtools.BedTool(outside_bed)
+    for b in [*range(0,len(replicates))]:
+        bam_file=replicates[b] 
+        in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order)
+        out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
+        inside_df = pandas.DataFrame(columns=['id','inside'])
+        for entry in in_cov:
+            inside_df = inside_df.append([{'id' : entry.name , 'inside' : float(entry[6])}], ignore_index=True)
+        outside_df = pandas.DataFrame(columns=['id','outside'])
+        for entry in out_cov:
+            outside_df = outside_df.append([{'id' : entry.name , 'outside' : float(entry[6])}], ignore_index=True)
+        merged = pandas.merge(inside_df, outside_df, on="id")
+        merged['ratio_TSS'] = (merged['inside']+0.01)/(merged['outside']+0.01)
+        if b == 0 :
+            ratio_rep_df = merged['id']
+        ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
+    ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1)
+    ratio_rep_df = ratio_rep_df[['id','max_ratio_TSS']]
+    ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
+    os.system('rm {i} {o}'.format(i=inside_bed, o=outside_bed))
+    print('Temp files removed.\n')
+    return(ratio_rep_dict)
 
