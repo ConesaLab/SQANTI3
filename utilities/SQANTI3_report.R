@@ -380,18 +380,17 @@ p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
 #**** PLOT 0: Distribution of Number of Isoforms per Gene
 
 p0 <- ggplot(isoPerGene, aes(x=nIsoCat, fill=nIsoCat)) +
-  geom_bar(stat="count", aes(y= (..count..)/sum(..count..)), color="black", size=0.3, width=0.7) +
+  geom_bar(stat="count", aes(y= (..count..)/sum(..count..)*100), color="black", size=0.3, width=0.7) +
   guides(fill=FALSE) +
-  scale_y_continuous(labels = percent, expand = c(0,0)) +
+  scale_y_continuous(labels = function(x) format(x), expand = c(0,0)) +
   scale_fill_manual(values = myPalette[c(2:5)]) +
-  labs(x ="Isoforms per gene", title="Number of Isoforms per Gene\n\n\n", y = "% Genes") +
+  labs(x ="Isoforms per gene", title="Number of Isoforms per Gene\n\n\n", y = "Genes, %") +
   mytheme
 
 #**** PLOT 1: Structural Classification
 
 p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=structural_category), color="black", size=0.3, width=0.7) +
-  scale_y_continuous(labels = function(x) format(x), expand = c(0,0), limits = c(0,100))+
   #geom_text(aes(y = ((..count..)/sum(..count..)), label = scales::percent((..count..)/sum(..count..))), stat = "count", vjust = -0.25)  +
   scale_x_discrete(drop=FALSE) +
   scale_alpha_manual(values=c(1,0.3),
@@ -426,7 +425,6 @@ for(i in 1:length(categories.list)){
   if (!(dim(c))[1]==0){
     p1.s <- ggplot(data=c, aes(x=subcategory)) +
       geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=subcategory), color="black", size=0.3, width=0.7) +
-      scale_y_continuous(labels = function(x) format(x), expand = c(0,0), limits = c(0,100))+
       guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
       ylab("Transcripts, %") +
       xlab("Subcategory") +
@@ -565,9 +563,9 @@ p6 <- ggplot(data=data.class, aes(x=novelGene)) +
 
 # p7: Distribution of Number of Isoforms, separated by Novel vs Annotated Genes
 
-p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
-  geom_bar(position="fill", aes(y = (..count..)/sum(..count..), fill=nIsoCat), color="black", size=0.3, width=0.5) +
-  scale_y_continuous(labels = percent, expand = c(0,0)) +
+p7 <- ggplot(data=isoPerGene, aes(x=novelGene, fill=nIsoCat)) +
+  #geom_bar(position="fill", aes(y = (..count..)/sum(..count..)*100), color="black", size=0.3, width=0.5) +
+  geom_bar(aes(y = (..count..)/sum(..count..)*100), color="black", size=0.3, width=0.5) +
   scale_x_discrete(drop=FALSE) +
   scale_fill_manual(name = "Isoforms Per Gene",
                     values = myPalette[c(2:5)]) +
