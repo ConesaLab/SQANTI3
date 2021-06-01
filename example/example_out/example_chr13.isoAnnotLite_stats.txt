@@ -1,0 +1,79 @@
+	TRANSCRIPT-LEVEL SUMMARY
+
+		·A total of 44.62 % of transcripts in the GTF target annotation file (718 of 1609) were annotated because they matched a transcript ID in the GFF3 source annotation file (SQANTI FSM and ISM).
+		·A total of 54.75 % of transcripts in the GTF target annotation file (881 of 1609) do not match any of the transcript IDs in the GFF3 file (SQANTI novel transcripts).
+			·92.85 % of them (818 of 881) were annotated by positional feature transference.
+			·Annotated novel transcripts represent 50.84 % (818 of 1609) of transcript from the GTF target annotation file.
+
+		Global statistics:		·A total of 95.46 % of transcripts in the GTF target annotation file (1536 of 1609) were annotated (at least one feature transferred).
+		·Dit not annotate 0.62 % of transcripts (10) because they do not have gene information in GFF3 source annotation file.
+		·Dit not annotate 0.00 % of transcripts (0) because no annotations were retrieved by positional feature transference.
+
+	FEATURE-TRANSFERENCE SUMMARY
+
+		Transcript Annotation:
+
+		·repeat: annotated 56.74 % of transcripts (913 of 1609) with at least one repeat feature.
+		·miRNA_Binding: annotated 72.84 % of transcripts (1172 of 1609) with at least one miRNA_Binding feature.
+		·3UTRmotif: annotated 65.69 % of transcripts (1057 of 1609) with at least one 3UTRmotif feature.
+		·PAS: annotated 31.82 % of transcripts (512 of 1609) with at least one PAS feature.
+		·NMD: annotated 31.88 % of transcripts (513 of 1609) with at least one NMD feature.
+		·uORF: annotated 25.42 % of transcripts (409 of 1609) with at least one uORF feature.
+		·5UTRmotif: annotated 5.66 % of transcripts (91 of 1609) with at least one 5UTRmotif feature.
+
+		Protein Annotation:
+
+		·DOMAIN: annotated 68.30 % of transcripts (1099 of 1609) with at least one DOMAIN feature.
+		·PTM: annotated 84.34 % of transcripts (1357 of 1609) with at least one PTM feature.
+		·MOTIF: annotated 16.28 % of transcripts (262 of 1609) with at least one MOTIF feature.
+		·COMPBIAS: annotated 18.02 % of transcripts (290 of 1609) with at least one COMPBIAS feature.
+		·COILED: annotated 7.89 % of transcripts (127 of 1609) with at least one COILED feature.
+		·BINDING: annotated 30.45 % of transcripts (490 of 1609) with at least one BINDING feature.
+		·ACT_SITE: annotated 5.16 % of transcripts (83 of 1609) with at least one ACT_SITE feature.
+		·TRANSMEM: annotated 13.11 % of transcripts (211 of 1609) with at least one TRANSMEM feature.
+		·SIGNAL: annotated 9.07 % of transcripts (146 of 1609) with at least one SIGNAL feature.
+
+		Gene Annotation:
+
+		·P (GeneOntology): annotated 85.58 % of transcripts (1377 of 1609) with at least one P feature.
+		·C (GeneOntology): annotated 89.12 % of transcripts (1434 of 1609) with at least one C feature.
+		·F (GeneOntology): annotated 89.06 % of transcripts (1433 of 1609) with at least one F feature.
+		·CLAN: annotated 74.77 % of transcripts (1203 of 1609) with at least one CLAN feature.
+		·pathway: annotated 35.18 % of transcripts (566 of 1609) with at least one pathway feature.
+
+
+
+	FEATURE-LEVEL SUMMARY
+
+		Transcript Annotation:
+
+		·repeat: transferred 18.84 % of features (1707 of 9061).
+		·miRNA_Binding: transferred 37.51 % of features (17000 of 45320).
+		·3UTRmotif: transferred 32.17 % of features (4238 of 13172).
+		·PAS: transferred 21.32 % of features (769 of 3607).
+		·NMD: transferred 100.00 % of features (513 of 513).
+		·uORF: transferred 25.33 % of features (742 of 2929).
+		·5UTRmotif: transferred 40.27 % of features (91 of 226).
+
+		Protein Annotation:
+
+		·DOMAIN: transferred 67.34 % of features (4810 of 7143).
+		·PTM: transferred 79.86 % of features (52577 of 65838).
+		·MOTIF: transferred 77.64 % of features (861 of 1109).
+		·COMPBIAS: transferred 66.06 % of features (580 of 878).
+		·COILED: transferred 82.49 % of features (410 of 497).
+		·BINDING: transferred 81.35 % of features (2853 of 3507).
+		·ACT_SITE: transferred 78.45 % of features (182 of 232).
+		·TRANSMEM: transferred 75.04 % of features (1443 of 1923).
+		·SIGNAL: transferred 59.22 % of features (151 of 255).
+
+		Gene Annotation:
+
+		·P (GeneOntology): transferred 100.00 % of features (1377 of 1377).
+		·C (GeneOntology): transferred 100.00 % of features (1434 of 1434).
+		·F (GeneOntology): transferred 100.00 % of features (1433 of 1433).
+		·CLAN: transferred 100.00 % of features (1203 of 1203).
+		·pathway: transferred 100.00 % of features (566 of 566).
+
+		Global statistics:
+		·Annotated a total of 58.52 % (94940 of 162223) of features from the reference GFF3 file for the study transcripts.
