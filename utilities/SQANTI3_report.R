@@ -565,8 +565,7 @@ p6 <- ggplot(data=data.class, aes(x=novelGene)) +
 
 p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
   geom_bar(position="fill", aes(y = (..count..)/sum(..count..), fill=nIsoCat), color="black", size=0.3, width=0.5) +
-  #scale_y_continuous(labels = percent, expand = c(0,0)) +
-  scale_y_discrete(breaks=c("0.0","0.25","0.5","0.75","1"),
+  scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
                    labels=c("0","25","50","75","100")) +
   scale_x_discrete(drop=FALSE) +
   scale_fill_manual(name = "Isoforms Per Gene",
