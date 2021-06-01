@@ -630,11 +630,7 @@ def reference_parser(args, genome_chroms):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
         ## gtf to genePred
-<<<<<<< HEAD
-        if not args.genename:
-=======
         if not (args.genename or args.isoAnnotLite):
->>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
         else:
             subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
@@ -1022,24 +1018,6 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                         # (1) no prev hits yet
                         # (2) this one is better (prev not FSM or is FSM but worse tss/tts)
                         if cat_ranking[isoform_hit.str_class] < cat_ranking["full-splice_match"] or \
-<<<<<<< HEAD
-                                abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
-                            isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
-                                                             str_class="full-splice_match",
-                                                             subtype=subtype,
-                                                             chrom=trec.chrom,
-                                                             strand=trec.strand,
-                                                             genes=[ref.gene],
-                                                             transcripts=[ref.id],
-                                                             refLen = ref.length,
-                                                             refExons= ref.exonCount,
-                                                             refStart=ref.txStart,
-                                                             refEnd=ref.txEnd,
-                                                             q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
-                                                             q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA),
-                                                             seqAdownTTS=seq_downTTS)
-=======
                                                     abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                             if abs(diff_tss) < 50 and abs(diff_tts) < 50:
                                 subtype = 'reference_match'
@@ -1116,7 +1094,6 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                                                                  q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
                                                                  percAdownTTS=str(percA),
                                                                  seqAdownTTS=seq_downTTS)
->>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
                     # #######################################################
                     # SQANTI's incomplete-splice_match
                     # (only check if don't already have a FSM match)
@@ -2036,13 +2013,6 @@ def run(args):
 ### IsoAnnot Lite implementation
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
-<<<<<<< HEAD
-def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outDir, outName, gff3_opt):
-    if gff3_opt:
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, d=outDir, o=outName)
-    else:
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -d {d} -o {o}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, d=outDir, o=outName)
-=======
 def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
         iso_out = os.path.join(os.path.dirname(correctedGTF),outName)
@@ -2051,7 +2021,6 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
     else:
         iso_out = os.path.dirname(correctedGTF) + outName
         ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
->>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
         sys.exit(-1)
@@ -2419,11 +2388,7 @@ def main():
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
-<<<<<<< HEAD
-            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
-=======
             run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
->>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
     else:
         split_dirs = split_input_run(args)
         combine_split_runs(args, split_dirs)
@@ -2431,11 +2396,7 @@ def main():
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
-<<<<<<< HEAD
-            run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.dir, args.output, args.gff3)
-=======
             run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
->>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
 
 
 if __name__ == "__main__":
