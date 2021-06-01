@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 04/15/2021 (v3.0)   SQANTI3 release!
+Last Updated: 06/01/2021 (v3.1)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -46,6 +46,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2021.06.01 - updated to v3.1. Merged minor changes from Fran.
 
 2021.04.15 - updated to v3.0. Junction now reads unique/multi mapped read counts separately
 
