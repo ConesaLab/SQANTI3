@@ -2071,7 +2071,7 @@ def run(args):
     ## Generating report
     if not args.skip_report:
         print("**** Generating SQANTI3 report....", file=sys.stderr)
-        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d} {a}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc, a=args.extended_report)
+        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d} {a}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc, a=args.saturation)
         if subprocess.check_call(cmd, shell=True)!=0:
             print("ERROR running command: {0}".format(cmd), file=sys.stderr)
             sys.exit(-1)
@@ -2351,7 +2351,7 @@ def main():
     parser.add_argument('-fl', '--fl_count', help='\t\tFull-length PacBio abundance file', required=False)
     parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     parser.add_argument("--skip_report", action="store_true", default=False, help=argparse.SUPPRESS)
-    parser.add_argument("--extended_report", action="store_true", default=False, help='\t\tInclude saturation curves into report')
+    parser.add_argument("--saturation", action="store_true", default=False, help='\t\tInclude saturation curves into report')
     parser.add_argument('--isoAnnotLite' , help='\t\tRun isoAnnot Lite to output a tappAS-compatible gff3 file',required=False, action='store_true' , default=False)
     parser.add_argument('--gff3' , help='\t\tPrecomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes',required=False)
     parser.add_argument('--short_reads', help='\t\tFile Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.', required=False)

@@ -521,6 +521,7 @@ p5 <- ggplot(data=data.class, aes(x=structural_category, y=exons, fill=structura
   ggtitle("Exon Counts by Structural Classification\n\n" ) +
   theme(axis.title.x=element_blank())
 
+###Exon counts by subcategory
 p5.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=exons, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
@@ -622,6 +623,7 @@ if (!all(is.na(data.class$iso_exp))){
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Structural Category\n\n" )
 }
+###Expression, if isoform expression provided (iso_exp is in TPM) by subcategory
 if (!all(is.na(data.FSMISM$iso_exp))){
   p8.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
@@ -1228,7 +1230,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
   
   p29.a <- ggplot(data=df.RTS, aes(x=Var1, y=perc, fill=Var1)) +
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-    geom_text(label=paste(round(df.RTS$perc),"%",sep=''), nudge_y=0.3) +
+    geom_text(label=paste(df.RTS$perc,"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
     labs(x="", y="RT-switching junctions, %") +
     ggtitle("RT-Switching All Junctions\n\n" ) +
@@ -1249,7 +1251,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
   
   p29.b <- ggplot(data=df.uniqRTS, aes(x=Var1, y=perc, fill=Var1)) +
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-    geom_text(label=paste(round(df.uniqRTS$perc),"%",sep=''), nudge_y=0.3) +
+    geom_text(label=paste(df.uniqRTS$perc,"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
     labs(x="", y="RT-switching junctions, %") +
     ggtitle("Unique Junctions RT-switching\n\n" ) +
@@ -1994,14 +1996,6 @@ if (!all(is.na(data.class$dist_to_cage_peak)) | !all(is.na(data.class$polyA_moti
           axis.text.x  = element_text(size=10))+
     guides(fill = guide_legend(title = "QC Attributes") )
 }
-
-
-print(p28.a.annot)
-if (!all(is.na(data.class$polyA_motif))) {
-  print(p28.a.polyA)
-}
-
-
 
 # PLOT p30,p31,p32: percA by subcategory
 
