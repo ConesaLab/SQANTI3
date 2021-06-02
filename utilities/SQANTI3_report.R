@@ -1656,9 +1656,9 @@ p.polyA_dist_subcat.other <- ggplot(data.other, aes(x=polyA_dist, color=subcateg
 
 ### Bad quality control attributes
 if (nrow(data.junction) > 0){
-  
+  t3.data.sets=list()
+  t3.list=list()
   # (Fran) ToDo: USE COVERAGE DATA LATER
-  
   # for FSM, ISM, NIC, and NNC, plot the percentage of RTS and non-canonical junction
   x <- filter(data.class, structural_category %in% c("FSM", "ISM", "NIC", "NNC" ) & exons > 1)
   
@@ -1704,6 +1704,8 @@ if (nrow(data.junction) > 0){
     t3.Cov <- subset(t3.Cov, Coverage_SJ=='Not Coverage SJ');
     t3.Cov$Var=t3.Cov$Coverage_SJ
     t3.a.Cov$Var=t3.a.Cov$Coverage_SJ
+    t3.data.sets=list(t3.data.sets, x$min_cov)
+    t3.list = list(t3.list, t3.a.Cov)
     
   }
   
@@ -1715,6 +1717,8 @@ if (nrow(data.junction) > 0){
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
     t3.Cage <- subset(t3.Cage, Coverage_Cage=='Coverage Cage');
     t3.Cage$Var=t3.Cage$Coverage_Cage
+    t3.data.sets=list(t3.data.sets, data.class$dist_to_cage_peak)
+    t3.list = list(t3.list, t3.Cage)
     p28.a.Cage <- ggplot(t3.Cage, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[2] ,color="black") +
       geom_text(label=paste(round(t3.Cage$perc, 1),"%",sep=''), nudge_y=3) + 
@@ -1733,6 +1737,8 @@ if (nrow(data.junction) > 0){
     t3.PolyA$perc <- t3.PolyA$count.x / t3.PolyA$count.y * 100
     t3.PolyA <- subset(t3.PolyA, Coverage_PolyA=='Coverage PolyA');
     t3.PolyA$Var=t3.PolyA$Coverage_PolyA
+    t3.data.sets=list(t3.data.sets, data.class$polyA_motif)
+    t3.list = list(t3.list, t3.PolyA)
     p28.a.polyA <- ggplot(t3.PolyA, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[3] ,color="black") +
       geom_text(label=paste(round(t3.PolyA$perc, 1),"%",sep=''), nudge_y=3) + 
@@ -1840,17 +1846,6 @@ if (nrow(data.junction) > 0){
     
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
-    
-    p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
-      geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-      scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
-      scale_fill_manual(values = c(myPalette[6],myPalette[7],myPalette[10])) +
-      ylab("Transcripts, %") +
-      xlab("") +
-      mytheme +
-      theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
 
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)])
@@ -1866,18 +1861,6 @@ if (nrow(data.junction) > 0){
       guides(fill = guide_legend(title = "QC Attributes") )
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
-    
-    p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
-      geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-      scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
-      scale_fill_manual(values = c(myPalette[6],myPalette[7],myPalette[10])) +
-      ylab("Transcripts, %") +
-      xlab("") +
-      mytheme +
-      theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
-
 
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & !all(is.na(x$predicted_NMD))){
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
@@ -1903,17 +1886,7 @@ if (nrow(data.junction) > 0){
       guides(fill = guide_legend(title = "QC Attributes") )
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
-    
-    p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
-      geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-      scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
-      scale_fill_manual(values = c(myPalette[6],myPalette[7],myPalette[10])) +
-      ylab("Transcripts, %") +
-      xlab("") +
-      mytheme +
-      theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
+  
   }else if (n_t3.SJ>0 & n_t3.RTS>0) {
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
@@ -1959,43 +1932,36 @@ if (nrow(data.junction) > 0){
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
     
-    p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
-      geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-      scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
-      scale_fill_manual(values = c(myPalette[6],myPalette[7],myPalette[10])) +
-      ylab("Transcripts, %") +
-      xlab("") +
-      mytheme +
-      theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
   }
 
 }
+t3.a = rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
 
-if (!all(is.na(data.class$dist_to_cage_peak)) & !all(is.na(data.class$polyA_motif))) {
-  t3.aa=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)], t3.Cage[,c(1,5,6)], t3.PolyA[,c(1,5,6)])
+t3.list <- list(t3.a.Cov, t3.Cage, t3.PolyA)
+t3.data.sets <- list(x$min_cov, data.class$dist_to_cage_peak, data.class$polyA_motif)
+for(i in 1:length(t3.list)){
+  set=data.frame(t3.data.sets[i])
+  c=data.frame(t3.list[i])
+  if (!all(is.na(set))){
+    t.temp=t3.a
+    t3.a = rbind(t.temp, c[,c(1,5,6)])
+    t.temp=NULL
+  }
 }
-if (!all(is.na(data.class$dist_to_cage_peak)) & all(is.na(data.class$polyA_motif))) {
-  t3.aa=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)], t3.Cage[,c(1,5,6)])
-}
-if (all(is.na(data.class$dist_to_cage_peak)) & !all(is.na(data.class$polyA_motif))) {
-  t3.aa=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)], t3.PolyA[,c(1,5,6)])
-}
-if (!all(is.na(data.class$dist_to_cage_peak)) | !all(is.na(data.class$polyA_motif))) {
-  p28.aa <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
-    geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-    scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
-    scale_fill_manual(values = c(myPalette[6],myPalette[7],myPalette[10], myPalette[1], myPalette[2])) +
-    ylab("Transcripts, %") +
-    xlab("") +
-    mytheme +
-    theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-    theme(axis.text.y = element_text(size=10),
-          axis.text.x  = element_text(size=10))+
-    guides(fill = guide_legend(title = "QC Attributes") )
-}
+
+p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
+  geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
+  scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
+  scale_fill_manual(values = c(myPalette)) +
+  ylab("Transcripts, %") +
+  xlab("") +
+  mytheme +
+  theme(legend.position="bottom", axis.title.x = element_blank()) +
+  ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
+  theme(axis.text.y = element_text(size=10),
+        axis.text.x  = element_text(size=10))+
+  guides(fill = guide_legend(title = "QC Attributes") )
+p28.a
 
 # PLOT p30,p31,p32: percA by subcategory
 
@@ -3141,9 +3107,6 @@ if (!all(is.na(data.class$min_cov))) {
   print(p28.a.Cov)
 }
 print(p28.a)
-if (!all(is.na(data.class$dist_to_cage_peak)) | !all(is.na(data.class$polyA_motif))) {
-  print(p28.aa)
-}
 
 dev.off()
 
