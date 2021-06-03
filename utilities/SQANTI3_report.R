@@ -13,7 +13,7 @@ args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 junc.file <- args[2]
 saturation.curves<-args[5]
-if (saturation.curves==TRUE){
+if (saturation.curves=='True'){
   utilities.path <- args[4]
   source(paste(utilities.path, "plot.rarefaction.R", sep = "/"))
   source(paste(utilities.path, "LR.rarefaction.R", sep = "/"))
@@ -853,8 +853,7 @@ if (nrow(data.FSM) > 0) {
         max_height <- (max_height %/% 10+1) * 10;
         p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
           geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
-          scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
-                             labels=c("0","25","50","75","100")) +
+          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
           mytheme + labs(alpha = "polyA motif found") +
           scale_x_discrete(drop=F) +
           ylab("Transcripts, count")+
@@ -865,7 +864,8 @@ if (nrow(data.FSM) > 0) {
           theme(legend.justification=c(1,1), legend.position=c(1,1))
         p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
           geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
-          scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                             labels=c("0","25","50","75","100")) +
           scale_x_discrete(drop=F) +
           mytheme + labs(alpha = "polyA motif found") +
           ylab("Transcripts, %")+
@@ -2518,7 +2518,7 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
 
 #### Rarefraction plots
-if (saturation.curves==TRUE){
+if (saturation.curves=='True'){
   if (!all(is.na(data.class$FL))) {
     FL.counts <- as.matrix(data.class$FL)
     rownames(FL.counts) <- data.class$isoform
@@ -3067,7 +3067,7 @@ print(p30.a)
 print(p31)
 print(p32)
 
-if (saturation.curves==TRUE){
+if (saturation.curves=='True'){
   if (!all(is.na(data.class$FL))) {
     s <- textGrob("Saturation curves", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
     grid.arrange(s)
