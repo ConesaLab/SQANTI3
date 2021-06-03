@@ -606,7 +606,7 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript length, kb", y="Percentages", title="Structural Categories by Transcript Length\n\n\n")
+  labs(x="Transcript length, kb", y="%", title="Structural Categories by Transcript Length\n\n\n")
 
 
 
@@ -1729,7 +1729,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of Cage Support\n\n") +
+      ggtitle("CAGE Support\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
   }
   if (!all(is.na(data.class$polyA_motif))) {
@@ -1749,7 +1749,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of PolyA Support\n\n") +
+      ggtitle("PolyA Support\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
   }
   
@@ -1767,7 +1767,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Percentage of Annotation Support\n\n") +
+    ggtitle("Annotation Support\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
   #p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
   #  geom_col(position='dodge', width = 0.7,  size=0.3, fill='lightblue', color="black") +
@@ -1788,7 +1788,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Percentage of RT-switching\n\n") +
+    ggtitle("RT-switching\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
 
   p28.SJ <- ggplot(t3.SJ, aes(x=structural_category, y=perc)) +
@@ -1799,7 +1799,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Percentage of Non-Canonical Junctions\n\n") +
+    ggtitle("Non-Canonical Junctions\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
   p28.a.SJ <- ggplot(t3.a.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[7] ,color="black") +
@@ -1808,7 +1808,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Percentage of  All Canonical Junctions\n\n") +
+    ggtitle("All Canonical Junctions\n\n") +
     guides(fill = guide_legend(title = "QC Attributes") )
 
   if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))){
@@ -1820,7 +1820,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of Splice Junctions Without Short Reads Coverage\n\n") +
+      ggtitle("Splice Junctions Without Short Reads Coverage\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     p28.a.Cov <- ggplot(t3.a.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
@@ -1830,7 +1830,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of Splice Junctions With Short Reads Coverage\n\n") +
+      ggtitle("Splice Junctions With Short Reads Coverage\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
 
 
@@ -1844,8 +1844,8 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle( "Summary Features of Bad Quality\n\n" ) +
+      theme(legend.title = element_blank())
     
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
@@ -1874,7 +1874,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of NMD by Structural Category\n\n") +
+      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
@@ -1899,7 +1899,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of NMD by Structural Category\n\n") +
+      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
@@ -1909,7 +1909,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of Splice Junctions Without Short Read Coverage\n\n") +
+      ggtitle("Splice Junctions Without Short Read Coverage\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     p28.a.Cov <- ggplot(t3.a.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
@@ -1919,7 +1919,7 @@ if (nrow(data.junction) > 0){
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Percentage of Splice Junctions With Short Read Coverage\n\n") +
+      ggtitle("Splice Junctions With Short Read Coverage\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)],t3.Cov[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
@@ -3082,7 +3082,7 @@ if (saturation.curves==TRUE){
   }
 }
 
-s <- textGrob("Bad Quality Controls", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Features of Bad Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 print(p28.RTS)
 print(p28.SJ)
@@ -3096,7 +3096,7 @@ if (n_t3.SJ>0 & n_t3.RTS>0) {
   print(p28)
 }
 
-s <- textGrob("Good Quality Controls", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+s <- textGrob("Features of Good Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
 grid.arrange(s)
 if (!all(is.na(data.class$dist_to_cage_peak))) {
   print(p28.a.Cage)
