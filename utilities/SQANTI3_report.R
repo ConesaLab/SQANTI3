@@ -332,7 +332,7 @@ p.length.all <- ggplot(data.class, aes(x=length)) +
   geom_histogram(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(2:5)]) +
-  labs(x="Transcript length", y="Count", title="All Transcript Lengths") +
+  labs(x="Transcript length", y="Count", title="All Transcript Lengths Distribution") +
   theme(legend.position="top") +
   mytheme
 
@@ -366,7 +366,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_color_manual(values = cat.palette) +
-  labs(x="Transcript length", y="Count", title="Transcript Lengths by Structural Category") +
+  labs(x="Transcript length", y="Count", title="Transcript Lengths Distribution by Structural Category") +
   theme(legend.position="top") +
   mytheme
 
@@ -374,8 +374,8 @@ p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
   geom_freqpoly(binwidth=100) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(1:8)]) +
-  labs(x="Transcript length", y="Count", title="Mono- vs Multi-Exons Transcript Lengths") +
-  theme(legend.position="top") +
+  labs(x="Transcript length", y="Count", title="Mono- vs Multi- Exon Transcript Lengths Distribution") +
+  theme(legend.position="top", legend.title = element_blank()) +
   mytheme
 
 
@@ -482,7 +482,7 @@ p4 <- ggplot(data=data.class, aes(x=structural_category, y=length, fill=structur
   theme(axis.title.x=element_blank())
 
 p4.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=length, fill=subcategory)) +
-  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, aes(group=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
   scale_fill_manual(values = subcat.palette) +
@@ -555,10 +555,11 @@ p5.s2 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcat
 p6 <- ggplot(data=data.class, aes(x=novelGene)) +
   geom_bar(position="fill",aes(y = (..count..)/sum(..count..), fill=exonCat), color="black", size=0.3, width=0.5) +
   scale_x_discrete(drop=FALSE) +
-  scale_y_continuous(labels = percent, expand = c(0,0)) +
+  scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
+                     labels=c("0","25","50","75","100")) +
   scale_fill_manual(name = "Transcript type",
                     values = myPalette[c(2:5)]) +
-  ylab("% Transcripts ") +
+  ylab("Transcripts, %") +
   mytheme +
   theme(axis.title.x=element_blank()) +
   theme(legend.position="bottom") +
@@ -605,8 +606,7 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
   theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
-  labs(x="Transcript length, kb", y="Percentages", title="Structural Categories by Transcript Length\n\n\n",
-       subtitle="Normalized\n\n")
+  labs(x="Transcript length, kb", y="Percentages", title="Structural Categories by Transcript Length\n\n\n")
 
 
 
@@ -766,7 +766,7 @@ if (!all(is.na(data.class$gene_exp))){
       guides(fill=FALSE) +
       mytheme +
       theme(axis.title.x=element_blank()) + 
-      ggtitle("Gene Expression off NNC and not NNC containing Genes\n\n" )
+      ggtitle("Gene Expression of NNC And Not NNC Containing Genes\n\n" )
   }
 }
 
@@ -853,7 +853,8 @@ if (nrow(data.FSM) > 0) {
         max_height <- (max_height %/% 10+1) * 10;
         p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
           geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
-          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+          scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
+                             labels=c("0","25","50","75","100")) +
           mytheme + labs(alpha = "polyA motif found") +
           scale_x_discrete(drop=F) +
           ylab("Transcripts, count")+
@@ -1186,7 +1187,8 @@ if (nrow(data.junction) > 0){
   
   p23.a <- ggplot(data.junction, aes(x=structural_category)) +
     geom_bar(position="fill", aes(y = (..count..)/sum(..count..), fill=SJ_type), color="black",  size=0.3, width = 0.7) +
-    scale_y_continuous(labels = percent, expand = c(0,0)) +
+    scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
     ylab("Splice junctions, %") +
     mytheme +
@@ -1201,7 +1203,8 @@ if (nrow(data.junction) > 0){
   
   p23.b <- ggplot(data=t, aes(x=structural_category)) +
     geom_bar(position="fill", aes(y = (..count..)/sum(..count..), fill=all_canonical), color="black", size=0.3, width = 0.7) +
-    scale_y_continuous(labels = percent, expand = c(0,0)) +
+    scale_y_continuous(breaks=c(0.0,0.25,0.5,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
     xlab("") +
     ylab("% of Transcripts ") +
@@ -1230,7 +1233,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
   
   p29.a <- ggplot(data=df.RTS, aes(x=Var1, y=perc, fill=Var1)) +
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-    geom_text(label=paste(df.RTS$perc,"%",sep=''), nudge_y=0.3) +
+    geom_text(label=paste(round(df.RTS$perc, 2),"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
     labs(x="", y="RT-switching junctions, %") +
     ggtitle("RT-Switching All Junctions\n\n" ) +
@@ -1251,7 +1254,7 @@ if (sum(data.junction$RTS_junction=='TRUE') > 0) {
   
   p29.b <- ggplot(data=df.uniqRTS, aes(x=Var1, y=perc, fill=Var1)) +
     geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-    geom_text(label=paste(df.uniqRTS$perc,"%",sep=''), nudge_y=0.3) +
+    geom_text(label=paste(round(df.uniqRTS$perc, 2),"%",sep=''), nudge_y=0.3) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=F) +
     labs(x="", y="RT-switching junctions, %") +
     ggtitle("Unique Junctions RT-switching\n\n" ) +
