@@ -1335,27 +1335,27 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   #    theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   ## FSM cage hist number of Isoforms  
-  cage_hist_FSM=ggplot(data=data.FSM, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_FSM=ggplot(data=data.FSM, aes(x=dist_cage_Cat, fill=structural_category)) +
     geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
     mytheme  +
     theme(legend.position="bottom") +
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic FSM ",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage_hist_FSM_perc=ggplot(data=data.FSM, aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
     scale_y_continuous(labels = percent_format())+#, limits = c(0,0.3), expand = c(0,0))+
-    #    scale_x_discrete(drop=F) +
     mytheme  +
     theme(legend.position="bottom") +
-    #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic FSM",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage.titles.FSM<-list("Distance to CAGE Peak of Multi-Exonic FSM\n\nAlternative 3' End",
@@ -1378,7 +1378,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.FSM[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.FSM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
@@ -1388,7 +1389,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.FSM[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.FSM.list[[i]] = cage.FSM.s
       cage.FSM.list.a[[i]] = cage.FSM.s.perc
@@ -1404,7 +1406,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage_hist_ISM_perc=ggplot(data=data.ISM, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -1415,7 +1418,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Transcripts, %")+
     xlab("Distance to CAGE Peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage.titles.ISM<-list("Distance to CAGE Peak of Multi-Exonic ISM\n\n3' Fragment",
@@ -1440,7 +1444,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.ISM[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.ISM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
@@ -1450,7 +1455,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.ISM[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.ISM.list[[i]] = cage.ISM.s
       cage.ISM.list.a[[i]] = cage.ISM.s.perc
@@ -1511,7 +1517,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage_hist_NIC_perc=ggplot(data=data.NIC, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -1522,7 +1529,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage.titles.NIC<-list("Distance to CAGE Peak of Multi-Exonic NIC\n\nCombination of Annotated Junctions",
@@ -1545,7 +1553,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NIC[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NIC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
@@ -1555,7 +1564,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NIC[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NIC.list[[i]] = cage.NIC.s
       cage.NIC.list.a[[i]] = cage.NIC.s.perc
@@ -1570,7 +1580,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage_hist_NNC_perc=ggplot(data=data.NNC, aes(x=dist_cage_Cat , fill=structural_category)) +
@@ -1581,7 +1592,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
-              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+              alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   cage.titles.NNC<-list("Distance to CAGE Peak of Multi-Exonic NNC\n\nCombination of Annotated Junctions",
@@ -1606,7 +1618,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NNC[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NNC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
@@ -1616,7 +1629,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NNC[i],
-                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
+                  subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
+                  alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NNC.list[[i]] = cage.NNC.s
       cage.NNC.list.a[[i]] = cage.NNC.s.perc
@@ -1730,7 +1744,7 @@ if (nrow(data.junction) > 0){
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle("CAGE Support\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      theme(legend.title = element_blank())
   }
   if (!all(is.na(data.class$polyA_motif))) {
     x[which(is.na(x$polyA_motif)),"Coverage_PolyA"]="Not Coverage PolyA"
@@ -1767,8 +1781,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Annotation Support\n\n") +
-    guides(fill = guide_legend(title = "QC Attributes") )
+    ggtitle("Annotation Support\n\n") 
   #p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
   #  geom_col(position='dodge', width = 0.7,  size=0.3, fill='lightblue', color="black") +
   #  geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.5) +
@@ -1782,25 +1795,23 @@ if (nrow(data.junction) > 0){
 
   p28.RTS <- ggplot(t3.RTS, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[11], color="black") +
-    geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), nudge_y=1.1) +
+    geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), nudge_y=1) +
     scale_fill_manual(values = myPalette[9:11]) +
     ylab("Isoforms, %") +
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("RT-switching\n\n") +
-    guides(fill = guide_legend(title = "QC Attributes") )
+    ggtitle("RT-switching\n\n")
 
   p28.SJ <- ggplot(t3.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[9] ,color="black") +
-    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.02) + 
+    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.5) + 
     scale_fill_manual(values = myPalette[9:11]) +
     ylab("Isoforms, %") +
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Non-Canonical Junctions\n\n") +
-    guides(fill = guide_legend(title = "QC Attributes") )
+    ggtitle("Non-Canonical Junctions\n\n")
   p28.a.SJ <- ggplot(t3.a.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[7] ,color="black") +
     geom_text(label=paste(round(t3.a.SJ$perc, 1),"%",sep=''), nudge_y=3) + 
@@ -1808,8 +1819,7 @@ if (nrow(data.junction) > 0){
     xlab("") +
     mytheme +
     theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("All Canonical Junctions\n\n") +
-    guides(fill = guide_legend(title = "QC Attributes") )
+    ggtitle("All Canonical Junctions\n\n")
 
   if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))){
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
