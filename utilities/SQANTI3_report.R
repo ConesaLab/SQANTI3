@@ -894,7 +894,8 @@ if (nrow(data.FSM) > 0) {
 
   p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..) , alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
-    scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha = "polyA motif found") +
     ylab("FSM transcripts, %")+
@@ -920,7 +921,8 @@ if (nrow(data.FSM) > 0) {
     # plot histogram of distance to polyA site, Y-axis percentage
     p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
       geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[4], color="black", size=0.3)+
-      scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                         labels=c("0","25","50","75","100")) +
       scale_x_discrete(drop=F) +
       mytheme  +
       ylab("Percent of FSM transcripts")+
@@ -962,7 +964,8 @@ if (nrow(data.FSM) > 0) {
           theme(legend.justification=c(1,1), legend.position=c(1,1))
         p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
           geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
-          scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                             labels=c("0","25","50","75","100")) +
           scale_x_discrete(drop=F) +
           mytheme + labs(alpha = "TSS within a CAGE peak") +
           ylab("Transcripts, %")+
@@ -989,7 +992,8 @@ if (nrow(data.FSM) > 0) {
   
   p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..) , alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
-    scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("FSM transcripts, %")+
@@ -1014,7 +1018,8 @@ if (nrow(data.FSM) > 0) {
     # plot histogram of distance to start site, Y-axis absolute count
     p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
       geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[6], color="black", size=0.3)+
-      scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                         labels=c("0","25","50","75","100")) +
       scale_x_discrete(drop=F) +
       mytheme +
       ylab("FSM transcripts, %")+
@@ -1054,7 +1059,8 @@ if (nrow(data.ISM) > 0) {
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
         geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
-        scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         scale_x_discrete(drop=F) +
         mytheme + labs(alpha = "polyA motif found") +
         ylab("Transcripts, %")+
@@ -1091,7 +1097,8 @@ if (nrow(data.ISM) > 0) {
   # plot histogram of distance to polyA site, Y-axis percentages
   p21.dist3.ISM.b <- ggplot(data=data.ISM, aes(x=diffTTSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
-    scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha = "polyA motif found") +
     ylab("ISM transcripts, %")+
@@ -1117,7 +1124,8 @@ if (nrow(data.ISM) > 0) {
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.b <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
-    scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
     ylab("FSM transcripts, %")+
@@ -1155,7 +1163,8 @@ if (nrow(data.ISM) > 0) {
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
         geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
-        scale_y_continuous(labels = percent_format(), limits = c(0,1), expand = c(0,0))+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         scale_x_discrete(drop=F) +
         mytheme + labs(alpha = "TSS within a CAGE peak") +
         ylab("Transcripts, %")+
@@ -1207,7 +1216,7 @@ if (nrow(data.junction) > 0){
                        labels=c("0","25","50","75","100")) +
     scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
     xlab("") +
-    ylab("% of Transcripts ") +
+    ylab("Transcripts, %") +
     mytheme +
     guides(fill = guide_legend(keywidth = 0.7, keyheight = 0.3))+
     theme(legend.position="bottom", legend.title=element_blank())  +
@@ -1348,7 +1357,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   
   cage_hist_FSM_perc=ggplot(data=data.FSM, aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
-    scale_y_continuous(labels = percent_format())+#, limits = c(0,0.3), expand = c(0,0))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     mytheme  +
     theme(legend.position="bottom") +
     ylab("Transcripts, %")+
@@ -1383,7 +1393,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.FSM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
-        scale_y_continuous(labels = percent_format())+#, limits = c(0,0.3), expand = c(0,0))+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         mytheme  +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
@@ -1412,7 +1423,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   
   cage_hist_ISM_perc=ggplot(data=data.ISM, aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
-    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
@@ -1449,7 +1461,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.ISM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
-        scale_y_continuous(labels = percent_format())+#, limits = c(0,0.3), expand = c(0,0))+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         mytheme  +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
@@ -1523,7 +1536,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   
   cage_hist_NIC_perc=ggplot(data=data.NIC, aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar( aes(y = (..count..)/sum(..count..),alpha=within_cage_peak),color="black", size=0.3, fill=myPalette[3]) +
-    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
@@ -1558,7 +1572,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NIC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
-        scale_y_continuous(labels = percent_format())+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         mytheme  +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
@@ -1586,7 +1601,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   
   cage_hist_NNC_perc=ggplot(data=data.NNC, aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
-    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
     mytheme + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
@@ -1623,7 +1639,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
         theme(axis.text.x = element_text(angle = 90, hjust = 1))
       cage.NNC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
-        scale_y_continuous(labels = percent_format())+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
         mytheme  +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
@@ -1738,7 +1755,7 @@ if (nrow(data.junction) > 0){
     t3.list = list(t3.list, t3.Cage)
     p28.a.Cage <- ggplot(t3.Cage, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[2] ,color="black") +
-      geom_text(label=paste(round(t3.Cage$perc, 1),"%",sep=''), nudge_y=3) + 
+      geom_text(label=paste(round(t3.Cage$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
@@ -1758,7 +1775,7 @@ if (nrow(data.junction) > 0){
     t3.list = list(t3.list, t3.PolyA)
     p28.a.polyA <- ggplot(t3.PolyA, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[3] ,color="black") +
-      geom_text(label=paste(round(t3.PolyA$perc, 1),"%",sep=''), nudge_y=3) + 
+      geom_text(label=paste(round(t3.PolyA$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
@@ -1776,7 +1793,7 @@ if (nrow(data.junction) > 0){
   t3.annot$Var=t3.annot$Annotation
   p28.a.annot <- ggplot(t3.annot, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[6] ,color="black") +
-    geom_text(label=paste(round(t3.annot$perc, 1),"%",sep=''), nudge_y=3) + 
+    geom_text(label=paste(round(t3.annot$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
     ylab("Isoforms, %") +
     xlab("") +
     mytheme +
@@ -1795,7 +1812,7 @@ if (nrow(data.junction) > 0){
 
   p28.RTS <- ggplot(t3.RTS, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[11], color="black") +
-    geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), nudge_y=1) +
+    geom_text(label=paste(round(t3.RTS$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
     scale_fill_manual(values = myPalette[9:11]) +
     ylab("Isoforms, %") +
     xlab("") +
@@ -1805,7 +1822,7 @@ if (nrow(data.junction) > 0){
 
   p28.SJ <- ggplot(t3.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[9] ,color="black") +
-    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.5) + 
+    geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
     scale_fill_manual(values = myPalette[9:11]) +
     ylab("Isoforms, %") +
     xlab("") +
@@ -1814,7 +1831,7 @@ if (nrow(data.junction) > 0){
     ggtitle("Non-Canonical Junctions\n\n")
   p28.a.SJ <- ggplot(t3.a.SJ, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[7] ,color="black") +
-    geom_text(label=paste(round(t3.a.SJ$perc, 1),"%",sep=''), nudge_y=3) + 
+    geom_text(label=paste(round(t3.a.SJ$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
     ylab("Isoforms, %") +
     xlab("") +
     mytheme +
@@ -1824,24 +1841,22 @@ if (nrow(data.junction) > 0){
   if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))){
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
-      geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), nudge_y=1.1) +
+      geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Splice Junctions Without Short Reads Coverage\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Splice Junctions Without Short Reads Coverage\n\n")
     p28.a.Cov <- ggplot(t3.a.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
-      geom_text(label=paste(round(t3.a.Cov$perc, 1),"%",sep=''), nudge_y=3) +
+      geom_text(label=paste(round(t3.a.Cov$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Splice Junctions With Short Reads Coverage\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Splice Junctions With Short Reads Coverage\n\n") 
 
 
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
@@ -1871,21 +1886,20 @@ if (nrow(data.junction) > 0){
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      theme(legend.title = element_blank())
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
 
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & !all(is.na(x$predicted_NMD))){
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
-      geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
+      geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n")
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
@@ -1896,41 +1910,38 @@ if (nrow(data.junction) > 0){
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      theme(legend.title = element_blank())
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
   
   }else if (n_t3.SJ>0 & n_t3.RTS>0) {
     p28.NMD <- ggplot(t3.NMD, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[5], color="black") +
-      geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), nudge_y=1.1) +
+      geom_text(label=paste(round(t3.NMD$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Nonsense-Mediated Decay by Structural Category\n\n")
     p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
-      geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), nudge_y=1.1) +
+      geom_text(label=paste(round(t3.Cov$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Splice Junctions Without Short Read Coverage\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Splice Junctions Without Short Read Coverage\n\n")
     p28.a.Cov <- ggplot(t3.a.Cov, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[10], color="black") +
-      geom_text(label=paste(round(t3.a.Cov$perc, 1),"%",sep=''), nudge_y=3) +
+      geom_text(label=paste(round(t3.a.Cov$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) +
       scale_fill_manual(values = myPalette[9:11]) +
       ylab("Isoforms, %") +
       xlab("") +
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
-      ggtitle("Splice Junctions With Short Read Coverage\n\n") +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      ggtitle("Splice Junctions With Short Read Coverage\n\n")
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)],t3.Cov[,c(1,5,6)], t3.NMD[,c(1,5,6)])
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
@@ -1941,7 +1952,7 @@ if (nrow(data.junction) > 0){
       mytheme +
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
-      guides(fill = guide_legend(title = "QC Attributes") )
+      theme(legend.title = element_blank())
     #good quality control
     t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
     
@@ -1973,8 +1984,21 @@ p28.a <- ggplot(data=t3.a, aes(x=structural_category, y=perc, fill= Var)) +
   ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
   theme(axis.text.y = element_text(size=10),
         axis.text.x  = element_text(size=10))+
-  guides(fill = guide_legend(title = "QC Attributes") )
-p28.a
+  theme(legend.title = element_blank())
+
+#TSS ratio
+data.ratio = rbind(data.refmatch[,c(6,47)], data.ISM[,c(6,47)])
+require(scales)
+p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
+  geom_density(alpha=0.6)+
+  labs(x="TSS ratio, log2", y="Density", title="TSS Ratio\n\nFSM Reference Match vs ISM\n\n") +
+  scale_fill_manual(values = myPalette, breaks=c("full-splice_match", "incomplete-splice_match"),
+                    labels=c("FSM reference match", "ISM"), drop=F)+
+  scale_x_continuous(trans='log2', breaks = trans_breaks("log2", function(x) 2^x),
+                     labels = trans_format("log2", math_format(2^.x)))+
+  geom_vline(xintercept=1, linetype="dashed", color = "red")+
+  mytheme +
+  theme(legend.title = element_blank())
 
 # PLOT p30,p31,p32: percA by subcategory
 
@@ -3120,6 +3144,7 @@ if (!all(is.na(data.class$min_cov))) {
   print(p28.a.Cov)
 }
 print(p28.a)
+p28.a.ratio
 
 dev.off()
 
