@@ -604,7 +604,6 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   scale_fill_manual(values = cat.palette, guide='none', name="Structural Category") +
   mytheme+
   theme(legend.justification=c(1,1), legend.position=c(1,1))  +
-  theme(legend.position="bottom") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   labs(x="Transcript length, kb", y="%", title="Structural Categories by Transcript Length\n\n\n")
 
@@ -1027,7 +1026,7 @@ if (nrow(data.FSM) > 0) {
       labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
            subtitle="Negative values indicate downstream of annotated TSS\n\n") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1), legend.position='bottom')
+      theme(legend.justification=c(1,1), legend.position=c(1,1))
   }
 }
 
