@@ -141,8 +141,6 @@ def get_TSS_bed(corrected_gtf, chr_order):
                 else:
                     inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
                     outside.write(chr + "\t" + str(start_out) + "\t" + str(end_out) + "\t" + iso_id + "\t0\t" + strand + "\n")
-        outside.close()
-    inside.close()
     in_handle.close()
     i = pybedtools.BedTool(tmp_in)
     o = pybedtools.BedTool(tmp_out)
