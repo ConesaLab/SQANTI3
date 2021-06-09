@@ -2351,7 +2351,7 @@ def main():
     parser.add_argument('-fl', '--fl_count', help='\t\tFull-length PacBio abundance file', required=False)
     parser.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     parser.add_argument("--saturation", action="store_true", default=False, help='\t\tInclude saturation curves into report')
-    parser.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help='\t\tcreate both pdf and html report')
+    parser.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help='\t\tselect report format\t\t--html\t\t--pdf\t\t--both\t\t--skip')
     parser.add_argument('--isoAnnotLite' , help='\t\tRun isoAnnot Lite to output a tappAS-compatible gff3 file',required=False, action='store_true' , default=False)
     parser.add_argument('--gff3' , help='\t\tPrecomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes',required=False)
     parser.add_argument('--short_reads', help='\t\tFile Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.', required=False)
