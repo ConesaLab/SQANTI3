@@ -1986,17 +1986,19 @@ p28.a
 
 #TSS ratio
 data.ratio = rbind(data.refmatch[,c(6,47)], data.ISM[,c(6,47)])
-require(scales)
-p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
-  geom_density(alpha=0.6)+
-  labs(x="TSS ratio, log2", y="Density", title="TSS Ratio\n\nFSM Reference Match vs ISM\n\n") +
-  scale_fill_manual(values = myPalette, breaks=c("full-splice_match", "incomplete-splice_match"),
-                    labels=c("FSM reference match", "ISM"), drop=F)+
-  scale_x_continuous(trans='log2', breaks = trans_breaks("log2", function(x) 2^x),
-                     labels = trans_format("log2", math_format(2^.x)))+
-  geom_vline(xintercept=1, linetype="dashed", color = "red")+
-  mytheme +
-  theme(legend.title = element_blank())
+if (!all(is.na(data.ratio$ratio_TSS))){
+  require(scales)
+  p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
+    geom_density(alpha=0.6)+
+    labs(x="TSS ratio, log2", y="Density", title="TSS Ratio\n\nFSM Reference Match vs ISM\n\n") +
+    scale_fill_manual(values = myPalette, breaks=c("full-splice_match", "incomplete-splice_match"),
+                      labels=c("FSM reference match", "ISM"), drop=F)+
+    scale_x_continuous(trans='log2', breaks = trans_breaks("log2", function(x) 2^x),
+                       labels = trans_format("log2", math_format(2^.x)))+
+    geom_vline(xintercept=1, linetype="dashed", color = "red")+
+    mytheme +
+    theme(legend.title = element_blank())
+}
 
 # PLOT p30,p31,p32: percA by subcategory
 
@@ -3142,7 +3144,9 @@ if (!all(is.na(data.class$min_cov))) {
   print(p28.a.Cov)
 }
 print(p28.a)
-p28.a.ratio
+if (!all(is.na(data.ratio$ratio_TSS))){
+  print(p28.a.ratio)
+}
 
 dev.off()
 
