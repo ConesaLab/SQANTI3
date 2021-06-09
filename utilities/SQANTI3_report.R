@@ -2003,34 +2003,41 @@ if (!all(is.na(data.ratio$ratio_TSS))){
 # PLOT p30,p31,p32: percA by subcategory
 
 
-p30 <- ggplot(data=data.FSMISM, aes(y=perc_A_downstream_TTS, x=structural_category, fill=subcategory)) +
-  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+p30 <- ggplot(data=data.FSMISM, 
+              aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, position = "dodge") +
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
-  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
-  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   labs(title="Possible Intra-Priming by Structural Category\n\n",
        subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
-  theme(axis.title.x=element_blank()) +
-  scale_fill_manual(values=subcat.palette, drop=T)
-p30.a <- ggplot(data=data.other, aes(y=perc_A_downstream_TTS, x=structural_category, fill=subcategory)) +
-  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+        legend.direction = "horizontal", legend.box = "vertical") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  theme(strip.background = element_rect(color = "white"),
+        strip.placement = "outside", strip.text = element_text(size = 10)) +
+  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
+  scale_fill_manual(values=subcat.palette, drop=T) +
+  facet_grid(~structural_category, scales = "free", switch = "x")
+
+p30.a <- ggplot(data=data.other, 
+                aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, position = "dodge") +
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
-  theme(axis.text.x = element_text(angle = 45)) +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
-  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
-  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   labs(title="Possible Intra-Priming by Structural Category\n\n",
        subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
-  theme(axis.title.x=element_blank()) +
-  scale_fill_manual(values=subcat.palette, drop=T)
+  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
+        legend.direction = "horizontal", legend.box = "vertical") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  theme(strip.background = element_rect(color = "white"),
+        strip.placement = "outside", strip.text = element_text(size = 10)) +
+  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
+  scale_fill_manual(values=subcat.palette, drop=T) +
+  facet_grid(~structural_category, scales = "free", switch = "x")
 
 p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=exonCat)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
