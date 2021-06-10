@@ -24,13 +24,13 @@ if (saturation.curves=='True'){
 }
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1];
-report.file <- paste(report.prefix, "sqanti_report.pdf", sep="_");
+report.file <- paste0(report.prefix, "_sqanti_report/","SQANTI3_report.pdf");
 class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep='');
 
 
 #********************** Packages (install if not found)
 
-list_of_packages <- c("ggplot2", "scales", "reshape", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify")
+list_of_packages <- c("ggplot2", "scales", "reshape", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify", "rmarkdown")
 req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if("NOISeq" %in% req_packages) BiocManager::install("NOISeq")
@@ -45,6 +45,7 @@ library(gridExtra)
 library(grid)
 library(dplyr)
 library(NOISeq)
+library(rmarkdown)
 
 # ***********************
 # ***********************
