@@ -2636,6 +2636,36 @@ if (saturation.curves=='True'){
 #  }
 #}
 
+# table data arrange 
+if (sum(!is.na(data.class$polyA_dist)) > 10) {
+  df.polyA <- as.data.frame(group_by(data.class, by=structural_category) %>%
+                              dplyr::summarise(count=dplyr::n(),
+                                               polyA_detected=sum(!is.na(polyA_motif)),
+                                               polyA_detected_perc=round(polyA_detected*100/count)))
+  df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
+  df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
+  
+  df.polyA_subcat <- as.data.frame(group_by(data.class, by=subcategory) %>%
+                                     dplyr::summarise(count=dplyr::n(),
+                                                      polyA_detected=sum(!is.na(polyA_motif)),
+                                                      polyA_detected_perc=round(polyA_detected*100/count)))
+}
+
+
+
+
+if (!all(is.na(data.class$dist_to_cage_peak))){
+  df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
+                             dplyr::summarise(count=dplyr::n(),
+                                              cage_detected=length(which(within_cage_peak == "True")),
+                                              cage_detected_perc=round(cage_detected*100/count)))
+  
+  df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
+                                  dplyr::summarise(count=dplyr::n(),
+                                                   cage_detected=length(which(within_cage_peak == "True")),
+                                                   cage_detected_perc=round(cage_detected*100/count)))
+}
+
 ###** Output plots
 
 if (args[6]== 'both') {

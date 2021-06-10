@@ -1,8 +1,7 @@
 generatePDFreport = function() 
   {
   pdf(file=report.file, width = 6.5, height = 6.5)
-  
-  
+
   #cover
   grid.newpage()
   cover <- textGrob("SQANTI3 report",
@@ -338,18 +337,12 @@ generatePDFreport = function()
     print(p.polyA_dist)
     
     # PLOT polyA motif ranking, distance from 3' end
-    df.polyA <- as.data.frame(group_by(data.class, by=structural_category) %>%
-                                dplyr::summarise(count=dplyr::n(),
-                                                 polyA_detected=sum(!is.na(polyA_motif)),
-                                                 polyA_detected_perc=round(polyA_detected*100/count)))
     
     table.polyA <- tableGrob(df.polyA, rows = NULL, cols = c("Category","Count","polyA\nDetected","%"))
     title.polyA <- textGrob("Number of polyA Motifs Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-12)
     gt.polyA <- gTree(children=gList(table.polyA, title.polyA))
     
     
-    df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
-    df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
     table.polyA_freq <- tableGrob(df.polyA_freq, rows = NULL, cols = c("Motif", "Count", "%"))
     title.polyA_freq <- textGrob("Frequency of PolyA Motifs", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
     gt.polyA_freq <- gTree(children=gList(title.polyA_freq, table.polyA_freq))
@@ -363,18 +356,14 @@ generatePDFreport = function()
     print(p.polyA_dist_subcat)
     print(p.polyA_dist_subcat.other)
     # PLOT polyA motif ranking, distance from 3' end by subcategory
-    df.polyA <- as.data.frame(group_by(data.class, by=subcategory) %>%
-                                dplyr::summarise(count=dplyr::n(),
-                                                 polyA_detected=sum(!is.na(polyA_motif)),
-                                                 polyA_detected_perc=round(polyA_detected*100/count)))
     
-    table.polyA <- tableGrob(df.polyA, rows = NULL, cols = c("Subcategory","Count","polyA\nDetected","%"))
+    
+    df.polyA_subcat <- tableGrob(df.polyA_subcat, rows = NULL, cols = c("Subcategory","Count","polyA\nDetected","%"))
     title.polyA <- textGrob("Number of polyA Motifs Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
-    gt.polyA <- gTree(children=gList(table.polyA, title.polyA))
+    gt.polyA <- gTree(children=gList(df.polyA_subcat, title.polyA))
     
     
-    df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
-    df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
+
     table.polyA_freq <- tableGrob(df.polyA_freq, rows = NULL, cols = c("Motif", "Count", "%"))
     title.polyA_freq <- textGrob("Frequency of PolyA Motifs", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
     gt.polyA_freq <- gTree(children=gList(title.polyA_freq, table.polyA_freq))
@@ -425,21 +414,12 @@ generatePDFreport = function()
         print(cage.NNC.list.a[i])
       }
     }
-    
-    
-    df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
-                               dplyr::summarise(count=dplyr::n(),
-                                                cage_detected=length(which(within_cage_peak == "True")),
-                                                cage_detected_perc=round(cage_detected*100/count)))
-    
+  
     table.cage <- tableGrob(df.cage, rows = NULL, cols = c("Category","Count","CAGE\nDetected","%"))
     title.cage <- textGrob("Number of CAGE Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
     gt.cage <- gTree(children=gList(table.cage, title.cage))
     
-    df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
-                                    dplyr::summarise(count=dplyr::n(),
-                                                     cage_detected=length(which(within_cage_peak == "True")),
-                                                     cage_detected_perc=round(cage_detected*100/count)))
+    
     
     table.cage_subc <- tableGrob(df.cage_subc, rows = NULL, cols = c("Subcategory","Count","CAGE\nDetected","%"))
     title.cage_subc <- textGrob("Number of CAGE Detected", gp=gpar(fontface="italic", fontsize=15), vjust=-18)
