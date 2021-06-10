@@ -61,18 +61,41 @@ table3MD$Frac <- round(freqCat$Freq*100 / uniq_sj_count, 2)
 colnames(table3MD) <- c("Category","# SJs","Percent")
 rownames(table3MD) <- NULL
 
+
+
 ### Comparison with Annotated TSS and TTS
 
 # Table: Number of PolyA Motifs Detected
-#df.polyA_MD <- df.polyA
-#rownames(df.polyA_MD) <- NULL
-#colnames(df.polyA_MD) <- c("Category","Count","polyA\nDetected","%")
+if (exists("df.polyA")) {
+    df.polyA_MD <- df.polyA
+    rownames(df.polyA_MD) <- NULL
+    colnames(df.polyA_MD) <- c("Category","Count","polyA\nDetected","%")
+}
+
 
 # Table: Frequency of polyA motifs
-#df.polyA_freq_MD <- df.polyA_freq
-#rownames(df.polyA_freq_MD) <- NULL
-#colnames(df.polyA_freq_MD) <- c("Motif", "Count", "%")
+if (exists("df.polyA_freq")) {
+  df.polyA_freq_MD <- df.polyA_freq
+  rownames(df.polyA_freq_MD) <- NULL
+  colnames(df.polyA_freq_MD) <- c("Motif", "Count", "%")
+}
 
+if (exists("df.polyA_subcat")) {
+  df.polyA_subcat_MD <- df.polyA_subcat
+  rownames(df.polyA_subcat_MD) <- NULL
+  colnames(df.polyA_subcat_MD) <- c("Category","Count","polyA\nDetected","%")
+}
+
+if (exists("df.cage")) {
+  df.cage_MD <- df.cage
+  rownames(df.cage_MD) <- NULL
+  colnames(df.cage_MD) <- c("Category","Count","CAGE\nDetected","%")
+}
+if (exists("df.cage_subc")) {
+  df.cage_subc_MD <- df.cage_subc
+  rownames(df.cage_subc_MD) <- NULL
+  colnames(df.cage_subc_MD) <- c("Subcategory","Count","CAGE\nDetected","%")
+}
 
 #### Condition check (check whether show plots or not)
 
@@ -281,7 +304,7 @@ cat('\n')
 ```
 
 ```{r p.length.exon.sample, echo=TRUE, eval = exists("p.length.exon.sample"), results ='asis'}
-cat ('\n####',"Mono- vs Multi-Exons, By Sample", '\n')
+cat ('\n####'," Mono- vs Multi-Exons, By Sample", '\n')
 ggplotly(p.length.exon.sample)%>%
   layout(margin = list(r = 130))
 cat ('\n')
@@ -574,32 +597,58 @@ cat('\n')
 PolyA Distance Analysis
 -->
 
-```{r , echo=FALSE, eval = polyA_dist_provided, results ='asis', warning=FALSE}
-cat("## PolyA Distance Analysis {.tabset .tabset-fade }", '\n')
+```{r , echo=FALSE, eval = exists("p.polyA_dist") || exists("p.polyA_dist_subcat"), results ='asis', warning=FALSE}
+cat ("## PolyA Distance Analysis {.tabset .tabset-fade }", '\n')
 ```
 
 <!-- 1 -->
 
-```{r p.polyA_dist, echo=FALSE, eval = polyA_dist_provided, results ='asis', warning=FALSE}
-cat ('\n###'," PolyA motif", '\n')
+```{r , echo=FALSE, eval = exists("p.polyA_dist"), results ='asis', warning=FALSE}
+cat ('\n###'," PolyA Distance Analysis by categories", '\n')
 ggplotly(p.polyA_dist)%>%
   layout(margin = list(r = 130))
 cat ('\n')
 
-#datatable(df.polyA_MD,
-#          options = list(dom = 't'),
-#          caption = htmltools::tags$caption(
-#            style = 'caption-side: bottom; text-align: center;',
-#            htmltools::em('Number of PolyA Motifs Detected'))
-#)
+datatable(df.polyA_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of PolyA Motifs Detected'))
+)
 
-#datatable(df.polyA_freq,
-#          options = list(dom = 't'),
-#          caption = htmltools::tags$caption(
-#            style = 'caption-side: bottom; text-align: center;',
-#            htmltools::em('Frequency of PolyA Motifs'))
-#)
+datatable(df.polyA_freq,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Frequency of PolyA Motifs'))
+)
 ```
+
+
+```{r p.polyA_dist_sub, echo=FALSE, eval = exists("p.polyA_dist_subcat"), results ='asis', warning=FALSE}
+cat ('\n###',"PolyA Distance Analysis by subcategories", '\n')
+ggplotly(p.polyA_dist_subcat)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+
+ggplotly(p.polyA_dist_subcat.other)
+
+datatable(df.polyA_subcat_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of PolyA Motifs Detected'))
+)
+
+datatable(df.polyA_freq,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Frequency of PolyA Motifs'))
+)
+```
+
+
 
 <!--
 CAGE distances analysis
@@ -608,56 +657,117 @@ CAGE distances analysis
   3.Multi-exonic NIC/NCC
 -->
 
-```{r dist_to_cage_peak, echo = FALSE, eval = dist_to_cage_peak_provided, results ='asis', warning = FALSE}
+```{r , echo = FALSE, eval = !all(is.na(data.class$dist_to_cage_peak)), results ='asis', warning = FALSE}
 cat ('\n##'," CAGE distances analysis {.tabset .tabset-fade }", '\n')
+```
+
+```{r , echo = FALSE, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc"), results ='asis', warning = FALSE}
 cat ('\n###'," Multi-exonic FSM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r , echo = FALSE, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc"), results ='asis', warning = FALSE}
 cat ('\n####', "Distance to CAGE peak of multi-exonic FSM", '\n')
 ggplotly(cage_hist_FSM,cliponaxis = FALSE) %>%
     layout(margin = list(r = 130))
 ggplotly(cage_hist_FSM_perc,cliponaxis = FALSE) %>%
     layout(margin = list(r = 130))
+
+if (exists("cage.FSM.list")) {
+    if (length(cage.FSM.list)>0) {
+    for (i in 1:length(cage.FSM.list)){
+      print(cage.FSM.list[i])
+      print(cage.FSM.list.a[i])
+    }
+  }
+}
+
 cat ('\n')
+```
 
-
+```{r , echo = FALSE, eval = exists("cage_hist_ISM") , results ='asis', warning = FALSE}
 cat ('\n###'," Multi-exonic ISM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r , echo = FALSE, eval = exists("cage_hist_ISM"), results ='asis', warning = FALSE}
 cat ('\n####', "Distance to CAGE peak of multi-exonic ISM", '\n')
 ggplotly(cage_hist_ISM) %>%
     layout(margin = list(r = 130))
 ggplotly(cage_hist_ISM_perc) %>%
     layout(margin = list(r = 130))
 
+if (exists("cage.ISM.list")) {
+    if (length(cage.ISM.list)>0) {
+    for (i in 1:length(cage.ISM.list)){
+      print(cage.ISM.list[i])
+      print(cage.ISM.list.a[i])
+    }
+  }
+}
 cat ('\n')
+```
 
-#cat ('\n####', "Distance to CAGE peak of multi-exonic ISM 5prime fragments", '\n')
-#ggplotly(cage_hist_ISM5frag) %>%
-#    layout(margin = list(r = 130))
-#ggplotly(cage_hist_ISM5frag_perc) %>%
-#    layout(margin = list(r = 130))
-#cat ('\n')
 
-#cat ('\n####', "Distance to CAGE peak of multi-exonic ISM 3prime fragments", '\n')
-#ggplotly(cage_hist_ISM3frag) %>%
-#    layout(margin = list(r = 130))
-#ggplotly(cage_hist_ISM3frag_perc) %>%
-#    layout(margin = list(r = 130))
-#cat ('\n')
-
+```{r , echo = FALSE, eval = exists("cage_hist_NIC") || exists("cage_hist_NNC"), results ='asis', warning = FALSE}
 cat ('\n###'," Multi-exonic NIC/NNC {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r , echo = FALSE, eval = exists("cage_hist_NIC"), results ='asis', warning = FALSE}
 cat ('\n####', "Distance to CAGE peak of multi-exonic NIC", '\n')
 ggplotly(cage_hist_NIC) %>%
     layout(margin = list(r = 130))
 ggplotly(cage_hist_NIC_perc)%>%
     layout(margin = list(r = 130))
-cat ('\n')
 
+if (exists("cage_hist_NIC")) {
+    if (length(cage.NIC.list)>0) {
+    for (i in 1:length(cage.NIC.list)){
+      print(cage.NIC.list[i])
+      print(cage.NIC.list.a[i])
+    }
+  }
+}
+
+cat ('\n')
+```
+
+```{r , echo = FALSE, eval = exists("cage_hist_NNC"), results ='asis', warning = FALSE}
 cat ('\n####', "Distance to CAGE peak of multi-exonic NNC", '\n')
 ggplotly(cage_hist_NNC) %>%
     layout(margin = list(r = 130))
 ggplotly(cage_hist_NNC_perc)%>%
     layout(margin = list(r = 130))
+
+if (exists("cage_hist_NNC")) {
+    if (length(cage.NNC.list)>0) {
+    for (i in 1:length(cage.NNC.list)){
+      print(cage.NNC.list[i])
+      print(cage.NNC.list.a[i])
+    }
+  }
+}
 cat ('\n')
 
 ```
+
+
+```{r , echo = FALSE, eval = exists("df.cage_MD") || exists("df.cage_subc_MD"), results ='asis', warning = FALSE}
+cat ('\n###',"CAGE Detected(Number) {.tabset .tabset-fade .tabset-dropdown}", '\n')
+datatable(df.cage_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of CAGE Detected'))
+)
+
+datatable(df.cage_subc_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of CAGE Detected'))
+)
+
+```
+
 
 <!--
 Redundancy Analysis
@@ -666,7 +776,7 @@ Redundancy Analysis
   3. FSM+ISM
 -->
 
-```{r FSM_provided_ISM_provided, echo = FALSE, eval = FSM_provided || ISM_provided, results ='asis', warning = FALSE}
+```{r FSM_provided_ISM_provided, echo = FALSE, eval = nrow(data.ISM) > 0 || nrow(data.FSM) > 0, results ='asis', warning = FALSE}
 cat ('\n##'," Redundancy Analysis {.tabset .tabset-fade }", '\n')
 ```
 
@@ -788,6 +898,7 @@ Intra−Priming Quality Check
 
 ```{r p30, echo=FALSE, results ='asis', warning = FALSE}
 cat ('\n###',"By Structural Category", '\n')
+ggplotly(p30)
 ggplotly(p30.a)
 cat ('\n')
 ```
@@ -814,21 +925,62 @@ ggplotly(p32) %>%
 cat ('\n')
 ```
 
+```{r, echo=FALSE, results ='asis', eval=(saturation.curves=='True')&&!all(is.na(data.class$FL)),warning = FALSE}
+cat ('\n##',"Saturation curves", '\n')
+ggplotly(rar1[[1]])
+ggplotly(rar1[[2]])
+ggplotly(rar2[[1]])
+ggplotly(rar2[[2]])
+ggplotly(rar3[[1]])
+ggplotly(rar3[[2]])
+ggplotly(rar5[[1]])
+ggplotly(rar5[[2]])
+cat ('\n')
+```
 
-### NMD {.tabset .tabset-fade }
+
+## Features of Bad Quality {.tabset .tabset-fade }
+
+### RT-switching {.tabset .tabset-fade }
 
 ```{r , echo=FALSE, results ='asis', warning = FALSE}
-ggplotly(p28.NMD)%>%
+ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
   layout(showlegend = F) 
 cat ('\n')
 ```
 
 
-### Combined {.tabset .tabset-fade}
+### Junctions {.tabset .tabset-fade .tabset-dropdown}
 
 ```{r , echo=FALSE, results ='asis', warning = FALSE}
+cat("#### Non-Canonical Junctions",'\n')
+ggplotly(p28.SJ)%>%
+  layout(margin = list(r = 130)) 
+cat ('\n')
+```
+
+```{r , echo=FALSE, results ='asis', eval= exists("p28.Cov"), warning = FALSE}
+cat("#### Splice Junctions Without Short Read Coverage",'\n')
+ggplotly(p28.Cov)%>%
+  layout(margin = list(r = 130)) 
+cat ('\n')
+```
+
+```{r , echo=FALSE, results ='asis',eval=exists("p28") || exists("p28.NMD"), warning = FALSE}
+cat("### Structural Categories {.tabset .tabset-fade  .tabset-dropdown}", '\n')
+```
+
+```{r , echo=FALSE, results ='asis',eval=exists("p28"), warning = FALSE}
+cat("#### Quality Control Attributes Across Structural Categories",'\n')
 ggplotly(p28)%>%
+  layout(margin = list(r = 130)) 
+cat ('\n')
+```
+
+```{r , echo=FALSE, results ='asis',eval=exists("p28.NMD"), warning = FALSE}
+cat("#### Nonsense-Mediated Decay by Structural Category",'\n')
+ggplotly(p28.NMD)%>%
   layout(margin = list(r = 130)) 
 cat ('\n')
 ```
