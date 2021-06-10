@@ -1,6 +1,6 @@
 # SQANTI3
 
-Last Updated: 06/01/2021 (v3.1)   SQANTI3 release!
+Last Updated: 06/09/2021 (v3.2)   SQANTI3 release!
 
 ## What is SQANTI3?
 
@@ -46,6 +46,8 @@ New features implemented in SQANTI3 not available in previous versions are:
 <a name="Updates"/>
 
 ## Updates
+
+2021.06.09 - updated to v3.2. `sqanti3_qc.py --fl_count` now can accept non-int (ex: scientific notation) counts. 
 
 2021.06.01 - updated to v3.1. Merged minor changes from Fran.
 

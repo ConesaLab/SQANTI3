@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '3.0'  # Python 3.7
+__version__ = '3.3'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -1439,7 +1439,6 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
         sample_cov = defaultdict(lambda: (0,0))  # sample -> (unique, multi) count for this junction
         if covInf is not None:
             sample_cov = covInf[(trec.chrom, trec.strand)][(d,a)]
-        print(sample_cov)
 
         # if phyloP score dict exists, give the triplet score of (last base in donor exon), donor site -- similarly for acceptor
         phyloP_start, phyloP_end = 'NA', 'NA'
@@ -1783,7 +1782,13 @@ def FLcount_parser(fl_count_filename):
             samples = list(v.keys())
             for sample,count in v.items():
                 if sample not in ('superPBID', 'id'):
-                    fl_count_dict[k][sample] = int(count) if count!='NA' else 0
+                    if count=='NA':
+                        fl_count_dict[k][sample] = 0
+                    else:
+                        try:
+                            fl_count_dict[k][sample] = int(count)
+                        except ValueError:
+                            fl_count_dict[k][sample] = float(count)
 
     samples.sort()
 
