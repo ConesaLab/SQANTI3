@@ -29,9 +29,7 @@ The code contains several parts:
 <!---Basic setting-->
 
 ```{r setup, include=FALSE}
-library(DT)
-library(plyr)
-library(plotly)
+
 knitr::opts_chunk$set(echo = TRUE, cache = FALSE, warning = FALSE, results = 'asis', echo=FALSE)
 #### Data preparation (change previous table format)
 
@@ -168,7 +166,8 @@ Summary
 ```{r}
 datatable(
   table2MD,
-  options = list(dom = 't'),
+  options = list(
+    dom = 't'),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;','Table 1: ',
     htmltools::em('Gene classification.'))
@@ -215,7 +214,7 @@ Gene Characterization
 
 ```{r p0}
 ggplotly(p0)%>%
-  layout(margin = list(r = 150), showlegend = F)
+  layout(margin = list(r = 150), showlegend = T)
 ```
 
 #### Kown vs Novel Genes
@@ -300,7 +299,7 @@ cat ('\n###',"Quantification {.tabset .tabset-fade .tabset-dropdown}", '\n')
 ```{r p10, eval = exists("p10")}
 cat ('\n####',"Gene Expression, Annotated vs Novel", '\n')
 ggplotly(p10)%>%
-  layout(margin = list(r = 130), showlegend = F)
+  layout(margin = list(r = 130), showlegend = T)
 cat ('\n')
 ```
 
@@ -309,7 +308,7 @@ cat ('\n')
 ```{r p11, eval = exists("p11")}
 cat ('\n####',"Number of FL reads per Gene by type of gene annotation", '\n')
 ggplotly(p11)%>%
-  layout(margin = list(r = 130), showlegend = F)
+  layout(margin = list(r = 130), showlegend = T)
 cat ('\n')
 ```
 
@@ -358,7 +357,7 @@ for (i in 1:length(p1.s.list)) {
   cat(p1.s.titles[[i]])
   cat('  \n')
   print(htmltools::tagList(ggplotly(p1.s.list[[i]])%>%
-                             layout(margin = list(r = 130), showlegend = F, width=700)))
+                             layout(margin = list(r = 130), showlegend = T, width=700)))
   cat('  \n\n')
 
 }
@@ -372,17 +371,17 @@ for (i in 1:length(p1.s.list)) {
 
 ```{r p4}
 ggplotly(p4) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 ```
 
 #### By Subcategory
 
 ```{r p4.s1_p4.s2}
 ggplotly(p4.s1) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 
 ggplotly(p4.s2) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 ```
 
 
@@ -392,17 +391,17 @@ ggplotly(p4.s2) %>%
 
 ```{r p5}
 ggplotly(p5) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 ```
 
 #### By Subcategory
 
 ```{r p5.s1_p5.s2}
 ggplotly(p5.s1) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 
 ggplotly(p5.s2) %>%
-  layout(showlegend = F)
+  layout(showlegend = T)
 ```
 
 ```{r, eval = exists("p2") || exists("p3")}
@@ -414,7 +413,7 @@ cat ('\n###',"Matched Reference Transcripts {.tabset .tabset-fade .tabset-dropdo
 ```{r p2, eval = exists("p2")}
 cat ('\n####',"Length Distribution", '\n')
 ggplotly(p2)%>%
-  layout(margin = list(r = 130), showlegend = F)
+  layout(margin = list(r = 130), showlegend = T)
 cat ('\n')
 ```
 
@@ -423,7 +422,7 @@ cat ('\n')
 ```{r p3, eval = exists("p3")}
 cat ('\n####',"Exon Count Distribution", '\n')
 ggplotly(p3)%>%
-  layout(margin = list(r = 130), showlegend = F)
+  layout(margin = list(r = 130), showlegend = T)
 cat ('\n')
 ```
 
@@ -480,8 +479,8 @@ if (length(p21.FSM.list) > 0) {
                         "Reference Match for FSM")
   for (i in 1:length(p21.FSM.list)) {
     cat ('\n####', p21.stitles.FSM[[i]][1], '\n')
-    print(htmltools::tagList(ggplotly(p21.FSM.list[[i]])%>%layout(width=700)))
-    print(htmltools::tagList(ggplotly(p21.FSM.list.a[[i]])%>%layout(width=700)))
+    print(htmltools::tagList(ggplotly(p21.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
+    print(htmltools::tagList(ggplotly(p21.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
     
   }
 }
@@ -496,8 +495,8 @@ if (length(p21.ISM.list)>0) {
                       "Reference Match for ISM")
   for (i in 1:length(p21.ISM.list)) {
     cat ('\n####', p21.stitles.ISM[[i]][1], '\n')
-    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]]) %>% layout(width=700)))
-    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]])%>% layout(width=700)))
+    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]]) %>% layout(width=700, margin = list(r = 150))))
+    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]])%>% layout(width=700), margin = list(r = 150)))
   }
 }
 ```
@@ -506,17 +505,21 @@ if (length(p21.ISM.list)>0) {
 
 ```{r p21.a_p21.b, eval = exists("p21.a") || exists("p21.b")}
 cat ('\n####', "For FSM", '\n')
-ggplotly(p21.a)
+ggplotly(p21.a) %>%
+  layout(margin = list(r = 150))
 cat('\n')
-ggplotly(p21.b)
+ggplotly(p21.b) %>%
+  layout(margin = list(r = 150))
 cat('\n')
 ```
 
 ```{r p21.dist3.ISM.a_p21.dist3.ISM.b, eval = exists("p21.dist3.ISM.a") || exists("p21.dist3.ISM.b")}
 cat ('\n####', "For ISM", '\n')
-ggplotly(p21.dist3.ISM.a)
+ggplotly(p21.dist3.ISM.a) %>% 
+  layout(margin = list(r = 150))
 cat('\n')
-ggplotly(p21.dist3.ISM.b)
+ggplotly(p21.dist3.ISM.b) %>%
+  layout(margin = list(r = 150))
 cat('\n')
 ```
 
@@ -533,10 +536,10 @@ if(length(p22.FSM.list)>0) {
   for (i in 1:length(p22.FSM.list)) {
     cat ('\n####', p22.stitles.FSM[[i]][1], '\n')
     print(htmltools::tagList(ggplotly(p22.FSM.list[[i]])) %>%
-            layout(width=700)
+            layout(width=700, margin = list(r = 150))
           )
     print(htmltools::tagList(ggplotly(p22.FSM.list.a[[i]])%>%
-            layout(width=700)))
+            layout(width=700, margin = list(r = 150))))
     
   }
 }
@@ -551,31 +554,43 @@ p22.stitles.ISM<-list("Alternative 3'End for ISM",
 for (i in 1:length(p22.ISM.list)) {
   cat ('\n####', p22.stitles.ISM[[i]][1], '\n')
   print(htmltools::tagList(ggplotly(p22.ISM.list[[i]]) %>%
-            layout(width=700)))
+            layout(width=700, margin = list(r = 150))))
   print(htmltools::tagList(ggplotly(p22.ISM.list.a[[i]])%>%
-            layout(width=700)))
+            layout(width=700, margin = list(r = 150))))
 }
 }
 ```
 
 ```{r p22.a_p22.b, eval = exists("p22.a") || exists("p22.b")}
 cat ('\n####', "For FSM", '\n')
+if (exists("p22.a")) {
+  ggplotly(p22.a) %>%
+    layout(margin = list(r = 150))
+  cat('\n')
+}
 
-ggplotly(p22.a)
-cat('\n')
+if (exists("p22.b")) {
+  ggplotly(p22.b) %>%
+    layout(margin = list(r = 150))
+  cat('\n') 
+}
 
-ggplotly(p22.b)
-cat('\n')
 ```
 
 ```{r p22.dist3.ISM.a_p22.dist3.ISM.b, eval = exists("p22.dist5.ISM.a") || exists("p22.dist5.ISM.b")}
 cat ('\n####', "For ISM", '\n')
+if (exists("p22.dist5.ISM.a")) {
+  ggplotly(p22.dist5.ISM.a) %>%
+    layout(margin = list(r = 150))
+  cat('\n') 
+}
 
-ggplotly(p22.dist5.ISM.a)
-cat('\n')
+if (exists("p22.dist5.ISM.b")) {
+  ggplotly(p22.dist5.ISM.b) %>%
+    layout(margin = list(r = 150))
+  cat('\n')
+}
 
-ggplotly(p22.dist5.ISM.b)
-cat('\n')
 ```
 
 <!--
@@ -653,15 +668,15 @@ cat ('\n###'," Multi-exonic FSM {.tabset .tabset-fade .tabset-dropdown}", '\n')
 ```{r, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc")}
 cat ('\n####', "Distance to CAGE peak of multi-exonic FSM", '\n')
 ggplotly(cage_hist_FSM,cliponaxis = FALSE) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 ggplotly(cage_hist_FSM_perc,cliponaxis = FALSE) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 
 if (exists("cage.FSM.list")) {
     if (length(cage.FSM.list)>0) {
     for (i in 1:length(cage.FSM.list)){
-      print(htmltools::tagList(ggplotly(cage.FSM.list[[i]])%>%layout(width=700)))
-      print(htmltools::tagList(ggplotly(cage.FSM.list.a[[i]])%>%layout(width=700)))
+      print(htmltools::tagList(ggplotly(cage.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
+      print(htmltools::tagList(ggplotly(cage.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
       
     }
   }
@@ -684,8 +699,8 @@ ggplotly(cage_hist_ISM_perc) %>%
 if (exists("cage.ISM.list")) {
     if (length(cage.ISM.list)>0) {
     for (i in 1:length(cage.ISM.list)){
-      print(htmltools::tagList(ggplotly(cage.ISM.list[[i]])%>%layout(width=700)))
-      print(htmltools::tagList(ggplotly(cage.ISM.list.a[[i]])%>%layout(widt=700)))
+      print(htmltools::tagList(ggplotly(cage.ISM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
+      print(htmltools::tagList(ggplotly(cage.ISM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
     }
   }
 }
@@ -707,8 +722,8 @@ ggplotly(cage_hist_NIC_perc)%>%
 if (exists("cage_hist_NIC")) {
     if (length(cage.NIC.list)>0) {
     for (i in 1:length(cage.NIC.list)){
-      print(htmltools::tagList(ggplotly(cage.NIC.list[[i]])%>% layout(width=700)))
-      print(htmltools::tagList(ggplotly(cage.NIC.list.a[[i]])%>%layout(width=700)))
+      print(htmltools::tagList(ggplotly(cage.NIC.list[[i]])%>% layout(width=700, margin = list(r = 150))))
+      print(htmltools::tagList(ggplotly(cage.NIC.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
     }
   }
 }
@@ -912,14 +927,14 @@ cat ('\n')
 
 ```{r, eval=(saturation.curves=='True')&&!all(is.na(data.class$FL))}
 cat ('\n##',"Saturation curves", '\n')
-ggplotly(rar1[[1]])
-ggplotly(rar1[[2]])
-ggplotly(rar2[[1]])
-ggplotly(rar2[[2]])
-ggplotly(rar3[[1]])
-ggplotly(rar3[[2]])
-ggplotly(rar5[[1]])
-ggplotly(rar5[[2]])
+ggplotly(rar1[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar1[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar2[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar2[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar3[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar3[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar5[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar5[[2]]) %>% layout(margin=list(b=120))
 cat ('\n')
 ```
 
@@ -931,7 +946,7 @@ cat ('\n')
 ```{r ,exists("p28.RTS")}
 ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
-  layout(showlegend = F) 
+  layout(showlegend = T) 
 cat ('\n')
 ```
 
@@ -941,14 +956,16 @@ cat ('\n')
 ```{r, eval=exists("p28.SJ")}
 cat("#### Non-Canonical Junctions",'\n')
 ggplotly(p28.SJ)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r ,eval= exists("p28.Cov")}
 cat("#### Splice Junctions Without Short Read Coverage",'\n')
 ggplotly(p28.Cov)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
@@ -959,14 +976,16 @@ cat("### Structural Categories {.tabset .tabset-fade  .tabset-dropdown}", '\n')
 ```{r , eval=exists("p28")}
 cat("#### Quality Control Attributes Across Structural Categories",'\n')
 ggplotly(p28)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r , eval=exists("p28.NMD")}
 cat("#### Nonsense-Mediated Decay by Structural Category",'\n')
 ggplotly(p28.NMD)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
@@ -977,21 +996,24 @@ cat ('\n')
 ```{r, eval = exists("p28.a.Cage")}
 cat("#### CAGE Support", '\n') 
 ggplotly(p28.a.Cage)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r}
 cat("#### Annotation support", '\n') 
 ggplotly(p28.a.annot)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r, eval=exists("p28.a.polyA")}
 cat("#### PolyA support", '\n') 
 ggplotly(p28.a.polyA)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
@@ -1000,14 +1022,16 @@ cat ('\n')
 ```{r, eval=exists("p28.a.SJ")}
 cat("#### Junctions", '\n') 
 ggplotly(p28.a.SJ)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r, eval=exists("p28.a.Cov")}
 cat("#### Dist to cage peak", '\n') 
 ggplotly(p28.a.Cov)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
@@ -1016,13 +1040,15 @@ cat ('\n')
 ```{r , eval=exists("p28.a")}
 cat("#### Good Quality Control Attributes", '\n') 
 ggplotly(p28.a)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130), textposition="outside")  %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r, eval=exists("p28.a.ratio")}
 ggplotly(p28.a.ratio)%>%
-  layout(margin = list(r = 130)) 
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center')
 cat ('\n')
 ```
 
