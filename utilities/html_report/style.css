@@ -52,7 +52,7 @@ h4 {
 
 .main-container {
   /* max main container */
-  max-width: 100% !important;
+  max-width: 85% !important;
 }
 
 .show-modal {
