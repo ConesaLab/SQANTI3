@@ -454,6 +454,7 @@ generatePDFreport = function()
       print(new.4.total)
     }
   }
+  
   s <- textGrob("Intra-Priming Quality Check", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
   print(p30)
