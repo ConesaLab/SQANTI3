@@ -1,6 +1,6 @@
 generatePDFreport = function() 
   {
-  pdf(file=report.file, width = 6.5, height = 6.5)
+  pdf(file=pdf.report.file, width = 6.5, height = 6.5)
 
   #cover
   grid.newpage()
