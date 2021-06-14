@@ -233,8 +233,8 @@ python sqanti3_qc.py [-h] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
                      [--skipORF] [--is_fusion] [-g] [-e EXPRESSION]
                      [-x GMAP_INDEX] [-t CPUS] [-n CHUNKS] [-o OUTPUT]
                      [-d DIR] [-c COVERAGE] [-s SITES] [-w WINDOW]
-                     [--genename] [-fl FL_COUNT] [-v] [--skip_report]
-                     [--isoAnnotLite] [--gff3 GFF3] 
+                     [--genename] [-fl FL_COUNT] [-v] [--report {pdf, html, both, skip}]
+                     [--saturation] [--isoAnnotLite] [--gff3 GFF3] 
                      [--short_reads] [--SR_bam]
                      isoforms annotation genome
 
