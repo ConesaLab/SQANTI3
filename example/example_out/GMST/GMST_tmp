@@ -1,6 +1,11 @@
 GeneMark.hmm PROKARYOTIC (Version 3.20)
+<<<<<<< HEAD
+Date: Tue May 12 09:48:19 2020
+Sequence file name: /ufrc/conesa/fpardopalacios/SQANTI_QDE/SQANTI3/example_out/melanoma_chr13_corrected.fasta
+=======
 Date: Tue Apr 20 10:35:01 2021
 Sequence file name: /blue/conesa/fpardopalacios/github/SQANTI3/example/example_out/example_chr13_corrected.fasta
+>>>>>>> 5edebaac826a21e4c9f96e0c06074d91f23c8ec5
 Model file name: GeneMark_hmm.mod
 RBS: true
 
