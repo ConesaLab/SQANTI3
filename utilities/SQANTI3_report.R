@@ -195,10 +195,12 @@ subcat.palette = c("Alternative 3'end"='#02314d',"Alternative 3'5'end"='#0e5a87'
                    "Mono-exon by intron retention"='#78ad78',"At least 1 annot. donor/accept."='#bbfabc',"Mono-exon"='#686e68',"Multi-exon"='#c0c4c0')
 
 
+
 cat.palette = c("FSM"="#6BAED6", "ISM"="#FC8D59", "NIC"="#78C679", 
                 "NNC"="#EE6A50", "Genic\nGenomic"="#969696", "Antisense"="#66C2A4", "Fusion"="goldenrod1",
                 "Intergenic" = "darksalmon", "Genic\nIntron"="#41B6C4")
  
+
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
         axis.line.y = element_line(color="black", size = 0.4)) +
