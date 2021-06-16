@@ -20,36 +20,33 @@ source(paste(utilities.path, "generatePDFreport.R", sep = "/"))
 if (saturation.curves=='True'){
   source(paste(utilities.path, "plot.rarefaction.R", sep = "/"))
   source(paste(utilities.path, "LR.rarefaction.R", sep = "/"))
-  source(paste(utilities.path, "NewReadData.R", sep = "/"))
+  source(paste(utilities.path, "readData_functions.R", sep = "/"))
 }
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1];
-report.file <- paste0(report.prefix, "_sqanti_report/","SQANTI3_report.pdf");
+output_directory <- dirname(class.file)
+output_name <- basename(report.prefix)
+pdf.report.file <- paste0(report.prefix, "_SQANTI3_report.pdf");
+html.report.file <- paste0(output_name, "_SQANTI3_report.html");
 class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep='');
 
 
-#********************** Packages (install if not found)
-
-list_of_packages <- c("ggplot2", "scales", "reshape", "gridExtra", "grid", "dplyr", "NOISeq", "ggplotify", "rmarkdown", "htmltools", "DT", "plyr", "plotly")
-req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
-if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
-if("NOISeq" %in% req_packages) BiocManager::install("NOISeq")
-req_packages <- list_of_packages[!(list_of_packages %in% installed.packages()[,"Package"])]
-if(length(req_packages)) install.packages(req_packages, repo="http://cran.rstudio.com/")
+#********************** Packages 
 
 library(ggplot2)
 library(ggplotify)
 library(scales)
 library(reshape)
-library(gridExtra)
 library(grid)
-library(dplyr)
+library(gridExtra)
 library(NOISeq)
 library(rmarkdown)
 library(htmltools)
 library(DT)
 library(plyr)
 library(plotly)
+library(dplyr)
+
 # ***********************
 # ***********************
 # PLOTS INDEX
@@ -198,10 +195,12 @@ subcat.palette = c("Alternative 3'end"='#02314d',"Alternative 3'5'end"='#0e5a87'
                    "Mono-exon by intron retention"='#78ad78',"At least 1 annot. donor/accept."='#bbfabc',"Mono-exon"='#686e68',"Multi-exon"='#c0c4c0')
 
 
+
 cat.palette = c("FSM"="#6BAED6", "ISM"="#FC8D59", "NIC"="#78C679", 
                 "NNC"="#EE6A50", "Genic\nGenomic"="#969696", "Antisense"="#66C2A4", "Fusion"="goldenrod1",
                 "Intergenic" = "darksalmon", "Genic\nIntron"="#41B6C4")
  
+
 mytheme <- theme_classic(base_family = "Helvetica") +
   theme(axis.line.x = element_line(color="black", size = 0.4),
         axis.line.y = element_line(color="black", size = 0.4)) +
@@ -594,7 +593,7 @@ p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
 ##**** PLOT  absolute and normalized % of different categories with increasing transcript length
 # requires use of dplyr package
 data.class$lenCat <- as.factor(as.integer(data.class$length %/% 1000))
-data.class.byLen <- data.class %>% dplyr::group_by(lenCat, structural_category) %>% dplyr::summarise(count=dplyr::n()) %>% mutate(perc=count/sum(count))
+data.class.byLen <- data.class %>% dplyr::group_by(lenCat, structural_category) %>% dplyr::summarise(count=dplyr::n() ) %>% mutate(perc=count/sum(count))
 data.class.byLen$structural_category <- factor(data.class.byLen$structural_category, levels=(xaxislabelsF1), order=TRUE)
 
 p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(structural_category))) +
@@ -1702,8 +1701,8 @@ if (nrow(data.junction) > 0){
   # for FSM, ISM, NIC, and NNC, plot the percentage of RTS and non-canonical junction
   x <- filter(data.class, structural_category %in% c("FSM", "ISM", "NIC", "NNC" ) & exons > 1)
   
-  t1.RTS <- group_by(x, structural_category, RTS_stage) %>% dplyr::summarise(count=dplyr::n())
-  t2.RTS <- group_by(x, structural_category) %>% dplyr::summarise(count=dplyr::n())
+  t1.RTS <- group_by(x, structural_category, RTS_stage) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
+  t2.RTS <- group_by(x, structural_category) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
   t3.RTS <- merge(t1.RTS, t2.RTS, by="structural_category")
   t3.RTS <- t3.RTS[-which(t3.RTS$structural_category=="ISM"),]
   t3.RTS$perc <- t3.RTS$count.x / t3.RTS$count.y * 100
@@ -1713,7 +1712,7 @@ if (nrow(data.junction) > 0){
 	  t3.RTS$Var <- "RT switching"
   }
 
-  t1.SJ <- group_by(x, structural_category, all_canonical) %>% dplyr::summarise(count=dplyr::n())
+  t1.SJ <- group_by(x, structural_category, all_canonical) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
   t3.SJ <- merge(t1.SJ, t2.RTS, by="structural_category")
   t3.SJ$perc <- t3.SJ$count.x / t3.SJ$count.y * 100
   t3.a.SJ <- subset(t3.SJ, all_canonical=='canonical');
@@ -1728,7 +1727,7 @@ if (nrow(data.junction) > 0){
   if (!all(is.na(x$predicted_NMD))){
     x[which(x$predicted_NMD=="TRUE"),"predicted_NMD"]="Predicted NMD"
     x[which(x$predicted_NMD=="FALSE"),"predicted_NMD"]="Not NMD predicted"
-    t1.NMD <- group_by(x, structural_category, predicted_NMD) %>% dplyr::summarise(count=dplyr::n())
+    t1.NMD <- group_by(x, structural_category, predicted_NMD) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.NMD <- merge(t1.NMD, t2.RTS, by="structural_category")
     t3.NMD$perc <- t3.NMD$count.x / t3.NMD$count.y * 100
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
@@ -1737,7 +1736,7 @@ if (nrow(data.junction) > 0){
   if (!all(is.na(x$min_cov))){
     x[which(x$min_cov==0),"Coverage_SJ"]="Not Coverage SJ"
     x[which(x$min_cov>0),"Coverage_SJ"]="Coverage SJ"
-    t1.Cov <- group_by(x, structural_category, Coverage_SJ) %>% dplyr::summarise(count=dplyr::n())
+    t1.Cov <- group_by(x, structural_category, Coverage_SJ) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.Cov <- merge(t1.Cov, t2.RTS, by="structural_category")
     t3.Cov$perc <- t3.Cov$count.x / t3.Cov$count.y * 100
     t3.a.Cov <- subset(t3.Cov, Coverage_SJ=='Coverage SJ');
@@ -1751,7 +1750,7 @@ if (nrow(data.junction) > 0){
   if (!all(is.na(x$within_cage_peak))){
     x[which(x$within_cage_peak=='False'),"Coverage_Cage"]="Not Coverage Cage"
     x[which(x$within_cage_peak=='True'),"Coverage_Cage"]="Coverage Cage"
-    t1.Cage <- group_by(x, structural_category, Coverage_Cage) %>% dplyr::summarise(count=dplyr::n())
+    t1.Cage <- group_by(x, structural_category, Coverage_Cage) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.Cage <- merge(t1.Cage, t2.RTS, by="structural_category")
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
     t3.Cage <- subset(t3.Cage, Coverage_Cage=='Coverage Cage');
@@ -1771,7 +1770,7 @@ if (nrow(data.junction) > 0){
   if (!all(is.na(data.class$polyA_motif))) {
     x[which(is.na(x$polyA_motif)),"Coverage_PolyA"]="Not Coverage PolyA"
     x[which(!is.na(x$polyA_motif)),"Coverage_PolyA"]="Coverage PolyA"
-    t1.PolyA <- group_by(x, structural_category, Coverage_PolyA) %>% dplyr::summarise(count=dplyr::n())
+    t1.PolyA <- group_by(x, structural_category, Coverage_PolyA) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.PolyA <- merge(t1.PolyA, t2.RTS, by="structural_category")
     t3.PolyA$perc <- t3.PolyA$count.x / t3.PolyA$count.y * 100
     t3.PolyA <- subset(t3.PolyA, Coverage_PolyA=='Coverage PolyA');
@@ -1791,7 +1790,7 @@ if (nrow(data.junction) > 0){
   
   x[which(x$diff_to_gene_TSS<=50),"Annotation"]="Annotated"
   x[which(x$diff_to_gene_TSS>50),"Annotation"]="Not annotated"
-  t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n())
+  t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
   t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
   t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
   t3.annot <- subset(t3.annot, Annotation=='Annotated');
@@ -1988,7 +1987,7 @@ p28.a <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
   theme(axis.text.y = element_text(size=10),
         axis.text.x  = element_text(size=10))+
   theme(legend.title = element_blank())
-p28.a 
+ 
 
 
 #TSS ratio
@@ -2318,9 +2317,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   ### Now only with polyA motif = T isoforms
   if (!all(is.na(data.class$polyA_motif))) {
-    ism_per_transcript_polya=data.ISM[which(!is.na(data.ISM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    ism_per_transcript_polya=data.ISM[which(!is.na(data.ISM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_polya)[3]<-"ISM_per_tr"
-    fsm_per_transcript_polya=data.FSM[which(!is.na(data.FSM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_polya=data.FSM[which(!is.na(data.FSM$polyA_motif)),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(fsm_per_transcript_polya)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_polya=merge(x = fsm_per_transcript_polya , y=ism_per_transcript_polya, by = "associated_transcript", all=T)
@@ -2441,9 +2440,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   #### Now with just isoforms polyA and Cage +
   if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_cage_peak))) {
-    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(fsm_per_transcript_cage_polya)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage_polya=merge(x = fsm_per_transcript_cage_polya , y=ism_per_transcript_cage_polya, by = "associated_transcript", all=T)
@@ -2644,14 +2643,16 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
   df.polyA <- as.data.frame(group_by(data.class, by=structural_category) %>%
                               dplyr::summarise(count=dplyr::n(),
                                                polyA_detected=sum(!is.na(polyA_motif)),
-                                               polyA_detected_perc=round(polyA_detected*100/count)))
+                                               polyA_detected_perc=round(polyA_detected*100/count) ,
+                                               .groups = 'keep'))
   df.polyA_freq <- as.data.frame(sort(table(data.class$polyA_motif),decreasing=T))
   df.polyA_freq$perc <- round(df.polyA_freq$Freq*100/sum(df.polyA_freq$Freq),1)
   
   df.polyA_subcat <- as.data.frame(group_by(data.class, by=subcategory) %>%
                                      dplyr::summarise(count=dplyr::n(),
                                                       polyA_detected=sum(!is.na(polyA_motif)),
-                                                      polyA_detected_perc=round(polyA_detected*100/count)))
+                                                      polyA_detected_perc=round(polyA_detected*100/count) ,
+                                                      .groups = 'keep'))
 }
 
 
@@ -2661,22 +2662,24 @@ if (!all(is.na(data.class$dist_to_cage_peak))){
   df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
                              dplyr::summarise(count=dplyr::n(),
                                               cage_detected=length(which(within_cage_peak == "True")),
-                                              cage_detected_perc=round(cage_detected*100/count)))
+                                              cage_detected_perc=round(cage_detected*100/count) , 
+                                              .groups = 'keep'))
   
   df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
                                   dplyr::summarise(count=dplyr::n(),
                                                    cage_detected=length(which(within_cage_peak == "True")),
-                                                   cage_detected_perc=round(cage_detected*100/count)))
+                                                   cage_detected_perc=round(cage_detected*100/count) ,
+                                                   .groups = 'keep'))
 }
 
 ###** Output plots
 
 if (args[6]== 'both') {
-  generatePDFreport()
-  render(input = paste(utilities.path, "html_report", "SQANTI3_report.Rmd", sep = "/"), output_dir =  paste0(report.prefix, "_sqanti_report"))
+  invisible(generatePDFreport())
+  rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory , output_file=html.report.file)
 } else if (args[6] == 'pdf' & args[6] != 'html'){
-  generatePDFreport()
+  invisible(generatePDFreport())
 } else {
-  render(input = paste(utilities.path, "html_report", "SQANTI3_report.Rmd", sep = "/"), output_dir =  paste0(report.prefix, "_sqanti_report"))
+  rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory, output_file=html.report.file )
 }
 
