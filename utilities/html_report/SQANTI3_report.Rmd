@@ -140,6 +140,10 @@ myPalette_fade <- c("#D2E6F2", "#FEDCCD", "#D6EDD6", "#F9D2CA", "#DFDFDF", "#D1E
 nGenes = nrow(isoPerGene)
 nIso = nrow(data.class)
 
+## Functions
+
+
+
 ```
 
 <body>
@@ -356,8 +360,11 @@ p1.s.titles = list("#### Across FSM",
 for (i in 1:length(p1.s.list)) {
   cat(p1.s.titles[[i]])
   cat('  \n')
-  print(htmltools::tagList(ggplotly(p1.s.list[[i]])%>%
+  if (!is.null(p1.s.list[[i]])) {
+    print(htmltools::tagList(ggplotly(p1.s.list[[i]])%>%
                              layout(margin = list(r = 130), showlegend = T, width=700)))
+  }
+  
   cat('  \n\n')
 
 }
@@ -479,9 +486,12 @@ if (length(p21.FSM.list) > 0) {
                         "Reference Match for FSM")
   for (i in 1:length(p21.FSM.list)) {
     cat ('\n####', p21.stitles.FSM[[i]][1], '\n')
-    print(htmltools::tagList(ggplotly(p21.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
-    print(htmltools::tagList(ggplotly(p21.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
-    
+    if (!is.null((p21.FSM.list[[i]]))){
+        print(htmltools::tagList(ggplotly(p21.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
+    }
+    if (!is.null((p21.FSM.list.a[[i]]))) {
+        print(htmltools::tagList(ggplotly(p21.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+    }
   }
 }
 ```
@@ -495,8 +505,13 @@ if (length(p21.ISM.list)>0) {
                       "Reference Match for ISM")
   for (i in 1:length(p21.ISM.list)) {
     cat ('\n####', p21.stitles.ISM[[i]][1], '\n')
-    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]]) %>% layout(width=700, margin = list(r = 150))))
-    print(htmltools::tagList(ggplotly(p21.ISM.list[[i]])%>% layout(width=700), margin = list(r = 150)))
+    if (!is.null(p21.ISM.list[[i]])) {
+          print(htmltools::tagList(ggplotly(p21.ISM.list[[i]]) %>% layout(width=700, margin = list(r = 150))))
+    }
+    if (!is.null(p21.ISM.list[[i]])) {
+          print(htmltools::tagList(ggplotly(p21.ISM.list[[i]])%>% layout(width=700), margin = list(r = 150)))
+
+    }
   }
 }
 ```
@@ -553,10 +568,15 @@ p22.stitles.ISM<-list("Alternative 3'End for ISM",
                       "Reference Match for ISM")
 for (i in 1:length(p22.ISM.list)) {
   cat ('\n####', p22.stitles.ISM[[i]][1], '\n')
-  print(htmltools::tagList(ggplotly(p22.ISM.list[[i]]) %>%
+  if (!is.null(p22.ISM.list[[i]])) {
+    print(htmltools::tagList(ggplotly(p22.ISM.list[[i]]) %>%
             layout(width=700, margin = list(r = 150))))
-  print(htmltools::tagList(ggplotly(p22.ISM.list.a[[i]])%>%
+  }
+  if (!is.null(p22.ISM.list.a[[i]])) {
+    print(htmltools::tagList(ggplotly(p22.ISM.list.a[[i]])%>%
             layout(width=700, margin = list(r = 150))))
+  }
+
 }
 }
 ```
@@ -675,8 +695,14 @@ ggplotly(cage_hist_FSM_perc,cliponaxis = FALSE) %>%
 if (exists("cage.FSM.list")) {
     if (length(cage.FSM.list)>0) {
     for (i in 1:length(cage.FSM.list)){
-      print(htmltools::tagList(ggplotly(cage.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
-      print(htmltools::tagList(ggplotly(cage.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+      if (!is.null(cage.FSM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.FSM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
+
+      }
+      if (!is.null(cage.FSM.list.a[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.FSM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+
+      }
       
     }
   }
@@ -692,15 +718,20 @@ cat ('\n###'," Multi-exonic ISM {.tabset .tabset-fade .tabset-dropdown}", '\n')
 ```{r , eval = exists("cage_hist_ISM")}
 cat ('\n####', "Distance to CAGE peak of multi-exonic ISM", '\n')
 ggplotly(cage_hist_ISM) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 200))
 ggplotly(cage_hist_ISM_perc) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 200))
 
 if (exists("cage.ISM.list")) {
     if (length(cage.ISM.list)>0) {
     for (i in 1:length(cage.ISM.list)){
-      print(htmltools::tagList(ggplotly(cage.ISM.list[[i]])%>%layout(width=700, margin = list(r = 150))))
-      print(htmltools::tagList(ggplotly(cage.ISM.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+      if (!is.null(cage.ISM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.ISM.list[[i]])%>%layout(width=700, margin = list(r = 200))))
+
+      }
+      if (!is.null(cage.ISM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.ISM.list.a[[i]])%>%layout(width=700, margin = list(r = 200))))
+      }
     }
   }
 }
@@ -715,15 +746,19 @@ cat ('\n###'," Multi-exonic NIC/NNC {.tabset .tabset-fade .tabset-dropdown}", '\
 ```{r, eval = exists("cage_hist_NIC")}
 cat ('\n####', "Distance to CAGE peak of multi-exonic NIC", '\n')
 ggplotly(cage_hist_NIC) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 ggplotly(cage_hist_NIC_perc)%>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 
 if (exists("cage_hist_NIC")) {
     if (length(cage.NIC.list)>0) {
     for (i in 1:length(cage.NIC.list)){
-      print(htmltools::tagList(ggplotly(cage.NIC.list[[i]])%>% layout(width=700, margin = list(r = 150))))
-      print(htmltools::tagList(ggplotly(cage.NIC.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+      if (!is.null(cage.NIC.list[[i]])){
+              print(htmltools::tagList(ggplotly(cage.NIC.list[[i]])%>% layout(width=700, margin = list(r = 150))))
+      }
+      if (!is.null(cage.NIC.list.a[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.NIC.list.a[[i]])%>%layout(width=700, margin = list(r = 150))))
+      }
     }
   }
 }
@@ -734,18 +769,21 @@ cat ('\n')
 ```{r, eval = exists("cage_hist_NNC")}
 cat ('\n####', "Distance to CAGE peak of multi-exonic NNC", '\n')
 ggplotly(cage_hist_NNC) %>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 ggplotly(cage_hist_NNC_perc)%>%
-    layout(margin = list(r = 130))
+    layout(margin = list(r = 150))
 
-if (exists("cage_hist_NNC")) {
-    if (length(cage.NNC.list)>0) {
+if (length(cage.NNC.list)>0) {
     for (i in 1:length(cage.NNC.list)){
-      ggplotly(cage.NNC.list[[i]])
-      ggplotly(cage.NNC.list.a[[i]])
+      if (!is.null(cage.NNC.list[[i]])) {
+        print(htmltools::tagList(ggplotly(cage.NNC.list[[i]])%>% layout(width=700, margin = list(r = 150))))
+      }
+      if (!is.null(cage.NNC.list.a[[i]])) {
+        print(htmltools::tagList(ggplotly(cage.NNC.list.a[[i]])%>% layout(width=700, margin = list(r = 150))))
+      }
     }
   }
-}
+
 cat ('\n')
 
 ```
@@ -946,7 +984,9 @@ cat ('\n')
 ```{r ,exists("p28.RTS")}
 ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
-  layout(showlegend = T) 
+  layout(showlegend = T) %>%
+  style(textposition= 'top center', textfont = list(size=9))
+
 cat ('\n')
 ```
 
@@ -957,7 +997,7 @@ cat ('\n')
 cat("#### Non-Canonical Junctions",'\n')
 ggplotly(p28.SJ)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -965,7 +1005,7 @@ cat ('\n')
 cat("#### Splice Junctions Without Short Read Coverage",'\n')
 ggplotly(p28.Cov)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -976,8 +1016,7 @@ cat("### Structural Categories {.tabset .tabset-fade  .tabset-dropdown}", '\n')
 ```{r , eval=exists("p28")}
 cat("#### Quality Control Attributes Across Structural Categories",'\n')
 ggplotly(p28)%>%
-  layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  layout(margin = list(r = 130)) 
 cat ('\n')
 ```
 
@@ -985,7 +1024,7 @@ cat ('\n')
 cat("#### Nonsense-Mediated Decay by Structural Category",'\n')
 ggplotly(p28.NMD)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -997,7 +1036,7 @@ cat ('\n')
 cat("#### CAGE Support", '\n') 
 ggplotly(p28.a.Cage)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -1005,7 +1044,7 @@ cat ('\n')
 cat("#### Annotation support", '\n') 
 ggplotly(p28.a.annot)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -1013,7 +1052,7 @@ cat ('\n')
 cat("#### PolyA support", '\n') 
 ggplotly(p28.a.polyA)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -1023,15 +1062,14 @@ cat ('\n')
 cat("#### Junctions", '\n') 
 ggplotly(p28.a.SJ)%>%
   layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
 ```{r, eval=exists("p28.a.Cov")}
 cat("#### Dist to cage peak", '\n') 
 ggplotly(p28.a.Cov)%>%
-  layout(margin = list(r = 130)) %>%
-  style(textposition= 'top center')
+  style(textposition= 'top center', textfont = list(size=9))
 cat ('\n')
 ```
 
@@ -1040,14 +1078,14 @@ cat ('\n')
 ```{r , eval=exists("p28.a")}
 cat("#### Good Quality Control Attributes", '\n') 
 ggplotly(p28.a)%>%
-  layout(margin = list(r = 130), textposition="outside")  %>%
+  layout(margin = list(t = 50), textposition="outside")  %>%
   style(textposition= 'top center')
 cat ('\n')
 ```
 
 ```{r, eval=exists("p28.a.ratio")}
 ggplotly(p28.a.ratio)%>%
-  layout(margin = list(r = 130)) %>%
+  layout(margin = list(t = 50)) %>%
   style(textposition= 'top center')
 cat ('\n')
 ```
