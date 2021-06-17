@@ -35,7 +35,7 @@ Please, visit our wiki for more detailed information
 
 ## How to cite SQANTI3
 
-SQANTI3 paper is under construction, but in the meantime it is possible to cite the [original SQANTI paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/).
+SQANTI3 paper is in preparation, but in the meantime it is possible to cite the [original SQANTI paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/).
 
-
+*Tardaguila M, de la Fuente L, Marti C, et al. SQANTI: extensive characterization of long-read transcript sequences for quality control in full-length transcriptome identification and quantification. Genome Res. 2018;28(3):396-411. doi:10.1101/gr.222976.117*
 
