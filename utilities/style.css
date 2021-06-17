@@ -1,0 +1,100 @@
+body {
+  /* Normal  */
+  font-size: 14px;
+  font-family: "Arial";
+}
+td {
+  /* Table  */
+  font-size: 14px;
+  font-family: "Arial";
+}
+
+h2 {
+  /* Header 2 */
+  font-size: 22px;
+  font-family: "Arial";
+  color: DarkBlue;
+  padding-top: 40px;
+}
+
+h4 {
+  font-size: 14px;
+  font-family: Arial;
+  font-style: italic;
+}
+
+.title {
+  font-size: 38px;
+  font-family: "Arial";
+  color: #dd4609;
+}
+
+.tabset-dropdown {
+  /* dropdown setting */
+  text-align: right;
+  font-size: 14px;
+  font-family: "Arial";
+}
+
+.tocify-item {
+  /* Table of content */
+  overflow: hidden;
+  height: 40px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.level3 {
+  /* Level 3 plot */
+  font-size: 12px;
+  font-family: "Arial";
+}
+
+.main-container {
+  /* max main container */
+  max-width: 85% !important;
+}
+
+.show-modal {
+  font-weight: 600;
+  border: none;
+  background-color: #fff;
+  color: DarkBlue;
+  cursor: pointer;
+}
+
+.close-modal {
+  position: absolute;
+  top: 1.2rem;
+  right: 2rem;
+  font-size: 5rem;
+  color: #333;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(3px);
+  padding: 6rem;
+  border-radius: 5px;
+  box-shadow: 0 3rem 5rem rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.hidden {
+  display: none;
+}
+
+.header {
+  font-size: 22px;
+  font-family: "Arial";
+  color: DarkBlue;
+  padding-top: 40px;
+}
