@@ -1,6 +1,6 @@
 ![SQANTI3 logo](https://github.com/FJPardoPalacios/public_figures/blob/master/sq3-logo.png)
 
-# SQANTI3
+#		 SQANTI3
 
 SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/)) that merges features from SQANTI, ([code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
 
@@ -11,7 +11,7 @@ Current version (06/17/2021): SQANTI3 version 4.0
 
 New features implemented in SQANTI3
 
-*version 4.0:*
+**version 4.0:**
 * Creation of HTML report. Using the `--report` argument, it is possible to choose which type of report: `html` (default), `pdf`, `both` or `skip`.
 * Short-reads processing pipeline included. Now, providing directly your short-read data (FASTA/FASTQ format), SQANTI3 will:
     * Map them against the genome to identify SJ and calculate their coverage.
