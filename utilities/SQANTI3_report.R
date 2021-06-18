@@ -844,50 +844,57 @@ if (nrow(data.FSM) > 0) {
 
   # plot histogram of distance to polyA site, Y-axis absolute count
   if (!all(is.na(data.FSM$polyA_motif))){
-    p21.stitles.FSM<-list("Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'End",
-                          "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'5'End",
-                          "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 5'End",
-                          "Distance to Annotated Polyadenylation Site for FSM\n\nReference Match")
-    for(i in 1:length(subcategories.FSM)){
-      c<-data.frame(subcategories.FSM[i])
-      if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
-        diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-        diff_breaks <- c(seq(-500, 500, by = 50));
-        c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-        max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
-        max_height <- (max_height %/% 10+1) * 10;
-        p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
-          geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
-          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-          mytheme + labs(alpha = "polyA motif found") +
-          scale_x_discrete(drop=F) +
-          ylab("Transcripts, count")+
-          xlab("Distance to annotated polyadenylation site, bp")+
-          labs(     title=p21.stitles.FSM[i],
-                    subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
-          geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
-          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                             labels=c("0","25","50","75","100")) +
-          scale_x_discrete(drop=F) +
-          mytheme + labs(alpha = "polyA motif found") +
-          ylab("Transcripts, %")+
-          xlab("Distance to annotated polyadenylation site, bp")+
-          labs(     title=p21.stitles.FSM[i],
-                    subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
+    alpha21=!is.na(polyA_motif)
+    alpha_labs21="polyA motif found"
+  }else{
+    alpha21=NULL
+    alpha_labs21=NULL
+  }
+
+  p21.stitles.FSM<-list("Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'End",
+                        "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'5'End",
+                        "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 5'End",
+                        "Distance to Annotated Polyadenylation Site for FSM\n\nReference Match")
+  for(i in 1:length(subcategories.FSM)){
+    c<-data.frame(subcategories.FSM[i])
+    if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
+      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
+      diff_breaks <- c(seq(-500, 500, by = 50));
+      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
+      max_height <- (max_height %/% 10+1) * 10;
+      p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
+        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+        mytheme + labs(alpha = "polyA motif found") +
+        scale_x_discrete(drop=F) +
+        ylab("Transcripts, count")+
+        xlab("Distance to annotated polyadenylation site, bp")+
+        labs(     title=p21.stitles.FSM[i],
+                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                            labels=c("0","25","50","75","100")) +
+        scale_x_discrete(drop=F) +
+        mytheme + labs(alpha = "polyA motif found") +
+        ylab("Transcripts, %")+
+        xlab("Distance to annotated polyadenylation site, bp")+
+        labs(     title=p21.stitles.FSM[i],
+                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
         
-        p21.FSM.list[[i]] = p21.s
-        p21.FSM.list.a[[i]] = p21.s.a
-      }
+      p21.FSM.list[[i]] = p21.s
+      p21.FSM.list.a[[i]] = p21.s.a
     }
+  }
   p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
+    geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha=alpha21)) +
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-    mytheme + labs(alpha = "polyA motif found") +
+    mytheme + labs(alpha = alpha_labs21) +
     scale_x_discrete(drop=F) +
     ylab("Number of FSM transcripts")+
     xlab("Distance to annotated polyadenylation site, bp")+
@@ -898,45 +905,17 @@ if (nrow(data.FSM) > 0) {
 
 
   p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
+    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= alpha21), fill=myPalette[4], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
-    mytheme + labs(alpha = "polyA motif found") +
+    mytheme + labs(alpha = alpha_labs21) +
     ylab("FSM transcripts, %")+
     xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  
-  } else {
-    p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-      geom_bar(fill=myPalette[4], color="black", size=0.3 ) +
-      scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-      mytheme +
-      scale_x_discrete(drop=F) +
-      ylab("Number of FSM transcripts") +
-      xlab("Distance to annotated polyadenylation site, bp") +
-      labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
-                subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
-
-    # plot histogram of distance to polyA site, Y-axis percentage
-    p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-      geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[4], color="black", size=0.3)+
-      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                         labels=c("0","25","50","75","100")) +
-      scale_x_discrete(drop=F) +
-      mytheme  +
-      ylab("Percent of FSM transcripts")+
-      xlab("Distance to annotated polyadenylation site, bp")+
-      labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
-                subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
-}
 
   # plot histogram of distance to start site, Y-axis absolute count
   p22.FSM.list = list()
