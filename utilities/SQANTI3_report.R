@@ -836,6 +836,8 @@ if (nrow(data.FSM) > 0) {
   diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 50), diff_max+1);
   data.FSM$diffTTSCat = cut(-(data.FSM$diff_to_TTS), breaks = diff_breaks);
   data.FSM$diffTSSCat = cut(-(data.FSM$diff_to_TSS), breaks = diff_breaks);
+  p21.FSM.list = list()
+  p21.FSM.list.a = list()
 
   max_height <- max(max(table(data.FSM$diffTSSCat)), max(table(data.FSM$diffTTSCat)));
   max_height <- (max_height %/% 10+1) * 10;
@@ -846,8 +848,6 @@ if (nrow(data.FSM) > 0) {
                           "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'5'End",
                           "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 5'End",
                           "Distance to Annotated Polyadenylation Site for FSM\n\nReference Match")
-    p21.FSM.list = list()
-    p21.FSM.list.a = list()
     for(i in 1:length(subcategories.FSM)){
       c<-data.frame(subcategories.FSM[i])
       if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
@@ -939,14 +939,15 @@ if (nrow(data.FSM) > 0) {
 }
 
   # plot histogram of distance to start site, Y-axis absolute count
+  p22.FSM.list = list()
+  p22.FSM.list.a = list()
   if (!all(is.na(data.FSM$within_cage_peak))){
     #FSM_TSS
     p22.stitles.FSM<-list("Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3' End",
                           "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3'5' End",
                           "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 5' End",
                           "Distance to Annotated Transcription Start Site for FSM\n\nReference Match")
-    p22.FSM.list = list()
-    p22.FSM.list.a = list()
+    
     for(i in 1:length(subcategories.FSM)){
       c<-data.frame(subcategories.FSM[i])
       if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
