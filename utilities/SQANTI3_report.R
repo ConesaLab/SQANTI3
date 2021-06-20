@@ -844,12 +844,37 @@ if (nrow(data.FSM) > 0) {
 
   # plot histogram of distance to polyA site, Y-axis absolute count
   if (!all(is.na(data.FSM$polyA_motif))){
-    alpha21=!is.na(polyA_motif)
+    alpha21='!is.na(polyA_motif)'
     alpha_labs21="polyA motif found"
   }else{
     alpha21=NULL
     alpha_labs21=NULL
   }
+  p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
+    geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha=eval(parse(text = alpha21)))) +
+    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+    mytheme + labs(alpha = alpha_labs21) +
+    scale_x_discrete(drop=F) +
+    ylab("Number of FSM transcripts")+
+    xlab("Distance to annotated polyadenylation site, bp")+
+    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
+              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.justification=c(1,1), legend.position=c(1,1))
+  
+  
+  p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
+    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= eval(parse(text = alpha21))), fill=myPalette[4], color="black", size=0.3)+
+    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                       labels=c("0","25","50","75","100")) +
+    scale_x_discrete(drop=F) +
+    mytheme + labs(alpha = alpha_labs21) +
+    ylab("FSM transcripts, %")+
+    xlab("Distance to annotated polyadenylation site, bp")+
+    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
+              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.justification=c(1,1), legend.position=c(1,1))
 
   p21.stitles.FSM<-list("Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'End",
                         "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'5'End",
@@ -857,16 +882,23 @@ if (nrow(data.FSM) > 0) {
                         "Distance to Annotated Polyadenylation Site for FSM\n\nReference Match")
   for(i in 1:length(subcategories.FSM)){
     c<-data.frame(subcategories.FSM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
+    if (!(dim(c))[1]==0 ){
+      if (!all(is.na(c$polyA_motif))){
+        alpha21s='!is.na(polyA_motif)'
+        alpha_labs21s="polyA motif found"
+      }else{
+        alpha21=NULL
+        alpha_labs21=NULL
+      }
       diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
       diff_breaks <- c(seq(-500, 500, by = 50));
       c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
       max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
       max_height <- (max_height %/% 10+1) * 10;
       p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
-        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
+        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha=eval(parse(text = alpha21s)))) +
         scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-        mytheme + labs(alpha = "polyA motif found") +
+        mytheme + labs(alpha = alpha_labs21s) +
         scale_x_discrete(drop=F) +
         ylab("Transcripts, count")+
         xlab("Distance to annotated polyadenylation site, bp")+
@@ -875,11 +907,11 @@ if (nrow(data.FSM) > 0) {
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
-        geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
+        geom_bar(aes(alpha= eval(parse(text = alpha21s)), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                             labels=c("0","25","50","75","100")) +
         scale_x_discrete(drop=F) +
-        mytheme + labs(alpha = "polyA motif found") +
+        mytheme + labs(alpha = alpha_labs21s) +
         ylab("Transcripts, %")+
         xlab("Distance to annotated polyadenylation site, bp")+
         labs(     title=p21.stitles.FSM[i],
@@ -891,83 +923,23 @@ if (nrow(data.FSM) > 0) {
       p21.FSM.list.a[[i]] = p21.s.a
     }
   }
-  p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha=alpha21)) +
-    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-    mytheme + labs(alpha = alpha_labs21) +
-    scale_x_discrete(drop=F) +
-    ylab("Number of FSM transcripts")+
-    xlab("Distance to annotated polyadenylation site, bp")+
-    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
-              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
-
-
-  p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= alpha21), fill=myPalette[4], color="black", size=0.3)+
-    scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                       labels=c("0","25","50","75","100")) +
-    scale_x_discrete(drop=F) +
-    mytheme + labs(alpha = alpha_labs21) +
-    ylab("FSM transcripts, %")+
-    xlab("Distance to annotated polyadenylation site, bp")+
-    labs(     title="Distance to Annotated Polyadenylation Site for FSM\n\n",
-              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
-
+}
   # plot histogram of distance to start site, Y-axis absolute count
   p22.FSM.list = list()
   p22.FSM.list.a = list()
-  if (!all(is.na(data.FSM$within_cage_peak))){
     #FSM_TSS
-    p22.stitles.FSM<-list("Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3' End",
-                          "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3'5' End",
-                          "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 5' End",
-                          "Distance to Annotated Transcription Start Site for FSM\n\nReference Match")
-    
-    for(i in 1:length(subcategories.FSM)){
-      c<-data.frame(subcategories.FSM[i])
-      if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
-        diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-        diff_breaks <- c(seq(-500, 500, by = 50));
-        c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-        c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
-        max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
-        max_height <- (max_height %/% 10+1) * 10;
-        p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
-          geom_bar(fill=myPalette[6], color="black", size=0.3, aes( alpha= within_cage_peak)) +
-          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-          scale_x_discrete(drop=F) +
-          mytheme + labs(alpha = "TSS within a CAGE peak") +
-          ylab("Transcripts, count")+
-          xlab("Distance to annotated transcription start site, bp")+
-          labs(     title=p22.stitles.FSM[i],
-                    subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
-          geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
-          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                             labels=c("0","25","50","75","100")) +
-          scale_x_discrete(drop=F) +
-          mytheme + labs(alpha = "TSS within a CAGE peak") +
-          ylab("Transcripts, %")+
-          xlab("Distance to annotated transcription start site, bp")+
-          labs(     title=p22.stitles.FSM[i],
-                    subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-          theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p22.FSM.list[[i]] = p22.s
-        p22.FSM.list.a[[i]] = p22.s.a
-      }
-    }
+  if (!all(is.na(data.FSM$within_cage_peak))){
+    alpha22tss='!is.na(polyA_motif)'
+    alpha_labs22tss="TSS within a CAGE peak"
+  }else{
+    alpha21tss=NULL
+    alpha_labs22tss=NULL
+  }
   p22.a <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-    geom_bar(fill=myPalette[6], color="black", size=0.3 , aes(alpha=within_cage_peak))+
+    geom_bar(fill=myPalette[6], color="black", size=0.3 , aes(alpha=eval(parse(text = alpha22tss))))+
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     scale_x_discrete(drop=F) +
-    mytheme + labs(alpha="TSS within a CAGE peak") +
+    mytheme + labs(alpha=alpha_labs22tss) +
     ylab("Number of FSM transcripts") +
     xlab("Distance to annotated transcription start site, bp") +
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
@@ -976,45 +948,66 @@ if (nrow(data.FSM) > 0) {
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
   p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..) , alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
+    geom_bar(aes(y = (..count..)/sum(..count..) , alpha=eval(parse(text = alpha22tss))), fill=myPalette[6], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F) +
-    mytheme + labs(alpha="TSS within a CAGE peak") +
+    mytheme + labs(alpha=alpha_labs22tss) +
     ylab("FSM transcripts, %")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  }else{
-    p22.a <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-      geom_bar(fill=myPalette[6], color="black", size=0.3 )+
-      scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-      scale_x_discrete(drop=F) +
-      mytheme + 
-      ylab("Number of FSM transcripts")+
-      xlab("Distance to annotated transcription start site, bp")+
-      labs(     title="Distance to Annotated Transcription Start Site for FSM\n\n",
-                subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
+  
+  p22.stitles.FSM<-list("Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3' End",
+                        "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 3'5' End",
+                        "Distance to Annotated Transcription Start Site for FSM\n\nAlternative 5' End",
+                        "Distance to Annotated Transcription Start Site for FSM\n\nReference Match")
     
-    # plot histogram of distance to start site, Y-axis absolute count
-    p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-      geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[6], color="black", size=0.3)+
-      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                         labels=c("0","25","50","75","100")) +
-      scale_x_discrete(drop=F) +
-      mytheme +
-      ylab("FSM transcripts, %")+
-      xlab("Distance to annotated transcription start site, bp")+
-      labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-           subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
+  for(i in 1:length(subcategories.FSM)){
+    c<-data.frame(subcategories.FSM[i])
+    if (!(dim(c))[1]==0){
+      if (!all(is.na(c$within_cage_peak))){
+        alpha22s='!is.na(polyA_motif)'
+        alpha_labs22s="TSS within a CAGE peak"
+      }else{
+        alpha22s=NULL
+        alpha_labs22s=NULL
+      }
+      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
+      diff_breaks <- c(seq(-500, 500, by = 50));
+      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
+      max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
+      max_height <- (max_height %/% 10+1) * 10;
+      p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
+        geom_bar(fill=myPalette[6], color="black", size=0.3, aes(alpha=eval(parse(text = alpha22s)))) +
+        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+        scale_x_discrete(drop=F) +
+        mytheme + labs(alpha = alpha_labs22s) +
+        ylab("Transcripts, count")+
+        xlab("Distance to annotated transcription start site, bp")+
+        labs(     title=p22.stitles.FSM[i],
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
+        geom_bar(aes( alpha=eval(parse(text = alpha22s)), y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100")) +
+        scale_x_discrete(drop=F) +
+        mytheme + labs(alpha = alpha_labs22s) +
+        ylab("Transcripts, %")+
+        xlab("Distance to annotated transcription start site, bp")+
+        labs(     title=p22.stitles.FSM[i],
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p22.FSM.list[[i]] = p22.s
+      p22.FSM.list.a[[i]] = p22.s.a
+    }
   }
-}
 
 if (nrow(data.ISM) > 0) {
   p21.stitles.ISM<-list("Distance to Annotated Polyadenylation Site for ISM\n\n3' Fragment",
