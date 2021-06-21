@@ -929,7 +929,7 @@ if (nrow(data.FSM) > 0) {
   p22.FSM.list.a = list()
     #FSM_TSS
   if (!all(is.na(data.FSM$within_cage_peak))){
-    alpha22tss='!is.na(polyA_motif)'
+    alpha22tss='within_cage_peak'
     alpha_labs22tss="TSS within a CAGE peak"
   }else{
     alpha21tss=NULL
@@ -969,7 +969,7 @@ if (nrow(data.FSM) > 0) {
     c<-data.frame(subcategories.FSM[i])
     if (!(dim(c))[1]==0){
       if (!all(is.na(c$within_cage_peak))){
-        alpha22s='!is.na(polyA_motif)'
+        alpha22s='within_cage_peak'
         alpha_labs22s="TSS within a CAGE peak"
       }else{
         alpha22s=NULL
