@@ -382,11 +382,14 @@ ggplotly(p4) %>%
 
 #### By Subcategory
 
-```{r p4.s1_p4.s2}
+```{r p4.s1_p4.s2_p4.s3}
 ggplotly(p4.s1) %>%
   layout(showlegend = T)
 
 ggplotly(p4.s2) %>%
+  layout(showlegend = T)
+
+ggplotly(p4.s3) %>%
   layout(showlegend = T)
 ```
 
@@ -402,11 +405,14 @@ ggplotly(p5) %>%
 
 #### By Subcategory
 
-```{r p5.s1_p5.s2}
+```{r p5.s1_p5.s2_p5.s3}
 ggplotly(p5.s1) %>%
   layout(showlegend = T)
 
 ggplotly(p5.s2) %>%
+  layout(showlegend = T)
+
+ggplotly(p5.s3) %>%
   layout(showlegend = T)
 ```
 
@@ -690,7 +696,7 @@ ggplotly(p.polyA_dist_subcat)%>%
   layout(margin = list(r = 130))
 cat ('\n')
 
-ggplotly(p.polyA_dist_subcat.other)
+ggplotly(p.polyA_dist_subcat.s2)
 
 datatable(df.polyA_subcat_MD,
           options = list(dom = 't'),
@@ -1003,10 +1009,11 @@ Intra−Priming Quality Check
 
 <!-- 1 -->
 
-```{r p30, eval=exists("p30") && exists("p30.a")}
+```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
 cat ('\n###',"By Structural Category", '\n')
-ggplotly(p30)
-ggplotly(p30.a)
+ggplotly(p30.s1)
+ggplotly(p30.s2)
+ggplotly(p30.s3)
 cat ('\n')
 ```
 
