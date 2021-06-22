@@ -13,7 +13,7 @@ generatePDFreport = function()
   freqCat <- as.data.frame(table(data.class$structural_category))
   #freqCat$ranking = order(freqCat$Freq,decreasing = T)
   table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Isoforms, count"))
-  title1 <- textGrob("Transcript Classification\n", gp=gpar(fontface="italic", fontsize=17), vjust = -4)
+  title1 <- textGrob("Transcript Classification\n", gp=gpar(fontface="italic", fontsize=17), vjust = -3.2)
   gt1 <- gTree(children=gList(table1, title1))
   
   
