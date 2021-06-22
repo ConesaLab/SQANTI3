@@ -115,7 +115,7 @@ rownames(data.class) <- data.class$isoform
 xaxislevelsF1 <- c("full-splice_match","incomplete-splice_match","novel_in_catalog","novel_not_in_catalog", "genic","antisense","fusion","intergenic","genic_intron");
 xaxislabelsF1 <- c("FSM", "ISM", "NIC", "NNC", "Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron")
 subc.levels=c("alternative_3end",'alternative_3end5end', "alternative_5end","reference_match", "3prime_fragment","internal_fragment", "5prime_fragment","combination_of_known_junctions", "combination_of_known_splicesites", "intron_retention","no_combination_of_known_junctions", "mono-exon_by_intron_retention", "at_least_one_novel_splicesite", "mono-exon", "multi-exon")
-subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alterantive 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Combin. of annot. junctions", "Combin. of annot. splice sites", "Intron retention", "Not combin. of annot. junctions", "Mono-exon by intron retention", "At least 1 annot. donor/accept.", "Mono-exon", "Multi-exon")
+subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alterantive 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Comb. of annot. junctions", "Comb. of annot. splice sites", "Intron retention", "Not comb. of annot. junctions", "Mono-exon by intron ret.", "At least 1 annot. don./accept.", "Mono-exon", "Multi-exon")
 coding.levels=c("coding", "non_coding")
 coding.labels=c("Coding", "Non coding")
 
@@ -136,7 +136,8 @@ data.class$coding = factor(data.class$coding,
                                 ordered=TRUE)
 
 data.FSMISM <- subset(data.class, structural_category %in% c('FSM', 'ISM'))
-data.other <- subset(data.class, structural_category %in% c("NIC", "NNC", "Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron"))
+data.NICNNC <- subset(data.class, structural_category %in% c("NIC", "NNC"))
+data.other <- subset(data.class, structural_category %in% c("Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron"))
 data.FSM <- subset(data.class, (structural_category=="FSM" & exons>1))
 data.ISM <- subset(data.class, (structural_category=="ISM" & exons>1))
 data.NNC <- subset(data.class, (structural_category=="NNC" & exons>1))
@@ -307,12 +308,17 @@ if (!all(is.na(data.FSMISM$FL))){
   data.FSMISM$FL_TPM <- data.FSMISM$FL*(10**6)/total_fl
 }
 
+if (!all(is.na(data.NICNNC$FL))){
+  total_fl <- sum(data.NICNNC$FL, na.rm=T)
+  #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
+  data.NICNNC$FL_TPM <- data.NICNNC$FL*(10**6)/total_fl
+}
+
 if (!all(is.na(data.other$FL))){
   total_fl <- sum(data.other$FL, na.rm=T)
   #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
   data.other$FL_TPM <- data.other$FL*(10**6)/total_fl
 }
-
 
 if (length(FL_multisample_indices)>0){
   FL_multisample_names <- substring(colnames(data.class)[FL_multisample_indices],4)
@@ -502,26 +508,32 @@ p4.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=length, fill=subc
   ylab("Transcript Length (bp)") +
   scale_fill_manual(values = subcat.palette) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
-  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
   ggtitle("Transcript Lengths by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
-p4.s2 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subcategory)) +
+p4.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=length, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
   scale_fill_manual(values = subcat.palette) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
-  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(legend.position="right", legend.title=element_blank())+
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
   ggtitle("Transcript Lengths by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
+p4.s3 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  scale_x_discrete(drop=TRUE) +
+  ylab("Transcript Length (bp)") +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(legend.position="right", legend.title=element_blank())+
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  ggtitle("Transcript Lengths by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
 
 ##**** PLOT 5: Exon counts by category
 
@@ -541,28 +553,34 @@ p5.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=exons, fill=subca
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank()) +
-  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.title.x=element_blank())+
   ylab("Number of exons") +
   scale_x_discrete(drop=TRUE) +
   scale_fill_manual(values = subcat.palette) +
   ggtitle("Exon Counts by Subcategory\n\n" )
-  
 
-p5.s2 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcategory)) +
+p5.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=exons, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   ylab("Number of exons") +
   scale_x_discrete(drop=TRUE) +
   scale_fill_manual(values = subcat.palette) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical")+
-  guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+  theme(legend.position="right", legend.title=element_blank())+
   ggtitle("Exon Counts by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
+p5.s3 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  ylab("Number of exons") +
+  scale_x_discrete(drop=TRUE) +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  theme(legend.position="right", legend.title=element_blank())+
+  ggtitle("Exon Counts by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
 
 
 ##**** PLOT 6: Mono vs Multi-exon distribution for Known vs Novel Genes
@@ -609,7 +627,7 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
   geom_bar(stat='identity', color="black", size=0.3, width=0.85) +
   scale_fill_manual(values = cat.palette, guide='none', name="Structural Category") +
   mytheme+
-  theme(legend.justification=c(1,1), legend.position="bottom")  +
+  theme(legend.position="right") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   scale_y_continuous(expand=c(0,0))+
   labs(x="Transcript length, kb", y="Counts", title="Structural Categories by Transcript Length")
@@ -619,7 +637,7 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   geom_bar(stat='identity', color ="black", size=0.3, width=0.85) +
   scale_fill_manual(values = cat.palette, guide='none', name="Structural Category") +
   mytheme+
-  theme(legend.justification=c(1,1), legend.position="bottom")  +
+  theme(legend.position="right")  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   scale_y_continuous(expand=c(0,0))+
   labs(x="Transcript length, kb", y="%", title="Structural Categories by Transcript Length\n\n\n")
@@ -647,27 +665,38 @@ if (!all(is.na(data.FSMISM$iso_exp))){
     ylab("log2(TPM+1)") +
     scale_fill_manual(values = subcat.palette) +
     mytheme  + theme(axis.text.x = element_text(angle = 45)) +
-    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-          legend.direction = "horizontal", legend.box = "vertical") +
-    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(legend.position="right", legend.title=element_blank()) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
-if (!all(is.na(data.other$iso_exp))){
-  p8.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+
+if (!all(is.na(data.NICNNC$iso_exp))){
+  p8.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
     scale_x_discrete(drop=TRUE) +
     ylab("log2(TPM+1)") +
     scale_fill_manual(values = subcat.palette) +
     mytheme  + theme(axis.text.x = element_text(angle = 45)) +
-    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-          legend.direction = "horizontal", legend.box = "vertical") +
-    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(legend.position="right", legend.title=element_blank()) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
+
+if (!all(is.na(data.other$iso_exp))){
+  p8.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+    scale_x_discrete(drop=TRUE) +
+    ylab("log2(TPM+1)") +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    theme(legend.position="right", legend.title=element_blank()) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Transcript Expression by Subcategory\n\n" )
+}
+
 
 
 # PLOT 9: FL number, if FL count provided
@@ -688,14 +717,26 @@ if (!all(is.na(data.class$FL))){
 
 if (!all(is.na(data.FSMISM$FL))){
   p9.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
-    geom_boxplot(color="black", size=0.3, outlier.size=0.2) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
     scale_fill_manual(values = subcat.palette) +
     mytheme +
-    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-          legend.direction = "horizontal", legend.box = "vertical") +
-    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(legend.position="right", legend.title=element_blank()) +
+    theme(axis.text.x = element_text(angle = 45)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Long Reads Count by Subcategory\n\n" )
+}
+
+if (!all(is.na(data.NICNNC$FL))){
+  p9.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
+    ylab("log2(FL_TPM+1)") +
+    scale_x_discrete(drop=TRUE) +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme +
+    theme(legend.position="right", legend.title=element_blank()) +
     theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
@@ -703,21 +744,18 @@ if (!all(is.na(data.FSMISM$FL))){
 }
 
 if (!all(is.na(data.other$FL))){
-  p9.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
-    geom_boxplot(color="black", size=0.3, outlier.size=0.2) +
+  p9.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
     scale_fill_manual(values = subcat.palette) +
     mytheme +
-    theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-          legend.direction = "horizontal", legend.box = "vertical") +
-    guides(fill=guide_legend(nrow=4,byrow=TRUE)) +
+    theme(legend.position="right", legend.title=element_blank()) +
     theme(axis.text.x = element_text(angle = 45)) +
     theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Long Reads Count by Subcategory\n\n" )
 }
-
 
 
 
@@ -1703,7 +1741,8 @@ p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory))
   mytheme+
   theme(legend.title=element_blank())
 
-p.polyA_dist_subcat.other <- ggplot(data.other, aes(x=polyA_dist, color=subcategory)) +
+data.s2=rbind(data.other, data.NICNNC)
+p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) +
   geom_freqpoly(binwidth=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
@@ -2030,41 +2069,54 @@ if (!all(is.na(data.ratio$ratio_TSS))){
 # PLOT p30,p31,p32: percA by subcategory
 
 
-p30 <- ggplot(data=data.FSMISM, 
-              aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
-  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, position = "dodge") +
+p30.s1 <- ggplot(data=data.FSMISM, 
+                 aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
   labs(title="Possible Intra-Priming by Structural Category\n\n",
        subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
+  theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
   theme(strip.background = element_rect(color = "white"),
         strip.placement = "outside", strip.text = element_text(size = 10)) +
-  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
   scale_fill_manual(values=subcat.palette, drop=T) +
   facet_grid(~structural_category, scales = "free", switch = "x")
 
-p30.a <- ggplot(data=data.other, 
-                aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
-  geom_boxplot(color="black", size=0.3, outlier.size = 0.2, position = "dodge") +
+p30.s2 <- ggplot(data=data.NICNNC, 
+                 aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
   labs(title="Possible Intra-Priming by Structural Category\n\n",
        subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
-  theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(), 
-        legend.direction = "horizontal", legend.box = "vertical") +
+  theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
   theme(strip.background = element_rect(color = "white"),
         strip.placement = "outside", strip.text = element_text(size = 10)) +
-  guides(fill=guide_legend(nrow=5,byrow=TRUE)) +
   scale_fill_manual(values=subcat.palette, drop=T) +
   facet_grid(~structural_category, scales = "free", switch = "x")
+
+p30.s3 <- ggplot(data=data.other, 
+                 aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
+  mytheme +
+  xlab("Structural category") +
+  ylab("'A's, %") +
+  labs(title="Possible Intra-Priming by Structural Category\n\n",
+       subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
+  theme(legend.position="right", legend.title=element_blank()) +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  theme(strip.background = element_rect(color = "white"),
+        strip.placement = "outside", strip.text = element_text(size = 10)) +
+  scale_fill_manual(values=subcat.palette, drop=T) +
+  facet_grid(~structural_category, scales = "free", switch = "x")
+
 
 p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=exonCat)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
