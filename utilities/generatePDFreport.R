@@ -45,8 +45,9 @@ generatePDFreport = function()
   
   
   # Plot Table 1 and Table 2
-  grid.arrange(gt4,gt2,gt3,gt1, layout_matrix = cbind(c(1,2,3),c(1,4,4)))
+  grid.arrange(gt4,gt2,gt1, layout_matrix = cbind(c(1,2,3),c(1,4,4)))
   
+  grid.arrange(gt3)
   
   s <- textGrob("Gene Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
@@ -88,16 +89,21 @@ generatePDFreport = function()
   print(p4)
   print(p4.s1)
   print(p4.s2)
+  print(p4.s3)
   print(p5)
   print(p5.s1)
   print(p5.s2)
+  print(p5.s3)
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
     if (!all(is.na(data.FSMISM$iso_exp))){
       print(p8.s1)
     }
-    if (!all(is.na(data.other$iso_exp))){
+    if (!all(is.na(data.NICNNC$iso_exp))){
       print(p8.s2)
+    }
+    if (!all(is.na(data.other$iso_exp))){
+      print(p8.s3)
     }
   }
   if (!all(is.na(data.class$FL))){
@@ -105,8 +111,11 @@ generatePDFreport = function()
     if (!all(is.na(data.FSMISM$FL))){
       print(p9.s1)
     }
-    if (!all(is.na(data.other$FL))){
+    if (!all(is.na(data.NICNNC$FL))){
       print(p9.s2)
+    }
+    if (!all(is.na(data.other$FL))){
+      print(p9.s3)
     }
   }
   
@@ -354,7 +363,7 @@ generatePDFreport = function()
   
   if (sum(!is.na(data.class$polyA_dist)) > 10) {
     print(p.polyA_dist_subcat)
-    print(p.polyA_dist_subcat.other)
+    print(p.polyA_dist_subcat.s2)
     # PLOT polyA motif ranking, distance from 3' end by subcategory
     
     
@@ -457,8 +466,9 @@ generatePDFreport = function()
   
   s <- textGrob("Intra-Priming Quality Check", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
-  print(p30)
-  print(p30.a)
+  print(p30.s1)
+  print(p30.s2)
+  print(p30.s3)
   print(p31)
   print(p32)
   
