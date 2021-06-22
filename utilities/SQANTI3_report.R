@@ -130,7 +130,8 @@ data.class$subcategory = factor(data.class$subcategory,
 
 
 data.FSMISM <- subset(data.class, structural_category %in% c('FSM', 'ISM'))
-data.other <- subset(data.class, structural_category %in% c("NIC", "NNC", "Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron"))
+data.NICNNC <- subset(data.class, structural_category %in% c("NIC", "NNC"))
+data.other <- subset(data.class, structural_category %in% c("Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron"))
 data.FSM <- subset(data.class, (structural_category=="FSM" & exons>1))
 data.ISM <- subset(data.class, (structural_category=="ISM" & exons>1))
 data.NNC <- subset(data.class, (structural_category=="NNC" & exons>1))
@@ -297,6 +298,12 @@ if (!all(is.na(data.FSMISM$FL))){
   total_fl <- sum(data.FSMISM$FL, na.rm=T)
   #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
   data.FSMISM$FL_TPM <- data.FSMISM$FL*(10**6)/total_fl
+}
+
+if (!all(is.na(data.NICNNC$FL))){
+  total_fl <- sum(data.NICNNC$FL, na.rm=T)
+  #data.class$FL_TPM <- round(data.class$FL*(10**6)/total_fl)
+  data.NICNNC$FL_TPM <- data.NICNNC$FL*(10**6)/total_fl
 }
 
 if (!all(is.na(data.other$FL))){
@@ -501,7 +508,18 @@ p4.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=length, fill=subc
   ggtitle("Transcript Lengths by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
-p4.s2 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subcategory)) +
+p4.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=length, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  scale_x_discrete(drop=TRUE) +
+  ylab("Transcript Length (bp)") +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(legend.position="right", legend.title=element_blank())+
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  ggtitle("Transcript Lengths by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
+
+p4.s3 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
@@ -538,7 +556,18 @@ p5.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=exons, fill=subca
   scale_fill_manual(values = subcat.palette) +
   ggtitle("Exon Counts by Subcategory\n\n" )
 
-p5.s2 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcategory)) +
+p5.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=exons, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
+  ylab("Number of exons") +
+  scale_x_discrete(drop=TRUE) +
+  scale_fill_manual(values = subcat.palette) +
+  mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+  theme(legend.position="right", legend.title=element_blank())+
+  ggtitle("Exon Counts by Subcategory\n\n" ) +
+  theme(axis.title.x=element_blank())
+
+p5.s3 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   ylab("Number of exons") +
   scale_x_discrete(drop=TRUE) +
@@ -636,8 +665,22 @@ if (!all(is.na(data.FSMISM$iso_exp))){
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
+
+if (!all(is.na(data.NICNNC$iso_exp))){
+  p8.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+    scale_x_discrete(drop=TRUE) +
+    ylab("log2(TPM+1)") +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    theme(legend.position="right", legend.title=element_blank()) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Transcript Expression by Subcategory\n\n" )
+}
+
 if (!all(is.na(data.other$iso_exp))){
-  p8.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
+  p8.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
     scale_x_discrete(drop=TRUE) +
     ylab("log2(TPM+1)") +
@@ -680,8 +723,22 @@ if (!all(is.na(data.FSMISM$FL))){
     ggtitle("Long Reads Count by Subcategory\n\n" )
 }
 
+if (!all(is.na(data.NICNNC$FL))){
+  p9.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
+    ylab("log2(FL_TPM+1)") +
+    scale_x_discrete(drop=TRUE) +
+    scale_fill_manual(values = subcat.palette) +
+    mytheme +
+    theme(legend.position="right", legend.title=element_blank()) +
+    theme(axis.text.x = element_text(angle = 45)) +
+    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.title.x=element_blank()) +
+    ggtitle("Long Reads Count by Subcategory\n\n" )
+}
+
 if (!all(is.na(data.other$FL))){
-  p9.s2 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+  p9.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
@@ -867,6 +924,7 @@ if (nrow(data.FSM) > 0) {
                         "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 3'5'End",
                         "Distance to Annotated Polyadenylation Site for FSM\n\nAlternative 5'End",
                         "Distance to Annotated Polyadenylation Site for FSM\n\nReference Match")
+  subcategories.FSM <- list(data.alt3end, data.alt35end, data.alt5end, data.refmatch)
   for(i in 1:length(subcategories.FSM)){
     c<-data.frame(subcategories.FSM[i])
     if (!(dim(c))[1]==0 ){
@@ -1648,7 +1706,8 @@ p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory))
   mytheme+
   theme(legend.title=element_blank())
 
-p.polyA_dist_subcat.other <- ggplot(data.other, aes(x=polyA_dist, color=subcategory)) +
+data.s2=rbind(data.other, data.NICNNC)
+p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) +
   geom_freqpoly(binwidth=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
@@ -1975,7 +2034,7 @@ if (!all(is.na(data.ratio$ratio_TSS))){
 # PLOT p30,p31,p32: percA by subcategory
 
 
-p30 <- ggplot(data=data.FSMISM, 
+p30.s1 <- ggplot(data=data.FSMISM, 
               aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
   mytheme +
@@ -1991,7 +2050,23 @@ p30 <- ggplot(data=data.FSMISM,
   scale_fill_manual(values=subcat.palette, drop=T) +
   facet_grid(~structural_category, scales = "free", switch = "x")
 
-p30.a <- ggplot(data=data.other, 
+p30.s2 <- ggplot(data=data.NICNNC, 
+                 aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
+  geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
+  mytheme +
+  xlab("Structural category") +
+  ylab("'A's, %") +
+  labs(title="Possible Intra-Priming by Structural Category\n\n",
+       subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
+  theme(legend.position="right", legend.title=element_blank()) +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  theme(strip.background = element_rect(color = "white"),
+        strip.placement = "outside", strip.text = element_text(size = 10)) +
+  scale_fill_manual(values=subcat.palette, drop=T) +
+  facet_grid(~structural_category, scales = "free", switch = "x")
+
+p30.s3 <- ggplot(data=data.other, 
                 aes(y=perc_A_downstream_TTS, x=subcategory, fill=subcategory)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.1, position = "dodge") +
   mytheme +
