@@ -2023,7 +2023,7 @@ if (!all(is.na(data.ratio$ratio_TSS))){
   p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
     geom_density(alpha=0.6)+
     labs(x="TSS ratio, log2", y="Density", title="TSS Ratio\n\nFSM Reference Match vs ISM\n\n") +
-    scale_fill_manual(values = myPalette, breaks=c("full-splice_match", "incomplete-splice_match"),
+    scale_fill_manual(values = myPalette, breaks=c("FSM", "ISM"),
                       labels=c("FSM reference match", "ISM"), drop=F)+
     scale_x_continuous(trans='log2', breaks = trans_breaks("log2", function(x) 2^x),
                        labels = trans_format("log2", math_format(2^.x)))+
