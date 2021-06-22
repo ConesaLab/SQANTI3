@@ -447,20 +447,19 @@ for(i in 1:length(categories.list)){
   if (!(dim(c))[1]==0){
     p1.s <- ggplot(data=c, aes(x=subcategory)) +
       geom_bar(aes(y = (..count..)/sum(..count..)*100, alpha=coding, fill=subcategory), color="black", size=0.3, width=0.7) +
-      guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+      scale_x_discrete(drop=TRUE) +
+      scale_alpha_manual(values=c(1,0.3), name = "Coding prediction", labels = legendLabelF1)+
       ylab("Transcripts, %") +
-      xlab("Subcategory") +
       mytheme +
       geom_blank(aes(y=((..count..)/sum(..count..))), stat = "count") +
-      scale_fill_manual(values = subcat.palette, drop=TRUE) +
-      ggtitle(p1.s.titles[i]) +
-      scale_alpha_manual(values = c(1, 0.3)) +
-      theme(legend.position="bottom", legend.text = element_text(size = 8), legend.title=element_blank(),
-            axis.text.x = element_text(angle = 45, hjust = 1))
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      scale_fill_manual(values = subcat.palette, guide='none') +
+      ggtitle(p1.s.titles[i])+
+      theme(axis.title.x=element_blank())  
     p1.s.list[[i]] = p1.s
   }
 }
-  
+p1.s.list[[3]]
 
 #**** PLOTS 2-3: refLength and refExons for ISM and FSM transcripts. Plot if any ISM or FSM transcript
 
@@ -2037,6 +2036,7 @@ for(i in 1:length(t3.list)){
 
 p28.a <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
   geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
   scale_fill_manual(values = c(myPalette)) +
   ylab("Transcripts, %") +
@@ -2057,7 +2057,7 @@ if (!all(is.na(data.ratio$ratio_TSS))){
   p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
     geom_density(alpha=0.6)+
     labs(x="TSS ratio, log2", y="Density", title="TSS Ratio\n\nFSM Reference Match vs ISM\n\n") +
-    scale_fill_manual(values = myPalette, breaks=c("full-splice_match", "incomplete-splice_match"),
+    scale_fill_manual(values = myPalette, breaks=c("FSM", "ISM"),
                       labels=c("FSM reference match", "ISM"), drop=F)+
     scale_x_continuous(trans='log2', breaks = trans_breaks("log2", function(x) 2^x),
                        labels = trans_format("log2", math_format(2^.x)))+
