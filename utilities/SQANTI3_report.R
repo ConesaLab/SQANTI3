@@ -215,7 +215,7 @@ mytheme <- theme_classic(base_family = "Helvetica") +
         axis.text.x  = element_text(size=12),
         axis.title.y = element_text(size=13),
         axis.text.y  = element_text(vjust=0.5, size=12) ) +
-  theme(legend.text = element_text(size = 10), legend.title = element_text(size=12), legend.key.size = unit(0.5, "cm")) +
+  theme(legend.text = element_text(size = 11), legend.title = element_text(size=12), legend.key.size = unit(0.5, "cm")) +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm"))
 
@@ -459,7 +459,6 @@ for(i in 1:length(categories.list)){
     p1.s.list[[i]] = p1.s
   }
 }
-p1.s.list[[3]]
 
 #**** PLOTS 2-3: refLength and refExons for ISM and FSM transcripts. Plot if any ISM or FSM transcript
 
