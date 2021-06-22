@@ -99,7 +99,7 @@ if (exists("df.cage_subc")) {
 
 p1x <- levels(p1$data$structural_category) # x axis
 p1x_order <- 1:length(p1x)
-p1x_row <- c(paste0(p1x, ' ','coding'), (paste0(p1x, ' ','non_coding')))
+p1x_row <- c(paste0(p1x, ' ','Coding'), (paste0(p1x, ' ','Non coding')))
 
 p1y1 <- c() # coding
 p1y2 <- c() # non_coding
@@ -119,7 +119,7 @@ index_2 = 1
 for (i in p1x) {
   for (j in rownames(p1x_df)) {
     if (i == strsplit(j, ' ')[[1]][1]) {
-      if (strsplit(j, ' ')[[1]][2] == 'coding') {
+      if (strsplit(j, ' ')[[1]][2] == 'Coding') {
         p1y1[index_1] <- p1x_df[j,]
         index_1 = index_1 + 1
       } else {
@@ -156,7 +156,7 @@ nIso = nrow(data.class)
 <!--
 Summary
   1.Gene classification
-  2.Characterization of transcripts
+  2.Structural classification of transcripts
   3.Splice Junction Classification
 -->
 
@@ -177,7 +177,7 @@ datatable(
   )
 ```
 
-### Splice Junction Classification
+### Isoform Classification
 
 ```{r}
 datatable(
@@ -185,7 +185,7 @@ datatable(
   options = list(dom = 't'),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;','Table 2: ',
-    htmltools::em('Characterization of transcripts based on splice junctions'))
+    htmltools::em('Structural classification of transcripts based on splice junctions.'))
 )
 ```
 
@@ -196,7 +196,7 @@ datatable(table3MD,
           options = list(dom = 't'),
           caption = htmltools::tags$caption(
             style = 'caption-side: bottom; text-align: center;','Table 3: ',
-            htmltools::em('Splice Junction Classification'))
+            htmltools::em('Splice Junction Classification.'))
 )
 ```
 
@@ -213,7 +213,7 @@ Gene Characterization
 
 ### Number of Isoforms per Gene {.tabset .tabset-fade .tabset-dropdown}
 
-#### Isoforms Number x-Axis
+#### Distribution of Isoforms per Gene
 
 ```{r p0}
 ggplotly(p0)%>%
@@ -382,15 +382,12 @@ ggplotly(p4) %>%
 
 #### By Subcategory
 
-```{r p4.s1_p4.s2_p4.s3}
+```{r p4.s1_p4.s2}
 ggplotly(p4.s1) %>%
-  layout(showlegend = T)
+  layout(showlegend = T, boxmode = "group")
 
 ggplotly(p4.s2) %>%
-  layout(showlegend = T)
-
-ggplotly(p4.s3) %>%
-  layout(showlegend = T)
+  layout(showlegend = T, boxmode = "group")
 ```
 
 
@@ -405,15 +402,12 @@ ggplotly(p5) %>%
 
 #### By Subcategory
 
-```{r p5.s1_p5.s2_p5.s3}
+```{r p5.s1_p5.s2}
 ggplotly(p5.s1) %>%
-  layout(showlegend = T)
+  layout(showlegend = T, boxmode = "group")
 
 ggplotly(p5.s2) %>%
-  layout(showlegend = T)
-
-ggplotly(p5.s3) %>%
-  layout(showlegend = T)
+  layout(showlegend = T, boxmode = "group")
 ```
 
 ```{r, eval = exists("p2") || exists("p3")}
@@ -696,7 +690,7 @@ ggplotly(p.polyA_dist_subcat)%>%
   layout(margin = list(r = 130))
 cat ('\n')
 
-ggplotly(p.polyA_dist_subcat.s2)
+ggplotly(p.polyA_dist_subcat.other)
 
 datatable(df.polyA_subcat_MD,
           options = list(dom = 't'),
@@ -1009,11 +1003,10 @@ Intra−Priming Quality Check
 
 <!-- 1 -->
 
-```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
+```{r p30, eval=exists("p30") && exists("p30.a")}
 cat ('\n###',"By Structural Category", '\n')
-ggplotly(p30.s1)
-ggplotly(p30.s2)
-ggplotly(p30.s3)
+ggplotly(p30)
+ggplotly(p30.a)
 cat ('\n')
 ```
 
