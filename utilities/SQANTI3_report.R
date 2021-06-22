@@ -2002,6 +2002,7 @@ for(i in 1:length(t3.list)){
 
 p28.a <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
   geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
+  guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,100)) +
   scale_fill_manual(values = c(myPalette)) +
   ylab("Transcripts, %") +
