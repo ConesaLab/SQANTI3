@@ -13,14 +13,14 @@ generatePDFreport = function()
   freqCat <- as.data.frame(table(data.class$structural_category))
   #freqCat$ranking = order(freqCat$Freq,decreasing = T)
   table1 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Isoforms, count"))
-  title1 <- textGrob("Transcript Classification\n", gp=gpar(fontface="italic", fontsize=17), vjust = -3.5)
+  title1 <- textGrob("Transcript Classification\n", gp=gpar(fontface="italic", fontsize=17), vjust = -4)
   gt1 <- gTree(children=gList(table1, title1))
   
   
   # TABLE 2: Number of Novel vs Known Genes
   freqCat = as.data.frame(table(isoPerGene$novelGene))
   table2 <- tableGrob(freqCat, rows = NULL, cols = c("Category","Genes, count"))
-  title2 <- textGrob("Gene Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -3)
+  title2 <- textGrob("Gene Classification", gp=gpar(fontface="italic", fontsize=17), vjust = -4)
   gt2 <- gTree(children=gList(table2, title2))
   
   
@@ -45,8 +45,7 @@ generatePDFreport = function()
   
   
   # Plot Table 1 and Table 2
-  grid.arrange(gt4,gt2,gt1, layout_matrix = cbind(c(1,2,3),c(1,4,4)))
-  
+  grid.arrange(gt4,gt2,gt1, layout_matrix = cbind(c(1,2),c(1,4)))
   grid.arrange(gt3)
   
   s <- textGrob("Gene Characterization", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
