@@ -420,6 +420,48 @@ ggplotly(p5.s3) %>%
 cat ('\n###',"Matched Reference Transcripts {.tabset .tabset-fade .tabset-dropdown}", '\n')
 ```
 
+```{r, eval = exists("p8")}
+cat ('\n###',"Transcript Expression {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####',"By Structural Category", '\n')
+ggplotly(p8) 
+```
+
+```{r, eval = exists("p8.s1")}
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p8.s1) 
+```
+
+```{r, eval = exists("p8.s2")}
+cat ('\n####',"By Subcategory NIC/NNC", '\n')
+ggplotly(p8.s2) 
+```
+
+```{r, eval = exists("p8.s3")}
+cat ('\n####',"By Subcategory Other", '\n')
+ggplotly(p8.s3) 
+```
+
+```{r, eval = exists("p9")}
+cat ('\n###',"Long Reads Count {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p9) 
+```
+
+```{r, eval = exists("p9.s1")}
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p9.s1) 
+```
+
+```{r, eval = exists("p9.s2")}
+cat ('\n####',"By Subcategory NIC/NNC", '\n')
+ggplotly(p9.s2) 
+```
+
+```{r, eval = exists("p9.s3")}
+cat ('\n####',"By Subcategory Other", '\n')
+ggplotly(p9.s3) 
+```
+
 <!-- codes only run when expresion provided -->
 
 ```{r p2, eval = exists("p2")}
