@@ -13,9 +13,8 @@
 # Changes with respect to previous version
 # RM instead of FSM are used as positive set
 # New SQANTI features are used in the ML, related to CAGE, polyA and Ratio_TSS
-# New parameters are added
-#   1. --isoform to provide the name of the column with the isoform names
-#   2. --output_directory
+# New options added
+#   1. --output_directory
 
 
 
@@ -67,8 +66,6 @@ option_list = list(
   make_option(c("-i","--intrapriming"), default = "80", 
               help="polyA percentage thereshold to flag an isoform as 
               intra-priming"),
-  make_option(c("-s","--isoform_id_colname"), default = "isoform", 
-              help="column name with isoform names"),
   make_option(c("-f","--force_fsm_in"), default = FALSE, 
               help="FMS transcripts are not filtered")
 )
@@ -80,13 +77,11 @@ opt$intrapriming = as.numeric(opt$intrapriming)
 dir.create(opt$output_directory)
 
 # Reading data
-d <-read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
+d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
 
 # Isoform name column goes to rownames and is deleted from the table
-isoform <- opt$isoform
-isoform <- "isoform"
 rownames(d) = d$isoform
-d = d[,-which(colnames(d) == isoform)]
+d = d[,-which(colnames(d) == "isoform")]
 
 # Check data for mono-exons. Only multi-exon transcripts are subject to ML filter
 monoexons <- nrow(d[which(d$exons == 1),])  # number of monoexon transcripts
@@ -96,22 +91,17 @@ if(multiexons == 0){
   message("Machine Learning filtering won't be applied because all the isoforms are mono-exon")
   flag = FALSE
 }else{
-  message("Number of of transcripts with more than one exon:")
+  message("Number of multi-exon transcript isoforms:")
   message(multiexons)
 }
 
 # Create the set of TP and TN
 if(is.null(opt$TP) | is.null(opt$TN)){
   message("Training set not provided, it will be created from input data.")
-  FSM_set <-  d[d$structural_category == "full-splice_match" & d$exons > 1,]
-  TSS <- abs(as.numeric(FSM_set$diff_to_gene_TSS))
-  TTS <- abs(as.numeric(FSM_set$diff_to_gene_TTS))
-  CAGE <- FSM_set$within_cage_peak == "True"
-  poly <-  !is.na(FSM_set$polyA_motif)
-  RM_set <-   FSM_set[(TSS < 50 | CAGE  ) &
-                       (TTS < 50 | poly ) ,]
- NNIC.NC_set <- d[(d$structural_category == "novel_not_in_catalog" & 
-                     d$all_canonical == "non_canonical"),]
+  FSM_set <-  rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
+  RM_set <-   rownames(d[d$subcategory == "reference_match",])
+  NNIC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
+                               d$all_canonical == "non_canonical"),])
   flag = TRUE
   if (nrow (NNIC.NC_set) > 40 ) {
     Negative_set <- NNIC.NC_set
@@ -177,8 +167,7 @@ if (flag) {
     if(!is.null(d1$FIRST_EXON_COV)){
         d1 = d1[,-grep("EXON",colnames(d1))]
     }
-  }
-  if(opt$exon_cov == 1){
+  } if(opt$exon_cov == 1){
     if(is.null(d1$FIRST_EXON_COV)|is.null(d1$FIRST_EXON_NUMBER)|
        is.null(d1$LAST_EXON_COV)|is.null(d1$LAST_EXON_NUMBER)|
        is.null(d1$EXON_min_cov)){
@@ -214,7 +203,7 @@ if (flag) {
     message(colnames(d1)[nzv])
     d1 = d1[,-nzv]
   } else {
-    message("no variables with near zero variances!")}
+    message("Preprocessing: no variables with near-zero variance found")}
   
   # Calculating redundant variables
   message("Preprocessing: removing the features with a correlation > 0.9")
@@ -251,9 +240,9 @@ if (flag) {
   #### Making the training set
   
    if(is.null(opt$TP)){
-    Positive_set <- dmult[intersect(rownames(dmult), rownames(Positive_set)),colnames(dmult)]
-    Negative_set <- dmult[intersect(rownames(dmult), rownames(Negative_set)),colnames(dmult)]
-    trainingset = rbind(Positive_set,Negative_set)
+    Positive_df <- dmult[intersect(rownames(dmult), rownames(Positive_set)),colnames(dmult)]
+    Negative_df <- dmult[intersect(rownames(dmult), rownames(Negative_set)),colnames(dmult)]
+    trainingset = rbind(Positive_df,Negative_df)
     Class = factor(c(rep("POS",nrow(Positive_set)),rep("NEG",nrow(Negative_set))))
   } else {
     TP = read.table(opt$TP,as.is = TRUE)
@@ -288,9 +277,8 @@ if (flag) {
   message(table(d[d[,1]%in%rownames(testing),]$structural_category))
   
   #10 times 10 cross validation
-  ctrl = trainControl(method = "repeatedcv",repeatdmults = 10,
+  ctrl = trainControl(method = "repeatedcv", repeats = 10,
                     classProbs = TRUE,
-                    #summaryFunction = twoClassSummary,
                     sampling = 'down',returnData = TRUE,
                     savePredictions = TRUE, returnResamp ='all')
   message("-------------------------------------------------")
@@ -447,7 +435,7 @@ if (flag) {
 message("-------------------------------------------------")
 message("Intrapriming filtering in our dataset")
 
-d1[,"intra-priming"] = d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
+d1[,"intra_priming"] = d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
   !(d1$structural_category %in% c("full-splice_match") )
 
 message("Intra-priming filtered transcripts:")
@@ -462,7 +450,7 @@ d1  <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same
 # d: Initial table with new column that indicates if transcript is isoform or artifact
 d$SQANTI_filter <- "Isoform"
 d[which(d1$ML_classifier == "Negative" | 
-          d1$intra.priming == TRUE),"SQANTI_filter"] <- "Artifact"
+          d1$intra_priming == TRUE),"SQANTI_filter"] <- "Artifact"
 write.table(d,file = paste(opt$output_directory,
                            "/SQANTI_classification_ML_prediction.txt",
                            sep =''),
@@ -565,7 +553,7 @@ plot.compare <- function (classification, myfeature, imp) {
   print(p)
 }
 
-features.eval <- c("count", rownames(imp), "intra.priming")
+features.eval <- c("count", rownames(imp), "intra_priming")
 importance <- c("NA", round(imp[,1],2), "NA")
 pdf("Evaluation.ML.pdf")
 for ( i in 1:length(features.eval)) {
