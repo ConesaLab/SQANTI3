@@ -92,29 +92,46 @@ if(multiexons == 0){
   message(multiexons)
 }
 
-# Create the set of TP and TN
-if(is.null(opt$TP) | is.null(opt$TN)){
+# Check whether TP and TN sets are supplied
+if(is.null(opt$TP) == FALSE & 
+    is.null(opt$TN) == FALSE){
+  
+  message("Using supplied set of isoforms as training set.")
+  
+  TP <- read.table(opt$TP, as.is = TRUE)
+  TN <- read.table(opt$TN, as.is = TRUE)
+  
+# If not available, create the set of TP and TN from input data
+} else{
   message("Training set not provided, it will be created from input data.")
-  FSM_set <-  rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
-  RM_set <-   rownames(d[d$subcategory == "reference_match",])
+  FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
+  RM_set <- rownames(d[d$subcategory == "reference_match",])
   NNIC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
   flag = TRUE
+  
+  # Check whether number of reference matches (or FSM) and NNC non-canonical
+  # is sufficient to run ML filter
   if (length (NNIC.NC_set) > 40 ) {
     Negative_set <- NNIC.NC_set
+    message("Using Novel Not In Catalog non-canonical isoforms as True Negatives for training.")
+    
     if (length(FSM_set) > 40 ) {
       Positive_set <- FSM_set
       if (length (RM_set) > 40) {
         Positive_set <- RM_set
-      } else { message ("Not enough Reference Match transcritps, 
-                      Full-Splice-Match transcripts will be used as Positive set.")}
-    } else { message ("Not enough Full-Splice-Match transcripts, ML filter is skipped.")
-            flag = FALSE
+        message("Using FSM Reference Match isoforms as True Positives for training")
+      } else { 
+        message("Not enough Reference Match transcript isoforms among Full Splice 
+                Matches, all FSM transcripts will be used as Positive set.")}
+    } else { 
+        message ("Not enough Full-Splice-Match transcripts, ML filter is skipped.")
+        flag = FALSE
     }
   } else { 
-    message  ("Not enough Novel_Not_in_Catalog + Non_Cannonical transcripts, 
+    message("Not enough Novel_Not_in_Catalog + Non_Cannonical transcripts, 
             ML filter is skipped.")
-  flag = FALSE 
+    flag = FALSE 
   }
 }
 
@@ -178,14 +195,14 @@ if (flag) {
   
   # Removing columns with zero variance
   message("-------------------------------------------------")
-  message("Preprocessing: removing variables with near zero variance")
+  message("Preprocessing: removing variables with near zero variance.")
   nzv = nearZeroVar(d1)
   if(length(colnames(d1)[nzv]) != 0){
-    message("removed columns: ")
+    message("Removed columns: ")
     message(colnames(d1)[nzv])
     d1 = d1[,-nzv]
   } else {
-    message("No variables with near-zero variance found")}
+    message("No variables with near-zero variance found.")}
   
   # Calculating redundant variables
   message("Preprocessing: removing the features with a correlation > 0.9")
@@ -194,12 +211,12 @@ if (flag) {
   d2 <- d1[,sapply(d1,class)%in%c("numeric", "integer")] # selecting only numeric variables
   descrCorr = cor(d2)
   highCorr <- findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
+  message("List of removed features: ")
   if(length(highCorr)>0){
-    message("List of removed features: ")
-    message ("highCorr")
+    message (highCorr)
     d1 = d1[,-which(colnames(d1)%in%highCorr)]
   } else {
-    message("No features removed")
+    message("No features removed.")
   }
   
   # END  preparing data for ML 
@@ -219,19 +236,26 @@ if (flag) {
   dmult <- d1[which(d1$exons != 1),]
   
   
-  #### Making training set
+  #### Subset pre-processed data table (dmult) to make training dataset
   
-   if(is.null(opt$TP)){
+  # Use supplied data if available
+  if(is.null(opt$TP) == FALSE & 
+      is.null(opt$TN) == FALSE){
+     
+     Class = factor(c(rep("POS", nrow(TP)),
+                      rep("NEG", nrow(TN))))
+     trainingset = dmult[intersect(rownames(dmult), c(TP$V1,TN$V1)),]
+     
+     message("Finished creating training data set from supplied True Positive and True Negative sets.")
+     
+    # If note, use Positive and Negative sets defined from data (FSM-RM and NNC.NC)
+  } else {
     trainingset = rbind(dmult[Positive_set, ], 
                         dmult[Negative_set,])
     Class = factor(c(rep("POS", length(Positive_set)),
                      rep("NEG", length(Negative_set))))
-  } else {
-    TP = read.table(opt$TP, as.is = TRUE)
-    TN = read.table(opt$TN, as.is = TRUE)
-    Class = factor(c(rep("POS", nrow(TP)),
-                     rep("NEG", nrow(TN))))
-    trainingset = dmult[intersect(rownames(dmult), c(TP$V1,TN$V1)),]
+    
+    message("Finished creating training data set from input data.")
   }
   
   # Remove columns that are not informative for ML
