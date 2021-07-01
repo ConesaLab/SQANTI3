@@ -4,7 +4,8 @@
 #########     SQANTI3 MACHINE LEARNING FILTER    #########
 ##########################################################
 #
-# Authors: Cecile Pereira, Lorena de la Fuente, Francisco Pardo, Leandro Balzano-Nogueira, Ana Conesa
+# Authors: Cecile Pereira, Lorena de la Fuente, Francisco Pardo, 
+# Leandro Balzano-Nogueira, Ana Conesa, Ángeles Arzalluz-Luque
 # Contact: f.pardo.palacios@gmail.com
 # Affiliation: Institute for Integrative Systems Biology, CSIC, Valencia, Spain
 #
