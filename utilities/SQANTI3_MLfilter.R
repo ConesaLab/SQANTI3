@@ -100,11 +100,11 @@ if(is.null(opt$TP) | is.null(opt$TN)){
   NNIC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
   flag = TRUE
-  if (nrow (NNIC.NC_set) > 40 ) {
+  if (length (NNIC.NC_set) > 40 ) {
     Negative_set <- NNIC.NC_set
-    if (nrow(FSM_set) > 40 ) {
+    if (length(FSM_set) > 40 ) {
       Positive_set <- FSM_set
-      if (nrow (RM_set) > 40) {
+      if (length (RM_set) > 40) {
         Positive_set <- RM_set
       } else { message ("Not enough Reference Match transcritps, 
                       Full-Splice-Match transcripts will be used as Positive set.")}
@@ -150,8 +150,8 @@ if (flag) {
   }
   
  
-  # Case special sdCov, If all NAs, replace by 0. If some NA replace with 
-  # median value of sdCov in the dataset
+  # Special case for sdCov: If all NAs, replace by 0. If there are NA values, 
+  # replace with  median value of sdCov in the dataset
   if (all(is.na(d1$sd_cov))){
     d1$sd_cov = 2
   } else{
@@ -185,7 +185,7 @@ if (flag) {
     message(colnames(d1)[nzv])
     d1 = d1[,-nzv]
   } else {
-    message("Preprocessing: no variables with near-zero variance found")}
+    message("No variables with near-zero variance found")}
   
   # Calculating redundant variables
   message("Preprocessing: removing the features with a correlation > 0.9")
@@ -199,7 +199,7 @@ if (flag) {
     message ("highCorr")
     d1 = d1[,-which(colnames(d1)%in%highCorr)]
   } else {
-    message("No feature removed")
+    message("No features removed")
   }
   
   # END  preparing data for ML 
@@ -215,21 +215,22 @@ if (flag) {
   message("Creating positive and negative sets for training and testing")
   
   
-  # Removing monoexons
-  dmult <- d1[which(d1$exons != 1),] #considering only multiexon 
+  # Remove mono-exon transcripts from training set
+  dmult <- d1[which(d1$exons != 1),]
   
   
-  #### Making the training set
+  #### Making training set
   
    if(is.null(opt$TP)){
-    Positive_df <- dmult[intersect(rownames(dmult), rownames(Positive_set)),colnames(dmult)]
-    Negative_df <- dmult[intersect(rownames(dmult), rownames(Negative_set)),colnames(dmult)]
-    trainingset = rbind(Positive_df,Negative_df)
-    Class = factor(c(rep("POS",nrow(Positive_set)),rep("NEG",nrow(Negative_set))))
+    trainingset = rbind(dmult[Positive_set, ], 
+                        dmult[Negative_set,])
+    Class = factor(c(rep("POS", length(Positive_set)),
+                     rep("NEG", length(Negative_set))))
   } else {
-    TP = read.table(opt$TP,as.is = TRUE)
-    TN = read.table(opt$TN,as.is = TRUE)
-    Class = factor(c(rep("POS",length(TP$V1)),rep("NEG",length(TN$V1))))
+    TP = read.table(opt$TP, as.is = TRUE)
+    TN = read.table(opt$TN, as.is = TRUE)
+    Class = factor(c(rep("POS", nrow(TP)),
+                     rep("NEG", nrow(TN))))
     trainingset = dmult[intersect(rownames(dmult), c(TP$V1,TN$V1)),]
   }
   
@@ -238,10 +239,10 @@ if (flag) {
              'ref_length','ref_exons', 'ORF_length', 'CDS_length', 'CDS_start', 
              'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'all_canonical',
              'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category')
-  trainingset = trainingset[,-which(colnames(trainingset)%in%colRem)]
+  trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
   
   
-  ####  Partition
+  ####  Partition data
   message("Partition train set / test set")
   message("Proportion of the label data used for the training (between 0 and 1):")
   message(opt$percent_training)
