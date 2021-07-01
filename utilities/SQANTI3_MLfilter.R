@@ -51,9 +51,6 @@ option_list = list(
   make_option(c("-t","--percent_training"),type="double",default = 0.8,
               help="the percentage of data that goes to training (parameter p of 
               the function createDataPartition)"),
-  make_option(c("-e","--exon_cov"),type="integer", default = 0,
-              help="Should the exon coverage be considered? 
-              0 = No, 1 = Yes, default = 0"),
   make_option(c("-p","--TP"), type="character",default = NULL,
               help="file containing the list of the TP transcripts, 
               one ID by line, no header"),
@@ -160,21 +157,6 @@ if (flag) {
   } else{
     medt2 = median(as.numeric(d1[!is.na(d1$sd_cov), "sd_cov"]))
     d1[is.na(d1$sd_cov),"sd_cov"] <- medt2
-  }
-  
-  # Considering the exon coverage option
-  if(opt$exon_cov == 0){
-    if(!is.null(d1$FIRST_EXON_COV)){
-        d1 = d1[,-grep("EXON",colnames(d1))]
-    }
-  } if(opt$exon_cov == 1){
-    if(is.null(d1$FIRST_EXON_COV)|is.null(d1$FIRST_EXON_NUMBER)|
-       is.null(d1$LAST_EXON_COV)|is.null(d1$LAST_EXON_NUMBER)|
-       is.null(d1$EXON_min_cov)){
-      message("The information on the exon coverage is not available (columns missing). 
-              The variables 'FIRST_EXON_COV','FIRST_EXON_NUMBER','LAST_EXON_NUMBER,
-              'LAST_EXON_COV','EXON_min_cov' will not be considered")
-    }
   }
   
   # Convert in factors columns with categorical variables
