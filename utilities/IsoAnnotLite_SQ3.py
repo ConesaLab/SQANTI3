@@ -15,7 +15,7 @@ ALL_AS_NOVELS = False
 INTRONIC = True
 STATS = False
 
-version = "2.6"
+version = "2.6.1"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
 CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
@@ -2989,7 +2989,10 @@ def run(args):
         #dc_SQexons = {trans : [[start,end], [start,end]...]}
         #dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         #dc_SQtransGene = {trans : [gene, category, transAssociated]}
-        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand = createGTFFromSqanti(gtf, classification, junctions, filename)
+
+        #we do not have dc_gene_descripton for NO-GFF3 Annotation
+        dc_gene_description = {}
+        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
 
         print("Adding extra information to relative columns...")
         updateGTF(filename, filenameMod)
