@@ -451,10 +451,10 @@ d1  <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same
 message("Writing results...")
 
 # d: Initial table with new column that indicates if transcript is isoform or artifact
-d$SQANTI_filter <- "Isoform"
+d$MLfilter_result <- "Isoform"
 
 d[which(d1$ML_classifier == "Negative" | 
-          d1$intra_priming == TRUE),"SQANTI_filter"] <- "Artifact"
+          d1$intra_priming == TRUE),"MLfilter_result"] <- "Artifact"
 write.table(d,file = paste(opt$output_directory,
                            "/SQANTI_classification_ML_prediction.txt",
                            sep =''),
@@ -462,7 +462,7 @@ write.table(d,file = paste(opt$output_directory,
 
 # d1: Table with variables modified by the ML filter and with the result of ML 
 # filter and intra-priming evaluation
-d1 = data.frame(d1, SQANTI_filter = d$SQANTI_filter)
+d1 = data.frame(d1, MLfilter_result = d$MLfilter_result)
 write.table(d1, file = paste(opt$output_directory,
                             "/Output_ML_filter_agorithm.txt",
                             sep = ''),
@@ -470,7 +470,7 @@ write.table(d1, file = paste(opt$output_directory,
 
 
 # new_classification: classification table with only Isoform transcripts
-new_classification <- d[d$"SQANTI_filter" == "Isoform",]
+new_classification <- d[d$"MLfilter_result" == "Isoform",]
 write.table(new_classification, 
             file = paste(opt$output_directory,
                          "/SQANTI_classification_ML_filtered.txt",
@@ -509,12 +509,12 @@ plot.compare <- function (classification, myfeature, imp) {
   if (class(classification[,col]) != "factor") {
     if (myfeature != "count")  {
       dat <- data.frame(category = classification$structural_category, 
-                        filter = classification$ML_classifier, 
+                        filter = classification$MLfilter_result, 
                         feature = classification[,col])
       dat2 <- with(dat, tapply(feature,list(category,filter), median))
     } else {
       dat <- data.frame(category = classification$structural_category, 
-                        filter = classification$ML_classifier)
+                        filter = classification$MLfilter_result)
       dat2 <- table(dat)
       dat2 <- dat2[mycategories,]
     }
@@ -536,7 +536,7 @@ plot.compare <- function (classification, myfeature, imp) {
   } else {   # code for categorical features
     col <- which(colnames(classification) == myfeature)
     dat <- data.frame(category = classification$structural_category, 
-                      filter = classification$ML_classifier, feature = classification[,col])
+                      filter = classification$MLfilter_result, feature = classification[,col])
     pasted <- as.data.frame(table(apply(dat,1, paste, collapse = "#")))
     splitted <- strsplit(as.character(pasted$Var1), split = "#")
     dat2 <- data.frame(matrix(unlist(splitted), nrow = length(splitted), byrow = TRUE))
@@ -567,9 +567,9 @@ for (i in 1:length(features.eval)) {
 dev.off()
 
 
-plot(density(log(classification$ratio_TSS[classification$structural_category == "incomplete-splice_match"])), col = "red")
-lines(density(log(classification$ratio_TSS[classification$structural_category == "full-splice_match"])))
-lines(density(log(classification$ratio_TSS[(classification$structural_category == "incomplete-splice_match" & classification$SQANTI_filter == "Isoform")])), col = "blue")
+plot(density(log(d1$ratio_TSS[d1$structural_category == "incomplete-splice_match"])), col = "red")
+lines(density(log(d1$ratio_TSS[d1$structural_category == "full-splice_match"])))
+lines(density(log(d1$ratio_TSS[(d1$structural_category == "incomplete-splice_match" & d1$MLfilter_result == "Isoform")])), col = "blue")
 
 
 
