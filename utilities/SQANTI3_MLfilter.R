@@ -50,7 +50,7 @@ opt_parser = optparse::OptionParser(option_list = option_list)
 opt = optparse::parse_args(opt_parser) #list of the args
 opt$threshold = as.numeric(opt$threshold)
 opt$intrapriming = as.numeric(opt$intrapriming)
-dir.create(opt$output_directory)
+
 
 
 ###############################
