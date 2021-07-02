@@ -26,10 +26,6 @@ option_list = list(
               help="SQANTI classification output file"),
   optparse::make_option(c("-o","--output_directory"),type="character", default="SQANTI3_filter_out", 
               help="Output directory name"),
-  optparse::make_option(c('-w','--wilcox'),type="integer",default = 0, 
-              help="Feature selection option: 0 = max rfe value, 1 = minimum 
-              number of feature with a mean non different to the mean of the 
-              classifier obtain on all the features."),
   optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
               help="the percentage of data that goes to training (parameter p of 
               the function createDataPartition)"),
