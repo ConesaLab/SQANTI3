@@ -19,62 +19,50 @@
 
 
 
-### Load required packages
-library(caret)           # confusion matrix: caret_6.0-76 Version
-library(dplyr) 
-library(ggplot2)
-library(ggpubr)
-library(ipred)           # Improved Predictors package
-library(MLmetrics)
-library(nnet)            # neural networks
-library(optparse)
-library(partykit)        # "Elegant" tree design package
-library(pROC)
-library(randomForest)    # randomForest
-library(ROCR)            # ROC curve
-library(ROSE)
-library(rpart)           # Rpart package
-library(rpart.plot)      # Tree design 
-
-
-
-### Definition of inputs
+### Make script argument list
 
 option_list = list(
-  make_option(c("-c","--sqanti_classif"),type="character", default = NULL, 
+  optparse::make_option(c("-c","--sqanti_classif"),type="character", default = NULL, 
               help="SQANTI classification output file"),
-  make_option(c("-o","--output_directory"),type="character", default="SQANTI3_filter_out", 
+  optparse::make_option(c("-o","--output_directory"),type="character", default="SQANTI3_filter_out", 
               help="Output directory name"),
-  make_option(c('-w','--wilcox'),type="integer",default = 0, 
+  optparse::make_option(c('-w','--wilcox'),type="integer",default = 0, 
               help="Feature selection option: 0 = max rfe value, 1 = minimum 
               number of feature with a mean non different to the mean of the 
               classifier obtain on all the features."),
-  make_option(c("-t","--percent_training"),type="double",default = 0.8,
+  optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
               help="the percentage of data that goes to training (parameter p of 
               the function createDataPartition)"),
-  make_option(c("-p","--TP"), type="character",default = NULL,
+  optparse::make_option(c("-p","--TP"), type="character",default = NULL,
               help="file containing the list of the TP transcripts, 
               one ID by line, no header"),
-  make_option(c("-n","--TN"), type="character",default = NULL,
+  optparse::make_option(c("-n","--TN"), type="character",default = NULL,
               help="file containing the list of the TN transcripts, 
               one ID by line, no header"),
-  make_option(c("-j","--threshold"), default = "0.7",
+  optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
               help="machine learning probability threshold to classify 
               positive isoforms"),
-  make_option(c("-i","--intrapriming"), default = "80", 
+  optparse::make_option(c("-i","--intrapriming"), type="integer", default=80, 
               help="polyA percentage thereshold to flag an isoform as 
               intra-priming"),
-  make_option(c("-f","--force_fsm_in"), default = FALSE, 
+  optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
               help="FMS transcripts are not filtered")
 )
 
-opt_parser = OptionParser(option_list = option_list)
-opt = parse_args(opt_parser) #list of the args
+# Parse and handle provided arguments
+opt_parser = optparse::OptionParser(option_list = option_list)
+opt = optparse::parse_args(opt_parser) #list of the args
 opt$threshold = as.numeric(opt$threshold)
 opt$intrapriming = as.numeric(opt$intrapriming)
 dir.create(opt$output_directory)
 
-# Reading data
+
+###############################
+###### Generate ML inputs #####
+###############################
+
+
+# Read input data
 d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
 
 # Isoform name column goes to rownames and is deleted from the table
@@ -197,7 +185,7 @@ if (flag) {
   # Removing columns with zero variance
   message("-------------------------------------------------")
   message("Preprocessing: removing variables with near zero variance.")
-  nzv = nearZeroVar(d1)
+  nzv = caret::nearZeroVar(d1)
   if(length(colnames(d1)[nzv]) != 0){
     message("Removed columns: ")
     message(colnames(d1)[nzv])
@@ -211,11 +199,11 @@ if (flag) {
   if (length(r) > 0){d1 = d1[,-r] }
   d2 <- d1[,sapply(d1,class)%in%c("numeric", "integer")] # selecting only numeric variables
   descrCorr = cor(d2)
-  highCorr <- findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
+  highCorr <- caret::findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
   message("List of removed features: ")
   if(length(highCorr)>0){
-    message (highCorr)
-    d1 = d1[,-which(colnames(d1)%in%highCorr)]
+    message(highCorr)
+    d1 = d1[,-which(colnames(d1) %in% highCorr)]
   } else {
     message("No features removed.")
   }
@@ -273,31 +261,32 @@ if (flag) {
   message(opt$percent_training)
   
   set.seed(123)
-  inTraining = createDataPartition(Class,p = opt$percent_training,list = FALSE, times = 1)[,1]
+  inTraining = caret::createDataPartition(Class, p = opt$percent_training, 
+                                          list = FALSE, times = 1)[,1]
   
   training = trainingset[inTraining,]
   testing = trainingset[-inTraining,]
   
   message("Description of the training set:")
   message("Table number of positive and negative examples in the training set")
-  message(table(d[d[,1]%in%rownames(training),]$structural_category))
+  message(table(d[d[,1] %in% rownames(training),]$structural_category))
   message("Table number of positive and negative examples in the testing set")
-  message(table(d[d[,1]%in%rownames(testing),]$structural_category))
+  message(table(d[d[,1] %in% rownames(testing),]$structural_category))
   
-  #10 times 10 cross validation
-  ctrl = trainControl(method = "repeatedcv", repeats = 10,
+  
+  # Train Random Forest classifier with 10 times 10 cross validation
+  ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
                     classProbs = TRUE,
                     sampling = 'down',returnData = TRUE,
                     savePredictions = TRUE, returnResamp ='all')
   message("-------------------------------------------------")
-  message("Training Random Forest Classifier. This can take up to several hours")
+  message("Training Random Forest Classifier. This can take up to several hours.")
   message("Random Forest parameters:")
   message("-Down sampling in training set")
   message("-10 cross validation")
   
   set.seed(1)
   
-  #default: 500 trees
   randomforest <- caret::train(x = training, y = as.factor(Class[inTraining]),
                                method ='rf',
                                tuneLength = 15,
@@ -305,7 +294,6 @@ if (flag) {
                                trControl = ctrl)
   
   save(randomforest, file = "randomforest.RData")
-  load("randomforest.RData")
   
 
   #### Apply classifier on test set
@@ -321,15 +309,15 @@ if (flag) {
   rownames (a) <- rownames(test_pred_prob)
   
   message("AUC, Sens, Spec on the test set")
-  message(twoClassSummary(a,lev = levels(a$obs)))
+  message(caret::twoClassSummary(a,lev = levels(a$obs)))
   write("AUC, Sens, Spec on the test set",
         file = paste(opt$output_directory,'/statistics_testSet.txt',sep = ''))
-  write(twoClassSummary(a,lev=levels(a$obs)),
+  write(caret::twoClassSummary(a,lev=levels(a$obs)),
         file = paste(opt$output_directory,'/statistics_testSet.txt',sep=''), append = TRUE)
   write.table(a,paste(opt$output_directory,'/Pred_test_and_class.txt',sep =''), 
               quote = F, sep = "\t", row.names = TRUE)
   
-  cm = confusionMatrix(data = pred,
+  cm = caret::confusionMatrix(data = pred,
                        reference = Class[-inTraining],
                        positive = "POS")
   info = "rows:predictions \ncolumns:reference"
@@ -346,15 +334,17 @@ if (flag) {
   write.table(cm$byClass,file = paste(opt$output_directory,"/confusionMatrix_testSet.txt",sep=''),
               append = TRUE, quote = F, col.names = F)
   
-  # Varaible importance for the prediction
-  imp = varImp(randomforest,scale = FALSE)
+  # Variable importance for the prediction
+  imp = caret::varImp(randomforest,scale = FALSE)
   imp <- imp$importance
   imp <- data.frame(rownames(imp),imp) 
   imp <- imp[order(-imp$Overall, decreasing = FALSE),]
-  imp <- imp[,-1, drop = FALSE] # added Leo
+  imp <- imp[,-1, drop = FALSE]
+  
   write.table(imp,file = paste(opt$output_directory,
                                "/VariableImportanceInClassifier.txt",sep =''), 
               sep = "\t", quote = F, col.names = F)
+  
   par(mar = c(5.1, 10.1, 4.1, 2.1)) # all sides have 3 lines of space
   pdf("variable.importance.pdf")
   barplot (as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
@@ -366,11 +356,12 @@ if (flag) {
   # (not the same proportion of positives and negatives)
   fileroc = paste(opt$output_directory,"/ROC_curve_testset.pdf",sep='')
   pdf(fileroc)
-  r = roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
-  auc(r)
-  plot.roc(r, main = "ROC with unbalanced classes")
-  text(20,10,paste('AUC =',signif(auc(r),4)))
-  text(20,5,paste('CI 95% = [',signif(ci(r)[1],4),',',signif(ci(r)[2]),']'))
+  r = pROC::roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
+  pROC::auc(r)
+  pROC::plot.roc(r, main = "ROC with unbalanced classes")
+  text(20,10,paste('AUC =', signif(pROC::auc(r),4)))
+  text(20,5,paste('CI 95% = [', signif(pROC::ci(r)[1],4), ',', 
+                  signif(pROC::ci(r)[2]),']'))
   
   # # 2) same proportion positives and negatives on the test set:
   #testing
@@ -379,6 +370,7 @@ if (flag) {
   alltestneg = which(Class[-inTraining] == 'NEG')
   nbpos = length(alltestpos)
   nbneg = length(alltestneg)
+  
   if(nbpos < nbneg){
     sampleneg = sample(alltestpos,nbpos,replace = FALSE)
     newtest = testing[c(sampleneg,alltestpos),]
@@ -388,34 +380,36 @@ if (flag) {
     newtest = testing[c(samplepos,alltestneg),]
     Classnewtest = factor(c(rep('POS',nbneg),rep('NEG',nbneg)))
   }
+  
   set.seed(1)
   test_pred_prob2 = predict(randomforest, newtest, type = 'prob')
   
-  r = roc(as.numeric(Classnewtest),test_pred_prob2$POS,percent = TRUE)
-  auc(r)
-  #Area under the curve: 99.29%
-  plot.roc(r, main = "ROC with balanced classes")
+  r = pROC::roc(as.numeric(Classnewtest),test_pred_prob2$POS,percent = TRUE)
+  pROC::auc(r)
+  pROC::plot.roc(r, main = "ROC with balanced classes")
   lines(r,col = 'red')
-  ci(r)
-  text(20,20,paste('AUC =',signif(auc(r),4)),col = 'red')
-  text(20,15,paste('CI 95% = [',signif(ci(r)[1],4),',',signif(ci(r)[2]),']'),col = 'red')
+  pROC::ci(r)
+  text(20,20,paste('AUC =',signif(pROC::auc(r),4)),col = 'red')
+  text(20,15,paste('CI 95% = [',signif(pROC::ci(r)[1],4),',', 
+                   signif(pROC::ci(r)[2]),']'),col = 'red')
   dev.off()
   
   ##################################
   #### Applying classifier to data #
   ##################################
   message("-------------------------------------------------")
-  message("Classifier in our dataset")
+  message("Applying classifier to our dataset.")
   
   isoform.predict = predict(randomforest,dmult[,colnames(training)],type = 'prob')
   colnames(isoform.predict) = gsub("NEG","NEG_MLprob", colnames(isoform.predict))
   colnames(isoform.predict) = gsub("POS","POS_MLprob", colnames(isoform.predict))
-  message( "Random forest prediction done")
+  message( "Random forest prediction finished")
   
   ## Adding predictions to classification table
   classified.isoforms = cbind(dmult[rownames(isoform.predict),],isoform.predict)
   
   negatives = classified.isoforms[classified.isoforms$POS_MLprob < opt$threshold,]
+  
   if (opt$force_fsm_in) {
     negatives <- negatives[negatives$structural_category != "full-splice_match",]
   }
@@ -423,8 +417,8 @@ if (flag) {
   classified.isoforms$"ML_classifier" <- "Positive"
   classified.isoforms$"ML_classifier"[rownames(classified.isoforms) %in% 
                                         rownames(negatives)] <- "Negative"
-  message( "Results")
-  message(table(classified.isoforms$"ML_classifier"))
+  message("Random forest classification results:")
+  print(table(classified.isoforms$ML_classifier))
   
   ####################################
   ## Add monoexons back to dataset  ##
@@ -432,7 +426,7 @@ if (flag) {
   dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
   dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
   
-  d1 <- rbind (classified.isoforms, dme[,colnames(classified.isoforms)])
+  d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
 }
 
 
@@ -441,22 +435,27 @@ if (flag) {
 ####################################
 
 message("-------------------------------------------------")
-message("Intrapriming filtering in our dataset")
+message("Applying intra-priming filter to our dataset.")
 
-d1[,"intra_priming"] = d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
-  !(d1$structural_category %in% c("full-splice_match") )
+d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
+  !(d1$structural_category %in% c("full-splice_match"))
 
 message("Intra-priming filtered transcripts:")
-message(table(d1$'intra-priming'))
+print(table(d1$intra_priming))
 
 d1  <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same order
 
-##### Final result tables
-##########################
 
+
+#############################################
+##### GENERATE AND OUTPUT RESULT TABLES #####
+#############################################
+
+message("Writing results...")
 
 # d: Initial table with new column that indicates if transcript is isoform or artifact
 d$SQANTI_filter <- "Isoform"
+
 d[which(d1$ML_classifier == "Negative" | 
           d1$intra_priming == TRUE),"SQANTI_filter"] <- "Artifact"
 write.table(d,file = paste(opt$output_directory,
@@ -467,7 +466,7 @@ write.table(d,file = paste(opt$output_directory,
 # d1: Table with variables modified by the ML filter and with the result of ML 
 # filter and intra-priming evaluation
 d1 = data.frame(d1, SQANTI_filter = d$SQANTI_filter)
-write.table(d1,file = paste(opt$output_directory,
+write.table(d1, file = paste(opt$output_directory,
                             "/Output_ML_filter_agorithm.txt",
                             sep = ''),
             quote = FALSE, col.names = TRUE, sep ='\t',row.names = TRUE)
@@ -489,10 +488,9 @@ write.table(discarded, file = paste(opt$output_directory,
             quote = FALSE, col.names = TRUE, sep ='\t',row.names = TRUE)
     
 message("-------------------------------------------------")
-message("*** SQANTI3 ML filter finished!")
+message("SQANTI3 ML filter finished correctly!")
 
 ################################################
-
 
 
 ##### Summary of results #####
@@ -504,7 +502,9 @@ classification = d1; myfeature = features.eval[i]; imp = importance[i]
 
 
 plot.compare <- function (classification, myfeature, imp) {
-  library(reshape2)
+  
+  require(ggplot2)
+  
   mycategories = c("full-splice_match", "incomplete-splice_match", "novel_in_catalog",
                    "novel_not_in_catalog", "intergenic", "fusion", "genic", 
                    "antisense", "genic_intron")
@@ -524,15 +524,14 @@ plot.compare <- function (classification, myfeature, imp) {
       dat2 <- table(dat)
       dat2 <- dat2[mycategories,]
     }
-    dat3 <- melt(dat2) ; names(dat3) <- c("category", "filter", "feature")
+    dat3 <- reshape::melt(dat2) ; names(dat3) <- c("category", "filter", "feature")
     dat3$category <- factor(dat3$category, levels = mycategories)
     dat3$filter <- factor(dat3$filter, levels = c("Isoform", "Artifact"))
     
     p <- ggplot(dat3, aes(x = category, y =  feature)) +
       geom_bar(
         aes(color = filter, fill = filter),
-        stat = "identity", position = position_dodge(0.8),
-      ) +
+        stat = "identity", position = position_dodge(0.8)) +
       scale_color_manual(values = c("#0073C2FF", "#EFC000FF")) +
       scale_fill_manual(values = c("#0073C2FF", "#EFC000FF")) +
       ggtitle(paste(myfeature, "importance", imp, sep = " ")) + 
