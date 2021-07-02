@@ -494,9 +494,6 @@ message("SQANTI3 ML filter finished correctly!")
 # plot.compare is a function to evaluate the values of the features used in the 
 # ML filter in Artifacts and Isoforms per structural category
 
-i = 2
-classification = d1; myfeature = features.eval[i]; imp = importance[i]
-
 
 plot.compare <- function (classification, myfeature, imp) {
   
@@ -554,14 +551,15 @@ plot.compare <- function (classification, myfeature, imp) {
       ggtitle(paste(myfeature, "importance", imp, sep = " ")) 
   }
   
-  print(p)
+  return(p)
 }
 
 features.eval <- c("count", rownames(imp), "intra_priming")
 importance <- c("NA", round(imp[,1],2), "NA")
-pdf("Evaluation.ML.pdf")
+
+pdf(file = paste0(opt$output_directory, "/Evaluation_ML.pdf"))
 for ( i in 1:length(features.eval)) {
-  print(features.eval[i])
+  features.eval[i]
   plot.compare (classification = d1, myfeature = features.eval[i], imp = importance[i])
 }
 dev.off()
