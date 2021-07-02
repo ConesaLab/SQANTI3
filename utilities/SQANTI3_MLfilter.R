@@ -289,7 +289,8 @@ if (flag) {
                                metric = "Accuracy",
                                trControl = ctrl)
   
-  save(randomforest, file = "randomforest.RData")
+  save(randomforest, file = paste(opt$output_directory, "randomforest.RData",
+                                  sep="/"))
   
 
   #### Apply classifier on test set
@@ -337,20 +338,20 @@ if (flag) {
   imp <- imp[order(-imp$Overall, decreasing = FALSE),]
   imp <- imp[,-1, drop = FALSE]
   
-  write.table(imp,file = paste(opt$output_directory,
+  write.table(imp, file = paste(opt$output_directory,
                                "/VariableImportanceInClassifier.txt",sep =''), 
               sep = "\t", quote = F, col.names = F)
   
   par(mar = c(5.1, 10.1, 4.1, 2.1)) # all sides have 3 lines of space
-  pdf("variable.importance.pdf")
-  barplot (as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
+  pdf(file = paste0(opt$output_directory, "/variable.importance.pdf"))
+  barplot(as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
            main = "Variable Importance In Classifier")
   dev.off()
   
   ###### ROC curve
   # 1) in function of the probability on the test set 
   # (not the same proportion of positives and negatives)
-  fileroc = paste(opt$output_directory,"/ROC_curve_testset.pdf",sep='')
+  fileroc = paste0(opt$output_directory,"/ROC_curve_testset.pdf")
   pdf(fileroc)
   r = pROC::roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
   pROC::auc(r)
