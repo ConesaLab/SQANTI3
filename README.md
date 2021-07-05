@@ -4,12 +4,16 @@
 
 SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/)) that merges features from SQANTI, ([code repository](https://github.com/ConesaLab/SQANTI)) and SQANTI2 ([code repository](https://github.com/Magdoll/SQANTI2)), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
 
-SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tapas.org/) framework, that also includes IsoAnnot and tappAS.
+SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, that also includes IsoAnnot and tappAS.
 
 ## Lastest updates
 Current version (06/17/2021): SQANTI3 version 4.0
 
 New features implemented in SQANTI3
+
+**version 4.1:**
+* Change for `--gtf` argument. Now, by default, SQANTI3 will expect a GTF file as input. It will still be possible to provide the sequences of your isoforms as a FASTA or FASTQ file by activatingt the `--fasta` option.
+* New plots and minor bugs of the report fixed.
 
 **version 4.0:**
 * Creation of HTML report. Using the `--report` argument, it is possible to choose which type of report: `html` (default), `pdf`, `both` or `skip`.
