@@ -24,7 +24,9 @@ dependencies:
   - python>=3.7.6
   - r>=3.6.0
   - r-biocmanager
+  - r-caret
   - r-dplyr
+  - r-e1071
   - r-ggplot2
   - r-ggplotify
   - r-gridbase
@@ -35,8 +37,11 @@ dependencies:
   - r-rmarkdown
   - r-stringi
   - r-dt
+  - r-optparse
   - r-plotly
   - r-plyr
+  - r-pROC
+  - r-randomForest
   - samtools
   - scipy
   - star
