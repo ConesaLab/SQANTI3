@@ -793,6 +793,7 @@ if (!all(is.na(data.class$FL))){
   FL_gene <- aggregate(as.integer(data.class$FL), by = list("associatedGene" = data.class$associated_gene), sum)
   colnames(FL_gene)[ncol(FL_gene)] <- "FL_gene"
   isoPerGene <- merge(isoPerGene, FL_gene, by="associatedGene")
+  total_fl <- sum(data.class$FL, na.rm=T)
   isoPerGene$FL_gene_TPM <- isoPerGene$FL_gene*(10**6)/total_fl
   
   p11 <- ggplot(data=isoPerGene, aes(x=novelGene, y=log2(FL_gene_TPM+1), fill=novelGene)) +
