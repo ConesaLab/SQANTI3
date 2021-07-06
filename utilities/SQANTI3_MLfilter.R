@@ -22,27 +22,30 @@
 ### Make script argument list
 
 option_list = list(
-  optparse::make_option(c("-c","--sqanti_classif"),type="character", default = NULL, 
-              help="SQANTI classification output file"),
-  optparse::make_option(c("-o","--output_directory"),type="character", default="SQANTI3_filter_out", 
-              help="Output directory name"),
+  optparse::make_option(c("-c","--sqanti_classif"), type="character", default = NULL, 
+              help="SQANTI classification output file."),
+  optparse::make_option(c("-o","--output"), type="character", default = "SQANTI3", 
+              help="Output classification file prefix."),
+  optparse::make_option(c("-d","--dir"), type="character", 
+                        help="Output directory."),
   optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
               help="the percentage of data that goes to training (parameter p of 
               the function createDataPartition)"),
   optparse::make_option(c("-p","--TP"), type="character",default = NULL,
               help="file containing the list of the TP transcripts, 
-              one ID by line, no header"),
+              one ID by line, no header."),
   optparse::make_option(c("-n","--TN"), type="character",default = NULL,
               help="file containing the list of the TN transcripts, 
-              one ID by line, no header"),
+              one ID by line, no header."),
   optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
               help="machine learning probability threshold to classify 
-              positive isoforms"),
+              positive isoforms."),
   optparse::make_option(c("-i","--intrapriming"), type="integer", default=80, 
               help="polyA percentage thereshold to flag an isoform as 
-              intra-priming"),
+              intra-priming."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
-              help="FMS transcripts are not filtered")
+              help="Forces retaining FMS transcripts regardless of ML filter,
+              FSM are threfore not filtered.")
 )
 
 # Parse and handle provided arguments
@@ -63,7 +66,7 @@ message("\n--------------------------------------------------")
 
 
 ### Read input data
-message("\n\tINITIAL ML CHECKS.")
+message("\n\tINITIAL ML CHECKS:")
 message("\nReading SQANTI3 *_classification.txt file...")
 
 d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
@@ -158,7 +161,7 @@ if(is.null(opt$TP) == FALSE &
  
 if (stop_ML) {
   message("\n-------------------------------------------------")
-  message("\nML DATA PREPARATION.")
+  message("\n\tML DATA PREPARATION:")
   
 ### Preparation of classification table for ML 
 
@@ -176,7 +179,7 @@ if (stop_ML) {
   
   
   #  Change NA in columns by an appropriate replacement
-  message("Replacing NAs with appropriate values for ML...")
+  message("\nReplacing NAs with appropriate values for ML...")
   
   NA_columns <- c("polyA_motif", "within_cage_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
@@ -221,7 +224,6 @@ if (stop_ML) {
   if (length(r)>0){  d1 = d1[,-r] }
   
   # Removing columns with zero variance
-  message("\n-------------------------------------------------")
   message("\nRemoving variables with near-zero variance...")
   nzv = caret::nearZeroVar(d1)
   if(length(colnames(d1)[nzv]) != 0){
@@ -256,6 +258,7 @@ if (stop_ML) {
   
   #### Creating positive and negative set
   message("\n-------------------------------------------------")
+  message("\n\tRANDOM FOREST ALGORITHM RUN:")
   message("\nCreating positive and negative sets for classifier training and testing...")
   
   
@@ -314,7 +317,8 @@ if (stop_ML) {
   
   # Train Random Forest classifier with 10 times 10 cross validation
   message("\n-------------------------------------------------")
-  message("\nTraining Random Forest Classifier... \n\nNOTE: this can take up to several hours.")
+  message("\nTraining Random Forest Classifier...")
+  message("\n\t***Note: this can take up to several hours.")
   message("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
   message("\t - Downsampling in training set (sampling = 'down').")
   message("\t - 10x cross-validation (repeats = 10).\n")
@@ -333,7 +337,7 @@ if (stop_ML) {
                                metric = "Accuracy",
                                trControl = ctrl)
   
-  save(randomforest, file = paste(opt$output_directory, "randomforest.RData",
+  save(randomforest, file = paste(opt$dir, "randomforest.RData",
                                   sep="/"))
   
   message("\nRandom forest training finished.")
@@ -360,7 +364,7 @@ if (stop_ML) {
   print(caret::twoClassSummary(test_result, lev = levels(test_result$obs)))
   
   write.table(data.frame(caret::twoClassSummary(test_result, lev = levels(test_result$obs))),
-          file = paste(opt$output_directory,'/testSet_summary.txt',sep=''),
+          file = paste(opt$dir,'/testSet_summary.txt',sep=''),
           quote = F, col.names = F)
   
   message("\nWriting summary to testSet_summary.txt file.")
@@ -377,7 +381,7 @@ if (stop_ML) {
   
   message("\t testSet_confusionMatrix.txt")
   write.table(data.frame(cm$table),
-              file = paste0(opt$output_directory,"/testSet_confusionMatrix.txt"), 
+              file = paste0(opt$dir,"/testSet_confusionMatrix.txt"), 
               quote = F, col.names = T, row.names = F, sep = "\t")
   
   # format stats
@@ -389,7 +393,7 @@ if (stop_ML) {
                     data.frame(byClass))
   
   message("\t testSet_stats.txt")
-  write.table(cm_stats, file = paste0(opt$output_directory,"/testSet_stats.txt"),
+  write.table(cm_stats, file = paste0(opt$dir,"/testSet_stats.txt"),
               quote = F, col.names = F, sep = "\t")
   
   
@@ -403,14 +407,14 @@ if (stop_ML) {
   message("\nGlobal variable importance in Random Forest classifier:")
   print(imp)
   
-  write.table(imp, file = paste(opt$output_directory,
+  write.table(imp, file = paste(opt$dir,
                                "/classifier_variable-importance_table.txt",sep =''), 
               sep = "\t", quote = F, col.names = F)
   
   message("\nVariable importance table saved as classifier_variable-importance_table.txt")
   
   par(mar = c(5.1, 10.1, 4.1, 2.1)) # all sides have 3 lines of space
-  pdf(file = paste0(opt$output_directory, "/classifier_variable-importance_barplot.pdf"))
+  pdf(file = paste0(opt$dir, "/classifier_variable-importance_barplot.pdf"))
   barplot(as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
            main = "Variable Importance In Classifier")
   dev.off()
@@ -421,7 +425,7 @@ if (stop_ML) {
   
   # 1) in function of the probability on the test set: 
   # (not the same proportion of positives and negatives)
-  pdf(file = paste0(opt$output_directory,"/testSet_ROC_curve.pdf"))
+  pdf(file = paste0(opt$dir,"/testSet_ROC_curve.pdf"))
   r = pROC::roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
   pROC::auc(r)
   pROC::plot.roc(r, main = "ROC with unbalanced classes")
@@ -525,39 +529,48 @@ d1 <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same 
 message("\n -------------------------------------------------")
 message("\nWriting ML filter and intra-priming prediction results to classification file...")
 
-# d: Initial table with new column that indicates if transcript is isoform or artifact
-d$MLfilter_result <- "Isoform"
+### Add ML results to d object (i.e. the initial classification table)
 
-d[which(d1$ML_classifier == "Negative" | 
-          d1$intra_priming == TRUE),"MLfilter_result"] <- "Artifact"
-write.table(d, file = paste0(opt$output_directory,
-                           "/SQANTI_classification_ML_prediction.txt"),
+# select new columns in d1 that contain the ML results
+result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
+
+# add result columns to classification table
+d_out <- cbind(d, d1[,result_cols])
+
+# create new column to intersect results of ML filter and intra-priming prediction
+d_out$filter_result <- ifelse(d_out$ML_classifier %in% c("Negative", NA) | 
+                                d_out$intra_priming %in% c(TRUE, NA), 
+                              yes = "Artifact", no = "Isoform")
+
+# write new classification table
+write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
+                           "_MLresult_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
 
-
-# d1: Table with variables modified by the ML filter and with the result of ML 
-# filter and intra-priming evaluation
-d1 = data.frame(d1, MLfilter_result = d$MLfilter_result)
-write.table(d1, file = paste0(opt$output_directory,
-                            "/Output_ML_filter_agorithm.txt"),
-            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+message(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
+              "\t", opt$output, "_MLresult_classification.txt file."))
 
 
-# new_classification: classification table with only isoform transcripts
-new_classification <- d[d$"MLfilter_result" == "Isoform",]
-write.table(new_classification, 
-            file = paste0(opt$output_directory,
-                         "/SQANTI_classification_ML_filtered.txt"),
-            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+# generate true isoform list
+whitelist <- data.frame(Isoforms = rownames(d_out[which(d_out$filter_result == "Isoform"),]))
+
+write.table(whitelist, file = paste0(opt$dir, "/", opt$output,
+                                    "_whitelist.txt"),
+            quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
+
+message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming 
+               filters) to ", opt$output, "_whitelist.txt file"))
 
 
-# discarded_transcripts and why
-discarded <- d1[which(d1$ML_classifier == "NEG" | d1$`intra-priming`== TRUE),]
-write.table(discarded, file = paste0(opt$output_directory,
-                                    "/Discarded_transcripts.txt"),
-            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+# final print summarizing results
+message("\n-------------------------------------------------")
+message("\nSUMMARY OF MACHINE LEARNING + INTRA-PRIMING FILTERS:")
+print(table(d_out$filter_result))
+
     
 message("\n-------------------------------------------------")
 message("\nSQANTI3 ML filter finished successfully!")
+message("\n-------------------------------------------------")
+
 
 ################################################
