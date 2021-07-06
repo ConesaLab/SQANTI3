@@ -58,11 +58,12 @@ opt$intrapriming = as.numeric(opt$intrapriming)
 ###############################
 
 message("-------------------------------------------------")
-message("\n \t SQANTI3's Machine Learning filter.")
-message("\n-----------------------------------------------")
+message("\n \t SQANTI3 Machine Learning filter")
+message("\n--------------------------------------------------")
 
 
 ### Read input data
+message("\n\tINITIAL ML CHECKS.")
 message("\nReading SQANTI3 *_classification.txt file...")
 
 d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
@@ -80,7 +81,7 @@ monoexons <- nrow(d[which(d$exons == 1),])  # number of monoexon transcripts
 multiexons <- nrow(d) - monoexons
 
   if(multiexons == 0){
-    message("\nWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
+    message("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
             skipping ML filter.")
     stop_ML = FALSE
   }else{
@@ -105,7 +106,7 @@ if(is.null(opt$TP) == FALSE &
   TN <- read.table(opt$TN, as.is = TRUE)
   
 } else{
-  message("\nWarning message: \n \t Training set not provided -will be created from input data.")
+  message("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
   RM_set <- rownames(d[d$subcategory == "reference_match",])
@@ -156,7 +157,8 @@ if(is.null(opt$TP) == FALSE &
 #############################
  
 if (stop_ML) {
-  message("\nInitializing Machine Learning computations...")
+  message("\n-------------------------------------------------")
+  message("\nML DATA PREPARATION.")
   
 ### Preparation of classification table for ML 
 
@@ -164,12 +166,18 @@ if (stop_ML) {
   d1 <- d
   
   # Sum all the columns that contain FL reads and create only one column
+  message("\nAggregating FL counts across samples (if more than one sample is provided)...")
+  
   if (any(grep('^FL\\.', names(d1)))){d1$FL= rowSums(d1[,grep('^FL\\.', names(d1))])}
+  
   
   # Case special of polyA motif. When present, simply replace by "Motif_found"
   d1[which(!is.na(d1$polyA_motif)), "polyA_motif"] <- "Motif_found"
   
+  
   #  Change NA in columns by an appropriate replacement
+  message("Replacing NAs with appropriate values for ML...")
+  
   NA_columns <- c("polyA_motif", "within_cage_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
                   "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polya_site", 
@@ -192,6 +200,8 @@ if (stop_ML) {
   }
   
   # Convert in factors columns with categorical variables
+  message("\nHandling factor columns...")
+  
   categorical <- c("FSM_class", "coding", "bite", "within_cage_peak", 
                    "polyA_motif" , "within_polya_site", "predicted_NMD")
   for (x in categorical){
@@ -199,6 +209,8 @@ if (stop_ML) {
   }
   
   # Convert in integers columns with numerical variables
+  message("\nHandling integer columns...")
+  
   integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov", 
                 "min_cov", "ratio_exp" , "polyA_dist", "dist_to_cage_peak")
   for (x in integers){
@@ -302,10 +314,10 @@ if (stop_ML) {
   
   # Train Random Forest classifier with 10 times 10 cross validation
   message("\n-------------------------------------------------")
-  message("\nTraining Random Forest Classifier... \nNOTE: this can take up to several hours.")
-  message("\nPre-defined Random Forest parameters:")
-  message("\t - Downsampling in training set.")
-  message("\t - 10x cross-validation.")
+  message("\nTraining Random Forest Classifier... \n\nNOTE: this can take up to several hours.")
+  message("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
+  message("\t - Downsampling in training set (sampling = 'down').")
+  message("\t - 10x cross-validation (repeats = 10).\n")
   
   ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
                     classProbs = TRUE,
@@ -347,8 +359,11 @@ if (stop_ML) {
   message("\nAUC, Sensitivity and Specificity on test set:")
   print(caret::twoClassSummary(test_result, lev = levels(test_result$obs)))
   
-  write.table(caret::twoClassSummary(test_result, lev = levels(test_result$obs)),
-          file = paste(opt$output_directory,'/statistics_testSet.txt',sep=''))
+  write.table(data.frame(caret::twoClassSummary(test_result, lev = levels(test_result$obs))),
+          file = paste(opt$output_directory,'/testSet_summary.txt',sep=''),
+          quote = F, col.names = F)
+  
+  message("\nWriting summary to testSet_summary.txt file.")
   
   # Create confusion matrix
   cm = caret::confusionMatrix(data = pred,
@@ -360,10 +375,10 @@ if (stop_ML) {
   
   message("\nWriting confusion matrix and statistics to output files:")
   
-  message("\t confusionMatrix_testSet.txt")
+  message("\t testSet_confusionMatrix.txt")
   write.table(data.frame(cm$table),
-              file = paste0(opt$output_directory,"/confusionMatrix_testSet.txt"), 
-              quote = F, col.names = T, row.names = T)
+              file = paste0(opt$output_directory,"/testSet_confusionMatrix.txt"), 
+              quote = F, col.names = T, row.names = F, sep = "\t")
   
   # format stats
   overall <- data.frame(cm$overall)
@@ -373,9 +388,9 @@ if (stop_ML) {
   cm_stats <- rbind(data.frame(overall),
                     data.frame(byClass))
   
-  message("\t stats_testSet.txt")
-  write.table(cm_stats, file = paste0(opt$output_directory,"/stats_testSet.txt"),
-              quote = F, col.names = F)
+  message("\t testSet_stats.txt")
+  write.table(cm_stats, file = paste0(opt$output_directory,"/testSet_stats.txt"),
+              quote = F, col.names = F, sep = "\t")
   
   
   # Variable importance for the prediction
@@ -389,23 +404,24 @@ if (stop_ML) {
   print(imp)
   
   write.table(imp, file = paste(opt$output_directory,
-                               "/variable_importance_RFclassifier.txt",sep =''), 
+                               "/classifier_variable-importance_table.txt",sep =''), 
               sep = "\t", quote = F, col.names = F)
   
-  message("\nVariable importance table saved as variable_importance_RFclassifier.txt")
+  message("\nVariable importance table saved as classifier_variable-importance_table.txt")
   
   par(mar = c(5.1, 10.1, 4.1, 2.1)) # all sides have 3 lines of space
-  pdf(file = paste0(opt$output_directory, "/variable_importance_barplot.pdf"))
+  pdf(file = paste0(opt$output_directory, "/classifier_variable-importance_barplot.pdf"))
   barplot(as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
            main = "Variable Importance In Classifier")
   dev.off()
+  
   
   ###### ROC curve
   message("\nCalculating and printing test set ROC curves...")
   
   # 1) in function of the probability on the test set: 
   # (not the same proportion of positives and negatives)
-  pdf(file = paste0(opt$output_directory,"/ROC_curve_testset.pdf"))
+  pdf(file = paste0(opt$output_directory,"/testSet_ROC_curve.pdf"))
   r = pROC::roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
   pROC::auc(r)
   pROC::plot.roc(r, main = "ROC with unbalanced classes")
@@ -444,7 +460,7 @@ if (stop_ML) {
                    signif(pROC::ci(r)[2]),']'),col = 'red')
   dev.off()
   
-  message("\nROC curves saved to ROC_curve_testset.pdf file. Includes:")
+  message("\nROC curves saved to testSet_ROC_curve.pdf file. Includes:")
   message("\t - ROC curve with unbalanced classes.")
   message("\t - ROC curve with balanced classes.")
   
@@ -514,34 +530,32 @@ d$MLfilter_result <- "Isoform"
 
 d[which(d1$ML_classifier == "Negative" | 
           d1$intra_priming == TRUE),"MLfilter_result"] <- "Artifact"
-write.table(d, file = paste(opt$output_directory,
-                           "/SQANTI_classification_ML_prediction.txt",
-                           sep =''),
+write.table(d, file = paste0(opt$output_directory,
+                           "/SQANTI_classification_ML_prediction.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+
 
 # d1: Table with variables modified by the ML filter and with the result of ML 
 # filter and intra-priming evaluation
 d1 = data.frame(d1, MLfilter_result = d$MLfilter_result)
-write.table(d1, file = paste(opt$output_directory,
-                            "/Output_ML_filter_agorithm.txt",
-                            sep = ''),
-            quote = FALSE, col.names = TRUE, sep ='\t',row.names = TRUE)
+write.table(d1, file = paste0(opt$output_directory,
+                            "/Output_ML_filter_agorithm.txt"),
+            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
 
 
-# new_classification: classification table with only Isoform transcripts
+# new_classification: classification table with only isoform transcripts
 new_classification <- d[d$"MLfilter_result" == "Isoform",]
 write.table(new_classification, 
-            file = paste(opt$output_directory,
-                         "/SQANTI_classification_ML_filtered.txt",
-                         sep =''),
-            quote = FALSE, col.names = TRUE, sep ='\t',row.names = TRUE)
+            file = paste0(opt$output_directory,
+                         "/SQANTI_classification_ML_filtered.txt"),
+            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+
 
 # discarded_transcripts and why
 discarded <- d1[which(d1$ML_classifier == "NEG" | d1$`intra-priming`== TRUE),]
-write.table(discarded, file = paste(opt$output_directory,
-                                    "/Discarded_transcripts.txt",
-                                    sep=''),
-            quote = FALSE, col.names = TRUE, sep ='\t',row.names = TRUE)
+write.table(discarded, file = paste0(opt$output_directory,
+                                    "/Discarded_transcripts.txt"),
+            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
     
 message("\n-------------------------------------------------")
 message("\nSQANTI3 ML filter finished successfully!")
