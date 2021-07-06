@@ -126,8 +126,10 @@ if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
 
-SPLIT_ROOT_DIR = 'splits/'
-
+def get_split_dir(args):
+    split_prefix=os.path.join(os.path.abspath(args.dir), args.output)
+    split_directory = split_prefix+'_splits/'
+    return split_directory
 
 class genePredReader(object):
     def __init__(self, filename):
@@ -2220,6 +2222,7 @@ class PolyAPeak:
 
 
 def split_input_run(args):
+    SPLIT_ROOT_DIR = get_split_dir(args)
     if os.path.exists(SPLIT_ROOT_DIR):
         print("WARNING: {0} directory already exists! Abort!".format(SPLIT_ROOT_DIR), file=sys.stderr)
         sys.exit(-1)
@@ -2475,6 +2478,7 @@ def main():
     else:
         split_dirs = split_input_run(args)
         combine_split_runs(args, split_dirs)
+        SPLIT_ROOT_DIR = get_split_dir(args)
         shutil.rmtree(SPLIT_ROOT_DIR)
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
