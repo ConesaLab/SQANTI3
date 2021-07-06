@@ -126,8 +126,10 @@ if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
 
-SPLIT_ROOT_DIR = 'splits/'
-
+def get_split_dir(args):
+    split_prefix=os.path.join(os.path.abspath(args.dir), args.output)
+    split_directory = split_prefix+'_splits/'
+    return split_directory
 
 class genePredReader(object):
     def __init__(self, filename):
@@ -466,7 +468,7 @@ def correctionPlusORFpred(args, genome_dict):
     if os.path.exists(corrFASTA):
         print("Error corrected FASTA {0} already exists. Using it...".format(corrFASTA), file=sys.stderr)
     else:
-        if not args.gtf:
+        if args.fasta:
             if os.path.exists(corrSAM):
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
@@ -2220,13 +2222,14 @@ class PolyAPeak:
 
 
 def split_input_run(args):
+    SPLIT_ROOT_DIR = get_split_dir(args)
     if os.path.exists(SPLIT_ROOT_DIR):
         print("WARNING: {0} directory already exists! Abort!".format(SPLIT_ROOT_DIR), file=sys.stderr)
         sys.exit(-1)
     else:
         os.makedirs(SPLIT_ROOT_DIR)
 
-    if args.gtf:
+    if not args.fasta:
         recs = [r for r in collapseGFFReader(args.isoforms)]
         n = len(recs)
         chunk_size = n//args.chunks + (n%args.chunks >0)
@@ -2328,7 +2331,7 @@ def main():
 
     #arguments
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
-    parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ) or GTF format. Recommend provide GTF format with the --gtf option.')
+    parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')
     parser.add_argument('annotation', help='\t\tReference annotation file (GTF format)')
     parser.add_argument('genome', help='\t\tReference genome (Fasta format)')
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
@@ -2339,9 +2342,9 @@ def main():
     parser.add_argument("--polyA_peak", help='\t\tPolyA Peak (BED format, optional)')
     parser.add_argument("--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)")
     parser.add_argument("--skipORF", default=False, action="store_true", help="\t\tSkip ORF prediction (to save time)")
-    parser.add_argument("--is_fusion", default=False, action="store_true", help="\t\tInput are fusion isoforms, must supply GTF as input using --gtf")
+    parser.add_argument("--is_fusion", default=False, action="store_true", help="\t\tInput are fusion isoforms, must supply GTF as input")
     parser.add_argument("--orf_input", help="\t\tInput fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
-    parser.add_argument('-g', '--gtf', help='\t\tUse when running SQANTI by using as input a gtf of isoforms', action='store_true')
+    parser.add_argument('--fasta', help='\t\tUse when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms', action='store_true')
     parser.add_argument('-e','--expression', help='\t\tExpression matrix (supported: Kallisto tsv)', required=False)
     parser.add_argument('-x','--gmap_index', help='\t\tPath and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
     parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. (default: 10)')
@@ -2370,8 +2373,8 @@ def main():
         if args.orf_input is None:
             print("WARNING: Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!", file=sys.stderr)
             args.skipORF = True
-        if not args.gtf:
-            print("ERROR: if --is_fusion is on, must supply GTF as input and use --gtf!", file=sys.stderr)
+        if args.fasta:
+            print("ERROR: if --is_fusion is on, must supply GTF as input", file=sys.stderr)
             sys.exit(-1)
 
     if args.gff3 is not None:
@@ -2413,7 +2416,7 @@ def main():
         print("ERROR: Input isoforms {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
         sys.exit()
 
-    if not args.gtf:
+    if args.fasta:
         if args.aligner_choice == 'gmap':
             if not os.path.isdir(os.path.abspath(args.gmap_index)):
                 print("GMAP index {0} doesn't exist! Abort.".format(args.gmap_index), file=sys.stderr)
@@ -2475,6 +2478,7 @@ def main():
     else:
         split_dirs = split_input_run(args)
         combine_split_runs(args, split_dirs)
+        SPLIT_ROOT_DIR = get_split_dir(args)
         shutil.rmtree(SPLIT_ROOT_DIR)
         if args.isoAnnotLite:
             corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)

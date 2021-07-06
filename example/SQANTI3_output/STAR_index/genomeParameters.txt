@@ -1,4 +1,4 @@
-### STAR   --runMode genomeGenerate      --runThreadN 4   --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI3_output/STAR_index/   --genomeFastaFiles /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta   
+### STAR   --runMode genomeGenerate      --runThreadN 8   --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/   --genomeFastaFiles /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta   
 ### GstrandBit 32
 versionGenome	2.7.4a
 genomeType	Full
