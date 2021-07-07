@@ -558,8 +558,8 @@ write.table(whitelist, file = paste0(opt$dir, "/", opt$output,
                                     "_whitelist.txt"),
             quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
 
-message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming 
-               filters) to ", opt$output, "_whitelist.txt file"))
+message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
+               "\n\t", "filters) to ", opt$output, "_whitelist.txt file"))
 
 
 # final print summarizing results
