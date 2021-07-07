@@ -40,7 +40,7 @@ option_list = list(
   optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
               help="machine learning probability threshold to classify 
               positive isoforms."),
-  optparse::make_option(c("-i","--intrapriming"), type="integer", default=80, 
+  optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
               help="polyA percentage thereshold to flag an isoform as 
               intra-priming."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
