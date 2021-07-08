@@ -317,33 +317,54 @@ if (stop_ML) {
   
   # Train Random Forest classifier with 10 times 10 cross validation
   message("\n-------------------------------------------------")
-  message("\nTraining Random Forest Classifier...")
-  message("\n\t***Note: this can take up to several hours.")
-  message("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
-  message("\t - Downsampling in training set (sampling = 'down').")
-  message("\t - 10x cross-validation (repeats = 10).\n")
   
-  ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
-                    classProbs = TRUE,
-                    sampling = 'down', returnData = TRUE,
-                    savePredictions = TRUE, returnResamp ='all')
+  # check working directory for previously classifier object
+  RF_outfiles <- dir(opt$dir)
   
-  set.seed(1)
+  if("randomforest.RData" %in% RF_outfiles == TRUE){
+    
+    # if the object exists, it is loaded to save runtime
+    
+    message(paste0("\nRandom forest classifier already exists in output directory ", 
+                   opt$dir, ": loading randomforest.RData object."))
+    message("\n\t ***Note: this will skip classifier training.")
+    message("\t If you have modified TP and TN sets and wish to train a new model, 
+            delete randomforest.RData or provide a different output directory.")
+    
+    randomforest <- readRDS(paste0(opt$dir, "/randomforest.RData"))
+    
+  } else {
+    
+    # if it does not exist, the classifier is trained again
+    
+    message("\nTraining Random Forest Classifier...")
+    message("\n\t***Note: this can take up to several hours.")
+    message("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
+    message("\t - Downsampling in training set (sampling = 'down').")
+    message("\t - 10x cross-validation (repeats = 10).\n")
+    
+    ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
+                      classProbs = TRUE,
+                      sampling = 'down', returnData = TRUE,
+                      savePredictions = TRUE, returnResamp ='all')
+    
+    set.seed(1)
+    
+    randomforest <- caret::train(x = training, 
+                                 y = as.factor(Class[inTraining]),
+                                 method ='rf',
+                                 tuneLength = 15,
+                                 metric = "Accuracy",
+                                 trControl = ctrl)
+    
+    saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData",
+                                    sep="/"))
+    
+    message("\nRandom forest training finished.")
+    message("\nSaved generated classifier to randomforest.RData file.")
+  }
   
-  randomforest <- caret::train(x = training, 
-                               y = as.factor(Class[inTraining]),
-                               method ='rf',
-                               tuneLength = 15,
-                               metric = "Accuracy",
-                               trControl = ctrl)
   
-  save(randomforest, file = paste(opt$dir, "randomforest.RData",
-                                  sep="/"))
-  
-  message("\nRandom forest training finished.")
-  message("\nSaved generated classifier to randomforest.RData file.")
-  
-
   #### Apply classifier on test set
 
   message("\n-------------------------------------------------")
