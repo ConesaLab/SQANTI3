@@ -552,13 +552,14 @@ d1 <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same 
 message("\n -------------------------------------------------")
 message("\nWriting ML filter and intra-priming prediction results to classification file...")
 
-### Add ML results to d object (i.e. the initial classification table)
+### Output ML results
 
 # select new columns in d1 that contain the ML results
 result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
 
-# add result columns to classification table
-d_out <- cbind(d, d1[,result_cols])
+# add isoform ids and result columns to d object (i.e. the initial classification table)
+ids_df <- data.frame(isoform = rownames(d))
+d_out <- cbind(ids_df, d, d1[,result_cols])
 
 # create new column to intersect results of ML filter and intra-priming prediction
 d_out$filter_result <- ifelse(d_out$ML_classifier %in% c("Negative", NA) | 
@@ -568,7 +569,7 @@ d_out$filter_result <- ifelse(d_out$ML_classifier %in% c("Negative", NA) |
 # write new classification table
 write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
                            "_MLresult_classification.txt"),
-            quote = FALSE, col.names = TRUE, sep ='\t', row.names = TRUE)
+            quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
 
 message(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
               "\t", opt$output, "_MLresult_classification.txt file."))
@@ -586,6 +587,9 @@ message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML a
 
 
 ### Output ML-intermediate file if requested
+
+# add isoform ids and write
+d1_out <- cbind(ids_df, d1)
 
 if(opt$intermediate_files == TRUE){
   write.table(d1, file = paste0(opt$dir, "/intermediate_", opt$output,
