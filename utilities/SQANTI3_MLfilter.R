@@ -45,7 +45,9 @@ option_list = list(
               intra-priming."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
               help="Forces retaining FMS transcripts regardless of ML filter,
-              FSM are threfore not filtered.")
+              FSM are threfore not filtered."),
+  optparse::make_option(c("-m", "--intermediate_files", type="logical", default=FALSE,
+              help="Output ML filter intermediate files."))
 )
 
 # Parse and handle provided arguments
@@ -572,7 +574,7 @@ message(paste0("\n\tWrote filter results (ML and intra-priming) to new classific
               "\t", opt$output, "_MLresult_classification.txt file."))
 
 
-# generate true isoform list
+### Generate true isoform list
 whitelist <- data.frame(Isoforms = rownames(d_out[which(d_out$filter_result == "Isoform"),]))
 
 write.table(whitelist, file = paste0(opt$dir, "/", opt$output,
@@ -581,6 +583,15 @@ write.table(whitelist, file = paste0(opt$dir, "/", opt$output,
 
 message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
                "\n\t", "filters) to ", opt$output, "_whitelist.txt file"))
+
+
+### Output ML-intermediate file if requested
+
+if(opt$intermediate_files == TRUE){
+  write.table(d1, file = paste0(opt$dir, "/intermediate_", opt$output,
+                                "_MLinput_table.txt"),
+              quote = FALSE, col.names = TRUE, sep = "\t", row.names = TRUE)
+}
 
 
 # final print summarizing results
