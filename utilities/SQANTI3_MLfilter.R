@@ -114,6 +114,8 @@ if(is.null(opt$TP) == FALSE &
   TP <- read.table(opt$TP, as.is = TRUE)
   TN <- read.table(opt$TN, as.is = TRUE)
   
+  stop_ML = TRUE
+  
 } else{
   message("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
   
