@@ -66,6 +66,10 @@ message("-------------------------------------------------")
 message("\n \t SQANTI3 Machine Learning filter")
 message("\n--------------------------------------------------")
 
+### Print specified parameters
+message("\n\tCURRENT ML FILTER PARAMETERS:\n")
+message(paste0("\t", names(opt), ": ", opt, "\n\n"))
+
 
 ### Read input data
 message("\n\tINITIAL ML CHECKS:")
