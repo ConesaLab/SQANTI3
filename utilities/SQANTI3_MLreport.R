@@ -98,9 +98,8 @@ theme_set(sq_theme)
 
 
 
-#### START ML filter plots ####
+#### ML filter plots ####
 if(opt$filter_type == "ml"){
-  
   
     ## Variable importance in classifier
     var_imp <- ggplot(imp) +
@@ -110,6 +109,7 @@ if(opt$filter_type == "ml"){
       labs(x = "SQANTI3 variables", y = "Importance") +
       coord_flip()
 
+    
 }
 #### END ML filter plots ####
 
