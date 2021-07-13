@@ -450,12 +450,6 @@ if (stop_ML) {
   
   message("\nVariable importance table saved as classifier_variable-importance_table.txt")
   
-  par(mar = c(5.1, 10.1, 4.1, 2.1)) # all sides have 3 lines of space
-  pdf(file = paste0(opt$dir, "/classifier_variable-importance_barplot.pdf"))
-  barplot(as.matrix(t(imp)) , horiz = TRUE, las = 2, col = "lightblue", 
-           main = "Variable Importance In Classifier")
-  dev.off()
-  
   
   ###### ROC curve
   message("\nCalculating and printing test set ROC curves...")
