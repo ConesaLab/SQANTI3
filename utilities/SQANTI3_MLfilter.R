@@ -9,13 +9,18 @@
 # Contact: f.pardo.palacios@gmail.com
 # Affiliation: Institute for Integrative Systems Biology, CSIC, Valencia, Spain
 #
-# Last updated: June/30/2021
+# Last updated: July/13/2021
 #
 # Changes with respect to previous version
-# RM instead of FSM are used as positive set
-# New SQANTI features are used in the ML, related to CAGE, polyA and Ratio_TSS
-# New options added
-#   1. --output_directory
+# - RM instead of FSM are used as positive set.
+# - New SQANTI features are used in the ML, i.e. related to CAGE, polyA and Ratio_TSS.
+# - Outputs: 
+#   1. Classification table + ML results.
+#   2. Single-column text file with IDs of transcripts labeled as isoforms by
+#     ML filter and intra-priming prediction.
+# - New options added:
+#   1. --output and --dir to control file prefix and output directory, respectively.
+#   2. --intermediate_files to output ML-modified classification table.
 
 
 
@@ -46,6 +51,9 @@ option_list = list(
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
               help="Forces retaining FMS transcripts regardless of ML filter,
               FSM are threfore not filtered."),
+  optparse::make_option(c("-e", "--force_multi_exon", type="logical", default = FALSE,
+              help="Forces retaining only multi-exon transcripts, all mono-exon
+              isoforms will be automatically removed.")),
   optparse::make_option(c("-m", "--intermediate_files", type="logical", default=FALSE,
               help="Output ML filter intermediate files."))
 )
@@ -524,13 +532,27 @@ if (stop_ML) {
   message("\nRandom forest classification results:")
   print(table(classified.isoforms$ML_classifier))
   
+  
   ####################################
   ## Add monoexons back to dataset  ##
   ####################################
-  dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
-  dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
+  if(opt$force_multi_exon == FALSE){
+    
+    dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
+    dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
+    
+    # d1 will include mono-exons (default behavior)
+    d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
+    
+  } else{
+    
+    message("\n\t ***force_multi_exon = TRUE: All mono-exon transcripts will be removed from the output.")
+    
+    # d1 will NOT include mono-exons
+    d1 <- classified.isoforms
+    
+  }
   
-  d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
 }
 
 
@@ -547,7 +569,12 @@ d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) 
 message("\nIntra-priming filtered transcripts:")
 print(table(d1$intra_priming))
 
-d1 <- d1[rownames(d),] # reordering of d and d1 to have transcripts in the same order
+
+    # reorder d and d1 to have transcripts in the same order
+    # when force_multi_exon = TRUE, d and d1 will have different number of rows: skip
+    if(opt$force_multi_exon == FALSE){
+      d1 <- d1[rownames(d),]
+    }
 
 
 
@@ -563,8 +590,14 @@ message("\nWriting ML filter and intra-priming prediction results to classificat
 # select new columns in d1 that contain the ML results
 result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
 
-# add isoform ids and result columns to d object (i.e. the initial classification table)
-ids_df <- data.frame(isoform = rownames(d))
+    # for force_multi_exon = TRUE, subset d object (initial classification table)
+    # to remove all mono-exon transcripts, not included in d1
+    if(opt$force_multi_exon == TRUE){
+      d <- d[rownames(d1),]
+    }
+
+# add isoform ids and result columns to d object (initial classification table)
+ids_df <- data.frame(isoform = rownames(d1))    
 d_out <- cbind(ids_df, d, d1[,result_cols])
 
 # create new column to intersect results of ML filter and intra-priming prediction
@@ -581,6 +614,7 @@ message(paste0("\n\tWrote filter results (ML and intra-priming) to new classific
               "\t", opt$output, "_MLresult_classification.txt file."))
 
 
+
 ### Generate true isoform list
 inclusion_list <- data.frame(Isoforms = rownames(d_out[which(d_out$filter_result == "Isoform"),]))
 
@@ -590,6 +624,7 @@ write.table(inclusion_list, file = paste0(opt$dir, "/", opt$output,
 
 message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
                "\n\t", "filters) to ", opt$output, "_inclusion-list.txt file"))
+
 
 
 ### Output ML-intermediate file if requested
