@@ -191,8 +191,21 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
 }
 
 
-#### Balance classes
-
+#### Balance isoform number in TP and TN sets
+if(length(Positive_set) != length(Negative_set)){
+  
+  message("\n\nBalancing number of isoforms in TP and TN sets...")
+  
+  # select minimum size among TP and TN sets
+  sub_size <- min(length(Positive_set), length(Negative_set))
+  
+  message(paste0("\n\tMinimum set size: ", sub_size, " transcripts."))
+  message(paste0("\n\tSampled ", sub_size, " transcripts to reduced larger set."))
+  
+  # sample sub_size number of isoforms as TP and TN
+  Positive_set <- sample(Positive_set, sub_size)
+  Negative_set <- sample(Negative_set, sub_size)
+}
 
 
 #############################
