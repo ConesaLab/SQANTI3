@@ -122,8 +122,14 @@ if(is.null(opt$TP) == FALSE &
   TP <- read.table(opt$TP)
   Positive_set <- unname(unlist(TP))
   
+  message(paste0("\n\t - Total isoforms in user-defined TP set: ", 
+                 length(Positive_set)))
+  
   TN <- read.table(opt$TN)
   Negative_set <- unname(unlist(TN))
+  
+  message(paste0("\n\t - Total isoforms in user-defined TN set: ", 
+                 length(Negative_set)))
   
   stop_ML = TRUE
   
