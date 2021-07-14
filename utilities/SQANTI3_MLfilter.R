@@ -650,7 +650,7 @@ message(paste0("\n\tWrote filter results (ML and intra-priming) to new classific
 inclusion_list <- data.frame(Isoforms = rownames(d_out[which(d_out$filter_result == "Isoform"),]))
 
 write.table(inclusion_list, file = paste0(opt$dir, "/", opt$output,
-                                    "_whitelist.txt"),
+                                    "_inclusion-list.txt"),
             quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
 
 message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
