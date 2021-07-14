@@ -180,11 +180,15 @@ if(is.null(opt$TP) == FALSE &
 }
 
 
+#### Balance classes
+
+
+
 #############################
 ###### Machine Learning #####
 #############################
  
-if (stop_ML) {
+if (stop_ML == TRUE) {
   message("\n-------------------------------------------------")
   message("\n\tML DATA PREPARATION:")
   
