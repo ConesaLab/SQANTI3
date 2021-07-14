@@ -51,9 +51,9 @@ option_list = list(
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
               help="Forces retaining FMS transcripts regardless of ML filter,
               FSM are threfore not filtered."),
-  optparse::make_option(c("-e", "--force_multi_exon", type="logical", default = FALSE,
+  optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
               help="Forces retaining only multi-exon transcripts, all mono-exon
-              isoforms will be automatically removed.")),
+              isoforms will be automatically removed."),
   optparse::make_option(c("-m", "--intermediate_files", type="logical", default=FALSE,
               help="Output ML filter intermediate files."))
 )
@@ -75,7 +75,7 @@ message("\n \t SQANTI3 Machine Learning filter")
 message("\n--------------------------------------------------")
 
 ### Print specified parameters
-message("\n\tCURRENT ML FILTER PARAMETERS:\n")
+message("\nCURRENT ML FILTER PARAMETERS:\n")
 message(paste0("\t", names(opt), ": ", opt, "\n\n"))
 
 
@@ -119,8 +119,11 @@ if(is.null(opt$TP) == FALSE &
   
   message("\n--TP and --TN arguments provided: using supplied set of isoforms as training set.")
   
-  TP <- read.table(opt$TP, as.is = TRUE)
-  TN <- read.table(opt$TN, as.is = TRUE)
+  TP <- read.table(opt$TP)
+  Positive_set <- unname(unlist(TP))
+  
+  TN <- read.table(opt$TN)
+  Negative_set <- unname(unlist(TN))
   
   stop_ML = TRUE
   
@@ -129,20 +132,20 @@ if(is.null(opt$TP) == FALSE &
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
   RM_set <- rownames(d[d$subcategory == "reference_match",])
-  NNIC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
+  NNC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
   stop_ML = TRUE
   
   # Check whether number of NNC non-canonical is sufficient to run ML filter
   # If it is, check RM and FSM sets for length
-  if (length (NNIC.NC_set) < 40) {
+  if (length (NNC.NC_set) < 40) {
     stop_ML = FALSE 
     
     message("Not enough Novel_Not_in_Catalog + Non_Cannonical transcripts, 
               ML filter is skipped.")
     
   } else{ 
-    Negative_set <- NNIC.NC_set
+    Negative_set <- NNC.NC_set
     
     message("\nUsing Novel Not In Catalog non-canonical isoforms as True Negatives for training.")
     message(paste("\n \t - Total NNC non-canonical isoforms:", length(Negative_set)))
@@ -282,28 +285,15 @@ if (stop_ML) {
   dmult <- d1[which(d1$exons != 1),]
   
   
-  #### Subset pre-processed data table (dmult) to make training dataset
-  
-  # Use supplied data if available
-  if(is.null(opt$TP) == FALSE & 
-      is.null(opt$TN) == FALSE){
-     
-     Class = factor(c(rep("POS", nrow(TP)),
-                      rep("NEG", nrow(TN))))
-     trainingset = dmult[intersect(rownames(dmult), c(TP$V1,TN$V1)),]
-     
-     message("\nFinished creating training data from supplied True Positive and True Negative sets.")
-     
-    # If note, use Positive and Negative sets defined from data (FSM-RM and NNC.NC)
-  } else {
-    trainingset = rbind(dmult[Positive_set, ], 
+  # Subset pre-processed data table (dmult) to make training dataset
+  trainingset = rbind(dmult[Positive_set, ], 
                         dmult[Negative_set,])
-    Class = factor(c(rep("POS", length(Positive_set)),
+  Class = factor(c(rep("POS", length(Positive_set)),
                      rep("NEG", length(Negative_set))),
                    levels = c("POS", "NEG"))
-    
-    message("\nFinished creating training data set from input data.")
-  }
+  
+  message("\nFinished creating training data set.")
+  
   
   # Remove columns that are not informative for ML
   colRem = c('chrom','strand','associated_gene', 'associated_transcript', 
@@ -342,7 +332,7 @@ if (stop_ML) {
     # if the object exists, it is loaded to save runtime
     
     message(paste0("\nRandom forest classifier already exists in output directory ", 
-                   opt$dir, ": loading randomforest.RData object."))
+                  ": loading randomforest.RData object."))
     message("\n\t ***Note: this will skip classifier training.")
     message("\t If you have modified TP and TN sets and wish to train a new model, 
             delete randomforest.RData or provide a different output directory.")
