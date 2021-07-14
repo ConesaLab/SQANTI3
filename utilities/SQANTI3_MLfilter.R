@@ -100,7 +100,7 @@ multiexons <- nrow(d) - monoexons
   if(multiexons == 0){
     message("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
             skipping ML filter.")
-    stop_ML = FALSE
+    run_ML = FALSE
   }else{
     message("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
     message(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
@@ -114,24 +114,35 @@ message("\nChecking input data for True Positive (TP) and True Negative (TN) set
 
 # First check whether TP and TN sets are supplied (first if)
 # If not available, create the set of TP and TN from input data
-if(is.null(opt$TP) == FALSE & 
-    is.null(opt$TN) == FALSE){
+if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   
   message("\n--TP and --TN arguments provided: using supplied set of isoforms as training set.")
   
   TP <- read.table(opt$TP)
-  Positive_set <- unname(unlist(TP))
-  
-  message(paste0("\n\t - Total isoforms in user-defined TP set: ", 
-                 length(Positive_set)))
-  
   TN <- read.table(opt$TN)
-  Negative_set <- unname(unlist(TN))
   
-  message(paste0("\n\t - Total isoforms in user-defined TN set: ", 
-                 length(Negative_set)))
+  if(nrow(TN) > 40 & nrow(TP) > 40){
+    
+    run_ML <- TRUE
+    
+    # define TP
+    Positive_set <- unname(unlist(TP))
+    message(paste0("\n\t - Total isoforms in user-defined TP set: ", 
+                   length(Positive_set)))
+    
+    # define TN
+    Negative_set <- unname(unlist(TN))
+    message(paste0("\n\t - Total isoforms in user-defined TN set: ", 
+                   length(Negative_set)))
+    
+  } else{
+    
+    run_ML <- FALSE
+    
+    message("\nWarning message:
+            user-defined TP and TN sets must have >40 isoforms! Skipping ML filter.")
+  }
   
-  stop_ML = TRUE
   
 } else{
   message("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
@@ -140,15 +151,15 @@ if(is.null(opt$TP) == FALSE &
   RM_set <- rownames(d[d$subcategory == "reference_match",])
   NNC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
-  stop_ML = TRUE
+  run_ML = TRUE
   
   # Check whether number of NNC non-canonical is sufficient to run ML filter
   # If it is, check RM and FSM sets for length
   if (length (NNC.NC_set) < 40) {
-    stop_ML = FALSE 
+    run_ML = FALSE 
     
-    message("Not enough Novel_Not_in_Catalog + Non_Cannonical transcripts, 
-              ML filter is skipped.")
+    message("\nWarning message:
+            \nNot enough Novel_Not_in_Catalog + Non_Cannonical transcripts, skipping ML filter.")
     
   } else{ 
     Negative_set <- NNC.NC_set
@@ -174,7 +185,7 @@ if(is.null(opt$TP) == FALSE &
         else{ 
           message ("Warning message: 
                      \nnot enough Full-Splice-Match transcripts, skipping ML filter.")
-          stop_ML = FALSE
+          run_ML = FALSE
         } 
   }
 }
@@ -188,14 +199,15 @@ if(is.null(opt$TP) == FALSE &
 ###### Machine Learning #####
 #############################
  
-if (stop_ML == TRUE) {
+# Create new classification table for ML data preparation
+d1 <- d
+
+
+if (run_ML == TRUE) {
   message("\n-------------------------------------------------")
   message("\n\tML DATA PREPARATION:")
   
 ### Preparation of classification table for ML 
-
-  # Create new classification table for ML data preparation
-  d1 <- d
   
   # Sum all the columns that contain FL reads and create only one column
   message("\nAggregating FL counts across samples (if more than one sample is provided)...")
@@ -547,6 +559,20 @@ if (stop_ML == TRUE) {
     
   }
   
+# END OF if(run_ML == TRUE)
+  
+} else if(run_ML == FALSE){
+  
+  ### Output generation when ML filter is skipped
+  
+  # ML did not run, fill result columns with NA
+  d1$"NEG_MLprob" <- d1$"POS_MLprob" <- d1$"ML_classifier" <- NA
+  
+  if(opt$force_multi_exon == TRUE){
+    
+    # d1 was not modified during ML filter, mono-exons need to be removed
+    d1 <- d1[rownames(d1)[which(d1$exons > 1)],]
+  }
 }
 
 
@@ -577,7 +603,7 @@ print(table(d1$intra_priming))
 #############################################
 
 message("\n -------------------------------------------------")
-message("\nWriting ML filter and intra-priming prediction results to classification file...")
+message("\nWriting filter results to classification file...")
 
 ### Output ML results
 
