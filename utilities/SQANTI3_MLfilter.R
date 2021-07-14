@@ -610,20 +610,31 @@ message("\nWriting filter results to classification file...")
 # select new columns in d1 that contain the ML results
 result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
 
+
     # for force_multi_exon = TRUE, subset d object (initial classification table)
     # to remove all mono-exon transcripts, not included in d1
     if(opt$force_multi_exon == TRUE){
       d <- d[rownames(d1),]
     }
 
+
 # add isoform ids and result columns to d object (initial classification table)
 ids_df <- data.frame(isoform = rownames(d1))    
 d_out <- cbind(ids_df, d, d1[,result_cols])
 
-# create new column to intersect results of ML filter and intra-priming prediction
-d_out$filter_result <- ifelse(d_out$ML_classifier %in% c("Negative", NA) | 
-                                d_out$intra_priming %in% c(TRUE, NA), 
-                              yes = "Artifact", no = "Isoform")
+    
+# intersect results of ML and intra-priming to create new column with filter results
+d_out$filter_result <- ifelse(d_out$intra_priming == FALSE &
+                                d_out$ML_classifier != "Negative", 
+                              yes = "Isoform", no = "Artifact")
+
+    # Condition table:
+    # intra_priming == TRUE -> Artifact
+    # intra_priming == FALSE:
+    #     - ML_classifier == NA -> Isoform
+    #     - ML_classifier == Positive -> Isoform
+    #     - ML_classifier == Negative -> Artifact
+
 
 # write new classification table
 write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
