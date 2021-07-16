@@ -100,10 +100,13 @@ multiexons <- nrow(d) - monoexons
   if(multiexons == 0){
     message("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
             skipping ML filter.")
+    
     run_ML = FALSE
-  }else{
+    
+  } else{
     message("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
     message(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
+  
   }
 
 
@@ -111,6 +114,10 @@ multiexons <- nrow(d) - monoexons
 #### Check inputs for TP and TN sets
 
 message("\nChecking input data for True Positive (TP) and True Negative (TN) sets...")
+
+# Positive and negative sets not defined yet
+Positive_set <- NULL
+Negative_set <- NULL
 
 # First check whether TP and TN sets are supplied (first if)
 # If not available, create the set of TP and TN from input data
@@ -149,44 +156,70 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
   RM_set <- rownames(d[d$subcategory == "reference_match",])
+  NNC_set <- rownames(d[d$structural_category == "novel_not_in_catalog",])
   NNC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
   run_ML = TRUE
   
+  
+  # 1. CHECK NEGATIVE SET REQUIREMENTS
   # Check whether number of NNC non-canonical is sufficient to run ML filter
-  # If it is, check RM and FSM sets for length
+  # If not, check NNC and see if it meets length requirement
   if (length (NNC.NC_set) < 40) {
-    run_ML = FALSE 
     
     message("\nWarning message:
-            \nNot enough Novel_Not_in_Catalog + Non_Cannonical transcripts, skipping ML filter.")
+            \nNot enough (< 40) Novel Not in Catalog (NNC) + non-canonical transcripts.")
+
+    if(length(NNC_set) > 40){
+      Negative_set <- NNC_set
+      
+      message("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
+      message(paste("\n \t - Total NNC isoforms: ", length(Negative_set)))
+      
+    } else{
+      run_ML = FALSE 
+      
+      message("\nWarning message:
+            \nNot enough (< 40) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
+      message("\n\t***Note: try re-running ML filter with a user-defined TN set >40 isoforms!")
+      
+    }
     
-  } else{ 
+  } else { 
     Negative_set <- NNC.NC_set
     
     message("\nUsing Novel Not In Catalog non-canonical isoforms as True Negatives for training.")
     message(paste("\n \t - Total NNC non-canonical isoforms:", length(Negative_set)))
     
-        if(length (RM_set) > 40){
-          Positive_set <- RM_set
-          
-          message("\nUsing FSM Reference Match isoforms as True Positives for training")
-          message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
-                        length(Positive_set)))
-        }
-        else if(length(FSM) > 40){ 
-          Positive_set <- FSM_set
-          
-          message("\nNot enough Reference Match transcript isoforms among FSM, 
-                  all FSM transcripts will be used as Positive set.")
-          message(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
-          
-        }
-        else{ 
-          message ("Warning message: 
-                     \nnot enough Full-Splice-Match transcripts, skipping ML filter.")
-          run_ML = FALSE
-        } 
+  }
+  
+  # 2. IF NEGATIVE_SET HAS BEEN DEFINED, RUN CHECKS TO CREATE POSITIVE_SET
+  # Check whether RM set meets length requirement
+  # If not, check FSM set for length and assign as TP
+  if(is.null(Negative_set) == FALSE){
+    
+      if(length (RM_set) > 40){
+        Positive_set <- RM_set
+        
+        message("\nUsing FSM Reference Match isoforms as True Positives for training")
+        message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
+                      length(Positive_set)))
+      }
+      else if(length(FSM) > 40){ 
+        Positive_set <- FSM_set
+        
+        message("\nNot enough (< 40) Reference Match transcript isoforms among FSM, 
+                      all FSM transcripts will be used as Positive set.")
+        message(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
+        
+      }
+      else{ 
+        message ("Warning message: 
+                         \nNot enough (< 40) Full-Splice-Match transcripts, skipping ML filter.")
+        message("\n\t***Note: try re-running ML filter with a user-defined TP set >40 isoforms!")
+        
+        run_ML = FALSE
+      } 
   }
 }
 
