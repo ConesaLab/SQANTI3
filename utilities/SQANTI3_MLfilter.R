@@ -21,6 +21,7 @@
 # - New options added:
 #   1. --output and --dir to control file prefix and output directory, respectively.
 #   2. --intermediate_files to output ML-modified classification table.
+#   3. NNC as true negative set when no NNC non-canonical transcripts are available.
 
 
 
@@ -34,25 +35,25 @@ option_list = list(
   optparse::make_option(c("-d","--dir"), type="character", 
                         help="Output directory."),
   optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
-              help="the percentage of data that goes to training (parameter p of 
+              help="Proportion of the data that goes to training (parameter p of 
               the function createDataPartition)"),
   optparse::make_option(c("-p","--TP"), type="character",default = NULL,
-              help="file containing the list of the TP transcripts, 
+              help="Path to file containing the list of the TP transcripts, 
               one ID by line, no header."),
   optparse::make_option(c("-n","--TN"), type="character",default = NULL,
-              help="file containing the list of the TN transcripts, 
+              help="Path to file containing the list of the TN transcripts, 
               one ID by line, no header."),
   optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
-              help="machine learning probability threshold to classify 
-              positive isoforms."),
+              help="Machine learning probability threshold to classify 
+              transcripts as positive isoforms."),
   optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
-              help="polyA percentage thereshold to flag an isoform as 
-              intra-priming."),
+              help="PolyA thereshold (i.e. number of A's downstream a transcript) 
+              to flag an isoform as intra-priming."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
-              help="Forces retaining FMS transcripts regardless of ML filter,
+              help="When TRUE, forces retaining FMS transcripts regardless of ML filter,
               FSM are threfore not filtered."),
   optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
-              help="Forces retaining only multi-exon transcripts, all mono-exon
+              help="When TRUE, forces retaining only multi-exon transcripts, all mono-exon
               isoforms will be automatically removed."),
   optparse::make_option(c("-m", "--intermediate_files", type="logical", default=FALSE,
               help="Output ML filter intermediate files."))
