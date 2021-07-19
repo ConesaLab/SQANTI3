@@ -55,8 +55,12 @@ option_list = list(
   optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
               help="When TRUE, forces retaining only multi-exon transcripts, all mono-exon
               isoforms will be automatically removed."),
-  optparse::make_option(c("-m", "--intermediate_files", type="logical", default=FALSE,
-              help="Output ML filter intermediate files."))
+  optparse::make_option(c("-m", "--intermediate_files"), type="logical", default=FALSE,
+              help="Output ML filter intermediate files."),
+  optparse::make_option(c("-r", "--remove_columns"), type="character", default=NULL,
+              help="Path to single-column file (no header) containing the names of 
+              the columns in SQ3's classification.txt file that are to be excluded 
+              during random forest training (optional).")
 )
 
 # Parse and handle provided arguments
@@ -364,11 +368,25 @@ if (run_ML == TRUE) {
   message("\nFinished creating training data set.")
   
   
-  # Remove columns that are not informative for ML
-  colRem = c('chrom','strand','associated_gene', 'associated_transcript', 
+  # Select columns that are not informative for ML
+  colRem_def = c('chrom','strand','associated_gene', 'associated_transcript', 
              'ref_length','ref_exons', 'ORF_length', 'CDS_length', 'CDS_start', 
              'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'all_canonical',
              'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category')
+  
+  # Select columns that were provided by --remove_columns
+  colRem_file <- read.table(opt$remove_columns)
+  colRem_file <- unname(unlist(colRem_file))
+  
+      # Check that all provided names exist
+      if(!(all(colRem_file %in% colnames(d)))){
+        warning(paste0("\t", "Some columns provided via --remove_columns (-r) do not exist in ",
+        "\n\t", opt$sqanti_classif, " file!"))
+      }
+  
+  # Remove all from training set
+  colRem <- c(colRem_def,
+              colRem_file[which(!(colRem_file %in%  colRem_def))])
   trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
   
   
