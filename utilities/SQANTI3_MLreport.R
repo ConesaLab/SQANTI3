@@ -51,7 +51,7 @@ paths <- paste0(opt$dir, "/", filter_outfiles)
 
 # Detect files depending on filter type
 
-if(opt$filter_tpye == "ml"){
+if(opt$filter_type == "ml"){
   
   # Detect path and load ML output classification
   message("\nReading ML result classification table...")
@@ -75,6 +75,22 @@ if(opt$filter_tpye == "ml"){
 }
 
 
+# Format category factor for classification file
+classif <- classif %>% 
+  dplyr::mutate(structural_category = factor(structural_category) %>% 
+                  forcats::fct_infreq() %>% 
+                  forcats::fct_recode(ISM = "incomplete-splice_match",
+                                      FSM = "full-splice_match",
+                                      NNC = "novel_not_in_catalog",
+                                      NIC = "novel_in_catalog",
+                                      Intergenic = "intergenic",
+                                      Antisense = "antisense",
+                                      Genic = "genic",
+                                      Fusion = "fusion",
+                                      Genic_intron = "genic_intron"))
+
+
+
 #### Define plot theme ####
 
 # Load ggplot2
@@ -96,6 +112,16 @@ sq_theme <- theme_classic(base_family = "Helvetica") +
 
 theme_set(sq_theme)
 
+
+# Set category palette
+cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679", 
+                NNC="#EE6A50", Genic="#969696", Antisense="#66C2A4", 
+                Fusion="goldenrod1", Intergenic = "darksalmon", Genic_intron="#41B6C4")
+
+
+
+#### Common filter plots ####
+    
 
 
 #### ML filter plots ####
