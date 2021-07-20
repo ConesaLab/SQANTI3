@@ -25,7 +25,8 @@ option_list <- list(
   optparse::make_option(c("-o","--output"), type = "character", default = "SQANTI3", 
                         help = "Output report file prefix."),
   optparse::make_option(c("f", "--filter_type"), type = "character",
-                        help = "Type of SQ3 filter that was run to generate input.")
+                        help = "Type of SQ3 filter that was run to generate input.
+                        Must be one of the following: 'ml' or 'rules'.")
 )
 
 # Parse arguments
@@ -122,8 +123,40 @@ cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679",
 
 #### Common filter plots ####
     
+# Isoforms and artifacts by category
+category_summary <- classif %>% 
+  dplyr::group_by(structural_category, filter_result) %>% 
+  dplyr::summarize(n = dplyr::n()) %>%
+  dplyr::mutate(percent = n/sum(n))
+    
+      # Plot totals
+      cat_totals <- ggplot(category_summary, 
+                            aes(x = structural_category, y = n)) + 
+        geom_bar(aes(alpha = filter_result, fill = structural_category), 
+                  stat = "identity",
+                  width = 0.8, color = "black", position = "dodge") +
+        labs(x = "Structural category", y = "Isoform no.") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        scale_fill_manual("", values = cat.palette, guide = "none") +
+        scale_alpha_manual("Filter result", values = c(0.3, 1))
+        
+      # Plot percentages
+      cat_percent <- ggplot(category_summary, 
+                            aes(x = structural_category, y = percent)) +
+        geom_bar(aes(alpha = filter_result, fill = structural_category), 
+                  stat = "identity",
+                  width = 0.8, color = "black", position = "stack") +
+        labs(x = "Structural category", y = "Isoform %") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        scale_y_continuous(labels = scales::percent_format()) +
+        scale_fill_manual("", values = cat.palette, guide = "none") +
+        scale_alpha_manual("Filter result", values = c(0.3, 1))
 
 
+
+#### END common filter plots ####
+      
+      
 #### ML filter plots ####
 if(opt$filter_type == "ml"){
   
