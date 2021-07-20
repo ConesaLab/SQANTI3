@@ -690,7 +690,8 @@ d_out <- cbind(ids_df, d, d1[,result_cols])
     
 # intersect results of ML and intra-priming to create new column with filter results
 d_out$filter_result <- ifelse(d_out$intra_priming == FALSE &
-                                d_out$ML_classifier != "Negative", 
+                                (d_out$ML_classifier == "Positive" |
+                                   is.na(d_out$ML_classifier)), 
                               yes = "Isoform", no = "Artifact")
 
     # Condition table:
