@@ -34,6 +34,23 @@ compare_MLvariables <- function(classification, variable, importance){
     
     return(p)
     
+  } else if(var_type[3] == "integer"){
+    
+    # Specific plot for exon-related columns (integer variables divided into intervals)
+    var_fct <- var_df %>% 
+      dplyr::mutate(variable = cut(variable, breaks = c(0, 1, 3, 5, 10, max(.$variable)),
+                    labels = c("1", "2-3", "4-5", "6-10", ">10")))
+    
+    p <- ggplot(var_fct) +
+      ggtitle(paste(var_name, "-", "ML importance:", importance)) +
+      geom_bar(aes(x = filter_result, fill = variable), stat = "count", 
+               width = 0.8, color = "black", position = "dodge") +
+      labs(x = "Filter result", y = "Transcript no.") +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+      RColorConesa::scale_fill_conesa(paste0(var_name), reverse = FALSE,
+                                      palette = "complete", discrete = TRUE) +
+      facet_grid(~structural_category, scales = "free")
+      
   } else{
     
     var_df <- var_df %>% 

@@ -90,7 +90,7 @@ classif <- classif %>%
                                       Antisense = "antisense",
                                       Genic = "genic",
                                       Fusion = "fusion",
-                                      Genic_intron = "genic_intron"))
+                                      `Genic \nintron` = "genic_intron"))
 
 
 
@@ -119,7 +119,7 @@ theme_set(sq_theme)
 # Set category palette
 cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679", 
                 NNC="#EE6A50", Genic="#969696", Antisense="#66C2A4", 
-                Fusion="goldenrod1", Intergenic = "darksalmon", Genic_intron="#41B6C4")
+                Fusion="goldenrod1", Intergenic = "darksalmon", `Genic \nintron`="#41B6C4")
 
 
 
