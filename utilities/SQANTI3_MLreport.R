@@ -59,7 +59,9 @@ if(opt$filter_type == "ml"){
   
   which_classif <- stringr::str_detect(paths, "MLresult_classification")
   path_classif <- paths[which_classif]
-  classif <- readr::read_tsv(path_classif)
+  classif <- readr::read_tsv(path_classif, 
+                             col_types = readr::cols(exons = readr::col_integer(),
+                                                     ref_exons = readr::col_integer()))
   
   
   # Detect path and load variable importance table
