@@ -1,0 +1,18 @@
+Accuracy	0.959459459459459
+Kappa	0.918918918918919
+AccuracyLower	0.886062743253437
+AccuracyUpper	0.991560243629236
+AccuracyNull	0.5
+AccuracyPValue	3.57871420214942e-18
+McnemarPValue	0.248213078989924
+Sensitivity	0.918918918918919
+Specificity	1
+Pos Pred Value	1
+Neg Pred Value	0.925
+Precision	1
+Recall	0.918918918918919
+F1	0.957746478873239
+Prevalence	0.5
+Detection Rate	0.459459459459459
+Detection Prevalence	0.459459459459459
+Balanced Accuracy	0.959459459459459
