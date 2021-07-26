@@ -374,20 +374,32 @@ if (run_ML == TRUE) {
              'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'all_canonical',
              'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category')
   
-  # Select columns that were provided by --remove_columns
-  colRem_file <- read.table(opt$remove_columns)
-  colRem_file <- unname(unlist(colRem_file))
   
-      # Check that all provided names exist
-      if(!(all(colRem_file %in% colnames(d)))){
-        warning(paste0("\t", "Some columns provided via --remove_columns (-r) do not exist in ",
-        "\n\t", opt$sqanti_classif, " file!"))
-      }
+  # If arg is present, add columns that were provided by --remove_columns
+  if(is.null(opt$remove_columns) == FALSE){
+    colRem_file <- read.table(opt$remove_columns)
+    colRem_file <- unname(unlist(colRem_file))
+    
+    # Check that all provided names exist
+    if(!(all(colRem_file %in% colnames(d)))){
+      warning(paste0("\t", "Some columns provided via --remove_columns (-r) do not exist in ",
+                     "\n\t", opt$sqanti_classif, " file!"))
+    }
+    
+    # Set both defined and file-input columns as the set to be removed
+    colRem <- c(colRem_def,
+                colRem_file[which(!(colRem_file %in%  colRem_def))])
+    
+  }else{
+    
+    # If arg is not present, only pre-set columns will be removed
+    colRem <- colRem_def
+  }
   
-  # Remove all from training set
-  colRem <- c(colRem_def,
-              colRem_file[which(!(colRem_file %in%  colRem_def))])
+  # Remove columns from trainingset
   trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
+  
+  
   
   
   ####  Partition data
