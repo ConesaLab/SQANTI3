@@ -17,6 +17,9 @@
 #-------------------------------------------------------------------------------
 
 
+
+####------------------------- FILTER REPORT ARG LIST -----------------------####
+
 #### Define script arguments ####
 
 option_list <- list(
@@ -34,6 +37,9 @@ opt_parser = optparse::OptionParser(option_list = option_list)
 opt = optparse::parse_args(opt_parser)
 
 
+
+
+####--------------------------- INPUTS & THEME -----------------------------####
 
 #### Initialize script and load input data ####
 
@@ -93,7 +99,6 @@ classif <- classif %>%
                                       `Genic \nintron` = "genic_intron"))
 
 
-
 #### Define plot theme ####
 
 # Load ggplot2
@@ -122,6 +127,9 @@ cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679",
                 Fusion="goldenrod1", Intergenic = "darksalmon", `Genic \nintron`="#41B6C4")
 
 
+
+
+####-------------------------- FILTER REPORT PLOTS ------------------------####
 
 #### Common filter plots ####
     
@@ -154,9 +162,8 @@ category_summary <- classif %>%
         scale_fill_manual("", values = cat.palette, guide = "none") +
         scale_alpha_manual("Filter result", values = c(0.3, 1))
 
-
-
 #### END common filter plots ####
+      
       
       
 #### ML filter plots ####
@@ -180,14 +187,62 @@ if(opt$filter_type == "ml"){
 }
 #### END ML filter plots ####
 
+      
+      
+#### Intra-priming plots ####
+
+# Intra-priming by category and exon number
+ip_summary <- classif %>% 
+    dplyr::select(structural_category, exons, intra_priming) %>% 
+    dplyr::mutate(exon_classif = dplyr::if_else(exons > 1, 
+                                                true = "Multi-exon", 
+                                                false = "Mono-exon"))
+      
+ip_byexons <- ip_summary %>% 
+    dplyr::group_by(structural_category, exon_classif, intra_priming) %>% 
+    dplyr::summarize(n = dplyr::n()) %>% 
+    dplyr::mutate(percent = n/sum(n))
+  
+  
+    # A % summary
+      ggplot(classif) +
+        ggtitle("Percentage of A's downstream of TTS") +
+        geom_density(aes(x = perc_A_downstream_TTS, fill = intra_priming), 
+                     alpha = 0.5) +
+        scale_fill_manual("Intra-priming prediction", 
+                          values = c("violetred3", "gray60"))
+      
+      
+    # Intra-priming by structural_category and exon_classif
+        # totals
+        ip_totals <- ggplot(ip_summary) +
+          geom_bar(aes(x = exon_classif, fill = intra_priming), 
+                   stat = "count", color = "black", position = "dodge", width = 0.8) +
+          labs(x = "Exon classification", y = "No. of transcripts") +
+          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+          scale_fill_manual("Intra-priming prediction", 
+                            values = c("violetred3", "gray60")) +   
+          facet_grid(~structural_category)
+        
+        # percentage
+        ip_percent <- ggplot(ip_byexons) +
+          geom_bar(aes(x = exon_classif, y = percent, 
+                       fill = structural_category, alpha = intra_priming),
+                   stat = "identity", position = "stack", 
+                   width = 0.8, color = "black") +
+          labs(x = "Exon classification", y = "% transcripts") +
+          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+          scale_fill_manual(guide = "none",
+                            values = cat.palette) + 
+          scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
+          scale_y_continuous(labels = scales::percent_format()) +
+          facet_grid(~structural_category)
+        
+#### END intra-priming plots #### 
+    
 
 
 
-plot(density(log(d1$ratio_TSS[d1$structural_category == "incomplete-splice_match"])), col = "red")
-lines(density(log(d1$ratio_TSS[d1$structural_category == "full-splice_match"])))
-lines(density(log(d1$ratio_TSS[(d1$structural_category == "incomplete-splice_match" & d1$MLfilter_result == "Isoform")])), col = "blue")
-
-
-
-
+####-------------------------- GENERATE PDF REPORT ------------------------####
+        
 
