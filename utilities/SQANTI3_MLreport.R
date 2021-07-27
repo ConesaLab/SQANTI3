@@ -133,6 +133,8 @@ cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679",
 
 #### Common filter plots ####
     
+message("\nGenerating common filter plots...")
+
 # Isoforms and artifacts by category
 category_summary <- classif %>% 
   dplyr::group_by(structural_category, filter_result) %>% 
@@ -169,6 +171,8 @@ category_summary <- classif %>%
 #### ML filter plots ####
 if(opt$filter_type == "ml"){
     
+    message("\nGenerating machine learning filter plots...")
+  
     ## Reason for calling artifacts: ML, intra-priming or both
     classif_artifacts <- classif %>% 
       dplyr::filter(filter_result == "Artifact") %>% 
@@ -188,7 +192,7 @@ if(opt$filter_type == "ml"){
           geom_bar(aes(x = structural_category, y = n, fill = reason), 
                    stat = "identity", position = "dodge", 
                    color = "black", width = 0.8) +
-          labs(x = "Structural category", y = "No. of transcripts") +
+          labs(x = "Structural category", y = "Transcript no.") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual("Reason", values = c("springgreen4", "darkgoldenrod2", 
                                                  "steelblue3"))
@@ -199,7 +203,7 @@ if(opt$filter_type == "ml"){
           geom_bar(aes(x = structural_category, y = percent, fill = reason), 
                    stat = "identity", position = "stack", 
                    color = "black", width = 0.8) +
-          labs(x = "Structural category", y = "% Transcripts") +
+          labs(x = "Structural category", y = "Transcript %") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual("Reason", values = c("springgreen4", "goldenrod2", 
                                                  "palevioletred3")) +
@@ -227,6 +231,8 @@ if(opt$filter_type == "ml"){
       
       
 #### Intra-priming plots ####
+      
+message("\nGenerating intra-priming plots...")
 
 # Intra-priming by category and exon number
 ip_summary <- classif %>% 
@@ -242,7 +248,7 @@ ip_byexons <- ip_summary %>%
   
   
     # A % summary
-      ggplot(classif) +
+    A_percent <- ggplot(classif) +
         ggtitle("Percentage of A's downstream of TTS") +
         geom_density(aes(x = perc_A_downstream_TTS, fill = intra_priming), 
                      alpha = 0.5) +
@@ -255,7 +261,7 @@ ip_byexons <- ip_summary %>%
         ip_totals <- ggplot(ip_summary) +
           geom_bar(aes(x = exon_classif, fill = intra_priming), 
                    stat = "count", color = "black", position = "dodge", width = 0.8) +
-          labs(x = "Exon classification", y = "No. of transcripts") +
+          labs(x = "Exon classification", y = "Transcript no.") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual("Intra-priming prediction", 
                             values = c("violetred3", "gray60")) +   
@@ -267,7 +273,7 @@ ip_byexons <- ip_summary %>%
                        fill = structural_category, alpha = intra_priming),
                    stat = "identity", position = "stack", 
                    width = 0.8, color = "black") +
-          labs(x = "Exon classification", y = "% transcripts") +
+          labs(x = "Exon classification", y = "Transcript %") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual(guide = "none",
                             values = cat.palette) + 
@@ -281,5 +287,33 @@ ip_byexons <- ip_summary %>%
 
 
 ####-------------------------- GENERATE PDF REPORT ------------------------####
-        
 
+message("\nWriting report plots to PDF file...")
+        
+# Create report file name
+pdf_file <- paste0(opt$dir, "/", opt$output, "_SQANTI3_filter_report.pdf")
+
+# Open file
+pdf(file = pdf_file, width = 8, height = 7.5)
+
+# Print plots
+
+    # Common filter plots
+    print(cat_totals)
+    print(cat_percent)
+    
+    # ML filter plots
+    print(artifact_totals)
+    print(artifact_percent)
+    print(var_imp)
+    suppressMessages(purrr::map(var_compare, print))
+    
+    # Intra-priming plots
+    print(A_percent)
+    print(ip_totals)
+    print(ip_percent)
+
+# Close file
+dev.off()
+
+        
