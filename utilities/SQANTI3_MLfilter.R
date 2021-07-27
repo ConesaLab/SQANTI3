@@ -33,30 +33,33 @@ option_list = list(
   optparse::make_option(c("-o","--output"), type="character", default = "SQANTI3", 
               help="Output classification file prefix."),
   optparse::make_option(c("-d","--dir"), type="character", 
-                        help="Output directory."),
+              help="Output directory."),
   optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
-              help="Proportion of the data that goes to training (parameter p of 
-              the function createDataPartition)"),
+              help="Default: 0.8. Proportion of the data that goes to training 
+              (parameter p of the function createDataPartition)"),
   optparse::make_option(c("-p","--TP"), type="character",default = NULL,
               help="Path to file containing the list of the TP transcripts, 
-              one ID by line, no header."),
+              one ID by line, no header (optional). If not supplied, it will be 
+              generated from input data."),
   optparse::make_option(c("-n","--TN"), type="character",default = NULL,
               help="Path to file containing the list of the TN transcripts, 
-              one ID by line, no header."),
+              one ID by line, no header (optional). If not supplied, it will be 
+              generated from input data."),
   optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
-              help="Machine learning probability threshold to classify 
+              help="Default: 0.7. Machine learning probability threshold to classify 
               transcripts as positive isoforms."),
   optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
-              help="PolyA thereshold (i.e. number of A's downstream a transcript) 
-              to flag an isoform as intra-priming."),
+              help="Default: 60. PolyA thereshold (i.e. number of A's downstream 
+              the TTS) to flag an isoform as an intra-priming artifact."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
-              help="When TRUE, forces retaining FMS transcripts regardless of ML filter,
-              FSM are threfore not filtered."),
+              help="Default: FALSE. When TRUE, forces retaining FMS transcripts 
+              regardless of ML filter, FSM are threfore not filtered."),
   optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
-              help="When TRUE, forces retaining only multi-exon transcripts, all mono-exon
-              isoforms will be automatically removed."),
+              help="Default: FALSE. When TRUE, forces retaining only multi-exon 
+              transcripts, all mono-exon isoforms will be automatically removed."),
   optparse::make_option(c("-m", "--intermediate_files"), type="logical", default=FALSE,
-              help="Output ML filter intermediate files."),
+              help="Default: FALSE. When TRUE, outputs ML filter intermediate 
+              files."),
   optparse::make_option(c("-r", "--remove_columns"), type="character", default=NULL,
               help="Path to single-column file (no header) containing the names of 
               the columns in SQ3's classification.txt file that are to be excluded 
