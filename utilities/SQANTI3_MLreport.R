@@ -168,7 +168,44 @@ category_summary <- classif %>%
       
 #### ML filter plots ####
 if(opt$filter_type == "ml"){
-  
+    
+    ## Reason for calling artifacts: ML, intra-priming or both
+    classif_artifacts <- classif %>% 
+      dplyr::filter(filter_result == "Artifact") %>% 
+      dplyr::mutate(reason = dplyr::case_when(
+        intra_priming == TRUE & ML_classifier == "Negative" ~ "Both",
+        intra_priming == TRUE | (ML_classifier == "Positive" | is.na(ML_classifier)) ~ "Intra-priming",
+        intra_priming == FALSE & ML_classifier == "Negative" ~ "ML"))
+    
+    artifact_summary <- classif_artifacts %>% 
+      dplyr::group_by(structural_category, reason) %>% 
+      dplyr::summarize(n = dplyr::n()) %>% 
+      dplyr::mutate(percent = n/sum(n))
+    
+        # totals
+        artifact_totals <- ggplot(artifact_summary) +
+          ggtitle("Reason to flag transcripts as artifacts, by category") +
+          geom_bar(aes(x = structural_category, y = n, fill = reason), 
+                   stat = "identity", position = "dodge", 
+                   color = "black", width = 0.8) +
+          labs(x = "Structural category", y = "No. of transcripts") +
+          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+          scale_fill_manual("Reason", values = c("springgreen4", "darkgoldenrod2", 
+                                                 "steelblue3"))
+        
+        # percentage
+        artifact_percent <- ggplot(artifact_summary) +
+          ggtitle("Reason to flag transcripts as artifacts, by category") +
+          geom_bar(aes(x = structural_category, y = percent, fill = reason), 
+                   stat = "identity", position = "stack", 
+                   color = "black", width = 0.8) +
+          labs(x = "Structural category", y = "% Transcripts") +
+          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+          scale_fill_manual("Reason", values = c("springgreen4", "goldenrod2", 
+                                                 "palevioletred3")) +
+          scale_y_continuous(labels = scales::percent_format())
+          
+    
     ## Variable importance in classifier
     var_imp <- ggplot(imp) +
       ggtitle("Variable importance in Random Forest classifier") +
@@ -176,7 +213,7 @@ if(opt$filter_type == "ml"){
                width = 0.7, color = "black", fill = "cadetblue3") +
       labs(x = "SQANTI3 variables", y = "Importance") +
       coord_flip()
-
+    
     
     ## Variables used in ML: values for isoforms and artifacts by category
     source(paste0(getwd(), "/utilities/compare_MLvariables.R"))
