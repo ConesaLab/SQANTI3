@@ -60,7 +60,11 @@ option_list = list(
   optparse::make_option(c("-r", "--remove_columns"), type="character", default=NULL,
               help="Path to single-column file (no header) containing the names of 
               the columns in SQ3's classification.txt file that are to be excluded 
-              during random forest training (optional).")
+              during random forest training (optional)."),
+  optparse::make_option(c("-z", "--max_class_size"), type="numeric", default=3000,
+              help="Default: 3000. Maximum number of isoforms to include in True 
+              Positive and True Negative sets. TP and TN sets will be downsized 
+              to this value if they are larger.")
 )
 
 # Parse and handle provided arguments
@@ -238,12 +242,24 @@ if(length(Positive_set) != length(Negative_set)){
   sub_size <- min(length(Positive_set), length(Negative_set))
   
   message(paste0("\n\tMinimum set size: ", sub_size, " transcripts."))
-  message(paste0("\n\tSampled ", sub_size, " transcripts to reduced larger set."))
+  
+      #### Downsize TP and TN sets if isoform no. is too large
+      if(sub_size > opt$max_class_size){
+        
+        message(paste0("\nWarning message: min. set size is larger than --max_class_size!"))
+        message(paste0("\n[!] TP and TN sets will be downsized to ", opt$max_class_size, 
+                       " isoforms."))
+        
+        sub_size <- opt$max_class_size
+      }
+  
+  message(paste0("\n\tSampled ", sub_size, " transcripts to define final TP and TN sets."))
   
   # sample sub_size number of isoforms as TP and TN
   Positive_set <- sample(Positive_set, sub_size)
   Negative_set <- sample(Negative_set, sub_size)
 }
+
 
 
 #############################
