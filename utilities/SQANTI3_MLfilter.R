@@ -264,6 +264,27 @@ if(length(Positive_set) != length(Negative_set)){
 }
 
 
+#### If not provided, output generated list of TP and TN
+if(is.null(opt$TP) == TRUE & is.null(opt$TN) == TRUE){
+  
+  # create single-column tables
+  Negative_df <- data.frame(transcripts = Negative_set)
+  Positive_df <- data.frame(transcripts = Positive_set)
+  
+  # output tables
+  write.table(Negative_df, 
+              file = paste0(opt$dir, "/", opt$output, "_TN_list.txt"),
+              quote = FALSE, col.names = FALSE, sep = "\t", row.names = FALSE)
+  
+  write.table(Positive_df, 
+              file = paste0(opt$dir, "/", opt$output, "_TP_list.txt"),
+              quote = FALSE, col.names = FALSE, sep = "\t", row.names = FALSE)
+  
+  message("\nWrote generated TP and TN lists to files:")
+  message(paste0("\n\t", opt$dir, "/", opt$output, "_TP_list.txt"))
+  message(paste0("\n\t", opt$dir, "/", opt$output, "_TN_list.txt"))
+}
+
 
 #############################
 ###### Machine Learning #####
