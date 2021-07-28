@@ -137,18 +137,6 @@ cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679",
     
 message("\nGenerating common filter plots...")
 
-# Isoforms and artifacts by category
-category_summary <- classif %>% 
-  dplyr::group_by(structural_category, filter_result) %>% 
-  dplyr::summarize(n = dplyr::n()) %>%
-  dplyr::mutate(percent = n/sum(n))
-
-# long-format table for grid.table()
-category_summary_long <- category_summary %>% 
-  dplyr::select(-percent) %>% 
-  tidyr::pivot_wider(names_from = filter_result, values_from = n)
-
-    
 # Gene-level summary tables
 gene_artifacts <- classif %>% 
   dplyr::select(associated_gene, filter_result) %>% 
@@ -158,7 +146,7 @@ gene_artifacts <- classif %>%
   dplyr::summarize(all_artifacts = all(filter_result == "Artifact"),
                    gene_type = gene_type,
                    filter_result = filter_result, 
-                  .groups = "drop")
+                   .groups = "drop")
 
 bygene_summary <- gene_artifacts %>% 
   dplyr::select(!filter_result) %>% 
@@ -176,8 +164,8 @@ bygene_summary_long <- bygene_summary %>%
                      names_prefix = "all_artifacts_", 
                      values_from = "isoform_no") %>% 
   dplyr::select(gene_type, total_genes, all_artifacts_TRUE)
-          
-      
+
+
       ### Create table objects for report ###
       # Total genes and artifacts 
       gene_count <- classif$associated_gene %>% unique %>% length
@@ -190,30 +178,43 @@ bygene_summary_long <- bygene_summary %>%
       iso_pcnt <- iso_count*100/sum(tr_count)
       artif_count <- tr_count["Artifact"]
       artif_pcnt <- artif_count*100/sum(tr_count) %>% round
-
+      
       
       sentence <- paste0("Total Genes: ", gene_count, "\n\n", 
-                        "Total Transcripts: ", sum(tr_count), "\n",
-                       "- Isoforms: ", 
-                       iso_count, " (", round(iso_pcnt), "%)", "\n",
-                       "- Artifacts: ", 
-                       artif_count, " (", round(artif_pcnt), "%)")
-  
+                         "Total Transcripts: ", sum(tr_count), "\n",
+                         "- Isoforms: ", 
+                         iso_count, " (", round(iso_pcnt), "%)", "\n",
+                         "- Artifacts: ", 
+                         artif_count, " (", round(artif_pcnt), "%)")
+      
       summary_title <- grid::textGrob(sentence, 
                                       gp = grid::gpar(fontface = "italic", 
-                                                   fontsize = 17), vjust = 0)
+                                                      fontsize = 17), vjust = 0)
       
       # Total artifacts/isoforms by category
       gene_table <- gridExtra::tableGrob(bygene_summary_long, rows = NULL,
-                           cols = c("Gene category", "Gene no.", 
-                                    "No. of genes with \nartifacts only"))
+                                         cols = c("Gene category", "Gene no.", 
+                                                  "No. of genes with \nartifacts only"))
       
       # Total genes and genes with all artifacts
       cat_table <- gridExtra::tableGrob(category_summary_long, rows = NULL,
-                           cols = c("Structural category",
-                                    "Artifact no.", "Isoform no."))
+                                        cols = c("Structural category",
+                                                 "Artifact no.", "Isoform no."))
+
+
+
+# Isoforms and artifacts by category
+category_summary <- classif %>% 
+  dplyr::group_by(structural_category, filter_result) %>% 
+  dplyr::summarize(n = dplyr::n()) %>%
+  dplyr::mutate(percent = n/sum(n))
+
+# long-format table for grid.table()
+category_summary_long <- category_summary %>% 
+  dplyr::select(-percent) %>% 
+  tidyr::pivot_wider(names_from = filter_result, values_from = n)
+
     
-      
       ### Create summary plots for report ###
       # Plot totals
       cat_totals <- ggplot(category_summary, 
@@ -238,6 +239,51 @@ bygene_summary_long <- bygene_summary %>%
         scale_fill_manual("", values = cat.palette, guide = "none") +
         scale_alpha_manual("Filter result", values = c(0.3, 1))
 
+      
+      
+# Number of isoforms per gene before and after filtering
+# calculate before
+isoforms_before <- classif %>% 
+  dplyr::select(isoform, associated_gene) %>% 
+  dplyr::group_by(associated_gene) %>% 
+  dplyr::summarize(isoform_no = dplyr::n()) %>% 
+  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, max(.$isoform_no)),
+                                     labels = c("1", "2-3", "4-5", ">=6"))) %>% 
+
+# calculate after
+isoforms_after <- classif %>% 
+  dplyr::filter(filter_result == "Isoform") %>%  
+  dplyr::group_by(associated_gene) %>% 
+  dplyr::summarize(isoform_no = dplyr::n()) %>% 
+  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, max(.$isoform_no)),
+                                     labels = c("1", "2-3", "4-5", ">=6")))
+
+# join both
+isoforms_per_gene <- dplyr::bind_rows(
+  list(Before = isoforms_before, After = isoforms_after),
+  .id = "filter"
+)
+
+# compute percentage
+isoforms_per_gene <- isoforms_per_gene %>% 
+  dplyr::group_by(filter, isoform_factor) %>% 
+  dplyr::summarize(gene_no = dplyr::n()) %>% 
+  dplyr::mutate(percent = gene_no/sum(gene_no))
+
+      # plot
+      iso_p_gene <- ggplot(isoforms_per_gene) +
+        ggtitle("Number of isoforms per gene") +
+        geom_bar(aes(x = isoform_factor, y = percent, 
+                     fill = forcats::fct_relevel(filter, 
+                                                 levels = c("Before", "After"))),
+                 stat = "identity", position = "dodge",
+                 color = "black", width = 0.8) +
+        labs(x = "Isoforms per gene", y = "% Genes") +
+        scale_fill_manual("Filter", values = c("steelblue3", "lightskyblue1")) +
+        scale_y_continuous(labels = scales::percent_format())
+
+      
+  
 #### END common filter plots ####
       
       
@@ -388,6 +434,7 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     # Common filter plots
     print(cat_totals)
     print(cat_percent)
+    print(iso_p_gene)
     
     # ML filter plots
     print(artifact_totals)
