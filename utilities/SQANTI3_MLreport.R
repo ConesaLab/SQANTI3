@@ -39,7 +39,7 @@ opt = optparse::parse_args(opt_parser)
 
 
 
-####--------------------------- INPUTS & THEME -----------------------------####
+####------------------------ INPUTS & PLOT THEME ---------------------------####
 
 #### Initialize script and load input data ####
 
@@ -140,7 +140,79 @@ category_summary <- classif %>%
   dplyr::group_by(structural_category, filter_result) %>% 
   dplyr::summarize(n = dplyr::n()) %>%
   dplyr::mutate(percent = n/sum(n))
+
+# long-format table for grid.table()
+category_summary_long <- category_summary %>% 
+  dplyr::select(-percent) %>% 
+  tidyr::pivot_wider(names_from = filter_result, values_from = n)
+
     
+# Gene-level summary tables
+gene_artifacts <- classif %>% 
+  dplyr::select(associated_gene, filter_result) %>% 
+  dplyr::mutate(gene_type = ifelse(stringr::str_detect(associated_gene, "novel"),
+                                   yes = "Novel", no = "Annotated")) %>% 
+  dplyr::group_by(associated_gene) %>% 
+  dplyr::summarize(all_artifacts = all(filter_result == "Artifact"),
+                   gene_type = gene_type,
+                   filter_result = filter_result, 
+                  .groups = "drop")
+
+bygene_summary <- gene_artifacts %>% 
+  dplyr::select(!filter_result) %>% 
+  dplyr::distinct() %>% 
+  dplyr::group_by(gene_type) %>% 
+  dplyr::add_tally(name = "total_genes") %>% 
+  dplyr::group_by(gene_type, all_artifacts) %>% 
+  dplyr::summarize(isoform_no = dplyr::n(),
+                   total_genes = total_genes) %>%  
+  dplyr::distinct()
+
+# long-format table for grid.table()
+bygene_summary_long <- bygene_summary %>% 
+  tidyr::pivot_wider(names_from = "all_artifacts", 
+                     names_prefix = "all_artifacts_", 
+                     values_from = "isoform_no") %>% 
+  dplyr::select(gene_type, total_genes, all_artifacts_TRUE)
+          
+      
+      ### Create table objects for report ###
+      # Total genes and artifacts 
+      gene_count <- classif$associated_gene %>% unique %>% length
+      tr_count <- classif %>% 
+        dplyr::group_by(filter_result) %>% 
+        dplyr::summarize(n = dplyr::n()) %>% 
+        tibble::deframe()
+      
+      iso_count <- tr_count["Isoform"]
+      iso_pcnt <- iso_count*100/sum(tr_count)
+      artif_count <- tr_count["Artifact"]
+      artif_pcnt <- artif_count*100/sum(tr_count) %>% round
+
+      
+      sentence <- paste0("Total Genes: ", gene_count, "\n\n", 
+                        "Total Transcripts: ", sum(tr_count), "\n",
+                       "- Isoforms: ", 
+                       iso_count, " (", round(iso_pcnt), "%)", "\n",
+                       "- Artifacts: ", 
+                       artif_count, " (", round(artif_pcnt), "%)")
+  
+      summary_title <- grid::textGrob(sentence, 
+                                      gp = grid::gpar(fontface = "italic", 
+                                                   fontsize = 17), vjust = 0)
+      
+      # Total artifacts/isoforms by category
+      gene_table <- gridExtra::tableGrob(bygene_summary_long, rows = NULL,
+                           cols = c("Gene category", "Gene no.", 
+                                    "No. of genes with \nartifacts only"))
+      
+      # Total genes and genes with all artifacts
+      cat_table <- gridExtra::tableGrob(category_summary_long, rows = NULL,
+                           cols = c("Structural category",
+                                    "Artifact no.", "Isoform no."))
+    
+      
+      ### Create summary plots for report ###
       # Plot totals
       cat_totals <- ggplot(category_summary, 
                             aes(x = structural_category, y = n)) + 
@@ -296,6 +368,19 @@ pdf_file <- paste0(opt$dir, "/", opt$output, "_SQANTI3_filter_report.pdf")
 # Open file
 pdf(file = pdf_file, width = 8, height = 7.5)
 
+    # Print title and header
+    grid::grid.newpage()
+    cover <- grid::textGrob("SQANTI3 filter report",
+                            gp = grid::gpar(fontface = "italic", 
+                                            fontsize = 40, col = "orangered"))
+    grid::grid.draw(cover)
+
+    
+# Create grid of tables
+    
+    gridExtra::grid.arrange(summary_title, gene_table, cat_table,
+                            layout_matrix = cbind(c(1,2),c(1,4)))
+
 # Print plots
 
     # Common filter plots
@@ -306,7 +391,7 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     print(artifact_totals)
     print(artifact_percent)
     print(var_imp)
-    suppressMessages(purrr::map(var_compare, print))
+    purrr::walk(var_compare, print)
     
     # Intra-priming plots
     print(A_percent)
