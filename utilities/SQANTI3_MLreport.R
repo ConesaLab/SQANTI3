@@ -87,16 +87,18 @@ if(opt$filter_type == "ml"){
 # Format category factor for classification file
 classif <- classif %>% 
   dplyr::mutate(structural_category = factor(structural_category) %>% 
-                  forcats::fct_infreq() %>% 
-                  forcats::fct_recode(ISM = "incomplete-splice_match",
-                                      FSM = "full-splice_match",
-                                      NNC = "novel_not_in_catalog",
+                  forcats::fct_recode(FSM = "full-splice_match",
+                                      ISM = "incomplete-splice_match",
                                       NIC = "novel_in_catalog",
+                                      NNC = "novel_not_in_catalog",
                                       Intergenic = "intergenic",
                                       Antisense = "antisense",
                                       Genic = "genic",
                                       Fusion = "fusion",
-                                      `Genic \nintron` = "genic_intron"))
+                                      `Genic \nintron` = "genic_intron") %>% 
+                  forcats::fct_relevel(c("FSM", "ISM", "NIC", "NNC", 
+                                         "Genic", "Antisense", "Fusion", 
+                                         "Intergenic", "Genic \nintron"))) 
 
 
 #### Define plot theme ####
@@ -267,7 +269,7 @@ if(opt$filter_type == "ml"){
           labs(x = "Structural category", y = "Transcript no.") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual("Reason", values = c("springgreen4", "darkgoldenrod2", 
-                                                 "steelblue3"))
+                                                 "palevioletred3"))
         
         # percentage
         artifact_percent <- ggplot(artifact_summary) +
