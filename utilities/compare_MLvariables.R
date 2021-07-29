@@ -51,8 +51,8 @@ compare_MLvariables <- function(classification, variable, importance){
                width = 0.8, color = "black", position = "dodge") +
       labs(x = "Filter result", y = "Transcript no.") +
       theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      RColorConesa::scale_fill_conesa(paste0(var_name), reverse = FALSE,
-                                      palette = "complete", discrete = TRUE) +
+      RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
+                                      continuous = FALSE, reverse = FALSE) +
       facet_grid(~structural_category, scales = "free")
       
   } else{
@@ -67,8 +67,8 @@ compare_MLvariables <- function(classification, variable, importance){
                width = 0.8, color = "black", position = "dodge") +
       labs(x = "Filter result", y = "Transcript no.") +
       theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      RColorConesa::scale_fill_conesa(paste0(var_name), reverse = FALSE,
-                                      palette = "complete", discrete = TRUE) +
+      RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
+                                      continuous = FALSE, reverse = FALSE) +
       facet_grid(~structural_category, scales = "free")
     
     return(p)
