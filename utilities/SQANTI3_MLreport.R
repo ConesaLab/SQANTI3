@@ -282,11 +282,116 @@ isoforms_per_gene <- isoforms_per_gene %>%
                  stat = "identity", position = "dodge",
                  color = "black", width = 0.8) +
         labs(x = "Isoforms per gene", y = "% Genes") +
-        scale_fill_manual("Filter", values = c("steelblue3", "lightskyblue1")) +
+        scale_fill_manual("Filter", values = c("tomato3", "#FFD4BF")) +
         scale_y_continuous(labels = scales::percent_format())
 
       
-  
+      
+# Redundancy before and after filtering
+# fsm redundancy
+fsm_before <- classif %>% 
+  dplyr::filter(structural_category == "FSM")
+
+fsm_after <- classif %>% 
+  dplyr::filter(structural_category == "FSM" &
+                  filter_result == "Isoform")
+
+fsm <- dplyr::bind_rows(list(Before = fsm_before, After = fsm_after),
+                        .id = "filter") %>% 
+  dplyr::mutate(filter = factor(filter) %>% 
+                  forcats::fct_relevel(c("Before", "After"))) %>% 
+  dplyr::select(isoform, associated_gene, associated_transcript, 
+                structural_category, filter)
+
+fsm_redund.df <- fsm %>% 
+  dplyr::group_by(filter, associated_transcript) %>% 
+  dplyr::summarize(fsm_no = dplyr::n()) %>% 
+  dplyr::filter(fsm_no > 0) %>% 
+  dplyr::mutate(fsm_type = as.factor(ifelse(fsm_no == 1, 
+                                            yes = "Unique", no = "Multiple")) %>% 
+                  forcats::fct_relevel(c("Unique", "Multiple")),
+                fsm_bin = ifelse(fsm_no <= 4, 
+                                 yes = as.character(fsm_no), no = ">4") %>% 
+                  ordered(levels = c("1", "2", "3", "4", ">4")))
+
+      
+      # plot FSM redundancy
+      fsm_redund <- ggplot(fsm_redund.df) + 
+        ggtitle("FSM redundancy") +
+        geom_bar(aes(x = fsm_type, fill = fsm_bin), color = "black", width = 0.5) +
+        geom_text(aes(x = fsm_type, label = stat(count)), stat = "count", vjust = -1) +
+        scale_y_continuous(breaks = scales::pretty_breaks(6)) +
+        scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
+        xlab("FSM per reference transcript") +
+        ylab("Reference transcfript no.") +
+        facet_grid(~filter)
+
+
+# ism redundancy
+ism_before <- classif %>% 
+  dplyr::filter(structural_category == "ISM")
+
+ism_after <- classif %>% 
+  dplyr::filter(structural_category == "ISM" &
+                  filter_result == "Isoform")
+
+ism <- dplyr::bind_rows(list(Before = ism_before, After = ism_after),
+                        .id = "filter") %>% 
+  dplyr::mutate(filter = factor(filter) %>% 
+                  forcats::fct_relevel(c("Before", "After"))) %>% 
+  dplyr::select(isoform, associated_gene, associated_transcript, 
+                structural_category, filter)
+
+ism_redund.df <- ism %>% 
+  dplyr::group_by(filter, associated_transcript) %>% 
+  dplyr::summarize(total_ism = dplyr::n()) %>% 
+  dplyr::filter(total_ism > 0) %>% 
+  dplyr::mutate(ism_type = ifelse(total_ism == 1, 
+                                  yes = "Unique", no = "Multiple") %>% 
+                  forcats::fct_relevel(c("Unique", "Multiple")),
+                ism_bin = ifelse(total_ism <= 4, 
+                                 yes = as.character(total_ism), no = ">4") %>% 
+                  ordered(levels = c("1", "2", "3", "4", ">4")))
+
+      # plot FSM redundancy
+      ism_redund <- ggplot(ism_redund.df) + 
+        ggtitle("ISM redundancy") +
+        geom_bar(aes(x = ism_type, fill = ism_bin), color = "black", width = 0.5) +
+        geom_text(aes(x = ism_type, label = stat(count)), stat = "count", vjust = -1) +
+        scale_y_continuous(breaks = scales::pretty_breaks(6)) +
+        scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
+        xlab("ISM per reference transcript") +
+        ylab("Reference transcfripts") +
+        facet_grid(~filter)
+
+      
+# combined redundancy (FSM + ISM)
+comb_fsm_ism <- dplyr::bind_rows(fsm, ism)
+
+comb_redund.df <- comb_fsm_ism %>% 
+  dplyr::group_by(filter, associated_transcript) %>% 
+  dplyr::summarize(total_tr = dplyr::n()) %>% 
+  dplyr::filter(total_tr > 0) %>% 
+  dplyr::mutate(tr_type = ifelse(total_tr == 1, 
+                                  yes = "Unique", no = "Multiple") %>% 
+                  forcats::fct_relevel(c("Unique", "Multiple")),
+                tr_bin = ifelse(total_tr <= 4, 
+                                 yes = as.character(total_tr), no = ">4") %>% 
+                  ordered(levels = c("1", "2", "3", "4", ">4")))
+      
+        # plot combined redundancy
+        comb_redund <- ggplot(comb_redund.df) + 
+          ggtitle("FSM+ISM redundancy") +
+          geom_bar(aes(x = tr_type, fill = tr_bin), color = "black", width = 0.5) +
+          geom_text(aes(x = tr_type, label = stat(count)), stat = "count", vjust = -1) +
+          scale_y_continuous(breaks = scales::pretty_breaks(6)) +
+          scale_fill_brewer("Total FSM+ISM \nper reference ID", palette = "Greens") +
+          xlab("FSM+ISM per reference transcript") +
+          ylab("Reference transcfript no.") +
+          facet_grid(~filter)
+        
+        
+
 #### END common filter plots ####
       
       
@@ -438,12 +543,15 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     print(cat_totals)
     print(cat_percent)
     print(iso_p_gene)
+    print(fsm_redund)
+    print(ism_redund)
+    print(comb_redund)
     
     # ML filter plots
     print(artifact_totals)
     print(artifact_percent)
     print(var_imp)
-    purrr::walk(var_compare, print)
+    supressWarnings(purrr::walk(var_compare, print))
     
     # Intra-priming plots
     print(A_percent)
