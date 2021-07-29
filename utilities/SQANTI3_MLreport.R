@@ -29,7 +29,7 @@ option_list <- list(
                         help = "Output report file prefix."),
   optparse::make_option(c("-u", "--utilities_path"), type = "character",
                         help = "Full path to SQANTI3/utilities folder."),
-  optparse::make_option(c("f", "--filter_type"), type = "character", default = "ml",
+  optparse::make_option(c("-f", "--filter_type"), type = "character", default = "ml",
                         help = "Type of SQ3 filter that was run to generate input.
                         Must be one of the following: 'ml' or 'rules'.
                         Default: 'ml'.")
@@ -138,7 +138,7 @@ cat.palette = c(FSM="#6BAED6", ISM="#FC8D59", NIC="#78C679",
 
 #### Common filter plots ####
     
-message("\nGenerating common filter plots...")
+message("\nGenerating common filter plots...\n")
 
 # Gene-level summary tables
 gene_artifacts <- classif %>% 
@@ -167,6 +167,20 @@ bygene_summary_long <- bygene_summary %>%
                      names_prefix = "all_artifacts_", 
                      values_from = "isoform_no") %>% 
   dplyr::select(gene_type, total_genes, all_artifacts_TRUE)
+
+
+
+# Isoforms and artifacts by category
+category_summary <- classif %>% 
+  dplyr::group_by(structural_category, filter_result) %>% 
+  dplyr::summarize(n = dplyr::n()) %>%
+  dplyr::mutate(percent = n/sum(n))
+
+# long-format table for grid.table()
+category_summary_long <- category_summary %>% 
+  dplyr::select(-percent) %>% 
+  tidyr::pivot_wider(names_from = filter_result, values_from = n)
+
 
 
       ### Create table objects for report ###
@@ -205,18 +219,6 @@ bygene_summary_long <- bygene_summary %>%
                                                  "Artifact no.", "Isoform no."))
 
 
-
-# Isoforms and artifacts by category
-category_summary <- classif %>% 
-  dplyr::group_by(structural_category, filter_result) %>% 
-  dplyr::summarize(n = dplyr::n()) %>%
-  dplyr::mutate(percent = n/sum(n))
-
-# long-format table for grid.table()
-category_summary_long <- category_summary %>% 
-  dplyr::select(-percent) %>% 
-  tidyr::pivot_wider(names_from = filter_result, values_from = n)
-
     
       ### Create summary plots for report ###
       # Plot totals
@@ -251,7 +253,7 @@ isoforms_before <- classif %>%
   dplyr::group_by(associated_gene) %>% 
   dplyr::summarize(isoform_no = dplyr::n()) %>% 
   dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, max(.$isoform_no)),
-                                     labels = c("1", "2-3", "4-5", ">=6"))) %>% 
+                                     labels = c("1", "2-3", "4-5", ">=6")))
 
 # calculate after
 isoforms_after <- classif %>% 
@@ -262,10 +264,11 @@ isoforms_after <- classif %>%
                                      labels = c("1", "2-3", "4-5", ">=6")))
 
 # join both
-isoforms_per_gene <- dplyr::bind_rows(
-  list(Before = isoforms_before, After = isoforms_after),
-  .id = "filter"
-)
+isoforms_per_gene <- dplyr::bind_rows(list(Before = isoforms_before, 
+                                           After = isoforms_after),
+                                      .id = "filter") %>% 
+  dplyr::mutate(filter = factor(filter) %>% 
+                  forcats::fct_relevel(c("Before", "After")))
 
 # compute percentage
 isoforms_per_gene <- isoforms_per_gene %>% 
@@ -399,7 +402,7 @@ comb_redund.df <- comb_fsm_ism %>%
 #### ML filter plots ####
 if(opt$filter_type == "ml"){
     
-    message("\nGenerating machine learning filter plots...")
+    message("\nGenerating machine learning filter plots...\n")
   
     ## Reason for calling artifacts: ML, intra-priming or both
     classif_artifacts <- classif %>% 
@@ -460,7 +463,7 @@ if(opt$filter_type == "ml"){
       
 #### Intra-priming plots ####
       
-message("\nGenerating intra-priming plots...")
+message("\nGenerating intra-priming plots...\n")
 
 # Intra-priming by category and exon number
 ip_summary <- classif %>% 
@@ -551,7 +554,7 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     print(artifact_totals)
     print(artifact_percent)
     print(var_imp)
-    supressWarnings(purrr::walk(var_compare, print))
+    suppressWarnings(purrr::walk(var_compare, print))
     
     # Intra-priming plots
     print(A_percent)
