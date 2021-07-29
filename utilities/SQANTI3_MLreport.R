@@ -279,9 +279,7 @@ isoforms_per_gene <- isoforms_per_gene %>%
       # plot
       iso_p_gene <- ggplot(isoforms_per_gene) +
         ggtitle("Number of isoforms per gene") +
-        geom_bar(aes(x = isoform_factor, y = percent, 
-                     fill = forcats::fct_relevel(filter, 
-                                                 levels = c("Before", "After"))),
+        geom_bar(aes(x = isoform_factor, y = percent, fill = filter),
                  stat = "identity", position = "dodge",
                  color = "black", width = 0.8) +
         labs(x = "Isoforms per gene", y = "% Genes") +
@@ -425,8 +423,8 @@ if(opt$filter_type == "ml"){
                    color = "black", width = 0.8) +
           labs(x = "Structural category", y = "Transcript no.") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          scale_fill_manual("Reason", values = c("springgreen4", "darkgoldenrod2", 
-                                                 "palevioletred3"))
+          scale_fill_manual("Reason", values = c("lightcoral", "lightgoldenrod1",
+                                                 "aquamarine3"))
         
         # percentage
         artifact_percent <- ggplot(artifact_summary) +
@@ -436,8 +434,8 @@ if(opt$filter_type == "ml"){
                    color = "black", width = 0.8) +
           labs(x = "Structural category", y = "Transcript %") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          scale_fill_manual("Reason", values = c("springgreen4", "goldenrod2", 
-                                                 "palevioletred3")) +
+          scale_fill_manual("Reason", values = c("lightcoral", "lightgoldenrod1",
+                                                 "aquamarine3")) +
           scale_y_continuous(labels = scales::percent_format())
           
     
@@ -484,7 +482,7 @@ ip_byexons <- ip_summary %>%
         geom_density(aes(x = perc_A_downstream_TTS, fill = intra_priming), 
                      alpha = 0.5) +
         scale_fill_manual("Intra-priming prediction", 
-                          values = c("violetred3", "gray60"))
+                          values = c("#74CDF0", "#9F7BB8"))
       
       
     # Intra-priming by structural_category and exon_classif
@@ -495,7 +493,7 @@ ip_byexons <- ip_summary %>%
           labs(x = "Exon classification", y = "Transcript no.") +
           theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
           scale_fill_manual("Intra-priming prediction", 
-                            values = c("violetred3", "gray60")) +   
+                            values = c("#74CDF0", "#9F7BB8")) +   
           facet_grid(~structural_category)
         
         # percentage
