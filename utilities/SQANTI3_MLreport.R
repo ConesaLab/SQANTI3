@@ -27,9 +27,12 @@ option_list <- list(
                         help = "Output/input directory - must be same as SQ3 filter."),
   optparse::make_option(c("-o","--output"), type = "character", default = "SQANTI3", 
                         help = "Output report file prefix."),
-  optparse::make_option(c("f", "--filter_type"), type = "character",
+  optparse::make_option(c("-u", "--utilities_path"), type = "character",
+                        help = "Full path to SQANTI3/utilities folder."),
+  optparse::make_option(c("f", "--filter_type"), type = "character", default = "ml",
                         help = "Type of SQ3 filter that was run to generate input.
-                        Must be one of the following: 'ml' or 'rules'.")
+                        Must be one of the following: 'ml' or 'rules'.
+                        Default: 'ml'.")
 )
 
 # Parse arguments
@@ -340,7 +343,7 @@ if(opt$filter_type == "ml"){
     
     
     ## Variables used in ML: values for isoforms and artifacts by category
-    source(paste0(getwd(), "/utilities/compare_MLvariables.R"))
+    source(paste0(opt$utilities_path, "/compare_MLvariables.R"))
     
     var_compare <- purrr::map2(imp$variable, imp$importance,
                                ~compare_MLvariables(classif, .x, .y))
