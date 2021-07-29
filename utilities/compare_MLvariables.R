@@ -10,6 +10,10 @@ compare_MLvariables <- function(classification, variable, importance){
     dplyr::select(structural_category, filter_result,
                   dplyr::all_of(variable))
   
+  # Explicitly remove NAs
+  var_df <- var_df %>% 
+    dplyr::filter(!(is.na(variable)))
+  
   # Get variable column info (class, name)
   var_type <- purrr::map_chr(var_df, class)
   var_name <- names(var_type[3])
