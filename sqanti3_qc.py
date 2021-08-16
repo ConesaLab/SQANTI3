@@ -1551,7 +1551,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             b = open(args.SR_bam , "r")
             bams = []
             for file in b:
-                bams.append(files)
+                bams.append(file)
         chr_order = get_bam_header(bams[0])
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
         ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order)
