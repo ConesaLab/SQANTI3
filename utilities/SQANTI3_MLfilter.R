@@ -140,6 +140,14 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   TP <- read.table(opt$TP)
   TN <- read.table(opt$TN)
   
+  # keep only multi-exon transcripts in user-defined TP and TN sets
+  tp_keep <- d[unlist(TP),]$exons > 1
+  TP <- TP[tp_keep, , drop = FALSE]
+  
+  tn_keep <- d[unlist(TN),]$exons > 1
+  TN <- TN[tn_keep, , drop = FALSE]
+  
+  
   if(nrow(TN) > 40 & nrow(TP) > 40){
     
     run_ML <- TRUE
@@ -167,7 +175,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   print("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
-  RM_set <- rownames(d[d$subcategory == "reference_match",])
+  RM_set <- rownames(d[d$subcategory == "reference_match" & d$exons > 1,])
   NNC_set <- rownames(d[d$structural_category == "novel_not_in_catalog",])
   NNC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
