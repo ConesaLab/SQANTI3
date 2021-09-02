@@ -324,7 +324,25 @@ fsm_redund.df <- fsm %>%
                 fsm_bin = ifelse(fsm_no <= 4, 
                                  yes = as.character(fsm_no), no = ">4") %>% 
                   ordered(levels = c("1", "2", "3", "4", ">4")))
-
+      
+      # plot general reference transcript complexity
+      ref_complexity <- ggplot(fsm_redund.df) +
+        ggtitle("Reference transcript complexity", 
+                subtitle = "No. of reference transcripts represented by FSM") +
+        geom_bar(aes(x = filter, fill = fsm_type), 
+                 stat = "count", position = "stack",
+                 color = "black", width = 0.7) +
+        geom_text(aes(x = filter,
+                      label = stat(count)), 
+                  stat = "count", vjust = -1) +
+        scale_y_continuous(breaks = scales::pretty_breaks(6)) +
+        RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
+                                        continuous = FALSE, reverse = FALSE) +
+        theme(plot.subtitle = element_text(hjust = 0.5, size = 12,
+                                           face = "italic")) +
+        xlab("Filter") +
+        ylab("Reference transcfript no.") 
+        
       
       # plot FSM redundancy
       fsm_redund <- ggplot(fsm_redund.df) + 
@@ -579,6 +597,7 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     print(cat_totals)
     print(cat_percent)
     print(iso_p_gene)
+    print(ref_complexity)
     print(fsm_redund)
     print(ism_redund)
     print(comb_redund)
