@@ -90,6 +90,14 @@ message("\n--------------------------------------------------")
 message("\nCURRENT ML FILTER PARAMETERS:\n")
 print(paste0(names(opt), ": ", opt))
 
+### write parameters to params.txt file
+params <- data.frame(parameter = names(opt),
+                     value = unlist(unname(opt)))
+
+write.table(params, 
+            file = paste0(opt$dir, "/", opt$output, "_params.txt"),
+            quote = FALSE, col.names = FALSE, sep = "\t", row.names = FALSE)
+
 
 ### Read input data
 message("\n\tINITIAL ML CHECKS:")
