@@ -232,6 +232,7 @@ category_summary_long <- category_summary %>%
       # Plot totals
       cat_totals <- ggplot(category_summary, 
                             aes(x = structural_category, y = n)) + 
+        ggtitle("Total isoforms and artifacts by category") +
         geom_bar(aes(alpha = filter_result, fill = structural_category), 
                   stat = "identity",
                   width = 0.8, color = "black", position = "dodge") +
@@ -243,6 +244,7 @@ category_summary_long <- category_summary %>%
       # Plot percentages
       cat_percent <- ggplot(category_summary, 
                             aes(x = structural_category, y = percent)) +
+        ggtitle("% isoforms and artifacts by category") +
         geom_bar(aes(alpha = filter_result, fill = structural_category), 
                   stat = "identity",
                   width = 0.8, color = "black", position = "stack") +
@@ -477,25 +479,49 @@ ip_summary <- classif %>%
     dplyr::mutate(exon_classif = dplyr::if_else(exons > 1, 
                                                 true = "Multi-exon", 
                                                 false = "Mono-exon"))
-      
+
+ip_general <- ip_summary %>% 
+  dplyr::group_by(structural_category, intra_priming) %>%
+  dplyr::summarize(n = dplyr::n()) %>% 
+  dplyr::mutate(percent = n/sum(n))
+  
 ip_byexons <- ip_summary %>% 
     dplyr::group_by(structural_category, exon_classif, intra_priming) %>% 
     dplyr::summarize(n = dplyr::n()) %>% 
     dplyr::mutate(percent = n/sum(n))
-  
-  
-    # A % summary
-    A_percent <- ggplot(classif) +
-        ggtitle("Percentage of A's downstream of TTS") +
-        geom_density(aes(x = perc_A_downstream_TTS, fill = intra_priming), 
-                     alpha = 0.5) +
+      
+      
+    # Intra-priming by structural_category
+      # totals
+      ip_totals <- ggplot(ip_summary) +
+        ggtitle("Isoforms flagged as intra-priming, by category") +
+        geom_bar(aes(x = structural_category, fill = intra_priming), 
+                 stat = "count", color = "black", position = "dodge", width = 0.8) +
+        labs(x = "Exon classification", y = "Transcript no.") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         scale_fill_manual("Intra-priming prediction", 
-                          values = c("#74CDF0", "#9F7BB8"))
+                          values = c("#74CDF0", "#9F7BB8")) +
+        scale_y_continuous(breaks = scales::pretty_breaks(6))
       
-      
+      # percentage
+      ip_percent <- ggplot(ip_general) +
+        ggtitle("Isoforms flagged as intra-priming, by category (%)") +
+        geom_bar(aes(x = structural_category, y = percent, 
+                     fill = structural_category, alpha = intra_priming),
+                 stat = "identity", position = "stack", 
+                 width = 0.8, color = "black") +
+        labs(x = "Exon classification", y = "Transcript %") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        scale_fill_manual(guide = "none",
+                          values = cat.palette) + 
+        scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
+        scale_y_continuous(labels = scales::percent_format())
+    
+
     # Intra-priming by structural_category and exon_classif
         # totals
-        ip_totals <- ggplot(ip_summary) +
+        ipex_totals <- ggplot(ip_summary) +
+          ggtitle("Isoforms flagged as intra-priming, by exon number") +
           geom_bar(aes(x = exon_classif, fill = intra_priming), 
                    stat = "count", color = "black", position = "dodge", width = 0.8) +
           labs(x = "Exon classification", y = "Transcript no.") +
@@ -505,7 +531,8 @@ ip_byexons <- ip_summary %>%
           facet_grid(~structural_category)
         
         # percentage
-        ip_percent <- ggplot(ip_byexons) +
+        ipex_percent <- ggplot(ip_byexons) +
+          ggtitle("Isoforms flagged as intra-priming, by exon number (%)") +
           geom_bar(aes(x = exon_classif, y = percent, 
                        fill = structural_category, alpha = intra_priming),
                    stat = "identity", position = "stack", 
@@ -563,9 +590,10 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     suppressWarnings(purrr::walk(var_compare, print))
     
     # Intra-priming plots
-    print(A_percent)
     print(ip_totals)
     print(ip_percent)
+    print(ipex_totals)
+    print(ipex_percent)
 
 # Close file
 dev.off()
