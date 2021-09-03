@@ -84,6 +84,13 @@ if(opt$filter_type == "ml"){
   imp <- imp %>% dplyr::mutate(variable = factor(variable) %>% 
                                  forcats::fct_reorder(importance))
   
+  # Detect path and load parameters
+  message("\nReading ML filter parameters...")
+  
+  which_params <- stringr::str_detect(paths, "params")
+  path_params <- paths[which_params]
+  params <- readr::read_tsv(path_params, col_names = c("parameter", "value"))
+  
 }
 
 
@@ -491,6 +498,24 @@ if(opt$filter_type == "ml"){
       
 message("\nGenerating intra-priming plots...\n")
 
+# A% per category
+a_value <- dplyr::filter(params, parameter == "intrapriming") %>% 
+  dplyr::select(value) %>% tibble::deframe() %>% 
+  as.numeric()
+        
+    # plot
+    a_percent <- ggplot(classif) +
+      ggtitle("A % by category", 
+              subtitle = "Red line indicates threshold employed in ML filter") +
+      geom_boxplot(aes(x = structural_category, y = perc_A_downstream_TTS),
+                   width = 0.5, fill = "navajowhite1") +
+      geom_hline(aes(yintercept = a_percent), 
+                 color = "firebrick3", size = 1, linetype = "dashed") +
+      xlab("Structural category") +
+      ylab("% A's downstream of TTS")
+      
+    
+        
 # Intra-priming by category and exon number
 ip_summary <- classif %>% 
     dplyr::select(structural_category, exons, intra_priming) %>% 
@@ -609,6 +634,7 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     suppressWarnings(purrr::walk(var_compare, print))
     
     # Intra-priming plots
+    print(a_percent)
     print(ip_totals)
     print(ip_percent)
     print(ipex_totals)
