@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '3.3'  # Python 3.7
+__version__ = '4.2'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -1738,7 +1738,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                         dist_to_last_junc = isoform_hit.CDS_genomic_end - rec.junctions[-1][0]
                     else: # - strand
                         dist_to_last_junc = rec.junctions[0][1] - isoform_hit.CDS_genomic_end
-                    isoform_hit.is_NMD = "TRUE" if dist_to_last_junc < 0 else "FALSE"
+                    isoform_hit.is_NMD = "TRUE" if dist_to_last_junc < -50 else "FALSE"
 
             isoforms_info[rec.id] = isoform_hit
             fout_class.writerow(isoform_hit.as_dict())
