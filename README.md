@@ -7,9 +7,13 @@ SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, that also includes IsoAnnot and tappAS.
 
 ## Lastest updates
-Current version (07/05/2021): SQANTI3 version 4.1
+Current version (09/15/2021): SQANTI3 version 4.2
 
 New features implemented in SQANTI3
+
+**version 4.2:**
+* NMD prediction now takes into account the 50bp rule, meaning that isoforms will be tagged as `TRUE` for `prediction_NMD` if there's a predicted ORF and CDS ends at least 50bp before the last junction.
+* Fixed minor bugs
 
 **version 4.1:**
 * Change for `--gtf` argument. Now, by default, SQANTI3 will expect a GTF file as input. It will still be possible to provide the sequences of your isoforms as a FASTA or FASTQ file by activatingt the `--fasta` option.
