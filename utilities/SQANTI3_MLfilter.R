@@ -46,7 +46,7 @@ option_list = list(
               one ID by line, no header (optional). If not supplied, it will be 
               generated from input data."),
   optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
-              help="Default: 0.7. Machine learning probability threshold to classify 
+              help="Default: 0.7. Machine learning probability threshold to classify, 
               transcripts as positive isoforms."),
   optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
               help="Default: 60. PolyA thereshold (i.e. number of A's downstream 
