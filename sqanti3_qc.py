@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '3.3'  # Python 3.7
+__version__ = '4.2'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -1422,17 +1422,27 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
             if abs(a) < abs(b): return a
             else: return b
 
-    if trec.chrom not in junctions_by_chr:
-        # nothing to do
-        return
-
     # go through each trec junction
     for junction_index, (d, a) in enumerate(trec.junctions):
         # NOTE: donor just means the start, not adjusted for strand
-        # find the closest junction start site
-        min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
-        # find the closest junction end site
-        min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
+        # Check if the chromosome of the transcript has any annotation by the reference
+        # create a list in case there are chromosomes present in the input but not in the annotation dictionary junctions_by_chr
+        missing_chr=[]
+        junction_cat = "novel"
+        if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
+            # Find the closest junction start site
+            min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
+            # find the closest junction end site
+            min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
+            if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs']):
+                junction_cat = "known"
+        else:
+            # if there is no record in the reference of junctions in this chromosome, minimum distances will be NA
+            # add also new chromosome to the junctions_by_chr with one dummy SJ d=1, a=2
+            if trec.chrom not in missing_chr:
+                missing_chr.append(trec.chrom)
+            min_diff_s = float("NaN")
+            min_diff_e = float("NaN")
 
         splice_site = trec.get_splice_site(genome_dict, junction_index)
 
@@ -1458,11 +1468,11 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
               "genomic_start_coord": d+1,  # write out as 1-based start
               "genomic_end_coord": a,      # already is 1-based end
               "transcript_coord": "?????",  # this is where the exon ends w.r.t to id sequence, ToDo: implement later
-              "junction_category": "known" if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs']) else "novel",
+              "junction_category": junction_cat,
               "start_site_category": "known" if min_diff_s==0 else "novel",
               "end_site_category": "known" if min_diff_e==0 else "novel",
-              "diff_to_Ref_start_site": min_diff_s,
-              "diff_to_Ref_end_site": min_diff_e,
+              "diff_to_Ref_start_site": min_diff_s if min_diff_s==min_diff_s else "NA", # check if min_diff is actually nan
+              "diff_to_Ref_end_site": min_diff_e if min_diff_e==min_diff_e else "NA",   # check if min_diff is actually nan
               "bite_junction": "TRUE" if ((min_diff_s<0 or min_diff_e<0) and not(min_diff_s>0 or min_diff_e>0)) else "FALSE",
               "splice_site": splice_site,
               "canonical": "canonical" if splice_site in accepted_canonical_sites else "non_canonical",
@@ -1541,7 +1551,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             b = open(args.SR_bam , "r")
             bams = []
             for file in b:
-                bams.append(files)
+                bams.append(file.rstrip())
         chr_order = get_bam_header(bams[0])
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
         ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order)
@@ -1728,7 +1738,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                         dist_to_last_junc = isoform_hit.CDS_genomic_end - rec.junctions[-1][0]
                     else: # - strand
                         dist_to_last_junc = rec.junctions[0][1] - isoform_hit.CDS_genomic_end
-                    isoform_hit.is_NMD = "TRUE" if dist_to_last_junc < 0 else "FALSE"
+                    isoform_hit.is_NMD = "TRUE" if dist_to_last_junc < -50 else "FALSE"
 
             isoforms_info[rec.id] = isoform_hit
             fout_class.writerow(isoform_hit.as_dict())
