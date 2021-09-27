@@ -43,6 +43,7 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus): #added cpus argument for
 def star(genome, SR_fofn, output_dir, cpus):
     fasta_genome = genome #Fasta Format already checked
     index_dir = output_dir + '/STAR_index/'
+    index_dir_tmp = index_dir + '/_STARtmp/'
     index_dir_o = index_dir + 'SAindex' 
     mapping_dir = output_dir + '/STAR_mapping/'
     print('START running STAR...')
@@ -52,7 +53,7 @@ def star(genome, SR_fofn, output_dir, cpus):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
             print('Running indexing...')
-            subprocess.call(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome])
+            subprocess.call(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             print('Indexing done.')
     else:
         print('Index identified. Proceeding to mapping.')
@@ -136,7 +137,7 @@ def get_TSS_bed(corrected_gtf, chr_order):
                     end_in=int(loc[1])
                     start_out=int(loc[1])+1
                     end_out=int(loc[1])+101
-                if end_out<=0:
+                if end_out<=0 or start_in<=0: 
                     print('{iso} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome'.format(iso=iso_id))
                 else:
                     inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
