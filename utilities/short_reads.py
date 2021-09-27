@@ -137,7 +137,7 @@ def get_TSS_bed(corrected_gtf, chr_order):
                     end_in=int(loc[1])
                     start_out=int(loc[1])+1
                     end_out=int(loc[1])+101
-                if end_out<=0:
+                if end_out<=0 or start_in<=0: 
                     print('{iso} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome'.format(iso=iso_id))
                 else:
                     inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
