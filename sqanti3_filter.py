@@ -14,12 +14,9 @@ The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA
 ML FILTER
 It will take as input the classification file obtained from SQANTI3 QC and apply a Random Forest algorithm to distinguish between "true" isoforms and artifacts.
 
-Regardless of the strategy chosen, sqanti_filter.py will can return a filtered FASTA, filtered GTF and an updated classification file that can be used to compare the effects of filtering out
+Regardless of the strategy chosen, sqanti_filter.py can return a filtered FASTA, filtered GTF and an updated classification file that can be used to compare the effects of filtering out
 bad quality transcripts.
 
-Arguments needed:
-- Filter types: Two arguments that should exclude each other --> rules & ML
-- Machine Learning arguments needed: 
 """
 
 import os, sys, argparse, subprocess
