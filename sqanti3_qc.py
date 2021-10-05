@@ -79,6 +79,7 @@ GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-in
 #MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
 MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {i} > {o}"
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
+ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq" 
 
 GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
 GMST_CMD = "perl " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
@@ -460,7 +461,7 @@ def correctionPlusORFpred(args, genome_dict):
     global corrFASTA
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
-
+    p = os.path.splitext(os.path.basename(corrSAM))[0]
     n_cpu = max(1, args.cpus // args.chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
@@ -493,6 +494,14 @@ def correctionPlusORFpred(args, genome_dict):
                                             dir=args.gmap_index,
                                             i=args.isoforms,
                                             o=corrSAM)
+                elif args.aligner_choice == "uLTRA":
+                    print("****Aligning reads with uLTRA...", file=sys.stdout)
+                    cmd = ULTRA_CMD.format(cpus=n_cpu,
+                                           prefix= "../" + p,
+                                           g=args.genome,
+                                           a=args.annotation,
+                                           i=args.isoforms,
+                                           o_dir=args.dir + "/uLTRA_out/")                   
                 if subprocess.check_call(cmd, shell=True)!=0:
                     print("ERROR running alignment cmd: {0}".format(cmd), file=sys.stderr)
                     sys.exit(-1)
@@ -2346,7 +2355,7 @@ def main():
     parser.add_argument('genome', help='\t\tReference genome (Fasta format)')
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
     parser.add_argument("--force_id_ignore", action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
-    parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap'], default='minimap2')
+    parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2')
     parser.add_argument('--cage_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
     parser.add_argument("--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)")
     parser.add_argument("--polyA_peak", help='\t\tPolyA Peak (BED format, optional)')
