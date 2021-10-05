@@ -40,3 +40,6 @@ dependencies:
   - samtools
   - scipy
   - star
+  - slamem
+  - pip:
+    - ultra-bioinformatics
