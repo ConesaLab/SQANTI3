@@ -1,0 +1,19 @@
+name: sqanti3_output_comparison.env
+channels:
+        - conda-forge
+        - bioconda
+        - anaconda
+        - r
+        - defaults
+dependencies:
+        - pandoc
+        - r>=3.6.0
+        - r-dt
+        - r-entropy
+        - r-gridextra
+        - r-knitr
+        - r-optparse
+        - r-rmarkdown
+        - r-tidyverse
+        - r-upsetr
+        - r-venndiagram
