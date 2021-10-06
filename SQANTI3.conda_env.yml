@@ -11,7 +11,9 @@ dependencies:
   - biopython
   - bioconductor-noiseq
   - bx-python
+  - desalt
   - gffread
+  - gmap
   - kallisto
   - minimap2
   - numpy
