@@ -1032,81 +1032,33 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                         # (2) this one is better (prev not FSM or is FSM but worse tss/tts)
                         if cat_ranking[isoform_hit.str_class] < cat_ranking["full-splice_match"] or \
                                                     abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
-                            if abs(diff_tss) < 50 and abs(diff_tts) < 50:
-                                subtype = 'reference_match'
-                                isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
-                                                                 str_class="full-splice_match",
-                                                                 subtype=subtype,
-                                                                 chrom=trec.chrom,
-                                                                 strand=trec.strand,
-                                                                 genes=[ref.gene],
-                                                                 transcripts=[ref.id],
-                                                                 refLen = ref.length,
-                                                                 refExons= ref.exonCount,
-                                                                 refStart=ref.txStart,
-                                                                 refEnd=ref.txEnd,
-                                                                 q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
-                                                                 q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA),
-                                                                 seqAdownTTS=seq_downTTS)
-
-                                # subcategory for matching 5' and non-matching 3'
-
-                            if abs(diff_tss) < 50 and abs(diff_tts) > 50:
+                            # subcategory for matching 5' and matching 3'
+                            if abs(diff_tss) <= 50 and abs(diff_tts) <= 50:
+                                    subtype = 'reference_match'
+                            # subcategory for matching 5' and non-matching 3'
+                            if abs(diff_tss) <= 50 and abs(diff_tts) > 50:
                                 subtype = 'alternative_3end'
-                                isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
-                                                                 str_class="full-splice_match",
-                                                                 subtype=subtype,
-                                                                 chrom=trec.chrom,
-                                                                 strand=trec.strand,
-                                                                 genes=[ref.gene],
-                                                                 transcripts=[ref.id],
-                                                                 refLen = ref.length,
-                                                                 refExons= ref.exonCount,
-                                                                 refStart=ref.txStart,
-                                                                 refEnd=ref.txEnd,
-                                                                 q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
-                                                                 q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA),
-                                                                 seqAdownTTS=seq_downTTS)
-
-                                # subcategory for matching 3' and non-matching 5'
-                            if abs(diff_tss) > 50 and abs(diff_tts) < 50:
+                            # subcategory for matching 3' and non-matching 5'
+                            if abs(diff_tss) > 50 and abs(diff_tts) <= 50:
                                 subtype = 'alternative_5end'
-                                isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
-                                                                 str_class="full-splice_match",
-                                                                 subtype=subtype,
-                                                                 chrom=trec.chrom,
-                                                                 strand=trec.strand,
-                                                                 genes=[ref.gene],
-                                                                 transcripts=[ref.id],
-                                                                 refLen = ref.length,
-                                                                 refExons= ref.exonCount,
-                                                                 refStart=ref.txStart,
-                                                                 refEnd=ref.txEnd,
-                                                                 q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
-                                                                 q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA),
-                                                                 seqAdownTTS=seq_downTTS)
-
-                                # subcategory for non-matching 3' and non-matching 5'
+                            # subcategory for non-matching 3' and non-matching 5'
                             if abs(diff_tss) > 50 and abs(diff_tts) > 50:
                                 subtype = 'alternative_3end5end'
-                                isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
-                                                                 str_class="full-splice_match",
-                                                                 subtype=subtype,
-                                                                 chrom=trec.chrom,
-                                                                 strand=trec.strand,
-                                                                 genes=[ref.gene],
-                                                                 transcripts=[ref.id],
-                                                                 refLen = ref.length,
-                                                                 refExons= ref.exonCount,
-                                                                 refStart=ref.txStart,
-                                                                 refEnd=ref.txEnd,
-                                                                 q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
-                                                                 q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA),
-                                                                 seqAdownTTS=seq_downTTS)
+                            isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
+                                                              str_class="full-splice_match",
+                                                              subtype=subtype,
+                                                              chrom=trec.chrom,
+                                                              strand=trec.strand,
+                                                              genes=[ref.gene],
+                                                              transcripts=[ref.id],
+                                                              refLen = ref.length,
+                                                              refExons= ref.exonCount,
+                                                              refStart=ref.txStart,
+                                                              refEnd=ref.txEnd,
+                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
+                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
+                                                              percAdownTTS=str(percA),
+                                                              seqAdownTTS=seq_downTTS)
                     # #######################################################
                     # SQANTI's incomplete-splice_match
                     # (only check if don't already have a FSM match)
