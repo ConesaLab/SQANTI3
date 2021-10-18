@@ -607,7 +607,7 @@ if (length(class_in) != length(count.files)){
 # ----- GTF input
 
 gtf_name <- list.files(dir_in,
-                       pattern = "*.gtf",
+                       pattern = "*reference.gtf",
                        all.files = FALSE,
                        full.names = TRUE)
 if (length(gtf_name) == 1){
@@ -680,9 +680,9 @@ print("Comparing comparisson results between samples...")
 
 # ----- Define max number of samples in plots
 
-if (length(f_in) < 6){
+if (length(f_in) <= 6){
   limit <- length(f_in)
-} else {limit <- 5}
+} else {limit <- 6}
 
 
 # ----- Vector of structural categories
@@ -867,7 +867,7 @@ for (i in 3:ncol(res[[2]])){
 names(l) <- colnames(res[[2]])[3:ncol(res[[2]])]
 
 
-# -------------------- LRGASP SIRV metrics
+# -------------------- LRGASP metrics
 
 if (lrgasp == TRUE){
   sirv.metrics <- list()
@@ -876,6 +876,37 @@ if (lrgasp == TRUE){
   }
   sirv.metrics <- bind_cols(sirv.metrics)
   colnames(sirv.metrics) <- names(lrgasp.res)
+  # FSM
+  fsm.metrics <- list()
+  for (i in 1:length(lrgasp.res)){
+    fsm.metrics[[i]] <- lrgasp.res[[names(lrgasp.res)[i]]]["FSM"]
+  }
+  fsm.metrics <- bind_cols(fsm.metrics)
+  colnames(fsm.metrics) <- names(lrgasp.res)
+
+  # ISM
+  ism.metrics <- list()
+  for (i in 1:length(lrgasp.res)){
+    ism.metrics[[i]] <- lrgasp.res[[names(lrgasp.res)[i]]]["ISM"]
+  }
+  ism.metrics <- bind_cols(ism.metrics)
+  colnames(ism.metrics) <- names(lrgasp.res)
+
+  # NIC
+  nic.metrics <- list()
+  for (i in 1:length(lrgasp.res)){
+    nic.metrics[[i]] <- lrgasp.res[[names(lrgasp.res)[i]]]["NIC"]
+  }
+  nic.metrics <- bind_cols(nic.metrics)
+  colnames(nic.metrics) <- names(lrgasp.res)
+
+  # NNC
+  nnc.metrics <- list()
+  for (i in 1:length(lrgasp.res)){
+    nnc.metrics[[i]] <- lrgasp.res[[names(lrgasp.res)[i]]]["NNC"]
+  }
+  nnc.metrics <- bind_cols(nnc.metrics)
+  colnames(nnc.metrics) <- names(lrgasp.res)
 }
 
 
@@ -920,6 +951,7 @@ print("Generating plots for the report...")
 # -------------------- Global plot parameters
 # COPY-PASTE FROM SQANTI3 REPORT
 
+#myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
 myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
 
 mytheme <- theme_classic(base_family = "Helvetica") +
@@ -975,11 +1007,49 @@ if (lrgasp == TRUE){
   t3 <- DT::datatable(sirv.metrics,
                       extensions = "Buttons",
                       options = list(
+                        pageLength = 15,
                         dom = 'Bfrtip',
                         buttons = c('copy', 'csv', 'pdf', 'print')
                       ),
                       escape = FALSE,
                       caption = "Table 4. SIRV metrics")
+  t4 <- DT::datatable(fsm.metrics,
+                      extensions = "Buttons",
+                      options = list(
+                        pageLength = 15,
+                        dom = 'Bfrtip',
+                        buttons = c('copy', 'csv', 'pdf', 'print')
+                      ),
+                      escape = FALSE,
+                      caption = "Table 5. FSM metrics")
+  t5 <- DT::datatable(ism.metrics,
+                      extensions = "Buttons",
+                      options = list(
+                        pageLength = 15,
+                        dom = 'Bfrtip',
+                        buttons = c('copy', 'csv', 'pdf', 'print')
+                      ),
+                      escape = FALSE,
+                      caption = "Table 6. ISM metrics")
+  t6 <- DT::datatable(nic.metrics,
+                      extensions = "Buttons",
+                      options = list(
+                        pageLength = 15,
+                        dom = 'Bfrtip',
+                        buttons = c('copy', 'csv', 'pdf', 'print')
+                      ),
+                      escape = FALSE,
+                      caption = "Table 7. NIC metrics")
+  t7 <- DT::datatable(nnc.metrics,
+                      extensions = "Buttons",
+                      options = list(
+                        pageLength = 15,
+                        dom = 'Bfrtip',
+                        buttons = c('copy', 'csv', 'pdf', 'print')
+                      ),
+                      escape = FALSE,
+                      caption = "Table 8. NNC metrics")
+  
 }
 
 
@@ -1054,7 +1124,7 @@ p7.1.3 <- ggplot(NNC.RT, aes(x=sample, y=NNC)) + geom_bar(color="blue", fill=rgb
 # To not generate the .log files of VennDiagram
 futile.logger::flog.threshold(futile.logger::ERROR, name = "VennDiagramLogger")
 
-p9 <- venn.diagram(l, filename = NULL, fill = myPalette[1:length(l)])
+#p9 <- venn.diagram(l, filename = NULL, fill = myPalette[1:length(l)])
 
 # PLOT 10: UpSet plot
 
@@ -1070,54 +1140,54 @@ p10 <-
 
 # PLOT 11: Venn diagrams for SC
 
-p11 <- list()
-contador <- 1
-for (i in 1:length(res[[2]])) {
-  a <- res[[2]][res[[2]]$structural_category == str_cat[i], names(res[[2]])[3:length(names(res[[2]]))]]
-  l <- list()
-  for (j in 1:ncol(a)) {
-    l[[j]] <- na.omit(a[,j])
-  }
-  names(l) <- names(a)
-  p11[[contador]] <- venn.diagram(l, filename = NULL, fill = myPalette[1:length(l)])
-  contador <- contador + 1
-}
+#p11 <- list()
+#contador <- 1
+#for (i in 1:length(res[[2]])) {
+#  a <- res[[2]][res[[2]]$structural_category == str_cat[i], names(res[[2]])[3:length(names(res[[2]]))]]
+#  l <- list()
+#  for (j in 1:ncol(a)) {
+#    l[[j]] <- na.omit(a[,j])
+#  }
+#  names(l) <- names(a)
+#  p11[[contador]] <- venn.diagram(l, filename = NULL, fill = myPalette[1:length(l)])
+#  contador <- contador + 1
+#}
 
 # PLOT 12: UpSet plots for SC
 
 p12 <- list()
-for (i in 1:length(res$comparison)) {
-  a <- res$comparison[res$comparison$structural_category == str_cat[i], names(res$comparison)[3:length(names(res$comparison))]]
-  l <- list()
-  for (j in 1:ncol(a)) {
-    l[[j]] <- na.omit(a[,j])
-  }
-  names(l) <- names(a)
+#for (i in 1:length(res$comparison)) {
+#  a <- res$comparison[res$comparison$structural_category == str_cat[i], names(res$comparison)[3:length(names(res$comparison))]]
+#  l <- list()
+#  for (j in 1:ncol(a)) {
+#    l[[j]] <- na.omit(a[,j])
+#  }
+#  names(l) <- names(a)
   
-  p12[[i]] <-
-    UpSetR::upset(
-      UpSetR::fromList(l),
-      order.by = "freq",
-      mainbar.y.label = "Isoform Intersections",
-      sets.x.label = "Isoforms Per Sample",
-      nintersects = 20
-      #sets.bar.color = myPalette[1:length(l)]
-    )
-}
+#  p12[[i]] <-
+#    UpSetR::upset(
+#      UpSetR::fromList(l),
+#      order.by = "freq",
+#      mainbar.y.label = "Isoform Intersections",
+#      sets.x.label = "Isoforms Per Sample",
+#      nintersects = 20
+#     #sets.bar.color = myPalette[1:length(l)]
+#    )
+#}
 
 if (TSS_TTS_coord == TRUE) {
   
   # PLOT 13: TSS standard deviation per pipeline
   
-  a <- bind_rows(res$classifications, .id = "pipeline")
+  a <- bind_rows(res$classifications, .id = "experiment_id")
   p13 <- ggplot(a, aes(log2(a[,"sdTSS"]))) +
-    geom_density(aes(col = pipeline)) + xlab(paste0("log2(",colnames(a)[8],")")) +
+    geom_density(aes(col = experiment_id)) + xlab(paste0("log2(",colnames(a)[8],")")) +
     scale_fill_manual(values = myPalette) + mytheme
   
   # PLOT 14: TTS standard deviation per pipeline
   
   p14 <- ggplot(a, aes(log2(a[,"sdTTS"]))) +
-    geom_density(aes(col = pipeline)) + xlab(paste0("log2(",colnames(a)[9],")")) +
+    geom_density(aes(col = experiment_id)) + xlab(paste0("log2(",colnames(a)[9],")")) +
     scale_fill_manual(values = myPalette) + mytheme
   
 

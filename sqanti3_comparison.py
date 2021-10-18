@@ -46,7 +46,7 @@ def main():
     subparsers = parser.add_subparsers(dest='subcommand')
 ### Rules filter arguments
     samples = subparsers.add_parser('samples', parents=[common], description="Samples comparison selected")
-    samples.add_argument('-e', "--exclude_mono_exonic", action="store_true", default=False, help='\t\tMono-exonic transcripts will be excluded from any comparison.')
+    samples.add_argument('-l', "--lrgasp", action="store_true", default=False, help='\t\tCompare LRGASP results.')
 ### ML filter arguments
     filters = subparsers.add_parser('filters', parents=[common],  description='Filters comparison selected')
     filters.add_argument('-t','--percent_training', type=float, default=0.8, \

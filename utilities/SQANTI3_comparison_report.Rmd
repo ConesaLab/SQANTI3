@@ -8,8 +8,12 @@ output:
     toc: true
     toc_float: true
     toc_depth: 3
-    theme: spacelab
+#    theme: spacelab
     css: style.css
+    pandoc_args: [
+      "+RTS", "-K64m",
+      "-RTS"
+    ]
 
 ---
 
@@ -252,10 +256,44 @@ if (TSS_TTS_coord == TRUE){
 }
 ```
 
+## LRGASP metrics {.tabset .tabset-fade}
 
-```{r, results='asis'}
+### FSM evaluation
+
+```{r}
 if (lrgasp == TRUE){
-  cat("\n\n## SIRV metrics\n\n")
+  t4
+}
+```
+
+### ISM evaluation
+
+```{r}
+if (lrgasp == TRUE){
+  t5
+}
+```
+
+### NIC evaluation
+
+```{r}
+if (lrgasp == TRUE){
+  t6
+}
+```
+
+### NNC evaluation
+
+```{r}
+if (lrgasp == TRUE){
+  t7
+}
+```
+
+### SIRVs evaluation
+
+```{r}
+if (lrgasp == TRUE){
   t3
 }
 ```
