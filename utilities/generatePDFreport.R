@@ -319,12 +319,6 @@ generatePDFreport = function()
         print(p21.ISM.list.a[i])
       }
     }
-    if (length(p22.ISM.list) > 0) {
-      for (i in 1:length(p22.ISM.list)) {
-        print(p22.ISM.list[i])
-        print(p22.ISM.list.a[i])
-      }
-    }
   }
   
   if (!all(is.na(data.FSM$within_cage_peak))) {
@@ -332,6 +326,12 @@ generatePDFreport = function()
       for (i in 1:length(p22.FSM.list)) {
         print(p22.FSM.list[i])
         print(p22.FSM.list.a[i])
+      }
+    }
+    if (length(p22.ISM.list) > 0) {
+      for (i in 1:length(p22.ISM.list)) {
+        print(p22.ISM.list[i])
+        print(p22.ISM.list.a[i])
       }
     }
   }
