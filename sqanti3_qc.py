@@ -1646,9 +1646,9 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             # look at PolyA Peak info (if available)
             if polya_peak_obj is not None:
                 if rec.strand == '+':
-                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
-                else:
                     within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
+                else:
+                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
                 isoform_hit.within_polya_site = within_polya_site
                 isoform_hit.dist_polya_site = dist_polya_site
 
