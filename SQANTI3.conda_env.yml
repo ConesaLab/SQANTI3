@@ -11,7 +11,9 @@ dependencies:
   - biopython
   - bioconductor-noiseq
   - bx-python
+  - desalt
   - gffread
+  - gmap
   - kallisto
   - minimap2
   - numpy
@@ -40,3 +42,6 @@ dependencies:
   - samtools
   - scipy
   - star
+  - slamem
+  - pip:
+    - ultra-bioinformatics

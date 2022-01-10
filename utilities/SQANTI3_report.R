@@ -120,8 +120,6 @@ coding.levels=c("coding", "non_coding")
 coding.labels=c("Coding", "Non coding")
 
 
-legendLabelF1 <- levels(as.factor(data.class$coding));
-
 data.class$structural_category = factor(data.class$structural_category,
                                         labels = xaxislabelsF1,
                                         levels = xaxislevelsF1,
@@ -134,6 +132,7 @@ data.class$coding = factor(data.class$coding,
                                 labels = coding.labels,
                                 levels = coding.levels,
                                 ordered=TRUE)
+legendLabelF1 <- levels(as.factor(data.class$coding));
 
 data.FSMISM <- subset(data.class, structural_category %in% c('FSM', 'ISM'))
 data.NICNNC <- subset(data.class, structural_category %in% c("NIC", "NNC"))
@@ -197,10 +196,21 @@ uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction"
 #*** Global plot parameters
 
 myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
-subcat.palette = c("Alternative 3'end"='#02314d',"Alternative 3'5'end"='#0e5a87',"Alterantive 5'end"='#7ccdfc','Reference match'='#c4e1f2',
-                   "3' fragment"='#c4531d',"Internal fragment"='#e37744',  "5' fragment"='#e0936e', "Combin. of annot. junctions"='#014d02',
-                   "Combin. of annot. splice sites"='#048506',  "Intron retention"='#4abd4b', "Not combin. of annot. junctions"='#81eb82',
-                   "Mono-exon by intron retention"='#78ad78',"At least 1 annot. donor/accept."='#bbfabc',"Mono-exon"='#686e68',"Multi-exon"='#c0c4c0')
+subcat.palette = c("Alternative 3'end"='#02314d',
+                   "Alternative 3'5'end"='#0e5a87',
+                   "Alterantive 5'end"='#7ccdfc',
+                   'Reference match'='#c4e1f2',
+                   "3' fragment"='#c4531d',
+                   "Internal fragment"='#e37744',  
+                   "5' fragment"='#e0936e', 
+                   "Comb. of annot. junctions"='#014d02',
+                   "Comb. of annot. splice sites"='#379637',  
+                   "Intron retention"='#81eb82', 
+                   "Not comb. of annot. junctions"='#6ec091',
+                   "Mono-exon by intron ret."='#4aaa72',
+                   "At least 1 annot. don./accept."='#32734d',
+                   "Mono-exon"='#cec2d2',
+                   "Multi-exon"='#876a91')
 
 
 
@@ -384,15 +394,15 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
 }
 
 p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
-  geom_freqpoly(binwidth=100) +
+  geom_freqpoly(binwidth=100, size=1) +
   guides(fill=FALSE) +
-  scale_color_manual(values = cat.palette, guide='none', name="Structural Category") +
+  scale_color_manual(values = cat.palette, name="Structural Category") +
   labs(x="Transcript length", y="Count", title="Transcript Lengths Distribution by Structural Category") +
-  theme(legend.position="top") +
-  mytheme
+  mytheme+
+  theme(legend.position="top", legend.title=element_blank())
 
 p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
-  geom_freqpoly(binwidth=100) +
+  geom_freqpoly(binwidth=100, size=1) +
   guides(fill=FALSE) +
   scale_fill_manual(values = myPalette[c(1:8)], guide='none', name="Category") +
   labs(x="Transcript length", y="Count", title="Mono- vs Multi- Exon Transcript Lengths Distribution") +
@@ -534,6 +544,7 @@ p4.s3 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subca
   ggtitle("Transcript Lengths by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
+
 ##**** PLOT 5: Exon counts by category
 
 p5 <- ggplot(data=data.class, aes(x=structural_category, y=exons, fill=structural_category)) +
@@ -629,6 +640,7 @@ p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(st
   theme(legend.position="right") +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   scale_y_continuous(expand=c(0,0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size=10))+
   labs(x="Transcript length, kb", y="Counts", title="Structural Categories by Transcript Length")
 
 
@@ -639,6 +651,7 @@ p.classByLen.b <- ggplot(data.class.byLen, aes(x=lenCat, y=perc*100, fill=factor
   theme(legend.position="right")  +
   guides(fill = guide_legend(keywidth = 1, keyheight = 1)) +
   scale_y_continuous(expand=c(0,0))+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size=10))+
   labs(x="Transcript length, kb", y="%", title="Structural Categories by Transcript Length\n\n\n")
 
 
@@ -780,6 +793,7 @@ if (!all(is.na(data.class$FL))){
   FL_gene <- aggregate(as.integer(data.class$FL), by = list("associatedGene" = data.class$associated_gene), sum)
   colnames(FL_gene)[ncol(FL_gene)] <- "FL_gene"
   isoPerGene <- merge(isoPerGene, FL_gene, by="associatedGene")
+  total_fl <- sum(data.class$FL, na.rm=T)
   isoPerGene$FL_gene_TPM <- isoPerGene$FL_gene*(10**6)/total_fl
   
   p11 <- ggplot(data=isoPerGene, aes(x=novelGene, y=log2(FL_gene_TPM+1), fill=novelGene)) +
@@ -892,53 +906,21 @@ if (nrow(data.FSM) > 0) {
   p21.FSM.list.a = list()
 
   # plot histogram of distance to polyA site, Y-axis absolute count
+  
   if (!all(is.na(data.FSM$polyA_motif))){
-    p21.stitles.FSM<-list("Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'End",
-                          "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'5'End",
-                          "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 5'End",
-                          "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Reference Match")
-    for(i in 1:length(subcategories.FSM)){
-      c<-data.frame(subcategories.FSM[i])
-      if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
-        diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-        diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100),(diff_max+1));
-        c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-        max_height <- max(table(c$diffTTSCat));
-        max_height <- (max_height %/% 10+1) * 10;
-        p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
-          geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
-          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-          mytheme + labs(alpha = "polyA motif found") +
-          scale_x_discrete(drop=F, labels=breaks_labels) +
-          ylab("Transcripts, count")+
-          xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
-          labs(     title=p21.stitles.FSM[i],
-                    subtitle="Negative values indicate upstream of annotated termination site\n\n") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
-          geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
-          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                             labels=c("0","25","50","75","100"), expand=c(0,0)) +
-          scale_x_discrete(drop=F, labels=breaks_labels) +
-          mytheme + labs(alpha = "polyA motif found") +
-          ylab("Transcripts, %")+
-          xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
-          labs(     title=p21.stitles.FSM[i],
-                    subtitle="Negative values indicate upstream of annotated termination site\n\n") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        
-        p21.FSM.list[[i]] = p21.s
-        p21.FSM.list.a[[i]] = p21.s.a
-      }
-    }
+    alpha21='!is.na(polyA_motif)'
+    alpha_labs21="polyA motif found"
+  }else{
+    alpha21=NULL
+    alpha_labs21=NULL
+  }
+  
   max_height <- max(table(data.FSM$diffTTSCat));
   max_height <- (max_height %/% 10+1) * 10;
   p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
+    geom_bar(fill=myPalette[4], color="black", size=0.3, aes(alpha=eval(parse(text = alpha21)))) +
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-    mytheme + labs(alpha = "polyA motif found") +
+    mytheme + labs(alpha = alpha_labs21) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
     ylab("Transcripts, count")+
     xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
@@ -946,104 +928,78 @@ if (nrow(data.FSM) > 0) {
               subtitle="Negative values indicate upstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-
-
+  
+  
   p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
+    geom_bar(aes(y = (..count..)/sum(..count..) , alpha= eval(parse(text = alpha21))), fill=myPalette[4], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100"), expand = c(0,0)) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
-    mytheme + labs(alpha = "polyA motif found") +
+    mytheme + labs(alpha = alpha_labs21) +
     ylab("Transcripts, %")+
     xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
     labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
               subtitle="Negative values indicate upstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  } else {
-    max_height <- max(table(data.FSM$diffTTSCat));
-    max_height <- (max_height %/% 10+1) * 10;
-    p21.a <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-      geom_bar(fill=myPalette[4], color="black", size=0.3 ) +
-      scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-      mytheme +
-      scale_x_discrete(drop=F, labels=breaks_labels) +
-      ylab("Transcripts, count") +
-      xlab("Distance to annotated Transcription Termination Site (TTS), bp") +
-      labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
-                subtitle="Negative values indicate upstream of annotated termination site\n\n") +
-      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
-
-    # plot histogram of distance to polyA site, Y-axis percentage
-    p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
-      geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[4], color="black", size=0.3)+
-      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                         labels=c("0","25","50","75","100"), expand = c(0,0)) +
-      scale_x_discrete(drop=F, labels=breaks_labels) +
-      mytheme  +
-      ylab("Transcripts, %")+
-      xlab("Distance to annotated polyadenylation site, bp")+
-      labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\nFSM",
-                subtitle="Negative values indicate upstream of annotated termination site\n\n") +
-      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
-}
-
-  # plot histogram of distance to start site, Y-axis absolute count
-
-  p22.FSM.list = list()
-  p22.FSM.list.a = list()
-  if (!all(is.na(data.FSM$within_cage_peak))){
-    #FSM_TSS
-    p22.stitles.FSM<-list("Distance to Annotated Transcription Start Site\n\nFSM Alternative 3' End",
-                          "Distance to Annotated Transcription Start Site\n\nFSM Alternative 3'5' End",
-                          "Distance to Annotated Transcription Start Site\n\nFSM Alternative 5' End",
-                          "Distance to Annotated Transcription Start Site\n\nFSM Reference Match")
-    
-    for(i in 1:length(subcategories.FSM)){
-      c<-data.frame(subcategories.FSM[i])
-      if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
-        diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-        diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100), (diff_max+1));
-        c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-        c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
-        max_height <- max(table(c$diffTSSCat));
-        max_height <- (max_height %/% 10+1) * 10;
-        p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
-          geom_bar(fill=myPalette[6], color="black", size=0.3, aes( alpha= within_cage_peak)) +
-          scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-          scale_x_discrete(drop=F, labels=breaks_labels) +
-          mytheme + labs(alpha = "TSS within a CAGE peak") +
-          ylab("Transcripts, count")+
-          xlab("Distance to annotated Transcription Start Site (TSS), bp")+
-          labs(     title=p22.stitles.FSM[i],
-                    subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
-          geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
-          scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                             labels=c("0","25","50","75","100"), expand = c(0,0)) +
-          scale_x_discrete(drop=F, labels=breaks_labels) +
-          mytheme + labs(alpha = "TSS within a CAGE peak") +
-          ylab("Transcripts, %")+
-          xlab("Distance to annotated Transcription Start Site (TSS), bp")+
-          labs(     title=p22.stitles.FSM[i],
-                    subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          theme(legend.justification=c(1,1), legend.position=c(1,1))
-        p22.FSM.list[[i]] = p22.s
-        p22.FSM.list.a[[i]] = p22.s.a
-      }
+  
+  p21.stitles.FSM<-list("Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'End",
+                        "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'5'End",
+                        "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 5'End",
+                        "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Reference Match")
+  for(i in 1:length(subcategories.FSM)){
+    c<-data.frame(subcategories.FSM[i])
+    if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
+      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
+      diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100),(diff_max+1));
+      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      max_height <- max(table(c$diffTTSCat));
+      max_height <- (max_height %/% 10+1) * 10;
+      p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha=eval(parse(text = alpha21)))) +
+        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+        mytheme + labs(alpha = alpha_labs21) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        ylab("Transcripts, count")+
+        xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
+        labs(     title=p21.stitles.FSM[i],
+                  subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(aes(alpha=eval(parse(text = alpha21)), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                            labels=c("0","25","50","75","100"), expand=c(0,0)) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        mytheme + labs(alpha = alpha_labs21) +
+        ylab("Transcripts, %")+
+        xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
+        labs(     title=p21.stitles.FSM[i],
+                  subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        
+      p21.FSM.list[[i]] = p21.s
+      p21.FSM.list.a[[i]] = p21.s.a
     }
+    }
+  
+  # plot histogram of distance to start site, Y-axis absolute count
   max_height <- max(table(data.FSM$diffTSSCat));
   max_height <- (max_height %/% 10+1) * 10;
+  if (!all(is.na(data.FSM$within_cage_peak))){
+    alpha22tss='within_cage_peak'
+    alpha_labs22tss="TSS within a CAGE peak"
+  }else{
+    alpha22tss=NULL
+    alpha_labs22tss=NULL
+  }
+  
   p22.a <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-    geom_bar(fill=myPalette[6], color="black", size=0.3 , aes(alpha=within_cage_peak))+
+    geom_bar(fill=myPalette[6], color="black", size=0.3 , aes(alpha=eval(parse(text = alpha22tss))))+
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     scale_x_discrete(drop=F, labels=breaks_labels) +
-    mytheme + labs(alpha="TSS within a CAGE peak") +
+    mytheme + labs(alpha=alpha_labs22tss) +
     ylab("Transcripts, count") +
     xlab("Distance to annotated Transcription Start Site (TSS), bp") +
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
@@ -1052,94 +1008,74 @@ if (nrow(data.FSM) > 0) {
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
   p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..) , alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
+    geom_bar(aes(y = (..count..)/sum(..count..) , alpha=eval(parse(text = alpha22tss))), fill=myPalette[6], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100"), expand = c(0,0)) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
-    mytheme + labs(alpha="TSS within a CAGE peak") +
+    mytheme + labs(alpha=alpha_labs22tss) +
     ylab("Transcripts, %")+
     xlab("Distance to annotated Transcription Start Site (TSS), bp")+
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  }else{
-    max_height <- max(table(data.FSM$diffTSSCat));
-    max_height <- (max_height %/% 10+1) * 10;
-    p22.a <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-      geom_bar(fill=myPalette[6], color="black", size=0.3 )+
-      scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-      scale_x_discrete(drop=F, labels=breaks_labels) +
-      mytheme + 
-      ylab("Number of FSM transcripts")+
-      xlab("Distance to annotated Transcription Start Site (TSS), bp")+
-      labs(     title="Distance to Annotated Transcription Start Site for FSM\n\n",
-                subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
+  
+    #FSM_TSS
+  p22.FSM.list = list()
+  p22.FSM.list.a = list()
+  p22.stitles.FSM<-list("Distance to Annotated Transcription Start Site\n\nFSM Alternative 3' End",
+                        "Distance to Annotated Transcription Start Site\n\nFSM Alternative 3'5' End",
+                        "Distance to Annotated Transcription Start Site\n\nFSM Alternative 5' End",
+                        "Distance to Annotated Transcription Start Site\n\nFSM Reference Match")
     
-    # plot histogram of distance to start site, Y-axis absolute count
-    p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
-      geom_bar(aes(y = (..count..)/sum(..count..)) , fill=myPalette[6], color="black", size=0.3)+
-      scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                         labels=c("0","25","50","75","100"), expand = c(0,0)) +
-      scale_x_discrete(drop=F, labels=breaks_labels) +
-      mytheme +
-      ylab("FSM transcripts, %")+
-      xlab("Distance to annotated Transcription Start Site, bp")+
-      labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-           subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      theme(legend.justification=c(1,1), legend.position=c(1,1))
+  for(i in 1:length(subcategories.FSM)){
+    c<-data.frame(subcategories.FSM[i])
+    if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
+      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
+      diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100), (diff_max+1));
+      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
+      max_height <- max(table(c$diffTSSCat));
+      max_height <- (max_height %/% 10+1) * 10;
+      p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
+        geom_bar(fill=myPalette[6], color="black", size=0.3, aes(alpha=eval(parse(text = alpha22tss)))) +
+        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        mytheme + labs(alpha=alpha_labs22tss) +
+        ylab("Transcripts, count")+
+        xlab("Distance to annotated Transcription Start Site (TSS), bp")+
+        labs(     title=p22.stitles.FSM[i],
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
+        geom_bar(aes(alpha=eval(parse(text = alpha22tss)), y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                            labels=c("0","25","50","75","100"), expand = c(0,0)) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        mytheme + labs(alpha=alpha_labs22tss) +
+        ylab("Transcripts, %")+
+        xlab("Distance to annotated Transcription Start Site (TSS), bp")+
+        labs(     title=p22.stitles.FSM[i],
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p22.FSM.list[[i]] = p22.s
+      p22.FSM.list.a[[i]] = p22.s.a
+    }
   }
 }
 
+
+  
 if (nrow(data.ISM) > 0) {
-  p21.stitles.ISM<-list("Distance to Annotated Polyadenylation Site for ISM\n\n3' Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nInternal Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nA5' Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nIntron Retention")
-  p21.ISM.list = list()
-  p21.ISM.list.a = list()
-  for(i in 1:length(subcategories.ISM)){
-    c<-data.frame(subcategories.ISM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
-      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-      diff_breaks <- c(seq(-5000, 5000, by = 500));
-      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-      max_height <-  max(table(c$diffTTSCat));
-      max_height <- (max_height %/% 10+1) * 10;
-      p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
-        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
-        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-        mytheme + labs(alpha = "polyA motif found") +
-        scale_x_discrete(drop=F) +
-        ylab("Transcripts, count")+
-        xlab("Distance to annotated polyadenylation site, bp")+
-        labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
-      p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
-        geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
-        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                           labels=c("0","25","50","75","100")) +
-        scale_x_discrete(drop=F) +
-        mytheme + labs(alpha = "polyA motif found") +
-        ylab("Transcripts, %")+
-        xlab("Distance to annotated polyadenylation site, bp")+
-        labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
-      
-      p21.ISM.list[[i]] = p21.s
-      p21.ISM.list.a[[i]] = p21.s.a
-    }
-  }
   
   diff_max <- max(max(abs(data.ISM$diff_to_TSS)), max(abs(data.ISM$diff_to_TTS)));
   diff_breaks <- c(-(diff_max+1), seq(-5000, 5000, by = 500), diff_max+1);
+  breaks_labels <- c("Larger than -5 kb", "-5 to -4.5 kb", "-4.5 to -4 kb", "-4 to -3.5 kb", "-3.5 to -3 kb", "-3 to -2.5 kb",
+                     "-2.5 to -2 kb", "-2 to -1.5 kb", "-1.5 to -1 kb", "-1 to -0.5 kb", "-0.5 to 0 kb", "0 to 0.5 kb", "0.5 to 1 kb",
+                     "1 to 1.5 kb", "1.5 to 2 kb", "2 to 2.5 kb", "2.5 to 3 kb", "3 to 3.5 kb", "3.5 to 4 kb", "4 to 4.5 kb", "4.5 to 5 kb", "Larger than 5 kb")
+  
   data.ISM$diffTTSCat = cut(-(data.ISM$diff_to_TTS), breaks = diff_breaks);
   data.ISM$diffTSSCat = cut(-(data.ISM$diff_to_TSS), breaks = diff_breaks);
   
@@ -1150,53 +1086,96 @@ if (nrow(data.ISM) > 0) {
     geom_bar(fill=myPalette[4], color="black", size=0.3,  aes( alpha= !is.na(polyA_motif))) +
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme + labs(alpha = "polyA motif found") +
-    scale_x_discrete(drop=F) +
-    ylab("Number of ISM transcripts")+
+    scale_x_discrete(drop=F, labels=breaks_labels) +
+    ylab("Transcripts, count")+
     xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
+  
   # plot histogram of distance to polyA site, Y-axis percentages
   p21.dist3.ISM.b <- ggplot(data=data.ISM, aes(x=diffTTSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha= !is.na(polyA_motif)), fill=myPalette[4], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                       labels=c("0","25","50","75","100")) +
-    scale_x_discrete(drop=F) +
+                       labels=c("0","25","50","75","100"), expand = c(0,0)) +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     mytheme + labs(alpha = "polyA motif found") +
-    ylab("ISM transcripts, %")+
+    ylab("Transcripts, %")+
     xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
               subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.a <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
     geom_bar(fill=myPalette[6], color="black", size=0.3, aes(alpha=within_cage_peak))+
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-    scale_x_discrete(drop=F) +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("Number of FSM transcripts")+
+    ylab("Transcripts, count")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
               subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.b <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                       labels=c("0","25","50","75","100")) +
-    scale_x_discrete(drop=F) +
+                       labels=c("0","25","50","75","100"), expand = c(0,0)) +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
-    ylab("FSM transcripts, %")+
+    ylab("Transcripts, %")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
+  p21.stitles.ISM<-list("Distance to Annotated Polyadenylation Site for ISM\n\n3' Fragment",
+                        "Distance to Annotated Polyadenylation Site for ISM\n\nInternal Fragment",
+                        "Distance to Annotated Polyadenylation Site for ISM\n\nA5' Fragment",
+                        "Distance to Annotated Polyadenylation Site for ISM\n\nIntron Retention")
+  p21.ISM.list = list()
+  p21.ISM.list.a = list()
+  for(i in 1:length(subcategories.ISM)){
+    c<-data.frame(subcategories.ISM[i])
+    if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
+      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
+      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      max_height <-  max(table(c$diffTTSCat));
+      max_height <- (max_height %/% 10+1) * 10;
+      p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(fill=myPalette[4], color="black", size=0.3, aes( alpha= !is.na(polyA_motif))) +
+        scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        mytheme + labs(alpha = "polyA motif found") +
+        ylab("Transcripts, count")+
+        xlab("Distance to annotated polyadenylation site, bp")+
+        labs(     title=p21.stitles.ISM[i],
+                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
+        geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
+        scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
+                           labels=c("0","25","50","75","100"), expand = c(0,0)) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
+        mytheme + labs(alpha = "polyA motif found") +
+        ylab("Transcripts, %")+
+        xlab("Distance to annotated polyadenylation site, bp")+
+        labs(     title=p21.stitles.ISM[i],
+                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+        theme(legend.justification=c(1,1), legend.position=c(1,1))
+      
+      p21.ISM.list[[i]] = p21.s
+      p21.ISM.list.a[[i]] = p21.s.a
+    }
+  }
+  
   #FSM_TSS
   p22.stitles.ISM<-list("Distance to Annotated Transcription Start Site for ISM\n\n3' Fragment",
                         "Distance to Annotated Transcription Start Site for ISM\n\nInternal Fragment",
@@ -1207,8 +1186,6 @@ if (nrow(data.ISM) > 0) {
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
-      diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-      diff_breaks <- c(seq(-500, 500, by = 50));
       c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
       c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
       max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
@@ -1216,25 +1193,25 @@ if (nrow(data.ISM) > 0) {
       p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
         geom_bar(fill=myPalette[6], color="black", size=0.3, aes( alpha= within_cage_peak)) +
         scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-        scale_x_discrete(drop=F) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         mytheme + labs(alpha = "TSS within a CAGE peak") +
         ylab("Transcripts, count")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
         geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
-                           labels=c("0","25","50","75","100")) +
-        scale_x_discrete(drop=F) +
+                           labels=c("0","25","50","75","100"), expand = c(0,0)) +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         mytheme + labs(alpha = "TSS within a CAGE peak") +
         ylab("Transcripts, %")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.ISM.list[[i]] = p22.s
       p22.ISM.list.a[[i]] = p22.s.a
@@ -1381,15 +1358,19 @@ if (!all(is.na(data.junction$total_coverage_unique))){
 if (!all(is.na(data.class$dist_to_cage_peak))) {
   #data.class$dist_to_cage_peak[is.na(data.class$dist_to_cage_peak)] <- -11000
   diff_max=11000     ##diff_max <- max(abs(data.class$dist_to_cage_peak));
-  diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
+  diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
   
-  data.FSM$dist_to_cage_peak[is.na(data.FSM$dist_to_cage_peak)] <- -11000
+  breaks_labels <- c("Larger than -200", "-200 to -180","-180 to -160","-160 to -140","-140 to -120",
+                     "-120 to -100", "-100 to -80", "-80 to -60", "-60 to -40", "-40 to -20", "-20 to 0",
+                     "0 to 20", "20 to 40", "40 to 60", "60 to 80", "80 to 100", "Larger than 100")
+  
+  #data.FSM$dist_to_cage_peak[is.na(data.FSM$dist_to_cage_peak)] <- -11000
   data.FSM$dist_cage_Cat = cut(-(data.FSM$dist_to_cage_peak), breaks = diff_breaks);
-  data.ISM$dist_to_cage_peak[is.na(data.ISM$dist_to_cage_peak)] <- -11000
+  #data.ISM$dist_to_cage_peak[is.na(data.ISM$dist_to_cage_peak)] <- -11000
   data.ISM$dist_cage_Cat = cut(-(data.ISM$dist_to_cage_peak), breaks = diff_breaks);
-  data.NNC$dist_to_cage_peak[is.na(data.NNC$dist_to_cage_peak)] <- -11000
+  #data.NNC$dist_to_cage_peak[is.na(data.NNC$dist_to_cage_peak)] <- -11000
   data.NNC$dist_cage_Cat = cut(-(data.NNC$dist_to_cage_peak), breaks = diff_breaks);
-  data.NIC$dist_to_cage_peak[is.na(data.NIC$dist_to_cage_peak)] <- -11000
+  #data.NIC$dist_to_cage_peak[is.na(data.NIC$dist_to_cage_peak)] <- -11000
   data.NIC$dist_cage_Cat = cut(-(data.NIC$dist_to_cage_peak), breaks = diff_breaks);
   
   #  max_height <- max(max(table(data.class$dist_cage_Cat)), max(table(data.class$dist_cage_Cat)));
@@ -1407,29 +1388,31 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   #    theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   ## FSM cage hist number of Isoforms  
-  cage_hist_FSM=ggplot(data=data.FSM, aes(x=dist_cage_Cat, fill=structural_category)) +
+  cage_hist_FSM=ggplot(data=subset(data.FSM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat, fill=structural_category)) +
     geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
     mytheme  +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     theme(legend.position="bottom") +
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic FSM ",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_FSM_perc=ggplot(data=data.FSM, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_FSM_perc=ggplot(data=subset(data.FSM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme  +
     theme(legend.position="bottom") +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic FSM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
   cage.titles.FSM<-list("Distance to CAGE Peak of Multi-Exonic FSM\n\nAlternative 3' End",
                         "Distance to CAGE Peak of Multi-Exonic FSM\n\nAlternative 3'5' End",
@@ -1440,41 +1423,44 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   for(i in 1:length(subcategories.FSM)){
     c<-data.frame(subcategories.FSM[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
-      diff_max=11000
-      diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-      c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+      #diff_max=11000
+      #diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
+      #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
       c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.FSM.s=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+      cage.FSM.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.FSM[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      cage.FSM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
+      cage.FSM.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.FSM[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
       cage.FSM.list[[i]] = cage.FSM.s
       cage.FSM.list.a[[i]] = cage.FSM.s.perc
     }
   }
   
-  cage_hist_ISM=ggplot(data=data.ISM, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_ISM=ggplot(data=subset(data.ISM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Number of transcripts")+
@@ -1482,12 +1468,13 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_ISM_perc=ggplot(data=data.ISM, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_ISM_perc=ggplot(data=subset(data.ISM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
@@ -1495,7 +1482,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     labs(     title="Distance to CAGE Peak of Multi-Exonic ISM",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
   cage.titles.ISM<-list("Distance to CAGE Peak of Multi-Exonic ISM\n\n3' Fragment",
                         "Distance to CAGE Peak of Multi-Exonic ISM\n\nInternal Fragment",
@@ -1508,107 +1495,65 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
-      diff_max=11000
-      diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-      c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+      #diff_max=11000
+      #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
+      #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
       c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.ISM.s=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+      cage.ISM.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      cage.ISM.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
+      cage.ISM.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
       cage.ISM.list[[i]] = cage.ISM.s
       cage.ISM.list.a[[i]] = cage.ISM.s.perc
     }
   }
   
-  #data.ISM5frag=data.ISM[which(data.ISM$subcategory=="5' fragment"),]
-  #cage_hist_ISM5frag=ggplot(data=data.ISM5frag, aes(x=dist_cage_Cat , fill=structural_category)) +
-   # geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
-    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-    #mytheme  + theme(legend.position="bottom") +
-    #    scale_x_discrete(limits = c(-50,50)) +
-    #ylab("Number of transcripts")+
-    #xlab("Distance to CAGE peak, bp")+
-    #labs(     title="Distance to CAGE peak of Multi-Exonic ISM 5' Fragments",
-    #          subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
-    #theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  
-# cage_hist_ISM5frag_perc=ggplot(data=data.ISM5frag, aes(x=dist_cage_Cat , fill=structural_category)) +
-#    geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
-#    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-#    mytheme  + theme(legend.position="bottom") +
-#    #    scale_x_discrete(limits = c(-50,50)) +
-#    ylab("Percentage of transcripts")+
-#    xlab("Distance to CAGE peak, bp")+
-#   labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 5' Fragments",
-#             subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
-#    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  
-#  data.ISM3frag=data.ISM[which(data.ISM$subcategory=="3' fragment"),]
-#  cage_hist_ISM3frag=ggplot(data=data.ISM3frag, aes(x=dist_cage_Cat , fill=structural_category)) +
-#    geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
-#    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-#    mytheme  + theme(legend.position="bottom") +
-#    #    scale_x_discrete(limits = c(-50,50)) +
-#    ylab("Number of transcripts")+
-#    xlab("Distance to CAGE peak, bp")+
-#    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 3' Fragments",
-#              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
-#    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  
-#  cage_hist_ISM3frag_perc=ggplot(data=data.ISM3frag, aes(x=dist_cage_Cat , fill=structural_category)) +
-#    geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
-#    #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-#    mytheme  + theme(legend.position="bottom") +
-#    #    scale_x_discrete(limits = c(-50,50)) +
-#    ylab("Percentage of transcripts")+
-#    xlab("Distance to CAGE peak, bp")+
-#    labs(     title="Distance to CAGE Peak of Multi-Exonic ISM 3' Fragments",
-#              subtitle="Negative values indicate downstream of annotated CAGE peak\n\n") +
-#    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-  
-  cage_hist_NIC=ggplot(data=data.NIC, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_NIC=ggplot(data=subset(data.NIC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar( aes(alpha=within_cage_peak),color="black", size=0.3, fill=myPalette[3]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_NIC_perc=ggplot(data=data.NIC, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_NIC_perc=ggplot(data=subset(data.NIC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar( aes(y = (..count..)/sum(..count..),alpha=within_cage_peak),color="black", size=0.3, fill=myPalette[3]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme  + theme(legend.position="bottom") +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NIC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
   cage.titles.NIC<-list("Distance to CAGE Peak of Multi-Exonic NIC\n\nCombination of Annotated Junctions",
                         "Distance to CAGE Peak of Multi-Exonic NIC\n\nCombination of Annotated Splice Sites",
@@ -1619,61 +1564,65 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   for(i in 1:length(subcategories.NIC)){
     c<-data.frame(subcategories.NIC[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
-      diff_max=11000
-      diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-      c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+      #diff_max=11000
+      #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
+      #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
       c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.NIC.s=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+      cage.NIC.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NIC[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      cage.NIC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
+      cage.NIC.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NIC[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
       cage.NIC.list[[i]] = cage.NIC.s
       cage.NIC.list.a[[i]] = cage.NIC.s.perc
     }
   }
   
-  cage_hist_NNC=ggplot(data=data.NNC, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_NNC=ggplot(data=subset(data.NNC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     ylab("Number of transcripts")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_NNC_perc=ggplot(data=data.NNC, aes(x=dist_cage_Cat , fill=structural_category)) +
+  cage_hist_NNC_perc=ggplot(data=subset(data.NNC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
     geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme + theme(legend.position="bottom") +
+    scale_x_discrete(drop=F, labels=breaks_labels) +
     #    scale_x_discrete(limits = c(-50,50)) +
     ylab("Transcripts, %")+
     xlab("Distance to CAGE peak, bp")+
     labs(     title="Distance to CAGE Peak of Multi-Exonic NNC",
               subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
               alpha = "TSS within a CAGE peak") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
   cage.titles.NNC<-list("Distance to CAGE Peak of Multi-Exonic NNC\n\nCombination of Annotated Junctions",
                         "Distance to CAGE Peak of Multi-Exonic NNC\n\nCombination of Annotated Splice Sites",
@@ -1686,32 +1635,34 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   for(i in 1:length(subcategories.NNC)){
     c<-data.frame(subcategories.NNC[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
-      diff_max=11000
-      diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-      c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+      #diff_max=11000
+      #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
+      #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
       c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.NNC.s=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+      cage.NNC.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Number of transcripts")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NNC[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      cage.NNC.s.perc=ggplot(data=c, aes(x=dist_cage_Cat , fill=structural_category)) +
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
+      cage.NNC.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
         geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
+        scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
         ylab("Transcripts, %")+
         xlab("Distance to CAGE peak, bp")+
         labs(     title=cage.titles.NNC[i],
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+        theme(axis.text.x = element_text(angle = 60, hjust = 1))
       cage.NNC.list[[i]] = cage.NNC.s
       cage.NNC.list.a[[i]] = cage.NNC.s.perc
     }
@@ -1724,7 +1675,7 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
 #########
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
-    geom_freqpoly(binwidth=1) +
+    geom_freqpoly(binwidth=1, size=1) +
     scale_color_manual(values = cat.palette)+
     xlab("Distance of polyA motif from 3' end, bp") +
     ylab("Count") +
@@ -1732,7 +1683,7 @@ p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category))
     mytheme+
     theme(legend.title=element_blank())
 p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory)) +
-  geom_freqpoly(binwidth=1) +
+  geom_freqpoly(binwidth=1, size=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
@@ -1742,7 +1693,7 @@ p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory))
 
 data.s2=rbind(data.other, data.NICNNC)
 p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) +
-  geom_freqpoly(binwidth=1) +
+  geom_freqpoly(binwidth=1, size=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
@@ -1750,7 +1701,6 @@ p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) 
   mytheme+
   theme(legend.title=element_blank())
 }
-
 
 ### Bad quality control attributes
 if (nrow(data.junction) > 0){
@@ -2063,7 +2013,7 @@ if (!all(is.na(data.ratio$ratio_TSS))){
                        labels = trans_format("log2", math_format(2^.x)))+
     geom_vline(xintercept=1, linetype="dashed", color = "red")+
     mytheme +
-    theme(legend.title = element_blank())
+    theme(legend.position="bottom", legend.title = element_blank())
 }
 
 # PLOT p30,p31,p32: percA by subcategory
@@ -2116,7 +2066,7 @@ p30.s3 <- ggplot(data=data.other,
         strip.placement = "outside", strip.text = element_text(size = 10)) +
   scale_fill_manual(values=subcat.palette, drop=T) +
   facet_grid(~structural_category, scales = "free", switch = "x")
-
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=exonCat)) +
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
