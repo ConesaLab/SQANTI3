@@ -509,7 +509,7 @@ a_value <- dplyr::filter(params, parameter == "intrapriming") %>%
               subtitle = "Red line indicates threshold employed in ML filter") +
       geom_boxplot(aes(x = structural_category, y = perc_A_downstream_TTS),
                    width = 0.5, fill = "navajowhite1") +
-      geom_hline(aes(yintercept = a_percent), 
+      geom_hline(aes(yintercept = a_value), 
                  color = "firebrick3", size = 1, linetype = "dashed") +
       xlab("Structural category") +
       ylab("% A's downstream of TTS")
