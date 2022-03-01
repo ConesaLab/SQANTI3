@@ -5,7 +5,7 @@ __version__ = '1.0'   # Python 3.7 syntax!
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
 
-RULES FILTER
+RULES FILTER --> Need to be updated with JSON
 Only keep Iso-Seq isoforms if:
 The isoform is FSM, ISM, or NIC and (does not have intrapriming or has polyA_motif)
 The isoform is NNC, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
@@ -30,6 +30,8 @@ utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utili
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 RSCRIPT_REPORT = 'SQANTI3_report.R'
 RSCRIPT_ML = 'SQANTI3_MLfilter.R'
+RSCRIPT_RULES = 'SQANTI3_rules_filter.R'
+default_json = utilitiesPath + "/default_filter.json"
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -109,6 +111,26 @@ def run_ML(args):
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep)
 
+def run_rules(args):
+    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j}".format(u=utilitiesPath, \
+     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_rules)
+
+    if args.json_rules is not None:
+        if not os.path.isfile(args.json_rules):
+            print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
+            sys.exit(-1)
+    print(cmd)
+    subprocess.call(cmd, shell=True)
+    # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
+    inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
+    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
+    return(seqs_to_keep)
+
+
+
+
+
+
 def main():
     parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes.\
 \nChoose between a rules filter or a Machine-Learning based filter.")
@@ -121,19 +143,14 @@ def main():
     common.add_argument('--faa', help='\t\tORF prediction faa file to be filtered by SQANTI3')
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
-    common.add_argument('-i',"--intrapriming", type=float, default=0.6, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 0.6)')
-    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     common.add_argument("--skipJunction", action="store_true", default=False, help='\t\tSkip output of junctions file')
-    common.add_argument("--saturation", action="store_true", default=False, help='\t\tInclude saturation curves into report')
     common.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help='\t\tselect report format\t\t--html\t\t--pdf\t\t--both\t\t--skip')
     subparsers = parser.add_subparsers(dest='subcommand')
 
 ### Rules filter arguments
     rules = subparsers.add_parser('rules', parents=[common], description="Rules filter selected")
-    rules.add_argument('-r', "--runAlength", type=int, default=6, help='\t\tContinuous run-A length at genomic 3\' end to flag an isoform as intra-priming (default: 6)')
-    rules.add_argument('-m',"--max_dist_to_known_end", type=int, default=50, help="\t\tMaximum distance to an annotated 3' end to preserve as a valid 3' end and not filter out (default: 50bp)")
-    rules.add_argument("-c", "--min_cov", type=int, default=3, help="\t\tMinimum junction coverage for each isoform (only used if min_cov field is not 'NA'), default: 3")
+    rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/default_filter.json')
 
 ### ML filter arguments
     ml = subparsers.add_parser('ML', parents=[common],  description='ML filter selected')
@@ -154,7 +171,9 @@ def main():
     help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
     help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
-    
+    ml.add_argument('-i',"--intrapriming", type=float, default=0.6, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 0.6)')
+    ml.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
+
     args = parser.parse_args()
 
 ### Checking presence of files. Common arguments
@@ -217,8 +236,8 @@ def main():
 ### Checking presence of files for Rules. Check arguments --> If ok run Rules
 
     if args.subcommand == 'rules':
-        if args.runAlength < 4 or args.runAlength > 20:
-            print("ERROR: --runAlength must be between 4-20, instead given {0}! Abort!".format(args.runAlength), file=sys.stderr)
+        if args.json_filter is not None and not os.path.exists(args.json_filter):
+            print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
             sys.exit(-1)
 
         ids = run_rules(args)
