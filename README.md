@@ -7,11 +7,17 @@ SQANTI3 is the newest version of the SQANTI tool ([publication](https://www.ncbi
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, that also includes IsoAnnot and tappAS.
 
 ## Lastest updates
-Current version (09/15/2021): SQANTI3 version 4.2
+Current version (10/05/2021): SQANTI3 version 4.2
 
 New features implemented in SQANTI3
 
+**version 4.3:**
+* Fixed bug printing the ORF in the classification file
+* Fixed bug using PolyA peaks
+* IsoAnnot Lite updated.
+
 **version 4.2:**
+* Extra aligner for mapping Long-Read sequences: **uLTRA** . To use it, set the option `--aligner_choice uLTRA`.
 * NMD prediction now takes into account the 50bp rule, meaning that isoforms will be tagged as `TRUE` for `prediction_NMD` if there's a predicted ORF and CDS ends at least 50bp before the last junction.
 * Fixed minor bugs
 
