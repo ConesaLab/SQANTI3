@@ -15,7 +15,7 @@ ALL_AS_NOVELS = False
 INTRONIC = True
 STATS = False
 
-version = "2.6.1"
+version = "2.7.1"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
 CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
@@ -178,6 +178,8 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
 
     f = open(file_exons)
     dc_exons = {}
+    dc_geneID2geneName = {}
+    dc_geneName2geneID = {}
     #add exons
     for line in f:
         fields = line.split("\t")
@@ -186,6 +188,27 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
             #source
             feature = fields[sq_strand]
             if(feature == "transcript"): #just want exons
+                split_length = len(fields[8].split('"'))
+                gID = fields[8].split('"')[3].strip()
+                if split_length>5: #it can be possible some transcripts do not have Gene Name
+                    gName = fields[8].split('"')[5].strip()
+                else:
+                    gName = ""
+
+                # if verbose:
+                #     print("Reading gene ID and gene Name from junction file: " + gID + " and " + gName)
+
+                #GeneNameID Dictionary
+                if(not dc_geneID2geneName.get(gID)):
+                    dc_geneID2geneName.update({str(gID) : gName}) #geneName can be NA
+                else:
+                    dc_geneID2geneName.update({str(gID) : gName})
+
+                if(not dc_geneName2geneID.get(gName)):
+                    dc_geneName2geneID.update({str(gName) : gID})
+                else:
+                    dc_geneName2geneID.update({str(gName) : gID})
+
                 continue
 
             start = int(fields[sq_length])
@@ -226,7 +249,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
     f.close()
     res.close()
 
-    return dc_exons, dc_coding, dc_gene, dc_SQstrand
+    return dc_exons, dc_coding, dc_gene, dc_SQstrand, dc_geneID2geneName, dc_geneName2geneID
 
 def createDCgeneTrans(dc_SQtransGene):
     global verbose
@@ -252,6 +275,8 @@ def readGFF(gff3):
     dc_GFF3coding = {}
     dc_GFF3strand = {}
     dc_GFF3geneTrans = {}
+    dc_GFF3transGene = {}
+    dc_GFF3geneNameTrans = {}
     dc_gene_description = {}
     for line in f:
         fields = line.split("\t")
@@ -278,10 +303,28 @@ def readGFF(gff3):
                 else:                
                     dc_gene_description.update({str(g) : fields[8]})
 
+                #keep the Gene ID:
                 if not dc_GFF3geneTrans.get(str(g)):
                     dc_GFF3geneTrans.update({str(g) : [transcript]})
                 else:                
                     dc_GFF3geneTrans.update({str(g) : dc_GFF3geneTrans.get(str(g)) + [transcript]})
+
+                #trans - trans-Gene
+                if not dc_GFF3transGene.get(str(transcript)):
+                    dc_GFF3transGene.update({str(transcript) : str(g)})
+                else:                
+                    dc_GFF3transGene.update({str(transcript) : str(g)})
+
+                #keep the Gene NAME:
+                g_name = text[1][5:-1] #delete "NAME=" and final ";" == GENE
+
+                # if verbose:
+                #     print(g_name)
+
+                if not dc_GFF3geneNameTrans.get(str(g_name)):
+                    dc_GFF3geneNameTrans.update({str(g_name) : [transcript]})
+                else:                
+                    dc_GFF3geneNameTrans.update({str(g_name) : dc_GFF3geneNameTrans.get(str(g_name)) + [transcript]})
 
             if feature == "exon":
                 if not dc_GFF3transExons.get(str(transcript)):
@@ -314,7 +357,7 @@ def readGFF(gff3):
             print("File GFF3 doesn't have the correct number of columns (9).")
 
     sorted(dc_GFF3exonsTrans.keys())
-    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3_raw_annot, dc_gene_description
+    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description
 
 def unique(list1): 
     global verbose
@@ -1426,7 +1469,7 @@ def addFeatureWithAnnot(feature, key, AnnotFeatureCounts_dc, TotalFeatures = Fal
             AnnotFeatureCounts_dc.update({feature : [hs_check, hs_checkTotal]})
     return AnnotFeatureCounts_dc
 
-def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3, dc_GFF3gene, dc_GFF3coding, dc_GFF3geneTrans, filename, filename_prints):
+def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3, dc_GFF3gene, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints):
     #toTest
     transInterest = "PB.1879.12"
     featureOfInterest = "Complex"
@@ -1769,8 +1812,64 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 novelTranscripts = novelTranscripts + 1 #real novelTranscript
 
             gene = infoGenomic[0] #geneAssociated
+            alternative_gene = ""
             anyNovelAnnotation = False
             checkingNovel = True
+
+            l_gene = 0
+            l_alternative_gene = 0
+
+            # if verbose:
+            #     print("Gene associated to map features is: " + gene)
+            if len(gene) != 0:
+
+                if dc_geneID2geneName.get(gene):
+                    alternative_gene = dc_geneID2geneName.get(gene)
+                elif dc_geneName2geneID.get(gene):
+                    alternative_gene = dc_geneName2geneID.get(gene)
+                elif alternative_gene == "" and dc_GFF3transGene.get(transGFF3): #if still NULL
+                    alternative_gene = dc_GFF3transGene.get(transGFF3) #uses associated transcript in the GFF3 and get it's gene
+
+                if verbose:
+                    print("1º: " + transSQ)
+                    print("Gene: " + gene)
+                    print("Gene alt: " + alternative_gene)
+                    print(dc_GFF3geneTrans.get(gene))
+                    print(dc_GFF3geneTrans.get(alternative_gene))
+
+                if dc_GFF3geneTrans.get(gene):
+                    l_gene = len(dc_GFF3geneTrans.get(gene))
+                if dc_GFF3geneTrans.get(alternative_gene):
+                    l_alternative_gene = len(dc_GFF3geneTrans.get(alternative_gene))
+
+                if l_gene < l_alternative_gene:
+                    if verbose:
+                        print("se cambia el gen!!\n")
+                        print("El transcript de referencia original es: " + transSQ + " y el de asociación " + transGFF3)
+                        print("gene: " + gene + " alternative_gene: " + alternative_gene + "\n")
+                    gene = alternative_gene
+                    if verbose:
+                        print(dc_GFF3geneTrans.get(gene))
+
+            #it is possible some transcripts do not have gene associated but its transcript it is annotated
+            #or that associated gene is not present in the dictionaries - in that case look for the real gene can be slow if a lot of transcripts
+            #we have to look for the gene id in another dictionary trans -> raw_gene 
+            elif l_alternative_gene==0 and l_gene==0:
+                if dc_GFF3transGene.get(transGFF3):
+                    gene = dc_GFF3transGene.get(transGFF3)
+                    if verbose:
+                        print("2º")
+                        print("Gene has not been defined, using the classification information. New gene is: " + gene)
+                # for gene_test, lst_transcripts in dc_GFF3geneTrans.items():
+                #     if transGFF3 in lst_transcripts:
+                #         gene = gene_test
+                #         break
+
+            if verbose:
+                print(transSQ)
+                print(gene)
+                print(dc_GFF3geneTrans.get(gene))
+                print("\n")
 
             if dc_GFF3geneTrans.get(gene):
                 for transGFF3 in dc_GFF3geneTrans.get(gene): #Each trans in GFF3 inside gene
@@ -2159,9 +2258,9 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     perctTotalAnnotated = round(((transcriptsAnnotated+novelTranscriptsRecovered)/totalTranscripts*100),2)
     m5 = "\t\t·A total of " + "%.2f" % perctTotalAnnotated + " % of transcripts in the GTF target annotation file (" + str(int(transcriptsAnnotated+novelTranscriptsRecovered))  + " of " + str(totalTranscripts) + ") were annotated (at least one feature transferred)."
 
-    m6 = "\t\t·Dit not annotate " + "%.2f" % percTranscriptsNotAnnotatedNotGeneInformation + " % of transcripts (" + str(transcriptsNotAnnotatedNotGeneInformation) + ") because they do not have gene information in GFF3 source annotation file."
-    m6_2 = "\t\t·Dit not annotate " + "%.2f" % percTranscriptsNotAnnotated + " % of transcripts (" + str(transcriptsNotAnnotated) + ") because no annotations were retrieved by positional feature transference."
-    m6_3 = "\t\t·Dit not annotate " + "%.2f" % percNovelTranscriptsNotAnnotated + " % of transcripts (" + str(novelTranscriptsNotAnnotated) + ") because they were novel and no annotations were retrieved by positional feature transference."
+    m6 = "\t\t·Did not annotate " + "%.2f" % percTranscriptsNotAnnotatedNotGeneInformation + " % of transcripts (" + str(transcriptsNotAnnotatedNotGeneInformation) + ") because they do not have gene information in GFF3 source annotation file."
+    m6_2 = "\t\t·Did not annotate " + "%.2f" % percTranscriptsNotAnnotated + " % of transcripts (" + str(transcriptsNotAnnotated) + ") because no annotations were retrieved by positional feature transference."
+    m6_3 = "\t\t·Did not annotate " + "%.2f" % percNovelTranscriptsNotAnnotated + " % of transcripts (" + str(novelTranscriptsNotAnnotated) + ") because they were novel and no annotations were retrieved by positional feature transference."
 
     featureTransferenceSection = "\n\n\tFEATURE-TRANSFERENCE SUMMARY"
     transfTrans = ""
@@ -2912,14 +3011,14 @@ def run(args):
         #dc_GFF3geneTrans = {gene : [trans1, trans2...]}
         #dc_GFF3_raw_annot = {trans : [line, line...]} #for not annot lines
         #dc_gene_description = {gene : [ID=...]} #description line
-        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3_raw_annot, dc_gene_description = readGFF(gff3) #dc_GFF3exons is sorted
+        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description = readGFF(gff3) #dc_GFF3exons is sorted
 
         print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
         #dc_SQexons = {trans : [[start,end], [start,end]...]}
         #dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         #dc_SQtransGene = {trans : [gene, category, transAssociated]}
         #dc_SQstrand = {trans : strand}
-        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
+        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
         
         #create gene-trans dictionary for SQ file
         dc_SQgeneTrans = createDCgeneTrans(dc_SQtransGene)
@@ -2938,8 +3037,9 @@ def run(args):
         dc_GFF3Gene_Genomic = getTranscriptomePerGene(dc_SQgeneTrans, dc_GFF3_Genomic) # {gene : [[start,end,line], [start,end,line], ...]}
 
         print("Mapping transcript features betweeen GFFs...")
-        mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3_Genomic, dc_GFF3Gene_Genomic, dc_GFF3coding, dc_GFF3geneTrans, filename, filename_prints) #edit tappAS_annotation_from_Sqanti file
-        
+        mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3_Genomic, dc_GFF3Gene_Genomic, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints) #edit tappAS_annotation_from_Sqanti file
+        #dc_geneID2geneName, dc_geneName2geneID
+
         print("Adding extra information to GFF3 columns...")
         updateGTF(filename, filenameMod)
 
@@ -2990,9 +3090,9 @@ def run(args):
         #dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         #dc_SQtransGene = {trans : [gene, category, transAssociated]}
 
-        #we do not have dc_gene_descripton for NO-GFF3 Annotation
+        #we do not have dc_gene_descripton - NO-GFF3 Annotation
         dc_gene_description = {}
-        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
+        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
 
         print("Adding extra information to relative columns...")
         updateGTF(filename, filenameMod)
