@@ -11,6 +11,11 @@ Current version (10/05/2021): SQANTI3 version 4.2
 
 New features implemented in SQANTI3
 
+**version 4.3:**
+* Fixed bug printing the ORF in the classification file
+* Fixed bug using PolyA peaks
+* IsoAnnot Lite updated.
+
 **version 4.2:**
 * Extra aligner for mapping Long-Read sequences: **uLTRA** . To use it, set the option `--aligner_choice uLTRA`.
 * NMD prediction now takes into account the 50bp rule, meaning that isoforms will be tagged as `TRUE` for `prediction_NMD` if there's a predicted ORF and CDS ends at least 50bp before the last junction.
