@@ -39,129 +39,152 @@ opt = optparse::parse_args(opt_parser)
 classif_file = opt$sqanti_classif
 json_file = opt$json_filter
 
+### read files
+message("-------------------------------------------------")
+message("\n \t Reading classification file")
+message("\n--------------------------------------------------")
 classif <- read.table(classif_file, sep="\t", header = T, as.is = T)
-
-json_df <- jsonlite::fromJSON(txt = "test.json" ,simplifyDataFrame = T)
-
-### read json and convert into data frame with 4 columns:
-### structural_category {any category + rest } ; 
-### column { any SQ3 column name} ; 
-### type {Logical, Category, Min_Threshold and Max_Threshold}
-### rule {the value that will be use to filter}
-
 message("-------------------------------------------------")
 message("\n \t Reading JSON file with rules to filter")
 message("\n--------------------------------------------------")
+json_df <- jsonlite::fromJSON(txt = json_file ,simplifyDataFrame = T)
 
+### json list will be transformed into a list of data frames with the rules. Rules DF have 4 columns:
+### structural_category {any category + rest } ; 
+### column { any SQ3 column name} ; 
+### type {Category, Min_Threshold and Max_Threshold} ;
+######### Ranges will be converted into 2 rules, a min_threshold and a max_threshold
+######### "Category" rules will accept arrays in the json file and it will also deal with the TRUE or FALSE columns, treating them as characters
+### rule {the value that will be used to filter}
+###########################################################
+### It's possible to define several independent rules for the same structural category, that's why I can't use structural categories to iterate the json list
 
-rules_table <- data.frame()
-count=0
+rules_list <- list() 
+list_idx <- 0
+names_rules_list <- c()
 for (sc in names(json_df)){
-  rules <- json_df[[as.character(sc)]]
-  for (r in names(rules)){
-    count=count+1
-    col_name <- r
-    r <- unlist(rules[[r]])
-    if (length(r)>1){
-      if (is.numeric(r)){
-        lower_limit <- min(r)
-        upper_limit <- max(r)
+  for (j in c(1:dim(json_df[[sc]])[1])){
+    rules <- json_df[[sc]][j,]
+    names(rules) <- names(json_df[[sc]])
+    rules_table <- data.frame()
+    count=0
+    for (r in names(rules)){
+      count=count+1
+      col_name <- r
+      r <- unlist(rules[[r]])
+      if (length(r)>1){
+        if (is.numeric(r)){
+          lower_limit <- min(r)
+          upper_limit <- max(r)
+          rules_table[count,"structural_category"]=sc
+          rules_table[count,"column"]=col_name
+          rules_table[count,"type"]="Min_Threshold"
+          rules_table[count,"rule"]=lower_limit
+          count=count+1
+          rules_table[count,"structural_category"]=sc
+          rules_table[count,"column"]=col_name
+          rules_table[count,"type"]= "Max_Threshold"
+          rules_table[count,"rule"]= upper_limit
+        }else{
+          filter_type <- "Category"
+          for (c in c(1:length(r))){
+            rules_table[count,"structural_category"]=sc
+            rules_table[count,"column"]=col_name
+            rules_table[count,"type"]=filter_type
+            rules_table[count,"rule"]=tolower(r[c])
+            if (c != length(r)){
+              count=count+1
+            }
+          }
+        }
+      }else if(is.numeric(r)){
         rules_table[count,"structural_category"]=sc
         rules_table[count,"column"]=col_name
         rules_table[count,"type"]="Min_Threshold"
-        rules_table[count,"rule"]=lower_limit
-        count=count+1
+        rules_table[count,"rule"]=r
+      }else if(is.character(r)){
         rules_table[count,"structural_category"]=sc
         rules_table[count,"column"]=col_name
-        rules_table[count,"type"]= "Max_Threshold"
-        rules_table[count,"rule"]= upper_limit
-      }else{
-        filter_type <- "Category"
-        for (c in c(1:length(r))){
-          rules_table[count,"structural_category"]=sc
-          rules_table[count,"column"]=col_name
-          rules_table[count,"type"]=filter_type
-          rules_table[count,"rule"]=r[c]
-          if (c != length(r)){
-            count=count+1
+        rules_table[count,"type"]="Category"
+        rules_table[count,"rule"]=tolower(r)
+      }
+    }
+    list_idx=list_idx+1
+    rules_table <- rules_table[!is.na(rules_table$rule),]
+    names_rules_list <- c(names_rules_list, sc)
+    rules_list[[list_idx]]<- rules_table
+  }
+}
+
+
+names(rules_list) <- names_rules_list
+## This actual function that will classify transcripts as Isoform or Artifacts
+
+apply_rules <- function(isoform_info){
+  sc = as.character(isoform_info["structural_category"])
+  final_is_isoform=TRUE
+  # detect if there is any specific rule for the SC of the isoform
+  if (sc %in% names(json_df)) {
+    final_is_isoform=FALSE
+    # iterate all the independent rules for a certain SC
+    for (p in which(names(json_df)==sc)){
+      is_isoform=TRUE
+      rules <- rules_list[[p]] 
+      # iterate through the rules defined
+      for (i in c(1:length(rules$rule))){
+        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
+          if (rules[i, "type"] == "Min_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+              is_isoform=FALSE
+            }
+          }else if (rules[i, "type"] == "Max_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+              is_isoform=FALSE
+            }
+          }else if (rules[i, "type"] == "Category"){
+            cat_rules <- rules[rules$column == rules[i, "column"], ]
+            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+              is_isoform=FALSE
+            }
           }
         }
       }
-    }else if(r=="TRUE"|r=="FALSE"|r=="True"|r=="False"){
-      rules_table[count,"structural_category"]=sc
-      rules_table[count,"column"]=col_name
-      rules_table[count,"type"]="Logical"
-      rules_table[count,"rule"]=as.logical(r)
-    }else if(is.numeric(r)){
-      rules_table[count,"structural_category"]=sc
-      rules_table[count,"column"]=col_name
-      rules_table[count,"type"]="Min_Threshold"
-      rules_table[count,"rule"]=r
-    }else if(is.character(r)){
-      rules_table[count,"structural_category"]=sc
-      rules_table[count,"column"]=col_name
-      rules_table[count,"type"]="Category"
-      rules_table[count,"rule"]=r
+      final_is_isoform=final_is_isoform | is_isoform
     }
-  }
-}
-
-## Define the actual function that will classify transcripts as Isoform or Artifacts
-
-apply_rules <- function(isoform_info){
-  o="Isoform"
-  sc = as.character(isoform_info["structural_category"])
-  if (sc %in% rules_table[,"structural_category"]){
-      rules <- rules_table[rules_table$structural_category == sc , ]
+  # the isoform has a SC different, if will be evaluated with the rules of "rest" (if any was defined)  
+  }else if ("rest" %in% names(json_df)){
+    final_is_isoform=FALSE
+    for (p in which(names(json_df)=="rest")){
+      is_isoform=TRUE
+      rules <- rules_list[[p]]
       for (i in c(1:length(rules$rule))){
-        if ( ! is.na(isoform_info[rules[i, "column"]])){
-           if (rules[i, "type"] == "Min_Threshold"){
-                if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-                    o="Artifact"
-                }
-           }else if (rules[i, "type"] == "Max_Threshold"){
-                 if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-                    o="Artifact"
-                }
-           }else if (rules[i, "type"] == "Logical"){
-                 if (as.logical(isoform_info[rules[i, "column"]]) != rules[i, "rule"]){
-                    o="Artifact"
-                 }
-           }else if (rules[i, "type"] == "Category"){
-                 cat_rules <- rules[rules$column == rules[i, "column"], ]
-                 if ( ! as.character(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-                    o="Artifact"
-                 }
-           }
+        if (! is.na(isoform_info[rules[i, "column"]])){
+          if (rules[i, "type"] == "Min_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+              is_isoform=FALSE
+            }
+          }else if (rules[i, "type"] == "Max_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+              is_isoform=FALSE
+            }
+          }else if (rules[i, "type"] == "Category"){
+            cat_rules <- rules[rules$column == rules[i, "column"], ]
+            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+              is_isoform=FALSE
+            }
+          }
         }
-      }    
-  } else {
-    rules <- rules_table[rules_table$structural_category == "rest", ]
-    for (i in c(1:length(rules$rule))){
-      if (! is.na(isoform_info[rules[i, "column"]])){
-           if (rules[i, "type"] == "Min_Threshold"){
-                if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-                    o="Artifact"
-                }
-           }else if (rules[i, "type"] == "Max_Threshold"){
-                 if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-                    o="Artifact"
-                }
-           }else if (rules[i, "type"] == "Logical"){
-                 if (as.logical(isoform_info[rules[i, "column"]]) != rules[i, "rule"]){
-                    o="Artifact"
-                 }
-           }else if (rules[i, "type"] == "Category"){
-                 cat_rules <- rules[rules$column == rules[i, "column"], ]
-                 if ( ! as.character(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-                    o="Artifact"
-                 }
-           }
       }
+      final_is_isoform=final_is_isoform | is_isoform
     }
   }
-  return(o)
+  if (final_is_isoform){
+   return("Isoform") 
+  }else{
+   return("Artifact")
+  }
 }
+
 
 message("-------------------------------------------------")
 message("\n \t Performing filtering")

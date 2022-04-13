@@ -113,10 +113,10 @@ def run_ML(args):
 
 def run_rules(args):
     cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j}".format(u=utilitiesPath, \
-     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_rules)
+     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter)
 
-    if args.json_rules is not None:
-        if not os.path.isfile(args.json_rules):
+    if args.json_filter is not None:
+        if not os.path.isfile(args.json_filter):
             print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
             sys.exit(-1)
     print(cmd)
@@ -197,8 +197,6 @@ def main():
     if args.faa is not None and not os.path.exists(args.faa):
         print("ERROR: {0} doesn't exist. Abort!".format(args.faa), file=sys.stderr)
         sys.exit(-1)
-    if args.intrapriming < 0.25 or args.intrapriming > 1.:
-        print("ERROR: --intrapriming must be between 0.25-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
 ### Define output dir and output name in case it was not defined
     if args.dir is None:
         args.dir=os.path.dirname(args.sqanti_class)
@@ -229,6 +227,9 @@ def main():
         if args.percent_training < 0 or args.percent_training > 1.:
             print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
             sys.exit(-1)
+        if args.intrapriming < 0.25 or args.intrapriming > 1.:
+            print("ERROR: --intrapriming must be between 0.25-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
+
 
         ids = run_ML(args)
         filter_files(args, ids)
