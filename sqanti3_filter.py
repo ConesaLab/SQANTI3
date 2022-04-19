@@ -5,11 +5,13 @@ __version__ = '1.0'   # Python 3.7 syntax!
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
 
-RULES FILTER --> Need to be updated with JSON
-Only keep Iso-Seq isoforms if:
+RULES FILTER --> Now it can work with a JSON filter
+By default, it will only keep Iso-Seq isoforms if:
 The isoform is FSM, ISM, or NIC and (does not have intrapriming or has polyA_motif)
 The isoform is NNC, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
 The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
+
+If the user wants to define new rules, it can define them in a JSON file following the same format used in the default_filter.json
 
 ML FILTER
 It will take as input the classification file obtained from SQANTI3 QC and apply a Random Forest algorithm to distinguish between "true" isoforms and artifacts.
@@ -28,7 +30,7 @@ from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
-RSCRIPT_REPORT = 'SQANTI3_report.R'
+RSCRIPT_REPORT = 'SQANTI3_filter_report.R'
 RSCRIPT_ML = 'SQANTI3_MLfilter.R'
 RSCRIPT_RULES = 'SQANTI3_rules_filter.R'
 default_json = utilitiesPath + "/default_filter.json"
@@ -85,6 +87,9 @@ def run_ML(args):
     -e {e} -m {m} -z {z}".format(u=utilitiesPath, s=RSCRIPT_ML, c=args.sqanti_class, \
     o=args.output, d=args.dir, t=args.percent_training, j=args.threshold, i=args.intrapriming ,\
     f=args.force_fsm_in, e=args.filter_mono_exonic, m=args.intermediate_files, r=args.remove_columns, z=args.max_class_size)
+    
+    report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f ml ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
+    o=args.output, d=args.dir)
 
     if args.TP is not None:
         if not os.path.isfile(args.TP):
@@ -106,6 +111,8 @@ def run_ML(args):
             cmd = cmd + " -r {0}".format(args.remove_columns)
     print(cmd)
     subprocess.call(cmd, shell=True)
+    if args.report:
+      subprocess.call(report_cmd, shell=True)
     # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
@@ -115,12 +122,17 @@ def run_rules(args):
     cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j}".format(u=utilitiesPath, \
      s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter)
 
+    report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
+    o=args.output, d=args.dir)
+    
     if args.json_filter is not None:
         if not os.path.isfile(args.json_filter):
             print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
             sys.exit(-1)
     print(cmd)
     subprocess.call(cmd, shell=True)
+    if args.report:
+      subprocess.call(report_cmd, shell=True)
     # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
@@ -144,8 +156,7 @@ def main():
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    common.add_argument("--skipJunction", action="store_true", default=False, help='\t\tSkip output of junctions file')
-    common.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help='\t\tselect report format\t\t--html\t\t--pdf\t\t--both\t\t--skip')
+    common.add_argument("--report", action="store_true", default=False, help='\t\tCreate a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
 
 ### Rules filter arguments
@@ -171,7 +182,7 @@ def main():
     help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
     help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
-    ml.add_argument('-i',"--intrapriming", type=float, default=0.6, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 0.6)')
+    ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
     ml.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
 
     args = parser.parse_args()
@@ -227,8 +238,8 @@ def main():
         if args.percent_training < 0 or args.percent_training > 1.:
             print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
             sys.exit(-1)
-        if args.intrapriming < 0.25 or args.intrapriming > 1.:
-            print("ERROR: --intrapriming must be between 0.25-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
+        if args.intrapriming < 25 or args.intrapriming > 100:
+            print("ERROR: --intrapriming must be between 25-100, instead given {0}! Remember to use the percentage value. Abort!".format(args.intrapriming), file=sys.stderr)
 
 
         ids = run_ML(args)

@@ -118,7 +118,7 @@ for (sc in names(json_df)){
 
 
 names(rules_list) <- names_rules_list
-## This actual function that will classify transcripts as Isoform or Artifacts
+## This is the actual function that will classify transcripts as Isoform or Artifacts
 
 apply_rules <- function(isoform_info){
   sc = as.character(isoform_info["structural_category"])
@@ -185,15 +185,85 @@ apply_rules <- function(isoform_info){
   }
 }
 
+### This function will apply the same filtering process but it will return the reasons for filtering a transcript. Use only on artifacts
+get_reasons <- function(isoform_info){
+  sc = as.character(isoform_info["structural_category"])
+  reasons <- c()
+  # detect if there is any specific rule for the SC of the isoform
+  if (sc %in% names(json_df)) {
+    # iterate all the independent rules for a certain SC
+    for (p in which(names(json_df)==sc)){
+      rules <- rules_list[[p]] 
+      # iterate through the rules defined
+      for (i in c(1:length(rules$rule))){
+        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
+          if (rules[i, "type"] == "Min_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+              reason_line <- paste("Low", rules[i, "column"])
+              reasons <- c(reasons, reason_line)
+            }
+          }else if (rules[i, "type"] == "Max_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+              reason_line <- paste("High", rules[i, "column"])
+              reasons <- c(reasons, reason_line)            
+              }
+          }else if (rules[i, "type"] == "Category"){
+            cat_rules <- rules[rules$column == rules[i, "column"], ]
+            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+              reason_line <- paste("Out", rules[i, "column"])
+              reasons <- c(reasons, reason_line)            
+              }
+          }
+        }
+      }
+    }
+    # the isoform has a SC different, if will be evaluated with the rules of "rest" (if any was defined)  
+  }else if ("rest" %in% names(json_df)){
+    for (p in which(names(json_df)=="rest")){
+      rules <- rules_list[[p]]
+      for (i in c(1:length(rules$rule))){
+        if (! is.na(isoform_info[rules[i, "column"]])){
+          if (rules[i, "type"] == "Min_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+              reason_line <- paste("Low", rules[i, "column"])
+              reasons <- c(reasons, reason_line)
+            }
+          }else if (rules[i, "type"] == "Max_Threshold"){
+            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+              reason_line <- paste("High", rules[i, "column"])
+              reasons <- c(reasons, reason_line)            
+            }
+          }else if (rules[i, "type"] == "Category"){
+            cat_rules <- rules[rules$column == rules[i, "column"], ]
+            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+              reason_line <- paste("Out", rules[i, "column"])
+              reasons <- c(reasons, reason_line)            
+            }
+          }
+        }
+      }
+    }
+  }
+ num_reasons <- length(unique(reasons))
+ final_df <- data.frame(isoform=rep(isoform_info["isoform"], num_reasons),
+                        structural_category=rep(isoform_info["structural_category"],num_reasons), 
+                        reasons=unique(reasons))
+ return(final_df)
+}
+
+
 
 message("-------------------------------------------------")
 message("\n \t Performing filtering")
 message("\n--------------------------------------------------")
 
 
-classif$Rules_filter <- apply(classif, 1, apply_rules)
+classif$filter_result <- apply(classif, 1, apply_rules)
 
-inclusion_list <- classif[classif$Rules_filter == "Isoform", "isoform"]
+inclusion_list <- classif[classif$filter_result == "Isoform", "isoform"]
+
+artifacts_classif <- classif[classif$filter_result == "Artifact", ]
+reasons_df <- apply(artifacts_classif,1, get_reasons) %>% bind_rows()
 
 message("-------------------------------------------------")
 message("\n \t Writting results")
@@ -205,6 +275,10 @@ write.table(classif, file=paste0(opt$dir, "/", opt$output, "_RulesFilter_result_
 
 write.table(inclusion_list, file = paste0(opt$dir, "/", opt$output, "_inclusion-list.txt"),
             quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
+
+write.table(reasons_df, file = paste0(opt$dir, "/", opt$output, "_filtering_reasons.txt"),
+            quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
+
 
 
 
