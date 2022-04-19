@@ -45,10 +45,16 @@ opt = optparse::parse_args(opt_parser)
 ####------------------------ INPUTS & PLOT THEME ---------------------------####
 
 #### Initialize script and load input data ####
+if (opt$filter_type == "ml"){
+  message("\n-------------------------------------------------")
+  message("\n \t SQANTI3 Machine Learning filter report")
+  message("\n--------------------------------------------------")
+}else if (opt$filter_type == "rules"){
+  message("\n-------------------------------------------------")
+  message("\n \t SQANTI3 Rules filter report")
+  message("\n--------------------------------------------------")
+}
 
-message("\n-------------------------------------------------")
-message("\n \t SQANTI3 Machine Learning filter")
-message("\n--------------------------------------------------")
 
 # Import pipe operator
 require(magrittr)
@@ -91,7 +97,18 @@ if(opt$filter_type == "ml"){
   path_params <- paths[which_params]
   params <- readr::read_tsv(path_params, col_names = c("parameter", "value"))
   
+}else if (opt$filter_type == "rules"){
+  # Detect path and load ML output classification
+  message("\nReading Rules result classification table...")
+  
+  which_classif <- stringr::str_detect(paths, "RulesFilter_result_classification")
+  path_classif <- paths[which_classif]
+  classif <- readr::read_tsv(path_classif, 
+                             col_types = readr::cols(exons = readr::col_integer(),
+                                                     ref_exons = readr::col_integer()))
+  
 }
+
 
 
 # Format category factor for classification file
@@ -494,105 +511,104 @@ if(opt$filter_type == "ml"){
 
       
       
-#### Intra-priming plots ####
-      
-message("\nGenerating intra-priming plots...\n")
-
-# A% per category
-a_value <- dplyr::filter(params, parameter == "intrapriming") %>% 
-  dplyr::select(value) %>% tibble::deframe() %>% 
-  as.numeric()
-        
-    # plot
-    a_percent <- ggplot(classif) +
-      ggtitle("A % by category", 
-              subtitle = "Red line indicates threshold employed in ML filter") +
-      geom_boxplot(aes(x = structural_category, y = perc_A_downstream_TTS),
-                   width = 0.5, fill = "navajowhite1") +
-      geom_hline(aes(yintercept = a_value), 
-                 color = "firebrick3", size = 1, linetype = "dashed") +
-      xlab("Structural category") +
-      ylab("% A's downstream of TTS")
-      
-    
-        
-# Intra-priming by category and exon number
-ip_summary <- classif %>% 
+#### ML Intra-priming plots ####
+if(opt$filter_type == "ml"){
+  message("\nGenerating intra-priming plots...\n")
+  
+  # A% per category
+  a_value <- dplyr::filter(params, parameter == "intrapriming") %>% 
+    dplyr::select(value) %>% tibble::deframe() %>% 
+    as.numeric()
+  
+  # plot
+  a_percent <- ggplot(classif) +
+    ggtitle("A % by category", 
+            subtitle = "Red line indicates threshold employed in ML filter") +
+    geom_boxplot(aes(x = structural_category, y = perc_A_downstream_TTS),
+                 width = 0.5, fill = "navajowhite1") +
+    geom_hline(aes(yintercept = a_value), 
+               color = "firebrick3", size = 1, linetype = "dashed") +
+    xlab("Structural category") +
+    ylab("% A's downstream of TTS")
+  
+  
+  
+  # Intra-priming by category and exon number
+  ip_summary <- classif %>% 
     dplyr::select(structural_category, exons, intra_priming) %>% 
     dplyr::mutate(exon_classif = dplyr::if_else(exons > 1, 
                                                 true = "Multi-exon", 
                                                 false = "Mono-exon"))
-
-ip_general <- ip_summary %>% 
-  dplyr::group_by(structural_category, intra_priming) %>%
-  dplyr::summarize(n = dplyr::n()) %>% 
-  dplyr::mutate(percent = n/sum(n))
   
-ip_byexons <- ip_summary %>% 
+  ip_general <- ip_summary %>% 
+    dplyr::group_by(structural_category, intra_priming) %>%
+    dplyr::summarize(n = dplyr::n()) %>% 
+    dplyr::mutate(percent = n/sum(n))
+  
+  ip_byexons <- ip_summary %>% 
     dplyr::group_by(structural_category, exon_classif, intra_priming) %>% 
     dplyr::summarize(n = dplyr::n()) %>% 
     dplyr::mutate(percent = n/sum(n))
-      
-      
-    # Intra-priming by structural_category
-      # totals
-      ip_totals <- ggplot(ip_summary) +
-        ggtitle("Isoforms flagged as intra-priming, by category") +
-        geom_bar(aes(x = structural_category, fill = intra_priming), 
-                 stat = "count", color = "black", position = "dodge", width = 0.8) +
-        labs(x = "Exon classification", y = "Transcript no.") +
-        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        scale_fill_manual("Intra-priming prediction", 
-                          values = c("#74CDF0", "#9F7BB8")) +
-        scale_y_continuous(breaks = scales::pretty_breaks(6))
-      
-      # percentage
-      ip_percent <- ggplot(ip_general) +
-        ggtitle("Isoforms flagged as intra-priming, by category (%)") +
-        geom_bar(aes(x = structural_category, y = percent, 
-                     fill = structural_category, alpha = intra_priming),
-                 stat = "identity", position = "stack", 
-                 width = 0.8, color = "black") +
-        labs(x = "Exon classification", y = "Transcript %") +
-        theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        scale_fill_manual(guide = "none",
-                          values = cat.palette) + 
-        scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
-        scale_y_continuous(labels = scales::percent_format())
-    
+  
+  
+  # Intra-priming by structural_category
+  # totals
+  ip_totals <- ggplot(ip_summary) +
+    ggtitle("Isoforms flagged as intra-priming, by category") +
+    geom_bar(aes(x = structural_category, fill = intra_priming), 
+             stat = "count", color = "black", position = "dodge", width = 0.8) +
+    labs(x = "Exon classification", y = "Transcript no.") +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+    scale_fill_manual("Intra-priming prediction", 
+                      values = c("#74CDF0", "#9F7BB8")) +
+    scale_y_continuous(breaks = scales::pretty_breaks(6))
+  
+  # percentage
+  ip_percent <- ggplot(ip_general) +
+    ggtitle("Isoforms flagged as intra-priming, by category (%)") +
+    geom_bar(aes(x = structural_category, y = percent, 
+                 fill = structural_category, alpha = intra_priming),
+             stat = "identity", position = "stack", 
+             width = 0.8, color = "black") +
+    labs(x = "Exon classification", y = "Transcript %") +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+    scale_fill_manual(guide = "none",
+                      values = cat.palette) + 
+    scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
+    scale_y_continuous(labels = scales::percent_format())
+  
+  
+  # Intra-priming by structural_category and exon_classif
+  # totals
+  ipex_totals <- ggplot(ip_summary) +
+    ggtitle("Isoforms flagged as intra-priming, by exon number") +
+    geom_bar(aes(x = exon_classif, fill = intra_priming), 
+             stat = "count", color = "black", position = "dodge", width = 0.8) +
+    labs(x = "Exon classification", y = "Transcript no.") +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+    scale_fill_manual("Intra-priming prediction", 
+                      values = c("#74CDF0", "#9F7BB8")) +   
+    facet_grid(~structural_category)
+  
+  # percentage
+  ipex_percent <- ggplot(ip_byexons) +
+    ggtitle("Isoforms flagged as intra-priming, by exon number (%)") +
+    geom_bar(aes(x = exon_classif, y = percent, 
+                 fill = structural_category, alpha = intra_priming),
+             stat = "identity", position = "stack", 
+             width = 0.8, color = "black") +
+    labs(x = "Exon classification", y = "Transcript %") +
+    theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+    scale_fill_manual(guide = "none",
+                      values = cat.palette) + 
+    scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
+    scale_y_continuous(labels = scales::percent_format()) +
+    facet_grid(~structural_category)
+  
+}
 
-    # Intra-priming by structural_category and exon_classif
-        # totals
-        ipex_totals <- ggplot(ip_summary) +
-          ggtitle("Isoforms flagged as intra-priming, by exon number") +
-          geom_bar(aes(x = exon_classif, fill = intra_priming), 
-                   stat = "count", color = "black", position = "dodge", width = 0.8) +
-          labs(x = "Exon classification", y = "Transcript no.") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          scale_fill_manual("Intra-priming prediction", 
-                            values = c("#74CDF0", "#9F7BB8")) +   
-          facet_grid(~structural_category)
-        
-        # percentage
-        ipex_percent <- ggplot(ip_byexons) +
-          ggtitle("Isoforms flagged as intra-priming, by exon number (%)") +
-          geom_bar(aes(x = exon_classif, y = percent, 
-                       fill = structural_category, alpha = intra_priming),
-                   stat = "identity", position = "stack", 
-                   width = 0.8, color = "black") +
-          labs(x = "Exon classification", y = "Transcript %") +
-          theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-          scale_fill_manual(guide = "none",
-                            values = cat.palette) + 
-          scale_alpha_manual("Intra-priming", values = c(0.3, 1)) +
-          scale_y_continuous(labels = scales::percent_format()) +
-          facet_grid(~structural_category)
-        
 #### END intra-priming plots #### 
-    
-
-
-
+        
 ####-------------------------- GENERATE PDF REPORT ------------------------####
 
 message("\nWriting report plots to PDF file...")
@@ -628,18 +644,19 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     print(comb_redund)
     
     # ML filter plots
-    print(artifact_totals)
-    print(artifact_percent)
-    print(var_imp)
-    suppressWarnings(purrr::walk(var_compare, print))
+    if(opt$filter_type == "ml"){
+      print(artifact_totals)
+      print(artifact_percent)
+      print(var_imp)
+      suppressWarnings(purrr::walk(var_compare, print))
     
-    # Intra-priming plots
-    print(a_percent)
-    print(ip_totals)
-    print(ip_percent)
-    print(ipex_totals)
-    print(ipex_percent)
-
+    # Intra-priming plots (only available when ML activated)
+      print(a_percent)
+      print(ip_totals)
+      print(ip_percent)
+      print(ipex_totals)
+      print(ipex_percent)
+}
 # Close file
 dev.off()
 
