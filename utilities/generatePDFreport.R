@@ -1,6 +1,6 @@
 generatePDFreport = function() 
   {
-  pdf(file=pdf.report.file, width = 6.5, height = 6.5)
+  pdf(file=pdf.report.file, width = 7.5, height = 6.5)
 
   #cover
   grid.newpage()
@@ -518,7 +518,7 @@ generatePDFreport = function()
   print(p28.a)
   
   if (!all(is.na(data.ratio$ratio_TSS))){
-    print(p28.a.ratio)
+    print(p28.a.ratio.pdf)
   }
   
   dev.off()
