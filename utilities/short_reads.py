@@ -179,10 +179,10 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
             outside_df = pandas.concat([outside_df, new_entry], ignore_index=True)
         merged = pandas.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside']+0.01)/(merged['outside']+0.01)
+        merged['ratio_TSS'] = pandas.to_numeric(merged['ratio_TSS'])
         if b == 0 :
             ratio_rep_df = merged['id']
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
-        ratio_rep_df['ratio_TSS'] = pandas.to_numeric(ratio_rep_df['ratio_TSS'])
     ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1, numeric_only=True)
     ratio_rep_df = ratio_rep_df[['id','max_ratio_TSS']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
