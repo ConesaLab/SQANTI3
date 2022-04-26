@@ -134,6 +134,54 @@ data.class$coding = factor(data.class$coding,
                                 ordered=TRUE)
 legendLabelF1 <- levels(as.factor(data.class$coding));
 
+####### SRTM and SNTM functions
+
+STM_function <- function(x){
+  five=FALSE
+  three=FALSE
+  sj=FALSE
+  ev_sj <- !is.na(x["min_cov"]) & as.numeric(x["exons"])>1
+  ref_TSS <- FALSE
+  ref_TTS <- FALSE
+  
+  if (!is.na(x["diff_to_gene_TSS"])){
+    if (abs(as.numeric(x["diff_to_gene_TSS"]))<=50){
+      ref_TSS <- TRUE
+    }
+  }
+  
+  if (!is.na(x["diff_to_gene_TTS"])){
+    if (abs(as.numeric(x["diff_to_gene_TTS"]))<=50){
+      ref_TTS <- TRUE
+    }
+  }
+  
+  w_cage <- !is.na(x["within_cage_peak"]) & x["within_cage_peak"]=="True"
+  if ( ref_TSS | w_cage  ){
+    five=TRUE
+  }
+  w_polya <- !is.na(x["within_polya_site"]) & x["within_polya_site"]=="True"
+  if (ref_TTS | w_polya | !is.na(x["polyA_motif"])){
+    three=TRUE
+  }
+  if (x["structural_category"]=="FSM" | x["structural_category"]=="ISM"){
+    sj=TRUE
+  }else if ( ev_sj ){
+    if (as.numeric(x["min_cov"])>0){
+      sj=TRUE
+    }
+  }
+  
+  if (five & three & sj){
+    return("Fully supported")
+  }else{
+    return("Not fully supported")
+  }
+}
+
+data.class$STM <- apply(data.class,1, STM_function)
+################################
+
 data.FSMISM <- subset(data.class, structural_category %in% c('FSM', 'ISM'))
 data.NICNNC <- subset(data.class, structural_category %in% c("NIC", "NNC"))
 data.other <- subset(data.class, structural_category %in% c("Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron"))
@@ -355,6 +403,7 @@ if (length(FL_multisample_indices)>0){
                                         ordered=TRUE)
 }
 
+
 ########################################
 ######### LENGTH PLOTS  ################
 ########################################
@@ -402,9 +451,9 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
 p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
   geom_freqpoly(binwidth=100, size=1) +
   labs(x="Transcript length", y="Count", title="Mono- vs Multi- Exon Transcript Lengths Distribution") +
-  theme(legend.position="bottom", legend.title=element_blank()) +
   scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
-  mytheme
+  mytheme +
+  theme(legend.position="bottom", legend.title=element_blank()) 
 
 
 #**** PLOT 0: Distribution of Number of Isoforms per Gene
@@ -514,7 +563,7 @@ p4.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=length, fill=subc
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
-  scale_fill_manual(values = subcat.palette) +
+  scale_fill_manual(values = subcat.palette, drop=TRUE) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -525,7 +574,7 @@ p4.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=length, fill=subc
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
-  scale_fill_manual(values = subcat.palette) +
+  scale_fill_manual(values = subcat.palette, drop=TRUE) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(legend.position="right", legend.title=element_blank())+
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -536,7 +585,7 @@ p4.s3 <- ggplot(data=data.other, aes(x=structural_category, y=length, fill=subca
   geom_boxplot(color="black", size=0.3, outlier.size = 0.2) +
   scale_x_discrete(drop=TRUE) +
   ylab("Transcript Length (bp)") +
-  scale_fill_manual(values = subcat.palette) +
+  scale_fill_manual(values = subcat.palette, drop=TRUE) +
   mytheme  + theme(axis.text.x = element_text(angle = 45)) +
   theme(legend.position="right", legend.title=element_blank())+
   theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
@@ -591,6 +640,114 @@ p5.s3 <- ggplot(data=data.other, aes(x=structural_category, y=exons, fill=subcat
   ggtitle("Exon Counts by Subcategory\n\n" ) +
   theme(axis.title.x=element_blank())
 
+##### STM plots
+
+data.FSMISMNICNNC <- rbind(data.FSMISM, data.NICNNC )
+pSTM <- ggplot(data=data.FSMISMNICNNC, aes(x=structural_category)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=structural_category), color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, count") +
+  mytheme +
+  geom_blank(aes(y=(..count..)), stat = "count") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  scale_fill_manual(values = cat.palette, guide='none') +
+  ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
+  theme(legend.position = "right")
+
+pSTM_perc <- ggplot(data=data.FSMISMNICNNC, aes(x=structural_category)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=structural_category), position="fill", color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, %") +
+  mytheme +
+  theme(axis.text.x = element_text(angle = 45)) +
+  scale_fill_manual(values = cat.palette, guide='none') +
+  ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1)), labels = scales::percent) +
+  theme(legend.position = "right")
+
+
+pSTM.s1 <- ggplot(data=data.FSMISM, aes(x=subcategory)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=subcategory), color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, count") +
+  mytheme +
+  facet_grid(.~ structural_category, scales = "free_x") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = subcat.palette, guide = "none") +
+  ggtitle("Isoform Distribution Across Structural Subcategories\n\n",
+          subtitle = "FSM and ISM" ) +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x=element_text(size=10)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
+  theme(legend.position = "right")
+
+pSTM_perc.s1 <- ggplot(data=data.FSMISM, aes(x=subcategory)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=subcategory), position="fill", color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, %") +
+  mytheme +
+  facet_grid(.~ structural_category, scales = "free_x") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = subcat.palette, guide = "none") +
+  ggtitle("Isoform Distribution Across Structural Subcategories\n\n",
+          subtitle = "FSM and ISM" ) +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(size=10)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0)), labels = scales::percent) +
+  theme(legend.position = "right")
+
+pSTM.s2 <- ggplot(data=data.NICNNC, aes(x=subcategory)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=subcategory), color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, count") +
+  mytheme +
+  facet_grid(.~ structural_category, scales = "free_x") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = subcat.palette, guide='none') +
+  ggtitle("Isoform Distribution Across Structural Subcategories\n\n",
+          subtitle = "NIC and NNC") +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(size=10)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
+  theme(legend.position = "right")
+
+pSTM_perc.s2 <- ggplot(data=data.NICNNC, aes(x=subcategory)) +
+  geom_bar(aes(y = (..count..), alpha=STM, fill=subcategory), position="fill", color="black", size=0.3, width=0.7) +
+  scale_x_discrete(drop=TRUE) +
+  scale_alpha_manual(values=c(1,0.3),
+                     name = "Supported Transcript Model",
+                     guide = "legend")+
+  xlab("") +
+  ylab("Transcripts, %") +
+  mytheme +
+  facet_grid(.~ structural_category, scales = "free_x") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = subcat.palette, guide='none') +
+  ggtitle("Isoform Distribution Across Structural Subcategories\n\n",
+          subtitle = "NIC and NNC" ) +
+  theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(size=10)) +
+  scale_y_continuous(expand=expansion(mult = c(0,0)), labels = scales::percent) +
+  theme(legend.position = "right")
 
 ##**** PLOT 6: Mono vs Multi-exon distribution for Known vs Novel Genes
 
@@ -670,40 +827,43 @@ if (!all(is.na(data.class$iso_exp))){
 }
 ###Expression, if isoform expression provided (iso_exp is in TPM) by subcategory
 if (!all(is.na(data.FSMISM$iso_exp))){
-  p8.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
-    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+  p8.s1 <- ggplot(data=data.FSMISM, aes(x=subcategory, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2, position="dodge") +
     scale_x_discrete(drop=TRUE) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(TPM+1)") +
-    scale_fill_manual(values = subcat.palette) +
-    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
+    mytheme  + theme(axis.text.x = element_text(angle = 90)) +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
 
 if (!all(is.na(data.NICNNC$iso_exp))){
-  p8.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
-    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+  p8.s2 <- ggplot(data=data.NICNNC, aes(x=subcategory, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2, position="dodge") +
     scale_x_discrete(drop=TRUE) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(TPM+1)") +
-    scale_fill_manual(values = subcat.palette) +
-    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
+    mytheme  + theme(axis.text.x = element_text(angle = 90)) +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
 
 if (!all(is.na(data.other$iso_exp))){
-  p8.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(iso_exp+1), fill=subcategory)) +
-    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2) +
+  p8.s3 <- ggplot(data=data.other, aes(x=subcategory, y=log2(iso_exp+1), fill=subcategory)) +
+    geom_boxplot(color="black", size=0.3,  outlier.size = 0.2, position="dodge") +
     scale_x_discrete(drop=TRUE) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(TPM+1)") +
-    scale_fill_manual(values = subcat.palette) +
-    mytheme  + theme(axis.text.x = element_text(angle = 45)) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
+    mytheme  + theme(axis.text.x = element_text(angle = 90)) +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Transcript Expression by Subcategory\n\n" )
 }
@@ -727,43 +887,46 @@ if (!all(is.na(data.class$FL))){
 }
 
 if (!all(is.na(data.FSMISM$FL))){
-  p9.s1 <- ggplot(data=data.FSMISM, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+  p9.s1 <- ggplot(data=data.FSMISM, aes(x=subcategory, y=log2(FL_TPM+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
-    scale_fill_manual(values = subcat.palette) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
     mytheme +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x = element_text(angle = 45)) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Long Reads Count by Subcategory\n\n" )
 }
 
 if (!all(is.na(data.NICNNC$FL))){
-  p9.s2 <- ggplot(data=data.NICNNC, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+  p9.s2 <- ggplot(data=data.NICNNC, aes(x=subcategory, y=log2(FL_TPM+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
-    scale_fill_manual(values = subcat.palette) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
     mytheme +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x = element_text(angle = 45)) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Long Reads Count by Subcategory\n\n" )
 }
 
 if (!all(is.na(data.other$FL))){
-  p9.s3 <- ggplot(data=data.other, aes(x=structural_category, y=log2(FL_TPM+1), fill=subcategory)) +
+  p9.s3 <- ggplot(data=data.other, aes(x=subcategory, y=log2(FL_TPM+1), fill=subcategory)) +
     geom_boxplot(color="black", size=0.3, outlier.size=0.1) +
+    facet_grid(.~ structural_category, scales = "free_x") +
     ylab("log2(FL_TPM+1)") +
     scale_x_discrete(drop=TRUE) +
-    scale_fill_manual(values = subcat.palette) +
+    scale_fill_manual(values = subcat.palette, guide="none") +
     mytheme +
     theme(legend.position="right", legend.title=element_blank()) +
-    theme(axis.text.x = element_text(angle = 45)) +
-    theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12))+
+    theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x  = element_text(size=10))+
     theme(axis.title.x=element_blank()) +
     ggtitle("Long Reads Count by Subcategory\n\n" )
 }

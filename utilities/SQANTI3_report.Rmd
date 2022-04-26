@@ -359,7 +359,7 @@ for (i in 1:length(p1.s.list)) {
   cat(p1.s.titles[[i]])
   cat('  \n')
   if (!is.null(p1.s.list[[i]])) {
-    print(htmltools::tagList(ggplotly(p1.s.list[[i]])%>%
+    print(htmltools::tagList(ggplotly(p1.s.list[[i]] + theme(axis.title.x=element_blank()))%>%
                              layout(margin = list(r = 130), showlegend = T, width=700)))
   }
   
@@ -413,11 +413,57 @@ ggplotly(p5.s2) %>%
 
 ggplotly(p5.s3) %>%
   layout(showlegend = T, boxmode = "group")
+
 ```
 
-```{r, eval = exists("p2") || exists("p3")}
-cat ('\n###',"Matched Reference Transcripts {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```{r, eval = exists("pSTM")}
+cat ('\n###',"Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
+
+cat ('\n####',"Structural Classification ", '\n')
+
+ggplotly(pSTM)%>%
+  layout(showlegend = T)
+
+ggplotly(pSTM_perc)%>%
+  layout(showlegend = T)
+
+cat ('\n####',"Structural Subcategories FSM and ISM", '\n')
+
+ggplotly(pSTM.s1 + theme(axis.title.x=element_blank()))%>%
+  layout(showlegend = T)
+
+ggplotly(pSTM_perc.s1 + theme(axis.title.x=element_blank()))%>%
+  layout(showlegend = T)
+
+cat ('\n####',"Structural Subcategories NIC and NNC", '\n')
+
+ggplotly(pSTM.s2 + theme(axis.title.x=element_blank()))%>%
+  layout(showlegend = T)
+
+ggplotly(pSTM_perc.s2 + theme(axis.title.x=element_blank()))%>%
+  layout(showlegend = T)
+
+cat ('\n')
+
 ```
+
+```{r, eval = exists("p2") || exists("p3") }
+
+cat ('\n###',"Matched Reference Transcripts {.tabset .tabset-fade .tabset-dropdown}", '\n')
+
+cat ('\n####',"Length Distribution ", '\n')
+
+ggplotly(p2) %>%
+  layout(showlegend = T)
+
+
+cat ('\n####',"Exon Count Distribution ", '\n')
+ggplotly(p3) %>%
+  layout(showlegend = T)
+
+
+```
+
 
 ```{r, eval = exists("p8")}
 cat ('\n###',"Transcript Expression {.tabset .tabset-fade .tabset-dropdown}", '\n')
@@ -427,17 +473,17 @@ ggplotly(p8)
 
 ```{r, eval = exists("p8.s1")}
 cat ('\n####',"By Subcategory FSM/ISM", '\n')
-ggplotly(p8.s1) 
+ggplotly(p8.s1 + theme(axis.title.x=element_blank())) 
 ```
 
 ```{r, eval = exists("p8.s2")}
 cat ('\n####',"By Subcategory NIC/NNC", '\n')
-ggplotly(p8.s2) 
+ggplotly(p8.s2 + theme(axis.title.x=element_blank())) 
 ```
 
 ```{r, eval = exists("p8.s3")}
 cat ('\n####',"By Subcategory Other", '\n')
-ggplotly(p8.s3) 
+ggplotly(p8.s3 + theme(axis.title.x=element_blank())) 
 ```
 
 ```{r, eval = exists("p9")}
@@ -448,41 +494,18 @@ ggplotly(p9)
 
 ```{r, eval = exists("p9.s1")}
 cat ('\n####',"By Subcategory FSM/ISM", '\n')
-ggplotly(p9.s1) 
+ggplotly(p9.s1 + theme(axis.title.x=element_blank())) 
 ```
 
 ```{r, eval = exists("p9.s2")}
 cat ('\n####',"By Subcategory NIC/NNC", '\n')
-ggplotly(p9.s2) 
+ggplotly(p9.s2 + theme(axis.title.x=element_blank())) 
 ```
 
 ```{r, eval = exists("p9.s3")}
 cat ('\n####',"By Subcategory Other", '\n')
-ggplotly(p9.s3) 
+ggplotly(p9.s3 + theme(axis.title.x=element_blank()) ) 
 ```
-
-<!-- codes only run when expresion provided -->
-
-```{r p2, eval = exists("p2")}
-cat ('\n####',"Length Distribution", '\n')
-ggplotly(p2)%>%
-  layout(margin = list(r = 130),
-         showlegend = T,
-         title = list(text = paste0("Length Distribution of Matched Reference Transcripts", '<br>', '<sup>', 'Applicable Only to FSM and ISM Categories','</sup>')))
-cat ('\n')
-```
-
-<!-- codes only run when FL count provided -->
-
-```{r p3, eval = exists("p3")}
-cat ('\n####',"Exon Count Distribution", '\n')
-ggplotly(p3)%>%
-  layout(margin = list(r = 130),
-         showlegend = T,
-          title = list(text = paste0("Exon Count Distribution of Matched Reference Transcripts", '<br>', '<sup>', 'Applicable Only to FSM and ISM Categories','</sup>')))
-cat ('\n')
-```
-
 
 
 <!--

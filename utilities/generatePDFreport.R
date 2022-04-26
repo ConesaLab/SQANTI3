@@ -93,6 +93,13 @@ generatePDFreport = function()
   print(p5.s1)
   print(p5.s2)
   print(p5.s3)
+  print(pSTM)
+  print(pSTM_perc)
+  print(pSTM.s1)
+  print(pSTM_perc.s1)
+  print(pSTM.s2)
+  print(pSTM_perc.s2)
+
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
     if (!all(is.na(data.FSMISM$iso_exp))){
