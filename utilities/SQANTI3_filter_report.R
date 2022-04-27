@@ -513,7 +513,8 @@ if(opt$filter_type == "ml"){
       
 #### ML Intra-priming plots ####
 if(opt$filter_type == "ml"){
-  message("\nGenerating intra-priming plots...\n")
+  
+  message("\nGenerating ML filter intra-priming plots...\n")
   
   # A% per category
   a_value <- dplyr::filter(params, parameter == "intrapriming") %>% 
