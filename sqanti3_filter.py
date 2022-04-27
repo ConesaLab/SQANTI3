@@ -39,7 +39,7 @@ if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
     sys.exit(-1)
 
-def filter_files(args, ids_to_keep):
+def filter_files(args, ids_to_keep, inclusion_f):
     prefix = args.dir + "/" + args.output
     # filter FASTA/FASTQ file
     if args.isoforms is not None:
@@ -82,6 +82,13 @@ def filter_files(args, ids_to_keep):
                     f.write(">{0}\n{1}\n".format(r.description, r.seq))
         print("Output written to: {0}".format(f.name), file=sys.stdout)
 
+    # filter isoAnnot GFF3
+    if args.isoAnnotGFF3 is not None:
+        outputGFF3 = prefix + '.filtered.gff3'
+        awk_cmd = """awk 'FNR==NR {{ a[$1]; next }} ($1 in a)' {l} {g} > {o}""".format(l=inclusion_f, g=args.isoAnnotGFF3, o=outputGFF3)
+        subprocess.call(awk_cmd, shell=True)
+        print("Output written to: {0}".format(outputGFF3), file=sys.stdout)
+
 def run_ML(args):
     cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -t {t} -j {j} -i {i} -f {f} \
     -e {e} -m {m} -z {z}".format(u=utilitiesPath, s=RSCRIPT_ML, c=args.sqanti_class, \
@@ -111,12 +118,12 @@ def run_ML(args):
             cmd = cmd + " -r {0}".format(args.remove_columns)
     print(cmd)
     subprocess.call(cmd, shell=True)
-    if args.report:
+    if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
     # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
-    return(seqs_to_keep)
+    return(seqs_to_keep, inclusion_list)
 
 def run_rules(args):
     cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j}".format(u=utilitiesPath, \
@@ -131,16 +138,12 @@ def run_rules(args):
             sys.exit(-1)
     print(cmd)
     subprocess.call(cmd, shell=True)
-    if args.report:
+    if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
     # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
-    return(seqs_to_keep)
-
-
-
-
+    return(seqs_to_keep, inclusion_list)
 
 
 def main():
@@ -149,6 +152,7 @@ def main():
 ### Common arguments for both modes
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('sqanti_class', help='\t\tSQANTI3 QC classification file.')
+    common.add_argument('--isoAnnotGFF3', help='\t\tisoAnnotLite GFF3 file to be filtered')
     common.add_argument('--isoforms', help='\t\tfasta/fastq isoform file to be filtered')
     common.add_argument('--gtf', help='\t\tGTF file to be filtered')
     common.add_argument('--sam', help='\t\tSAM alignment of the input fasta/fastq')
@@ -156,7 +160,7 @@ def main():
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    common.add_argument("--report", action="store_true", default=False, help='\t\tCreate a report about the filtering')
+    common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
 
 ### Rules filter arguments
@@ -242,8 +246,8 @@ def main():
             print("ERROR: --intrapriming must be between 25-100, instead given {0}! Remember to use the percentage value. Abort!".format(args.intrapriming), file=sys.stderr)
 
 
-        ids = run_ML(args)
-        filter_files(args, ids)
+        ids, inclusion_file = run_ML(args)
+        filter_files(args, ids, inclusion_file)
 
 ### Checking presence of files for Rules. Check arguments --> If ok run Rules
 
@@ -252,8 +256,8 @@ def main():
             print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
             sys.exit(-1)
 
-        ids = run_rules(args)
-        filter_files(args, ids)
+        ids, inclusion_file = run_rules(args)
+        filter_files(args, ids, inclusion_file)
 
 if __name__ == "__main__":
     main()
