@@ -118,7 +118,7 @@ def run_ML(args):
             cmd = cmd + " -r {0}".format(args.remove_columns)
     print(cmd)
     subprocess.call(cmd, shell=True)
-    if args.report:
+    if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
     # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
@@ -138,7 +138,7 @@ def run_rules(args):
             sys.exit(-1)
     print(cmd)
     subprocess.call(cmd, shell=True)
-    if args.report:
+    if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
     # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
     inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
@@ -160,7 +160,7 @@ def main():
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    common.add_argument("--report", action="store_true", default=False, help='\t\tCreate a report about the filtering')
+    common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
 
 ### Rules filter arguments
