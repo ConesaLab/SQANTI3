@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '4.2'  # Python 3.7
+__version__ = '4.3'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -2128,7 +2128,7 @@ class CAGEPeak:
             start0 = int(raw[1])
             end1 = int(raw[2])
             strand = raw[5]
-            tss0 = int(raw[6])
+            tss0 = int((start0+end1)/2)
             self.cage_peaks[(chrom,strand)].insert(start0, end1, (tss0, start0, end1))
 
     def find(self, chrom, strand, query, search_window=10000):

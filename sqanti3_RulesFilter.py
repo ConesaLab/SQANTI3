@@ -76,7 +76,7 @@ def sqanti_filter_lite(args):
 
         potential_intrapriming = (percA >= args.intrapriming or runA >= args.runAlength) and \
                                  r['polyA_motif'] == 'NA' and \
-                                 (r['diff_to_gene_TSS'] == 'NA' or abs(
+                                 (r['diff_to_gene_TTS'] == 'NA' or abs(
                                      int(r['diff_to_gene_TTS'])) > args.max_dist_to_known_end)
 
 
