@@ -37,15 +37,23 @@ New features implemented in SQANTI3
     *  Saturation curves only plot when `--saturation` option activated.
 * Installation provided as a conda yml environment file  
 
-## Wiki
+## Documentation
 
-Please, visit our wiki for more detailed information
+For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/ConesaLab/SQANTI3/wiki).
 
-* [What is SQANTI3?](https://github.com/ConesaLab/SQANTI3/wiki/What-is-SQANTI3%3F)
-* [SQANTI3 dependencies and installation](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-dependencies-and-installation)
-* [Running SQANTI3 Quality Control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
-* [Running SQANTI3 rules filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rules-filter)
-* [SQANTI3 output explanation](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-output-explanation)
+### Wiki contents:
+* [Introduction to SQANTI3](https://github.com/ConesaLab/SQANTI3/wiki/Introduction-to-SQANTI3)
+* [Dependencies and installation](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation)
+* [Isoform classification: categories and subcategories](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories)
+* [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
+* [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
+* [Running SQANTI3 filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)
+* [Tutorial: running SQANTI3 on an example dataset](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset)
+
+Please, note that we are currently updating and expanding the wiki to provide as much information as possible and 
+enhance the SQANTI3 user experience. Pages under construction -or where information is still missing- will be indicated where appropriate. 
+Thank you for your patience!
+
 
 ## How to cite SQANTI3
 
