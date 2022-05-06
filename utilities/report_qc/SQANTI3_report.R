@@ -15,12 +15,12 @@ junc.file <- args[2]
 utilities.path <- args[4]
 saturation.curves<-args[5]
 
-source(paste(utilities.path, "generatePDFreport.R", sep = "/"))
+source(paste(utilities.path, "/report_qc/generatePDFreport.R", sep = "/"))
 
 if (saturation.curves=='True'){
-  source(paste(utilities.path, "plot.rarefaction.R", sep = "/"))
-  source(paste(utilities.path, "LR.rarefaction.R", sep = "/"))
-  source(paste(utilities.path, "readData_functions.R", sep = "/"))
+  source(paste(utilities.path, "/report_qc/saturation/plot_saturation.R", sep = "/"))
+  source(paste(utilities.path, "/report_qc/saturation/LR_saturation.R", sep = "/"))
+  source(paste(utilities.path, "/report_qc/saturation/data_prep_saturation.R", sep = "/"))
 }
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1];
@@ -2699,10 +2699,10 @@ if (!all(is.na(data.class$dist_to_cage_peak))){
 
 if (args[6]== 'both') {
   invisible(generatePDFreport())
-  rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory , output_file=html.report.file)
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory , output_file=html.report.file)
 } else if (args[6] == 'pdf' & args[6] != 'html'){
   invisible(generatePDFreport())
 } else {
-  rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory, output_file=html.report.file )
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory, output_file=html.report.file )
 }
 
