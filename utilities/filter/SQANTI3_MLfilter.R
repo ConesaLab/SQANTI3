@@ -13,7 +13,7 @@
 #
 # Changes with respect to previous version
 # - RM instead of FSM are used as positive set.
-# - New SQANTI features are used in the ML, i.e. related to CAGE, polyA and Ratio_TSS.
+# - New SQANTI features are used in the ML, i.e. related to CAGE,  and Ratio_TSS.
 # - Outputs: 
 #   1. Classification table + ML results.
 #   2. Single-column text file with IDs of transcripts labeled as isoforms by
@@ -49,7 +49,7 @@ option_list = list(
               help="Default: 0.7. Machine learning probability threshold to classify, 
               transcripts as positive isoforms."),
   optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
-              help="Default: 60. PolyA thereshold (i.e. number of A's downstream 
+              help="Default: 60.  thereshold (i.e. number of A's downstream 
               the TTS) to flag an isoform as an intra-priming artifact."),
   optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
               help="Default: FALSE. When TRUE, forces retaining FMS transcripts 
@@ -329,10 +329,10 @@ if (run_ML == TRUE) {
   #  Change NA in columns by an appropriate replacement
   message("\nReplacing NAs with appropriate values for ML...")
   
-  NA_columns <- c("polyA_motif", "within_cage_peak", 'n_indels', "n_indels_junc", 
+  NA_columns <- c("polyA_motif", "within_CAGE_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
-                  "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polya_site", 
-                  "dist_to_cage_peak", 'within_polya_site', "polyA_dist")
+                  "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polyA_site", 
+                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist")
   replacement.na <- c("No_polyA_motif", 0,0, 0, "non_coding",0, 0,0, FALSE, 
                       -11000, -11000, -11000, -11000, FALSE, -11000)
   for (i in 1: length(NA_columns)) {
@@ -353,8 +353,8 @@ if (run_ML == TRUE) {
   # Convert in factors columns with categorical variables
   message("\nHandling factor columns...")
   
-  categorical <- c("FSM_class", "coding", "bite", "within_cage_peak", 
-                   "polyA_motif" , "within_polya_site", "predicted_NMD")
+  categorical <- c("FSM_class", "coding", "bite", "within_CAGE_peak", 
+                   "polyA_motif" , "within_polyA_site", "predicted_NMD")
   for (x in categorical){
     d1[,x] <- as.factor(d1[,x])
   }
@@ -363,7 +363,7 @@ if (run_ML == TRUE) {
   message("\nHandling integer columns...")
   
   integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov", 
-                "min_cov", "ratio_exp" , "polyA_dist", "dist_to_cage_peak")
+                "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak")
   for (x in integers){
     d1[,x] <- as.integer(d1[,x])
   }
