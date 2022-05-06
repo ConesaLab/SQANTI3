@@ -118,7 +118,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
                 'dist_to_cage_peak', 'within_cage_peak',
                 'dist_to_polya_site', 'within_polya_site',
-                'polyA_motif', 'polyA_dist', 'ORF_seq', 'ratio_TSS']
+                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
@@ -231,7 +231,8 @@ class myQueryTranscripts:
                  FSM_class = None, percAdownTTS = None, seqAdownTTS=None,
                  dist_cage='NA', within_cage='NA',
                  dist_polya_site='NA', within_polya_site='NA',
-                 polyA_motif='NA', polyA_dist='NA', ratio_TSS='NA'):
+                 polyA_motif='NA', polyA_dist='NA',
+                 polyA_motif_found='NA', ratio_TSS='NA'):
 
         self.id  = id
         self.tss_diff    = tss_diff   # distance to TSS of best matching ref
@@ -284,6 +285,7 @@ class myQueryTranscripts:
         self.dist_polya_site   = dist_polya_site    # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
         self.polyA_dist  = polyA_dist               # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
         self.ratio_TSS = ratio_TSS
 
     def get_total_diff(self):
@@ -336,7 +338,7 @@ class myQueryTranscripts:
                                                                                                                                                            str(self.dist_polya_site),
                                                                                                                                                            str(self.within_polya_site),
                                                                                                                                                            str(self.polyA_motif),
-                                                                                                                                                           str(self.polyA_dist), str(self.ratio_TSS))
+                                                                                                                                                           str(self.polyA_dist),str(self.polyA_motif_found), str(self.ratio_TSS))
 
 
     def as_dict(self):
@@ -386,6 +388,7 @@ class myQueryTranscripts:
          'within_polya_site': self.within_polya_site,
          'polyA_motif': self.polyA_motif,
          'polyA_dist': self.polyA_dist,
+         'polyA_motif_found':self.polyA_motif_found,
          'ratio_TSS' : self.ratio_TSS
          }
         for sample,count in self.FL_dict.items():
@@ -1628,11 +1631,12 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
             if polyA_motif_list is not None:
                 if rec.strand == '+':
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
                 else:
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
                 isoform_hit.polyA_motif = polyA_motif
                 isoform_hit.polyA_dist = polyA_dist
+                isoform_hit.polyA_motif_found = polyA_motif_found
 
             # Fill in ORF/coding info and NMD detection
             if args.is_fusion:
@@ -1726,8 +1730,8 @@ def find_polyA_motif(genome_seq, polyA_motif_list):
     for motif in polyA_motif_list:
         i = genome_seq.find(motif)
         if i >= 0:
-            return motif, -(len(genome_seq)-i-len(motif)+1)
-    return 'NA', 'NA'
+            return motif, -(len(genome_seq)-i-len(motif)+1), 'TRUE'
+    return 'NA', 'NA', 'FALSE'
 
 def FLcount_parser(fl_count_filename):
     """
