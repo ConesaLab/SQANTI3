@@ -987,8 +987,8 @@ if (nrow(data.FSM) > 0) {
   # plot histogram of distance to start site, Y-axis absolute count
   max_height <- max(table(data.FSM$diffTSSCat));
   max_height <- (max_height %/% 10+1) * 10;
-  if (!all(is.na(data.FSM$within_cage_peak))){
-    alpha22tss='within_cage_peak'
+  if (!all(is.na(data.FSM$within_CAGE_peak))){
+    alpha22tss='within_CAGE_peak'
     alpha_labs22tss="TSS within a CAGE peak"
   }else{
     alpha22tss=NULL
@@ -1030,7 +1030,7 @@ if (nrow(data.FSM) > 0) {
     
   for(i in 1:length(subcategories.FSM)){
     c<-data.frame(subcategories.FSM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$within_CAGE_peak))){
       diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
       diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100), (diff_max+1));
       c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
@@ -1110,7 +1110,7 @@ if (nrow(data.ISM) > 0) {
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.a <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
-    geom_bar(fill=myPalette[6], color="black", size=0.3, aes(alpha=within_cage_peak))+
+    geom_bar(fill=myPalette[6], color="black", size=0.3, aes(alpha=within_CAGE_peak))+
     scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     scale_x_discrete(drop=F, labels=breaks_labels) +
     mytheme + labs(alpha="TSS within a CAGE peak") +
@@ -1123,7 +1123,7 @@ if (nrow(data.ISM) > 0) {
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.b <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
-    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), fill=myPalette[6], color="black", size=0.3)+
+    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), fill=myPalette[6], color="black", size=0.3)+
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100"), expand = c(0,0)) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
@@ -1185,13 +1185,13 @@ if (nrow(data.ISM) > 0) {
   p22.ISM.list.a = list()
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$within_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$within_CAGE_peak))){
       c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
       c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
       max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
       max_height <- (max_height %/% 10+1) * 10;
       p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
-        geom_bar(fill=myPalette[6], color="black", size=0.3, aes( alpha= within_cage_peak)) +
+        geom_bar(fill=myPalette[6], color="black", size=0.3, aes( alpha= within_CAGE_peak)) +
         scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
         scale_x_discrete(drop=F, labels=breaks_labels) +
         mytheme + labs(alpha = "TSS within a CAGE peak") +
@@ -1202,7 +1202,7 @@ if (nrow(data.ISM) > 0) {
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
-        geom_bar(aes( alpha= within_cage_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
+        geom_bar(aes( alpha= within_CAGE_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100"), expand = c(0,0)) +
         scale_x_discrete(drop=F, labels=breaks_labels) +
@@ -1355,8 +1355,7 @@ if (!all(is.na(data.junction$total_coverage_unique))){
 
 ##### Distances to CAGE peaks by FSM and ISM
 
-if (!all(is.na(data.class$dist_to_cage_peak))) {
-  #data.class$dist_to_cage_peak[is.na(data.class$dist_to_cage_peak)] <- -11000
+if (!all(is.na(data.class$dist_to_CAGE_peak))) {
   diff_max=11000     ##diff_max <- max(abs(data.class$dist_to_cage_peak));
   diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
   
@@ -1364,14 +1363,10 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
                      "-120 to -100", "-100 to -80", "-80 to -60", "-60 to -40", "-40 to -20", "-20 to 0",
                      "0 to 20", "20 to 40", "40 to 60", "60 to 80", "80 to 100", "Larger than 100")
   
-  #data.FSM$dist_to_cage_peak[is.na(data.FSM$dist_to_cage_peak)] <- -11000
-  data.FSM$dist_cage_Cat = cut(-(data.FSM$dist_to_cage_peak), breaks = diff_breaks);
-  #data.ISM$dist_to_cage_peak[is.na(data.ISM$dist_to_cage_peak)] <- -11000
-  data.ISM$dist_cage_Cat = cut(-(data.ISM$dist_to_cage_peak), breaks = diff_breaks);
-  #data.NNC$dist_to_cage_peak[is.na(data.NNC$dist_to_cage_peak)] <- -11000
-  data.NNC$dist_cage_Cat = cut(-(data.NNC$dist_to_cage_peak), breaks = diff_breaks);
-  #data.NIC$dist_to_cage_peak[is.na(data.NIC$dist_to_cage_peak)] <- -11000
-  data.NIC$dist_cage_Cat = cut(-(data.NIC$dist_to_cage_peak), breaks = diff_breaks);
+  data.FSM$dist_CAGE_Cat = cut(-(data.FSM$dist_to_CAGE_peak), breaks = diff_breaks);
+  data.ISM$dist_CAGE_Cat = cut(-(data.ISM$dist_to_CAGE_peak), breaks = diff_breaks);
+  data.NNC$dist_CAGE_Cat = cut(-(data.NNC$dist_to_CAGE_peak), breaks = diff_breaks);
+  data.NIC$dist_CAGE_Cat = cut(-(data.NIC$dist_to_CAGE_peak), breaks = diff_breaks);
   
   #  max_height <- max(max(table(data.class$dist_cage_Cat)), max(table(data.class$dist_cage_Cat)));
   #  max_height <- (max_height %/% 10+1) * 10;
@@ -1388,8 +1383,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   #    theme(axis.text.x = element_text(angle = 90, hjust = 1))
   
   ## FSM cage hist number of Isoforms  
-  cage_hist_FSM=ggplot(data=subset(data.FSM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat, fill=structural_category)) +
-    geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
+  cage_hist_FSM=ggplot(data=subset(data.FSM, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat, fill=structural_category)) +
+    geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[1]) +
     mytheme  +
     scale_x_discrete(drop=F, labels=breaks_labels) +
     theme(legend.position="bottom") +
@@ -1400,8 +1395,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
               alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_FSM_perc=ggplot(data=subset(data.FSM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
+  cage_hist_FSM_perc=ggplot(data=subset(data.FSM, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[1]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme  +
@@ -1422,13 +1417,13 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   cage.FSM.list.a = list()
   for(i in 1:length(subcategories.FSM)){
     c<-data.frame(subcategories.FSM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
       #diff_max=11000
       #diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
       #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
-      c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.FSM.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
+      c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
+      cage.FSM.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[1]) +
         mytheme  +
         scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
@@ -1438,8 +1433,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1))
-      cage.FSM.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[1]) +
+      cage.FSM.s.perc=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[1]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
@@ -1456,8 +1451,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     }
   }
   
-  cage_hist_ISM=ggplot(data=subset(data.ISM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
+  cage_hist_ISM=ggplot(data=subset(data.ISM, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3, fill=myPalette[2]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  +
     scale_x_discrete(drop=F, labels=breaks_labels) +
@@ -1470,8 +1465,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
               alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_ISM_perc=ggplot(data=subset(data.ISM, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[2]) +
+  cage_hist_ISM_perc=ggplot(data=subset(data.ISM, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3, fill=myPalette[2]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
@@ -1494,13 +1489,13 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   cage.ISM.list.a = list()
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
       #diff_max=11000
       #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
       #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
-      c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.ISM.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
+      c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
+      cage.ISM.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[2]) +
         mytheme  +
         scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
@@ -1510,8 +1505,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1))
-      cage.ISM.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[2]) +
+      cage.ISM.s.perc=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[2]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
@@ -1528,8 +1523,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     }
   }
   
-  cage_hist_NIC=ggplot(data=subset(data.NIC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar( aes(alpha=within_cage_peak),color="black", size=0.3, fill=myPalette[3]) +
+  cage_hist_NIC=ggplot(data=subset(data.NIC, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar( aes(alpha=within_CAGE_peak),color="black", size=0.3, fill=myPalette[3]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     scale_x_discrete(drop=F, labels=breaks_labels) +
@@ -1541,8 +1536,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
               alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_NIC_perc=ggplot(data=subset(data.NIC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar( aes(y = (..count..)/sum(..count..),alpha=within_cage_peak),color="black", size=0.3, fill=myPalette[3]) +
+  cage_hist_NIC_perc=ggplot(data=subset(data.NIC, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar( aes(y = (..count..)/sum(..count..),alpha=within_CAGE_peak),color="black", size=0.3, fill=myPalette[3]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme  + theme(legend.position="bottom") +
@@ -1563,13 +1558,13 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   cage.NIC.list.a = list()
   for(i in 1:length(subcategories.NIC)){
     c<-data.frame(subcategories.NIC[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
       #diff_max=11000
       #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
       #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
-      c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.NIC.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
+      c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
+      cage.NIC.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[3]) +
         mytheme  +
         scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
@@ -1579,8 +1574,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1))
-      cage.NIC.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[3]) +
+      cage.NIC.s.perc=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[3]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
@@ -1597,8 +1592,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
     }
   }
   
-  cage_hist_NNC=ggplot(data=subset(data.NNC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
+  cage_hist_NNC=ggplot(data=subset(data.NNC, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3, fill=myPalette[4]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
@@ -1610,8 +1605,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
               alpha = "TSS within a CAGE peak") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1))
   
-  cage_hist_NNC_perc=ggplot(data=subset(data.NNC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
+  cage_hist_NNC_perc=ggplot(data=subset(data.NNC, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+    geom_bar(aes(y = (..count..)/sum(..count..),alpha=within_CAGE_peak), color="black", size=0.3, fill=myPalette[4]) +
     scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                        labels=c("0","25","50","75","100")) +
     mytheme + theme(legend.position="bottom") +
@@ -1634,13 +1629,13 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
   cage.NNC.list.a = list()
   for(i in 1:length(subcategories.NNC)){
     c<-data.frame(subcategories.NNC[i])
-    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_cage_peak))){
+    if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
       #diff_max=11000
       #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
       #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
-      c$dist_cage_Cat = cut(-(c$dist_to_cage_peak), breaks = diff_breaks);
-      cage.NNC.s=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
+      c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
+      cage.NNC.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[4]) +
         mytheme  +
         scale_x_discrete(drop=F, labels=breaks_labels) +
         theme(legend.position="bottom") +
@@ -1650,8 +1645,8 @@ if (!all(is.na(data.class$dist_to_cage_peak))) {
                   subtitle="Negative values indicate downstream of annotated CAGE peak\n\n",
                   alpha = "TSS within a CAGE peak") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1))
-      cage.NNC.s.perc=ggplot(data=subset(c, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_cage_peak), color="black", size=0.3,  fill=myPalette[4]) +
+      cage.NNC.s.perc=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
+        geom_bar(aes(y = (..count..)/sum(..count..), alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[4]) +
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
                            labels=c("0","25","50","75","100")) +
         mytheme  +
@@ -1756,15 +1751,15 @@ if (nrow(data.junction) > 0){
     t3.list[[length(t3.list) + 1]]=t3.a.Cov
   }
   
-  if (!all(is.na(x$within_cage_peak))){
-    x[which(x$within_cage_peak=='False'),"Coverage_Cage"]="Not Coverage Cage"
-    x[which(x$within_cage_peak=='True'),"Coverage_Cage"]="Coverage Cage"
+  if (!all(is.na(x$within_CAGE_peak))){
+    x[which(x$within_CAGE_peak=='False'),"Coverage_Cage"]="Not Coverage Cage"
+    x[which(x$within_CAGE_peak=='True'),"Coverage_Cage"]="Coverage Cage"
     t1.Cage <- group_by(x, structural_category, Coverage_Cage) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.Cage <- merge(t1.Cage, t2.RTS, by="structural_category")
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
     t3.Cage <- subset(t3.Cage, Coverage_Cage=='Coverage Cage');
     t3.Cage$Var=t3.Cage$Coverage_Cage
-    t3.data.sets[[length(t3.data.sets) + 1]]=data.class$dist_to_cage_peak
+    t3.data.sets[[length(t3.data.sets) + 1]]=data.class$dist_to_CAGE_peak
     t3.list[[length(t3.list) + 1]]=t3.Cage
     p28.a.Cage <- ggplot(t3.Cage, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[2] ,color="black") +
@@ -2216,10 +2211,10 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
   #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.")
 
   #### Now only with cage + isoforms
-  if (!all(is.na(data.class$dist_to_cage_peak))) {
-    ism_per_transcript_cage=data.ISM[which(data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+  if (!all(is.na(data.class$dist_to_CAGE_peak))) {
+    ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_cage)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage=merge(x = fsm_per_transcript_cage , y=ism_per_transcript_cage, by = "associated_transcript", all=T)
@@ -2462,10 +2457,10 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
 
   #### Now with just isoforms polyA and Cage +
-  if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_cage_peak))) {
-    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+  if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_CAGE_peak))) {
+    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_CAGE_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(fsm_per_transcript_cage_polya)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage_polya=merge(x = fsm_per_transcript_cage_polya , y=ism_per_transcript_cage_polya, by = "associated_transcript", all=T)
@@ -2681,16 +2676,16 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
 
 
 
-if (!all(is.na(data.class$dist_to_cage_peak))){
+if (!all(is.na(data.class$dist_to_CAGE_peak))){
   df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
                              dplyr::summarise(count=dplyr::n(),
-                                              cage_detected=length(which(within_cage_peak == "True")),
+                                              cage_detected=length(which(within_CAGE_peak == "True")),
                                               cage_detected_perc=round(cage_detected*100/count) , 
                                               .groups = 'keep'))
   
   df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
                                   dplyr::summarise(count=dplyr::n(),
-                                                   cage_detected=length(which(within_cage_peak == "True")),
+                                                   cage_detected=length(which(within_CAGE_peak == "True")),
                                                    cage_detected_perc=round(cage_detected*100/count) ,
                                                    .groups = 'keep'))
 }
