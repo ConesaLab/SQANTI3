@@ -501,7 +501,7 @@ if(opt$filter_type == "ml"){
     
     
     ## Variables used in ML: values for isoforms and artifacts by category
-    source(paste0(opt$utilities_path, "/compare_MLvariables.R"))
+    source(paste0(opt$utilities_path, "/report_filter/compare_MLvariables.R"))
     
     var_compare <- purrr::map2(imp$variable, imp$importance,
                                ~compare_MLvariables(classif, .x, .y))

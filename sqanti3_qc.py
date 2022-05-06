@@ -121,7 +121,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'polyA_motif', 'polyA_dist', 'ORF_seq', 'ratio_TSS']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
-RSCRIPT_REPORT = 'SQANTI3_report.R'
+RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
