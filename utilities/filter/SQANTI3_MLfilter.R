@@ -321,20 +321,17 @@ if (run_ML == TRUE) {
   
   if (any(grep('^FL\\.', names(d1)))){d1$FL= rowSums(d1[,grep('^FL\\.', names(d1))])}
   
-  
-  # Case special of polyA motif. When present, simply replace by "Motif_found"
-  d1[which(!is.na(d1$polyA_motif)), "polyA_motif"] <- "Motif_found"
-  
-  
   #  Change NA in columns by an appropriate replacement
   message("\nReplacing NAs with appropriate values for ML...")
   
-  NA_columns <- c("polyA_motif", "within_CAGE_peak", 'n_indels', "n_indels_junc", 
+  NA_columns <- c("within_CAGE_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
                   "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polyA_site", 
                   "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist")
-  replacement.na <- c("No_polyA_motif", 0,0, 0, "non_coding",0, 0,0, FALSE, 
+  
+  replacement.na <- c(0, 0, 0, "non_coding",0, 0,0, FALSE, 
                       -11000, -11000, -11000, -11000, FALSE, -11000)
+  
   for (i in 1: length(NA_columns)) {
     sel.column <- which(colnames (d1) == NA_columns [i])
     d1[which(is.na(d1[,sel.column])), sel.column] <- replacement.na[i]
@@ -354,7 +351,7 @@ if (run_ML == TRUE) {
   message("\nHandling factor columns...")
   
   categorical <- c("FSM_class", "coding", "bite", "within_CAGE_peak", 
-                   "polyA_motif" , "within_polyA_site", "predicted_NMD")
+                   "polyA_motif_found" , "within_polyA_site", "predicted_NMD")
   for (x in categorical){
     d1[,x] <- as.factor(d1[,x])
   }
@@ -376,7 +373,7 @@ if (run_ML == TRUE) {
   nzv = caret::nearZeroVar(d1)
   if(length(colnames(d1)[nzv]) != 0){
     message("\tRemoved columns: ")
-    message(paste(colnames(d1)[nzv]))
+    print(paste(colnames(d1)[nzv]))
     d1 = d1[,-nzv]
   } else {
     message("\tNo variables with near-zero variance found.")}
@@ -428,7 +425,8 @@ if (run_ML == TRUE) {
   colRem_def = c('chrom','strand','associated_gene', 'associated_transcript', 
              'ref_length','ref_exons', 'ORF_length', 'CDS_length', 'CDS_start', 
              'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'all_canonical',
-             'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category')
+             'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category',
+             'polyA_motif')
   
   
   # If arg is present, add columns that were provided by --remove_columns
