@@ -11,7 +11,7 @@ The isoform is FSM, ISM, or NIC and (does not have intrapriming or has polyA_mot
 The isoform is NNC, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
 The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
 
-If the user wants to define new rules, it can define them in a JSON file following the same format used in the default_filter.json
+If the user wants to define new rules, it can define them in a JSON file following the same format used in the filter_default.json
 
 ML FILTER
 It will take as input the classification file obtained from SQANTI3 QC and apply a Random Forest algorithm to distinguish between "true" isoforms and artifacts.
@@ -31,9 +31,9 @@ from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 RSCRIPT_REPORT = 'SQANTI3_filter_report.R'
-RSCRIPT_ML = 'SQANTI3_MLfilter.R'
-RSCRIPT_RULES = 'SQANTI3_rules_filter.R'
-default_json = utilitiesPath + "/default_filter.json"
+RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
+RSCRIPT_RULES = 'filter/SQANTI3_rules_filter.R'
+default_json = utilitiesPath + "/filter/filter_default.json"
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -165,7 +165,7 @@ def main():
 
 ### Rules filter arguments
     rules = subparsers.add_parser('rules', parents=[common], description="Rules filter selected")
-    rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/default_filter.json')
+    rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/filter/filter_default.json')
 
 ### ML filter arguments
     ml = subparsers.add_parser('ML', parents=[common],  description='ML filter selected')
