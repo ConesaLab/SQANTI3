@@ -1,7 +1,7 @@
 #!/bin/bash Rscript
 
 ##########################################################
-#########     SQANTI3 MACHINE LEARNING FILTER    #########
+#############       SQANTI3 RULES FILTER      ############
 ##########################################################
 #
 # Authors: Francisco J. Pardo-Palacios
@@ -15,8 +15,9 @@
 # Filtering values will ALWAYS be in "positive", so the values set in the JSON will be the attributes that the filter will keep
 
 library(optparse)
-library(tidyverse)
 library(jsonlite)
+library(magrittr)
+library(dplyr)
 
 ### Define arguments
 option_list = list(

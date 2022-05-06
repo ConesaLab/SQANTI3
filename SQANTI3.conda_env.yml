@@ -54,7 +54,6 @@ dependencies:
   - r-stringr
   - r-tibble
   - r-tidyr
-  - r-tidyverse
   - samtools
   - scipy
   - star
