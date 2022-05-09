@@ -1,6 +1,6 @@
 generatePDFreport = function() 
   {
-  pdf(file=pdf.report.file, width = 6.5, height = 6.5)
+  pdf(file=pdf.report.file, width = 7.5, height = 6.5)
 
   #cover
   grid.newpage()
@@ -93,6 +93,13 @@ generatePDFreport = function()
   print(p5.s1)
   print(p5.s2)
   print(p5.s3)
+  print(pSTM)
+  print(pSTM_perc)
+  print(pSTM.s1)
+  print(pSTM_perc.s1)
+  print(pSTM.s2)
+  print(pSTM_perc.s2)
+
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
     if (!all(is.na(data.FSMISM$iso_exp))){
@@ -518,7 +525,7 @@ generatePDFreport = function()
   print(p28.a)
   
   if (!all(is.na(data.ratio$ratio_TSS))){
-    print(p28.a.ratio)
+    print(p28.a.ratio.pdf)
   }
   
   dev.off()
