@@ -1765,15 +1765,9 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
     }
   }
   
-<<<<<<< HEAD:utilities/report_qc/SQANTI3_report.R
   cage_hist_NNC=ggplot(data=subset(data.NNC, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
     geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3, fill=myPalette[4]) +
     #    scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
-=======
-  cage_hist_NNC=ggplot(data=subset(data.NNC, !is.na(dist_cage_Cat)), aes(x=dist_cage_Cat , fill=structural_category)) +
-    geom_bar(aes(alpha=within_cage_peak), color="black", size=0.3, fill=myPalette[4]) +
-    scale_y_continuous( expand = expansion(mult = c(0,0.1)) ) +
->>>>>>> master:utilities/SQANTI3_report.R
     mytheme  + theme(legend.position="bottom") +
     #    scale_x_discrete(limits = c(-50,50)) +
     scale_x_discrete(drop=F, labels=breaks_labels) +
