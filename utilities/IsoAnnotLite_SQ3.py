@@ -2,6 +2,7 @@
 
 import argparse
 import math
+from pickle import FALSE
 import sys
 import os
 import bisect
@@ -14,10 +15,12 @@ USE_STDOUT = False
 ALL_AS_NOVELS = False
 INTRONIC = True
 STATS = False
+SAVE_PROB_TRANSCRIPTS = False
 
-version = "2.7.1"
+version = "2.7.3"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
 CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
+
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
 LST_TRANSCRIPTSOURCES_INTRONIC = ["PAR-clip"]
 
@@ -752,7 +755,7 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
 
 def transformCDStoGenomic(dc_SQcoding, dc_SQexons, dc_SQstrand):
     #toTest
-    transInterest = "PB.14090.2" #a veces problemas con las posiciones de la CDS en el classification 
+    transInterest = "PB.14090.2" #sometimes we can found problems with CDS positions in classification file
     
     global verbose
     newdc_coding = {}
@@ -879,9 +882,9 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
 
     if dc_SQcoding.get(transSQ) and dc_GFF3coding.get(transGFF3): #both coding
         if not dc_SQcoding.get(transSQ)[0][0]=="NA":
-            #Tenemos rango de intervalos en los exones:
-            #   Si coinciden todos es coding
-            #   Si coinciden todos menos sub exons (inicio o final) es semicoding
+            #We already have intervale exons range
+            #   If all of them match, is coding
+            #   If all of them match except sub-exons (begining or end) is semi-coding
             allExonsGFF3 = dc_GFF3coding.get(transGFF3)
             
             if strand == "+":
@@ -934,15 +937,15 @@ def checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand):
 
 def checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end, strand):
     #toTest
-    transInterest = "PB.14090.2" #a veces problemas con las posiciones de la CDS en el classification 
+    transInterest = "PB.14090.2" #sometimes we can found problems with CDS positions in classification file
     startInterest = 166180380
     
     global verbose
     bstart = False
     if not dc_SQcoding.get(transSQ)[0]=="NA" and dc_SQcoding.get(transSQ) and dc_GFF3coding.get(transGFF3):
-        #Tenemos rango de intervalos en los exones:
-        #   Si coinciden todos es coding
-        #   Si coinciden todos menos sub exons (inicio o final) es semicoding
+        #We already have intervale exons range
+        #   If all of them match, is coding
+        #   If all of them match except sub-exons (begining or end) is semi-coding
         allExonsGFF3 = dc_GFF3coding.get(transGFF3)
         allExonsSQ = dc_SQcoding.get(transSQ)
 
@@ -984,7 +987,7 @@ def checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end
                             for exSQ in allExonsSQ: #we just need end subexon
                                 if exSQ[0] == ex[0] and end <= exSQ[1] and end >= exSQ[0]: #and feature in range
                                     if transSQ == transInterest and start == startInterest and verbose:
-                                        print("Encontrado")
+                                        print("Found")
                                     return True
                             return False #does not find the feture in same exon
                     elif end > ex[1]: #we have to check the next exon in list if this exon is equal to one in SQlist
@@ -1019,9 +1022,9 @@ def checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end
             if ex[0]<= start and start <= ex[1] and not bstart: #start in exon
                 if strand=="+":
                     if transSQ == transInterest and start == startInterest and verbose:
-                        print("Start encontrado:")
+                        print("Start found:")
                         print(start, ex)
-                        print("Y el final? " + str(end))
+                        print("Where is the end? " + str(end))
                     if ex[0] <= end and end <= ex[1]: #end in exon
                         if ex in allExonsSQ: #if exon exist
                             return True
@@ -1035,13 +1038,13 @@ def checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end
                         for exSQ in allExonsSQ:
                             if exSQ[0]<= start and start <= exSQ[1] and ex[1]==exSQ[1]: #it can start before but end in same place
                                 if transSQ == transInterest and start == startInterest and verbose:
-                                    print("Continuamos buscando en otro exon...")
+                                    print("Continue looking in next exon...")
                                 bstart = True
                 else: #negative strand
                     if transSQ == transInterest and start == startInterest and verbose:
-                        print("Start encontrado:")
+                        print("Start found:")
                         print(start, ex)
-                        print("Y el final? " + str(end))
+                        print("Where is the end? " + str(end))
                     if ex[0] <= end and end <= ex[1]: #end in exon
                         if ex in allExonsSQ: #if exon exist
                             return True
@@ -1055,7 +1058,7 @@ def checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, start, end
                         for exSQ in allExonsSQ:
                             if exSQ[0]<= start and start <= exSQ[1] and ex[0]==exSQ[0]: #it can start before but end in same place
                                 if transSQ == transInterest and start == startInterest and verbose:
-                                    print("Continuamos buscando en otro exon...")
+                                    print("Continue looking in next exon...")
                                 bstart = True
     return False
 
@@ -1064,9 +1067,9 @@ def transformGenomicToLocale(dc_SQcoding, transSQ, start, end, strand, PROT):
     global verbose
     bstart = False
     if not dc_SQcoding.get(transSQ)[0]=="NA" and dc_SQcoding.get(transSQ):
-        # Tenemos rango de intervalos en los exones:
-        #   Si coinciden todos es coding
-        #   Si coinciden todos menos sub exons (inicio o final) es semicoding
+        # We already have intervale exons range
+        #   If all of them match, is coding
+        #   If all of them match except sub-exons (begining or end) is semi-coding
         allExonsSQ = dc_SQcoding.get(transSQ)
 
         if strand == "+":
@@ -1160,7 +1163,7 @@ def transformGenomicToLocale(dc_SQcoding, transSQ, start, end, strand, PROT):
 
 def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, start, end, strand, dc_SQcoding, dc_GFF3coding):
     #toTest
-    transInterest = "" #a veces problemas con las posiciones de la CDS en el classification 
+    transInterest = "ENST00000486627" #sometimes we can found problems with CDS positions in classification file
     startInterest = 0
     global verbose
     bstart = False
@@ -1257,9 +1260,9 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
         return res
 
     if dc_SQexons.get(transSQ) and dc_GFF3transExons.get(transGFF3):
-        #Tenemos rango de intervalos en los exones:
-        #   Si coinciden todos es coding
-        #   Si coinciden todos menos sub exons (inicio o final) es semicoding
+        #We already have intervale exons range
+        #   If all of them match, is coding
+        #   If all of them match except sub-exons (begining or end) is semi-coding
         allExonsGFF3 = dc_GFF3transExons.get(transGFF3)
         allExonsSQ = dc_SQexons.get(transSQ)
         if strand == "+":
@@ -1272,7 +1275,7 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
             start = end
             end = a
 
-        #ya tenemos la posición en genómico, comprobar que entra dentro de SQ y ya
+        #we already have genomic position, just check is inside SQ trasncript exons
         for ex in allExonsGFF3:
             ##1
             if(transSQ==transInterest and start==startInterest and verbose):
@@ -1311,7 +1314,7 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
                             exSQ = ex_aux_sq
                             break
                     if(transSQ==transInterest and start==startInterest and verbose):
-                        print("stran negativo")
+                        print("strand negativo")
                         print("ini" + str(start) + " fin: " + str(end))
                         print(exSQ, ex)
                         print(ex[0] <= start and start <= ex[1])
@@ -1325,7 +1328,7 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
                         bstart = True
                     else: #different termination
                         break
-            ##2 exon final
+            ##2 final exon
             elif bstart and ex[0] <= end and end <= ex[1]: #End Annot in exon
                 if strand == "+":
                     exSQ = [0,0]
@@ -1363,7 +1366,7 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
                     else: #SQexon shorter
                         break
 
-            elif(bstart): #nos saltamos un exon completo que también debería estar presente en los exones del SQ
+            elif(bstart): #we jump a complete exon (that is also present in SQtrans)
                 found = False
                 for ex_aux_sq in allExonsSQ:
                     if(ex==ex_aux_sq):
@@ -1375,7 +1378,7 @@ def checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, 
                 else:
                     break
             else:
-                continue #si no start, seguimos buscando
+                continue #if start is not found, we keep looking
             
             if bnotMiddleExon:
                 break
@@ -1414,12 +1417,12 @@ def range_subset(range1, range2):
     return range1.start in range2 and range1[-1] in range2
 
 def addTranscriptWithAnnot(feature, transSQ, AnnotTranscriptCounts_dc, TotalTranscripts = False):
-    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+    #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
     hs_check = AnnotTranscriptCounts_dc.get(feature)[0] #annotated - hashmaps
     hs_checkTotal = AnnotTranscriptCounts_dc.get(feature)[1] #total - hashmaps
     
     if not TotalTranscripts:
-        # print("Añadir a la izquierda: " + transSQ + "con id" + feature)
+        # print("Add to the left: " + transSQ + "con id" + feature)
         # print(hs_check)
         if hs_check=={}:
             hs_check = {}
@@ -1431,7 +1434,7 @@ def addTranscriptWithAnnot(feature, transSQ, AnnotTranscriptCounts_dc, TotalTran
         # print("*****")
         # print(hs_check)
     else:
-        # print("Añadir a la derecha: " + transSQ + "con id" + feature)
+        # print("Add to the right: " + transSQ + "con id" + feature)
         # print(hs_checkTotal)
         if hs_checkTotal=={}:
             hs_checkTotal = {}
@@ -1447,7 +1450,7 @@ def addTranscriptWithAnnot(feature, transSQ, AnnotTranscriptCounts_dc, TotalTran
 
 #same for Features 
 def addFeatureWithAnnot(feature, key, AnnotFeatureCounts_dc, TotalFeatures = False):
-    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+    #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
     hs_check = AnnotFeatureCounts_dc.get(feature)[0] #annotated - hashmaps
     hs_checkTotal = AnnotFeatureCounts_dc.get(feature)[1] #total - hashmaps
     
@@ -1471,8 +1474,8 @@ def addFeatureWithAnnot(feature, key, AnnotFeatureCounts_dc, TotalFeatures = Fal
 
 def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3, dc_GFF3gene, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints):
     #toTest
-    transInterest = "PB.1879.12"
-    featureOfInterest = "Complex"
+    transInterest = "ENST00000486627"
+    featureOfInterest = "miRNA_Binding"
     global verbose
     global USE_STDOUT
     global LST_TRANSCRIPTFEATURES_NOTIN_CDS
@@ -1480,28 +1483,39 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     global ALL_AS_NOVELS
     global INTRONIC
     global STATS
+    global SAVE_PROB_TRANSCRIPTS
+
+    if SAVE_PROB_TRANSCRIPTS:
+        file_trans_not_annot_by_PF = open("file_trans_not_annot_by_PF.txt","w+")
+        file_novel_not_annot_by_PF = open("file_novel_not_annot_by_by_PF.txt","w+")
+        file_reference_gene_not_annot = open("file_reference_gene_not_annot.txt","w+")
+        file_reference_transcript_not_annot = open("file_reference_transcript_not_annot.txt","w+")
+        file_trans_not_gene_ID = open("file_transcript_wo_gene_ID.txt","w+")
 
     f = open(filename,"a+")
     print("\n")
+
+    realNewTrans = False
+
     novelTranscripts = 0
-    novelTranscriptsRecovered = 0
-    novelTranscriptsNotAnnotated = 0 #se puede sacar de novel-novelRecovered
+    novelTranscriptsAnnotated = 0
+    novelTranscriptsAnnotated_wo_features = 0
+    novelTranscriptsNotAnnotated = 0
+    novelTranscriptsNotGeneMatch = 0
     
     transcriptsAnnotated = 0
+    transcriptsAnnotated_wo_features = 0
     transcriptsNotAnnotated = 0
     transcriptsNotAnnotatedNotGeneInformation = 0
+    transcriptsNotGeneID = 0
 
-    totalAnotations = 0
     featuresAnnotated = 0
 
+    anotationsChecked = 0
     transcriptsChecked = 0
     perct = 0
 
-    countDomain = 0
-
-    transAnnot_dc = {}
-    protAnnot_dc = {}
-    geneAnnot_dc = {}
+    #countDomain = 0
 
     transAnnotTotal_dc = {}
     protAnnotTotal_dc = {}
@@ -1514,19 +1528,24 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     annotLines = [] #for novel transcripts
     
     for transSQ in dc_SQexons.keys():
-        transcriptFromReferenceWithNoAnnot = False
         transcriptsChecked = transcriptsChecked + 1
+        realNewTrans = False
         if ALL_AS_NOVELS:
             newTrans = True
         else:
             newTrans = False
+
         anyAnnot = False
         anyNovelAnnotation = False
-        checkingNovel = False
+        isNovel = False
+        referenceTransNoAnnot = True
+        referenceGeneNoAnnot = True
 
-        #Be carefully - not all tranSQ must be in SQtransGene [we do not have gene and trasncript related information]
+        #Be carefully - not all tranSQ must be in SQtransGene [we do not have gene and transcript related information]
         if not dc_SQtransGene.get(str(transSQ)):
-            transcriptsNotAnnotatedNotGeneInformation = transcriptsNotAnnotatedNotGeneInformation + 1
+            if SAVE_PROB_TRANSCRIPTS:
+                file_trans_not_gene_ID.write(transSQ + "\n")
+            transcriptsNotGeneID = transcriptsNotGeneID + 1
             continue
         
         perct = transcriptsChecked/len(dc_SQexons)*100
@@ -1538,35 +1557,42 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         #######################
         infoGenomic = dc_SQtransGene.get(transSQ)
         transGFF3 = infoGenomic[2] #transAssociated
+        geneSQ = infoGenomic[0] #gene
 
         ###########################
         #IF NOT FULL-SPLICED-MATCH#
         ###########################
         val = ""
 
-        if dc_GFF3.get(transGFF3): #dc_GFF3 key=gene
-            transcriptFromReferenceWithNoAnnot = True
-            val = dc_GFF3.get(transGFF3)
-        elif dc_GFF3.get(transSQ):
-            transcriptFromReferenceWithNoAnnot = True
+        if dc_GFF3.get(transSQ):
             transGFF3 = transSQ
             val = dc_GFF3.get(transGFF3)
+        elif dc_GFF3.get(transGFF3): #dc_GFF3 key=gene
+            val = dc_GFF3.get(transGFF3)
         elif(dc_GFF3transExons.get(transGFF3)): #if transcript have exons, is not novel, it means the reference have no annotations but can be annotated as a novel
-            transcriptFromReferenceWithNoAnnot = True
             newTrans = True
         else: #Novel Transcript won't be annoted
             newTrans = True
 
-        # if(transSQ==transInterest and verbose):
-        #     print(val)
-        #     print(newTrans)
-        #     print(transcriptFromReferenceWithNoAnnot)
+        if(dc_GFF3transGene.get(transSQ) or dc_GFF3transGene.get(transGFF3)):
+            realNewTrans = False #trans or reference trans exits in GFF3 (is not a novel transcript)
+        elif(dc_GFF3geneTrans.get(geneSQ)):
+            realNewTrans = True #gene exits in GFF3 (with or without annot)
+        else: #not transcript and not gene exists in GFF3, novel gene?
+            if SAVE_PROB_TRANSCRIPTS:
+                file_reference_gene_not_annot.write(transSQ + "\n")
+            novelTranscripts = novelTranscripts + 1
+            novelTranscriptsNotGeneMatch = novelTranscriptsNotGeneMatch + 1
+            continue
+
+        if(transSQ==transInterest and verbose):
+            print("First print:")
+            print(val)
+            print(newTrans)
+            print(referenceTransNoAnnot)
 
         if(newTrans==False):
-            line = val[0][2].split("\t")
             strand = dc_SQstrand.get(transSQ)
-            if transSQ == transInterest and verbose:
-                print(line)
             #Check if we had same CDS to add Protein information
             coding, semicoding = checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand)
 
@@ -1575,13 +1601,15 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 text = fields[8].split(" ")
                 if fields[1] == "tappAS":
                     continue
-                totalAnotations = totalAnotations + 1
+                anotationsChecked = anotationsChecked + 1
 
                 #################
                 #GENE ANNOTATION#
                 #################
                 if (text[-1].endswith("G\n") or text[-1].endswith("N\n")): #gene - always put if the gene is the same
                     
+                    referenceTransNoAnnot = False #exists at least one feature
+
                     #update total prot annotation
                     key = fields[2]+fields[3]+str(values[0])+str(values[1])+transSQ #miRNAmi-hsa-3p345234PB.2.2
 
@@ -1599,7 +1627,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         geneAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, geneAnnotTotal_dc, True)
                         geneAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, geneAnnotTranscriptCounts_dc, True)
 
-                    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                    #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                     geneAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, geneAnnotTranscriptCounts_dc, False)
                     geneAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, geneAnnotTotal_dc, False) #sum 1
 
@@ -1618,6 +1646,8 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 #PROTEIN ANNOTATION#
                 ####################
                 elif (text[-1].endswith("P\n")): #protein
+
+                    referenceTransNoAnnot = False #exists at least one feature
 
                     if(transGFF3==transInterest and fields[2] == featureOfInterest and verbose):
                         print("\n\nTrans:" + transSQ + " con feature: " + featureOfInterest)
@@ -1644,7 +1674,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         index = values[2].find("\t")
                         line_text = values[2].split("\t")
 
-                        #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                        #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                         protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                         protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
                         
@@ -1658,14 +1688,14 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
 
                     elif semicoding and not values[0]=="." and not values[1] == ".":
                         bannot = False
-                        #funcion match annot to its our CDSexons and match to CDSexonsSQ
+                        #function: match annot to its our CDSexons and match to CDSexonsSQ
                         bannot = checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, int(values[0]), int(values[1]), strand)
 
                         if bannot:
                             index = values[2].find("\t")
                             line_text = values[2].split("\t")
 
-                            #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                            #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                             protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                             protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
                         
@@ -1684,7 +1714,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         index = values[2].find("\t")
                         line_text = values[2].split("\t")
 
-                        #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                        #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                         protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                         protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
                         
@@ -1704,8 +1734,10 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 #######################
                 #TRANSCRIPT ANNOTATION#
                 #######################
-
                 elif not values[0]=="." and not values[1] == "." and text[-1].endswith("T\n"):
+
+                    referenceTransNoAnnot = False #exists at least one feature
+
                     #update total trans annotation
                     key = fields[2]+fields[3]+str(values[0])+str(values[1])+transSQ #miRNAmi-hsa-3p345234PB.2.2
                     if(not transAnnotTotal_dc.get(fields[2])):
@@ -1734,11 +1766,17 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                     else:
                         bannot = checkFeatureInTranscript(dc_SQexons, dc_GFF3transExons, transSQ, transGFF3, int(values[0]), int(values[1]), strand, dc_SQcoding, dc_GFF3coding)
 
+                    if transSQ == transInterest and verbose:
+                        print("Transcript Feature:")
+                        print(values)
+                        print(dc_SQexons)
+                        print(bannot)
+
                     if bannot:
                         index = values[2].find("\t")
                         line_text = values[2].split("\t")
 
-                        #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                        #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                         transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, False)
                         transAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, transAnnotTotal_dc, False)
 
@@ -1786,7 +1824,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, True)
 
 
-                    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                    #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                     transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, False)
                     transAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, transAnnotTotal_dc, False)
 
@@ -1808,13 +1846,13 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         print(fields)
 
         else: #new Transcript and we have to run possible matches for all transcripts of the gene
-            if(not transcriptFromReferenceWithNoAnnot):
-                novelTranscripts = novelTranscripts + 1 #real novelTranscript
+            if(realNewTrans):
+                novelTranscripts = novelTranscripts + 1 #real novelTranscript, can be here also by force novel transferred annotation
 
             gene = infoGenomic[0] #geneAssociated
             alternative_gene = ""
             anyNovelAnnotation = False
-            checkingNovel = True
+            isNovel = True
 
             l_gene = 0
             l_alternative_gene = 0
@@ -1822,7 +1860,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             # if verbose:
             #     print("Gene associated to map features is: " + gene)
             if len(gene) != 0:
-
                 if dc_geneID2geneName.get(gene):
                     alternative_gene = dc_geneID2geneName.get(gene)
                 elif dc_geneName2geneID.get(gene):
@@ -1872,6 +1909,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 print("\n")
 
             if dc_GFF3geneTrans.get(gene):
+                
                 for transGFF3 in dc_GFF3geneTrans.get(gene): #Each trans in GFF3 inside gene
 
                     if transSQ == transInterest and verbose:
@@ -1880,7 +1918,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                     if dc_GFF3.get(transGFF3):
                         val = dc_GFF3.get(transGFF3)
                     else:
-                        continue #no podemos usar el de estudio porque es novel
+                        continue #if we do not have values, next transcript
                     
                     line = val[0][2].split("\t")
                     strand = dc_SQstrand.get(transSQ)
@@ -1890,12 +1928,15 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         text = fields[8].split(" ")
                         if fields[1] == "tappAS":
                             continue
-                        totalAnotations = totalAnotations + 1
+                        anotationsChecked = anotationsChecked + 1
 
                         #################
                         #GENE ANNOTATION#
                         #################
                         if (text[-1].endswith("G\n") or text[-1].endswith("N\n")): #gene - always put if the gene is the same
+
+                            referenceGeneNoAnnot = False #exists at least one feature in one transcript with annot
+
                             #update total prot annotation
                             key = fields[2]+fields[3]+str(values[0])+str(values[1])+transSQ #miRNAmi-hsa-3p345234PB.2.2
                             if(not geneAnnotTotal_dc.get(fields[2])):
@@ -1912,12 +1953,13 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                                 geneAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, geneAnnotTotal_dc, True)
                                 geneAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, geneAnnotTranscriptCounts_dc, True)
 
-                            #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                            #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                             geneAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, geneAnnotTranscriptCounts_dc, False)
                             geneAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, geneAnnotTotal_dc, False)
 
                             featuresAnnotated = featuresAnnotated + 1
                             anyNovelAnnotation  = True
+
                             line_text = values[2].split("\t")
                             if values[2].endswith("\n"):
                                 new_line = '\t'.join(map(str, [transSQ, '\t'.join(map(str, line_text[1:3])), values[0], values[1], '\t'.join(map(str, line_text[5:]))]))
@@ -1929,6 +1971,8 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         #PROTEIN ANNOTATION#
                         ####################
                         elif (text[-1].endswith("P\n")): #protein
+
+                            referenceGeneNoAnnot = False #exists at least one feature in one transcript with annot
 
                             #Check if we had same CDS to add Protein information
                             coding, semicoding = checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand)
@@ -1960,7 +2004,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                             if coding:
                                 index = values[2].find("\t")
 
-                                #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                                #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                                 protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                                 protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
 
@@ -1996,7 +2040,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                                 if bannot:
                                     index = values[2].find("\t")
 
-                                    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                                    #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                                     protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                                     protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
 
@@ -2012,7 +2056,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                             elif semicoding and values[0]=="." and values[1] == ".":
                                 index = values[2].find("\t")
 
-                                #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                                #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                                 protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                                 protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
 
@@ -2030,6 +2074,9 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         #######################
 
                         elif not values[0]=="." and not values[1] == "." and text[-1].endswith("T\n"):
+
+                            referenceGeneNoAnnot = False #exists at least one feature in one transcript with annot
+
                             #update total trans annotation
                             key = fields[2]+fields[3]+str(values[0])+str(values[1])+transSQ #miRNAmi-hsa-3p345234PB.2.2
                             if(not transAnnotTotal_dc.get(fields[2])):
@@ -2062,28 +2109,28 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                             shouldAnnotate=True
 
                             if transSQ == transInterest and transGFF3=="NM_001081080.1"  and verbose:
-                                print("La anotacion es de transcrito:")
+                                print("Annotation for studied transcript:")
                                 print(val)
 
-                            if val[2] in LST_TRANSCRIPTFEATURES_NOTIN_CDS: #si la anotación no es de la CDS, comprobar que tenemos esas posiciones fuera de nuestra CDS
+                            if val[2] in LST_TRANSCRIPTFEATURES_NOTIN_CDS: #if annotation is not inside CDS, check we have that positions outside our CDS
                                 if(dc_SQcoding.get(transSQ)): 
                                     cdsExons = dc_SQcoding.get(transSQ)
                                     for ex in cdsExons:
-                                        if ex[0]=="NA": #si es coding con valores comprobamos 
+                                        if ex[0]=="NA": #if coding with values, check it 
                                             continue
-                                        elif(int(ex[0]) <= int(values[0]) <= int(ex[1]) or int(ex[0]) <= int(values[1]) <= int(ex[1])): #si la anotación dentro, entonces no podemos anotarla
+                                        elif(int(ex[0]) <= int(values[0]) <= int(ex[1]) or int(ex[0]) <= int(values[1]) <= int(ex[1])): #if the annotation is inside, we cannot annoted it
                                             shouldAnnotate = False
                                             break
 
                             if transSQ == transInterest and transGFF3=="NM_001081080.1" and verbose:
-                                print("Si es 3UTR intentamos anotar?" + str(shouldAnnotate))
+                                print("If it is a 3UTR feature, should we try to annot?" + str(shouldAnnotate))
                                 print("annotated: " + str(bannot))
 
                             if shouldAnnotate:
                                 if bannot:
                                     index = values[2].find("\t")
 
-                                    #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                                    #check if trans already in transAnnot - count transcripts just one time, if it is new them add it
                                     transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, False)
                                     transAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, transAnnotTotal_dc, False)
 
@@ -2116,7 +2163,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                                 transAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, transAnnotTotal_dc, True)
                                 transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, True)
 
-                            #check if trans already in transAnnot - contar solo los transcritos una vez, si nuevo entonces añadirlo
+                            #check if trans already in transAnnot - count transcripts just one time, if it is new them add it
                             transAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, transAnnotTranscriptCounts_dc, False)
                             transAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, transAnnotTotal_dc, False)
 
@@ -2138,31 +2185,41 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             # else: #gene not associated in novelTrascript
             #     if(verbose):
             #         print("Gene not associated with no-match in novel Transcript -- Gene " + gene + " con el trans" + transSQ)
-        
-        if(anyAnnot): #si reference transcript
-            transcriptsAnnotated = transcriptsAnnotated + 1
-        elif(anyNovelAnnotation): #si novelTranscript
-            if(not transcriptFromReferenceWithNoAnnot): #is a real novel
-                novelTranscriptsRecovered = novelTranscriptsRecovered + 1
-            else:
-                transcriptsAnnotated = transcriptsAnnotated + 1 #because comes from reference without annotation
 
-        elif(not anyNovelAnnotation and checkingNovel): #si no info en reference y es novel
-            if(not transcriptFromReferenceWithNoAnnot): #is a real novel
+        if(anyAnnot): #REFERENCE ANNOT
+            transcriptsAnnotated = transcriptsAnnotated + 1
+        elif(not realNewTrans):
+            if(referenceTransNoAnnot):
+                if SAVE_PROB_TRANSCRIPTS:
+                    file_reference_transcript_not_annot.write(transSQ + "\n")
+                transcriptsAnnotated_wo_features = transcriptsAnnotated_wo_features + 1 #transcript has not info to transfered, so mark as checked it
+            else:
+                if SAVE_PROB_TRANSCRIPTS:
+                    file_trans_not_annot_by_PF.write(transSQ + "\n")
+                transcriptsNotAnnotated = transcriptsNotAnnotated + 1 #by positional transference
+
+        elif(realNewTrans):
+            if(anyNovelAnnotation): #NOVEL ANNOT
+                #if(referenceGeneNoAnnot): #if novel annotated with another gene transcript
+                novelTranscriptsAnnotated = novelTranscriptsAnnotated + 1
+            elif(referenceGeneNoAnnot):
+                if SAVE_PROB_TRANSCRIPTS:
+                    file_reference_gene_not_annot.write(transSQ + "\n")
+                novelTranscriptsAnnotated_wo_features = novelTranscriptsAnnotated_wo_features + 1 #transcript has not info to transfered, so mark as checked it
+            else: #features exits in gene
+                if SAVE_PROB_TRANSCRIPTS:
+                    file_novel_not_annot_by_PF.write(transSQ + "\n")
                 novelTranscriptsNotAnnotated = novelTranscriptsNotAnnotated + 1
-            else:
-                transcriptsNotAnnotatedNotGeneInformation = transcriptsNotAnnotatedNotGeneInformation +1
-        elif(not checkingNovel and not anyNovelAnnotation):
-            transcriptsNotAnnotatedNotGeneInformation = transcriptsNotAnnotatedNotGeneInformation +1
-        else: #no hay ninguna anotación en el GFF3 por lo que el transcrito no es que no se anote, sino que no puede anotarse  
-            transcriptsAnnotated = transcriptsAnnotated + 1
 
-    #new dictionary to remove duplicates
+    # new dictionary to remove duplicates
     realAnnotLines = {}
     annotInterest = ""
     for annot in annotLines:
         annot_aux = annot.split("\t")
-        text_annot = str(annot_aux[0:5])
+        extra_info = ""
+        if annot_aux[1] == "GeneOntology":
+            extra_info = str(annot_aux[8].split(";")[0])
+        text_annot = str(annot_aux[0:7]) + extra_info #check also attribute field
         # if annot_aux[0] == transInterest and verbose:
         #     if annot_aux[2] == "3UTRmotif":
         #         annotInterest = text_annot
@@ -2173,7 +2230,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         if(not realAnnotLines.get(text_annot)):
             realAnnotLines.update({str(text_annot) : annot})
 
-    #get prot annotation
+    # get prot annotation
     # we have to be aware in proteins because can appear domains that include smaller domains
     checkProteinAnnot = {}
     for annot in realAnnotLines.keys():
@@ -2224,43 +2281,74 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
 
     f.close()
 
+    if SAVE_PROB_TRANSCRIPTS:
+        file_novel_not_annot_by_PF.close()
+        file_reference_gene_not_annot.close()
+        file_reference_transcript_not_annot.close()
+
     print("\n\n")
 
     #statistics
+    # transcriptsAnnotated
+    # transcriptsAnnotated_wo_features
+    # transcriptsNotAnnotated
+
+    # novelTranscriptsAnnotated
+    # novelTranscriptsAnnotated_wo_features
+    # novelTranscriptsNotAnnotated
+    # transcriptsNotGeneID
+    
+    #TRANS_REFERENCE
     totalTranscripts = len(dc_SQexons)
+
     perctAnnotedMatchID = round((transcriptsAnnotated/totalTranscripts*100),2)
     annotedMatchID = transcriptsAnnotated
 
+    perctAnnotedMatchID_wo_features = round((transcriptsAnnotated_wo_features/totalTranscripts*100),2)
+    annotedMatchID_wo_features = transcriptsAnnotated_wo_features
+
+    percTranscriptsNotAnnotated = round((transcriptsNotAnnotated/totalTranscripts*100),2)
+
+    #NOVEL_TRANS
     percNovelTranscripts = round((novelTranscripts/totalTranscripts*100),2)
-    percNovelTranscriptsRecovered = round((novelTranscriptsRecovered/totalTranscripts*100),2)
+
+    percnovelTranscriptsAnnotated = round((novelTranscriptsAnnotated/totalTranscripts*100),2)
+    percnovelTranscripts_wo_features = round((novelTranscriptsAnnotated_wo_features/totalTranscripts*100),2)
     percNovelTranscriptsNotAnnotated = round((novelTranscriptsNotAnnotated/totalTranscripts*100),2)
+    percnovelTranscripts_no_gene_name = round((transcriptsNotGeneID/totalTranscripts*100),2)
+    percnovelTranscripts_no_gene_match = round((novelTranscriptsNotGeneMatch/totalTranscripts*100),2)
+    
     
     percTranscriptsAnnotated = round((transcriptsAnnotated/totalTranscripts*100),2)
-    percTranscriptsNotAnnotated = round((transcriptsNotAnnotated/totalTranscripts*100),2)
     percTranscriptsNotAnnotatedNotGeneInformation = round((transcriptsNotAnnotatedNotGeneInformation/totalTranscripts*100),2)
 
     if(verbose):
-        print(novelTranscripts, novelTranscriptsRecovered, novelTranscriptsNotAnnotated, transcriptsAnnotated, transcriptsNotAnnotated, transcriptsNotAnnotatedNotGeneInformation)
+        print(novelTranscripts, novelTranscriptsAnnotated, novelTranscriptsNotAnnotated, transcriptsAnnotated, transcriptsNotAnnotated, transcriptsNotAnnotatedNotGeneInformation)
     
     transcriptSection = "\tTRANSCRIPT-LEVEL SUMMARY\n"
-    m1 = "\t\t·A total of " + "%.2f" % perctAnnotedMatchID + " % of transcripts in the GTF target annotation file (" + str(annotedMatchID) + " of " + str(totalTranscripts) + ") were annotated because they matched a transcript ID in the GFF3 source annotation file (SQANTI FSM and ISM)."
-    m2 = "\t\t·A total of " + "%.2f" % percNovelTranscripts + " % of transcripts in the GTF target annotation file (" + str(novelTranscripts) + " of " + str(totalTranscripts) + ") do not match any of the transcript IDs in the GFF3 file (SQANTI novel transcripts)."
     
-    if novelTranscripts == 0:
-        percNovelRecoveredRespectTotalNovels = 0
-    else:
-        percNovelRecoveredRespectTotalNovels = round(novelTranscriptsRecovered/novelTranscripts*100,2)
-    m3 = "\t\t\t·%.2f" % percNovelRecoveredRespectTotalNovels + " % of them (" + str(novelTranscriptsRecovered) + " of " + str(novelTranscripts) + ") were annotated by positional feature transference."
+    info_transAnnot = "\t\t·A total of " + "%.2f" % perctAnnotedMatchID + " % of transcripts in the GTF target annotation file (" + str(annotedMatchID) + " of " + str(totalTranscripts) + ") were annotated because they matched a transcript ID in the GFF3 source annotation file (SQANTI FSM and ISM)."
+    info_transAnnot_wo_features = "\t\t·A total of " + "%.2f" % perctAnnotedMatchID_wo_features + " % of transcripts in the GTF target annotation file (" + str(transcriptsAnnotated_wo_features) + " of " + str(totalTranscripts) + ") were not annotated because reference has no annotations."
+    info_transAnnot_notAnnot = "\t\t·A total of " + "%.2f" % percTranscriptsNotAnnotated + " % of transcripts in the GTF target annotation file (" + str(transcriptsNotAnnotated) + " of " + str(totalTranscripts) + ") were not annotated by positional feature transference."
     
-    m4 = "\t\t\t·Annotated novel transcripts represent " + "%.2f" % percNovelTranscriptsRecovered + " % (" + str(novelTranscriptsRecovered)  + " of " + str(totalTranscripts) + ") of transcript from the GTF target annotation file."
+    info_novelTrans = "\n\t\t·A total of " + "%.2f" % percNovelTranscripts + " % of transcripts in the GTF target annotation file (" + str(novelTranscripts) + " of " + str(totalTranscripts) + ") do not match any of the transcript IDs in the GFF3 file (SQANTI novel transcripts)."
     
-    globalTranscripts = "\n\t\tGlobal statistics:"
-    perctTotalAnnotated = round(((transcriptsAnnotated+novelTranscriptsRecovered)/totalTranscripts*100),2)
-    m5 = "\t\t·A total of " + "%.2f" % perctTotalAnnotated + " % of transcripts in the GTF target annotation file (" + str(int(transcriptsAnnotated+novelTranscriptsRecovered))  + " of " + str(totalTranscripts) + ") were annotated (at least one feature transferred)."
+    info_novelTransAnnot = "\t\t\t·A total of " + "%.2f" % percnovelTranscriptsAnnotated + " % novel transcripts (" + str(novelTranscriptsAnnotated) + " of " + str(totalTranscripts) + ") were annotated by positional feature transference."
+    info_novelTransAnnot_wo_features = "\t\t\t·A total of " + "%.2f" % percnovelTranscripts_wo_features + " % of novel transcripts in the GTF target annotation file (" + str(novelTranscriptsAnnotated_wo_features) + " of " + str(totalTranscripts) + ") were not annotated because reference gene has no annotations in any transcript."
+    info_novelTransAnnot_notAnnot = "\t\t\t·A total of " + "%.2f" % percNovelTranscriptsNotAnnotated + " % of novel transcripts (" + str(novelTranscriptsNotAnnotated) + " of " + str(totalTranscripts) + ") were not annotated by any positional feature."
+    info_novelTransAnnot_noGeneName = "\t\t\t·A total of " + "%.2f" % percnovelTranscripts_no_gene_name + " % of novel transcripts in the GTF target annotation file (" + str(transcriptsNotGeneID) + " of " + str(totalTranscripts) + ") were not annotated because no gene name was returned by SQANTI output."
+    info_novelTransAnnot_noGeneMatch = "\t\t\t·A total of " + "%.2f" % percnovelTranscripts_no_gene_match + " % of novel transcripts in the GTF target annotation file (" + str(novelTranscriptsNotGeneMatch) + " of " + str(totalTranscripts) + ") were not annotated because gene ID was not found in GFF3 source annotation file."
 
-    m6 = "\t\t·Did not annotate " + "%.2f" % percTranscriptsNotAnnotatedNotGeneInformation + " % of transcripts (" + str(transcriptsNotAnnotatedNotGeneInformation) + ") because they do not have gene information in GFF3 source annotation file."
-    m6_2 = "\t\t·Did not annotate " + "%.2f" % percTranscriptsNotAnnotated + " % of transcripts (" + str(transcriptsNotAnnotated) + ") because no annotations were retrieved by positional feature transference."
-    m6_3 = "\t\t·Did not annotate " + "%.2f" % percNovelTranscriptsNotAnnotated + " % of transcripts (" + str(novelTranscriptsNotAnnotated) + ") because they were novel and no annotations were retrieved by positional feature transference."
+    globalTranscripts = "\n\t\tGlobal statistics:\n"
+
+    perctTotalAnnotated = round(((transcriptsAnnotated+novelTranscriptsAnnotated)/totalTranscripts*100),2)
+    total_transcripts_annotated = "\t\t·A total of " + "%.2f" % perctTotalAnnotated + " % of transcripts in the GTF target annotation file (" + str(int(transcriptsAnnotated+novelTranscriptsAnnotated))  + " of " + str(totalTranscripts) + ") were annotated (at least one feature transferred)."
+    perctTotalNotAnnotated_no_features = round(((transcriptsAnnotated_wo_features+novelTranscriptsAnnotated_wo_features)/totalTranscripts*100),2)
+    total_transcripts_wo_features = "\t\t·Did not annotate " + "%.2f" % perctTotalNotAnnotated_no_features + " % of transcripts (" + str(transcriptsAnnotated_wo_features + novelTranscriptsAnnotated_wo_features) + " of " + str(totalTranscripts) +  + ") because reference matches have not annotation to transferred."
+    perctTotalNotAnnotated_no_pf = round(((transcriptsNotAnnotated+novelTranscriptsNotAnnotated)/totalTranscripts*100),2)
+    total_transcripts_no_pf = "\t\t·Did not annotate " + "%.2f" % perctTotalNotAnnotated_no_pf + " % of transcripts (" + str(transcriptsNotAnnotated + novelTranscriptsNotAnnotated) + " of " + str(totalTranscripts) +  + ") because no annotations were retrieved by positional feature transference with an existing TRANSCRIPT or GENE reference."
+    total_transcripts_no_gene_name = "\t\t·Did not annotate " + "%.2f" % percnovelTranscripts_no_gene_name + " % of transcripts (" + str(transcriptsNotGeneID) + " of " + str(totalTranscripts) +  + ") because no gene name was returned by SQANTI output."
+    total_transcripts_no_gene_match = "\t\t·Did not annotate " + "%.2f" % percnovelTranscripts_no_gene_match + " % of transcripts (" + str(novelTranscriptsNotGeneMatch) + " of " + str(totalTranscripts) +  + ") because gene ID was not found in GFF3 source annotation file."
 
     featureTransferenceSection = "\n\n\tFEATURE-TRANSFERENCE SUMMARY"
     transfTrans = ""
@@ -2311,7 +2399,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             realTotalFeaturesChecked = realTotalFeaturesChecked + len(geneAnnotTotal_dc.get(feat)[1].keys())
 
     anyNotAnnotated = False
-    if(transcriptsNotAnnotatedNotGeneInformation!=0):
+    if((transcriptsNotAnnotated + novelTranscriptsNotAnnotated) > 0):
         anyNotAnnotated = True
     
     anyNovel = False
@@ -2327,23 +2415,24 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         anyTransWithoutFeatures = True
 
     print(transcriptSection)
-    print(m1)
+    print(info_transAnnot)
+    print(info_transAnnot_wo_features)
+    print(info_transAnnot_notAnnot)
     if(anyNovel):
-        print(m2)
-        print(m3)
-        print(m4)
+        print(info_novelTrans)
+        print(info_novelTransAnnot)
+        print(info_novelTransAnnot_wo_features)
+        print(info_novelTransAnnot_notAnnot)
+        print(info_novelTransAnnot_noGeneName)
+        print(info_novelTransAnnot_noGeneMatch)
 
     print(globalTranscripts)
-    print(m5)
+    print(total_transcripts_annotated)
     if(anyNotAnnotated):
-        print(m6)
-
-    if(anyTransWithoutFeatures): #not annotated
-        print(m6_2)
-
-    if(anyNovelNotAnnot):
-        print(m6_3)
-
+        print(total_transcripts_wo_features)
+        print(total_transcripts_no_pf)
+        print(total_transcripts_no_gene_match)
+    
     if(percTranscriptsAnnotated!=0):
         #Transference section
         print(featureTransferenceSection)
@@ -2373,10 +2462,10 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             print(m9)
             print(mGene)
 
-            # if(totalAnotations==0):
+            # if(anotationsChecked==0):
             #     perct_annot = 0
             # else:
-            #     perct_annot = featuresAnnotated/totalAnotations*100
+            #     perct_annot = featuresAnnotated/anotationsChecked*100
 
             if(realTotalFeaturesChecked==0):
                 perct_annotReal = 0
@@ -2384,7 +2473,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 perct_annotReal = round(realFeaturesAnnoted/realTotalFeaturesChecked*100,2)
 
             globalFeatures = "\t\tGlobal statistics:"
-            m10 = "\t\t·Annotated a total of " + "%.2f" % perct_annotReal + " % (" + str(realFeaturesAnnoted) + " of " + str(realTotalFeaturesChecked) + ") of features from the reference GFF3 file for the study transcripts."
+            m10 = "\t\t·Annotated a total of " + "%.2f" % perct_annotReal + " % (" + str(realFeaturesAnnoted) + " of " + str(realTotalFeaturesChecked) + ") features from the reference GFF3 file for the study transcripts."
             print(globalFeatures)
             print(m10 + "\n\n")
 
@@ -2396,18 +2485,21 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     if USE_STDOUT:
         f = open(filename_prints, "w")
         f.write(transcriptSection)
-        f.write("\n" + m1 + "\n")
-        f.write(m2 + "\n")
-        f.write(m3 + "\n")
-        f.write(m4 + "\n")
+        f.write("\n" + info_transAnnot + "\n")
+        f.write(info_transAnnot_wo_features + "\n")
+        f.write(info_transAnnot_notAnnot + "\n")
+        f.write(info_novelTrans + "\n")
+        f.write(info_novelTransAnnot + "\n")
+        f.write(info_novelTransAnnot_notAnnot + "\n")
+        f.write(info_novelTransAnnot_noGeneName + "\n")
+        f.write(info_novelTransAnnot_noGeneMatch + "\n")
         f.write(globalTranscripts)
-        f.write(m5)
+        f.write(total_transcripts_annotated + "\n")
         if(anyNotAnnotated):
-            f.write("\n" + m6)
-        if(anyNovelNotAnnot): #not annotated
-            f.write("\n" + m6_2)
-        if(anyTransWithoutFeatures):
-            f.write("\n" + m6_3)
+            f.write(total_transcripts_wo_features + "\n")
+            f.write(total_transcripts_no_pf + "\n")
+            f.write(total_transcripts_no_gene_name + "\n")
+            f.write(total_transcripts_no_gene_match + "\n")
 
         if(percTranscriptsAnnotated!=0):
             #transference
@@ -2705,7 +2797,7 @@ def updateGTF(filename, filenameMod):
                                 #break
 
                         else:
-                            print("IsoAnnotLite can not identify the source " + str(fields[1]) + ", in line:\n" + line + "\nUSing N type to annotate.")
+                            print("IsoAnnotLite can not identify the source " + str(fields[1]) + ", in line:\n" + line + "\nUsing N type to annotate. You should edit method 'updateGTF' and add your feature type following the same structure than the other features.")
                             addPosType(res, line, "N")
                             #break
 
@@ -2886,6 +2978,7 @@ def main():
     global ALL_AS_NOVELS
     global INTRONIC
     global STATS
+    global SAVE_PROB_TRANSCRIPTS
     global version
     global verbose
     #arguments
@@ -2899,6 +2992,7 @@ def main():
     parser.add_argument('-novel', help='\t\Annotate transcripts using all gene information instead using only the transcript of reference (just for transcripts with reference).', required = False, action='store_true')
     parser.add_argument('-nointronic', help='\t\Do not annotate intronic features.', required = False, action='store_true')
     parser.add_argument('-statistics', help='\t\Show Feature Level Summary (statistics) [currently not used, by default we show all the statistics results].', required = False, action='store_true')
+    parser.add_argument('-saveTranscriptIDs', help='\t\Save problematic transcript IDs in five different files. Transcripts not annotated by positional transference ("file_trans_not_annot_by_PF.txt"). Novel transcripts not annotated by positional transference ("file_novel_not_annot_by_by_PF.txt"). SQ3 reference gene not found in GFF3 annotation ("file_reference_gene_not_annot.txt"). Transcripts not annotated because any features were found in GFF3 annotation ("file_reference_transcript_not_annot.txt"). SQ reference gene field is empty ("file_transcript_wo_gene_ID.txt").', required = False, action='store_true')
 
     args = parser.parse_args()
 
@@ -2951,6 +3045,11 @@ def main():
         STATS = True
     else: 
         STATS = True #works perfectly
+
+    if args.saveTranscriptIDs:
+        SAVE_PROB_TRANSCRIPTS = True
+    else:
+        SAVE_PROB_TRANSCRIPTS = False
 
     # Running functionality
     if ALL_AS_NOVELS:
@@ -3036,7 +3135,7 @@ def run(args):
         print("Generating Transcriptome per each gene...") #dc_GFF3_Genomic
         dc_GFF3Gene_Genomic = getTranscriptomePerGene(dc_SQgeneTrans, dc_GFF3_Genomic) # {gene : [[start,end,line], [start,end,line], ...]}
 
-        print("Mapping transcript features betweeen GFFs...")
+        print("Mapping transcript features between GFFs...")
         mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3_Genomic, dc_GFF3Gene_Genomic, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints) #edit tappAS_annotation_from_Sqanti file
         #dc_geneID2geneName, dc_geneName2geneID
 
