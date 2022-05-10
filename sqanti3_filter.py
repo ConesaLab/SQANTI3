@@ -7,9 +7,9 @@ New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-L
 
 RULES FILTER --> Now it can work with a JSON filter
 By default, it will only keep Iso-Seq isoforms if:
-The isoform is FSM, ISM, or NIC and (does not have intrapriming or has polyA_motif)
-The isoform is NNC, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
-The isoform is antisense, intergenic, genic, does not have intrapriming/or polyA motif, not RT-switching, and all junctions are either all canonical or short-read-supported
+The isoform is FSM and does not have intrapriming.
+The isoform is ISM, NIC or NNC, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
+The isoform is antisense, intergenic, genic, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
 
 If the user wants to define new rules, it can define them in a JSON file following the same format used in the filter_default.json
 
