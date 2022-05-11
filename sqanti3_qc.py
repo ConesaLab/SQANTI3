@@ -116,12 +116,12 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'FSM_class',   'coding', 'ORF_length', 'CDS_length', 'CDS_start',
                 'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'predicted_NMD',
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
-                'dist_to_cage_peak', 'within_cage_peak',
-                'dist_to_polya_site', 'within_polya_site',
-                'polyA_motif', 'polyA_dist', 'ORF_seq', 'ratio_TSS']
+                'dist_to_CAGE_peak', 'within_CAGE_peak',
+                'dist_to_polyA_site', 'within_polyA_site',
+                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
-RSCRIPT_REPORT = 'SQANTI3_report.R'
+RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -229,9 +229,10 @@ class myQueryTranscripts:
                  q_splicesite_hit = 0,
                  q_exon_overlap = 0,
                  FSM_class = None, percAdownTTS = None, seqAdownTTS=None,
-                 dist_cage='NA', within_cage='NA',
-                 dist_polya_site='NA', within_polya_site='NA',
-                 polyA_motif='NA', polyA_dist='NA', ratio_TSS='NA'):
+                 dist_CAGE='NA', within_CAGE='NA',
+                 dist_polyA_site='NA', within_polyA_site='NA',
+                 polyA_motif='NA', polyA_dist='NA',
+                 polyA_motif_found='NA', ratio_TSS='NA'):
 
         self.id  = id
         self.tss_diff    = tss_diff   # distance to TSS of best matching ref
@@ -278,12 +279,13 @@ class myQueryTranscripts:
         self.bite        = bite
         self.percAdownTTS = percAdownTTS
         self.seqAdownTTS  = seqAdownTTS
-        self.dist_cage   = dist_cage
-        self.within_cage = within_cage
-        self.within_polya_site = within_polya_site
-        self.dist_polya_site   = dist_polya_site    # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_CAGE   = dist_CAGE
+        self.within_CAGE = within_CAGE
+        self.within_polyA_site = within_polyA_site
+        self.dist_polyA_site   = dist_polyA_site    # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
         self.polyA_dist  = polyA_dist               # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
         self.ratio_TSS = ratio_TSS
 
     def get_total_diff(self):
@@ -331,12 +333,12 @@ class myQueryTranscripts:
                                                                                                                                                            str(self.CDS_genomic_start), str(self.CDS_genomic_end), str(self.is_NMD),
                                                                                                                                                            str(self.percAdownTTS),
                                                                                                                                                            str(self.seqAdownTTS),
-                                                                                                                                                           str(self.dist_cage),
-                                                                                                                                                           str(self.within_cage),
-                                                                                                                                                           str(self.dist_polya_site),
-                                                                                                                                                           str(self.within_polya_site),
+                                                                                                                                                           str(self.dist_CAGE),
+                                                                                                                                                           str(self.within_CAGE),
+                                                                                                                                                           str(self.dist_polyA_site),
+                                                                                                                                                           str(self.within_polyA_site),
                                                                                                                                                            str(self.polyA_motif),
-                                                                                                                                                           str(self.polyA_dist), str(self.ratio_TSS))
+                                                                                                                                                           str(self.polyA_dist),str(self.polyA_motif_found), str(self.ratio_TSS))
 
 
     def as_dict(self):
@@ -380,12 +382,13 @@ class myQueryTranscripts:
          'predicted_NMD': self.is_NMD,
          'perc_A_downstream_TTS': self.percAdownTTS,
          'seq_A_downstream_TTS': self.seqAdownTTS,
-         'dist_to_cage_peak': self.dist_cage,
-         'within_cage_peak': self.within_cage,
-         'dist_to_polya_site': self.dist_polya_site,
-         'within_polya_site': self.within_polya_site,
+         'dist_to_CAGE_peak': self.dist_CAGE,
+         'within_CAGE_peak': self.within_CAGE,
+         'dist_to_polyA_site': self.dist_polyA_site,
+         'within_polyA_site': self.within_polyA_site,
          'polyA_motif': self.polyA_motif,
          'polyA_dist': self.polyA_dist,
+         'polyA_motif_found':self.polyA_motif_found,
          'ratio_TSS' : self.ratio_TSS
          }
         for sample,count in self.FL_dict.items():
@@ -977,7 +980,7 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
 
         if len(hits_by_gene) == 0: return isoform_hit
 
-        for ref_gene in hits_by_gene:
+        for ref_gene in sorted(hits_by_gene):
             isoform_hit = myQueryTranscripts(id=trec.id, tts_diff="NA", tss_diff="NA", \
                                              num_exons=trec.exonCount,
                                              length=trec.length,
@@ -1534,9 +1537,9 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             bams = None
             ratio_TSS_dict = None
 
-    if args.cage_peak is not None:
+    if args.CAGE_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)
-        cage_peak_obj = CAGEPeak(args.cage_peak)
+        cage_peak_obj = CAGEPeak(args.CAGE_peak)
     else:
         cage_peak_obj = None
 
@@ -1610,29 +1613,30 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             # look at Cage Peak info (if available)
             if cage_peak_obj is not None:
                 if rec.strand == '+':
-                    within_cage, dist_cage = cage_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                    within_CAGE, dist_CAGE = cage_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
                 else:
-                    within_cage, dist_cage = cage_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
-                isoform_hit.within_cage = within_cage
-                isoform_hit.dist_cage = dist_cage
+                    within_CAGE, dist_CAGE = cage_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
+                isoform_hit.within_CAGE = within_CAGE
+                isoform_hit.dist_CAGE = dist_CAGE
 
             # look at PolyA Peak info (if available)
             if polya_peak_obj is not None:
                 if rec.strand == '+':
-                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
+                    within_polyA_site, dist_polyA_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
                 else:
-                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
-                isoform_hit.within_polya_site = within_polya_site
-                isoform_hit.dist_polya_site = dist_polya_site
+                    within_polyA_site, dist_polyA_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                isoform_hit.within_polyA_site = within_polyA_site
+                isoform_hit.dist_polyA_site = dist_polyA_site
 
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
             if polyA_motif_list is not None:
                 if rec.strand == '+':
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
                 else:
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
                 isoform_hit.polyA_motif = polyA_motif
                 isoform_hit.polyA_dist = polyA_dist
+                isoform_hit.polyA_motif_found = polyA_motif_found
 
             # Fill in ORF/coding info and NMD detection
             if args.is_fusion:
@@ -1726,8 +1730,8 @@ def find_polyA_motif(genome_seq, polyA_motif_list):
     for motif in polyA_motif_list:
         i = genome_seq.find(motif)
         if i >= 0:
-            return motif, -(len(genome_seq)-i-len(motif)+1)
-    return 'NA', 'NA'
+            return motif, -(len(genome_seq)-i-len(motif)+1), 'TRUE'
+    return 'NA', 'NA', 'FALSE'
 
 def FLcount_parser(fl_count_filename):
     """
@@ -2308,7 +2312,7 @@ def main():
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
     parser.add_argument("--force_id_ignore", action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2')
-    parser.add_argument('--cage_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
+    parser.add_argument('--CAGE_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
     parser.add_argument("--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)")
     parser.add_argument("--polyA_peak", help='\t\tPolyA Peak (BED format, optional)')
     parser.add_argument("--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)")
@@ -2433,7 +2437,7 @@ def main():
         f.write("FLCount\t" + (os.path.basename(args.fl_count) if args.fl_count is not None else "NA") + "\n")
         f.write("Expression\t" + (os.path.basename(args.expression) if args.expression is not None else "NA") + "\n")
         f.write("Junction\t" + (os.path.basename(args.coverage) if args.coverage is not None else "NA") + "\n")
-        f.write("CagePeak\t" + (os.path.basename(args.cage_peak)  if args.cage_peak is not None else "NA") + "\n")
+        f.write("CagePeak\t" + (os.path.basename(args.CAGE_peak)  if args.CAGE_peak is not None else "NA") + "\n")
         f.write("PolyA\t" + (os.path.basename(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
         f.write("PolyAPeak\t" + (os.path.basename(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
         f.write("IsFusion\t" + str(args.is_fusion) + "\n")

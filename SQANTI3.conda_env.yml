@@ -11,6 +11,7 @@ dependencies:
   - biopython
   - bioconductor-noiseq
   - bx-python
+  - cython
   - desalt
   - gffread
   - gmap
@@ -20,25 +21,39 @@ dependencies:
   - openssl
   - pandoc
   - perl
+  - pip
   - psutil
   - pybedtools
   - pysam
   - python>=3.7.6
   - r>=3.6.0
   - r-biocmanager
+  - r-caret
   - r-dplyr
+  - r-dt
+  - r-devtools
+  - r-e1071
+  - r-forcats
   - r-ggplot2
   - r-ggplotify
   - r-gridbase
   - r-gridextra
   - r-htmltools
-  - r-reshape
-  - r-scales
-  - r-rmarkdown
-  - r-stringi
-  - r-dt
+  - r-jsonlite
+  - r-optparse
   - r-plotly
   - r-plyr
+  - r-pROC
+  - r-purrr
+  - r-rmarkdown
+  - r-reshape
+  - r-readr
+  - r-randomForest
+  - r-scales
+  - r-stringi
+  - r-stringr
+  - r-tibble
+  - r-tidyr
   - samtools
   - scipy
   - star

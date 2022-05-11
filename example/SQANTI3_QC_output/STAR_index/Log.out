@@ -1,0 +1,63 @@
+STAR version=2.7.9a
+STAR compilation time,server,dir=2021-05-04T09:43:56-0400 vega:/home/dobin/data/STAR/STARcode/STAR.master/source
+##### Command Line:
+STAR --runThreadN 8 --runMode genomeGenerate --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/ --genomeFastaFiles /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta
+##### Initial USER parameters from Command Line:
+###### All USER parameters from Command Line:
+runThreadN                    8     ~RE-DEFINED
+runMode                       genomeGenerate        ~RE-DEFINED
+genomeDir                     /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/     ~RE-DEFINED
+genomeFastaFiles              /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runMode                           genomeGenerate   
+runThreadN                        8
+genomeDir                         /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/
+genomeFastaFiles                  /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta   
+
+-------------------------------
+##### Final effective command line:
+STAR   --runMode genomeGenerate      --runThreadN 8   --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/   --genomeFastaFiles /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta   
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+--genomeDir directory exists and will be overwritten: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/
+Jul 01 11:19:57 ... starting to generate Genome files
+/blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
+Chromosome sequence lengths: 
+chr22	50818468
+Genome sequence total length = 50818468
+Genome size with padding = 50855936
+!!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=50818468, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 11
+Estimated genome size with padding and SJs: total=genome+SJ=251855936 = 50855936 + 201000000
+GstrandBit=32
+Number of SA indices: 78319554
+Jul 01 11:20:01 ... starting to sort Suffix Array. This may take a long time...
+Number of chunks: 8;   chunks size limit: 89508056 bytes
+Jul 01 11:20:01 ... sorting Suffix Array chunks and saving them to disk...
+Writing 11867832 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_7 ; empty space on disk = 1525347963187200 bytes ... done
+Writing 85824624 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_6 ; empty space on disk = 1525348512608256 bytes ...Writing 86740560 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_4 ; empty space on disk = 1525348512608256 bytes ...Writing 87922664 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_5 ; empty space on disk = 1525348512608256 bytes ...Writing 88432832 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_0 ; empty space on disk = 1525348512608256 bytes ...Writing 88172472 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_3 ; empty space on disk = 1525348512608256 bytes ...Writing 89331264 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_2 ; empty space on disk = 1525348512608256 bytes ... done
+ done
+ done
+ done
+ done
+ done
+Writing 88264184 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA_1 ; empty space on disk = 1525348512608256 bytes ... done
+Jul 01 11:20:07 ... loading chunks from disk, packing SA...
+Jul 01 11:20:08 ... finished generating suffix array
+Jul 01 11:20:08 ... generating Suffix Array index
+Jul 01 11:20:17 ... completed Suffix Array index
+Jul 01 11:20:17 ... writing Genome to disk ...
+Writing 50855936 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//Genome ; empty space on disk = 1525350480375808 bytes ... done
+SA size in bytes: 323068164
+Jul 01 11:20:18 ... writing Suffix Array to disk ...
+Writing 323068164 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SA ; empty space on disk = 1525350480375808 bytes ... done
+Jul 01 11:20:18 ... writing SAindex to disk
+Writing 8 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SAindex ; empty space on disk = 1525350480375808 bytes ... done
+Writing 120 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SAindex ; empty space on disk = 1525350480375808 bytes ... done
+Writing 1565873491 bytes into /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index//SAindex ; empty space on disk = 1525350480375808 bytes ... done
+Jul 01 11:20:21 ..... finished successfully
+DONE: Genome generation, EXITING
