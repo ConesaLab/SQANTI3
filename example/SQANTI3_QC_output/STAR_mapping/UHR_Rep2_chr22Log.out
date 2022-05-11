@@ -1,0 +1,307 @@
+STAR version=2.7.9a
+STAR compilation time,server,dir=2021-05-04T09:43:56-0400 vega:/home/dobin/data/STAR/STARcode/STAR.master/source
+##### Command Line:
+STAR --runThreadN 8 --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/ --readFilesIn example/UHR_Rep2_chr22.R1.fastq.gz example/UHR_Rep2_chr22.R2.fastq.gz --outFileNamePrefix /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22
+###### All USER parameters from Command Line:
+runThreadN                    8     ~RE-DEFINED
+genomeDir                     /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/     ~RE-DEFINED
+readFilesIn                   example/UHR_Rep2_chr22.R1.fastq.gz   example/UHR_Rep2_chr22.R2.fastq.gz        ~RE-DEFINED
+outFileNamePrefix             /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22     ~RE-DEFINED
+alignSJoverhangMin            8     ~RE-DEFINED
+alignSJDBoverhangMin          1     ~RE-DEFINED
+outFilterType                 BySJout     ~RE-DEFINED
+outSAMunmapped                Within        ~RE-DEFINED
+outFilterMultimapNmax         20     ~RE-DEFINED
+outFilterMismatchNoverLmax    0.04     ~RE-DEFINED
+outFilterMismatchNmax         999     ~RE-DEFINED
+alignIntronMin                20     ~RE-DEFINED
+alignIntronMax                1000000     ~RE-DEFINED
+alignMatesGapMax              1000000     ~RE-DEFINED
+sjdbScore                     1     ~RE-DEFINED
+genomeLoad                    NoSharedMemory     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
+twopassMode                   Basic     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        8
+genomeDir                         /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/
+genomeLoad                        NoSharedMemory
+readFilesIn                       example/UHR_Rep2_chr22.R1.fastq.gz   example/UHR_Rep2_chr22.R2.fastq.gz   
+readFilesCommand                  zcat   
+outFileNamePrefix                 /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22
+outSAMtype                        BAM   SortedByCoordinate   
+outSAMunmapped                    Within   
+outFilterType                     BySJout
+outFilterMultimapNmax             20
+outFilterMismatchNmax             999
+outFilterMismatchNoverLmax        0.04
+alignIntronMin                    20
+alignIntronMax                    1000000
+alignMatesGapMax                  1000000
+alignSJoverhangMin                8
+alignSJDBoverhangMin              1
+sjdbScore                         1
+twopassMode                       Basic
+
+-------------------------------
+##### Final effective command line:
+STAR   --runThreadN 8   --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/   --genomeLoad NoSharedMemory   --readFilesIn example/UHR_Rep2_chr22.R1.fastq.gz   example/UHR_Rep2_chr22.R2.fastq.gz      --readFilesCommand zcat      --outFileNamePrefix /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22   --outSAMtype BAM   SortedByCoordinate      --outSAMunmapped Within      --outFilterType BySJout   --outFilterMultimapNmax 20   --outFilterMismatchNmax 999   --outFilterMismatchNoverLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000   --alignSJoverhangMin 8   --alignSJDBoverhangMin 1   --sjdbScore 1   --twopassMode Basic
+----------------------------------------
+
+Number of fastq files for each mate = 1
+
+   Input read files for mate 1 :
+-rw-r--r-- 1 fpardopalacios conesa 10137426 Jun 21 09:31 example/UHR_Rep2_chr22.R1.fastq.gz
+
+   readsCommandsFile:
+exec > "/blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp/tmp.fifo.read1"
+echo FILE 0
+zcat      "example/UHR_Rep2_chr22.R1.fastq.gz"
+
+
+   Input read files for mate 2 :
+-rw-r--r-- 1 fpardopalacios conesa 10731212 Jun 21 09:31 example/UHR_Rep2_chr22.R2.fastq.gz
+
+   readsCommandsFile:
+exec > "/blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp/tmp.fifo.read2"
+echo FILE 0
+zcat      "example/UHR_Rep2_chr22.R2.fastq.gz"
+
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting
+Finished loading and checking parameters
+Reading genome generation parameters:
+### STAR   --runMode genomeGenerate      --runThreadN 8   --genomeDir /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_index/   --genomeFastaFiles /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta   
+### GstrandBit=32
+versionGenome                 2.7.4a     ~RE-DEFINED
+genomeType                    Full     ~RE-DEFINED
+genomeFastaFiles              /blue/conesa/fpardopalacios/github/SQANTI3/example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+genomeSAindexNbases           14     ~RE-DEFINED
+genomeChrBinNbits             18     ~RE-DEFINED
+genomeSAsparseD               1     ~RE-DEFINED
+genomeTransformType           None     ~RE-DEFINED
+genomeTransformVCF            -     ~RE-DEFINED
+sjdbOverhang                  0     ~RE-DEFINED
+sjdbFileChrStartEnd           -        ~RE-DEFINED
+sjdbGTFfile                   -     ~RE-DEFINED
+sjdbGTFchrPrefix              -     ~RE-DEFINED
+sjdbGTFfeatureExon            exon     ~RE-DEFINED
+sjdbGTFtagExonParentTranscripttranscript_id     ~RE-DEFINED
+sjdbGTFtagExonParentGene      gene_id     ~RE-DEFINED
+sjdbInsertSave                Basic     ~RE-DEFINED
+genomeFileSizes               50855936   323068164        ~RE-DEFINED
+Genome version is compatible with current STAR
+Number of real (reference) chromosomes= 1
+1	chr22	50818468	0
+Started loading the genome: Thu Jul  1 11:21:30 2021
+
+Genome: size given as a parameter = 50855936
+SA: size given as a parameter = 323068164
+SAindex: size given as a parameter = 1
+Read from SAindex: pGe.gSAindexNbases=14  nSAi=357913940
+nGenome=50855936;  nSAbyte=323068164
+GstrandBit=32   SA number of indices=78319554
+Shared memory is not used for genomes. Allocated a private copy of the genome.
+Genome file size: 50855936 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 50855936 bytes
+SA file size: 323068164 bytes; state: good=1 eof=0 fail=0 bad=0
+Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 323068164 bytes
+Loading SAindex ... done: 1565873619 bytes
+Finished loading the genome: Thu Jul  1 11:21:31 2021
+
+To accommodate alignIntronMax=1000000 redefined winBinNbits=18
+To accommodate alignIntronMax=1000000 and alignMatesGapMax=1000000, redefined winFlankNbins=4 and winAnchorDistNbins=8
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread0 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread0 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread1 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread1 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread2 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread2 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread3 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread4 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread4 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread5 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread5 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread6 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread6 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread7 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread7 ... ok
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Created thread # 4
+Created thread # 5
+Created thread # 6
+Starting to map file # 0
+mate 1:   example/UHR_Rep2_chr22.R1.fastq.gz
+mate 2:   example/UHR_Rep2_chr22.R2.fastq.gz
+Created thread # 7
+Thread #3 end of input stream, nextChar=-1
+Completed: thread #4
+Completed: thread #5
+Completed: thread #6
+Completed: thread #7
+Completed: thread #0
+Completed: thread #1
+Joined thread # 1
+Completed: thread #3
+Completed: thread #2
+Joined thread # 2
+Joined thread # 3
+Joined thread # 4
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Jul 01 11:21:52   Loaded database junctions from the 1st pass file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARpass1//SJ.out.tab: 3188 total junctions
+
+Jul 01 11:21:52   Finished preparing junctions
+Jul 01 11:21:52 ..... inserting junctions into the genome indices
+Jul 01 11:21:52   Finished SA search: number of new junctions=3188, old junctions=0
+Jul 01 11:21:52   Finished sorting SA indicesL nInd=1275200
+Genome size with junctions=51496724  50855936   640788
+GstrandBit1=32   GstrandBit=32
+Jul 01 11:21:53   Finished inserting junction indices
+Jul 01 11:21:59   Finished SAi
+Jul 01 11:21:59 ..... finished inserting junctions into genome
+
+   Input read files for mate 1 :
+-rw-r--r-- 1 fpardopalacios conesa 10137426 Jun 21 09:31 example/UHR_Rep2_chr22.R1.fastq.gz
+
+   readsCommandsFile:
+exec > "/blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp/tmp.fifo.read1"
+echo FILE 0
+zcat      "example/UHR_Rep2_chr22.R1.fastq.gz"
+
+
+   Input read files for mate 2 :
+-rw-r--r-- 1 fpardopalacios conesa 10731212 Jun 21 09:31 example/UHR_Rep2_chr22.R2.fastq.gz
+
+   readsCommandsFile:
+exec > "/blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp/tmp.fifo.read2"
+echo FILE 0
+zcat      "example/UHR_Rep2_chr22.R2.fastq.gz"
+
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread0 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread0 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread1 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread1 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread2 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread2 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread3 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread4 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread4 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread5 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread5 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread6 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread6 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate1.thread7 ... ok
+Opening the file: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/STAR_mapping/UHR_Rep2_chr22_STARtmp//FilterBySJoutFiles.mate2.thread7 ... ok
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Created thread # 4
+Created thread # 5
+Created thread # 6
+Starting to map file # 0
+mate 1:   example/UHR_Rep2_chr22.R1.fastq.gz
+mate 2:   example/UHR_Rep2_chr22.R2.fastq.gz
+Created thread # 7
+Thread #2 end of input stream, nextChar=-1
+Completed: thread #1
+Completed: thread #6
+Completed: thread #5
+Completed: thread #7
+Completed: thread #0
+Joined thread # 1
+Completed: thread #3
+Completed: thread #2
+Joined thread # 2
+Joined thread # 3
+Completed: thread #4
+Joined thread # 4
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Completed stage 1 mapping of outFilterBySJout mapping
+Detected 0 novel junctions that passed filtering, will proceed to filter reads that contained unannotated junctions
+Created thread # 1
+Created thread # 2
+Created thread # 3
+Created thread # 4
+Created thread # 5
+Created thread # 6
+Created thread # 7
+Completed: thread #1
+Completed: thread #0
+Joined thread # 1
+Completed: thread #6
+Completed: thread #5
+Completed: thread #7
+BAM sorting: 50790 mapped reads
+BAM sorting bins genomic start loci:
+1	0	39522055
+2	0	39570636
+3	0	40146955
+4	0	40330809
+5	0	40410973
+6	0	40654483
+7	0	40826646
+8	0	40866333
+9	0	41126027
+10	0	41230935
+11	0	41338406
+12	0	41459191
+13	0	41529000
+14	0	41636197
+15	0	41653611
+16	0	41674980
+17	0	41865040
+18	0	41906579
+19	0	42089666
+20	0	42213700
+21	0	42516529
+22	0	42567459
+23	0	42619823
+24	0	42865141
+25	0	43039171
+26	0	43258758
+27	0	43989199
+28	0	44245460
+29	0	44737074
+30	0	45178579
+31	0	45331174
+32	0	45729467
+33	0	46041164
+34	0	46244531
+35	0	46361952
+36	0	46685080
+37	0	46929549
+38	0	47492649
+39	0	47784733
+40	0	48083141
+41	0	49182212
+42	0	49612859
+43	0	49884191
+44	0	50138445
+45	0	50253187
+46	0	50381181
+47	0	50462107
+48	0	50529212
+Completed: thread #2
+Joined thread # 2
+Completed: thread #4
+Completed: thread #3
+Joined thread # 3
+Joined thread # 4
+Joined thread # 5
+Joined thread # 6
+Joined thread # 7
+Jul 01 11:22:21 ..... started sorting BAM
+Max memory needed for sorting = 36484866
+ALL DONE!

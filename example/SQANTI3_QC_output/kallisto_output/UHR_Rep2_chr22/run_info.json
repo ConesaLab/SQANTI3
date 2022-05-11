@@ -1,0 +1,13 @@
+{
+	"n_targets": 3925,
+	"n_bootstraps": 100,
+	"n_processed": 162373,
+	"n_pseudoaligned": 48066,
+	"n_unique": 10733,
+	"p_pseudoaligned": 29.6,
+	"p_unique": 6.6,
+	"kallisto_version": "0.46.2",
+	"index_version": 10,
+	"start_time": "Thu Jul  1 11:22:54 2021",
+	"call": "kallisto quant -i /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/kallisto_output/kallisto_corrected_fasta.idx -o /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/kallisto_output/UHR_Rep2_chr22 -b 100 -t 8 example/UHR_Rep2_chr22.R1.fastq.gz example/UHR_Rep2_chr22.R2.fastq.gz"
+}
