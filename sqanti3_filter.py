@@ -126,7 +126,7 @@ def run_ML(args):
     return(seqs_to_keep, inclusion_list)
 
 def run_rules(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j}".format(u=utilitiesPath, \
+    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u}".format(u=utilitiesPath, \
      s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter)
 
     report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \

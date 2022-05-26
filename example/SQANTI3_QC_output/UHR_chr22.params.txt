@@ -1,4 +1,4 @@
-Version	4.3
+Version	5.0
 Input	UHR_chr22.gtf
 Annotation	gencode.v38.basic_chr22.gtf
 Genome	GRCh38.p13_chr22.fasta
