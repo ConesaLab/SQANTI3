@@ -2142,7 +2142,7 @@ class CAGEPeak:
         dist to TSS is 0 if right on spot
         dist to TSS is + if downstream, - if upstream (watch for strand!!!)
         """
-        within_peak, dist_peak = False, 'NA'
+        within_peak, dist_peak = 'FALSE', 'NA'
         for (tss0,start0,end1) in self.cage_peaks[(chrom,strand)].find(query-search_window, query+search_window):
  # Skip those cage peaks that are downstream the detected TSS because degradation just make the transcript shorter
             if strand=='+' and start0>int(query) and end1>int(query):
@@ -2150,12 +2150,18 @@ class CAGEPeak:
             if strand=='-' and start0<int(query) and end1<int(query):
                 continue
 ##
-            if not within_peak:
-                within_peak, dist_peak = (start0<=query<end1), (query - tss0) * (-1 if strand=='-' else +1)
+            within_out = (start0<=query<end1)
+            if within_out:
+                w = 'TRUE'
+            else:
+                w = 'FALSE'
+
+            if not within_peak=='TRUE':
+                within_peak, dist_peak = w, (query - tss0) * (-1 if strand=='-' else +1)
             else:
                 d = (query - tss0) * (-1 if strand=='-' else +1)
                 if abs(d) < abs(dist_peak):
-                    within_peak, dist_peak = (start0<=query<end1), d
+                    within_peak, dist_peak = w, d
         return within_peak, dist_peak
 
 class PolyAPeak:
@@ -2183,7 +2189,7 @@ class PolyAPeak:
         assert strand in ('+', '-')
         hits = self.polya_peaks[(chrom,strand)].find(query-search_window, query+search_window)
         if len(hits) == 0:
-            return False, None
+            return "FALSE", None
         else:
             s0, e1 = hits[0]
             min_dist = query - s0
@@ -2193,7 +2199,7 @@ class PolyAPeak:
                     min_dist = d
             if strand == '-':
                 min_dist = -min_dist
-            return True, min_dist
+            return "TRUE", min_dist
 
 
 def split_input_run(args):

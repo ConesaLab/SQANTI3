@@ -1928,8 +1928,8 @@ if (nrow(data.junction) > 0){
   }
   
   if (!all(is.na(x$within_CAGE_peak))){
-    x[which(x$within_CAGE_peak=='False'),"Coverage_Cage"]="Not Coverage Cage"
-    x[which(x$within_CAGE_peak=='True'),"Coverage_Cage"]="Coverage Cage"
+    x[which(x$within_CAGE_peak=='FALSE'),"Coverage_Cage"]="Not Coverage Cage"
+    x[which(x$within_CAGE_peak=='TRUE'),"Coverage_Cage"]="Coverage Cage"
     t1.Cage <- group_by(x, structural_category, Coverage_Cage) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.Cage <- merge(t1.Cage, t2.RTS, by="structural_category")
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
@@ -2404,9 +2404,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   #### Now only with cage + isoforms
   if (!all(is.na(data.class$dist_to_CAGE_peak))) {
-    ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak == "TRUE"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak == "TRUE"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_cage)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage=merge(x = fsm_per_transcript_cage , y=ism_per_transcript_cage, by = "associated_transcript", all=T)
@@ -2650,9 +2650,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   #### Now with just isoforms polyA and Cage +
   if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_CAGE_peak))) {
-    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_CAGE_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_CAGE_peak == "TRUE"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_CAGE_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_CAGE_peak == "TRUE" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(fsm_per_transcript_cage_polya)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage_polya=merge(x = fsm_per_transcript_cage_polya , y=ism_per_transcript_cage_polya, by = "associated_transcript", all=T)
@@ -2871,13 +2871,13 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
 if (!all(is.na(data.class$dist_to_CAGE_peak))){
   df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
                              dplyr::summarise(count=dplyr::n(),
-                                              cage_detected=length(which(within_CAGE_peak == "True")),
+                                              cage_detected=length(which(within_CAGE_peak == "TRUE")),
                                               cage_detected_perc=round(cage_detected*100/count) , 
                                               .groups = 'keep'))
   
   df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
                                   dplyr::summarise(count=dplyr::n(),
-                                                   cage_detected=length(which(within_CAGE_peak == "True")),
+                                                   cage_detected=length(which(within_CAGE_peak == "TRUE")),
                                                    cage_detected_perc=round(cage_detected*100/count) ,
                                                    .groups = 'keep'))
 }

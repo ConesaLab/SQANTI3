@@ -29,7 +29,9 @@ option_list = list(
   optparse::make_option(c("-o","--output"), type="character", default = "SQANTI3", 
                         help="Output classification file prefix."),
   optparse::make_option(c("-d","--dir"), type="character", 
-                        help="Output directory.")
+                        help="Output directory."),
+  optparse::make_option(c("-u","--utilities_path"), type="character",
+                        help="Full path to SQANTI3/utilities folder.")
 )
 
 
@@ -39,6 +41,11 @@ opt_parser = optparse::OptionParser(option_list = option_list)
 opt = optparse::parse_args(opt_parser)
 classif_file = opt$sqanti_classif
 json_file = opt$json_filter
+utilities = opt$utilities_path
+
+### Load functions from rules_filter_functions
+source(paste0(utilities, "/filter/rules_filter_functions.R"))
+
 
 ### read files
 message("-------------------------------------------------")
@@ -119,151 +126,6 @@ for (sc in names(json_df)){
 
 
 names(rules_list) <- names_rules_list
-## This is the actual function that will classify transcripts as Isoform or Artifacts
-
-apply_rules <- function(isoform_info){
-  sc = as.character(isoform_info["structural_category"])
-  final_is_isoform=TRUE
-  # detect if there is any specific rule for the SC of the isoform
-  if (sc %in% names(json_df)) {
-    final_is_isoform=FALSE
-    # iterate all the independent rules for a certain SC
-    for (p in which(names(rules_list)==sc)){
-      is_isoform=TRUE
-      rules <- rules_list[[p]] 
-      # iterate through the rules defined
-      for (i in c(1:length(rules$rule))){
-        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
-          if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              is_isoform=FALSE
-              break
-            }
-          }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              is_isoform=FALSE
-              break
-            }
-          }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              is_isoform=FALSE
-              break
-            }
-          }
-        }else{
-          is_isoform=FALSE
-          break
-        }
-      }
-      final_is_isoform=final_is_isoform | is_isoform
-    }
-  # the isoform has a SC different, if will be evaluated with the rules of "rest" (if any was defined)  
-  }else if ("rest" %in% names(json_df)){
-    final_is_isoform=FALSE
-    for (p in which(names(rules_list)=="rest")){
-      is_isoform=TRUE
-      rules <- rules_list[[p]]
-      for (i in c(1:length(rules$rule))){
-        if (! is.na(isoform_info[rules[i, "column"]])){
-          if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              is_isoform=FALSE
-              break
-            }
-          }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              is_isoform=FALSE
-              break
-            }
-          }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              is_isoform=FALSE
-              break
-            }
-          }
-        }else{
-         is_isoform=FALSE
-         break
-        }
-      }
-      final_is_isoform=final_is_isoform | is_isoform
-    }
-  }
-  if (final_is_isoform){
-   return("Isoform") 
-  }else{
-   return("Artifact")
-  }
-}
-
-### This function will apply the same filtering process but it will return the reasons for filtering a transcript. Use only on artifacts
-get_reasons <- function(isoform_info){
-  sc = as.character(isoform_info["structural_category"])
-  reasons <- c()
-  # detect if there is any specific rule for the SC of the isoform
-  if (sc %in% names(json_df)) {
-    # iterate all the independent rules for a certain SC
-    for (p in which(names(json_df)==sc)){
-      rules <- rules_list[[p]] 
-      # iterate through the rules defined
-      for (i in c(1:length(rules$rule))){
-        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
-          if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              reason_line <- paste("Low", rules[i, "column"])
-              reasons <- c(reasons, reason_line)
-            }
-          }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              reason_line <- paste("High", rules[i, "column"])
-              reasons <- c(reasons, reason_line)            
-              }
-          }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              reason_line <- paste("Out", rules[i, "column"])
-              reasons <- c(reasons, reason_line)            
-              }
-          }
-        }
-      }
-    }
-    # the isoform has a SC different, if will be evaluated with the rules of "rest" (if any was defined)  
-  }else if ("rest" %in% names(json_df)){
-    for (p in which(names(json_df)=="rest")){
-      rules <- rules_list[[p]]
-      for (i in c(1:length(rules$rule))){
-        if (! is.na(isoform_info[rules[i, "column"]])){
-          if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              reason_line <- paste("Low", rules[i, "column"])
-              reasons <- c(reasons, reason_line)
-            }
-          }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              reason_line <- paste("High", rules[i, "column"])
-              reasons <- c(reasons, reason_line)            
-            }
-          }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              reason_line <- paste("Out", rules[i, "column"])
-              reasons <- c(reasons, reason_line)            
-            }
-          }
-        }
-      }
-    }
-  }
- num_reasons <- length(unique(reasons))
- final_df <- data.frame(isoform=rep(isoform_info["isoform"], num_reasons),
-                        structural_category=rep(isoform_info["structural_category"],num_reasons), 
-                        reasons=unique(reasons))
- return(final_df)
-}
-
 
 
 message("-------------------------------------------------")
