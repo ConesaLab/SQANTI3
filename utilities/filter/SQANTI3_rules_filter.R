@@ -128,7 +128,7 @@ apply_rules <- function(isoform_info){
   if (sc %in% names(json_df)) {
     final_is_isoform=FALSE
     # iterate all the independent rules for a certain SC
-    for (p in which(names(json_df)==sc)){
+    for (p in which(names(rules_list)==sc)){
       is_isoform=TRUE
       rules <- rules_list[[p]] 
       # iterate through the rules defined
@@ -137,17 +137,23 @@ apply_rules <- function(isoform_info){
           if (rules[i, "type"] == "Min_Threshold"){
             if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
+              break
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
             if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
+              break
             }
           }else if (rules[i, "type"] == "Category"){
             cat_rules <- rules[rules$column == rules[i, "column"], ]
             if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
               is_isoform=FALSE
+              break
             }
           }
+        }else{
+          is_isoform=FALSE
+          break
         }
       }
       final_is_isoform=final_is_isoform | is_isoform
@@ -155,7 +161,7 @@ apply_rules <- function(isoform_info){
   # the isoform has a SC different, if will be evaluated with the rules of "rest" (if any was defined)  
   }else if ("rest" %in% names(json_df)){
     final_is_isoform=FALSE
-    for (p in which(names(json_df)=="rest")){
+    for (p in which(names(rules_list)=="rest")){
       is_isoform=TRUE
       rules <- rules_list[[p]]
       for (i in c(1:length(rules$rule))){
@@ -163,17 +169,23 @@ apply_rules <- function(isoform_info){
           if (rules[i, "type"] == "Min_Threshold"){
             if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
+              break
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
             if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
+              break
             }
           }else if (rules[i, "type"] == "Category"){
             cat_rules <- rules[rules$column == rules[i, "column"], ]
             if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
               is_isoform=FALSE
+              break
             }
           }
+        }else{
+         is_isoform=FALSE
+         break
         }
       }
       final_is_isoform=final_is_isoform | is_isoform
