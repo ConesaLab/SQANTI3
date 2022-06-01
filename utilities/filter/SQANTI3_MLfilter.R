@@ -714,8 +714,13 @@ if (run_ML == TRUE) {
 message("\n-------------------------------------------------")
 message("\nApplying intra-priming filter to our dataset.")
 
+# apply to all not FSM transcripts and to all mono-exons from all categories
 d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
-  !(d1$structural_category %in% c("full-splice_match"))
+  # not FSM: always TRUE
+  (d1$structural_category != "full-splice_match" |
+     # FSM: only TRUE when mono-exon
+     (d1$structural_category == "full-splice_match" & d1$exons == 1))
+
 
 message("\nIntra-priming filtered transcripts:")
 print(table(d1$intra_priming))
