@@ -7,7 +7,7 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Latest updates
-Latest SQANTI3 release (11/05/2022) is **version 5.0**.
+Latest SQANTI3 release (01/06/2022) is **version 5.0**.
 
 **WARNING:** v5.0 constitutes a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will herefore need to re-run SQANTI3 QC.
 
