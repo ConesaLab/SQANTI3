@@ -126,8 +126,8 @@ def run_ML(args):
     return(seqs_to_keep, inclusion_list)
 
 def run_rules(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u}".format(u=utilitiesPath, \
-     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter)
+    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u} -e {e}".format(u=utilitiesPath, \
+     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter, e=args.filter_mono_exonic)
 
     report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
     o=args.output, d=args.dir)
@@ -159,6 +159,7 @@ def main():
     common.add_argument('--faa', help='\t\tORF prediction faa file to be filtered by SQANTI3')
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
+    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
@@ -187,7 +188,6 @@ def main():
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
     help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
-    ml.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
 
     args = parser.parse_args()
 
