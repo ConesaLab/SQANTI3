@@ -28,6 +28,7 @@ dependencies:
   - python>=3.7.6
   - r>=3.6.0
   - r-biocmanager
+  - r-BUSpaRse
   - r-caret
   - r-dplyr
   - r-dt
