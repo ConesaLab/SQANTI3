@@ -31,7 +31,10 @@ option_list = list(
                         help = "Full path to SQANTI3/utilities folder."),
   optparse::make_option(c("-g", "--refGTF"), type = "character",
                         help = "Full path to reference transcriptome GTF used when
-                        running SQANTI3.")
+                        running SQANTI3."), 
+  optparse::make_option(c("-e", "--rescue_mono_exonic"), type = "character", default = "all",
+                        help = "Whether or not to include mono-exonic artifacts 
+                        in the rescue. Options include: 'none', 'fsm' and 'all' (default).")
   )
 
 
@@ -60,32 +63,36 @@ message("\n---------------------------------------------------------------")
 message("\n\tPERFORMING AUTOMATIC RESCUE...\n")
 message("\n---------------------------------------------------------------")
 
-## MONO-EXONS ##
-# rescue mono-exon FSM transcripts
+# print warning message regarding -e option
+message(paste0("\n\t***NOTE: you have set -e ", opt$rescue_mono_exonic, ":"))
+if(opt$rescue_mono_exonic == "all"){
+  message("\n\t\tAll mono-exonic artifact transcripts will be considered for rescue.")
+}else if(opt$rescue_mono_exonic == "fsm"){
+  message("\n\t\tMono-exonic artifact transcripts will only be considered for rescue if they are FSM.")
+}else{
+  message("\n\t\tAll mono-exonic artifact transcripts will be excluded from the rescue.")
+}
 
-message("\n\tRescuing references associated to mono-exon FSM...")
+## MONO-EXONS ##
+# rescue mono-exon FSM transcripts (if indicated)
+
+if(opt$rescue_mono_exonic %in% c("all", "fsm")){
+
+    message("\n\tRescuing references associated to mono-exon FSM...")
 
     # filter classification
     classif_mono <- classif %>% 
       dplyr::filter(structural_category == "full-splice_match" & 
-                      exons == 1)
+                      exons == 1 & filter_result == "Artifact")
     
     # select associated transcripts
     rescue_mono <- classif_mono %>% 
       dplyr::select(associated_transcript) %>% 
       unique %>% 
       dplyr::rename(isoform = "associated_transcript")
-    
-    # write mono-exon exclusion list
-    readr::write_tsv(classif_mono %>% dplyr::select(isoform), 
-                     col_names = FALSE,
-                     file = paste0(opt$dir, "/", opt$output,
-                                   "_monoexon_exclusion_list.tsv"))
-    
-message("\n\tExclusion list for rescued mono-exons written to output file:")
-message(paste0("\n\t\t", opt$dir, "/", opt$output,  
-               "_monoexon_exclusion_list.tsv\n"))
-    
+}
+
+
 ## FSM and ISM ##
 # analyze lost reference transcripts and 
 # see whether they are supported by ISM/FSM
@@ -95,6 +102,18 @@ message(paste0("\n\t\t", opt$dir, "/", opt$output,
       dplyr::filter(structural_category %in% c("full-splice_match", 
                                                "incomplete-splice_match") &
                       exons > 1)
+    
+    # add ISM mono-exons if indicated
+    if(opt$rescue_mono_exonic == "all"){
+      
+      message("\n\tIncluding mono-exon ISM as rescue candidates...")
+      
+      classif_ism_mono <- classif %>% 
+        dplyr::filter(structural_category == "incomplete-splice_match" &
+                        exons == 1)
+      classif_ism_fsm <- dplyr::bind_rows(classif_ism_fsm,
+                                          classif_ism_mono)
+    }
     
     # find all reference IDs in associated_transcript column
     all_ref <- classif_ism_fsm %>% 
@@ -114,7 +133,6 @@ message(paste0("\n\t\t", opt$dir, "/", opt$output,
     source(paste0(opt$utilities_path, "/rescue/rescue_aux_functions.R"))
     rescue <- purrr::map_df(lost_ref, rescue_lost_reference, classif_ism_fsm)
 
-    
     # separate result into reference transcripts and ISM
     rescue_ism <- rescue %>% 
       dplyr::filter(isoform %in% classif_ism_fsm$isoform)
@@ -124,7 +142,12 @@ message(paste0("\n\t\t", opt$dir, "/", opt$output,
     
     
     # write out reference transcripts that are automatically rescued
-    rescue_auto <- dplyr::bind_rows(rescue_mono, rescue_ref)
+    # add mono-exons if indicated
+    if(opt$rescue_mono_exonic %in% c("all", "fsm")){
+      rescue_auto <- dplyr::bind_rows(rescue_mono, rescue_ref)
+    }else{
+      rescue_auto <- rescue_ref
+    }
     
     readr::write_tsv(rescue_auto, 
                      col_names = FALSE,
@@ -132,16 +155,19 @@ message(paste0("\n\t\t", opt$dir, "/", opt$output,
                                    "_automatic_rescued_list.tsv"))
     
     
-message("\n\tAutomatic rescue finished successfully!")
-message("\n\tReference transcripts output by automatic rescue were written to output file:")
-message(paste0("\n\t\t", opt$dir, "/", opt$output, 
-               "_automatic_rescued_list.tsv"))
-message(paste0("\n\t\tTotal transcripts rescued from reference : ", 
-               rescue_auto %>% nrow))
-message(paste0("\n\t\t - From mono-exon FSM: ", 
-               rescue_mono %>% nrow))
-message(paste0("\n\t\t - From FSM artifacts: ", 
-               rescue_ref %>% nrow))
+  message("\n\tAutomatic rescue finished successfully!")
+  message("\n\tReference transcripts output by automatic rescue were written to output file:")
+  message(paste0("\n\t\t", opt$dir, "/", opt$output, 
+                 "_automatic_rescued_list.tsv"))
+  message(paste0("\n\t\tTotal transcripts rescued from reference : ", 
+                 rescue_auto %>% nrow))
+    if(opt$rescue_mono_exonic %in% c("all", "fsm")){
+      message(paste0("\n\t\t - From mono-exon FSM: ", rescue_mono %>% nrow))
+    }else{
+      message("\n\t\t - From mono-exon FSM: 0")
+    }
+  message(paste0("\n\t\t - From FSM artifacts: ", 
+                 rescue_ref %>% nrow))
 
 message("\n---------------------------------------------------------------")
 
@@ -162,10 +188,24 @@ message("\n\tRescue candidates: artifact transcripts to be used for rescue.\n")
                       structural_category %in% c("novel_in_catalog", 
                                                  "novel_not_in_catalog"))
     
+    # exclude mono-exonic if indicated
+    if(opt$rescue_mono_exonic %in% c("fsm", "none")){
+      
+      all_novel <- nrow(rescue_novel)
+      
+      rescue_novel <- rescue_novel %>% 
+        dplyr::filter(exons > 1)
+      
+      message(paste0("\n\tExcluding ", 
+                     all_novel - nrow(rescue_novel),
+                     " mono-exonic novel transcripts from rescue candidate list."))
+    }
+    
     # write out rescue candidates (novel and ISM)
     rescue_candidates <- dplyr::bind_rows(rescue_ism, 
                                           rescue_novel %>% dplyr::select(isoform))
     
+    # remove mono-exons if instructed
     readr::write_tsv(rescue_candidates, 
                      col_names = FALSE,
                      file = paste0(opt$dir, "/", opt$output,
