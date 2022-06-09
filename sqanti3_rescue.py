@@ -14,6 +14,7 @@ import distutils.spawn
 
 ## Set general path variables
 Rscript_path = distutils.spawn.find_executable('Rscript')
+gffread_path = distutiles.spawn.find_executable('gffread')
 utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 
 ## Set path variables to call R scripts
@@ -21,8 +22,12 @@ automatic_rescue_path = "rescue/automatic_rescue.R"
 
 ## Check that Rscript is working
 if os.system(Rscript_path + " --version") != 0:
-    print("Rscript executable not found! Abort!", file = sys.stderr)
+    print("Rscript executable not found. Abort!", file = sys.stderr)
     sys.exit(-1)
+    
+## Check that gffread is working
+if os.system(gffread_path + " --version") != 0:
+  print("Cannot find gffread executable. Abort!", file = sys.stderr)
     
     
 #### DEFINE FUNCTIONS ####
@@ -81,6 +86,8 @@ def main():
   help = "\t\tFASTA file output by SQANTI3 QC (*_corrected.fa).")
   common.add_argument("-g", "--refGTF", \
   help = "\t\tFull path to reference transcriptome GTF used when running SQANTI3 QC.")
+  common.add_argument("-f", "--refGenome", \
+  help = "\t\tFull path to reference genome FASTA used when running SQANTI3 QC.")
   common.add_argument("-e","--rescue_mono_exonic", \
   choices = ['all', 'fsm', 'none'], default = "all", \
   help='\t\tWhether or not to include mono-exonic artifacts in the rescue. Options include: none, fsm and all (default).')
@@ -125,22 +132,42 @@ def main():
   if not os.path.isfile(args.refGTF):
     print("ERROR: {0} doesn't exist. Abort!".format(args.refGTF), file=sys.stderr)
     sys.exit(-1)
+    
+  if not os.path.isfile(args.refGenome):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.refGenome), file=sys.stderr)
+    sys.exit(-1)
+  
+  ## Check that ML-specific args are valid
+  if args.subcommand == "ML":
+    if not os.path.isfile(args.randomforest):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
+    sys.exit(-1)
+    
+    if args.threshold < 0 or args.threshold > 1.:
+      print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
+      sys.exit(-1)
   
   
-  ## Run automatic rescue for both rules and ML (if all arg tests passed)
+  ## Run automatic rescue 
+  # this part is run for both rules and ML and if all arg tests passed
   print("\nRunning automatic rescue...\n", file = sys.stdout)
   auto_result, candidates, targets = run_automatic_rescue(args)
   
   
-  ## Check that ML-specific args are valid before running that part of the rescue
-  # if args.subcommand == "ML":
-  #   if not os.path.isfile(args.randomforest):
-  #   print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
-  #   sys.exit(-1)
-  #   
-  #   if args.threshold < 0 or args.threshold > 1.:
-  #     print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
-  #     sys.exit(-1)
+  ## Convert reference transcriptome GTF to FASTA
+  # make FASTA file name
+  pre, ext = os.path.splitext(args.refGTF)
+  refGTF_rename = pre + ".fasta"
+  
+  # build gffread command
+  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refGTF_rename, g = args.refGenome, \
+  a = args.refGTF)
+  
+  print(ref_cmd, "\n")
+  
+  # run gffread
+  subprocess.call(ref_cmd, shell = True)
+  
   
 
 
