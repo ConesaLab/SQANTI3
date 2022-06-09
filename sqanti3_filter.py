@@ -240,7 +240,7 @@ def main():
             print("ERROR: {0} doesn't exist. Abort!".format(args.remove_columns), file=sys.stderr)
             sys.exit(-1)
         if args.percent_training < 0 or args.percent_training > 1.:
-            print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
+            print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.percent_training), file=sys.stderr)
             sys.exit(-1)
         if args.intrapriming < 25 or args.intrapriming > 100:
             print("ERROR: --intrapriming must be between 25-100, instead given {0}! Remember to use the percentage value. Abort!".format(args.intrapriming), file=sys.stderr)
