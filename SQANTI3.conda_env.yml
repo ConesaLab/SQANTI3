@@ -10,6 +10,7 @@ dependencies:
   - bedtools
   - biopython
   - bioconductor-noiseq
+  - bioconductor-busparse
   - bx-python
   - cython
   - desalt
@@ -28,7 +29,6 @@ dependencies:
   - python>=3.7.6
   - r>=3.6.0
   - r-biocmanager
-  - r-BUSpaRse
   - r-caret
   - r-dplyr
   - r-dt
@@ -57,6 +57,7 @@ dependencies:
   - r-tidyr
   - samtools
   - scipy
+  - seqtk
   - star
   - slamem
   - pip:
