@@ -169,6 +169,53 @@ def main():
   subprocess.call(ref_cmd, shell = True)
   
   
+  ## Filter reference transcriptome FASTA to only include target ref transcripts
+  # make file names
+  target_file =	args.dir + "/" + args.output + "_rescue_targets.tsv"
+  ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refGTF_rename, \
+  t = target_file, f = ref_target_fasta)
+
+  print(fasta_cmd, "\n")
+
+  # run	
+  subprocess.call(fasta_cmd, shell = True)
+
+
+  ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
+  # make file names
+  LR_target_fasta = args.dir +  "/" + args.output + "_rescue_targets.LR.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  t = target_file, f = LR_target_fasta)
+
+  print(fasta_cmd, "\n")
+
+  # run
+  subprocess.call(fasta_cmd, shell = True)  
+
+  ## join both FASTA files
+  target_fasta = args.dir +  "/" + args.output + "_rescue_targets.fasta"
+  cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
+  f = target_fasta)
+
+
+  ## Filter SQ3 FASTA to include rescue candidates
+  # make file names
+  candidate_file = args.dir + "/" + args.output + "_rescue_candidates.tsv"
+  candidate_fasta = args.dir + "/" + args.output + "_rescue_candidates.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  t = candidate_file, f = candidate_fasta)
+
+  print(fasta_cmd, "\n")
+
+  # run
+  subprocess.call(fasta_cmd, shell = True)
 
 
 ## Run main()
