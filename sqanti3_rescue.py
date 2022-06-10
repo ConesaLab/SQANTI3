@@ -14,7 +14,7 @@ import distutils.spawn
 
 ## Set general path variables
 Rscript_path = distutils.spawn.find_executable('Rscript')
-gffread_path = distutiles.spawn.find_executable('gffread')
+gffread_path = distutils.spawn.find_executable('gffread')
 utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 
 ## Set path variables to call R scripts
@@ -44,6 +44,7 @@ def run_automatic_rescue(args):
   g = args.refGTF, e = args.rescue_mono_exonic)
   
   # print command
+  print("\nAutomatic rescue run via the following command:\n")
   print(auto_cmd + "\n")
   
   ## run automatic rescue script via terminal
@@ -140,8 +141,8 @@ def main():
   ## Check that ML-specific args are valid
   if args.subcommand == "ML":
     if not os.path.isfile(args.randomforest):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
-    sys.exit(-1)
+      print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
+      sys.exit(-1)
     
     if args.threshold < 0 or args.threshold > 1.:
       print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
@@ -150,11 +151,19 @@ def main():
   
   ## Run automatic rescue 
   # this part is run for both rules and ML and if all arg tests passed
-  print("\nRunning automatic rescue...\n", file = sys.stdout)
   auto_result, candidates, targets = run_automatic_rescue(args)
   
+
+  #### PREPARATION OF FILES FOR MINIMAP2 ####
   
+  print("\n-------------------------------------------------------\n")
+  print("\n\tPREPARATION OF FILES FOR ARTIFACT MAPPING:\n")
+  print("\n-------------------------------------------------------\n")
+
   ## Convert reference transcriptome GTF to FASTA
+  
+  print("\nCreating reference transcriptome FASTA from provided GTF (--refGTF)...\n")
+
   # make FASTA file name
   pre, ext = os.path.splitext(args.refGTF)
   refGTF_rename = pre + ".fasta"
@@ -163,6 +172,7 @@ def main():
   ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refGTF_rename, g = args.refGenome, \
   a = args.refGTF)
   
+  print("\n\tgffread command used:\n")
   print(ref_cmd, "\n")
   
   # run gffread
@@ -170,6 +180,9 @@ def main():
   
   
   ## Filter reference transcriptome FASTA to only include target ref transcripts
+  
+  print("\nFiltering reference transcriptome FASTA to only rescue targets...\n")
+
   # make file names
   target_file =	args.dir + "/" + args.output + "_rescue_targets.tsv"
   ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
@@ -178,6 +191,7 @@ def main():
   fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refGTF_rename, \
   t = target_file, f = ref_target_fasta)
 
+  print("\n\tseqtk command used:\n")
   print(fasta_cmd, "\n")
 
   # run	
@@ -185,6 +199,9 @@ def main():
 
 
   ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
+  
+  print("\nFiltering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...\n")
+
   # make file names
   LR_target_fasta = args.dir +  "/" + args.output + "_rescue_targets.LR.fasta"
 
@@ -192,18 +209,30 @@ def main():
   fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
   t = target_file, f = LR_target_fasta)
 
+  print("\n\tseqtk command used:\n")
   print(fasta_cmd, "\n")
 
   # run
   subprocess.call(fasta_cmd, shell = True)  
 
+
   ## join both FASTA files
+
+  print("\nJoining reference and LR rescue target FASTA files...\n")
+
   target_fasta = args.dir +  "/" + args.output + "_rescue_targets.fasta"
   cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
   f = target_fasta)
 
+  print("\nRescue target FASTA was saved to ", target_fasta, "\n")
+  print("\nCommand used:")
+  print(cat_cmd, "\n")
+
 
   ## Filter SQ3 FASTA to include rescue candidates
+
+  print("\nCreating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...\n ")
+
   # make file names
   candidate_file = args.dir + "/" + args.output + "_rescue_candidates.tsv"
   candidate_fasta = args.dir + "/" + args.output + "_rescue_candidates.fasta"
@@ -216,6 +245,10 @@ def main():
 
   # run
   subprocess.call(fasta_cmd, shell = True)
+
+  print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
+  print("\n\tseqtk command used:\n")
+  print(fasta_cmd, "\n")
 
 
 ## Run main()
