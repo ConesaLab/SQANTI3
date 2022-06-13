@@ -11,6 +11,7 @@ __version__ = "5.1"
 ## Module import
 import os, sys, argparse, subprocess
 import distutils.spawn
+import pandas as pd
 
 ## Set general path variables
 Rscript_path = distutils.spawn.find_executable('Rscript')
@@ -19,6 +20,8 @@ utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "util
 
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
+run_randomforest_path = "rescue/run_randomforest_on_reference.R"
+rescue_by_mapping_ML_path = "rescue/rescue_by_mapping.R"
 
 ## Check that Rscript is working
 if os.system(Rscript_path + " --version") != 0:
@@ -69,6 +72,57 @@ def run_automatic_rescue(args):
 
 
 
+## Run rescue steps specific to the ML filter
+def run_ML_rescue(args):
+
+  ## run pre-trained ML classifier on reference transcriptome
+  
+  print("\nML rescue selected!\n") 
+  print("\nRunning pre-trained random forest on reference transcriptome classification file...\n")
+
+  # define Rscript command with run_randomforest_on_reference.R args
+  refML_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -r {r}".format( \
+  u = utilities_path, s = run_randomforest_path, \
+  c = args.refClassif, o = args.output, d = args.dir, \
+  r = args.randomforest) 
+  
+  # print command
+  print(refML_cmd + "\n")
+
+  # run R script via terminal
+  subprocess.call(refML_cmd, shell = True)
+
+
+  ## run rescue-by-mapping
+  
+  print("\nRunning rescue-by-mapping for ML filter...\n")
+
+  # make file names
+  ref_isoform_predict = args.dir + "/" + args.output + "_reference_isoform_predict.tsv"
+  mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+
+  # define Rscsript command with rescue_by_mapping.R args
+  rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
+  u = utilities_path, s = rescue_by_mapping_ML_path, \
+  c = args.sqanti_MLclassif, o = args.output, d = args.dir, m = mapping_hits, \
+  r = ref_isoform_predict, j = args.threshold)
+
+  # print command
+  print(rescue_cmd + "\n")
+
+  # run R script via terminal
+  subprocess.call(rescue_cmd, shell = True)
+
+  # load output list of rescued transcripts
+  rescued_file = args.dir + "/" + args.output + "_rescued_list.tsv"
+  
+  rescued_list = pd.read_table(rescued_file, usecols = [1])
+
+  # return rescued transcript list
+  return(rescued_list)
+ 
+
+
 #### MAIN ####
 
 ## Define main()
@@ -109,6 +163,8 @@ def main():
   
   ml.add_argument("-r", "--randomforest", \
   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
+  ml.add_argument("-k", "--refClassif", \
+  help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
   ml.add_argument("-j", "--threshold", type = float, default = 0.7, \
   help = "Default: 0.7. Machine learning probability threshold to filter elegible rescue targets (mapping hits).")
   
@@ -139,20 +195,26 @@ def main():
     sys.exit(-1)
   
   ## Check that ML-specific args are valid
-  if args.subcommand == "ML":
+  if args.subcommand == "ml":
     if not os.path.isfile(args.randomforest):
       print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
+      sys.exit(-1)
+
+    if not os.path.isfile(args.refClassif):
+      print("ERROR: {0} doesn't exist. Abort!".format(args.refClassif), file=sys.stderr)
       sys.exit(-1)
     
     if args.threshold < 0 or args.threshold > 1.:
       print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
       sys.exit(-1)
   
+
   
-  ## Run automatic rescue 
+  #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
   auto_result, candidates, targets = run_automatic_rescue(args)
   
+
 
   #### PREPARATION OF FILES FOR MINIMAP2 ####
   
@@ -306,6 +368,26 @@ def main():
   # delete altered SAM file
   rm_cmd = "rm {t}".format(t = sam_tmp_file)
   subprocess.call(rm_cmd, shell = True)
+
+
+
+  #### RUN ML FILTER RESCUE ####
+
+  # this part combines reference ML filter run with mapping results
+  # and is therefore run only for ML filter
+
+  if args.subcommand == "ml":
+    
+    print("\n-------------------------------------------------------\n")
+    print("\n\tRESCUE-BY-MAPPING FOR ML FILTER:\n")
+    print("\n-------------------------------------------------------\n")
+    
+    # run ML-specific steps of rescue
+    rescued = run_ML_rescue(args)
+
+    # finish print
+    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescued_list.tsv\n")
+
 
 
 
