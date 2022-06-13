@@ -53,22 +53,16 @@ def run_automatic_rescue(args):
   ## run automatic rescue script via terminal
   subprocess.call(auto_cmd, shell = True)
   
-  ## load outputs
-  # transcripts rescued as a result of automatic rescue
+  ## load output: transcripts rescued as a result of automatic rescue
+  
+  # make file name
   automatic_rescued_list = args.dir + "/" + args.output + "_automatic_rescued_list.tsv"
+  
   # set object containing rescued list from the output file
   auto_rescue = set(line.strip() for line in open(automatic_rescued_list))
   
-  # rescue candidate list
-  rescue_candidate_list = args.dir + "/" + args.output + "_rescue_candidates.tsv"
-  rescue_candidates = set(line.strip() for line in open(rescue_candidate_list))
-  
-  # rescue target list
-  rescue_target_list = args.dir + "/" + args.output + "_rescue_targets.tsv"
-  rescue_targets = set(line.strip() for line in open(rescue_target_list))
-
-  # return automatic rescue outputs
-  return(auto_rescue, rescue_candidates, rescue_targets)
+  ## return automatic rescue outputs
+  return(auto_rescue)
 
 
 
@@ -212,7 +206,7 @@ def main():
   
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
-  auto_result, candidates, targets = run_automatic_rescue(args)
+  auto_result = run_automatic_rescue(args)
   
 
 
