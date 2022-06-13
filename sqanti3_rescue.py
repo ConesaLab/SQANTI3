@@ -229,6 +229,15 @@ def main():
   print(cat_cmd, "\n")
 
 
+  ## remove intermediate target FASTA files (LR and ref)
+  
+  print("\nRemoving intermediate target FASTA files...\n")
+
+  rm_cmd = "rm {r} {l}".format(r = ref_target_fasta, l = LR_target_fasta)
+
+  subprocess.call(rm_cmd, shell = True)
+
+
   ## Filter SQ3 FASTA to include rescue candidates
 
   print("\nCreating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...\n ")
@@ -249,6 +258,8 @@ def main():
   print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
   print("\n\tseqtk command used:\n")
   print(fasta_cmd, "\n")
+
+
 
 
 ## Run main()
