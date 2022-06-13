@@ -224,6 +224,8 @@ def main():
   cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
   f = target_fasta)
 
+  subprocess.call(cat_cmd, shell = True)
+
   print("\nRescue target FASTA was saved to ", target_fasta, "\n")
   print("\nCommand used:")
   print(cat_cmd, "\n")
@@ -259,6 +261,51 @@ def main():
   print("\n\tseqtk command used:\n")
   print(fasta_cmd, "\n")
 
+
+  #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
+
+  print("\n-------------------------------------------------------\n")
+  print("\n\tARTIFACT MAPPING (CANDIDATES VS TARGETS):\n")
+  print("\n-------------------------------------------------------\n")
+
+  ## Mapping
+
+  print("\nMapping rescue candidates to rescue targets with minimap2...\n")
+
+  # make file names
+  sam_file = args.dir + "/" + args.output + "_mapped_rescue.sam"
+
+  # make command
+  minimap_cmd = "minimap2 --secondary=yes -ax map-hifi {t} {c} > {s}".format( \
+  t = target_fasta, c = candidate_fasta, s = sam_file)
+
+  # run
+  subprocess.call(minimap_cmd, shell = True)
+
+  print("\nMinimap2 results were saved to ", sam_file, "\n")
+  print("\n\tminimap2 command used:\n")
+  print(minimap_cmd, "\n")
+
+
+  ## Filter mapping results (select SAM columns)
+
+  print("\nBuilding candidate-target table of mapping hits...\n")
+
+  # remove header from SAM
+  sam_tmp_file = args.dir + "/" + args.output + "_mapped_rescue_noheader.sam"
+  sam_cmd = "grep -v '@' {s} > {t}".format(s = sam_file, t = sam_tmp_file)
+  subprocess.call(sam_cmd, shell = True)
+
+  # get cols with candidate-target pairs + alignment type
+  hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+  hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
+  subprocess.call(hits_cmd, shell = True)
+
+  print("\nMapping hit table was saved to ", hits_file, "\n")
+
+  # delete altered SAM file
+  rm_cmd = "rm {t}".format(t = sam_tmp_file)
+  subprocess.call(rm_cmd, shell = True)
 
 
 
