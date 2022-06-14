@@ -12,6 +12,7 @@ __version__ = "5.1"
 import os, sys, argparse, subprocess
 import distutils.spawn
 import pandas as pd
+from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 ## Set general path variables
 Rscript_path = distutils.spawn.find_executable('Rscript')
@@ -43,7 +44,7 @@ def run_automatic_rescue(args):
   # define Rscript command with automatic_rescue.R args
   auto_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} \
   -g {g} -e {e}".format(u = utilities_path, s = automatic_rescue_path, \
-  c = args.sqanti_MLclassif, o = args.output, d = args.dir, \
+  c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
   g = args.refGTF, e = args.rescue_mono_exonic)
   
   # print command
@@ -98,7 +99,7 @@ def run_ML_rescue(args):
   # define Rscsript command with rescue_by_mapping.R args
   rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
   u = utilities_path, s = rescue_by_mapping_ML_path, \
-  c = args.sqanti_MLclassif, o = args.output, d = args.dir, m = mapping_hits, \
+  c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
   r = ref_isoform_predict, j = args.threshold)
 
   # print command
@@ -108,9 +109,11 @@ def run_ML_rescue(args):
   subprocess.call(rescue_cmd, shell = True)
 
   # load output list of rescued transcripts
-  rescued_file = args.dir + "/" + args.output + "_rescued_list.tsv"
+  rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
   
-  rescued_list = pd.read_table(rescued_file, usecols = [1])
+  rescued_df = pd.read_table(rescued_file, header = None, \
+  names = ["transcript"])
+  rescued_list = list(rescued_df["transcript"])
 
   # return rescued transcript list
   return(rescued_list)
@@ -129,10 +132,12 @@ def main():
   
   ## Common arguments
   common = argparse.ArgumentParser(add_help = False)
-  common.add_argument("sqanti_MLclassif", \
-  help = "\t\tSQANTI ML output classification file.")
+  common.add_argument("sqanti_filter_classif", \
+  help = "\t\tSQANTI filter (ML or rules) output classification file.")
   common.add_argument("--isoforms", \
-  help = "\t\tFASTA file output by SQANTI3 QC (*_corrected.fa).")
+  help = "\t\tFASTA file output by SQANTI3 filter (*.filtered.fasta).")
+  common.add_argument("--gtf", \
+  help = "\t\tGTF file output by SQANTI3 filter (*.filtered.gtf).")
   common.add_argument("-g", "--refGTF", \
   help = "\t\tFull path to reference transcriptome GTF used when running SQANTI3 QC.")
   common.add_argument("-f", "--refGenome", \
@@ -171,13 +176,17 @@ def main():
   
   
   ## Check that common arguments are valid
-  args.sqanti_MLclassif = os.path.abspath(args.sqanti_MLclassif)
-  if not os.path.isfile(args.sqanti_MLclassif):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_MLclassif), file=sys.stderr)
+  args.sqanti_filter_classif = os.path.abspath(args.sqanti_filter_classif)
+  if not os.path.isfile(args.sqanti_filter_classif):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_filter_classif), file=sys.stderr)
     sys.exit(-1)
     
   if not os.path.isfile(args.isoforms):
     print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
+    sys.exit(-1)
+
+  if not os.path.isfile(args.gtf):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
     sys.exit(-1)
     
   if not os.path.isfile(args.refGTF):
@@ -380,8 +389,41 @@ def main():
     rescued = run_ML_rescue(args)
 
     # finish print
-    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescued_list.tsv\n")
+    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescue_inclusion-list.tsv\n")
 
+
+
+  #### Create new GTF including rescued transcripts ####
+    
+  print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
+
+  # create file names
+  tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
+  output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
+  rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+
+  # filter reference GTF to create tmp_gtf
+  gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
+  g = args.refGTF)
+
+  subprocess.call(gtf_cmd, shell = True)
+
+  # concatenate with filtered GTF
+  cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
+  o = output_gtf)
+
+  subprocess.call(cat_cmd, shell = True)
+
+  print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
+  print("\nFinal output GTF written to file: " + output_gtf  + "\n")
+
+  # remove tmp_gtf
+  rm_cmd = "rm " + tmp_gtf
+  subprocess.call(rm_cmd, shell = True)
+
+
+  ## END ##
+  print("\nRescue finished successfully!\n")
 
 
 
