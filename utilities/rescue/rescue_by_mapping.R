@@ -142,10 +142,15 @@ opt$threshold <- as.numeric(opt$threshold)
                                              mapping = rescued_mapping_final), 
                                         .id = "rescue_method")
       
-      # output final rescue list
+      # output rescue reasons
       readr::write_tsv(rescued_final, col_names = FALSE,
                        file = paste0(opt$dir, "/", opt$output, 
-                                     "_rescued_list.tsv"))
+                                     "_rescue_reasons.tsv"))
       
-      
+      # output rescue inclusion list
+      readr::write_tsv(rescued_final %>%
+				dplyr::select(ref_transcript), 
+			col_names = FALSE,
+			file = paste0(opt$dir, "/", opt$output, 
+			"_rescue_inclusion-list.tsv"))
     
