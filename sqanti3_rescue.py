@@ -158,7 +158,8 @@ def main():
   subparsers = parser.add_subparsers(dest = 'subcommand')
 
   ## ML rescue arguments
-  ml = subparsers.add_parser("ml", parents = [common], description = "Rescue for ML-filtered transcriptomes.")
+  ml = subparsers.add_parser("ml", parents = [common], \
+  description = "Rescue for ML-filtered transcriptomes.")
   
   ml.add_argument("-r", "--randomforest", \
   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
@@ -170,6 +171,9 @@ def main():
   ## Rules rescue arguments
   rules = subparsers.add_parser("rules", parents = [common], \
   description = "Rescue for rules-filtered transcriptomes.")
+  
+  rules.add_argument("-j", "--json", \
+  "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
   
   # parse arguments
   args = parser.parse_args()
@@ -211,6 +215,11 @@ def main():
       print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
       sys.exit(-1)
   
+  ## Check that rules-specific args are valid
+  if args.subcommand == "rules":
+    if not os.path.isfile(args.json):
+      print("ERROR: {0} doesn't exist. Abort!".format(args.json), file=sys.stderr)
+      sys.exit(-1)
 
   
   #### RUN AUTOMATIC RESCUE ####
