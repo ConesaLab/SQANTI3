@@ -135,7 +135,7 @@ def main():
   common.add_argument("sqanti_filter_classif", \
   help = "\t\tSQANTI filter (ML or rules) output classification file.")
   common.add_argument("--isoforms", \
-  help = "\t\tFASTA file output by SQANTI3 filter (*.filtered.fasta).")
+  help = "\t\tFASTA file output by SQANTI3 QC (*_corrected.fasta), i.e. the full long read transcriptome.")
   common.add_argument("--gtf", \
   help = "\t\tGTF file output by SQANTI3 filter (*.filtered.gtf).")
   common.add_argument("-g", "--refGTF", \
