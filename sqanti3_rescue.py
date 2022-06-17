@@ -22,7 +22,7 @@ utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "util
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
-rescue_by_mapping_ML_path = "rescue/rescue_by_mapping.R"
+rescue_by_mapping_path = "rescue/rescue_by_mapping.R"
 
 ## Check that Rscript is working
 if os.system(Rscript_path + " --version") != 0:
@@ -98,7 +98,7 @@ def run_ML_rescue(args):
 
   # define Rscsript command with rescue_by_mapping.R args
   rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
-  u = utilities_path, s = rescue_by_mapping_ML_path, \
+  u = utilities_path, s = rescue_by_mapping_path, \
   c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
   r = ref_isoform_predict, j = args.threshold)
 
@@ -142,6 +142,8 @@ def main():
   help = "\t\tFull path to reference transcriptome GTF used when running SQANTI3 QC.")
   common.add_argument("-f", "--refGenome", \
   help = "\t\tFull path to reference genome FASTA used when running SQANTI3 QC.")
+  common.add_argument("-k", "--refClassif", \
+  help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
   common.add_argument("-e","--rescue_mono_exonic", \
   choices = ['all', 'fsm', 'none'], default = "all", \
   help='\t\tWhether or not to include mono-exonic artifacts in the rescue. Options include: none, fsm and all (default).')
@@ -163,8 +165,6 @@ def main():
   
   ml.add_argument("-r", "--randomforest", \
   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
-  ml.add_argument("-k", "--refClassif", \
-  help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
   ml.add_argument("-j", "--threshold", type = float, default = 0.7, \
   help = "Default: 0.7. Machine learning probability threshold to filter elegible rescue targets (mapping hits).")
   
@@ -200,15 +200,15 @@ def main():
   if not os.path.isfile(args.refGenome):
     print("ERROR: {0} doesn't exist. Abort!".format(args.refGenome), file=sys.stderr)
     sys.exit(-1)
+    
+  if not os.path.isfile(args.refClassif):
+      print("ERROR: {0} doesn't exist. Abort!".format(args.refClassif), file=sys.stderr)
+      sys.exit(-1)
   
   ## Check that ML-specific args are valid
   if args.subcommand == "ml":
     if not os.path.isfile(args.randomforest):
       print("ERROR: {0} doesn't exist. Abort!".format(args.randomforest), file=sys.stderr)
-      sys.exit(-1)
-
-    if not os.path.isfile(args.refClassif):
-      print("ERROR: {0} doesn't exist. Abort!".format(args.refClassif), file=sys.stderr)
       sys.exit(-1)
     
     if args.threshold < 0 or args.threshold > 1.:
