@@ -12,17 +12,20 @@ __version__ = "5.1"
 import os, sys, argparse, subprocess
 import distutils.spawn
 import pandas as pd
-from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 ## Set general path variables
 Rscript_path = distutils.spawn.find_executable('Rscript')
 gffread_path = distutils.spawn.find_executable('gffread')
+python_path = distutils.spawn.find_executable('python')
 utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
 rescue_by_mapping_path = "rescue/rescue_by_mapping.R"
+
+## Set path variables to call SQ3 scripts
+filter_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sqanti3_filter.py")
 
 ## Check that Rscript is working
 if os.system(Rscript_path + " --version") != 0:
@@ -120,6 +123,31 @@ def run_ML_rescue(args):
  
 
 
+## Run rescue steps specific to rules filter
+def run_rules_rescue(args):
+  
+  ## Run rules filter on reference transcriptome
+  
+  print("\nRules rescue selected!\n")
+  print("\nApplying provided rules (--json) to reference transcriptome classification file...\n")
+
+  # create reference out prefix and dir
+  ref_out = "reference"
+  ref_dir = "reference_rules_filter"
+ 
+  # define command
+  refRules_cmd = python_path + " {f} rules {c} -j {j} \
+  -o {o} -d {d} --skip_report".format(f = filter_path, c = args.refClassif, \
+  j = args.json, o = ref_out, d = ref_dir)
+
+  # print command
+  print(refRules_cmd + "\n")
+
+  # run on terminal
+  subprocess.call(refRules_cmd, shell = True)
+
+
+
 #### MAIN ####
 
 ## Define main()
@@ -173,7 +201,7 @@ def main():
   description = "Rescue for rules-filtered transcriptomes.")
   
   rules.add_argument("-j", "--json", \
-  "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
+  help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
   
   # parse arguments
   args = parser.parse_args()
@@ -402,38 +430,54 @@ def main():
 
 
 
-  #### Create new GTF including rescued transcripts ####
+    #### Create new GTF including rescued transcripts ####
     
-  print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
+    print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
 
-  # create file names
-  tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
-  output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
-  rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+    # create file names
+    tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
+    output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
+    rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
 
-  # filter reference GTF to create tmp_gtf
-  gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
-  g = args.refGTF)
+    # filter reference GTF to create tmp_gtf
+    gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
+    g = args.refGTF)
 
-  subprocess.call(gtf_cmd, shell = True)
+    subprocess.call(gtf_cmd, shell = True)
 
-  # concatenate with filtered GTF
-  cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
-  o = output_gtf)
+    # concatenate with filtered GTF
+    cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
+    o = output_gtf)
 
-  subprocess.call(cat_cmd, shell = True)
+    subprocess.call(cat_cmd, shell = True)
 
-  print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
-  print("\nFinal output GTF written to file: " + output_gtf  + "\n")
+    print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
+    print("\nFinal output GTF written to file: " + output_gtf  + "\n")
 
-  # remove tmp_gtf
-  rm_cmd = "rm " + tmp_gtf
-  subprocess.call(rm_cmd, shell = True)
+    # remove tmp_gtf
+    rm_cmd = "rm " + tmp_gtf
+    subprocess.call(rm_cmd, shell = True)
+
+
+  
+  #### RUN RULES FILTER RESCUE ####
+  # this part runs SQ3 rules filter for the reference transcriptome
+  # and combines the results with the mapping hits obtained in the previous step
+
+  if args.subcommand == "rules":
+
+    print("\n-------------------------------------------------------\n")
+    print("\n\tRESCUE-BY-MAPPING FOR ML FILTER:\n")
+    print("\n-------------------------------------------------------\n")
+    
+    # run rules-specific steps of rescue
+    run_rules_rescue(args)
+
 
 
   ## END ##
   print("\nRescue finished successfully!\n")
-
+  
 
 
 ## Run main()
