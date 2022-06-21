@@ -223,7 +223,34 @@ def main():
         args.output=args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]
         print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
 
-### Define TRUE or FALSE for boolean arguments
+### Print out parameters so can be reproduced the same SQ run
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
+    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    with open(args.doc, 'w') as f:
+      f.write("Version\t" + __version__ + "\n")
+      f.write("Mode\t" + args.subcommand + "\n")
+      f.write("ClassificationFile\t" + str(args.sqanti_class) + "\n")
+      f.write("Isoforms\t" + (str(args.isoforms) if args.isoforms is not None else "NA")+ "\n")
+      f.write("GTF\t" + (str(args.gtf) if args.gtf is not None else "NA") + "\n")
+      f.write("SAM\t" + (str(args.sam) if args.sam is not None else "NA") + "\n")
+      f.write("FAA\t" + (str(args.faa) if args.faa is not None else "NA") + "\n")
+      f.write("isoAnnotGFF3\t" + (str(args.isoAnnotGFF3) if args.isoAnnotGFF3 is not None else "NA") + "\n")
+      f.write("OutputPrefix\t" + str(args.output) + "\n")
+      f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+      f.write("FilterMonoexonic\t" + str(args.filter_mono_exonic) + "\n")
+      f.write("SkipReport\t" + str(args.skip_report) + "\n")
+      if args.subcommand == 'rules':
+          f.write("JSON\t" + str(args.json_filter) + "\n")
+      if args.subcommand == 'ML':
+          f.write("PercentTraining\t" + str(args.percent_training) + "\n")          
+          f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
+          f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
+          f.write("Threshold\t" + str(args.threshold) + "\n")
+          f.write("ForceFSM\t" + str(args.force_fsm_in) + "\n")
+          f.write("KeepIntermediate\t" + str(args.intermediate_files) + "\n")
+          f.write("ColumnsRemoved\t" + (str(args.remove_columns) if args.remove_columns is not None else "NA") + "\n")
+          f.write("MaxClassSize\t" + str(args.max_class_size) + "\n")
+          f.write("Intrapriming\t" + str(args.intrapriming) + "\n")
 
 ### Checking presence of files for ML. Check arguments --> If ok run ML
     
