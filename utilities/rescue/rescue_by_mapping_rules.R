@@ -16,3 +16,142 @@
 # and long read-defined transcripts), it selects the best rescue target from 
 # those that were retrieved during alignment.
 #
+
+# script argument list
+option_list = list(
+  optparse::make_option(c("-c","--sqanti_rules_classif"), type = "character", default = NULL, 
+                        help = "SQANTI rules filter output classification file."),
+  optparse::make_option(c("-o","--output"), type = "character", default = "SQANTI3", 
+                        help = "Output file prefix."),
+  optparse::make_option(c("-d","--dir"), type = "character", 
+                        help="Output directory."),
+  optparse::make_option(c("-m", "--mapping_hits"), type = "character",
+                        help = "Path to file containing artifact isoform pairs 
+                        (rescue candidates and targets) obtained during alignment."),
+  optparse::make_option(c("-r", "--reference_rules"), type = "character",
+                        help = "Path to reference transcriptome
+                        rules classification (obtained after running rules filter 
+                        on reference transcriptome).")
+)
+
+
+# Parse and handle provided arguments
+opt_parser <- optparse::OptionParser(option_list = option_list)
+opt <- optparse::parse_args(opt_parser) # list of the args
+
+
+#### PREPARATION ####
+
+    # import pipe operator
+    require(magrittr)
+    
+    # load mapping hits obtained from SAM
+    mapping_hits <- readr::read_tsv(opt$mapping_hits, 
+                                    col_names = c("rescue_candidate", 
+                                                  "sam_flag", 
+                                                  "mapping_hit"))
+
+    # load reference rules filter results
+    rules.ref <- readr::read_tsv(opt$reference_rules) %>% 
+      dplyr::select(isoform, filter_result)
+    
+    # load long read transcriptome filter classification (rules)
+    # including rules filter results for LR isoforms
+    classif <- readr::read_tsv(opt$sqanti_rules_classif)
+    
+    rules.LR <- classif %>% 
+      dplyr::select(isoform, filter_result)
+    
+    # join both reference and LR rules results
+    rules <- dplyr::bind_rows(rules.ref, rules.LR)
+    
+    # add filter result of mapping hits to entire table
+    mapping_hits <- mapping_hits %>% 
+      dplyr::left_join(rules %>% 
+                         dplyr::rename(mapping_hit = "isoform"), 
+                       by = "mapping_hit")
+    
+    # add structural categories of candidates to mapping hits table
+    mapping_hits <- mapping_hits %>% 
+      dplyr::rename(isoform = "rescue_candidate") %>% 
+      dplyr::left_join(classif %>% 
+                         dplyr::select(isoform, structural_category), 
+                       by = "isoform") %>% 
+      dplyr::rename(rescue_candidate = "isoform")
+    
+    
+#### PERFORM RESCUE ####
+    
+    ## 1. Filter mapping_hits that did not pass rules
+    mapping_hits.iso <- mapping_hits %>% 
+      dplyr::filter(filter_result == "Isoform")
+
+    ## 2. Select only reference rescued transcripts
+    rescued_ref <- mapping_hits.iso %>% 
+      dplyr::filter(stringr::str_detect(mapping_hit, 
+                                        "PB.", negate = TRUE))
+    
+    ## 3. Remove reference transcripts already represented in transcriptome
+    ##    to avoid introducing redundancy as a result of the rescue
+    
+        # retrieve all reference transcripts (associated_transcript)
+        # that are already represented by an isoform
+        isoform_assoc.tr <- classif %>%
+          dplyr::filter(filter_result == "Isoform" & 
+                          associated_transcript != "novel") %>% 
+          dplyr::select(associated_transcript)
+    
+        # include those that were retrieved in automatic rescue
+        automatic_ref_rescued <- readr::read_tsv(paste0(opt$dir, "/", opt$output, 
+                                                        "_automatic_rescued_list.tsv"),
+                                                 col_names = "associated_transcript")
+        
+        isoform_assoc.tr <- dplyr::bind_rows(isoform_assoc.tr, 
+                                             automatic_ref_rescued) %>% unique
+        
+        # find truly rescued references (not represented by any isoform)
+        rescued_mapping_final <- rescued_ref %>% 
+          dplyr::filter(!(mapping_hit %in% 
+                            isoform_assoc.tr$associated_transcript)) %>% 
+          dplyr::select(mapping_hit) %>% 
+          dplyr::rename(ref_transcript = "mapping_hit") %>% 
+          unique()
+        
+        # make compatible colnames
+        automatic_ref_rescued <- automatic_ref_rescued %>% 
+          dplyr::rename(ref_transcript = "associated_transcript")
+        
+        # generate final list of rescued transcripts
+        rescued_final <- dplyr::bind_rows(automatic_ref_rescued,
+                                          rescued_mapping_final)
+    
+        
+#### WRITE OUTPUTS ####
+        
+        # output rescue inclusion list
+        readr::write_tsv(rescued_final, 
+                         col_names = FALSE,
+                         file = paste0(opt$dir, "/", opt$output, 
+                                       "_rescue_inclusion-list.tsv"))
+
+        # include final rescue result in mapping hits table
+        mapping_hits <- mapping_hits %>% 
+          dplyr::mutate(rescue_result = dplyr::case_when(
+            mapping_hit %in% automatic_ref_rescued$ref_transcript ~ "rescued_automatic",
+            mapping_hit %in% rescued_mapping_final$ref_transcript ~ "rescued_mapping",
+            mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"),
+            exclusion_reason = dplyr::case_when(
+              mapping_hit %in% rescued_final$ref_transcript ~ NA,
+              mapping_hit %in% mapping_hits.iso$mapping_hit == FALSE ~ "artifact_by_rules",
+              mapping_hit %in% mapping_hits.iso$mapping_hit & 
+                str_detect(mapping_hit, "PB.") ~ "LR",
+              mapping_hit %in% rescued_ref$mapping_hit &
+                mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
+            ))
+        
+        # output rescue table
+        readr::write_tsv(mapping_hits,
+                         file = paste0(opt$dir, "/", opt$output, 
+                                       "_rescue_table.tsv"))
+        
+        
