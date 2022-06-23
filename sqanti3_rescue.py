@@ -22,7 +22,8 @@ utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "util
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
-rescue_by_mapping_path = "rescue/rescue_by_mapping.R"
+rescue_by_mapping_ML_path = "rescue/rescue_by_mapping_ML.R"
+rescue_by_mapping_rules_path = "rescue/rescue_by_mapping_rules.R"
 
 ## Set path variables to call SQ3 scripts
 filter_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sqanti3_filter.py")
@@ -99,9 +100,9 @@ def run_ML_rescue(args):
   ref_isoform_predict = args.dir + "/" + args.output + "_reference_isoform_predict.tsv"
   mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
 
-  # define Rscsript command with rescue_by_mapping.R args
+  # define Rscsript command with rescue_by_mapping_ML.R args
   rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
-  u = utilities_path, s = rescue_by_mapping_path, \
+  u = utilities_path, s = rescue_by_mapping_ML_path, \
   c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
   r = ref_isoform_predict, j = args.threshold)
 
