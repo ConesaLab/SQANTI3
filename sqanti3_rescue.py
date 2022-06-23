@@ -268,11 +268,11 @@ def main():
   print("\nCreating reference transcriptome FASTA from provided GTF (--refGTF)...\n")
 
   # make FASTA file name
-  pre, ext = os.path.splitext(args.refGTF)
-  refGTF_rename = pre + ".fasta"
+  pre, ext = os.path.splitext(os.path.basename(args.refGTF))
+  refFASTA = args.dir + "/" + pre + ".fasta"
   
   # build gffread command
-  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refGTF_rename, g = args.refGenome, \
+  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refFASTA, g = args.refGenome, \
   a = args.refGTF)
   
   print("\n\tgffread command used:\n")
