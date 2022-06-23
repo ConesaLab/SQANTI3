@@ -71,24 +71,19 @@ opt$threshold <- as.numeric(opt$threshold)
     # join both reference and LR ML probabilities
     probs <- dplyr::bind_rows(probs.ref, probs.LR)
     
-    # add ML probabilities to mapping hits table
+    # add ML probabilities of mapping hits to mapping hits table
     mapping_hits <- mapping_hits %>% 
       dplyr::left_join(probs %>% 
                          dplyr::rename(mapping_hit = "isoform"), 
                 by = "mapping_hit")
 
-    # add structural categories to mapping hits table
+    # add structural categories of candidates to mapping hits table
     mapping_hits <- mapping_hits %>% 
       dplyr::rename(isoform = "rescue_candidate") %>% 
       dplyr::left_join(classif %>% 
                          dplyr::select(isoform, structural_category), 
                        by = "isoform") %>% 
       dplyr::rename(rescue_candidate = "isoform")
-    
-    # output complete mapping hits table
-    readr::write_tsv(mapping_hits,
-                     file = paste0(opt$dir, "/", opt$output, 
-                                   "_rescue_table.tsv"))
     
   
 #### PERFORM RESCUE ####
@@ -133,24 +128,42 @@ opt$threshold <- as.numeric(opt$threshold)
         dplyr::filter(!(mapping_hit %in% 
                         isoform_assoc.tr$associated_transcript)) %>% 
         dplyr::select(mapping_hit) %>% 
-        dplyr::rename(ref_transcript = "mapping_hit")
+        dplyr::rename(ref_transcript = "mapping_hit") %>% 
+        unique()
       
+      # make compatible colnames
       automatic_ref_rescued <- automatic_ref_rescued %>% 
         dplyr::rename(ref_transcript = "associated_transcript")
       
-      rescued_final <- dplyr::bind_rows(list(automatic = automatic_ref_rescued,
-                                             mapping = rescued_mapping_final), 
-                                        .id = "rescue_method")
+      # generate final list of rescued transcripts
+      rescued_final <- dplyr::bind_rows(automatic_ref_rescued,
+                                        rescued_mapping_final)
       
-      # output rescue reasons
-      readr::write_tsv(rescued_final, col_names = FALSE,
-                       file = paste0(opt$dir, "/", opt$output, 
-                                     "_rescue_reasons.tsv"))
+      
+#### WRITE OUTPUTS ####
       
       # output rescue inclusion list
-      readr::write_tsv(rescued_final %>%
-				dplyr::select(ref_transcript), 
-			col_names = FALSE,
-			file = paste0(opt$dir, "/", opt$output, 
-			"_rescue_inclusion-list.tsv"))
+      readr::write_tsv(rescued_final, 
+                       col_names = FALSE,
+                       file = paste0(opt$dir, "/", opt$output, 
+                                     "_rescue_inclusion-list.tsv"))
     
+      # include final rescue result in mapping hits table
+      mapping_hits <- mapping_hits %>% 
+        dplyr::mutate(rescue_result = dplyr::case_when(
+          mapping_hit %in% automatic_ref_rescued$ref_transcript ~ "rescued_automatic",
+          mapping_hit %in% rescued_mapping_final$ref_transcript ~ "rescued_mapping",
+          mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"),
+        exclusion_reason = dplyr::case_when(
+          mapping_hit %in% rescued_final$ref_transcript ~ NA,
+          mapping_hit %in% mapping_hits.max$mapping_hit == FALSE ~ "MLprob",
+          mapping_hit %in% mapping_hits.max$mapping_hit & 
+            str_detect(mapping_hit, "PB.") ~ "LR",
+          mapping_hit %in% rescued_ref$mapping_hit &
+            mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
+        ))
+      
+      # output rescue table
+      readr::write_tsv(mapping_hits,
+                       file = paste0(opt$dir, "/", opt$output, 
+                                     "_rescue_table.tsv"))
