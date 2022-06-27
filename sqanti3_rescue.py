@@ -153,7 +153,7 @@ def run_rules_rescue(args):
   print("\nRunning rescue-by-mapping for rules filter...\n")
 
   # make file names
-  ref_rules = args.dir + "/" + args.output + \
+  ref_rules = args.dir + \
   "/reference_rules_filter/reference_RulesFilter_result_classification.txt"
   mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
 
