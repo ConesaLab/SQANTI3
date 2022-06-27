@@ -75,7 +75,8 @@ opt$threshold <- as.numeric(opt$threshold)
     mapping_hits <- mapping_hits %>% 
       dplyr::left_join(probs %>% 
                          dplyr::rename(mapping_hit = "isoform"), 
-                by = "mapping_hit")
+                by = "mapping_hit") %>% 
+      dplyr::rename(hit_filter_result = "filter_result")
 
     # add structural categories of candidates to mapping hits table
     mapping_hits <- mapping_hits %>% 
@@ -83,7 +84,8 @@ opt$threshold <- as.numeric(opt$threshold)
       dplyr::left_join(classif %>% 
                          dplyr::select(isoform, structural_category), 
                        by = "isoform") %>% 
-      dplyr::rename(rescue_candidate = "isoform")
+      dplyr::rename(rescue_candidate = "isoform") %>% 
+      dplyr::rename(candidate_structural_category = "structural_category")
     
   
 #### PERFORM RESCUE ####
@@ -156,7 +158,7 @@ opt$threshold <- as.numeric(opt$threshold)
           mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"))
       
       # include exclusion reason for those not rescued
-      mapping_hits <- mapping_hits %>% 
+      rescue_table <- rescue_table %>% 
         dplyr::mutate(exclusion_reason = dplyr::case_when(
           mapping_hit %in% mapping_hits.max$mapping_hit == FALSE ~ "ML_probability",
           mapping_hit %in% mapping_hits.max$mapping_hit & 
@@ -166,6 +168,6 @@ opt$threshold <- as.numeric(opt$threshold)
         ))
       
       # output rescue table
-      readr::write_tsv(mapping_hits,
+      readr::write_tsv(rescue_table,
                        file = paste0(opt$dir, "/", opt$output, 
                                      "_rescue_table.tsv"))
