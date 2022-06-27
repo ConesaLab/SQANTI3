@@ -56,7 +56,9 @@ def run_automatic_rescue(args):
   print(auto_cmd + "\n")
   
   ## run automatic rescue script via terminal
-  subprocess.call(auto_cmd, shell = True)
+  if subprocess.check_call(auto_cmd, shell = True) != 0:
+    print("ERROR running automatic rescue: {0}".format(auto_cmd), file = sys.stderr)
+    sys.exit()
   
   ## load output: transcripts rescued as a result of automatic rescue
   
@@ -89,39 +91,55 @@ def run_ML_rescue(args):
   print(refML_cmd + "\n")
 
   # run R script via terminal
-  subprocess.call(refML_cmd, shell = True)
+  if subprocess.check_call(refML_cmd, shell = True) != 0:
+    print("ERROR running random forest classifier on reference transcriptome: {0}".format(refML_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else:
+    # make expected output file name
+    ref_isoform_predict = args.dir + "/" + args.output + "_reference_isoform_predict.tsv"
+    
+    if os.path.isfile(ref_isoform_predict):
+      
+      ## run rescue-by-mapping
+      print("\nRunning rescue-by-mapping for ML filter...\n")
+      
+      # input file name
+      mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+      
+      # define Rscsript command with rescue_by_mapping_ML.R args
+      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
+      u = utilities_path, s = rescue_by_mapping_ML_path, \
+      c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
+      r = ref_isoform_predict, j = args.threshold)
 
+      # expected output name
+      rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
 
-  ## run rescue-by-mapping
-  
-  print("\nRunning rescue-by-mapping for ML filter...\n")
+      # run R script via terminal
+      if subprocess.check_call(rescue_cmd, shell = True) != 0:
+         print("ERROR running rescue by mapping: {0}".format(rescue_cmd), \
+         file = sys.stderr)
+         sys.exit(1)
+         
+      else if os.path.isfile(rescued_file):
+        # load output list of rescued transcripts
+        rescued_df = pd.read_table(rescued_file, header = None, \
+        names = ["transcript"])
+        rescued_list = list(rescued_df["transcript"])
 
-  # make file names
-  ref_isoform_predict = args.dir + "/" + args.output + "_reference_isoform_predict.tsv"
-  mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+        # return rescued transcript list
+        return(rescued_list)
+      
+      else:
+        print("ERROR: rescue inclusion list not created -file not found!", file = sys.stderr)
+        sys.exit(1)
 
-  # define Rscsript command with rescue_by_mapping_ML.R args
-  rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
-  u = utilities_path, s = rescue_by_mapping_ML_path, \
-  c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
-  r = ref_isoform_predict, j = args.threshold)
-
-  # print command
-  print(rescue_cmd + "\n")
-
-  # run R script via terminal
-  subprocess.call(rescue_cmd, shell = True)
-
-  # load output list of rescued transcripts
-  rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-  
-  rescued_df = pd.read_table(rescued_file, header = None, \
-  names = ["transcript"])
-  rescued_list = list(rescued_df["transcript"])
-
-  # return rescued transcript list
-  return(rescued_list)
- 
+    else:
+      print("ERROR: reference isoform predictions not found!", file = sys.stderr)
+      sys.exit(1)
+      
 
 
 ## Run rescue steps specific to rules filter
@@ -134,7 +152,7 @@ def run_rules_rescue(args):
 
   # create reference out prefix and dir
   ref_out = "reference"
-  ref_dir = "reference_rules_filter"
+  ref_dir = args.dir + "/reference_rules_filter"
  
   # define command
   refRules_cmd = python_path + " {f} rules {c} -j {j} \
@@ -145,39 +163,56 @@ def run_rules_rescue(args):
   print(refRules_cmd + "\n")
 
   # run on terminal
-  subprocess.call(refRules_cmd, shell = True)
+  if subprocess.check_call(refRules_cmd, shell = True) != 0:
+    print("ERROR running rules filter on reference transcriptome: {0}".format(refRules_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else:
+     # make file names
+    ref_rules = args.dir + \
+    "/reference_rules_filter/reference_RulesFilter_result_classification.txt"
+    
+    if os.path.isfile(ref_rules):
+      ## run rescue-by-mapping
+      print("\nRunning rescue-by-mapping for rules filter...\n")
+    
+      # input file name
+      mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
 
+      # define Rscsript command with rescue_by_mapping_ML.R args
+      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r}".format( \
+      u = utilities_path, s = rescue_by_mapping_rules_path, \
+      c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
+      m = mapping_hits, r = ref_rules)
+      
+      # expected output name
+      rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+      
+      # run R script via terminal
+      if subprocess.check_call(rescue_cmd, shell = True) != 0:
+        print("ERROR running rescue by mapping: {0}".format(rescue-cmd), \
+        file = sys.stderr)
+        sys.exit(1)
+        
+      else if os.path.isfile(rescued_file):
+        # load output list of rescued transcripts
+        rescued_df = pd.read_table(rescued_file, header = None, \
+        names = ["transcript"])
+        rescued_list = list(rescued_df["transcript"])
 
-  ## run rescue-by-mapping
-  
-  print("\nRunning rescue-by-mapping for rules filter...\n")
+        # return rescued transcript list
+        return(rescued_list)
+      
+      else:
+        print("ERROR: rescue inclusion list not created -file not found!", file = sys.stderr)
+        sys.exit(1)
 
-  # make file names
-  ref_rules = args.dir + \
-  "/reference_rules_filter/reference_RulesFilter_result_classification.txt"
-  mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+    else:
+      print("ERROR: reference filter classification not found!", file = sys.stderr)
+      sys.exit(1)
+      
 
-  # define Rscsript command with rescue_by_mapping_ML.R args
-  rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r}".format( \
-  u = utilities_path, s = rescue_by_mapping_rules_path, \
-  c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
-  m = mapping_hits, r = ref_rules)
-
-  # print command
-  print(rescue_cmd + "\n")
-
-  # run R script via terminal
-  subprocess.call(rescue_cmd, shell = True)
-
-  # load output list of rescued transcripts
-  rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-  
-  rescued_df = pd.read_table(rescued_file, header = None, \
-  names = ["transcript"])
-  rescued_list = list(rescued_df["transcript"])
-
-  # return rescued transcript list
-  return(rescued_list)
 
 
 #### MAIN ####
@@ -306,12 +341,23 @@ def main():
   ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refFASTA, g = args.refGenome, \
   a = args.refGTF)
   
-  print("\n\tgffread command used:\n")
-  print(ref_cmd, "\n")
-  
   # run gffread
-  subprocess.call(ref_cmd, shell = True)
-  
+  if subprocess.check_call(ref_cmd, shell = True) != 0:
+    print("ERROR converting reference transcriptome GTF to FASTA: {0}".format(ref_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(refFASTA):
+    print("\nReference transcriptome FASTA was saved to ", refFASTA, "\n")
+    print("\n\tgffread command used:\n")
+    print(ref_cmd, "\n")
+    
+  else:
+    print("ERROR: reference transcriptome FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+    
+    
   
   ## Filter reference transcriptome FASTA to only include target ref transcripts
   
@@ -325,12 +371,23 @@ def main():
   fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refFASTA, \
   t = target_file, f = ref_target_fasta)
 
-  print("\n\tseqtk command used:\n")
-  print(fasta_cmd, "\n")
-
   # run	
-  subprocess.call(fasta_cmd, shell = True)
-
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving target reference transcripts from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(ref_target_fasta):
+    print("\nTarget reference transcript sequences were saved to ", refFASTA, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: target reference transcript FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+    
+    
 
   ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
   
@@ -343,11 +400,22 @@ def main():
   fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
   t = target_file, f = LR_target_fasta)
 
-  print("\n\tseqtk command used:\n")
-  print(fasta_cmd, "\n")
-
   # run
-  subprocess.call(fasta_cmd, shell = True)  
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving target long-read transcripts from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(LR_target_fasta):
+    print("\nTarget long read transcript sequences were saved to ", refFASTA, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: target long read transcript FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+
 
 
   ## join both FASTA files
@@ -358,20 +426,25 @@ def main():
   cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
   f = target_fasta)
 
-  subprocess.call(cat_cmd, shell = True)
-
-  print("\nRescue target FASTA was saved to ", target_fasta, "\n")
-  print("\nCommand used:")
-  print(cat_cmd, "\n")
-
-
-  ## remove intermediate target FASTA files (LR and ref)
-  
-  print("\nRemoving intermediate target FASTA files...\n")
-
-  rm_cmd = "rm {r} {l}".format(r = ref_target_fasta, l = LR_target_fasta)
-
-  subprocess.call(rm_cmd, shell = True)
+  if subprocess.check_call(cat_cmd, shell = True) != 0:
+    print("ERROR joining target long-read and reference FASTA files: {}".format(cat_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(target_fasta):
+    print("\nRescue target FASTA was saved to ", target_fasta, "\n")
+    print("\nCommand used:")
+    print(cat_cmd, "\n")
+    
+    ## remove intermediate target FASTA files (LR and ref)
+    print("\nRemoving intermediate target FASTA files...\n")
+    rm_cmd = "rm {r} {l}".format(r = ref_target_fasta, l = LR_target_fasta)
+    subprocess.call(rm_cmd, shell = True)
+    
+  else:
+    print("ERROR: target FASTA was not created -file not found!", file = sys.stderr)
+    sys.exit(1)
+    
 
 
   ## Filter SQ3 FASTA to include rescue candidates
@@ -386,15 +459,22 @@ def main():
   fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
   t = candidate_file, f = candidate_fasta)
 
-  print(fasta_cmd, "\n")
-
   # run
-  subprocess.call(fasta_cmd, shell = True)
-
-  print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
-  print("\n\tseqtk command used:\n")
-  print(fasta_cmd, "\n")
-
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving rescue candidate sequences from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(candidate_fasta):
+    print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: candidate FASTA was not created -file not found!", file = sys.stderr)
+    sys.exit(1)
+    
+    
 
   #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
 
@@ -414,34 +494,46 @@ def main():
   t = target_fasta, c = candidate_fasta, s = sam_file)
 
   # run
-  subprocess.call(minimap_cmd, shell = True)
-
-  print("\nMinimap2 results were saved to ", sam_file, "\n")
-  print("\n\tminimap2 command used:\n")
-  print(minimap_cmd, "\n")
-
-
-  ## Filter mapping results (select SAM columns)
-
-  print("\nBuilding candidate-target table of mapping hits...\n")
-
-  # remove header from SAM
-  sam_tmp_file = args.dir + "/" + args.output + "_mapped_rescue_noheader.sam"
-  sam_cmd = "grep -v '@' {s} > {t}".format(s = sam_file, t = sam_tmp_file)
-  subprocess.call(sam_cmd, shell = True)
-
-  # get cols with candidate-target pairs + alignment type
-  hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
-  hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
-  subprocess.call(hits_cmd, shell = True)
-
-  print("\nMapping hit table was saved to ", hits_file, "\n")
-
-  # delete altered SAM file
-  rm_cmd = "rm {t}".format(t = sam_tmp_file)
-  subprocess.call(rm_cmd, shell = True)
-
-
+  if subprocess.check_call(minimap_cmd, shell = True) != 0:
+    print("ERROR mapping rescue candidates to targets: {0}".format(minimap_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else if os.path.isfile(sam_file):
+    print("\nMinimap2 results were saved to ", sam_file, "\n")
+    print("\n\tminimap2 command used:\n")
+    print(minimap_cmd, "\n")
+    
+    ## Filter mapping results (select SAM columns)
+    print("\nBuilding candidate-target table of mapping hits...\n")
+    
+    # remove header from SAM
+    sam_tmp_file = args.dir + "/" + args.output + "_mapped_rescue_noheader.sam"
+    sam_cmd = "grep -v '@' {s} > {t}".format(s = sam_file, t = sam_tmp_file)
+    
+    if subprocess.check_call(sam_cmd, shell = True) != 0:
+      print("ERROR: could not create mapping hit table from SAM: {0}".format(sam_cmd), \
+      file = sys.stderr)
+      sys.exit(1)
+      
+    else if os.path.isfile(sam_tmp_file):
+      # get cols with candidate-target pairs + alignment type
+      hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+      hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
+      
+      if subprocess.check_call(hits_cmd, shell = True) != 0:
+        print("ERROR: could not create mapping hit table from SAM: {0}".format(hits_cmd), \
+        file = sys.stderr)
+        sys.exit(1)
+        
+      else if os.path.isfile(hits_file):
+        print("\nMapping hit table was saved to ", hits_file, "\n")
+        
+        # delete altered SAM file
+        rm_cmd = "rm {t}".format(t = sam_tmp_file)
+        subprocess.call(rm_cmd, shell = True)
+        
+        
 
   #### RUN ML FILTER RESCUE ####
 
@@ -457,9 +549,6 @@ def main():
     # run ML-specific steps of rescue
     rescued = run_ML_rescue(args)
 
-    # finish print
-    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescue_inclusion-list.tsv\n")
-
   
   #### RUN RULES FILTER RESCUE ####
   # this part runs SQ3 rules filter for the reference transcriptome
@@ -474,8 +563,13 @@ def main():
     # run rules-specific steps of rescue
     run_rules_rescue(args)
     
-    # finish print
-    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescue_inclusion-list.tsv\n")
+    
+  ### Finish print if output exists (same for rules and ML) ####
+  inclusion_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+    
+  if os.path.isfile(inclusion_list):
+    print("\nFinal rescued transcript list witten to file: " + inclusion_list + "\n")
+
 
 
   #### Create new GTF including rescued transcripts ####
@@ -491,20 +585,29 @@ def main():
   gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
   g = args.refGTF)
 
-  subprocess.call(gtf_cmd, shell = True)
-
-  # concatenate with filtered GTF
-  cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
-  o = output_gtf)
-
-  subprocess.call(cat_cmd, shell = True)
-
-  print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
-  print("\nFinal output GTF written to file: " + output_gtf  + "\n")
-
-  # remove tmp_gtf
-  rm_cmd = "rm " + tmp_gtf
-  subprocess.call(rm_cmd, shell = True)
+  if subprocess.check_call(gtf_cmd, shell = True) != 0:
+    print("ERROR creating rescued transcript GTF: {0}".format(gtf_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  else:
+    # concatenate with filtered GTF
+    cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
+    o = output_gtf)
+    
+    if subprocess.check_call(cat_cmd, shell = True) != 0:
+      print("ERROR adding rescued transcripts to supplied filtered GTF: {0}".format(cat_cmd), \
+      file = sys.stderr)
+      sys.exit(1)
+    
+    else:
+      print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
+      print("\nFinal output GTF written to file: " + output_gtf  + "\n")
+    
+      # remove tmp_gtf
+      rm_cmd = "rm " + tmp_gtf
+      subprocess.call(rm_cmd, shell = True)
+  
   
   ## END ##
   print("\nRescue finished successfully!\n")
