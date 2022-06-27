@@ -21,8 +21,8 @@
 
 # script argument list
 option_list = list(
-  optparse::make_option(c("-c","--sqanti_MLclassif"), type="character", default = NULL, 
-                        help="SQANTI ML output classification file."),
+  optparse::make_option(c("-c","--sqanti_filter_classif"), type="character", default = NULL, 
+                        help="SQANTI filter output classification file."),
   optparse::make_option(c("-o","--output"), type="character", default = "SQANTI3", 
                         help="Output file prefix."),
   optparse::make_option(c("-d","--dir"), type="character", 
@@ -49,10 +49,10 @@ opt = optparse::parse_args(opt_parser) # list of the args
     require(magrittr)
 
     message("\n---------------------------------------------------------------")
-    message("\n\tREADING ML CLASSIFICATION FILE...\n")
+    message("\n\tREADING FILTER CLASSIFICATION FILE...\n")
 
     # read in classification
-    classif <- readr::read_tsv(opt$sqanti_MLclassif)
+    classif <- readr::read_tsv(opt$sqanti_filter_classif)
     
     message("\n---------------------------------------------------------------")
     
