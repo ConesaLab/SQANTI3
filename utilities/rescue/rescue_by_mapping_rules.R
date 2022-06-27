@@ -59,6 +59,7 @@ opt <- optparse::parse_args(opt_parser) # list of the args
     # including rules filter results for LR isoforms
     classif <- readr::read_tsv(opt$sqanti_rules_classif)
     
+    
     rules.LR <- classif %>% 
       dplyr::select(isoform, filter_result)
     
@@ -69,7 +70,8 @@ opt <- optparse::parse_args(opt_parser) # list of the args
     mapping_hits <- mapping_hits %>% 
       dplyr::left_join(rules %>% 
                          dplyr::rename(mapping_hit = "isoform"), 
-                       by = "mapping_hit")
+                       by = "mapping_hit") %>% 
+      dplyr::rename(hit_filter_result = "filter_result")
     
     # add structural categories of candidates to mapping hits table
     mapping_hits <- mapping_hits %>% 
@@ -77,14 +79,15 @@ opt <- optparse::parse_args(opt_parser) # list of the args
       dplyr::left_join(classif %>% 
                          dplyr::select(isoform, structural_category), 
                        by = "isoform") %>% 
-      dplyr::rename(rescue_candidate = "isoform")
+      dplyr::rename(rescue_candidate = "isoform") %>% 
+      dplyr::rename(candidate_structural_category = "structural_category")
     
     
 #### PERFORM RESCUE ####
     
     ## 1. Filter mapping_hits that did not pass rules
     mapping_hits.iso <- mapping_hits %>% 
-      dplyr::filter(filter_result == "Isoform")
+      dplyr::filter(hit_filter_result == "Isoform")
 
     ## 2. Select only reference rescued transcripts
     rescued_ref <- mapping_hits.iso %>% 
@@ -115,7 +118,7 @@ opt <- optparse::parse_args(opt_parser) # list of the args
                             isoform_assoc.tr$associated_transcript)) %>% 
           dplyr::select(mapping_hit) %>% 
           dplyr::rename(ref_transcript = "mapping_hit") %>% 
-          unique()
+          unique
         
         # make compatible colnames
         automatic_ref_rescued <- automatic_ref_rescued %>% 
@@ -135,22 +138,24 @@ opt <- optparse::parse_args(opt_parser) # list of the args
                                        "_rescue_inclusion-list.tsv"))
 
         # include final rescue result in mapping hits table
-        mapping_hits <- mapping_hits %>% 
+        rescue_table <- mapping_hits %>% 
           dplyr::mutate(rescue_result = dplyr::case_when(
             mapping_hit %in% automatic_ref_rescued$ref_transcript ~ "rescued_automatic",
             mapping_hit %in% rescued_mapping_final$ref_transcript ~ "rescued_mapping",
-            mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"),
-            exclusion_reason = dplyr::case_when(
-              mapping_hit %in% rescued_final$ref_transcript ~ NA,
+            mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"))
+        
+        # include exclusion reason for those not rescued
+        rescue_table <- rescue_table %>% 
+            dplyr::mutate(exclusion_reason = dplyr::case_when(
               mapping_hit %in% mapping_hits.iso$mapping_hit == FALSE ~ "artifact_by_rules",
               mapping_hit %in% mapping_hits.iso$mapping_hit & 
-                stringr::str_detect(mapping_hit, "PB.") ~ "LR",
+                stringr::str_detect(mapping_hit, "PB.") ~ "long_read_transcript",
               mapping_hit %in% rescued_ref$mapping_hit &
                 mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
             ))
         
         # output rescue table
-        readr::write_tsv(mapping_hits,
+        readr::write_tsv(rescue_table,
                          file = paste0(opt$dir, "/", opt$output, 
                                        "_rescue_table.tsv"))
         
