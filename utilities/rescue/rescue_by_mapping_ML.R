@@ -149,16 +149,18 @@ opt$threshold <- as.numeric(opt$threshold)
                                      "_rescue_inclusion-list.tsv"))
     
       # include final rescue result in mapping hits table
-      mapping_hits <- mapping_hits %>% 
+      rescue_table <- mapping_hits %>% 
         dplyr::mutate(rescue_result = dplyr::case_when(
           mapping_hit %in% automatic_ref_rescued$ref_transcript ~ "rescued_automatic",
           mapping_hit %in% rescued_mapping_final$ref_transcript ~ "rescued_mapping",
-          mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"),
-        exclusion_reason = dplyr::case_when(
-          mapping_hit %in% rescued_final$ref_transcript ~ NA,
-          mapping_hit %in% mapping_hits.max$mapping_hit == FALSE ~ "MLprob",
+          mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"))
+      
+      # include exclusion reason for those not rescued
+      mapping_hits <- mapping_hits %>% 
+        dplyr::mutate(exclusion_reason = dplyr::case_when(
+          mapping_hit %in% mapping_hits.max$mapping_hit == FALSE ~ "ML_probability",
           mapping_hit %in% mapping_hits.max$mapping_hit & 
-            stringr::str_detect(mapping_hit, "PB.") ~ "LR",
+            stringr::str_detect(mapping_hit, "PB.") ~ "long_read_transcript",
           mapping_hit %in% rescued_ref$mapping_hit &
             mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
         ))
