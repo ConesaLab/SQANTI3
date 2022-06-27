@@ -291,7 +291,7 @@ def main():
   ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
 
   # make command
-  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refGTF_rename, \
+  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refFASTA, \
   t = target_file, f = ref_target_fasta)
 
   print("\n\tseqtk command used:\n")
