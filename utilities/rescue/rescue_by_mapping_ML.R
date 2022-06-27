@@ -76,7 +76,7 @@ opt$threshold <- as.numeric(opt$threshold)
       dplyr::left_join(probs %>% 
                          dplyr::rename(mapping_hit = "isoform"), 
                 by = "mapping_hit") %>% 
-      dplyr::rename(hit_filter_result = "filter_result")
+      dplyr::rename(hit_POS_MLprob = "POS_MLprob")
 
     # add structural categories of candidates to mapping hits table
     mapping_hits <- mapping_hits %>% 
@@ -95,9 +95,9 @@ opt$threshold <- as.numeric(opt$threshold)
       # filter mapping hits by probability threshold
       # and select hit based on max probability
       mapping_hits.max <- mapping_hits %>% 
-        dplyr::filter(POS_MLprob >= opt$threshold) %>% 
+        dplyr::filter(hit_POS_MLprob >= opt$threshold) %>% 
         dplyr::group_by(rescue_candidate) %>%
-        dplyr::filter(POS_MLprob == max(POS_MLprob)) %>% 
+        dplyr::filter(hit_POS_MLprob == max(hit_POS_MLprob)) %>% 
         dplyr::ungroup()
       
     ## 2. Select only reference+unique rescued transcripts
