@@ -123,7 +123,7 @@ def run_ML_rescue(args):
          file = sys.stderr)
          sys.exit(1)
          
-      else if os.path.isfile(rescued_file):
+      elif os.path.isfile(rescued_file):
         # load output list of rescued transcripts
         rescued_df = pd.read_table(rescued_file, header = None, \
         names = ["transcript"])
@@ -195,7 +195,7 @@ def run_rules_rescue(args):
         file = sys.stderr)
         sys.exit(1)
         
-      else if os.path.isfile(rescued_file):
+      elif os.path.isfile(rescued_file):
         # load output list of rescued transcripts
         rescued_df = pd.read_table(rescued_file, header = None, \
         names = ["transcript"])
@@ -347,7 +347,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(refFASTA):
+  elif os.path.isfile(refFASTA):
     print("\nReference transcriptome FASTA was saved to ", refFASTA, "\n")
     print("\n\tgffread command used:\n")
     print(ref_cmd, "\n")
@@ -377,7 +377,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(ref_target_fasta):
+  elif os.path.isfile(ref_target_fasta):
     print("\nTarget reference transcript sequences were saved to ", refFASTA, "\n")
     print("\n\tseqtk command used:\n")
     print(fasta_cmd, "\n")
@@ -406,7 +406,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(LR_target_fasta):
+  elif os.path.isfile(LR_target_fasta):
     print("\nTarget long read transcript sequences were saved to ", refFASTA, "\n")
     print("\n\tseqtk command used:\n")
     print(fasta_cmd, "\n")
@@ -431,7 +431,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(target_fasta):
+  elif os.path.isfile(target_fasta):
     print("\nRescue target FASTA was saved to ", target_fasta, "\n")
     print("\nCommand used:")
     print(cat_cmd, "\n")
@@ -465,7 +465,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(candidate_fasta):
+  elif os.path.isfile(candidate_fasta):
     print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
     print("\n\tseqtk command used:\n")
     print(fasta_cmd, "\n")
@@ -499,7 +499,7 @@ def main():
     file = sys.stderr)
     sys.exit(1)
     
-  else if os.path.isfile(sam_file):
+  elif os.path.isfile(sam_file):
     print("\nMinimap2 results were saved to ", sam_file, "\n")
     print("\n\tminimap2 command used:\n")
     print(minimap_cmd, "\n")
@@ -516,7 +516,7 @@ def main():
       file = sys.stderr)
       sys.exit(1)
       
-    else if os.path.isfile(sam_tmp_file):
+    elif os.path.isfile(sam_tmp_file):
       # get cols with candidate-target pairs + alignment type
       hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
       hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
@@ -526,7 +526,7 @@ def main():
         file = sys.stderr)
         sys.exit(1)
         
-      else if os.path.isfile(hits_file):
+      elif os.path.isfile(hits_file):
         print("\nMapping hit table was saved to ", hits_file, "\n")
         
         # delete altered SAM file
