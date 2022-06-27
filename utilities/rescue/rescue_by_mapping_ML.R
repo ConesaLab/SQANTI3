@@ -158,7 +158,7 @@ opt$threshold <- as.numeric(opt$threshold)
           mapping_hit %in% rescued_final$ref_transcript ~ NA,
           mapping_hit %in% mapping_hits.max$mapping_hit == FALSE ~ "MLprob",
           mapping_hit %in% mapping_hits.max$mapping_hit & 
-            str_detect(mapping_hit, "PB.") ~ "LR",
+            stringr::str_detect(mapping_hit, "PB.") ~ "LR",
           mapping_hit %in% rescued_ref$mapping_hit &
             mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
         ))
