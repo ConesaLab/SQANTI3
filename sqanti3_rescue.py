@@ -148,6 +148,37 @@ def run_rules_rescue(args):
   subprocess.call(refRules_cmd, shell = True)
 
 
+  ## run rescue-by-mapping
+  
+  print("\nRunning rescue-by-mapping for rules filter...\n")
+
+  # make file names
+  ref_rules = args.dir + "/" + args.output + \
+  "/reference_rules_filter/reference_RulesFilter_result_classification.txt"
+  mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+
+  # define Rscsript command with rescue_by_mapping_ML.R args
+  rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r}".format( \
+  u = utilities_path, s = rescue_by_mapping_rules_path, \
+  c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
+  m = mapping_hits, r = ref_rules)
+
+  # print command
+  print(rescue_cmd + "\n")
+
+  # run R script via terminal
+  subprocess.call(rescue_cmd, shell = True)
+
+  # load output list of rescued transcripts
+  rescued_file = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+  
+  rescued_df = pd.read_table(rescued_file, header = None, \
+  names = ["transcript"])
+  rescued_list = list(rescued_df["transcript"])
+
+  # return rescued transcript list
+  return(rescued_list)
+
 
 #### MAIN ####
 
@@ -429,37 +460,6 @@ def main():
     # finish print
     print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescue_inclusion-list.tsv\n")
 
-
-
-    #### Create new GTF including rescued transcripts ####
-    
-    print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
-
-    # create file names
-    tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
-    output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
-    rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-
-    # filter reference GTF to create tmp_gtf
-    gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
-    g = args.refGTF)
-
-    subprocess.call(gtf_cmd, shell = True)
-
-    # concatenate with filtered GTF
-    cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
-    o = output_gtf)
-
-    subprocess.call(cat_cmd, shell = True)
-
-    print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
-    print("\nFinal output GTF written to file: " + output_gtf  + "\n")
-
-    # remove tmp_gtf
-    rm_cmd = "rm " + tmp_gtf
-    subprocess.call(rm_cmd, shell = True)
-
-
   
   #### RUN RULES FILTER RESCUE ####
   # this part runs SQ3 rules filter for the reference transcriptome
@@ -473,9 +473,39 @@ def main():
     
     # run rules-specific steps of rescue
     run_rules_rescue(args)
+    
+    # finish print
+    print("\nFinal rescued transcript list witten to file: " + args.dir + "/" + args.output + "_rescue_inclusion-list.tsv\n")
 
 
+  #### Create new GTF including rescued transcripts ####
+    
+  print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
 
+  # create file names
+  tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
+  output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
+  rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+
+  # filter reference GTF to create tmp_gtf
+  gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
+  g = args.refGTF)
+
+  subprocess.call(gtf_cmd, shell = True)
+
+  # concatenate with filtered GTF
+  cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
+  o = output_gtf)
+
+  subprocess.call(cat_cmd, shell = True)
+
+  print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
+  print("\nFinal output GTF written to file: " + output_gtf  + "\n")
+
+  # remove tmp_gtf
+  rm_cmd = "rm " + tmp_gtf
+  subprocess.call(rm_cmd, shell = True)
+  
   ## END ##
   print("\nRescue finished successfully!\n")
   
