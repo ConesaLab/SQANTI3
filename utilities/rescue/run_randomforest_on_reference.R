@@ -143,7 +143,9 @@ message("\n\tChecking column compatibility with pre-trained random forest classi
 #### RUN ML ####
     
 message("\n\tRunning random forest classifier on reference transcriptome...\n")
-
+    # trick to equilize classes of classification and training set
+    classification = rbind(randomforest$trainingData[1,-dim(randomforest$trainingData)[2]] , classification)
+    classification = classification[-1,]
     # apply classifier to data
     isoform_predict = predict(randomforest, classification, type = 'prob')
     
