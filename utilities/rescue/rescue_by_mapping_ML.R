@@ -156,12 +156,13 @@ opt$threshold <- as.numeric(opt$threshold)
           automatic_fsm <- classif %>% 
             dplyr::select(isoform, associated_transcript, 
                           structural_category) %>% 
-            dplyr::right_join(automatic_ref_rescued, by = "associated_transcript")
+            dplyr::right_join(automatic_ref_rescued %>% dplyr::rename(associated_transcript = "ref_transcript"), 
+                              by = "associated_transcript")
           
           # add ML probabilities for automatic rescued references
           # and add SAM flag, rescue_result and exclusion_reason columns
           automatic_fsm <- automatic_fsm %>% 
-            dplyr::right_join(probs.ref %>% dplyr::rename(associated_transcript = "isoform"), 
+            dplyr::left_join(probs.ref %>% dplyr::rename(associated_transcript = "isoform"), 
                                                           by = "associated_transcript") %>% 
             dplyr::mutate(sam_flag = NA, 
                           rescue_result = "rescued_automatic", 
