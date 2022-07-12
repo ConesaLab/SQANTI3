@@ -150,12 +150,39 @@ opt$threshold <- as.numeric(opt$threshold)
                        file = paste0(opt$dir, "/", opt$output, 
                                      "_rescue_inclusion-list.tsv"))
     
+      # process automatic rescue result
+      
+          # find FSM rescued during automatic rescue to add to rescue table
+          automatic_fsm <- classif %>% 
+            dplyr::select(isoform, associated_transcript, 
+                          structural_category) %>% 
+            dplyr::right_join(automatic_ref_rescued, by = "associated_transcript")
+          
+          # add ML probabilities for automatic rescued references
+          # and add SAM flag, rescue_result and exclusion_reason columns
+          automatic_fsm <- automatic_fsm %>% 
+            dplyr::right_join(probs.ref %>% dplyr::rename(associated_transcript = "isoform"), 
+                                                          by = "associated_transcript") %>% 
+            dplyr::mutate(sam_flag = NA, 
+                          rescue_result = "rescued_automatic", 
+                          exclusion_reason = NA)
+          
+          # reorder and rename
+          automatic_fsm <- automatic_fsm %>% 
+            dplyr::rename(rescue_candidate = "isoform", 
+                          mapping_hit = "associated_transcript", 
+                          hit_POS_MLprob = "POS_MLprob", 
+                          candidate_structural_category = "structural_category") %>% 
+            dplyr::relocate(sam_flag, .after = rescue_candidate) %>% 
+            dplyr::relocate(hit_POS_MLprob, .after = mapping_hit)
+          
+      
       # include final rescue result in mapping hits table
       rescue_table <- mapping_hits %>% 
-        dplyr::mutate(rescue_result = dplyr::case_when(
-          mapping_hit %in% automatic_ref_rescued$ref_transcript ~ "rescued_automatic",
-          mapping_hit %in% rescued_mapping_final$ref_transcript ~ "rescued_mapping",
-          mapping_hit %in% rescued_final$ref_transcript == FALSE ~ "not_rescued"))
+        dplyr::mutate(rescue_result = dplyr::if_else(
+          mapping_hit %in% rescued_mapping_final$ref_transcript, 
+          true = "rescued_mapping",
+          false = "not_rescued"))
       
       # include exclusion reason for those not rescued
       rescue_table <- rescue_table %>% 
@@ -166,6 +193,9 @@ opt$threshold <- as.numeric(opt$threshold)
           mapping_hit %in% rescued_ref$mapping_hit &
             mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
         ))
+      
+      # join FSM/automatic rescue results
+      rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
       
       # output rescue table
       readr::write_tsv(rescue_table,
