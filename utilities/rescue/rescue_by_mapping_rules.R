@@ -203,7 +203,8 @@ opt <- optparse::parse_args(opt_parser) # list of the args
             
             # if no good matching ref transcript was found but there is at least one 
             # good LR transcript, set match column to LR
-            all(exclusion_reason != "reference_already_present") &
+            all(rescue_result == "not_rescued" & 
+                   exclusion_reason != "reference_already_present") &
               any(exclusion_reason == "long_read_transcript") ~ "long_read_transcript",
             
             # if none of the above is true, all hits were excluded due to ML probability
