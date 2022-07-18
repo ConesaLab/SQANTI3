@@ -2886,10 +2886,16 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))){
 
 if (args[6]== 'both') {
   invisible(generatePDFreport())
-  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory , output_file=html.report.file)
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), 
+                    intermediates_dir = output_directory, 
+                    output_dir =  output_directory, 
+                    output_file=html.report.file)
 } else if (args[6] == 'pdf' & args[6] != 'html'){
   invisible(generatePDFreport())
 } else {
-  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory, output_file=html.report.file )
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), 
+                    intermediates_dir = output_directory,
+                    output_dir =  output_directory, 
+                    output_file=html.report.file)
 }
 
