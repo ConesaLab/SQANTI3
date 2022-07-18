@@ -175,15 +175,41 @@ opt <- optparse::parse_args(opt_parser) # list of the args
         # include exclusion reason for those not rescued
         rescue_table <- rescue_table %>% 
             dplyr::mutate(exclusion_reason = dplyr::case_when(
+              # hits excluded because they do not pass rules, i.e. are not present in mapping_hits.iso
               mapping_hit %in% mapping_hits.iso$mapping_hit == FALSE ~ "artifact_by_rules",
+              
+              # hits passing rules that constitute long read transcripts
               mapping_hit %in% mapping_hits.iso$mapping_hit & 
                 stringr::str_detect(mapping_hit, "PB.") ~ "long_read_transcript",
+              
+              # hits that are included in rescued_ref are both passing rules and not from long reads
+              # and hits that are in isoform_assoc.tr have already been rescued or 
+              # are represented by an LR transcript
               mapping_hit %in% rescued_ref$mapping_hit &
                 mapping_hit %in% isoform_assoc.tr$associated_transcript ~ "reference_already_present"
             ))
         
         # join FSM/automatic rescue results
         rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
+        
+        # create best match column
+        rescue_table <- rescue_table %>% 
+          dplyr::group_by(rescue_candidate) %>% 
+          dplyr::mutate(best_match_for_candidate = dplyr::case_when(
+            # if there is a good matching reference transcript, set match column to ref
+            any(exclusion_reason == "reference_already_present" |
+                  rescue_result == "rescued_mapping" |
+                  rescue_result == "rescued_automatic") ~ "reference_transcript",
+            
+            # if no good matching ref transcript was found but there is at least one 
+            # good LR transcript, set match column to LR
+            all(exclusion_reason != "reference_already_present") &
+              any(exclusion_reason == "long_read_transcript") ~ "long_read_transcript",
+            
+            # if none of the above is true, all hits were excluded due to ML probability
+            # and match column is set to uknown (no match could be validated)
+            all(exclusion_reason == "artifact_by_rules") ~ "unknown"
+          ))
         
         # output rescue table
         readr::write_tsv(rescue_table,
