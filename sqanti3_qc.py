@@ -2071,11 +2071,11 @@ ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
-        iso_out = os.path.join(os.path.dirname(correctedGTF),outName)
+        iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         isoAnnot_sum = iso_out + ".isoAnnotLite_stats.txt"
         ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
     else:
-        iso_out = os.path.dirname(correctedGTF) + outName
+        iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
