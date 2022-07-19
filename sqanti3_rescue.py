@@ -109,7 +109,7 @@ def run_ML_rescue(args):
       mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
       
       # define Rscsript command with rescue_by_mapping_ML.R args
-      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r} -j {j}".format( \
+      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} -m {m} -r {r} -j {j}".format( \
       u = utilities_path, s = rescue_by_mapping_ML_path, \
       c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
       r = ref_isoform_predict, j = args.threshold)
@@ -181,7 +181,7 @@ def run_rules_rescue(args):
       mapping_hits = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
 
       # define Rscsript command with rescue_by_mapping_ML.R args
-      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -m {m} -r {r}".format( \
+      rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} -m {m} -r {r}".format( \
       u = utilities_path, s = rescue_by_mapping_rules_path, \
       c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
       m = mapping_hits, r = ref_rules)
