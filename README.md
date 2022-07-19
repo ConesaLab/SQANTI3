@@ -21,6 +21,7 @@ ___________
 * Fixed behavior of **mono-exon transcripts** during **ML filter**:
   - FSM now undergo intra-primming evaluation if they are mono-exons.
   - Corrected ML filter output when `--force_multi_exon` option is supplied: mono-exon transcripts will now be labeled as Artifacts.
+* Fixed reasons file output by **rules filter**: the table now includes correct filtering reasons for **mono-exon transcripts**.
 * Added an option to rules filter to control for mono-exon transcripts (previously available in ML filter).
 * Modified the **output of SQANTI3 QC** to incorporate the creation of a complete `params.txt` file, i.e. including all arguments and the full paths of all supplied files.
 
