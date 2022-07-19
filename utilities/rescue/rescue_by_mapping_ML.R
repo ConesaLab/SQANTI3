@@ -27,6 +27,8 @@ option_list = list(
                         help = "Output file prefix."),
   optparse::make_option(c("-d","--dir"), type = "character", 
                         help="Output directory."),
+  optparse::make_option(c("-u", "--utilities_path"), type = "character",
+                        help = "Full path to SQANTI3/utilities folder."),
   optparse::make_option(c("-m", "--mapping_hits"), type = "character",
                         help = "Path to file containing artifact isoform pairs 
                         (rescue candidates and targets) obtained during alignment."),
@@ -221,9 +223,62 @@ opt$threshold <- as.numeric(opt$threshold)
             any(exclusion_reason == "long_read_transcript") ~ "long_read_transcript",
           
           # if none of the above is true, all hits were excluded due to ML probability
-          # and match column is set to uknown (no match could be validated)
+          # and match column is set to unknown (no match could be validated)
           all(exclusion_reason == "ML_probability") ~ "unknown"
         ))
+      
+      
+      # create candidate - best match ID table
+      
+          # filter by ML probability (by rescue candidate groups)
+          rescue_table.max <- rescue_table %>% 
+            dplyr::filter(hit_POS_MLprob >= opt$threshold) %>% 
+            dplyr::filter(hit_POS_MLprob == max(hit_POS_MLprob))
+          
+          # get rescue candidates with clear best match by probability
+          match_unique.ids <- rescue_table.max %>% 
+            dplyr::filter(dplyr::n() == 1) %>% 
+            dplyr::select(rescue_candidate, mapping_hit) %>% 
+            dplyr::rename(best_match_id = "mapping_hit")
+            
+          # find out which rescue candidates have ambiguity/ties
+          rescue_ties <- rescue_table.max %>% 
+            dplyr::summarize(matches = dplyr::n()) %>% 
+            dplyr::filter(matches > 1) %>% 
+            dplyr::select(rescue_candidate) %>% unlist
+          
+          # run
+          rescue_table.ties <- rescue_table.max %>% 
+            dplyr::filter(rescue_candidate %in% rescue_ties)
+          
+          source(paste0(opt$utilities_path, "/rescue/rescue_aux_functions.R"))
+          match_tie.ids <- purrr::map(rescue_ties,
+                                  find_best_match_id, 
+                                  rescue_table.ties)
+          
+          match_tie.ids <- dplyr::bind_rows(match_tie.ids)
+          
+          # join match tables
+          match_ids <- dplyr::bind_rows(match_tie.ids, 
+                                        match_unique.ids %>% dplyr::ungroup())
+      
+          
+      # add match ID column to rescue table
+      rescue_table <- rescue_table %>% 
+        dplyr::left_join(match_ids, 
+                         by = "rescue_candidate")
+      
+          # handle match ID col NAs caused by:
+          # unknown best match cases
+          rescue_table <- rescue_table %>% 
+            dplyr::mutate(best_match_id = dplyr::if_else(best_match_for_candidate == "unknown", 
+                                                         true = "unknown", 
+                                                         false = best_match_id))
+          # automatic rescue cases
+          rescue_table <- rescue_table %>% 
+            dplyr::mutate(best_match_id = dplyr::if_else(rescue_result == "rescued_automatic", 
+                                                         true = mapping_hit,
+                                                         false = best_match_id))
       
       # output rescue table
       readr::write_tsv(rescue_table,

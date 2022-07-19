@@ -21,3 +21,29 @@ rescue_lost_reference <- function(ref_id, classif){
     return(ism_df)
   }
 }
+
+
+# function to create best_match_id column in rescue table
+find_best_match_id <- function(candidate_id, rescue_table){
+  
+  # select only rows from rescue candidate
+  rescue_sub <- rescue_table %>% 
+    dplyr::filter(rescue_candidate == candidate_id)
+    
+  # select primary alignment
+  sam <- rescue_sub %>% 
+    dplyr::filter(sam_flag == 0)
+      
+    if(nrow(sam) == 1){
+      id <- sam$mapping_hit
+  
+    }else{
+      id <- paste(rescue_sub$mapping_hit, 
+                  collapse = ",")
+    }
+  
+  match_result <- tibble::tibble(rescue_candidate = candidate_id, 
+                                 best_match_id = id)
+  
+  return(match_result)
+}
