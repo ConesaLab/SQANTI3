@@ -1,4 +1,7 @@
-apply_rules <- function(isoform_info){
+apply_rules <- function(isoform_info, force_multiexon){
+  if (force_multiexon & as.numeric(isoform_info["exons"])==1){
+  final_is_isoform=FALSE
+  }else{
   sc = as.character(isoform_info["structural_category"])
   final_is_isoform=TRUE
   # detect if there is any specific rule for the SC of the isoform
@@ -68,6 +71,7 @@ apply_rules <- function(isoform_info){
       final_is_isoform=final_is_isoform | is_isoform
     }
   }
+  }
   if (final_is_isoform){
    return("Isoform")
   }else{
@@ -76,7 +80,10 @@ apply_rules <- function(isoform_info){
 }
 
 ### This function will apply the same filtering process but it will return the reasons for filtering a transcript. Use only on artifacts
-get_reasons <- function(isoform_info){
+get_reasons <- function(isoform_info, force_multiexon){
+  if (force_multiexon & as.numeric(isoform_info["exons"])==1){
+  reasons <- c("Mono-exon")
+  }else{
   sc = as.character(isoform_info["structural_category"])
   reasons <- c()
   # detect if there is any specific rule for the SC of the isoform
@@ -134,6 +141,7 @@ get_reasons <- function(isoform_info){
       }
     }
   }
+ }
  num_reasons <- length(unique(reasons))
  final_df <- data.frame(isoform=rep(isoform_info["isoform"], num_reasons),
                         structural_category=rep(isoform_info["structural_category"],num_reasons),

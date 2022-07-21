@@ -126,8 +126,8 @@ def run_ML(args):
     return(seqs_to_keep, inclusion_list)
 
 def run_rules(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u}".format(u=utilitiesPath, \
-     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter)
+    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u} -e {e}".format(u=utilitiesPath, \
+     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter, e=args.filter_mono_exonic)
 
     report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
     o=args.output, d=args.dir)
@@ -159,6 +159,7 @@ def main():
     common.add_argument('--faa', help='\t\tORF prediction faa file to be filtered by SQANTI3')
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
+    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
@@ -187,7 +188,6 @@ def main():
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
     help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
-    ml.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
 
     args = parser.parse_args()
 
@@ -223,7 +223,34 @@ def main():
         args.output=args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]
         print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
 
-### Define TRUE or FALSE for boolean arguments
+### Print out parameters so can be reproduced the same SQ run
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
+    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    with open(args.doc, 'w') as f:
+      f.write("Version\t" + __version__ + "\n")
+      f.write("Mode\t" + args.subcommand + "\n")
+      f.write("ClassificationFile\t" + str(args.sqanti_class) + "\n")
+      f.write("Isoforms\t" + (str(args.isoforms) if args.isoforms is not None else "NA")+ "\n")
+      f.write("GTF\t" + (str(args.gtf) if args.gtf is not None else "NA") + "\n")
+      f.write("SAM\t" + (str(args.sam) if args.sam is not None else "NA") + "\n")
+      f.write("FAA\t" + (str(args.faa) if args.faa is not None else "NA") + "\n")
+      f.write("isoAnnotGFF3\t" + (str(args.isoAnnotGFF3) if args.isoAnnotGFF3 is not None else "NA") + "\n")
+      f.write("OutputPrefix\t" + str(args.output) + "\n")
+      f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+      f.write("FilterMonoexonic\t" + str(args.filter_mono_exonic) + "\n")
+      f.write("SkipReport\t" + str(args.skip_report) + "\n")
+      if args.subcommand == 'rules':
+          f.write("JSON\t" + str(args.json_filter) + "\n")
+      if args.subcommand == 'ML':
+          f.write("PercentTraining\t" + str(args.percent_training) + "\n")          
+          f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
+          f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
+          f.write("Threshold\t" + str(args.threshold) + "\n")
+          f.write("ForceFSM\t" + str(args.force_fsm_in) + "\n")
+          f.write("KeepIntermediate\t" + str(args.intermediate_files) + "\n")
+          f.write("ColumnsRemoved\t" + (str(args.remove_columns) if args.remove_columns is not None else "NA") + "\n")
+          f.write("MaxClassSize\t" + str(args.max_class_size) + "\n")
+          f.write("Intrapriming\t" + str(args.intrapriming) + "\n")
 
 ### Checking presence of files for ML. Check arguments --> If ok run ML
     
@@ -240,10 +267,11 @@ def main():
             print("ERROR: {0} doesn't exist. Abort!".format(args.remove_columns), file=sys.stderr)
             sys.exit(-1)
         if args.percent_training < 0 or args.percent_training > 1.:
-            print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.intrapriming), file=sys.stderr)
+            print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.percent_training), file=sys.stderr)
             sys.exit(-1)
         if args.intrapriming < 25 or args.intrapriming > 100:
             print("ERROR: --intrapriming must be between 25-100, instead given {0}! Remember to use the percentage value. Abort!".format(args.intrapriming), file=sys.stderr)
+            sys.exit(-1)
 
 
         ids, inclusion_file = run_ML(args)

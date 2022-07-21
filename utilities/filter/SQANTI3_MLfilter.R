@@ -673,22 +673,16 @@ if (run_ML == TRUE) {
   ####################################
   ## Add monoexons back to dataset  ##
   ####################################
-  if(opt$force_multi_exon == FALSE){
     
-    dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
-    dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
+  # select mono-exons
+  dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
+  
+  # set ML-related columns to NA
+  dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
     
-    # d1 will include mono-exons (default behavior)
-    d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
+  # add mono-exons back to the main data.frame
+  d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
     
-  } else{
-    
-    message("\n\t ***force_multi_exon = TRUE: All mono-exon transcripts will be removed from the output.")
-    
-    # d1 will NOT include mono-exons
-    d1 <- classified.isoforms
-    
-  }
   
 # END OF if(run_ML == TRUE)
   
@@ -699,11 +693,6 @@ if (run_ML == TRUE) {
   # ML did not run, fill result columns with NA
   d1$"NEG_MLprob" <- d1$"POS_MLprob" <- d1$"ML_classifier" <- NA
   
-  if(opt$force_multi_exon == TRUE){
-    
-    # d1 was not modified during ML filter, mono-exons need to be removed
-    d1 <- d1[rownames(d1)[which(d1$exons > 1)],]
-  }
 }
 
 
@@ -714,18 +703,20 @@ if (run_ML == TRUE) {
 message("\n-------------------------------------------------")
 message("\nApplying intra-priming filter to our dataset.")
 
+# apply to all not FSM transcripts and to all mono-exons from all categories
 d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
-  !(d1$structural_category %in% c("full-splice_match"))
+  # not FSM: always TRUE
+  (d1$structural_category != "full-splice_match" |
+     # FSM: only TRUE when mono-exon
+     (d1$structural_category == "full-splice_match" & d1$exons == 1))
+
 
 message("\nIntra-priming filtered transcripts:")
 print(table(d1$intra_priming))
 
 
-    # reorder d and d1 to have transcripts in the same order
-    # when force_multi_exon = TRUE, d and d1 will have different number of rows: skip
-    if(opt$force_multi_exon == FALSE){
-      d1 <- d1[rownames(d),]
-    }
+# reorder d and d1 to have transcripts in the same order
+d1 <- d1[rownames(d),]
 
 
 
@@ -740,13 +731,6 @@ message("\nWriting filter results to classification file...")
 
 # select new columns in d1 that contain the ML results
 result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
-
-
-    # for force_multi_exon = TRUE, subset d object (initial classification table)
-    # to remove all mono-exon transcripts, not included in d1
-    if(opt$force_multi_exon == TRUE){
-      d <- d[rownames(d1),]
-    }
 
 
 # add isoform ids and result columns to d object (initial classification table)
@@ -766,6 +750,12 @@ d_out$filter_result <- ifelse(d_out$intra_priming == FALSE &
     #     - ML_classifier == NA -> Isoform
     #     - ML_classifier == Positive -> Isoform
     #     - ML_classifier == Negative -> Artifact
+
+
+# if mono-exons are to be excluded (--e), set filter_result column to Artifact
+if(opt$force_multi_exon == TRUE){
+  d_out$filter_result[d_out$exons == 1] <- "Artifact"
+}
 
 
 # write new classification table
