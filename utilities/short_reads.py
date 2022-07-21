@@ -162,7 +162,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
 ## the idea would be to first calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get the maximum the ratios across replicates and return it as a dictionary
     print('BAM files identified: '+str(replicates))
-    out_TSS_file = os.path.dirname(inside_bed) + "/mean_ratio_TSS.tsv"
+    out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)
     for b in [*range(0,len(replicates))]:
@@ -183,6 +183,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
         if b == 0 :
             ratio_rep_df = merged['id']
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
+    #ratio_rep_df.to_csv(out_TSS_file, index=False)
     ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1, numeric_only=True)
     ratio_rep_df = ratio_rep_df[['id','max_ratio_TSS']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()

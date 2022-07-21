@@ -31,7 +31,10 @@ option_list = list(
   optparse::make_option(c("-d","--dir"), type="character", 
                         help="Output directory."),
   optparse::make_option(c("-u","--utilities_path"), type="character",
-                        help="Full path to SQANTI3/utilities folder.")
+                        help="Full path to SQANTI3/utilities folder."),
+  optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
+              help="Default: FALSE. When TRUE, forces retaining only multi-exon 
+              transcripts, all mono-exon isoforms will be automatically removed.")
 )
 
 
@@ -42,7 +45,7 @@ opt = optparse::parse_args(opt_parser)
 classif_file = opt$sqanti_classif
 json_file = opt$json_filter
 utilities = opt$utilities_path
-
+force_multiexon = opt$force_multi_exon
 ### Load functions from rules_filter_functions
 source(paste0(utilities, "/filter/rules_filter_functions.R"))
 
@@ -133,12 +136,12 @@ message("\n \t Performing filtering")
 message("\n--------------------------------------------------")
 
 
-classif$filter_result <- apply(classif, 1, apply_rules)
+classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
 
 inclusion_list <- classif[classif$filter_result == "Isoform", "isoform"]
 
 artifacts_classif <- classif[classif$filter_result == "Artifact", ]
-reasons_df <- apply(artifacts_classif,1, get_reasons) %>% bind_rows()
+reasons_df <- apply(artifacts_classif,1, get_reasons, force_multiexon) %>% bind_rows()
 
 message("-------------------------------------------------")
 message("\n \t Writting results")
