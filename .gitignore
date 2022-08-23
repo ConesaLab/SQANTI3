@@ -130,3 +130,6 @@ dmypy.json
 example/Homo_sapiens.GRCh38.dna.chromosome.13.fa
 example/SQANTI3_output/STAR_index/SA
 example/SQANTI3_output/STAR_index/SAindex
+
+# Cupcake
+cDNA_Cupcake/

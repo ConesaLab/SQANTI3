@@ -1,0 +1,11 @@
+sqanti_classif	/home/angeles/PhD/SQANTI3/example/SQANTI3_QC_output/UHR_chr22_classification.txt
+output	UHR_chr22
+dir	example/MLfilter_output/
+percent_training	0.8
+threshold	0.7
+intrapriming	60
+force_fsm_in	FALSE
+force_multi_exon	FALSE
+intermediate_files	FALSE
+max_class_size	3000
+help	FALSE
