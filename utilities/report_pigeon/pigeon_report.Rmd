@@ -1,0 +1,1213 @@
+---
+title: "SQANTI3 REPORT"
+author: "`r paste0('  ','Author', ': ',Sys.getenv('USERNAME'))`"
+date: "`r paste0('  ','Date', ': ', format(Sys.time(), '%d %B %Y'))`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    css: style.css
+---
+
+
+<!--
+The code contains several parts:
+  0.Summary
+  1.Gene Characterization
+  2.Structural Isoform Characterization by Splice Junctions
+  3.Splice Junction Characterization
+  4.Comparison with Annotated TSS and TTS
+  5.Comparison With Annotated TSS and TTS by Subcategories
+
+  6.CAGE distances analysis
+  7.Redundancy Analysis
+  8.Intra−Priming Quality Check
+  9.QC Features of Bad Qualities
+-->
+
+<!---Basic setting-->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = FALSE, warning = FALSE, results = 'asis', echo=FALSE)
+#### Data preparation (change previous table format)
+
+### Summary
+
+# Table 1: Number of isoforms in each structural category
+table1MD <- as.data.frame(table(data.class$structural_category))
+rownames(table1MD) <- NULL
+colnames(table1MD) <- c("Category","# Isoforms")
+
+# Table 2: Number of Novel vs Known Genes
+table2MD = as.data.frame(table(isoPerGene$novelGene))
+rownames(table2MD) = NULL
+colnames(table2MD) = c("Category","# Genes")
+
+# Table 3: Junction Classification
+freqCat <- as.data.frame(table(uniqJunc$SJ_type))
+freqCat$Var1 <- gsub(" ", "", freqCat$Var1)
+freqCat$Var1 <- gsub("\n", " ", freqCat$Var1)
+uniq_sj_count <- nrow(uniqJunc)
+freqCat$Frac <- round(freqCat$Freq*100 / uniq_sj_count, 2)
+
+table3MD <- as.data.frame(table(uniqJunc$SJ_type))
+table3MD$Var1 <- gsub(" ", "", freqCat$Var1)
+table3MD$Var1 <- gsub("\n", " ", freqCat$Var1)
+table3MD$Frac <- round(freqCat$Freq*100 / uniq_sj_count, 2)
+colnames(table3MD) <- c("Category","# SJs","Percent")
+rownames(table3MD) <- NULL
+
+
+
+### Comparison with Annotated TSS and TTS
+
+# Table: Number of PolyA Motifs Detected
+if (exists("df.polyA")) {
+    df.polyA_MD <- df.polyA
+    rownames(df.polyA_MD) <- NULL
+    colnames(df.polyA_MD) <- c("Category","Count","polyA\nDetected","%")
+}
+
+
+# Table: Frequency of polyA motifs
+if (exists("df.polyA_freq")) {
+  df.polyA_freq_MD <- df.polyA_freq
+  rownames(df.polyA_freq_MD) <- NULL
+  colnames(df.polyA_freq_MD) <- c("Motif", "Count", "%")
+}
+
+if (exists("df.polyA_subcat")) {
+  df.polyA_subcat_MD <- df.polyA_subcat
+  rownames(df.polyA_subcat_MD) <- NULL
+  colnames(df.polyA_subcat_MD) <- c("Category","Count","polyA\nDetected","%")
+}
+
+if (exists("df.cage")) {
+  df.cage_MD <- df.cage
+  rownames(df.cage_MD) <- NULL
+  colnames(df.cage_MD) <- c("Category","Count","CAGE\nDetected","%")
+}
+if (exists("df.cage_subc")) {
+  df.cage_subc_MD <- df.cage_subc
+  rownames(df.cage_subc_MD) <- NULL
+  colnames(df.cage_subc_MD) <- c("Subcategory","Count","CAGE\nDetected","%")
+}
+
+## Figures
+### P1
+
+p1x <- levels(p1$data$structural_category) # x axis
+p1x_order <- 1:length(p1x)
+p1x_row <- c(paste0(p1x, ' ','Coding'), (paste0(p1x, ' ','Non coding')))
+
+p1y1 <- c() # coding
+p1y2 <- c() # non_coding
+
+p1x_df <-  as.data.frame(rep(0, length(p1x_row)))
+rownames(p1x_df) <-  p1x_row
+
+p1_summary <- as.data.frame(summary(as.factor(paste0(p1$data$structural_category, ' ', p1$data$coding))))
+for (i in rownames(p1x_df)) {
+  if (i %in% rownames(p1_summary)) {
+    p1x_df$`rep(0, length(p1x_row))`[rownames(p1x_df) == i] = p1_summary$`summary(as.factor(paste0(p1$data$structural_category, " ", p1$data$coding)))`[rownames(p1_summary) == i]
+  }
+}
+
+index_1 = 1
+index_2 = 1
+for (i in p1x) {
+  for (j in rownames(p1x_df)) {
+    if (i == strsplit(j, ' ')[[1]][1]) {
+      if (strsplit(j, ' ')[[1]][2] == 'Coding') {
+        p1y1[index_1] <- p1x_df[j,]
+        index_1 = index_1 + 1
+      } else {
+        p1y2[index_2] <- p1x_df[j,]
+        index_2 = index_2 + 1
+      }
+    }
+  }
+}
+
+p1y1_plot = p1y1/sum(p1y1+p1y2)
+p1y2_plot = p1y2/sum(p1y1+p1y2)
+p1y_sum = round(p1y1_plot + p1y2_plot, 4)
+myPalette_fade <- c("#D2E6F2", "#FEDCCD", "#D6EDD6", "#F9D2CA", "#DFDFDF", "#D1ECE3", "#FFECBD", "#F8DFD7", "#C6E9ED", "#F0CAC3", "#FEE0BE")
+
+## number of genes
+nGenes = nrow(isoPerGene)
+nIso = nrow(data.class)
+
+## Functions
+
+
+
+```
+
+<body>
+  <a class="show-modal" href="#">
+    <i class="fas fa-question-circle"></i> How to use the report?
+  </a>
+
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="howToUse.png"></div>
+</body>
+
+<!--
+Summary
+  1.Gene classification
+  2.Structural classification of transcripts
+  3.Splice Junction Classification
+-->
+
+## Summary {.tabset .tabset-fade}
+
+<p> ***Unique Genes: `r nGenes`*** <br> ***Unique Isoforms: `r nIso`*** </p>
+
+### Gene classification
+
+```{r}
+datatable(
+  table2MD,
+  options = list(
+    dom = 't'),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;','Table 1: ',
+    htmltools::em('Gene classification.'))
+  )
+```
+
+### Isoform Classification
+
+```{r}
+datatable(
+  table1MD,
+  options = list(dom = 't'),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;','Table 2: ',
+    htmltools::em('Structural classification of transcripts based on splice junctions.'))
+)
+```
+
+### Splice Junction Classification
+
+```{r}
+datatable(table3MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;','Table 3: ',
+            htmltools::em('Splice Junction Classification.'))
+)
+```
+
+<!--
+Gene Characterization
+  1. Number of Isoforms per Gene
+  2. Transcript Length
+  3. Other Plots
+-->
+
+## Gene Characterization {.tabset .tabset-fade }
+
+<!--1-->
+
+### Number of Isoforms per Gene {.tabset .tabset-fade .tabset-dropdown}
+
+#### Distribution of Isoforms per Gene
+
+```{r p0}
+ggplotly(p0)%>%
+  layout(margin = list(r = 150), showlegend = T)
+```
+
+#### Kown vs Novel Genes
+
+```{r p7}
+ggplotly(p7)%>%
+  layout(margin = list(r = 150), title = list(text = paste0("Number of Isoforms per Gene", '<br>', '<sup>','Number of Isoforms per Gene','</sup>')))
+```
+
+<!--2-->
+
+### Transcript Length {.tabset .tabset-fade .tabset-dropdown}
+
+#### Classification
+
+```{r p.classByLen.a}
+ggplotly(p.classByLen.a)%>%
+  layout(margin = list(r = 150))
+```
+
+#### Normalized Classification
+
+```{r p.classByLen.b}
+ggplotly(p.classByLen.b)%>%
+  layout(margin = list(r = 150))
+```
+
+#### All Transcripts
+
+```{r p.length.all}
+ggplotly(p.length.all)%>%
+  layout(margin = list(r = 130))
+```
+
+#### By Structural Category
+
+```{r p.length.cat}
+ggplotly(p.length.cat)%>%
+  layout(margin = list(r = 150))
+```
+
+#### Mono- vs Multi-Exons
+
+```{r p.length.exon}
+ggplotly(p.length.exon)%>%
+  layout(margin = list(r = 130))
+```
+
+<!-- codes only run when multiple_samples is true -->
+
+```{r, eval = exists("p.length.all.sample")}
+cat('\n####'," By Sample", '\n')
+ggplotly(p.length.all.sample)%>%
+  layout(margin = list(r = 130))
+cat('\n')
+```
+
+```{r, eval = exists("p.length.exon.sample")}
+cat ('####'," Mono- vs Multi-Exons, By Sample", '\n')
+ggplotly(p.length.exon.sample)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+```
+
+<!--3-->
+
+### Exon Structure
+
+```{r p6}
+ggplotly(p6)%>%
+  layout(margin = list(r = 130))
+```
+
+<!--4-->
+
+```{r, eval = exists("p10") || exists("p11")}
+cat ('\n###',"Quantification {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+<!-- codes only run when expresion provided -->
+
+```{r p10, eval = exists("p10")}
+cat ('\n####',"Gene Expression, Annotated vs Novel", '\n')
+ggplotly(p10)%>%
+  layout(margin = list(r = 130), showlegend = T)
+cat ('\n')
+```
+
+<!-- codes only run when FL count provided -->
+
+```{r p11, eval = exists("p11")}
+cat ('\n####',"Number of FL reads per Gene by type of gene annotation", '\n')
+ggplotly(p11)%>%
+  layout(margin = list(r = 130), showlegend = T)
+cat ('\n')
+```
+
+<!--
+Structural Isoform Characterization
+  1.Structural Categories
+  2.Subcategories
+  3.Matched Reference Transcripts
+  4.Other Plots
+-->
+
+## Structural Isoform Characterization {.tabset .tabset-fade }
+
+<!-- 1 -->
+
+### Isoform Distribution {.tabset .tabset-fade .tabset-dropdown}
+
+#### Across Structural Categories
+
+```{r p1}
+plot_ly(x=reorder(p1x, p1x_order), y=p1y1_plot, type='bar', name = "Coding", text = paste0(p1y_sum*100,"%"), textposition = 'none',
+        marker = list(color= myPalette,
+                      line = list(color = '#000000', width = 1))) %>%
+  add_trace(y = p1y2_plot, name = "Non_coding", marker= list(color=myPalette_fade),textposition= 'outside') %>%
+
+  layout(title = list(text = "Isoform distribution across structural categories", font= list (size = 18), x = 0.4),
+         font = list(family = "arial", color = "#000000", size = 14),
+         barmode='stack',
+         yaxis = list(tickformat='%'),
+         xaxis = list(tickangle = -45),
+         legend = list(title = list(text = 'Coding prediction')))
+
+```
+
+```{r p1.s.list, eval=exists("p1.s.list")}
+p1.s.titles = list("#### Across FSM",
+                   "#### Across ISM",
+                   "#### Across NNC",
+                   "#### Across NIC",
+                   "#### Across Genic Genomic",
+                   "#### Across Antisense",
+                   "#### Across Fusion",
+                   "#### Across Intergenic",
+                   "#### Across Genic Intron")
+for (i in 1:length(p1.s.list)) {
+  cat(p1.s.titles[[i]])
+  cat('  \n')
+  if (!is.null(p1.s.list[[i]])) {
+    print(htmltools::tagList(ggplotly(p1.s.list[[i]])%>%
+                             layout(margin = list(r = 130), showlegend = T, width=700)))
+  }
+
+  cat('  \n\n')
+
+}
+
+
+```
+
+### Transcript Lengths {.tabset .tabset-fade .tabset-dropdown}
+
+#### By Structural Classification
+
+```{r p4}
+ggplotly(p4) %>%
+  layout(showlegend = T)
+```
+
+#### By Subcategory
+
+```{r p4.s1_p4.s2_p4.s3}
+ggplotly(p4.s1) %>%
+  layout(showlegend = T, boxmode = "group")
+
+ggplotly(p4.s2) %>%
+  layout(showlegend = T, boxmode = "group")
+
+ggplotly(p4.s3) %>%
+  layout(showlegend = T, boxmode = "group")
+```
+
+
+### Exon Counts by Structural Classification {.tabset .tabset-fade .tabset-dropdown}
+
+#### By Structural Classification
+
+```{r p5}
+ggplotly(p5) %>%
+  layout(showlegend = T)
+```
+
+#### By Subcategory
+
+```{r p5.s1_p5.s2_p5.s3}
+ggplotly(p5.s1) %>%
+  layout(showlegend = T, boxmode = "group")
+
+ggplotly(p5.s2) %>%
+  layout(showlegend = T, boxmode = "group")
+
+ggplotly(p5.s3) %>%
+  layout(showlegend = T, boxmode = "group")
+```
+
+```{r, eval = exists("p2") || exists("p3")}
+cat ('\n###',"Matched Reference Transcripts {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r, eval = exists("p8")}
+cat ('\n###',"Transcript Expression {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####',"By Structural Category", '\n')
+ggplotly(p8)
+```
+
+```{r, eval = exists("p8.s1")}
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p8.s1)
+```
+
+```{r, eval = exists("p8.s2")}
+cat ('\n####',"By Subcategory NIC/NNC", '\n')
+ggplotly(p8.s2)
+```
+
+```{r, eval = exists("p8.s3")}
+cat ('\n####',"By Subcategory Other", '\n')
+ggplotly(p8.s3)
+```
+
+```{r, eval = exists("p9")}
+cat ('\n###',"Long Reads Count {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p9)
+```
+
+```{r, eval = exists("p9.s1")}
+cat ('\n####',"By Subcategory FSM/ISM", '\n')
+ggplotly(p9.s1)
+```
+
+```{r, eval = exists("p9.s2")}
+cat ('\n####',"By Subcategory NIC/NNC", '\n')
+ggplotly(p9.s2)
+```
+
+```{r, eval = exists("p9.s3")}
+cat ('\n####',"By Subcategory Other", '\n')
+ggplotly(p9.s3)
+```
+
+<!-- codes only run when expresion provided -->
+
+```{r p2, eval = exists("p2")}
+cat ('\n####',"Length Distribution", '\n')
+ggplotly(p2)%>%
+  layout(margin = list(r = 130),
+         showlegend = T,
+         title = list(text = paste0("Length Distribution of Matched Reference Transcripts", '<br>', '<sup>', 'Applicable Only to FSM and ISM Categories','</sup>')))
+cat ('\n')
+```
+
+<!-- codes only run when FL count provided -->
+
+```{r p3, eval = exists("p3")}
+cat ('\n####',"Exon Count Distribution", '\n')
+ggplotly(p3)%>%
+  layout(margin = list(r = 130),
+         showlegend = T,
+          title = list(text = paste0("Exon Count Distribution of Matched Reference Transcripts", '<br>', '<sup>', 'Applicable Only to FSM and ISM Categories','</sup>')))
+cat ('\n')
+```
+
+
+
+<!--
+Splice Junction Characterization
+  1. Distribution
+  2. RT-switching
+-->
+
+<!-- 1 -->
+
+```{r p23.a_p23.b_p29.a_p29.b, eval = exists("p23.a") || exists("p23.b") || exists("p29.a") || exists("p29.b")}
+cat ('\n##'," Splice Junction Characterization {.tabset .tabset-fade }", '\n')
+```
+
+```{r p23.a_p23.b, eval = exists("p23.a") || exists("p23.b")}
+cat ('\n###', "Distribution {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####', "Distribution of Splice Junctions by Structural Classification", '\n')
+ggplotly(p23.a)
+cat ('\n')
+cat('\n####', "Distribution of Transcripts by Splice Junctions", '\n')
+ggplotly(p23.b)
+cat ('\n')
+```
+
+```{r p29.a_p29.b, eval = exists("p29.a") || exists("p29.b")}
+cat ('\n###', "RT−Switching {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####', "RT−Switching All Junctions", '\n')
+ggplotly(p29.a)
+cat ('\n')
+cat('\n####', "Unique Junctions RT−switching", '\n')
+ggplotly(p29.b)
+cat ('\n')
+```
+
+
+
+
+```{r , echo=FALSE, eval = nrow(data.FSM) > 0}
+cat ('\n##'," Comparison With Annotated TSS and TTS {.tabset .tabset-fade }", '\n')
+```
+
+```{r p21.a_p21.b_p21.dist3.ISM.a_p21.dist3.ISM.b, eval = exists("p21.a") || exists("p21.b")}
+cat ('\n###', "Distance to Annotated Polyadenylation Site {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+```{r p21.a_p21.b, eval = exists("p21.a") || exists("p21.b")}
+cat ('\n####', "For FSM", '\n')
+```
+
+```{r p21.a, eval = exists("p21.a")}
+ggplotly(p21.a) %>%
+layout(margin = list(r = 150),
+       title = list(text = paste0("Distance to Annotated Polyadenylation Site for FSM", '<br>', '<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))
+cat('\n')
+```
+
+```{r p21.b, eval = exists("p21.b")}
+ggplotly(p21.b) %>%
+  layout(margin = list(r = 150),
+         title = list(text = paste0("Distance to Annotated Polyadenylation Site for FSM", '<br>', '<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))
+cat('\n')
+```
+
+```{r p21.dist3.ISM.a_p21.dist3.ISM.b, eval = exists("p21.dist3.ISM.a") || exists("p21.dist3.ISM.b")}
+cat ('\n####', "For ISM", '\n')
+```
+
+```{r p21.dist3.ISM.a, eval = exists("p21.dist3.ISM.a")}
+ggplotly(p21.dist3.ISM.a) %>%
+  layout(margin = list(r = 150),
+         title = list(text = paste0("Distance to Annotated Polyadenylation Site for ISM", '<br>', '<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))
+cat('\n')
+```
+```{r p21.dist3.ISM.b, eval = exists("p21.dist3.ISM.b")}
+ggplotly(p21.dist3.ISM.b) %>%
+  layout(margin = list(r = 150),
+       title = list(text = paste0("Distance to Annotated Polyadenylation Site for ISM", '<br>', '<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))
+cat('\n')
+```
+
+```{r p22.a_p22.b_p22.dist3.ISM.a_p22.dist3.ISM.b, eval = exists("p22.a") || exists("p22.b")}
+cat ('\n###', "Distance to Annotated Transcription Start Site {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r p22.a_p22.b, eval = exists("p22.a") || exists("p22.b")}
+cat ('\n####', "For FSM", '\n')
+```
+
+```{r p22.a, eval = exists("p22.a")}
+ggplotly(p22.a) %>%
+    layout(margin = list(r = 150),
+           title = list(text = paste0("Distance to Annotated Transcription Start Site for FSM", '<br>', '<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+cat('\n')
+
+```
+
+```{r p22.b, eval = exists("p22.b")}
+ggplotly(p22.b) %>%
+    layout(margin = list(r = 150),
+            title = list(text = paste0("Distance to Annotated Transcription Start Site for FSM", '<br>', '<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+cat('\n')
+```
+
+
+```{r p22.dist3.ISM.a_p22.dist3.ISM.b, eval = exists("p22.dist5.ISM.a") || exists("p22.dist5.ISM.b")}
+cat ('\n####', "For ISM", '\n')
+```
+
+```{r p22.dist3.ISM.a, eval = exists("p22.dist5.ISM.a")}
+ggplotly(p22.dist5.ISM.a) %>%
+    layout(margin = list(r = 150),
+           title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', '<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+```
+```{r p22.dist3.ISM.b, eval = exists("p22.dist5.ISM.b")}
+ggplotly(p22.dist5.ISM.b) %>%
+    layout(margin = list(r = 150),
+           title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', '<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+cat('\n')
+```
+
+```{r, echo=FALSE, eval = (exists("p21.FSM.list") && length(p21.FSM.list)) || (exists("p21.ISM.list") && length(p21.ISM.list)) || (exists("p22.FSM.list") && length(p22.FSM.list)) || (exists("p22.ISM.list") && length(p22.ISM.list))}
+cat ('\n##',"Comparison With Annotated TSS and TTS by Subcategories {.tabset .tabset-fade }", '\n')
+```
+
+```{r, eval =  (exists("p21.FSM.list") && length(p21.FSM.list)) || (exists("p21.ISM.list")&&length(p21.ISM.list))}
+cat ('\n###', "Distance to Annotated Polyadenylation Site {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r, eval = exists("p21.FSM.list") && length(p21.FSM.list)}
+if (length(p21.FSM.list) > 0) {
+  p21.stitles.FSM<-list("Alternative 3'End for FSM",
+                        "Alternative 3'5'End for FSM",
+                        "Alternative 5'End for FSM",
+                        "Reference Match for FSM")
+  for (i in 1:length(p21.FSM.list)) {
+    cat ('\n####', p21.stitles.FSM[[i]][1], '\n')
+    if (!is.null((p21.FSM.list[[i]]))){
+        print(htmltools::tagList(ggplotly(p21.FSM.list[[i]])%>%layout(width=800, margin = list(r = 150),
+                                                                      title = list(text = paste0("Distance to Annotated Polyadenylation Site for FSM", '<br>', p21.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))))
+    }
+    if (!is.null((p21.FSM.list.a[[i]]))) {
+        print(htmltools::tagList(ggplotly(p21.FSM.list.a[[i]])%>%layout(width=800, margin = list(r = 150),
+                                                                        title = list(text = paste0("Distance to Annotated Polyadenylation Site for FSM", '<br>', p21.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))))
+    }
+  }
+}
+```
+
+```{r p21.ISM.list, eval = exists("p21.ISM.list") && length(p21.ISM.list)}
+
+if (length(p21.ISM.list)>0) {
+  p21.stitles.ISM<-list("Alternative 3'End for ISM",
+                      "Alternative 3'5'End for ISM",
+                      "Alternative 5'End for ISM",
+                      "Reference Match for ISM")
+  for (i in 1:length(p21.ISM.list)) {
+    cat ('\n####', p21.stitles.ISM[[i]][1], '\n')
+    if (!is.null(p21.ISM.list[[i]])) {
+          print(htmltools::tagList(ggplotly(p21.ISM.list[[i]]) %>% layout(width=800, margin = list(r = 150),
+                                                                          title = list(text = paste0("Distance to Annotated Polyadenylation Site for ISM", '<br>', p21.stitles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))))
+    }
+
+    if (!is.null(p21.ISM.list.a[[i]])) {
+          print(htmltools::tagList(ggplotly(p21.ISM.list.a[[i]])%>% layout(width=800, margin = list(r = 150),
+                                   title = list(text = paste0("Distance to Annotated Polyadenylation Site for ISM", '<br>', p21.stitles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate upstream of annotated polyA site','</sup>')))))
+
+    }
+  }
+}
+```
+
+```{r, eval =  (exists("p22.FSM.list") && length(p22.FSM.list)) || (exists("p22.ISM.list") && length(p22.ISM.list))}
+cat ('\n###', "Distance to Annotated Transcription Start Site {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r p22.FSM.list, eval = exists("p22.FSM.list") && length(p22.FSM.list)}
+if(length(p22.FSM.list)>0) {
+  p22.stitles.FSM<-list("Alternative 3'End for FSM",
+                      "Alternative 3'5'End for FSM",
+                      "Alternative 5'End for FSM",
+                      "Reference Match for FSM")
+  for (i in 1:length(p22.FSM.list)) {
+    cat ('\n####', p22.stitles.FSM[[i]][1], '\n')
+    print(htmltools::tagList(ggplotly(p22.FSM.list[[i]])) %>%
+            layout(width=800, margin = list(r = 150),
+                   title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+          )
+    print(htmltools::tagList(ggplotly(p22.FSM.list.a[[i]])%>%
+            layout(width=800, margin = list(r = 150),
+                    title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))))
+
+  }
+}
+```
+
+```{r p22.ISM.list, eval = exists("p22.ISM.list") && length(p22.ISM.list)}
+if (length(p22.ISM.list)>0) {
+p22.stitles.ISM<-list("Alternative 3'End for ISM",
+                      "Alternative 3'5'End for ISM",
+                      "Alternative 5'End for ISM",
+                      "Reference Match for ISM")
+for (i in 1:length(p22.ISM.list)) {
+  cat ('\n####', p22.stitles.ISM[[i]][1], '\n')
+  if (!is.null(p22.ISM.list[[i]])) {
+    print(htmltools::tagList(ggplotly(p22.ISM.list[[i]]) %>%
+            layout(width=800, margin = list(r = 150),
+                    title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))))
+  }
+  if (!is.null(p22.ISM.list.a[[i]])) {
+    print(htmltools::tagList(ggplotly(p22.ISM.list.a[[i]])%>%
+            layout(width=800, margin = list(r = 150),
+                    title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))))
+  }
+
+}
+}
+```
+<!--
+PolyA Distance Analysis
+-->
+
+```{r , eval = exists("p.polyA_dist") || exists("p.polyA_dist_subcat")}
+cat ("## PolyA Distance Analysis {.tabset .tabset-fade }", '\n')
+```
+
+<!-- 1 -->
+
+```{r , eval = exists("p.polyA_dist")}
+cat ('\n###'," PolyA Distance Analysis by categories", '\n')
+ggplotly(p.polyA_dist)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+
+datatable(df.polyA_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of PolyA Motifs Detected'))
+)
+
+datatable(df.polyA_freq,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Frequency of PolyA Motifs'))
+)
+```
+
+
+```{r p.polyA_dist_sub, eval = exists("p.polyA_dist_subcat")}
+cat ('\n###',"PolyA Distance Analysis by subcategories", '\n')
+ggplotly(p.polyA_dist_subcat)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+
+ggplotly(p.polyA_dist_subcat.s2)
+
+datatable(df.polyA_subcat_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of PolyA Motifs Detected'))
+)
+
+datatable(df.polyA_freq,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Frequency of PolyA Motifs'))
+)
+```
+
+
+
+<!--
+CAGE distances analysis
+  1.Multi-exonic FSM
+  2.Multi-exonic ISM
+  3.Multi-exonic NIC/NCC
+-->
+
+```{r , eval = !all(is.na(data.class$dist_to_cage_peak))}
+cat ('\n##'," CAGE distances analysis {.tabset .tabset-fade }", '\n')
+```
+
+```{r, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc")}
+cat ('\n###'," Multi-exonic FSM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc")}
+cat ('\n####', "Distance to CAGE peak of multi-exonic FSM", '\n')
+ggplotly(cage_hist_FSM,cliponaxis = FALSE) %>%
+    layout(margin = list(r = 150),title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic FSM",'<sup>', '<br>','Negative values indicate downstream of annotated CAGE peak','</sup>')))
+ggplotly(cage_hist_FSM_perc,cliponaxis = FALSE) %>%
+    layout(margin = list(r = 150),title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic FSM",'<sup>', '<br>','Negative values indicate downstream of annotated CAGE peak','</sup>')))
+
+cage.titles.FSM<-list("Alternative 3' End",
+                      "Alternative 3'5' End",
+                      "Alternative 5' End",
+                      "Reference Match")
+
+if (exists("cage.FSM.list")) {
+    if (length(cage.FSM.list)>0) {
+    for (i in 1:length(cage.FSM.list)){
+      if (!is.null(cage.FSM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.FSM.list[[i]])%>%layout(width=800, margin = list(r = 150),
+                                                                             title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic FSM", '<br>', cage.titles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+
+      }
+      if (!is.null(cage.FSM.list.a[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.FSM.list.a[[i]])%>%layout(width=800, margin = list(r = 150),
+                                                                               title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic FSM", '<br>', cage.titles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+
+      }
+
+    }
+  }
+}
+
+cat ('\n')
+```
+
+```{r, eval = exists("cage_hist_ISM")}
+cat ('\n###'," Multi-exonic ISM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r , eval = exists("cage_hist_ISM")}
+cat ('\n####', "Distance to CAGE peak of multi-exonic ISM", '\n')
+ggplotly(cage_hist_ISM) %>%
+    layout(margin = list(r = 200),
+           title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic ISM", '<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+ggplotly(cage_hist_ISM_perc) %>%
+    layout(margin = list(r = 200),
+           title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic ISM",'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+cage.titles.ISM<-list("3' Fragment",
+                        "Internal Fragment",
+                        "5' Fragment",
+                        "Intron Retention")
+if (exists("cage.ISM.list")) {
+    if (length(cage.ISM.list)>0) {
+    for (i in 1:length(cage.ISM.list)){
+      if (!is.null(cage.ISM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.ISM.list[[i]])%>%layout(width=800, margin = list(r = 200),
+                                                                              title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic ISM", '<br>', cage.titles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+
+      }
+      if (!is.null(cage.ISM.list[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.ISM.list.a[[i]])%>%layout(width=800, margin = list(r = 200),
+                                                                                title = list(text = paste0("Distance to CAGE Peak of Multi-Exonic ISM", '<br>', cage.titles.ISM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+      }
+    }
+  }
+}
+cat ('\n')
+```
+
+
+```{r, eval = exists("cage_hist_NIC") || exists("cage_hist_NNC")}
+cat ('\n###'," Multi-exonic NIC/NNC {.tabset .tabset-fade .tabset-dropdown}", '\n')
+```
+
+```{r, eval = exists("cage_hist_NIC")}
+cat ('\n####', "Distance to CAGE peak of multi-exonic NIC", '\n')
+ggplotly(cage_hist_NIC) %>%
+    layout(margin = list(r = 150),
+            title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NIC", '<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+ggplotly(cage_hist_NIC_perc)%>%
+    layout(margin = list(r = 150),
+           title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NIC", '<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+
+cage.titles.NIC<-list("Combination of Annotated Junctions",
+                        "Combination of Annotated Splice Sites",
+                        "Intron Retention",
+                        "Mono-Exon by Intron Retention")
+
+if (exists("cage_hist_NIC")) {
+    if (length(cage.NIC.list)>0) {
+    for (i in 1:length(cage.NIC.list)){
+      if (!is.null(cage.NIC.list[[i]])){
+              print(htmltools::tagList(ggplotly(cage.NIC.list[[i]])%>% layout(width=700, margin = list(r = 150),
+                                                                              title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NIC", '<br>', cage.titles.NIC[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+      }
+      if (!is.null(cage.NIC.list.a[[i]])) {
+              print(htmltools::tagList(ggplotly(cage.NIC.list.a[[i]])%>%layout(width=700, margin = list(r = 150),
+                                                                                title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NIC", '<br>', cage.titles.NIC[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+      }
+    }
+  }
+}
+
+cat ('\n')
+```
+
+```{r, eval = exists("cage_hist_NNC")}
+cat ('\n####', "Distance to CAGE peak of multi-exonic NNC", '\n')
+ggplotly(cage_hist_NNC) %>%
+    layout(margin = list(r = 150), title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NNC", '<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+ggplotly(cage_hist_NNC_perc)%>%
+    layout(margin = list(r = 150), title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NNC", '<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))
+
+cage.titles.NNC <- list("Combination of Annotated Junctions",
+                        "Combination of Annotated Splice Sites",
+                        "Intron Retention",
+                        "Mono-Exon by Intron Retention",
+                        "At Least One Annotated Donor/Acceptor")
+if (length(cage.NNC.list)>0) {
+    for (i in 1:length(cage.NNC.list)){
+      if (!is.null(cage.NNC.list[[i]])) {
+        print(htmltools::tagList(ggplotly(cage.NNC.list[[i]])%>% layout(width=800, margin = list(r = 150),
+                                                                        title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NNC", '<br>', cage.titles.NNC[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+      }
+      if (!is.null(cage.NNC.list.a[[i]])) {
+        print(htmltools::tagList(ggplotly(cage.NNC.list.a[[i]])%>% layout(width=800, margin = list(r = 150),
+                                                                          title = list(text = paste0("Distance to CAGE Peak of Multi−Exonic NNC", '<br>', cage.titles.NNC[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated CAGE peak','</sup>')))))
+      }
+    }
+  }
+
+cat ('\n')
+
+```
+
+
+```{r, eval = exists("df.cage_MD") || exists("df.cage_subc_MD")}
+cat ('\n###',"CAGE Detected(Number) {.tabset .tabset-fade .tabset-dropdown}", '\n')
+datatable(df.cage_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of CAGE Detected'))
+)
+
+datatable(df.cage_subc_MD,
+          options = list(dom = 't'),
+          caption = htmltools::tags$caption(
+            style = 'caption-side: bottom; text-align: center;',
+            htmltools::em('Number of CAGE Detected'))
+)
+
+```
+
+
+<!--
+Redundancy Analysis
+  1. Only FSM
+  2. Only ISM
+  3. FSM+ISM
+-->
+
+```{r, eval=nrow(data.ISM) > 0 || nrow(data.FSM) > 0}
+cat ('\n##'," Redundancy Analysis {.tabset .tabset-fade }", '\n')
+```
+
+<!-- 1 -->
+
+```{r, eval=exists("new.1.FSM")}
+cat ('\n###'," Only FSM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####', "Only FSM", '\n')
+ggplotly(new.1.FSM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.2.FSM")}
+cat ('\n####', "FSM with CAGE support", '\n')
+ggplotly(new.2.FSM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.3.FSM")}
+cat ('\n####', "FSM with a polyA motif found", '\n')
+ggplotly(new.3.FSM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.4.FSM")}
+cat ('\n####', "FSM with CAGE support and polyA motif", '\n')
+ggplotly(new.4.FSM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+<!-- 2 -->
+```{r, eval=exists("new.1.ISM")}
+cat ('\n###'," Only ISM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####', "Only ISM", '\n')
+ggplotly(new.1.ISM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.2.ISM")}
+cat ('\n####', "ISM with CAGE support", '\n')
+ggplotly(new.2.ISM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.3.ISM")}
+cat ('\n####', "ISM with a polyA motif found", '\n')
+ggplotly(new.3.ISM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.4.ISM")}
+cat ('\n####', "ISM with CAGE support and polyA motif", '\n')
+ggplotly(new.4.ISM) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+<!-- 3 -->
+
+```{r, eval=exists("new.1.total")}
+cat ('\n###'," FSM and ISM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####', "FSM and ISM", '\n')
+ggplotly(new.1.total) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.2.total")}
+cat ('\n####', "FSM and ISM with CAGE support", '\n')
+ggplotly(new.2.total) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.3.total")}
+cat ('\n####', "FSM and ISM with a polyA motif found", '\n')
+ggplotly(new.3.total) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("new.4.total")}
+cat ('\n####', "FSM and ISM with CAGE support and polyA motif", '\n')
+ggplotly(new.4.total) %>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+<!--
+Intra−Priming Quality Check
+  1.By Structural Category
+  2.Mono- vs Multi-Exon
+  3.Coding vs Non-Coding
+-->
+
+## Intra-Priming Quality Check {.tabset .tabset-fade }
+
+<!-- 1 -->
+
+```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
+cat ('\n###',"By Structural Category", '\n')
+ggplotly(p30.s1)
+ggplotly(p30.s2)
+ggplotly(p30.s3)
+cat ('\n')
+```
+
+<!-- 2 -->
+
+```{r p31, eval=exists("p31")}
+cat ('\n###',"Mono- vs Multi-Exon", '\n')
+ggplotly(p31) %>%
+  layout(boxmode = "group")  %>%
+  layout(legend = list(orientation = "h", x = 0, y = -0.6)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+<!-- 3 -->
+
+```{r p32, eval=exists("p32")}
+cat ('\n###',"Coding vs Non-Coding", '\n')
+ggplotly(p32) %>%
+  layout(boxmode = "group")  %>%
+  layout(legend = list(orientation = "h", x = 0, y = -0.6)) %>%
+  style(textposition = 'top center')
+cat ('\n')
+```
+
+```{r saturation, eval=(saturation.curves=='True')&&!all(is.na(data.class$FL))}
+cat ('\n##'," Saturation curves", '\n')
+ggplotly(rar1[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar1[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar2[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar2[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar3[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar3[[2]]) %>% layout(margin=list(b=120))
+ggplotly(rar5[[1]]) %>% layout(margin=list(b=120))
+ggplotly(rar5[[2]]) %>% layout(margin=list(b=120))
+cat ('\n')
+```
+
+
+## Features of Bad Quality {.tabset .tabset-fade }
+
+### RT-switching {.tabset .tabset-fade }
+
+```{r ,exists("p28.RTS")}
+ggplotly(p28.RTS)%>%
+  layout(margin = list(r = 130)) %>%
+  layout(showlegend = T) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+
+cat ('\n')
+```
+
+
+### Junctions {.tabset .tabset-fade .tabset-dropdown}
+
+```{r, eval=exists("p28.SJ")}
+cat("#### Non-Canonical Junctions",'\n')
+ggplotly(p28.SJ)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+```{r ,eval= exists("p28.Cov")}
+cat("#### Splice Junctions Without Short Read Coverage",'\n')
+ggplotly(p28.Cov)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+```{r , eval=exists("p28") || exists("p28.NMD")}
+cat("### Structural Categories {.tabset .tabset-fade  .tabset-dropdown}", '\n')
+```
+
+```{r , eval=exists("p28")}
+cat("#### Quality Control Attributes Across Structural Categories",'\n')
+ggplotly(p28)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+```
+
+```{r , eval=exists("p28.NMD")}
+cat("#### Nonsense-Mediated Decay by Structural Category",'\n')
+ggplotly(p28.NMD)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+## Features of Good Quality {.tabset .tabset-fade }
+
+### Support Percentages {.tabset .tabset-fade .tabset-dropdown}
+
+```{r, eval = exists("p28.a.Cage")}
+cat("#### CAGE Support", '\n')
+ggplotly(p28.a.Cage)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+```{r}
+cat("#### Annotation support", '\n')
+ggplotly(p28.a.annot)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+```{r, eval=exists("p28.a.polyA")}
+cat("#### PolyA support", '\n')
+ggplotly(p28.a.polyA)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+### Support Percentages {.tabset .tabset-fade .tabset-dropdown}
+
+```{r, eval=exists("p28.a.SJ")}
+cat("#### Junctions", '\n')
+ggplotly(p28.a.SJ)%>%
+  layout(margin = list(r = 130)) %>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+```{r, eval=exists("p28.a.Cov")}
+cat("#### Dist to cage peak", '\n')
+ggplotly(p28.a.Cov)%>%
+  style(textposition= 'top center', textfont = list(size=12))
+cat ('\n')
+```
+
+### Attributes {.tabset .tabset-fade .tabset-dropdown}
+
+```{r , eval=exists("p28.a")}
+cat("#### Good Quality Control Attributes", '\n')
+ggplotly(p28.a)%>%
+  layout(margin = list(t = 50), textposition="outside")  %>%
+  style(textposition= 'top center')
+cat ('\n')
+```
+
+```{r, eval=exists("p28.a.ratio")}
+ggplotly(p28.a.ratio)%>%
+  layout(margin = list(t = 50)) %>%
+  style(textposition= 'top center')
+cat ('\n')
+```
+
+
+<script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
+<script src="script.js"></script>
