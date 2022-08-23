@@ -13,7 +13,20 @@ args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 junc.file <- args[2]
 utilities.path <- args[4]
-saturation.curves<-args[5]
+saturation.curves <- args[5]
+report.format <- args[6]
+
+if (length(args) < 6) {
+  stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both]. Abort!")
+}
+
+if (!(saturation.curves %in% c('True', 'False'))) {
+  stop("Saturation curve argument needs to be 'True' or 'False'. Abort!")
+}
+
+if (!(report.format %in% c('pdf', 'html', 'both'))) {
+  stop("Report format needs to be: pdf, html, or both. Abort!")
+}
 
 source(paste(utilities.path, "generatePDFreport.R", sep = "/"))
 
@@ -1704,8 +1717,8 @@ p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) 
 
 ### Bad quality control attributes
 if (nrow(data.junction) > 0){
-  t3.data.sets=list()
-  t3.list=list()
+  t3.data.sets <- list()
+  t3.list <- list()
   # (Fran) ToDo: USE COVERAGE DATA LATER
   # for FSM, ISM, NIC, and NNC, plot the percentage of RTS and non-canonical junction
   x <- filter(data.class, structural_category %in% c("FSM", "ISM", "NIC", "NNC" ) & exons > 1)
@@ -1721,6 +1734,8 @@ if (nrow(data.junction) > 0){
 	  t3.RTS$Var <- "RT switching"
   }
 
+  # Liz: this is a placeholder for dealing with all_canonical being NA instead of "Non-canonical"
+  x[is.na(x$all_canonical), "all_canonical"] <- "Non-canonical"
   t1.SJ <- group_by(x, structural_category, all_canonical) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
   t3.SJ <- merge(t1.SJ, t2.RTS, by="structural_category")
   t3.SJ$perc <- t3.SJ$count.x / t3.SJ$count.y * 100
@@ -1757,15 +1772,15 @@ if (nrow(data.junction) > 0){
   }
   
   if (!all(is.na(x$within_cage_peak))){
-    x[which(x$within_cage_peak=='False'),"Coverage_Cage"]="Not Coverage Cage"
-    x[which(x$within_cage_peak=='True'),"Coverage_Cage"]="Coverage Cage"
+    x[which(!x$within_cage_peak),"Coverage_Cage"] <- "No Coverage CAGE"
+    x[which(x$within_cage_peak),"Coverage_Cage"] <- "Has Coverage CAGE"
     t1.Cage <- group_by(x, structural_category, Coverage_Cage) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.Cage <- merge(t1.Cage, t2.RTS, by="structural_category")
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
-    t3.Cage <- subset(t3.Cage, Coverage_Cage=='Coverage Cage');
-    t3.Cage$Var=t3.Cage$Coverage_Cage
-    t3.data.sets[[length(t3.data.sets) + 1]]=data.class$dist_to_cage_peak
-    t3.list[[length(t3.list) + 1]]=t3.Cage
+    t3.Cage <- subset(t3.Cage, Coverage_Cage=='Has Coverage CAGE');
+    t3.Cage$Var <- t3.Cage$Coverage_Cage
+    t3.data.sets[[length(t3.data.sets) + 1]] <- data.class$dist_to_cage_peak
+    t3.list[[length(t3.list) + 1]] <- t3.Cage
     p28.a.Cage <- ggplot(t3.Cage, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[2] ,color="black") +
       geom_text(label=paste(round(t3.Cage$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
@@ -1777,13 +1792,13 @@ if (nrow(data.junction) > 0){
       theme(legend.title = element_blank())
   }
   if (!all(is.na(data.class$polyA_motif))) {
-    x[which(is.na(x$polyA_motif)),"Coverage_PolyA"]="Not Coverage PolyA"
-    x[which(!is.na(x$polyA_motif)),"Coverage_PolyA"]="Coverage PolyA"
+    x[which(is.na(x$polyA_motif)),"Coverage_PolyA"] <- "No Coverage PolyA"
+    x[which(!is.na(x$polyA_motif)),"Coverage_PolyA"] <- "Has Coverage PolyA"
     t1.PolyA <- group_by(x, structural_category, Coverage_PolyA) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.PolyA <- merge(t1.PolyA, t2.RTS, by="structural_category")
     t3.PolyA$perc <- t3.PolyA$count.x / t3.PolyA$count.y * 100
-    t3.PolyA <- subset(t3.PolyA, Coverage_PolyA=='Coverage PolyA');
-    t3.PolyA$Var=t3.PolyA$Coverage_PolyA
+    t3.PolyA <- subset(t3.PolyA, Coverage_PolyA=='Has Coverage PolyA');
+    t3.PolyA$Var <- t3.PolyA$Coverage_PolyA
     t3.data.sets[[length(t3.data.sets) + 1]]=data.class$polyA_motif
     t3.list[[length(t3.list) + 1]]=t3.PolyA
     p28.a.polyA <- ggplot(t3.PolyA, aes(x=structural_category, y=perc)) +
@@ -1797,8 +1812,8 @@ if (nrow(data.junction) > 0){
       guides(fill = guide_legend(title = "QC Attributes") )
   }
   
-  x[which(x$diff_to_gene_TSS<=50),"Annotation"]="Annotated"
-  x[which(x$diff_to_gene_TSS>50),"Annotation"]="Not annotated"
+  x[which(x$diff_to_gene_TSS<=50),"Annotation"] <- "Annotated"
+  x[which(x$diff_to_gene_TSS>50),"Annotation"] <- "Not annotated"
   t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
   t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
   t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
@@ -1872,7 +1887,7 @@ if (nrow(data.junction) > 0){
       ggtitle("Splice Junctions With Short Reads Coverage\n\n") 
 
 
-    t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
+    t3 <- rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
 
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
@@ -1886,7 +1901,7 @@ if (nrow(data.junction) > 0){
       theme(legend.title = element_blank())
     
     #good quality control
-    t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
+    t3.a <- rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
 
   }else if (n_t3.SJ>0 & n_t3.RTS>0 & all(is.na(x$min_cov)) & all(is.na(x$predicted_NMD))) {
     t3=rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)])
@@ -1967,12 +1982,12 @@ if (nrow(data.junction) > 0){
       ggtitle( "Quality Control Attributes Across Structural Categories\n\n" ) +
       theme(legend.title = element_blank())
     #good quality control
-    t3.a=rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
+    t3.a <- rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)], t3.a.Cov[,c(1,5,6)])
     
   }
 
 }
-t3.aa = rbind(t3.annot[,c(1,5,6)], t3.a.SJ[,c(1,5,6)])
+t3.aa <-  rbind(t3.annot[,c("structural_category", "perc", "Var")], t3.a.SJ[,c(1,5,6)])
 
 for(i in 1:length(t3.list)){
   set=data.frame(t3.data.sets[i])
@@ -2217,9 +2232,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   #### Now only with cage + isoforms
   if (!all(is.na(data.class$dist_to_cage_peak))) {
-    ism_per_transcript_cage=data.ISM[which(data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    ism_per_transcript_cage=data.ISM[which(data.ISM$within_cage_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_cage_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(fsm_per_transcript_cage)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage=merge(x = fsm_per_transcript_cage , y=ism_per_transcript_cage, by = "associated_transcript", all=T)
@@ -2463,9 +2478,9 @@ if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
 
   #### Now with just isoforms polyA and Cage +
   if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_cage_peak))) {
-    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak == "True"),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+    ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_cage_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak == "True" ),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
+    fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_cage_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(fsm_per_transcript_cage_polya)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage_polya=merge(x = fsm_per_transcript_cage_polya , y=ism_per_transcript_cage_polya, by = "associated_transcript", all=T)
@@ -2684,23 +2699,23 @@ if (sum(!is.na(data.class$polyA_dist)) > 10) {
 if (!all(is.na(data.class$dist_to_cage_peak))){
   df.cage <- as.data.frame(group_by(data.class, by=structural_category) %>%
                              dplyr::summarise(count=dplyr::n(),
-                                              cage_detected=length(which(within_cage_peak == "True")),
+                                              cage_detected=length(which(within_cage_peak)),
                                               cage_detected_perc=round(cage_detected*100/count) , 
                                               .groups = 'keep'))
   
   df.cage_subc <- as.data.frame(group_by(data.class, by=subcategory) %>%
                                   dplyr::summarise(count=dplyr::n(),
-                                                   cage_detected=length(which(within_cage_peak == "True")),
+                                                   cage_detected=length(which(within_cage_peak)),
                                                    cage_detected_perc=round(cage_detected*100/count) ,
                                                    .groups = 'keep'))
 }
 
 ###** Output plots
 
-if (args[6]== 'both') {
+if (report.format == 'both') {
   invisible(generatePDFreport())
   rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory , output_file=html.report.file)
-} else if (args[6] == 'pdf' & args[6] != 'html'){
+} else if (report.format == 'pdf' & report.format != 'html'){
   invisible(generatePDFreport())
 } else {
   rmarkdown::render(input = paste(utilities.path, "SQANTI3_report.Rmd", sep = "/"), output_dir =  output_directory, output_file=html.report.file )
