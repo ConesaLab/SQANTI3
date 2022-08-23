@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '4.2'  # Python 3.7
+__version__ = '5.0'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
@@ -116,12 +116,12 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'FSM_class',   'coding', 'ORF_length', 'CDS_length', 'CDS_start',
                 'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'predicted_NMD',
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
-                'dist_to_cage_peak', 'within_cage_peak',
-                'dist_to_polya_site', 'within_polya_site',
-                'polyA_motif', 'polyA_dist', 'ORF_seq', 'ratio_TSS']
+                'dist_to_CAGE_peak', 'within_CAGE_peak',
+                'dist_to_polyA_site', 'within_polyA_site',
+                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
-RSCRIPT_REPORT = 'SQANTI3_report.R'
+RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -229,9 +229,10 @@ class myQueryTranscripts:
                  q_splicesite_hit = 0,
                  q_exon_overlap = 0,
                  FSM_class = None, percAdownTTS = None, seqAdownTTS=None,
-                 dist_cage='NA', within_cage='NA',
-                 dist_polya_site='NA', within_polya_site='NA',
-                 polyA_motif='NA', polyA_dist='NA', ratio_TSS='NA'):
+                 dist_CAGE='NA', within_CAGE='NA',
+                 dist_polyA_site='NA', within_polyA_site='NA',
+                 polyA_motif='NA', polyA_dist='NA',
+                 polyA_motif_found='NA', ratio_TSS='NA'):
 
         self.id  = id
         self.tss_diff    = tss_diff   # distance to TSS of best matching ref
@@ -278,12 +279,13 @@ class myQueryTranscripts:
         self.bite        = bite
         self.percAdownTTS = percAdownTTS
         self.seqAdownTTS  = seqAdownTTS
-        self.dist_cage   = dist_cage
-        self.within_cage = within_cage
-        self.within_polya_site = within_polya_site
-        self.dist_polya_site   = dist_polya_site    # distance to the closest polyA site (--polyA_peak, BEF file)
+        self.dist_CAGE   = dist_CAGE
+        self.within_CAGE = within_CAGE
+        self.within_polyA_site = within_polyA_site
+        self.dist_polyA_site   = dist_polyA_site    # distance to the closest polyA site (--polyA_peak, BEF file)
         self.polyA_motif = polyA_motif
         self.polyA_dist  = polyA_dist               # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
+        self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
         self.ratio_TSS = ratio_TSS
 
     def get_total_diff(self):
@@ -331,12 +333,12 @@ class myQueryTranscripts:
                                                                                                                                                            str(self.CDS_genomic_start), str(self.CDS_genomic_end), str(self.is_NMD),
                                                                                                                                                            str(self.percAdownTTS),
                                                                                                                                                            str(self.seqAdownTTS),
-                                                                                                                                                           str(self.dist_cage),
-                                                                                                                                                           str(self.within_cage),
-                                                                                                                                                           str(self.dist_polya_site),
-                                                                                                                                                           str(self.within_polya_site),
+                                                                                                                                                           str(self.dist_CAGE),
+                                                                                                                                                           str(self.within_CAGE),
+                                                                                                                                                           str(self.dist_polyA_site),
+                                                                                                                                                           str(self.within_polyA_site),
                                                                                                                                                            str(self.polyA_motif),
-                                                                                                                                                           str(self.polyA_dist), str(self.ratio_TSS))
+                                                                                                                                                           str(self.polyA_dist),str(self.polyA_motif_found), str(self.ratio_TSS))
 
 
     def as_dict(self):
@@ -380,12 +382,13 @@ class myQueryTranscripts:
          'predicted_NMD': self.is_NMD,
          'perc_A_downstream_TTS': self.percAdownTTS,
          'seq_A_downstream_TTS': self.seqAdownTTS,
-         'dist_to_cage_peak': self.dist_cage,
-         'within_cage_peak': self.within_cage,
-         'dist_to_polya_site': self.dist_polya_site,
-         'within_polya_site': self.within_polya_site,
+         'dist_to_CAGE_peak': self.dist_CAGE,
+         'within_CAGE_peak': self.within_CAGE,
+         'dist_to_polyA_site': self.dist_polyA_site,
+         'within_polyA_site': self.within_polyA_site,
          'polyA_motif': self.polyA_motif,
          'polyA_dist': self.polyA_dist,
+         'polyA_motif_found':self.polyA_motif_found,
          'ratio_TSS' : self.ratio_TSS
          }
         for sample,count in self.FL_dict.items():
@@ -614,7 +617,7 @@ def correctionPlusORFpred(args, genome_dict):
                     cds_start += pos*3
                     newid = "{0}|{1}_aa|{2}|{3}|{4}".format(id_pre, orf_length, orf_strand, cds_start, cds_end)
                     newseq = str(r.seq)[pos:]
-                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=newid)
+                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, newseq, proteinID=newid)
                     f.write(">{0}\n{1}\n".format(newid, newseq))
                 else:
                     new_rec = r
@@ -977,7 +980,7 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
 
         if len(hits_by_gene) == 0: return isoform_hit
 
-        for ref_gene in hits_by_gene:
+        for ref_gene in sorted(hits_by_gene):
             isoform_hit = myQueryTranscripts(id=trec.id, tts_diff="NA", tss_diff="NA", \
                                              num_exons=trec.exonCount,
                                              length=trec.length,
@@ -1534,9 +1537,9 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             bams = None
             ratio_TSS_dict = None
 
-    if args.cage_peak is not None:
+    if args.CAGE_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)
-        cage_peak_obj = CAGEPeak(args.cage_peak)
+        cage_peak_obj = CAGEPeak(args.CAGE_peak)
     else:
         cage_peak_obj = None
 
@@ -1610,29 +1613,30 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             # look at Cage Peak info (if available)
             if cage_peak_obj is not None:
                 if rec.strand == '+':
-                    within_cage, dist_cage = cage_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                    within_CAGE, dist_CAGE = cage_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
                 else:
-                    within_cage, dist_cage = cage_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
-                isoform_hit.within_cage = within_cage
-                isoform_hit.dist_cage = dist_cage
+                    within_CAGE, dist_CAGE = cage_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
+                isoform_hit.within_CAGE = within_CAGE
+                isoform_hit.dist_CAGE = dist_CAGE
 
             # look at PolyA Peak info (if available)
             if polya_peak_obj is not None:
                 if rec.strand == '+':
-                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                    within_polyA_site, dist_polyA_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
                 else:
-                    within_polya_site, dist_polya_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txEnd)
-                isoform_hit.within_polya_site = within_polya_site
-                isoform_hit.dist_polya_site = dist_polya_site
+                    within_polyA_site, dist_polyA_site = polya_peak_obj.find(rec.chrom, rec.strand, rec.txStart)
+                isoform_hit.within_polyA_site = within_polyA_site
+                isoform_hit.dist_polyA_site = dist_polyA_site
 
             # polyA motif finding: look within 50 bp upstream of 3' end for the highest ranking polyA motif signal (user provided)
             if polyA_motif_list is not None:
                 if rec.strand == '+':
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txEnd-50:rec.txEnd].seq), polyA_motif_list)
                 else:
-                    polyA_motif, polyA_dist = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
+                    polyA_motif, polyA_dist, polyA_motif_found = find_polyA_motif(str(genome_dict[rec.chrom][rec.txStart:rec.txStart+50].reverse_complement().seq), polyA_motif_list)
                 isoform_hit.polyA_motif = polyA_motif
                 isoform_hit.polyA_dist = polyA_dist
+                isoform_hit.polyA_motif_found = polyA_motif_found
 
             # Fill in ORF/coding info and NMD detection
             if args.is_fusion:
@@ -1726,8 +1730,8 @@ def find_polyA_motif(genome_seq, polyA_motif_list):
     for motif in polyA_motif_list:
         i = genome_seq.find(motif)
         if i >= 0:
-            return motif, -(len(genome_seq)-i-len(motif)+1)
-    return 'NA', 'NA'
+            return motif, -(len(genome_seq)-i-len(motif)+1), 'TRUE'
+    return 'NA', 'NA', 'FALSE'
 
 def FLcount_parser(fl_count_filename):
     """
@@ -2067,12 +2071,12 @@ ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
-        iso_out = os.path.join(os.path.dirname(correctedGTF),outName)
+        iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         isoAnnot_sum = iso_out + ".isoAnnotLite_stats.txt"
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
+        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
     else:
-        iso_out = os.path.dirname(correctedGTF) + outName
-        ISOANNOT_CMD = "python "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
+        iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
+        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
         sys.exit(-1)
@@ -2128,7 +2132,7 @@ class CAGEPeak:
             start0 = int(raw[1])
             end1 = int(raw[2])
             strand = raw[5]
-            tss0 = int(raw[6])
+            tss0 = int((start0+end1)/2)
             self.cage_peaks[(chrom,strand)].insert(start0, end1, (tss0, start0, end1))
 
     def find(self, chrom, strand, query, search_window=10000):
@@ -2138,7 +2142,7 @@ class CAGEPeak:
         dist to TSS is 0 if right on spot
         dist to TSS is + if downstream, - if upstream (watch for strand!!!)
         """
-        within_peak, dist_peak = False, 'NA'
+        within_peak, dist_peak = 'FALSE', 'NA'
         for (tss0,start0,end1) in self.cage_peaks[(chrom,strand)].find(query-search_window, query+search_window):
  # Skip those cage peaks that are downstream the detected TSS because degradation just make the transcript shorter
             if strand=='+' and start0>int(query) and end1>int(query):
@@ -2146,12 +2150,18 @@ class CAGEPeak:
             if strand=='-' and start0<int(query) and end1<int(query):
                 continue
 ##
-            if not within_peak:
-                within_peak, dist_peak = (start0<=query<end1), (query - tss0) * (-1 if strand=='-' else +1)
+            within_out = (start0<=query<end1)
+            if within_out:
+                w = 'TRUE'
+            else:
+                w = 'FALSE'
+
+            if not within_peak=='TRUE':
+                within_peak, dist_peak = w, (query - tss0) * (-1 if strand=='-' else +1)
             else:
                 d = (query - tss0) * (-1 if strand=='-' else +1)
                 if abs(d) < abs(dist_peak):
-                    within_peak, dist_peak = (start0<=query<end1), d
+                    within_peak, dist_peak = w, d
         return within_peak, dist_peak
 
 class PolyAPeak:
@@ -2179,7 +2189,7 @@ class PolyAPeak:
         assert strand in ('+', '-')
         hits = self.polya_peaks[(chrom,strand)].find(query-search_window, query+search_window)
         if len(hits) == 0:
-            return False, None
+            return "FALSE", None
         else:
             s0, e1 = hits[0]
             min_dist = query - s0
@@ -2189,7 +2199,7 @@ class PolyAPeak:
                     min_dist = d
             if strand == '-':
                 min_dist = -min_dist
-            return True, min_dist
+            return "TRUE", min_dist
 
 
 def split_input_run(args):
@@ -2308,7 +2318,7 @@ def main():
     parser.add_argument("--min_ref_len", type=int, default=200, help="\t\tMinimum reference transcript length (default: 200 bp)")
     parser.add_argument("--force_id_ignore", action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     parser.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2')
-    parser.add_argument('--cage_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
+    parser.add_argument('--CAGE_peak', help='\t\tFANTOM5 Cage Peak (BED format, optional)')
     parser.add_argument("--polyA_motif_list", help="\t\tRanked list of polyA motifs (text, optional)")
     parser.add_argument("--polyA_peak", help='\t\tPolyA Peak (BED format, optional)')
     parser.add_argument("--phyloP_bed", help="\t\tPhyloP BED for conservation score (BED, optional)")
@@ -2426,17 +2436,36 @@ def main():
     print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
     with open(args.doc, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
-        f.write("Input\t" + os.path.basename(args.isoforms) + "\n")
-        f.write("Annotation\t" + os.path.basename(args.annotation) + "\n")
-        f.write("Genome\t" + os.path.basename(args.genome) + "\n")
-        f.write("Aligner\t" + args.aligner_choice + "\n")
-        f.write("FLCount\t" + (os.path.basename(args.fl_count) if args.fl_count is not None else "NA") + "\n")
-        f.write("Expression\t" + (os.path.basename(args.expression) if args.expression is not None else "NA") + "\n")
-        f.write("Junction\t" + (os.path.basename(args.coverage) if args.coverage is not None else "NA") + "\n")
-        f.write("CagePeak\t" + (os.path.basename(args.cage_peak)  if args.cage_peak is not None else "NA") + "\n")
-        f.write("PolyA\t" + (os.path.basename(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
-        f.write("PolyAPeak\t" + (os.path.basename(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
+        f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
+        f.write("Annotation\t" + os.path.abspath(args.annotation) + "\n")
+        f.write("Genome\t" + os.path.abspath(args.genome) + "\n")
+        f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
+        f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
+        f.write("Aligner\t" + str(args.aligner_choice) + "\n")
+        f.write("FLCount\t" + (os.path.abspath(args.fl_count) if args.fl_count is not None else "NA") + "\n")
+        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA") + "\n")
+        f.write("Junction\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n")
+        f.write("CAGEPeak\t" + (os.path.abspath(args.CAGE_peak)  if args.CAGE_peak is not None else "NA") + "\n")
+        f.write("PolyAMotif\t" + (os.path.abspath(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
+        f.write("PolyAPeak\t" + (os.path.abspath(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
         f.write("IsFusion\t" + str(args.is_fusion) + "\n")
+        f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
+        f.write("SkipORF\t" + str(args.skipORF) + "\n")
+        f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
+        f.write("FASTAused\t" + str(args.fasta) +"\n")
+        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA" ) + "\n")
+        f.write("GMAPindex\t" + (os.path.abspath(args.gmap_index) if args.gmap_index is not None else "NA" ) + "\n")
+        f.write("OutputPrefix\t" + str(args.output) + "\n")
+        f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+        f.write("Coverage\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n" )
+        f.write("CanonicalSites\t" + str(args.sites) + "\n")
+        f.write("PostTTSWindow\t" + str(args.window) + "\n")
+        f.write("GeneName\t" + str(args.genename) + "\n")
+        f.write("ReportType\t" + str(args.report) + "\n")
+        f.write("RunIsoAnnotLite\t" + str(args.isoAnnotLite) + "\n")
+        f.write("isoAnnotGFF3\t" + (os.path.abspath(args.gff3) if args.gff3 is not None else "NA") + "\n")
+        f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
+        f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
     
     # Running functionality
     print("**** Running SQANTI3...", file=sys.stdout)
