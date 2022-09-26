@@ -169,11 +169,11 @@ STM_function <- function(x){
     }
   }
   
-  w_cage <- !is.na(x["within_cage_peak"]) & x["within_cage_peak"]=="True"
+  w_cage <- !is.na(x["within_CAGE_peak"]) & x["within_CAGE_peak"]=="True"
   if ( ref_TSS | w_cage  ){
     five=TRUE
   }
-  w_polya <- !is.na(x["within_polya_site"]) & x["within_polya_site"]=="True"
+  w_polya <- !is.na(x["within_polyA_site"]) & x["within_polyA_site"]=="True"
   if (ref_TTS | w_polya | !is.na(x["polyA_motif"])){
     three=TRUE
   }
