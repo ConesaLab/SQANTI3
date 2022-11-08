@@ -159,7 +159,7 @@ def main():
     common.add_argument('--faa', help='\t\tORF prediction faa file to be filtered by SQANTI3')
     common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
     common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
-    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tFilter out all mono-exonic transcripts (default: OFF)')
+    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tWhen TRUE, all mono-exonic transcripts are automatically filtered (default: False)')
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
@@ -180,9 +180,9 @@ def main():
     ml.add_argument('-j', '--threshold', type=float, default=0.7, \
     help="Machine Learning probability threshold to classify transcripts as positive isoforms.")
     ml.add_argument('-f', '--force_fsm_in', default=False, \
-    help="If activated, forces retaining only multi-exon transcripts, all mono-exon isoforms will be automatically removed.")
+    help="When TRUE, forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms). Default: FALSE.")
     ml.add_argument('--intermediate_files', default=False, \
-    help="If activated, outputs ML filter intermediate files.")
+    help="When TRUE, outputs ML filter intermediate files. Default: FALSE.")
     ml.add_argument('-r','--remove_columns', \
     help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
@@ -224,7 +224,7 @@ def main():
         print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
 
 ### Print out parameters so can be reproduced the same SQ run
-    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+"_params.txt")
     print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
     with open(args.doc, 'w') as f:
       f.write("Version\t" + __version__ + "\n")
