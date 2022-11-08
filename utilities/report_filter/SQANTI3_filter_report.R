@@ -517,7 +517,7 @@ if(opt$filter_type == "ml"){
   message("\nGenerating ML filter intra-priming plots...\n")
   
   # A% per category
-  a_value <- dplyr::filter(params, parameter == "intrapriming") %>% 
+  a_value <- dplyr::filter(params, parameter == "Intrapriming") %>% 
     dplyr::select(value) %>% tibble::deframe() %>% 
     as.numeric()
   
