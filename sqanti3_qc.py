@@ -1235,7 +1235,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
                 diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
-
+                flag = False
                 for e in ref.exons:
                     if e.start <= trec.txStart < trec.txEnd <= e.end:
                         isoform_hit.str_class = "incomplete-splice_match"
@@ -1243,8 +1243,10 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                         isoform_hit.modify(ref.id, ref.gene, diff_tss, diff_tts, ref.length, ref.exonCount)
                         # this is as good a match as it gets, we can stop the search here
                         get_gene_diff_tss_tts(isoform_hit)
+                        flag = True
                         return isoform_hit
-
+                if flag:
+                    continue
                 # if we haven't exited here, then ISM hit is not found yet
                 # instead check if it's NIC by intron retention
                 # but we don't exit here since the next gene could be a ISM hit
