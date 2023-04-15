@@ -2083,7 +2083,7 @@ def run(args):
     #isoform hits to file if requested
     if args.isoform_hits:
         fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 
-                      'Hit_exon_number', 'Match_type', 'diff_to_TSS', 'diff_to_TTS', 'Alignment_type']
+                      'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
         with open(isoform_hits_name,'w') as h:
             fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')    
             fout_hits.writeheader()
@@ -2091,9 +2091,9 @@ def run(args):
             data = sorted(data, key=lambda row:(row['Isoform']))
             for r in data:
                 if r['Hit'] in isoforms_info[r['Isoform']].transcripts:
-                    r['Alignment_type'] = 'primary'
+                    r['Matching_type'] = 'primary'
                 else:
-                    r['Alignment_type'] = 'secondary'
+                    r['Matching_type'] = 'secondary'
                 fout_hits.writerow(r)
         os.remove(isoform_hits_name+'_tmp')
     ## Generating report
