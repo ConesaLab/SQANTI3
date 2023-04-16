@@ -15,6 +15,7 @@ import itertools
 import bisect
 import argparse
 import math
+import csv
 import numpy as np
 from scipy import mean
 from collections import defaultdict, Counter, namedtuple
@@ -447,6 +448,12 @@ def get_corr_filenames(args, dir=None):
     corrORF =  corrPathPrefix +"_corrected.faa"
     return corrGTF, corrSAM, corrFASTA, corrORF
 
+def get_isoform_hits_name(args, dir=None):
+    d = dir if dir is not None else args.dir
+    corrPathPrefix = os.path.join(d, args.output)
+    isoform_hits_name = corrPathPrefix +"_isoform_hits.txt"
+    return isoform_hits_name
+
 def get_class_junc_filenames(args, dir=None):
     d = dir if dir is not None else args.dir
     outputPathPrefix = os.path.join(d, args.output)
@@ -830,7 +837,7 @@ def expression_parser(expressionFile):
         return exp_dict
 
 
-def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, trec, genome_dict, nPolyA):
+def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, trec, genome_dict, nPolyA):
     """
     :param refs_1exon_by_chr: dict of single exon references (chr -> IntervalTree)
     :param refs_exons_by_chr: dict of multi exon references (chr -> IntervalTree)
@@ -1030,6 +1037,12 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                     # #############################
                     if match_type == "exact":
                         subtype = "multi-exon"
+                        if isoform_hits_name:
+                            with open(isoform_hits_name+'_tmp', 'a') as out_file:
+                                tsv_writer = csv.writer(out_file, delimiter='\t')
+                                tsv_writer.writerow([trec.id, trec.length, trec.exonCount, ref.id, ref.length, ref.exonCount,
+                                                      'FSM', diff_tss, diff_tts])
+                        #record hit to isoform hits file
                         # assign as a new hit if
                         # (1) no prev hits yet
                         # (2) this one is better (prev not FSM or is FSM but worse tss/tts)
@@ -1068,6 +1081,11 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                     # #######################################################
                     elif match_type == "subset":
                         subtype = categorize_incomplete_matches(trec, ref)
+                        if isoform_hits_name:
+                            with open(isoform_hits_name+'_tmp', 'a') as out_file:
+                                tsv_writer = csv.writer(out_file, delimiter='\t')
+                                tsv_writer.writerow([trec.id, trec.length, trec.exonCount, ref.id, ref.length, 
+                                                     ref.exonCount, 'ISM', diff_tss, diff_tts])
                         # assign as a new (ISM) hit if
                         # (1) no prev hit
                         # (2) prev hit not as good (is ISM with worse tss/tts or anyKnownSpliceSite)
@@ -1217,7 +1235,7 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
                 diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
-
+                flag = False
                 for e in ref.exons:
                     if e.start <= trec.txStart < trec.txEnd <= e.end:
                         isoform_hit.str_class = "incomplete-splice_match"
@@ -1225,8 +1243,10 @@ def transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends
                         isoform_hit.modify(ref.id, ref.gene, diff_tss, diff_tts, ref.length, ref.exonCount)
                         # this is as good a match as it gets, we can stop the search here
                         get_gene_diff_tss_tts(isoform_hit)
+                        flag = True
                         return isoform_hit
-
+                if flag:
+                    continue
                 # if we haven't exited here, then ISM hit is not found yet
                 # instead check if it's NIC by intron retention
                 # but we don't exit here since the next gene could be a ISM hit
@@ -1478,10 +1498,19 @@ def get_fusion_component(fusion_gtf):
 
 
 def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF):
+    global isoform_hits_name
     if args.is_fusion: # read GFF to get fusion components
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
         fusion_components = get_fusion_component(args.isoforms)
 
+    if args.isoform_hits:
+        isoform_hits_name = get_isoform_hits_name(args, dir=None)
+        with open(isoform_hits_name+'_tmp', 'w') as out_file:
+            tsv_writer = csv.writer(out_file, delimiter='\t')
+            tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 
+                                 'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
+    else:
+        isoform_hits_name = None
     ## read coverage files if provided
     star_out=None
     if args.coverage is not None:
@@ -1589,7 +1618,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     for chrom,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit
-            isoform_hit = transcriptsKnownSpliceSites(refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, rec, genome_dict, nPolyA=args.window)
+            isoform_hit = transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, rec, genome_dict, nPolyA=args.window)
 
             if isoform_hit.str_class in ("anyKnownJunction", "anyKnownSpliceSite"):
                 # not FSM or ISM --> see if it is NIC, NNC, or fusion
@@ -1824,7 +1853,8 @@ def FLcount_parser(fl_count_filename):
 def run(args):
     global outputClassPath
     global outputJuncPath
-    global corrFASTA
+    global corrFASTA 
+    global isoform_hits_name
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args)
@@ -2050,6 +2080,22 @@ def run(args):
                     r['RTS_junction'] = 'FALSE'
             fout_junc.writerow(r)
 
+    #isoform hits to file if requested
+    if args.isoform_hits:
+        fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 
+                      'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
+        with open(isoform_hits_name,'w') as h:
+            fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')    
+            fout_hits.writeheader()
+            data = DictReader(open(isoform_hits_name+"_tmp"), delimiter='\t')
+            data = sorted(data, key=lambda row:(row['Isoform']))
+            for r in data:
+                if r['Hit'] in isoforms_info[r['Isoform']].transcripts:
+                    r['Matching_type'] = 'primary'
+                else:
+                    r['Matching_type'] = 'secondary'
+                fout_hits.writerow(r)
+        os.remove(isoform_hits_name+'_tmp')
     ## Generating report
     if args.report != 'skip':
         print("**** Generating SQANTI3 report....", file=sys.stderr)
@@ -2345,6 +2391,7 @@ def main():
     parser.add_argument('--gff3' , help='\t\tPrecomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes',required=False)
     parser.add_argument('--short_reads', help='\t\tFile Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.', required=False)
     parser.add_argument('--SR_bam' , help='\t\t Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome', required=False)
+    parser.add_argument('--isoform_hits' , help='\t\t Report all FSM/ISM isoform hits in a separate file', required=False, default = False, action='store_true')
 
 
 
