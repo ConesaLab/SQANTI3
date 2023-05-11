@@ -6,7 +6,7 @@ channels:
   - r
   - defaults
 dependencies:
-  - bcbiogff
+  - bcbio-gff
   - bedtools
   - biopython
   - bioconductor-noiseq
