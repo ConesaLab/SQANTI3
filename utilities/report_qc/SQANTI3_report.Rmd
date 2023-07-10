@@ -683,18 +683,31 @@ cat ('\n###', "Distance to Annotated Transcription Start Site {.tabset .tabset-f
 ```{r p22.FSM.list, eval = exists("p22.FSM.list") && length(p22.FSM.list)}
 if(length(p22.FSM.list)>0) {
   p22.stitles.FSM<-list("Alternative 3'End for FSM",
-                      "Alternative 3'5'End for FSM",
-                      "Alternative 5'End for FSM",
-                      "Reference Match for FSM")
+                        "Alternative 3'5'End for FSM",
+                        "Alternative 5'End for FSM",
+                        "Reference Match for FSM")
   for (i in 1:length(p22.FSM.list)) {
     cat ('\n####', p22.stitles.FSM[[i]][1], '\n')
-    print(htmltools::tagList(ggplotly(p22.FSM.list[[i]])) %>%
-            layout(width=800, margin = list(r = 150), 
-                   title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))
+    if (!is.null(p22.FSM.list[[i]])) {
+      print(htmltools::tagList(
+        ggplotly(p22.FSM.list[[i]]) %>%
+          layout(
+            width = 800,
+            margin = list(r = 150),
+            title = list(text = paste0("Distance to Annotated Transcription Start Site for FSM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>'))
           )
-    print(htmltools::tagList(ggplotly(p22.FSM.list.a[[i]])%>%
-            layout(width=800, margin = list(r = 150),
-                    title = list(text = paste0("Distance to Annotated Transcription Start Site for ISM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>')))))
+      ))
+    }
+    if (!is.null(p22.FSM.list.a[[i]])) {
+      print(htmltools::tagList(
+        ggplotly(p22.FSM.list.a[[i]]) %>%
+          layout(
+            width = 800,
+            margin = list(r = 150),
+            title = list(text = paste0("Distance to Annotated Transcription Start Site for FSM", '<br>', p22.stitles.FSM[[i]][1],'<br>','<sup>', 'Negative values indicate downstream of annotated TSS','</sup>'))
+          )
+      ))
+    }
     
   }
 }
