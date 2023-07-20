@@ -7,13 +7,21 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Latest updates
-The latest SQANTI3 release (19/01/2023) is **version 5.1.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The latest SQANTI3 release (19/01/2023) is **version 5.1.2**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 **WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will herefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
 
 ___________
 
-### Patch to SQANTI3 v5.1.1 [LATEST]:
+### Patch to SQANTI3 v5.1.2 [LATEST]:
+
+* Speed improvements in **rescue** when finding best match IDs for rescue candidates.
+* Output all reference transcripts associated to FSM/ISM found during **QC** if the `--isoform_hits` flag is supplied.
+* Fixed bug in **ML filter** leading to errors when input data had no mono-exonic transcripts.
+* Fixed saturation curve bug in pigeon report.
+* Fixes conda environment installation of bcbio-gff.
+
+### Patch to SQANTI3 v5.1.1:
 
 * Adapt for pigeon compatibility.
 * Bug fixes in STM function.
