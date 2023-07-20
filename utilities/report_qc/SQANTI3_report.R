@@ -128,7 +128,7 @@ rownames(data.class) <- data.class$isoform
 xaxislevelsF1 <- c("full-splice_match","incomplete-splice_match","novel_in_catalog","novel_not_in_catalog", "genic","antisense","fusion","intergenic","genic_intron");
 xaxislabelsF1 <- c("FSM", "ISM", "NIC", "NNC", "Genic\nGenomic",  "Antisense", "Fusion","Intergenic", "Genic\nIntron")
 subc.levels=c("alternative_3end",'alternative_3end5end', "alternative_5end","reference_match", "3prime_fragment","internal_fragment", "5prime_fragment","combination_of_known_junctions", "combination_of_known_splicesites", "intron_retention","no_combination_of_known_junctions", "mono-exon_by_intron_retention", "at_least_one_novel_splicesite", "mono-exon", "multi-exon")
-subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alterantive 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Comb. of annot. junctions", "Comb. of annot. splice sites", "Intron retention", "Not comb. of annot. junctions", "Mono-exon by intron ret.", "At least 1 annot. don./accept.", "Mono-exon", "Multi-exon")
+subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alternative 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Comb. of annot. junctions", "Comb. of annot. splice sites", "Intron retention", "Not comb. of annot. junctions", "Mono-exon by intron ret.", "At least 1 annot. don./accept.", "Mono-exon", "Multi-exon")
 coding.levels=c("coding", "non_coding")
 coding.labels=c("Coding", "Non coding")
 
@@ -212,7 +212,7 @@ data.GenicIntron <- subset(data.class, (structural_category=="Genic\nIntron" & e
 #"FSM"
 data.alt3end <- subset(data.FSM, (subcategory=="Alternative 3'end"))
 data.alt35end <- subset(data.FSM, (subcategory=="Alternative 3'5'end"))
-data.alt5end <- subset(data.FSM, (subcategory=="Alterantive 5'end"))
+data.alt5end <- subset(data.FSM, (subcategory=="Alternative 5'end"))
 data.refmatch <- subset(data.FSM, (subcategory=="Reference match"))
 #"ISM"
 data.3fragment <- subset(data.ISM, (subcategory=="3' fragment"))
@@ -259,7 +259,7 @@ uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction"
 myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
 subcat.palette = c("Alternative 3'end"='#02314d',
                    "Alternative 3'5'end"='#0e5a87',
-                   "Alterantive 5'end"='#7ccdfc',
+                   "Alternative 5'end"='#7ccdfc',
                    'Reference match'='#c4e1f2',
                    "3' fragment"='#c4531d',
                    "Internal fragment"='#e37744',  
