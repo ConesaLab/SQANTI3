@@ -669,12 +669,20 @@ if (run_ML == TRUE) {
   # select mono-exons
   dme <- d1[setdiff(rownames(d1), rownames(isoform.predict)),]
   
-  # set ML-related columns to NA
-  dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
-    
-  # add mono-exons back to the main data.frame
-  d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
-    
+    # verify that the dme object is not empty 
+    # this happens when there are no mono-exons in the input transcriptome
+    if(nrow(dme) > 0){
+      
+      # set ML-related columns to NA
+      dme$"NEG_MLprob"  <- dme$"POS_MLprob" <- dme$"ML_classifier"  <- NA
+        
+      # add mono-exons back to the main data.frame
+      d1 <- rbind(classified.isoforms, dme[,colnames(classified.isoforms)])
+      
+    } else{
+      d1 <- classified.isoforms
+    }
+  
   
 # END OF if(run_ML == TRUE)
   
