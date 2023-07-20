@@ -237,13 +237,13 @@ opt <- optparse::parse_args(opt_parser) # list of the args
             rescue_table.ties <- rescue_table.iso[
               rescue_table.iso$rescue_candidate %in% rescue_ties,]
 
-                        # split table for candidates with primary primary alignments
+            # split table for candidates with primary alignments
             # and candidates with no primary alignments
             rescue_table.ties.prim <- rescue_table.ties %>%
               dplyr::filter(sam_flag == 0)
 
             # ids of candidate with no primary alignments
-            nonprim = setdiff(rescue_table.ties$rescue_candidate,
+            nonprim <- setdiff(rescue_table.ties$rescue_candidate,
                         rescue_table.ties.prim$rescue_candidate)
 
             rescue_table.ties.nonprim <- rescue_table.ties[
