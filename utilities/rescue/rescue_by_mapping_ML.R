@@ -106,8 +106,7 @@ opt$threshold <- as.numeric(opt$threshold)
       
       # select rescued transcripts from reference
       rescued_ref <- mapping_hits.max %>% 
-        dplyr::filter(stringr::str_detect(mapping_hit, 
-                                          "PB.", negate = TRUE))
+        dplyr::filter(mapping_hit %in% probs.ref$isoform)
       
     ## 3. Remove reference transcripts already represented in transcriptome
     ##    to avoid introducing redundancy as a result of the rescue
@@ -195,7 +194,7 @@ opt$threshold <- as.numeric(opt$threshold)
           
           # hits with high ML probability that constitute long read transcripts
           mapping_hit %in% mapping_hits.max$mapping_hit & 
-            stringr::str_detect(mapping_hit, "PB.") ~ "long_read_transcript",
+            !(mapping_hit %in% probs.ref$isoform) ~ "long_read_transcript",
           
           # hits that are included in rescued_ref have both high probability and are not from long reads
           # and hits that are in isoform_assoc.tr have already been rescued or 
