@@ -248,15 +248,33 @@ opt$threshold <- as.numeric(opt$threshold)
             dplyr::select(rescue_candidate) %>% unlist
           
           # run
-          rescue_table.ties <- rescue_table.max %>% 
-            dplyr::filter(rescue_candidate %in% rescue_ties)
+          rescue_table.ties <- rescue_table.max[
+            rescue_table.max$rescue_candidate %in% rescue_ties,]
           
-          source(paste0(opt$utilities_path, "/rescue/rescue_aux_functions.R"))
-          match_tie.ids <- purrr::map(rescue_ties,
-                                  find_best_match_id, 
-                                  rescue_table.ties)
+          # split table for candidates with primary alignments
+          # and candidates with no primary alignments
+          rescue_table.ties.prim <- rescue_table.ties %>%
+            dplyr::filter(sam_flag == 0)
           
-          match_tie.ids <- dplyr::bind_rows(match_tie.ids)
+          # ids of candidate with no primary alignments
+          nonprim <- setdiff(rescue_table.ties$rescue_candidate,
+                             rescue_table.ties.prim$rescue_candidate)
+          
+          rescue_table.ties.nonprim <- rescue_table.ties[
+            rescue_table.ties$rescue_candidate %in% nonprim,]
+          
+          # get best matches using primary alignments only
+          match_tie.ids.prim <- rescue_table.ties.prim %>%
+            dplyr::group_by(rescue_candidate) %>%
+            dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
+          
+          # get best matches using secondary alignments only
+          match_tie.ids.nonprim <- rescue_table.ties.nonprim %>%
+            dplyr::group_by(rescue_candidate) %>%
+            dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
+          
+          # merge matches
+          match_tie.ids <- rbind(match_tie.ids.prim, match_tie.ids.nonprim)
           
           # join match tables
           match_ids <- dplyr::bind_rows(match_tie.ids, 
