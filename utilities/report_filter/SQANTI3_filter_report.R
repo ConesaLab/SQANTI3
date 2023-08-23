@@ -509,11 +509,22 @@ if(opt$filter_type == "ml"){
                                   gp = grid::gpar(fontface = "bold", 
                                                         fontsize = 15), vjust = 0)
     
-      # stats
+      # stats with changed number formatting
+      # requires handling p-value separately (values too low)
+      accpvalue <- stats %>% 
+        dplyr::filter(metric == "AccuracyPValue")
+      pvalue_table <- gridExtra::tableGrob(accpvalue, rows = NULL,
+                                           cols = NULL)
+      
+      stats <- stats %>% 
+        dplyr::mutate(value = tibble::num(stats$value, sigfig = 3, 
+                                          notation = "dec")) %>% 
+        dplyr::filter(metric != "AccuracyPValue")
       stats_title <- grid::textGrob("Performance metrics", 
                                     gp = grid::gpar(fontsize = 14), vjust = 0)
       stats_table <- gridExtra::tableGrob(stats, rows = NULL,
                                           cols = c("Metric", "Value"))
+      
     
       # confusion matrix
       conf_title <- grid::textGrob("Confusion matrix",
@@ -701,9 +712,9 @@ pdf(file = pdf_file, width = 8, height = 7.5)
       
       # grid of ML tables
       gridExtra::grid.arrange(performance_title, stats_title, 
-                              stats_table, gconf,
-                              layout_matrix = cbind(c(1,2,3),c(1,4,4)),
-                              heights = c(0.2,0.1,1))
+                              stats_table, gconf, pvalue_table,
+                              layout_matrix = cbind(c(1,2,3,5),c(1,4,4,4)),
+                              heights = c(0.2,0.1,1,0.1))
       
       # plots
       print(prob_dens)

@@ -186,7 +186,7 @@ def main():
     ml.add_argument('-r','--remove_columns', \
     help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
-    help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
+    help="Maximum number of isoforms to include in True Positive and True Negative sets (default: 3000). TP and TN sets will be downsized to this value if they are larger.")
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
 
     args = parser.parse_args()
