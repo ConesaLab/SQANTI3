@@ -462,7 +462,7 @@ def main():
   
   common.add_argument("--mode", \
   choices = ["automatic", "full"], default = "automatic", \
-  help = "\t\tIf 'automatic', only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
+  help = "\t\tIf 'automatic' (default), only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
   
   common.add_argument("-o","--output", \
   help = "\t\tPrefix for output files.", required = False)
@@ -613,7 +613,7 @@ def main():
   
   # condition: inclusion list file only produced for mode = full
   # in mode = automatic, it is replaced by automatic rescue list
-  if mode == "full":
+  if args.mode == "full":
     rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
   else:
     rescued_list = args.dir + "/" + args.output + "_automatic_rescued_list.tsv"
