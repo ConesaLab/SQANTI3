@@ -34,7 +34,11 @@ option_list = list(
                         running SQANTI3."), 
   optparse::make_option(c("-e", "--rescue_mono_exonic"), type = "character", default = "all",
                         help = "Whether or not to include mono-exonic artifacts 
-                        in the rescue. Options include: 'none', 'fsm' and 'all' (default).")
+                        in the rescue. Options include: 'none', 'fsm' and 'all' (default)."),
+  optparse::make_option(c("-m", "--mode"), type = "character", default = "automatic",
+                        help = "If 'automatic' (default), only automatic rescue of FSM 
+                        artifacts will be performed. If 'full', rescue will include mapping 
+                        of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
   )
 
 
@@ -57,7 +61,7 @@ opt = optparse::parse_args(opt_parser) # list of the args
     message("\n---------------------------------------------------------------")
     
 
-####----------------- RESCUE CANDIDATES ----------------####
+####----------------- AUTOMATIC RESCUE OF FSM ----------------####
 
 message("\n---------------------------------------------------------------")
 message("\n\tPERFORMING AUTOMATIC RESCUE...\n")
@@ -104,7 +108,8 @@ if(opt$rescue_mono_exonic %in% c("all", "fsm")){
                       exons > 1)
     
     # add ISM mono-exons if indicated
-    if(opt$rescue_mono_exonic == "all"){
+    if(opt$rescue_mono_exonic == "all" & 
+       opt$mode  == "full"){
       
       message("\n\tIncluding mono-exon ISM as rescue candidates...")
       
@@ -172,120 +177,139 @@ if(opt$rescue_mono_exonic %in% c("all", "fsm")){
 message("\n---------------------------------------------------------------")
 
     
-## NOVEL (NNC AND NIC) ###
-# get all NIC and NNC artifacts and join
-# to ISM not associated with rescued references
-# to generate rescue candidates
 
-message("\n---------------------------------------------------------------")
-message("\n\tFINDING RESCUE CANDIDATES...\n")
-message("\n---------------------------------------------------------------")
-message("\n\tRescue candidates: artifact transcripts to be used for rescue.\n")
+####----------------- RESCUE CANDIDATES ----------------####
 
-    # filter classification to get NIC and NNC artifacts
-    rescue_novel <- classif %>% 
-      dplyr::filter(filter_result == "Artifact" &
-                      structural_category %in% c("novel_in_catalog", 
-                                                 "novel_not_in_catalog"))
+## NNC and NIC ###
+# get NIC and NNC artifacts and join ISM not associated with rescued references
+# only when mode == "full" (!!)
+
+if(opt$mode == "full"){
+  
+  message("\n---------------------------------------------------------------")
+  message("\n\tFINDING RESCUE CANDIDATES...\n")
+  message("\n---------------------------------------------------------------")
+  message("\n\tRescue candidates: artifact transcripts to be used for rescue.\n")
+  
+  # filter classification to get NIC and NNC artifacts
+  rescue_novel <- classif %>% 
+    dplyr::filter(filter_result == "Artifact" &
+                    structural_category %in% c("novel_in_catalog", 
+                                               "novel_not_in_catalog"))
+  
+  # exclude mono-exonic if indicated
+  if(opt$rescue_mono_exonic %in% c("fsm", "none")){
     
-    # exclude mono-exonic if indicated
-    if(opt$rescue_mono_exonic %in% c("fsm", "none")){
-      
-      all_novel <- nrow(rescue_novel)
-      
-      rescue_novel <- rescue_novel %>% 
-        dplyr::filter(exons > 1)
-      
-      message(paste0("\n\tExcluding ", 
-                     all_novel - nrow(rescue_novel),
-                     " mono-exonic novel transcripts from rescue candidate list."))
-    }
+    all_novel <- nrow(rescue_novel)
     
-    # write out rescue candidates (novel and ISM)
-    rescue_candidates <- dplyr::bind_rows(rescue_ism, 
-                                          rescue_novel %>% dplyr::select(isoform))
+    rescue_novel <- rescue_novel %>% 
+      dplyr::filter(exons > 1)
     
-    # remove mono-exons if instructed
-    readr::write_tsv(rescue_candidates, 
-                     col_names = FALSE,
-                     file = paste0(opt$dir, "/", opt$output,
-                                   "_rescue_candidates.tsv"))
+    message(paste0("\n\tExcluding ", 
+                   all_novel - nrow(rescue_novel),
+                   " mono-exonic novel transcripts from rescue candidate list."))
+  }
+  
+  # write out rescue candidates (novel and ISM)
+  rescue_candidates <- dplyr::bind_rows(rescue_ism, 
+                                        rescue_novel %>% dplyr::select(isoform))
+  
+  # remove mono-exons if instructed
+  readr::write_tsv(rescue_candidates, 
+                   col_names = FALSE,
+                   file = paste0(opt$dir, "/", opt$output,
+                                 "_rescue_candidates.tsv"))
+  
+  # print messages and summary
+  message("\n\tRescue candidate search finished successfully!")
+  message("\n\tArtifact transcripts flagged as rescue candidates were written to output file:")
+  message(paste0("\n\t\t", opt$dir, "/", opt$output, "_rescue_candidates.tsv"))
+  message("\n\tRescue candidate summary")
+  message(paste0("\n\t\t ISM: ", rescue_ism %>% nrow))
+  message(paste0("\n\t\t NIC: ", rescue_novel %>% 
+                   dplyr::filter(structural_category == "novel_in_catalog") %>% 
+                   nrow))
+  message(paste0("\n\t\t NNC: ", rescue_novel %>% 
+                   dplyr::filter(structural_category == "novel_not_in_catalog") %>% 
+                   nrow))
+  message(paste0("\n\t Total: ", rescue_candidates %>% nrow))
+  
+  message("\n---------------------------------------------------------------")
+  
+  
+}
+# END OF MODE == "FULL" CONDITION FOR NIC/NNC CANDIDATE SEARCH #
 
-# print messages and summary
-message("\n\tRescue candidate search finished successfully!")
-message("\n\tArtifact transcripts flagged as rescue candidates were written to output file:")
-message(paste0("\n\t\t", opt$dir, "/", opt$output, "_rescue_candidates.tsv"))
-message("\n\tRescue candidate summary")
-message(paste0("\n\t\t ISM: ", rescue_ism %>% nrow))
-message(paste0("\n\t\t NIC: ", rescue_novel %>% 
-               dplyr::filter(structural_category == "novel_in_catalog") %>% 
-                        nrow))
-message(paste0("\n\t\t NNC: ", rescue_novel %>% 
-               dplyr::filter(structural_category == "novel_not_in_catalog") %>% 
-                        nrow))
-message(paste0("\n\t Total: ", rescue_candidates %>% nrow))
-
-message("\n---------------------------------------------------------------")
 
     
 ####----------------- RESCUE TARGETS ----------------####
 
-message("\n---------------------------------------------------------------")
-message("\n\tRETRIEVING RESCUE TARGETS...\n")
-message("\n---------------------------------------------------------------")
-message("\n\t Rescue targets: validated LR or reference isoforms that could replace an artifact from the same gene.\n")
+# Isoforms passing filter from long-read transcriptome and reference transcripts
+# only when mode == "full" (!!)
 
-# obtain rescue targets for defined rescue candidates
-    
-    # get all genes with rescue candidates
-    message("\n\t Retrieving target genes...\n")
+if(opt$mode == "full"){
+  
+  message("\n---------------------------------------------------------------")
+  message("\n\tRETRIEVING RESCUE TARGETS...\n")
+  message("\n---------------------------------------------------------------")
+  message("\n\t Rescue targets: validated LR or reference isoforms that could replace an artifact from the same gene.\n")
+  
+  # obtain rescue targets for defined rescue candidates
+  
+  # get all genes with rescue candidates
+  message("\n\t Retrieving target genes...\n")
+  
+  rescue_candidates <- rescue_candidates %>% 
+    dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene), 
+                     by = "isoform")
+  
+  target_genes <- rescue_candidates$associated_gene %>% unique
+  
+  # get target isoforms for rescue from long read transcriptome
+  message("\n\t Finding target isoforms from long read transcriptome...\n")
+  
+  rescue_targets.LR <- classif %>% 
+    dplyr::filter(filter_result == "Isoform" &
+                    associated_gene %in% target_genes) %>% 
+    dplyr::select(isoform)
+  
+  # get targets from reference transcriptome
+  message("\n\t Finding target isoforms from reference transcriptome...\n")
+  
+  reference_ids <- BUSpaRse::tr2g_gtf(opt$refGTF, 
+                                      gene_version = NULL,
+                                      get_transcriptome = FALSE, 
+                                      out_path = opt$dir, 
+                                      save_filtered_gtf = FALSE,
+                                      write_tr2g = FALSE)
+  
+  rescue_targets.ref <- reference_ids %>% 
+    dplyr::filter(gene %in% target_genes) %>% 
+    dplyr::select(transcript) %>% 
+    dplyr::rename(isoform = "transcript")
+  
+  # join both target lists
+  rescue_targets <- dplyr::bind_rows(rescue_targets.LR,
+                                     rescue_targets.ref)
+  
+  # write to file
+  readr::write_tsv(rescue_targets, 
+                   col_names = FALSE,
+                   file = paste0(opt$dir, "/", opt$output,
+                                 "_rescue_targets.tsv"))
+  
+  # print messages and summary
+  message("\n\tRescue target search finished successfully!")
+  message("\n\tValidated isoforms to be used as rescue targets were written to output file:")
+  message(paste0("\n\t\t", opt$dir, "/", opt$output, "_rescue_targets.tsv"))
+  message("\n\tRescue target summary")
+  message(paste0("\n\t\t LR transcriptome: ", rescue_targets.LR %>% nrow))
+  message(paste0("\n\t\t Reference transcriptome: ", rescue_targets.ref %>% nrow))
+  message(paste0("\n\t Total: ", rescue_targets %>% nrow))
+  message("\n---------------------------------------------------------------")
+  
+}
 
-    rescue_candidates <- rescue_candidates %>% 
-      dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene), 
-                by = "isoform")
-    
-    target_genes <- rescue_candidates$associated_gene %>% unique
-    
-    # get target isoforms for rescue from long read transcriptome
-    message("\n\t Finding target isoforms from long read transcriptome...\n")
-    
-    rescue_targets.LR <- classif %>% 
-      dplyr::filter(filter_result == "Isoform" &
-                      associated_gene %in% target_genes) %>% 
-      dplyr::select(isoform)
-    
-    # get targets from reference transcriptome
-    message("\n\t Finding target isoforms from reference transcriptome...\n")
-    
-    reference_ids <- BUSpaRse::tr2g_gtf(opt$refGTF, 
-                                        gene_version = NULL,
-                                        get_transcriptome = FALSE, 
-                                        out_path = opt$dir, 
-                                        save_filtered_gtf = FALSE,
-                                        write_tr2g = FALSE)
-    
-    rescue_targets.ref <- reference_ids %>% 
-      dplyr::filter(gene %in% target_genes) %>% 
-      dplyr::select(transcript) %>% 
-      dplyr::rename(isoform = "transcript")
-    
-    # join both target lists
-    rescue_targets <- dplyr::bind_rows(rescue_targets.LR,
-                                       rescue_targets.ref)
-    
-    # write to file
-    readr::write_tsv(rescue_targets, 
-                     col_names = FALSE,
-                     file = paste0(opt$dir, "/", opt$output,
-                                   "_rescue_targets.tsv"))
-    
-# print messages and summary
-message("\n\tRescue target search finished successfully!")
-message("\n\tValidated isoforms to be used as rescue targets were written to output file:")
-message(paste0("\n\t\t", opt$dir, "/", opt$output, "_rescue_targets.tsv"))
-message("\n\tRescue target summary")
-message(paste0("\n\t\t LR transcriptome: ", rescue_targets.LR %>% nrow))
-message(paste0("\n\t\t Reference transcriptome: ", rescue_targets.ref %>% nrow))
-message(paste0("\n\t Total: ", rescue_targets %>% nrow))
-message("\n---------------------------------------------------------------")
+# END OF MODE == "FULL" CONDITION FOR TARGET SEARCH #
+
 

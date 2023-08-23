@@ -47,9 +47,9 @@ def run_automatic_rescue(args):
   
   # define Rscript command with automatic_rescue.R args
   auto_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} \
-  -g {g} -e {e}".format(u = utilities_path, s = automatic_rescue_path, \
+  -g {g} -e {e} -m {m}".format(u = utilities_path, s = automatic_rescue_path, \
   c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
-  g = args.refGTF, e = args.rescue_mono_exonic)
+  g = args.refGTF, e = args.rescue_mono_exonic, m = args.mode)
   
   # print command
   print("\nAutomatic rescue run via the following command:\n")
