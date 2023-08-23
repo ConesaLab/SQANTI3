@@ -72,6 +72,216 @@ def run_automatic_rescue(args):
   return(auto_rescue)
 
 
+## Run mapping of rescue candidates (artifacts) to targets
+def run_candidate_mapping(args):
+  
+  #### PREPARATION OF FILES FOR MINIMAP2 ####
+  
+  print("\n-------------------------------------------------------\n")
+  print("\n\tPREPARATION OF FILES FOR ARTIFACT MAPPING:\n")
+  print("\n-------------------------------------------------------\n")
+
+  ## Convert reference transcriptome GTF to FASTA
+  
+  print("\nCreating reference transcriptome FASTA from provided GTF (--refGTF)...\n")
+
+  # make FASTA file name
+  pre, ext = os.path.splitext(os.path.basename(args.refGTF))
+  refFASTA = args.dir + "/" + pre + ".fasta"
+  
+  # build gffread command
+  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refFASTA, g = args.refGenome, \
+  a = args.refGTF)
+  
+  # run gffread
+  if subprocess.check_call(ref_cmd, shell = True) != 0:
+    print("ERROR converting reference transcriptome GTF to FASTA: {0}".format(ref_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(refFASTA):
+    print("\nReference transcriptome FASTA was saved to ", refFASTA, "\n")
+    print("\n\tgffread command used:\n")
+    print(ref_cmd, "\n")
+    
+  else:
+    print("ERROR: reference transcriptome FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  
+  ## Filter reference transcriptome FASTA to only include target ref transcripts
+  
+  print("\nFiltering reference transcriptome FASTA to only rescue targets...\n")
+
+  # make file names
+  target_file =	args.dir + "/" + args.output + "_rescue_targets.tsv"
+  ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refFASTA, \
+  t = target_file, f = ref_target_fasta)
+
+  # run	
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving target reference transcripts from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(ref_target_fasta):
+    print("\nTarget reference transcript sequences were saved to ", refFASTA, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: target reference transcript FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+    
+
+  ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
+  
+  print("\nFiltering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...\n")
+
+  # make file names
+  LR_target_fasta = args.dir +  "/" + args.output + "_rescue_targets.LR.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  t = target_file, f = LR_target_fasta)
+
+  # run
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving target long-read transcripts from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(LR_target_fasta):
+    print("\nTarget long read transcript sequences were saved to ", refFASTA, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: target long read transcript FASTA was not created -file not found!", \
+    file = sys.stderr)
+    sys.exit(1)
+    
+
+  ## join both FASTA files
+
+  print("\nJoining reference and LR rescue target FASTA files...\n")
+
+  target_fasta = args.dir +  "/" + args.output + "_rescue_targets.fasta"
+  cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
+  f = target_fasta)
+
+  if subprocess.check_call(cat_cmd, shell = True) != 0:
+    print("ERROR joining target long-read and reference FASTA files: {}".format(cat_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(target_fasta):
+    print("\nRescue target FASTA was saved to ", target_fasta, "\n")
+    print("\nCommand used:")
+    print(cat_cmd, "\n")
+    
+    ## remove intermediate target FASTA files (LR and ref)
+    print("\nRemoving intermediate target FASTA files...\n")
+    rm_cmd = "rm {r} {l}".format(r = ref_target_fasta, l = LR_target_fasta)
+    subprocess.call(rm_cmd, shell = True)
+    
+  else:
+    print("ERROR: target FASTA was not created -file not found!", file = sys.stderr)
+    sys.exit(1)
+    
+
+  ## Filter SQ3 FASTA to include rescue candidates
+
+  print("\nCreating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...\n ")
+
+  # make file names
+  candidate_file = args.dir + "/" + args.output + "_rescue_candidates.tsv"
+  candidate_fasta = args.dir + "/" + args.output + "_rescue_candidates.fasta"
+
+  # make command
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  t = candidate_file, f = candidate_fasta)
+
+  # run
+  if subprocess.check_call(fasta_cmd, shell = True) != 0:
+    print("ERROR retrieving rescue candidate sequences from FASTA: {0}".format(fasta_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(candidate_fasta):
+    print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
+    print("\n\tseqtk command used:\n")
+    print(fasta_cmd, "\n")
+    
+  else:
+    print("ERROR: candidate FASTA was not created -file not found!", file = sys.stderr)
+    sys.exit(1)
+    
+    
+  #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
+
+  print("\n-------------------------------------------------------\n")
+  print("\n\tARTIFACT MAPPING (CANDIDATES VS TARGETS):\n")
+  print("\n-------------------------------------------------------\n")
+
+  ## Mapping
+
+  print("\nMapping rescue candidates to rescue targets with minimap2...\n")
+
+  # make file names
+  sam_file = args.dir + "/" + args.output + "_mapped_rescue.sam"
+
+  # make command
+  minimap_cmd = "minimap2 --secondary=yes -ax map-hifi {t} {c} > {s}".format( \
+  t = target_fasta, c = candidate_fasta, s = sam_file)
+
+  # run
+  if subprocess.check_call(minimap_cmd, shell = True) != 0:
+    print("ERROR mapping rescue candidates to targets: {0}".format(minimap_cmd), \
+    file = sys.stderr)
+    sys.exit(1)
+    
+  elif os.path.isfile(sam_file):
+    print("\nMinimap2 results were saved to ", sam_file, "\n")
+    print("\n\tminimap2 command used:\n")
+    print(minimap_cmd, "\n")
+    
+    ## Filter mapping results (select SAM columns)
+    print("\nBuilding candidate-target table of mapping hits...\n")
+    
+    # remove header from SAM
+    sam_tmp_file = args.dir + "/" + args.output + "_mapped_rescue_noheader.sam"
+    sam_cmd = "grep -v '@' {s} > {t}".format(s = sam_file, t = sam_tmp_file)
+    
+    if subprocess.check_call(sam_cmd, shell = True) != 0:
+      print("ERROR: could not create mapping hit table from SAM: {0}".format(sam_cmd), \
+      file = sys.stderr)
+      sys.exit(1)
+      
+    elif os.path.isfile(sam_tmp_file):
+      # get cols with candidate-target pairs + alignment type
+      hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
+      hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
+      
+      if subprocess.check_call(hits_cmd, shell = True) != 0:
+        print("ERROR: could not create mapping hit table from SAM: {0}".format(hits_cmd), \
+        file = sys.stderr)
+        sys.exit(1)
+        
+      elif os.path.isfile(hits_file):
+        print("\nMapping hit table was saved to ", hits_file, "\n")
+        
+        # delete altered SAM file
+        rm_cmd = "rm {t}".format(t = sam_tmp_file)
+        subprocess.call(rm_cmd, shell = True)
+        
+        
+
 
 ## Run rescue steps specific to the ML filter
 def run_ML_rescue(args):
@@ -227,26 +437,40 @@ def main():
   
   ## Common arguments
   common = argparse.ArgumentParser(add_help = False)
+  
   common.add_argument("sqanti_filter_classif", \
   help = "\t\tSQANTI filter (ML or rules) output classification file.")
+  
   common.add_argument("--isoforms", \
   help = "\t\tFASTA file output by SQANTI3 QC (*_corrected.fasta), i.e. the full long read transcriptome.")
+  
   common.add_argument("--gtf", \
   help = "\t\tGTF file output by SQANTI3 filter (*.filtered.gtf).")
+  
   common.add_argument("-g", "--refGTF", \
   help = "\t\tFull path to reference transcriptome GTF used when running SQANTI3 QC.")
+  
   common.add_argument("-f", "--refGenome", \
   help = "\t\tFull path to reference genome FASTA used when running SQANTI3 QC.")
+  
   common.add_argument("-k", "--refClassif", \
   help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
+  
   common.add_argument("-e","--rescue_mono_exonic", \
   choices = ['all', 'fsm', 'none'], default = "all", \
   help='\t\tWhether or not to include mono-exonic artifacts in the rescue. Options include: none, fsm and all (default).')
+  
+  common.add_argument("--mode", \
+  choices = ["automatic", "full"], default = "automatic", \
+  help = "\t\tIf 'automatic', only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
+  
   common.add_argument("-o","--output", \
   help = "\t\tPrefix for output files.", required = False)
+  
   common.add_argument("-d","--dir", \
   help = "\t\tDirectory for output files. Default: Directory where the script was run.", \
   required = False)
+  
   common.add_argument("-v", "--version", help="Display program version number.", \
   action='version', version='SQANTI3 '+str(__version__))
 
@@ -305,7 +529,7 @@ def main():
       sys.exit(-1)
     
     if args.threshold < 0 or args.threshold > 1.:
-      print("ERROR: --threshold must be between 0-1, value of {0} was supplied! Abort!".format(args.threshold), file=sys.stderr)
+      print("ERROR: --threshold must be between 0-1, value of {0} was supplied. Abort!".format(args.threshold), file=sys.stderr)
       sys.exit(-1)
   
   ## Check that rules-specific args are valid
@@ -317,267 +541,82 @@ def main():
   
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
+
+  if args.mode == "automatic":
+    print("\nAutomatic rescue mode selected (default).\n") 
+    print("\nRescue will be performed only for artifact FSM transcripts.\n")
+  
+  # automatic rescue run for both modes, warning only printed if mode == automatic  
   auto_result = run_automatic_rescue(args)
-  
-
-
-  #### PREPARATION OF FILES FOR MINIMAP2 ####
-  
-  print("\n-------------------------------------------------------\n")
-  print("\n\tPREPARATION OF FILES FOR ARTIFACT MAPPING:\n")
-  print("\n-------------------------------------------------------\n")
-
-  ## Convert reference transcriptome GTF to FASTA
-  
-  print("\nCreating reference transcriptome FASTA from provided GTF (--refGTF)...\n")
-
-  # make FASTA file name
-  pre, ext = os.path.splitext(os.path.basename(args.refGTF))
-  refFASTA = args.dir + "/" + pre + ".fasta"
-  
-  # build gffread command
-  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refFASTA, g = args.refGenome, \
-  a = args.refGTF)
-  
-  # run gffread
-  if subprocess.check_call(ref_cmd, shell = True) != 0:
-    print("ERROR converting reference transcriptome GTF to FASTA: {0}".format(ref_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
-    
-  elif os.path.isfile(refFASTA):
-    print("\nReference transcriptome FASTA was saved to ", refFASTA, "\n")
-    print("\n\tgffread command used:\n")
-    print(ref_cmd, "\n")
-    
-  else:
-    print("ERROR: reference transcriptome FASTA was not created -file not found!", \
-    file = sys.stderr)
-    sys.exit(1)
-    
     
   
-  ## Filter reference transcriptome FASTA to only include target ref transcripts
-  
-  print("\nFiltering reference transcriptome FASTA to only rescue targets...\n")
-
-  # make file names
-  target_file =	args.dir + "/" + args.output + "_rescue_targets.tsv"
-  ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
-
-  # make command
-  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refFASTA, \
-  t = target_file, f = ref_target_fasta)
-
-  # run	
-  if subprocess.check_call(fasta_cmd, shell = True) != 0:
-    print("ERROR retrieving target reference transcripts from FASTA: {0}".format(fasta_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
+  ### RUN FULL RESCUE (IF REQUESTED) ###
+  if args.mode == "full":
     
-  elif os.path.isfile(ref_target_fasta):
-    print("\nTarget reference transcript sequences were saved to ", refFASTA, "\n")
-    print("\n\tseqtk command used:\n")
-    print(fasta_cmd, "\n")
+    #### RUN MAPPING
+    # when in full mode, rescue maps candidates not included in the 
+    # automatic rescue (ISM, NIC, NNC) to long-read and reference
+    # isoforms passing the filter (targets)
     
-  else:
-    print("ERROR: target reference transcript FASTA was not created -file not found!", \
-    file = sys.stderr)
-    sys.exit(1)
+    print("\nFull rescue mode selected!\n") 
+    print("\nAdditional rescue steps will be performed for non-FSM artifact transcripts.\n")
     
+    run_candidate_mapping(args)
+
+
+    #### RUN ML FILTER RESCUE ####
+    # this part combines reference ML filter run with mapping results
+    # and is therefore run only for ML filter
     
-
-  ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
-  
-  print("\nFiltering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...\n")
-
-  # make file names
-  LR_target_fasta = args.dir +  "/" + args.output + "_rescue_targets.LR.fasta"
-
-  # make command
-  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
-  t = target_file, f = LR_target_fasta)
-
-  # run
-  if subprocess.check_call(fasta_cmd, shell = True) != 0:
-    print("ERROR retrieving target long-read transcripts from FASTA: {0}".format(fasta_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
-    
-  elif os.path.isfile(LR_target_fasta):
-    print("\nTarget long read transcript sequences were saved to ", refFASTA, "\n")
-    print("\n\tseqtk command used:\n")
-    print(fasta_cmd, "\n")
-    
-  else:
-    print("ERROR: target long read transcript FASTA was not created -file not found!", \
-    file = sys.stderr)
-    sys.exit(1)
-
-
-
-  ## join both FASTA files
-
-  print("\nJoining reference and LR rescue target FASTA files...\n")
-
-  target_fasta = args.dir +  "/" + args.output + "_rescue_targets.fasta"
-  cat_cmd = "cat {r} {l} > {f}".format(r = ref_target_fasta, l = LR_target_fasta, \
-  f = target_fasta)
-
-  if subprocess.check_call(cat_cmd, shell = True) != 0:
-    print("ERROR joining target long-read and reference FASTA files: {}".format(cat_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
-    
-  elif os.path.isfile(target_fasta):
-    print("\nRescue target FASTA was saved to ", target_fasta, "\n")
-    print("\nCommand used:")
-    print(cat_cmd, "\n")
-    
-    ## remove intermediate target FASTA files (LR and ref)
-    print("\nRemoving intermediate target FASTA files...\n")
-    rm_cmd = "rm {r} {l}".format(r = ref_target_fasta, l = LR_target_fasta)
-    subprocess.call(rm_cmd, shell = True)
-    
-  else:
-    print("ERROR: target FASTA was not created -file not found!", file = sys.stderr)
-    sys.exit(1)
-    
-
-
-  ## Filter SQ3 FASTA to include rescue candidates
-
-  print("\nCreating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...\n ")
-
-  # make file names
-  candidate_file = args.dir + "/" + args.output + "_rescue_candidates.tsv"
-  candidate_fasta = args.dir + "/" + args.output + "_rescue_candidates.fasta"
-
-  # make command
-  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
-  t = candidate_file, f = candidate_fasta)
-
-  # run
-  if subprocess.check_call(fasta_cmd, shell = True) != 0:
-    print("ERROR retrieving rescue candidate sequences from FASTA: {0}".format(fasta_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
-    
-  elif os.path.isfile(candidate_fasta):
-    print("\nRescue candidate FASTA was saved to ", candidate_fasta, "\n")
-    print("\n\tseqtk command used:\n")
-    print(fasta_cmd, "\n")
-    
-  else:
-    print("ERROR: candidate FASTA was not created -file not found!", file = sys.stderr)
-    sys.exit(1)
-    
-    
-
-  #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
-
-  print("\n-------------------------------------------------------\n")
-  print("\n\tARTIFACT MAPPING (CANDIDATES VS TARGETS):\n")
-  print("\n-------------------------------------------------------\n")
-
-  ## Mapping
-
-  print("\nMapping rescue candidates to rescue targets with minimap2...\n")
-
-  # make file names
-  sam_file = args.dir + "/" + args.output + "_mapped_rescue.sam"
-
-  # make command
-  minimap_cmd = "minimap2 --secondary=yes -ax map-hifi {t} {c} > {s}".format( \
-  t = target_fasta, c = candidate_fasta, s = sam_file)
-
-  # run
-  if subprocess.check_call(minimap_cmd, shell = True) != 0:
-    print("ERROR mapping rescue candidates to targets: {0}".format(minimap_cmd), \
-    file = sys.stderr)
-    sys.exit(1)
-    
-  elif os.path.isfile(sam_file):
-    print("\nMinimap2 results were saved to ", sam_file, "\n")
-    print("\n\tminimap2 command used:\n")
-    print(minimap_cmd, "\n")
-    
-    ## Filter mapping results (select SAM columns)
-    print("\nBuilding candidate-target table of mapping hits...\n")
-    
-    # remove header from SAM
-    sam_tmp_file = args.dir + "/" + args.output + "_mapped_rescue_noheader.sam"
-    sam_cmd = "grep -v '@' {s} > {t}".format(s = sam_file, t = sam_tmp_file)
-    
-    if subprocess.check_call(sam_cmd, shell = True) != 0:
-      print("ERROR: could not create mapping hit table from SAM: {0}".format(sam_cmd), \
-      file = sys.stderr)
-      sys.exit(1)
+    if args.subcommand == "ml":
       
-    elif os.path.isfile(sam_tmp_file):
-      # get cols with candidate-target pairs + alignment type
-      hits_file = args.dir + "/" + args.output + "_rescue_mapping_hits.tsv"
-      hits_cmd = "cut -f1-3 {t} > {h}".format(t = sam_tmp_file, h = hits_file)
+      print("\n-------------------------------------------------------\n")
+      print("\n\tRESCUE-BY-MAPPING FOR ML FILTER:\n")
+      print("\n-------------------------------------------------------\n")
       
-      if subprocess.check_call(hits_cmd, shell = True) != 0:
-        print("ERROR: could not create mapping hit table from SAM: {0}".format(hits_cmd), \
-        file = sys.stderr)
-        sys.exit(1)
-        
-      elif os.path.isfile(hits_file):
-        print("\nMapping hit table was saved to ", hits_file, "\n")
-        
-        # delete altered SAM file
-        rm_cmd = "rm {t}".format(t = sam_tmp_file)
-        subprocess.call(rm_cmd, shell = True)
-        
-        
-
-  #### RUN ML FILTER RESCUE ####
-
-  # this part combines reference ML filter run with mapping results
-  # and is therefore run only for ML filter
-
-  if args.subcommand == "ml":
+      # run ML-specific steps of rescue
+      rescued = run_ML_rescue(args)
+  
     
-    print("\n-------------------------------------------------------\n")
-    print("\n\tRESCUE-BY-MAPPING FOR ML FILTER:\n")
-    print("\n-------------------------------------------------------\n")
-    
-    # run ML-specific steps of rescue
-    rescued = run_ML_rescue(args)
+    #### RUN RULES FILTER RESCUE ####
+    # this part runs SQ3 rules filter for the reference transcriptome
+    # and combines the results with the mapping hits obtained in the previous step
+  
+    if args.subcommand == "rules":
+  
+      print("\n-------------------------------------------------------\n")
+      print("\n\tRESCUE-BY-MAPPING FOR RULES FILTER:\n")
+      print("\n-------------------------------------------------------\n")
+      
+      # run rules-specific steps of rescue
+      rescued = run_rules_rescue(args)
+      
+      
+    # Finish print if output exists (same for rules and ML) ####
+    inclusion_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+      
+    if os.path.isfile(inclusion_list):
+      print("\nFinal rescued transcript list witten to file: " + inclusion_list + "\n")
+      
+  ### End of condition (mode == "full")
+
 
   
-  #### RUN RULES FILTER RESCUE ####
-  # this part runs SQ3 rules filter for the reference transcriptome
-  # and combines the results with the mapping hits obtained in the previous step
-
-  if args.subcommand == "rules":
-
-    print("\n-------------------------------------------------------\n")
-    print("\n\tRESCUE-BY-MAPPING FOR ML FILTER:\n")
-    print("\n-------------------------------------------------------\n")
-    
-    # run rules-specific steps of rescue
-    run_rules_rescue(args)
-    
-    
-  ### Finish print if output exists (same for rules and ML) ####
-  inclusion_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-    
-  if os.path.isfile(inclusion_list):
-    print("\nFinal rescued transcript list witten to file: " + inclusion_list + "\n")
-
-
-
-  #### Create new GTF including rescued transcripts ####
+  #### WRITE FINAL OUPTUTS OF RESCUE ####
+  # Create new GTF including rescued transcripts #
     
   print("\nAdding rescued transcripts to provided SQ3 filtered GTF...\n")
 
   # create file names
   tmp_gtf = args.dir + "/rescued_only_tmp.gtf"
   output_gtf = args.dir + "/" + args.output + "_rescued.gtf"
-  rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+  
+  # condition: inclusion list file only produced for mode = full
+  # in mode = automatic, it is replaced by automatic rescue list
+  if mode == "full":
+    rescued_list = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
+  else:
+    rescued_list = args.dir + "/" + args.output + "_automatic_rescued_list.tsv"
 
   # filter reference GTF to create tmp_gtf
   gtf_cmd = "gffread --ids {i} -T -o {o} {g}".format(i = rescued_list, o = tmp_gtf, \
