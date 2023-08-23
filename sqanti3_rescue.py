@@ -156,7 +156,7 @@ def run_rules_rescue(args):
  
   # define command
   refRules_cmd = python_path + " {f} rules {c} -j {j} \
-  -o {o} -d {d} --skip_report".format(f = filter_path, c = args.refClassif, \
+  -o {o} -d {d}".format(f = filter_path, c = args.refClassif, \
   j = args.json, o = ref_out, d = ref_dir)
 
   # print command
@@ -247,8 +247,6 @@ def main():
   common.add_argument("-d","--dir", \
   help = "\t\tDirectory for output files. Default: Directory where the script was run.", \
   required = False)
-  common.add_argument("--skip_report", action = "store_true", default = False, \
-  help = '\t\tSkip creation of a report about the filtering')
   common.add_argument("-v", "--version", help="Display program version number.", \
   action='version', version='SQANTI3 '+str(__version__))
 
