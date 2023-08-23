@@ -541,12 +541,7 @@ def main():
   
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
-
-  if args.mode == "automatic":
-    print("\nAutomatic rescue mode selected (default).\n") 
-    print("\nRescue will be performed only for artifact FSM transcripts.\n")
   
-  # automatic rescue run for both modes, warning only printed if mode == automatic  
   auto_result = run_automatic_rescue(args)
     
   
@@ -557,9 +552,6 @@ def main():
     # when in full mode, rescue maps candidates not included in the 
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
-    
-    print("\nFull rescue mode selected!\n") 
-    print("\nAdditional rescue steps will be performed for non-FSM artifact transcripts.\n")
     
     run_candidate_mapping(args)
 

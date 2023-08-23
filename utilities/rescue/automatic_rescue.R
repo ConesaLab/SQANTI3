@@ -52,6 +52,24 @@ opt = optparse::parse_args(opt_parser) # list of the args
     # import pipe operator
     require(magrittr)
 
+
+    # message to indicate which mode is activated
+    message("\n---------------------------------------------------------------")
+    message("\n\t\tINITIATING SQANTI3 RESCUE...\n")
+    message("\n---------------------------------------------------------------")
+    
+    if(opt$mode == "automatic"){
+      message("\n\t--mode automatic:")
+      message("\n\t\tAutomatic rescue mode selected (default).\n") 
+      message("\n\t\tRescue will be performed only for artifact FSM transcripts.\n")
+    } else{
+      message("\n\t--mode full:")
+      message("\n\t\tFull rescue mode selected!\n") 
+      message("\n\t\tAutomatic rescue activated for artifact FSM transcripts.")
+      message("\n\t\tAdditional rescue steps will be performed for ISM, NIC and NNC artifacts.\n")
+    }
+   
+    # message for loading classification file
     message("\n---------------------------------------------------------------")
     message("\n\tREADING FILTER CLASSIFICATION FILE...\n")
 
