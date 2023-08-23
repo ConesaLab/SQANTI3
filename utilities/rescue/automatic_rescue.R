@@ -52,7 +52,6 @@ opt = optparse::parse_args(opt_parser) # list of the args
     # import pipe operator
     require(magrittr)
 
-
     # message to indicate which mode is activated
     message("\n---------------------------------------------------------------")
     message("\n\t\tINITIATING SQANTI3 RESCUE...\n")
@@ -176,6 +175,24 @@ if(opt$rescue_mono_exonic %in% c("all", "fsm")){
                      col_names = FALSE,
                      file = paste0(opt$dir, "/", opt$output, 
                                    "_automatic_rescued_list.tsv"))
+    
+    # write out rescue table when mode == "automatic"
+    # includes all artifacts (ID/category) considered during automatic rescue
+    # and the IDs of the rescued reference transcripts
+    if(opt$mode == "automatic"){
+      
+      # get ISM/FSM transcripts associated to all automatically rescued references
+      rescue_table <- dplyr::filter(classif_ism_fsm, 
+                                    associated_transcript %in% rescue_auto$isoform) %>% 
+        dplyr::select(isoform, associated_transcript, structural_category) %>% 
+        dplyr::rename(artifact = "isoform", 
+                      rescued_transcript = "associated_transcript")
+      
+      # write table
+      readr::write_tsv(rescue_table,
+                       file = paste0(opt$dir, "/", opt$output,
+                                     "_automatic_rescue_table.tsv"))
+    }
     
     
   message("\n\tAutomatic rescue finished successfully!")
