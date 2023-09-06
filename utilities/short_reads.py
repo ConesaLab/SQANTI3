@@ -173,7 +173,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         inside_df = pandas.DataFrame(columns=['id','inside'])
         for entry in in_cov:
             new_entry = pandas.DataFrame({'id' : [entry.name] , 'inside' : [float(entry[6])]})
-            if (new_entry['inside'] < 5).bool():
+            if (new_entry['inside'] < 3).bool():
                 new_entry['inside'] = np.nan
             inside_df = pandas.concat([inside_df,new_entry], ignore_index=True)
         outside_df = pandas.DataFrame(columns=['id','outside'])
