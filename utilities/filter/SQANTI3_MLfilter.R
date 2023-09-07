@@ -319,10 +319,11 @@ if (run_ML == TRUE) {
   NA_columns <- c("within_CAGE_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
                   "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polyA_site", 
-                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist")
+                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist",
+                  "ratio_TSS")
   
-  replacement.na <- c(0, 0, 0, "non_coding",0, 0,0, FALSE, 
-                      -11000, -11000, -11000, -11000, FALSE, -11000)
+  replacement.na <- c(0, 0, 0, "non_coding",0, 0, 0, FALSE, 
+                      -11000, -11000, -11000, -11000, FALSE, -11000, 1)
   
   for (i in 1: length(NA_columns)) {
     sel.column <- which(colnames (d1) == NA_columns [i])
