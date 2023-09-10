@@ -178,7 +178,7 @@ def main():
     ml.add_argument('-n', '--TN', \
     help="Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
     ml.add_argument('-j', '--threshold', type=float, default=0.7, \
-    help="Machine Learning probability threshold to classify transcripts as positive isoforms.")
+    help="Machine Learning probability threshold to classify transcripts as positive isoforms. Default: 0.7.")
     ml.add_argument('-f', '--force_fsm_in', default=False, \
     help="When TRUE, forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms). Default: FALSE.")
     ml.add_argument('--intermediate_files', default=False, \
@@ -198,7 +198,7 @@ def main():
         sys.exit(-1)
 
     if args.isoforms is not None and not os.path.exists(args.isoforms):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.isoform), file=sys.stderr)
+        print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
         sys.exit(-1)
 
     if args.gtf is not None and not os.path.exists(args.gtf):
