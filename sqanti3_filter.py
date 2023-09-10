@@ -202,7 +202,7 @@ def main():
         sys.exit(-1)
 
     if args.gtf is not None and not os.path.exists(args.gtf):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf_file), file=sys.stderr)
+        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
         sys.exit(-1)
 
     if args.sam is not None and not os.path.exists(args.sam):
