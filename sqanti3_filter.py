@@ -169,7 +169,7 @@ def main():
     rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/filter/filter_default.json')
 
 ### ML filter arguments
-    ml = subparsers.add_parser('ML', parents=[common],  description='ML filter selected')
+    ml = subparsers.add_parser('ml', parents=[common],  description='ML filter selected')
     ml.add_argument('-t','--percent_training', type=float, default=0.8, \
     help="Proportion of the data that goes to training (parameter p of the function createDataPartition). \
     \nDefault: 0.8")
@@ -241,7 +241,7 @@ def main():
       f.write("SkipReport\t" + str(args.skip_report) + "\n")
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
-      if args.subcommand == 'ML':
+      if args.subcommand == 'ml':
           f.write("PercentTraining\t" + str(args.percent_training) + "\n")          
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
           f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
@@ -256,7 +256,7 @@ def main():
     
     print("\nRunning SQANTI3 filtering...\n", file=sys.stdout)
     
-    if args.subcommand == 'ML':
+    if args.subcommand == 'ml':
         if args.TP is not None and not os.path.exists(args.TP):
             print("ERROR: {0} doesn't exist. Abort!".format(args.TP), file=sys.stderr)
             sys.exit(-1)
