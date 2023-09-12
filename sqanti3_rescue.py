@@ -521,6 +521,18 @@ def main():
   if not os.path.isfile(args.refClassif):
       print("ERROR: {0} doesn't exist. Abort!".format(args.refClassif), file=sys.stderr)
       sys.exit(-1)
+      
+  ## Define output dir and output name in case it was not defined
+  if args.dir is None:
+      args.dir=os.path.dirname(args.sqanti_filter_classif)
+      print("Output directory not defined. All the outputs will be stored at {0} directory".format(args.dir), file=sys.stderr)
+  else:
+      if not os.path.exists(args.dir):
+          os.makedirs(args.dir)
+  
+  if args.output is None:
+      args.output=args.sqanti_filter_classif[args.sqanti_filter_classif.rfind("/")+1:args.sqanti_filter_classif("_classification.txt")]
+      print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
   
   ## Check that ML-specific args are valid
   if args.subcommand == "ml":
