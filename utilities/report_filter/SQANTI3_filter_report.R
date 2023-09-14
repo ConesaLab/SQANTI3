@@ -159,7 +159,7 @@ pkg <- installed.packages() %>% rownames
 sq_theme <- theme_classic(base_family = "Helvetica") +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm")) +
-  theme(axis.line.x = element_line(color="black", linewidth = 0.4,),
+  theme(axis.line.x = element_line(color="black", linewidth = 0.4),
         axis.line.y = element_line(color="black", linewidth = 0.4)) +
   theme(axis.title.x = element_text(size=13),
         axis.text.x  = element_text(size=12),
