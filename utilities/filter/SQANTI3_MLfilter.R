@@ -148,7 +148,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   TN <- TN[tn_keep, , drop = FALSE]
   
   
-  if(nrow(TN) > 40 & nrow(TP) > 40){
+  if(nrow(TN) >= 250 & nrow(TP) >= 250){
     
     run_ML <- TRUE
     
@@ -167,7 +167,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
     run_ML <- FALSE
     
     message("\nWarning message:
-            user-defined TP and TN sets must have >40 isoforms! Skipping ML filter.")
+            user-defined TP and TN sets must have >=250 isoforms! Skipping ML filter.")
   }
   
   
@@ -185,12 +185,12 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # 1. CHECK NEGATIVE SET REQUIREMENTS
   # Check whether number of NNC non-canonical is sufficient to run ML filter
   # If not, check NNC and see if it meets length requirement
-  if (length (NNC.NC_set) < 40) {
+  if (length (NNC.NC_set) < 250) {
     
     message("\nWarning message:
-            \nNot enough (< 40) Novel Not in Catalog (NNC) + non-canonical transcripts.")
+            \nNot enough (< 250) Novel Not in Catalog (NNC) + non-canonical transcripts.")
 
-    if(length(NNC_set) > 40){
+    if(length(NNC_set) >= 250){
       Negative_set <- NNC_set
       
       message("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
@@ -200,8 +200,8 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
       run_ML = FALSE 
       
       message("\nWarning message:
-            \nNot enough (< 40) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
-      message("\n\t***Note: try re-running ML filter with a user-defined TN set >40 isoforms!")
+            \nNot enough (< 250) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
+      message("\n\t***Note: try re-running ML filter with a user-defined TN set >=250 isoforms!")
       
     }
     
@@ -218,25 +218,25 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # If not, check FSM set for length and assign as TP
   if(is.null(Negative_set) == FALSE){
     
-      if(length (RM_set) > 40){
+      if(length (RM_set) >= 250){
         Positive_set <- RM_set
         
         message("\nUsing FSM Reference Match isoforms as True Positives for training")
         message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
                       length(Positive_set)))
       }
-      else if(length(FSM) > 40){ 
+      else if(length(FSM) >= 250){ 
         Positive_set <- FSM_set
         
-        message("\nNot enough (< 40) Reference Match transcript isoforms among FSM, 
+        message("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
                       all FSM transcripts will be used as Positive set.")
         message(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
         
       }
       else{ 
         message ("Warning message: 
-                         \nNot enough (< 40) Full-Splice-Match transcripts, skipping ML filter.")
-        message("\n\t***Note: try re-running ML filter with a user-defined TP set >40 isoforms!")
+                         \nNot enough (< 250) Full-Splice-Match transcripts, skipping ML filter.")
+        message("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
         
         run_ML = FALSE
       } 
