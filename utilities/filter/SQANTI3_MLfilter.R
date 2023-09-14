@@ -224,6 +224,15 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
         message("\nUsing FSM Reference Match isoforms as True Positives for training")
         message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
                       length(Positive_set)))
+        
+        # If RM are TP set, exclude diff_to_* columns
+        colRem_RM <- c("diff_to_gene_TSS", "diff_to_gene_TTS",
+                       "diff_to_TSS", "diff_to_TTS")
+        
+        message("\nExcluding diff_to_* columns before model training to prevent overfitting!")
+        message(paste("\n \t The following columns will be added to the column removal list:", 
+                      colRem_RM))
+        
       }
       else if(length(FSM_set) >= 250){ 
         Positive_set <- FSM_set
@@ -421,6 +430,10 @@ if (run_ML == TRUE) {
              'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category',
              'polyA_motif')
   
+  # Add RM TP set columns to remove to defined list (if it has been previously created)
+  if(exists("colRem_RM")){
+    colRem_def <- c(colRem_RM, colRem_def)
+  }
   
   # If arg is present, add columns that were provided by --remove_columns
   if(is.null(opt$remove_columns) == FALSE){
@@ -442,10 +455,9 @@ if (run_ML == TRUE) {
     # If arg is not present, only pre-set columns will be removed
     colRem <- colRem_def
   }
-  
+ 
   # Remove columns from trainingset
   trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
-  
   
   
   
