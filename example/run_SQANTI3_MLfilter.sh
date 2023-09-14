@@ -2,4 +2,4 @@
 # Only includes mandatory arguments, all parameters set to default                                                                                                                                          
 # Run from SQANTI3 directory!                                                                                                                                                                               
 
-python sqanti3_filter.py ML example/SQANTI3_QC_output/UHR_chr22_classification.txt -d example/MLfilter_output/ -o UHR_chr22 -f TRUE
+python sqanti3_filter.py ml example/SQANTI3_QC_output/UHR_chr22_classification.txt -d example/MLfilter_output/ -o UHR_chr22 -f TRUE
