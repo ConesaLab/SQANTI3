@@ -225,7 +225,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
         message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
                       length(Positive_set)))
       }
-      else if(length(FSM) >= 250){ 
+      else if(length(FSM_set) >= 250){ 
         Positive_set <- FSM_set
         
         message("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
