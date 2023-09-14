@@ -1,5 +1,5 @@
-Version	5.0
-Mode	ML
+Version	5.1.3
+Mode	ml
 ClassificationFile	/home/angeles/PhD/SQANTI3/example/SQANTI3_QC_output/UHR_chr22_classification.txt
 Isoforms	NA
 GTF	NA
