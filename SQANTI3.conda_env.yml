@@ -35,7 +35,7 @@ dependencies:
   - r-devtools
   - r-e1071
   - r-forcats
-  - r-ggplot2
+  - r-ggplot2>=3.4.0
   - r-ggplotify
   - r-gridbase
   - r-gridextra
