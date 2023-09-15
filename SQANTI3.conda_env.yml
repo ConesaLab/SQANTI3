@@ -27,7 +27,7 @@ dependencies:
   - pybedtools
   - pysam
   - python>=3.7.6
-  - r>=3.6.0
+  - r>=4.3.0
   - r-biocmanager
   - r-caret
   - r-dplyr
