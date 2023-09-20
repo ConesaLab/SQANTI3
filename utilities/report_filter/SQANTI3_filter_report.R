@@ -147,14 +147,6 @@ classif <- classif %>%
 # Load ggplot2
 require(ggplot2)
 
-# Install RColorConesa from GitHub if not already installed
-pkg <- installed.packages() %>% rownames
-
-  if(!("RColorConesa" %in% pkg)){
-    suppressMessages(devtools::install_github("ConesaLab/RColorConesa"))
-  }
-
-
 # Set theme parameters (from SQANTI3_report.R)
 sq_theme <- theme_classic(base_family = "Helvetica") +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
