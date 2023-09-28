@@ -1,0 +1,14 @@
+	TRANSCRIPT-LEVEL SUMMARY
+
+		·A total of 0.00 % of transcripts in the GTF target annotation file (0 of 3925) were annotated because they matched a transcript ID in the GFF3 source annotation file (SQANTI FSM and ISM).
+		·A total of 39.49 % of transcripts in the GTF target annotation file (1550 of 3925) were not annotated because reference has no annotations.
+		·A total of 0.00 % of transcripts in the GTF target annotation file (0 of 3925) were not annotated by positional feature transference.
+
+		·A total of 60.51 % of transcripts in the GTF target annotation file (2375 of 3925) do not match any of the transcript IDs in the GFF3 file (SQANTI novel transcripts).
+			·A total of 0.00 % novel transcripts (0 of 3925) were annotated by positional feature transference.
+			·A total of 0.00 % of novel transcripts (0 of 3925) were not annotated by any positional feature.
+			·A total of 0.00 % of novel transcripts in the GTF target annotation file (0 of 3925) were not annotated because no gene name was returned by SQANTI output.
+			·A total of 60.51 % of novel transcripts in the GTF target annotation file (2375 of 3925) were not annotated because gene ID was not found in GFF3 source annotation file.
+
+		Global statistics:
+		·A total of 0.00 % of transcripts in the GTF target annotation file (0 of 3925) were annotated (at least one feature transferred).
