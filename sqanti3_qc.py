@@ -1547,7 +1547,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                 bams.append(file.rstrip())
         chr_order = get_bam_header(bams[0])
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
-        ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order)
+        ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, args.ratio_TSS_metric)
     else:
         if args.short_reads is not None:
             print("Running calculation of TSS ratio", file=sys.stdout)
@@ -1560,7 +1560,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             for filename in os.listdir(star_out):
                 if filename.endswith('.bam'):
                     bams.append(star_out + '/' + filename)
-            ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order)
+            ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, args.ratio_TSS_metric)
         else:
             print('**** TSS ratio will not be calculated since SR information was not provided')
             bams = None
@@ -1949,7 +1949,10 @@ def run(args):
                 print("WARNING: {0} found in ratio TSS file but not in input FASTA/GTF".format(iso), file=sys.stderr)
         for iso in isoforms_info:
             if iso in ratio_TSS_dict:
-                isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['max_ratio_TSS']
+                if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
+                    isoforms_info[iso].ratio_TSS = 'NA'
+                else:
+                    isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
             else:
                 print("WARNING: {0} not found in ratio TSS file. Assign count as 1.".format(iso), file=sys.stderr)
                 isoforms_info[iso].ratio_TSS = 1
@@ -2392,6 +2395,7 @@ def main():
     parser.add_argument('--short_reads', help='\t\tFile Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.', required=False)
     parser.add_argument('--SR_bam' , help='\t\t Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome', required=False)
     parser.add_argument('--isoform_hits' , help='\t\t Report all FSM/ISM isoform hits in a separate file', required=False, default = False, action='store_true')
+    parser.add_argument('--ratio_TSS_metric' , help='\t\t Define which statistic metric should be reported in the ratio_TSS column', choices=['max', 'mean', 'median', '3quartile'], default='max')
 
 
 
@@ -2513,6 +2517,7 @@ def main():
         f.write("isoAnnotGFF3\t" + (os.path.abspath(args.gff3) if args.gff3 is not None else "NA") + "\n")
         f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
         f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
+        f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
     
     # Running functionality
     print("**** Running SQANTI3...", file=sys.stdout)
