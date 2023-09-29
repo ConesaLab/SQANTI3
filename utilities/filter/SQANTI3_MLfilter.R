@@ -148,7 +148,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   TN <- TN[tn_keep, , drop = FALSE]
   
   
-  if(nrow(TN) > 40 & nrow(TP) > 40){
+  if(nrow(TN) >= 250 & nrow(TP) >= 250){
     
     run_ML <- TRUE
     
@@ -167,7 +167,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
     run_ML <- FALSE
     
     message("\nWarning message:
-            user-defined TP and TN sets must have >40 isoforms! Skipping ML filter.")
+            user-defined TP and TN sets must have >=250 isoforms! Skipping ML filter.")
   }
   
   
@@ -185,12 +185,12 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # 1. CHECK NEGATIVE SET REQUIREMENTS
   # Check whether number of NNC non-canonical is sufficient to run ML filter
   # If not, check NNC and see if it meets length requirement
-  if (length (NNC.NC_set) < 40) {
+  if (length (NNC.NC_set) < 250) {
     
     message("\nWarning message:
-            \nNot enough (< 40) Novel Not in Catalog (NNC) + non-canonical transcripts.")
+            \nNot enough (< 250) Novel Not in Catalog (NNC) + non-canonical transcripts.")
 
-    if(length(NNC_set) > 40){
+    if(length(NNC_set) >= 250){
       Negative_set <- NNC_set
       
       message("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
@@ -200,8 +200,8 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
       run_ML = FALSE 
       
       message("\nWarning message:
-            \nNot enough (< 40) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
-      message("\n\t***Note: try re-running ML filter with a user-defined TN set >40 isoforms!")
+            \nNot enough (< 250) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
+      message("\n\t***Note: try re-running ML filter with a user-defined TN set >=250 isoforms!")
       
     }
     
@@ -218,25 +218,34 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # If not, check FSM set for length and assign as TP
   if(is.null(Negative_set) == FALSE){
     
-      if(length (RM_set) > 40){
+      if(length (RM_set) >= 250){
         Positive_set <- RM_set
         
         message("\nUsing FSM Reference Match isoforms as True Positives for training")
         message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
                       length(Positive_set)))
+        
+        # If RM are TP set, exclude diff_to_* columns
+        colRem_RM <- c("diff_to_gene_TSS", "diff_to_gene_TTS",
+                       "diff_to_TSS", "diff_to_TTS")
+        
+        message("\nExcluding diff_to_* columns before model training to prevent overfitting!")
+        message(paste("\n \t The following columns will be added to the column removal list:", 
+                      colRem_RM))
+        
       }
-      else if(length(FSM) > 40){ 
+      else if(length(FSM_set) >= 250){ 
         Positive_set <- FSM_set
         
-        message("\nNot enough (< 40) Reference Match transcript isoforms among FSM, 
+        message("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
                       all FSM transcripts will be used as Positive set.")
         message(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
         
       }
       else{ 
         message ("Warning message: 
-                         \nNot enough (< 40) Full-Splice-Match transcripts, skipping ML filter.")
-        message("\n\t***Note: try re-running ML filter with a user-defined TP set >40 isoforms!")
+                         \nNot enough (< 250) Full-Splice-Match transcripts, skipping ML filter.")
+        message("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
         
         run_ML = FALSE
       } 
@@ -319,10 +328,11 @@ if (run_ML == TRUE) {
   NA_columns <- c("within_CAGE_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
                   "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polyA_site", 
-                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist")
+                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist",
+                  "ratio_TSS")
   
-  replacement.na <- c(0, 0, 0, "non_coding",0, 0,0, FALSE, 
-                      -11000, -11000, -11000, -11000, FALSE, -11000)
+  replacement.na <- c(0, 0, 0, "non_coding",0, 0, 0, FALSE, 
+                      -11000, -11000, -11000, -11000, FALSE, -11000, 1)
   
   for (i in 1: length(NA_columns)) {
     sel.column <- which(colnames (d1) == NA_columns [i])
@@ -420,6 +430,10 @@ if (run_ML == TRUE) {
              'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category',
              'polyA_motif')
   
+  # Add RM TP set columns to remove to defined list (if it has been previously created)
+  if(exists("colRem_RM")){
+    colRem_def <- c(colRem_RM, colRem_def)
+  }
   
   # If arg is present, add columns that were provided by --remove_columns
   if(is.null(opt$remove_columns) == FALSE){
@@ -441,10 +455,9 @@ if (run_ML == TRUE) {
     # If arg is not present, only pre-set columns will be removed
     colRem <- colRem_def
   }
-  
+ 
   # Remove columns from trainingset
   trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
-  
   
   
   

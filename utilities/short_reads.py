@@ -1,5 +1,6 @@
 import os, subprocess, sys
 import pandas
+import numpy as np
 import pybedtools
 import re
 try:
@@ -158,7 +159,7 @@ def get_bam_header(bam):
     os.system("samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out))
     return(out)
 
-def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order): 
+def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
 ## the idea would be to first calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get the maximum the ratios across replicates and return it as a dictionary
     print('BAM files identified: '+str(replicates))
@@ -172,6 +173,8 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
         inside_df = pandas.DataFrame(columns=['id','inside'])
         for entry in in_cov:
             new_entry = pandas.DataFrame({'id' : [entry.name] , 'inside' : [float(entry[6])]})
+            if (new_entry['inside'] < 3).bool():
+                new_entry['inside'] = np.nan
             inside_df = pandas.concat([inside_df,new_entry], ignore_index=True)
         outside_df = pandas.DataFrame(columns=['id','outside'])
         for entry in out_cov:
@@ -184,8 +187,21 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order):
             ratio_rep_df = merged['id']
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
     #ratio_rep_df.to_csv(out_TSS_file, index=False)
-    ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1, numeric_only=True)
-    ratio_rep_df = ratio_rep_df[['id','max_ratio_TSS']]
+    
+    # use metric value to get the final ratio_TSS that will be recorded in the classification file
+    if metric == "mean":
+        ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
+    elif metric == "3quartile":
+        dratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
+    elif metric == "max":
+        ratio_rep_df['return_ratio'] = ratio_rep_df.max(axis=1, numeric_only=True, skipna=True)
+    elif metric == "median":
+        ratio_rep_df['return_ratio'] = ratio_rep_df.median(axis=1, numeric_only=True, skipna=True)
+    else:
+        raise ValueError("Invalid value for 'metric'. Use 'mean', '3quartile', 'max', or 'median'.")
+
+    #ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1, numeric_only=True)
+    ratio_rep_df = ratio_rep_df[['id','return_ratio']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
     os.system('rm {i} {o}'.format(i=inside_bed, o=outside_bed))
     print('Temp files removed.\n')

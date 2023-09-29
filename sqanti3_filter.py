@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
-__version__ = '5.0'   # Python 3.7 syntax!
+__version__ = '5.1.3'   # Python 3.7 syntax!
 
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
@@ -169,7 +169,7 @@ def main():
     rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/filter/filter_default.json')
 
 ### ML filter arguments
-    ml = subparsers.add_parser('ML', parents=[common],  description='ML filter selected')
+    ml = subparsers.add_parser('ml', parents=[common],  description='ML filter selected')
     ml.add_argument('-t','--percent_training', type=float, default=0.8, \
     help="Proportion of the data that goes to training (parameter p of the function createDataPartition). \
     \nDefault: 0.8")
@@ -178,7 +178,7 @@ def main():
     ml.add_argument('-n', '--TN', \
     help="Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
     ml.add_argument('-j', '--threshold', type=float, default=0.7, \
-    help="Machine Learning probability threshold to classify transcripts as positive isoforms.")
+    help="Machine Learning probability threshold to classify transcripts as positive isoforms. Default: 0.7.")
     ml.add_argument('-f', '--force_fsm_in', default=False, \
     help="When TRUE, forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms). Default: FALSE.")
     ml.add_argument('--intermediate_files', default=False, \
@@ -186,7 +186,7 @@ def main():
     ml.add_argument('-r','--remove_columns', \
     help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
-    help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.")
+    help="Maximum number of isoforms to include in True Positive and True Negative sets (default: 3000). TP and TN sets will be downsized to this value if they are larger.")
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
 
     args = parser.parse_args()
@@ -198,11 +198,11 @@ def main():
         sys.exit(-1)
 
     if args.isoforms is not None and not os.path.exists(args.isoforms):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.isoform), file=sys.stderr)
+        print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
         sys.exit(-1)
 
     if args.gtf is not None and not os.path.exists(args.gtf):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf_file), file=sys.stderr)
+        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
         sys.exit(-1)
 
     if args.sam is not None and not os.path.exists(args.sam):
@@ -241,7 +241,7 @@ def main():
       f.write("SkipReport\t" + str(args.skip_report) + "\n")
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
-      if args.subcommand == 'ML':
+      if args.subcommand == 'ml':
           f.write("PercentTraining\t" + str(args.percent_training) + "\n")          
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
           f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
@@ -256,7 +256,7 @@ def main():
     
     print("\nRunning SQANTI3 filtering...\n", file=sys.stdout)
     
-    if args.subcommand == 'ML':
+    if args.subcommand == 'ml':
         if args.TP is not None and not os.path.exists(args.TP):
             print("ERROR: {0} doesn't exist. Abort!".format(args.TP), file=sys.stderr)
             sys.exit(-1)

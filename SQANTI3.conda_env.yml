@@ -27,15 +27,16 @@ dependencies:
   - pybedtools
   - pysam
   - python>=3.7.6
-  - r>=3.6.0
+  - r>=4.3.0
   - r-biocmanager
   - r-caret
+  - r-rcolorconesa
   - r-dplyr
   - r-dt
   - r-devtools
   - r-e1071
   - r-forcats
-  - r-ggplot2
+  - r-ggplot2>=3.4.0
   - r-ggplotify
   - r-gridbase
   - r-gridextra

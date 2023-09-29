@@ -12,7 +12,7 @@
 #
 # Affiliation: Institute for Integrative Systems Biology, CSIC, Valencia, Spain
 #
-# Last updated: 2/September/2021
+# Last updated: 23/August/2023
 #
 #-------------------------------------------------------------------------------
 
@@ -97,6 +97,20 @@ if(opt$filter_type == "ml"){
   path_params <- paths[which_params]
   params <- readr::read_tsv(path_params, col_names = c("parameter", "value"))
   
+  # Detect path and load model performance stats files
+  message("\nReading ML performance statistics...")
+  
+    # statistics
+    which_stats <- stringr::str_detect(paths, "testSet_stats")
+    path_stats <- paths[which_stats]
+    stats <- readr::read_tsv(path_stats, col_names = c("metric", "value"))
+    
+    # confusion matrix
+    which_conf <- stringr::str_detect(paths, "confusionMatrix")
+    path_conf <- paths[which_conf]
+    conf <- readr::read_tsv(path_conf)
+    
+  
 }else if (opt$filter_type == "rules"){
   # Detect path and load ML output classification
   message("\nReading Rules result classification table...")
@@ -133,20 +147,12 @@ classif <- classif %>%
 # Load ggplot2
 require(ggplot2)
 
-# Install RColorConesa from GitHub if not already installed
-pkg <- installed.packages() %>% rownames
-
-  if(!("RColorConesa" %in% pkg)){
-    suppressMessages(devtools::install_github("ConesaLab/RColorConesa"))
-  }
-
-
 # Set theme parameters (from SQANTI3_report.R)
 sq_theme <- theme_classic(base_family = "Helvetica") +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm")) +
-  theme(axis.line.x = element_line(color="black", size = 0.4),
-        axis.line.y = element_line(color="black", size = 0.4)) +
+  theme(axis.line.x = element_line(color="black", linewidth = 0.4),
+        axis.line.y = element_line(color="black", linewidth = 0.4)) +
   theme(axis.title.x = element_text(size=13),
         axis.text.x  = element_text(size=12),
         axis.title.y = element_text(size=13),
@@ -178,10 +184,9 @@ gene_artifacts <- classif %>%
   dplyr::mutate(gene_type = ifelse(stringr::str_detect(associated_gene, "novel"),
                                    yes = "Novel", no = "Annotated")) %>% 
   dplyr::group_by(associated_gene) %>% 
-  dplyr::summarize(all_artifacts = all(filter_result == "Artifact"),
+  dplyr::reframe(all_artifacts = all(filter_result == "Artifact"),
                    gene_type = gene_type,
-                   filter_result = filter_result, 
-                   .groups = "drop")
+                   filter_result = filter_result)
 
 bygene_summary <- gene_artifacts %>% 
   dplyr::select(!filter_result) %>% 
@@ -189,8 +194,8 @@ bygene_summary <- gene_artifacts %>%
   dplyr::group_by(gene_type) %>% 
   dplyr::add_tally(name = "total_genes") %>% 
   dplyr::group_by(gene_type, all_artifacts) %>% 
-  dplyr::summarize(isoform_no = dplyr::n(),
-                   total_genes = total_genes) %>%  
+  dplyr::reframe(isoform_no = dplyr::n(),
+                 total_genes = total_genes) %>%  
   dplyr::distinct()
 
 # long-format table for grid.table()
@@ -357,7 +362,7 @@ fsm_redund.df <- fsm %>%
                  stat = "count", position = "stack",
                  color = "black", width = 0.7) +
         geom_text(aes(x = filter,
-                      label = stat(count)), 
+                      label = after_stat(count)), 
                   stat = "count", vjust = -1) +
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
@@ -372,7 +377,7 @@ fsm_redund.df <- fsm %>%
       fsm_redund <- ggplot(fsm_redund.df) + 
         ggtitle("FSM redundancy") +
         geom_bar(aes(x = fsm_type, fill = fsm_bin), color = "black", width = 0.5) +
-        geom_text(aes(x = fsm_type, label = stat(count)), stat = "count", vjust = -1) +
+        geom_text(aes(x = fsm_type, label = after_stat(count)), stat = "count", vjust = -1) +
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
         xlab("FSM per reference transcript") +
@@ -410,7 +415,7 @@ ism_redund.df <- ism %>%
       ism_redund <- ggplot(ism_redund.df) + 
         ggtitle("ISM redundancy") +
         geom_bar(aes(x = ism_type, fill = ism_bin), color = "black", width = 0.5) +
-        geom_text(aes(x = ism_type, label = stat(count)), stat = "count", vjust = -1) +
+        geom_text(aes(x = ism_type, label = after_stat(count)), stat = "count", vjust = -1) +
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
         xlab("ISM per reference transcript") +
@@ -436,7 +441,7 @@ comb_redund.df <- comb_fsm_ism %>%
         comb_redund <- ggplot(comb_redund.df) + 
           ggtitle("FSM+ISM redundancy") +
           geom_bar(aes(x = tr_type, fill = tr_bin), color = "black", width = 0.5) +
-          geom_text(aes(x = tr_type, label = stat(count)), stat = "count", vjust = -1) +
+          geom_text(aes(x = tr_type, label = after_stat(count)), stat = "count", vjust = -1) +
           scale_y_continuous(breaks = scales::pretty_breaks(6)) +
           scale_fill_brewer("Total FSM+ISM \nper reference ID", palette = "Greens") +
           xlab("FSM+ISM per reference transcript") +
@@ -453,7 +458,7 @@ comb_redund.df <- comb_fsm_ism %>%
 if(opt$filter_type == "ml"){
     
     message("\nGenerating machine learning filter plots...\n")
-  
+    
     ## Reason for calling artifacts: ML, intra-priming or both
     classif_artifacts <- classif %>% 
       dplyr::filter(filter_result == "Artifact") %>% 
@@ -489,8 +494,39 @@ if(opt$filter_type == "ml"){
           scale_fill_manual("Reason", values = c("lightcoral", "lightgoldenrod1",
                                                  "aquamarine3")) +
           scale_y_continuous(labels = scales::percent_format())
-          
+        
     
+    ## Model performance: summary table of test set stats metrics
+    performance_title <- grid::textGrob("Classification model performance on test set", 
+                                  gp = grid::gpar(fontface = "bold", 
+                                                        fontsize = 15), vjust = 0)
+    
+      # stats with changed number formatting
+      # requires handling p-value separately (values too low)
+      accpvalue <- stats %>% 
+        dplyr::filter(metric == "AccuracyPValue")
+      pvalue_table <- gridExtra::tableGrob(accpvalue, rows = NULL,
+                                           cols = NULL)
+      
+      stats <- stats %>% 
+        dplyr::mutate(value = tibble::num(stats$value, sigfig = 3, 
+                                          notation = "dec")) %>% 
+        dplyr::filter(metric != "AccuracyPValue")
+      stats_title <- grid::textGrob("Performance metrics", 
+                                    gp = grid::gpar(fontsize = 14), vjust = 0)
+      stats_table <- gridExtra::tableGrob(stats, rows = NULL,
+                                          cols = c("Metric", "Value"))
+      
+    
+      # confusion matrix
+      conf_title <- grid::textGrob("Confusion matrix",
+                                   gp = grid::gpar(fontsize = 14), vjust = 0)
+      conf_table <- gridExtra::tableGrob(conf, rows = NULL)
+      gconf <- gridExtra::arrangeGrob(conf_title, conf_table,
+                                       layout_matrix = cbind(c(1,2,3)),
+                                       heights = c(0.2,0.5,1))
+    
+            
     ## Variable importance in classifier
     var_imp <- ggplot(imp) +
       ggtitle("Variable importance in Random Forest classifier") +
@@ -499,6 +535,18 @@ if(opt$filter_type == "ml"){
       labs(x = "SQANTI3 variables", y = "Importance") +
       coord_flip()
     
+    
+    ## Probability distribution obtained from model
+    probabilities <- classif %>% 
+      dplyr::select(isoform, POS_MLprob) %>% 
+      dplyr::filter(!is.na(POS_MLprob))
+    
+    prob_dens <- ggplot(probabilities) +
+      ggtitle(label = "",
+        subtitle = paste("Transcripts classified:", nrow(probabilities))) +
+      geom_density(aes(x = POS_MLprob)) +
+      labs(x = "Positive/Isoform probability obtained from ML filter classifier (POS_MLprob)",
+           y = "Density")
     
     ## Variables used in ML: values for isoforms and artifacts by category
     source(paste0(opt$utilities_path, "/report_filter/compare_MLvariables.R"))
@@ -646,12 +694,36 @@ pdf(file = pdf_file, width = 8, height = 7.5)
     
     # ML filter plots
     if(opt$filter_type == "ml"){
+      
+      # ML filter plots cover
+      grid::grid.newpage()
+      mlcover <- grid::textGrob("ML classifier performance report",
+                              gp = grid::gpar(fontface = "italic", 
+                                              fontsize = 30, col = "steelblue"))
+      grid::grid.draw(mlcover)
+      
+      # grid of ML tables
+      gridExtra::grid.arrange(performance_title, stats_title, 
+                              stats_table, gconf, pvalue_table,
+                              layout_matrix = cbind(c(1,2,3,5),c(1,4,4,4)),
+                              heights = c(0.2,0.1,1,0.1))
+      
+      # plots
+      print(prob_dens)
+      print(var_imp)
       print(artifact_totals)
       print(artifact_percent)
-      print(var_imp)
       suppressWarnings(purrr::walk(var_compare, print))
     
-    # Intra-priming plots (only available when ML activated)
+      # Intra-priming plots (only available when ML activated)
+        
+      # ML filter plots cover
+        grid::grid.newpage()
+        ipcover <- grid::textGrob("Intra-primming filter report",
+                                gp = grid::gpar(fontface = "italic", 
+                                                fontsize = 30, col = "steelblue"))
+        grid::grid.draw(ipcover)
+      
       print(a_percent)
       print(ip_totals)
       print(ip_percent)
