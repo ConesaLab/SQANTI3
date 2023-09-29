@@ -186,6 +186,9 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         if b == 0 :
             ratio_rep_df = merged['id']
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
+        renamed_ratioTSS = "ratio_TSS_" + str(b)
+        ratio_rep_df = ratio_rep_df.rename(columns={'ratio_TSS':renamed_ratioTSS})
+
     #ratio_rep_df.to_csv(out_TSS_file, index=False)
     
     # use metric value to get the final ratio_TSS that will be recorded in the classification file
@@ -205,5 +208,4 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
     os.system('rm {i} {o}'.format(i=inside_bed, o=outside_bed))
     print('Temp files removed.\n')
-    return(ratio_rep_dict)
-
+    return(ratio_rep_dict) 
