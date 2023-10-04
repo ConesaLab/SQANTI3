@@ -30,7 +30,6 @@ dependencies:
   - r>=4.3.0
   - r-biocmanager
   - r-caret
-  - r-rcolorconesa
   - r-dplyr
   - r-dt
   - r-devtools
