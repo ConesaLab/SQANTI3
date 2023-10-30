@@ -316,7 +316,8 @@ if(opt$mode == "full"){
                                       get_transcriptome = FALSE, 
                                       out_path = opt$dir, 
                                       save_filtered_gtf = FALSE,
-                                      write_tr2g = FALSE)
+                                      write_tr2g = FALSE,
+                                      chrs_only = FALSE)
   
   rescue_targets.ref <- reference_ids %>% 
     dplyr::filter(gene %in% target_genes) %>% 
