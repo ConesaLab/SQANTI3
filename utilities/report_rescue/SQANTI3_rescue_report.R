@@ -59,7 +59,7 @@ require(ggplot2)
 pkg <- installed.packages() %>% rownames
 
 if(!("RColorConesa" %in% pkg)){
-  suppressMessages(devtools::install_github("ConesaLab/RColorConesa"))
+  suppressMessages(install.packages("RColorConesa"))
 }
 
 
