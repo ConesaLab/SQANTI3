@@ -156,7 +156,8 @@ def get_TSS_bed(corrected_gtf, chr_order):
 def get_bam_header(bam):
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
-    os.system("samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out))
+    if not os.path.isfile(out):
+        os.system("samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out))
     return(out)
 
 def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
