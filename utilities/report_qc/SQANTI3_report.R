@@ -2267,7 +2267,7 @@ p30.s3 <- ggplot(data=data.other,
   theme(strip.background = element_rect(color = "white"),
         strip.placement = "outside", strip.text = element_text(size = 10)) +
   scale_fill_manual(values=subcat.palette, drop=T) +
-  facet_grid(~structural_category, scales = "free", switch = "x")
+  facet_grid(~structural_category, scales = "free", switch = "x") +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 p31 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_category, fill=exonCat)) +
