@@ -1075,8 +1075,8 @@ if (nrow(data.FSM) > 0) {
                      "-0.5 to -0.4 kb", "-0.4 to -0.3 kb", "-0.3 to -0.2 kb", "-0.2 to -0.1 kb", "-0.1 to 0 kb", "0 to 0.1 kb", "0.1 to 0.2 kb",
                      "0.2 to 0.3 kb", "0.3 to 0.4 kb", "0.4 to 0.5 kb", "0.5 to 0.6 kb", "0.6 to 0.7 kb", "0.7 to 0.8 kb", "0.8 to 0.9 kb", "0.9 to 1 kb",
                      "Larger than 1 kb")
-  data.FSM$diffTTSCat = cut(-(data.FSM$diff_to_TTS), breaks = diff_breaks);
-  data.FSM$diffTSSCat = cut(-(data.FSM$diff_to_TSS), breaks = diff_breaks);
+  data.FSM$diffTTSCat = cut((data.FSM$diff_to_TTS), breaks = diff_breaks);
+  data.FSM$diffTSSCat = cut((data.FSM$diff_to_TSS), breaks = diff_breaks);
   p21.FSM.list = list()
   p21.FSM.list.a = list()
 
@@ -1127,7 +1127,7 @@ if (nrow(data.FSM) > 0) {
     if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
       diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
       diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100),(diff_max+1));
-      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTTSCat = cut((c$diff_to_TTS), breaks = diff_breaks);
       max_height <- max(table(c$diffTTSCat));
       max_height <- (max_height %/% 10+1) * 10;
       p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
@@ -1178,7 +1178,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, count") +
     xlab("Distance to Annotated Transcription Start Site (TSS), bp") +
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1191,7 +1191,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to Annotated Transcription Start Site (TSS), bp")+
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1208,8 +1208,8 @@ if (nrow(data.FSM) > 0) {
     if (!(dim(c))[1]==0 & !all(is.na(c$within_CAGE_peak))){
       diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
       diff_breaks <- c(-(diff_max+1),seq(-1000, 1000, by = 100), (diff_max+1));
-      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-      c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
+      c$diffTTSCat = cut((c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTSSCat = cut((c$diff_to_TSS), breaks = diff_breaks);
       max_height <- max(table(c$diffTSSCat));
       max_height <- (max_height %/% 10+1) * 10;
       p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1220,7 +1220,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to annotated Transcription Start Site (TSS), bp")+
         labs(     title=p22.stitles.FSM[i],
-                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1232,7 +1232,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to annotated Transcription Start Site (TSS), bp")+
         labs(     title=p22.stitles.FSM[i],
-                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.FSM.list[[i]] = p22.s
@@ -1251,8 +1251,8 @@ if (nrow(data.ISM) > 0) {
                      "-2.5 to -2 kb", "-2 to -1.5 kb", "-1.5 to -1 kb", "-1 to -0.5 kb", "-0.5 to 0 kb", "0 to 0.5 kb", "0.5 to 1 kb",
                      "1 to 1.5 kb", "1.5 to 2 kb", "2 to 2.5 kb", "2.5 to 3 kb", "3 to 3.5 kb", "3.5 to 4 kb", "4 to 4.5 kb", "4.5 to 5 kb", "Larger than 5 kb")
   
-  data.ISM$diffTTSCat = cut(-(data.ISM$diff_to_TTS), breaks = diff_breaks);
-  data.ISM$diffTSSCat = cut(-(data.ISM$diff_to_TSS), breaks = diff_breaks);
+  data.ISM$diffTTSCat = cut((data.ISM$diff_to_TTS), breaks = diff_breaks);
+  data.ISM$diffTSSCat = cut((data.ISM$diff_to_TSS), breaks = diff_breaks);
   
   max_height <- max(table(data.ISM$diffTTSCat));
   max_height <- (max_height %/% 10+1) * 10;
@@ -1264,8 +1264,8 @@ if (nrow(data.ISM) > 0) {
     scale_x_discrete(drop=F, labels=breaks_labels) +
     ylab("Transcripts, count")+
     xlab("Distance to annotated polyadenylation site, bp")+
-    labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
-              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+    labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
+              subtitle="Negative values indicate upstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1278,8 +1278,8 @@ if (nrow(data.ISM) > 0) {
     mytheme + labs(alpha = "polyA motif found") +
     ylab("Transcripts, %")+
     xlab("Distance to annotated polyadenylation site, bp")+
-    labs(     title="Distance to Annotated Polyadenylation Site for ISM\n\n",
-              subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+    labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
+              subtitle="Negative values indicate upstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1292,7 +1292,7 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, count")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
-              subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+              subtitle="Negative values indicate upstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1306,20 +1306,20 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
-         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
-  p21.stitles.ISM<-list("Distance to Annotated Polyadenylation Site for ISM\n\n3' Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nInternal Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nA5' Fragment",
-                        "Distance to Annotated Polyadenylation Site for ISM\n\nIntron Retention")
+  p21.stitles.ISM<-list("Distance to Annotated Transcription Termination Site for ISM\n\n3' Fragment",
+                        "Distance to Annotated Transcription Termination Site for ISM\n\nInternal Fragment",
+                        "Distance to Annotated Transcription Termination Site for ISM\n\nA5' Fragment",
+                        "Distance to Annotated Transcription Termination Site for ISM\n\nIntron Retention")
   p21.ISM.list = list()
   p21.ISM.list.a = list()
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$polyA_motif))){
       diff_max <- max(max(abs(c$diff_to_TSS)), max(abs(c$diff_to_TTS)));
-      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTTSCat = cut((c$diff_to_TTS), breaks = diff_breaks);
       max_height <-  max(table(c$diffTTSCat));
       max_height <- (max_height %/% 10+1) * 10;
       p21.s <- ggplot(data=c, aes(x=diffTTSCat)) +
@@ -1328,9 +1328,9 @@ if (nrow(data.ISM) > 0) {
         scale_x_discrete(drop=F, labels=breaks_labels) +
         mytheme + labs(alpha = "polyA motif found") +
         ylab("Transcripts, count")+
-        xlab("Distance to annotated polyadenylation site, bp")+
+        xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
@@ -1340,9 +1340,9 @@ if (nrow(data.ISM) > 0) {
         scale_x_discrete(drop=F, labels=breaks_labels) +
         mytheme + labs(alpha = "polyA motif found") +
         ylab("Transcripts, %")+
-        xlab("Distance to annotated polyadenylation site, bp")+
+        xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated polyA site\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       
@@ -1361,8 +1361,8 @@ if (nrow(data.ISM) > 0) {
   for(i in 1:length(subcategories.ISM)){
     c<-data.frame(subcategories.ISM[i])
     if (!(dim(c))[1]==0 & !all(is.na(c$within_CAGE_peak))){
-      c$diffTTSCat = cut(-(c$diff_to_TTS), breaks = diff_breaks);
-      c$diffTSSCat = cut(-(c$diff_to_TSS), breaks = diff_breaks);
+      c$diffTTSCat = cut((c$diff_to_TTS), breaks = diff_breaks);
+      c$diffTSSCat = cut((c$diff_to_TSS), breaks = diff_breaks);
       max_height <- max(max(table(c$diffTSSCat)), max(table(c$diffTTSCat)));
       max_height <- (max_height %/% 10+1) * 10;
       p22.s <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1373,7 +1373,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
-                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1385,7 +1385,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
-                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.ISM.list[[i]] = p22.s
