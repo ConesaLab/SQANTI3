@@ -1355,11 +1355,10 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
                 # see if it is completely contained within a junction
                 da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
                 i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
-                while i < len(da_pairs) and da_pairs[i][0] <= trec.txStart:
-                    if da_pairs[i][0] <= trec.txStart <= trec.txEnd <= da_pairs[i][1]:
+                for j in range(i-1, i+1):
+                    if da_pairs[j][0] <= trec.txStart <= trec.txEnd <= da_pairs[j][1]:
                         isoforms_hit.str_class = "genic_intron"
                         break
-                    i += 1
             else:
                 pass # remain intergenic
         else:
