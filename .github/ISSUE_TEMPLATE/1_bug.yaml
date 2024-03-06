@@ -1,7 +1,7 @@
 name: 🐞 Bug report
 description: Report a problem to help improve this project
 title: "[BUG] "
-labels: [bug, triage]
+labels: [triage]
 body:
     - type: checkboxes
       attributes:
