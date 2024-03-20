@@ -21,7 +21,8 @@ Example:
 
 """
 
-import os, sys
+import os
+import sys
 from collections import defaultdict
 from csv import DictReader, DictWriter
 
@@ -36,7 +37,7 @@ def sanity_check_collapse_input(input_prefix):
     1. the count, gff, rep files exist
     2. the number of records agree among the three
     """
-    group_filename = input_prefix + '.group.txt'
+    # group_filename = input_prefix + '.group.txt'
     count_filename = input_prefix + '.abundance.txt'
     gff_filename = input_prefix + '.gff'
     rep_filenames = [(input_prefix + '.rep.fq', 'fastq'), (input_prefix + '.rep.fastq', 'fastq'), \
@@ -100,7 +101,7 @@ def can_merge(m, r1, r2, internal_fuzzy_max_dist):
             # if r2 is monoexonic, it can start after the last exon of r1's last exon
             # if r2 is multiexonic, the last start must be pretty close (fuzzy allowed)
             if n2==1: # r2 is mono-exonic
-                return r1.ref_exons[-1].start - r2.ref_exons[-1].start <= internal_fuzzy_max_dist 
+                return r1.ref_exons[-1].start - r2.ref_exons[-1].start <= internal_fuzzy_max_dist
             else: return abs(r1.ref_exons[-1].start - r2.ref_exons[-1].start) <= internal_fuzzy_max_dist and \
                     r1.ref_exons[-n2].start <= r2.ref_exons[0].start < r1.ref_exons[-n2].end
         else:
@@ -115,13 +116,13 @@ def filter_out_subsets(recs, internal_fuzzy_max_dist):
         no_change = True
         j = i + 1
         while j < len(recs):
-            if recs[j].start > recs[i].end: 
+            if recs[j].start > recs[i].end:
                 break
             recs[i].segments = recs[i].ref_exons
             recs[j].segments = recs[j].ref_exons
             m = compare_junctions.compare_junctions(recs[i], recs[j], internal_fuzzy_max_dist)
             if can_merge(m, recs[i], recs[j], internal_fuzzy_max_dist):
-                if m == 'super': # pop recs[j] 
+                if m == 'super': # pop recs[j]
                     recs.pop(j)
                 else:
                     recs.pop(i)

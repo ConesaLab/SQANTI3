@@ -3,17 +3,17 @@ Should always be faithful duplicate of sequence/BioReaders.py
 Duplicated here for tofu installation. This one is called via cupcake.io.BioReaders.
 """
 
-import re, sys, pdb
+import re
 from collections import namedtuple
 import pysam
 
 Interval = namedtuple('Interval', ['start', 'end'])
-                                 
+
 class SimpleSAMReader:
     """
     A simplified SAM reader meant for speed. Skips CIGAR & FLAG parsing; identity/coverage calculation.
     """
-    SAMheaders = ['@HD', '@SQ', '@RG', '@PG', '@CO']    
+    SAMheaders = ['@HD', '@SQ', '@RG', '@PG', '@CO']
     def __init__(self, filename, has_header):
         self.filename = filename
         self.f = open(filename)
@@ -26,26 +26,26 @@ class SimpleSAMReader:
                     break
                 self.header += line
             self.f.seek(cur)
-    
+
     def __iter__(self):
         return self
-    
+
     def __next__(self):
         line = self.f.readline().strip()
         if len(line) == 0:
             raise StopIteration
-        return SimpleSAMRecord(line)    
-    
-  
+        return SimpleSAMRecord(line)
+
+
 class SimpleSAMRecord:
-    cigar_rex = re.compile('(\d+)([MIDSHN])')
+    cigar_rex = re.compile(r'(\d+)([MIDSHN])')
     SAMflag = namedtuple('SAMflag', ['is_paired', 'strand', 'PE_read_num', 'is_secondary', 'is_supplementary'])
     def __init__(self, record_line):
         """
         Simple bare bones version: only has
-        
+
         qID, sID, sStart, sEnd, qStart, qEnd, cigar
-        
+
         Simplified assumptions:
         -- must be end-to-end alignment (so qStart always 0)
         -- must be unspliced (no 'N' in cigar string)
@@ -92,7 +92,7 @@ class SimpleSAMRecord:
         """
         cur_end = start
         q_aln_len = 0
-        for (num, type) in re.findall('(\d+)(\S)', cigar):
+        for (num, type) in re.findall(r'(\d+)(\S)', cigar):
             num = int(num)
             if type == 'I':
                 q_aln_len += num
@@ -104,7 +104,7 @@ class SimpleSAMRecord:
         self.qEnd = self.qStart + q_aln_len
         self.sEnd = cur_end
 
-            
+
     def process(self, record_line):
         """
         Only process cigar to get qEnd and sEnd
@@ -119,10 +119,10 @@ class SimpleSAMRecord:
         self.parse_cigar(self.cigar, self.sStart)
         #self.flag = SimpleSAMRecord.parse_sam_flag(int(raw[1]))
 
-    
+
 
 class SAMReader:
-    SAMheaders = ['@HD', '@SQ', '@RG', '@PG', '@CO']    
+    SAMheaders = ['@HD', '@SQ', '@RG', '@PG', '@CO']
     def __init__(self, filename, has_header, ref_len_dict=None, query_len_dict=None):
         self.filename = filename
         self.f = open(filename)
@@ -137,16 +137,16 @@ class SAMReader:
                     break
                 self.header += line
             self.f.seek(cur)
-    
+
     def __iter__(self):
         return self
-        
+
     def __next__(self):
         line = self.f.readline().strip()
         if len(line) == 0:
             raise StopIteration
-        return SAMRecord(line, self.ref_len_dict, self.query_len_dict)        
-    
+        return SAMRecord(line, self.ref_len_dict, self.query_len_dict)
+
 
 class SAMRecord:
     SAMflag = namedtuple('SAMflag', ['is_paired', 'strand', 'PE_read_num', 'is_secondary', 'is_supplementary'])
@@ -193,7 +193,7 @@ class SAMRecord:
         qStart-qEnd: {qs}-{qe}
         segments: {seg}
         flag: {f}
-        
+
         coverage (of query): {qcov}
         coverage (of subject): {scov}
         alignment identity: {iden}
@@ -220,7 +220,7 @@ class SAMRecord:
             XS: 1-based qStart, XE: 1-based qEnd, XQ: query length, NM: number of non-matches
 
         ignore_XQ should be False for BLASR/pbalign.py's SAM, True for GMAP's SAM
-        
+
         0. qID
         1. flag
         2. sID
@@ -244,7 +244,7 @@ class SAMRecord:
         self.segments = self.parse_cigar(self.cigar, self.sStart)
         self.sEnd = self.segments[-1].end
         self.flag = SAMRecord.parse_sam_flag(int(raw[1]))
-        
+
         # process optional fields
         # XM: number of mismatches
         # NM: edit distance (sub/ins/del)
@@ -258,14 +258,14 @@ class SAMRecord:
 
         if self.flag.strand == '-' and self.qLen is not None:
             self.qStart, self.qEnd = self.qLen - self.qEnd, self.qLen - self.qStart
-         
+
         if query_len_dict is not None: # over write qLen and qCoverage, should be done LAST
             self.qLen = query_len_dict[self.qID]
             self.qCoverage = (self.qEnd - self.qStart) * 1. / self.qLen
-            
+
         if self.num_nonmatches is not None:
             self.identity = 1. - (self.num_nonmatches * 1. / (self.num_del + self.num_ins + self.num_mat_or_sub))
-            
+
 
     def parse_cigar(self, cigar, start):
         """
@@ -293,7 +293,7 @@ class SAMRecord:
         self.num_ins = 0
         self.num_mat_or_sub = 0
         self.cigar_qLen = 0
-        for (num, type) in re.findall('(\d+)(\S)', cigar):
+        for (num, type) in re.findall(r'(\d+)(\S)', cigar):
             num = int(num)
             self.cigar_qLen += num
             if type == 'H' or type == 'S':
@@ -374,9 +374,9 @@ class SAMRecord:
         assert flag == 0 or flag == 1
         is_paired = flag == 1
         return SAMRecord.SAMflag(is_paired, strand, PE_read_num, is_secondary, is_supp)
-            
 
-            
+
+
 class GMAPSAMReader(SAMReader):
     def __next__(self):
         while True:
@@ -386,13 +386,13 @@ class GMAPSAMReader(SAMReader):
             if not line.startswith('@'): # header can occur at file end if the SAM was sorted
                 break
         return GMAPSAMRecord(line, self.ref_len_dict, self.query_len_dict)
-    
+
 class GMAPSAMRecord(SAMRecord):
     def process(self, record_line, ref_len_dict=None, query_len_dict=None):
         """
         SAM files from pbalign.py have following optional fields:
             XS: 1-based qStart, XE: 1-based qEnd, XQ: query length, NM: number of non-matches
-    
+
         0. qID
         1. flag
         2. sID
@@ -437,7 +437,7 @@ class GMAPSAMRecord(SAMRecord):
 
         if self.qLen is not None:
             self.qCoverage = (self.qEnd - self.qStart) * 1. / self.qLen
-           
+
         if query_len_dict is not None: # over write qLen and qCoverage, should be done LAST
             try:
                 self.qLen = query_len_dict[self.qID]
@@ -534,7 +534,7 @@ class SplicedBAMReaderRegioned(SplicedBAMReader):
             raise Exception(f"SplicedBAMReaderRegioned must be given proper integer [start_index, end_index)! Instead got {start_index}, {end_index}")
 
         for i in range(self.start_index):
-            r = next(self.reader)
+            next(self.reader)
 
     def __iter__(self):
         return self
@@ -544,5 +544,3 @@ class SplicedBAMReaderRegioned(SplicedBAMReader):
         if self.cur_index > self.end_index:
             raise StopIteration
         return self.grab_next_record()
-
-
