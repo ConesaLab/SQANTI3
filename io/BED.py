@@ -24,7 +24,7 @@ class SimpleBEDReader:
     def __init__(self, filename, start_base=0, end_base=1):
         self.filename = filename
         self.f = open(filename)
-        
+
         if start_base!=0 and start_base!=1:
             raise Exception("start_base can only be 0 or 1!")
         if end_base!=0 and end_base!=1:

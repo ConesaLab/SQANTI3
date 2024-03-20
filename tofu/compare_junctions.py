@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 __author__ = 'etseng@pacb.com'
 
-import pdb
-
 def overlaps(s1, s2):
     return max(0, min(s1.end, s2.end) - max(s1.start, s2.start))
 
@@ -122,5 +120,3 @@ def compare_junctions(r1, r2, internal_fuzzy_max_dist=0, max_5_diff=999999, max_
                         return "partial"
                     else:
                         return "concordant"
-
-
