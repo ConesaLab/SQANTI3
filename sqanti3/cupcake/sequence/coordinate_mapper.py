@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-import os, sys
-import pdb
 import bisect
 from bx.intervals import Interval
 from Bio.Seq import Seq
@@ -38,7 +36,7 @@ def make_exons_from_base_mapping(mapping, start, end, strand):
     #print output
     if len(output)==1:
         output = [output[0], output[0]] # just duplicate it
-    elif len(output)%2==1:
+    elif len(output) % 2 == 1:
         if output[0][1] and output[1][1]:
             output.insert(0, output[0])
         elif output[-1][1] and output[-2][1]:
@@ -47,7 +45,7 @@ def make_exons_from_base_mapping(mapping, start, end, strand):
     if strand == '+':
         return [Interval(output[i][0],output[i+1][0]+1) for i in range(0, len(output), 2)]
     else: # - strand
-        return [Interval(output[i][0],output[i-1][0]+1)  for i in range(len(output)-1,-1,-2)]
+        return [Interval(output[i][0],output[i-1][0]+1) for i in range(len(output)-1,-1,-2)]
 
 
 
@@ -81,7 +79,7 @@ def get_base_to_base_mapping_from_sam(exons, cigar_string, qStart, qEnd, strand,
             else:
                 # soft clipping at the end
                 # advance the mapping but not cur_nt_loc (otherwise will be diff from qEnd)
-                for i in range(num): 
+                for i in range(num):
                     mapping[cur_nt_loc+i] = (cur_genome_loc, False)
                     #cur_nt_loc += 1
                     #print cur_nt_loc
@@ -139,7 +137,7 @@ def get_base_to_base_mapping_from_sam(exons, cigar_string, qStart, qEnd, strand,
 
 def get_exon_coordinates(exons, start, end):
     """
-    Return the set of "exons" (genome location) that 
+    Return the set of "exons" (genome location) that
     is where the nucleotide start-end is
 
     start is 0-based
@@ -158,24 +156,24 @@ def get_exon_coordinates(exons, start, end):
     end = min(end, len_of_transcript) # trim it to the end if necessary (for PacBio)
 
 
-    i = bisect.bisect_right(acc_lens, start) 
-    j = bisect.bisect_right(acc_lens, end) 
+    i = bisect.bisect_right(acc_lens, start)
+    j = bisect.bisect_right(acc_lens, end)
 
     # starts at i-th exon and ends at j-th exon, i and j are both 1-based
     # for the first exon, the offset is start-acc+e.start
     # for the last exon, the end point is end-acc+e.start
     if i == j:
-        return [Interval(start-acc_lens[i-1]+exons[i-1].start, 
+        return [Interval(start-acc_lens[i-1]+exons[i-1].start,
                 end-acc_lens[i-1]+exons[i-1].start)]
     else:
         if j >= len(exons):  # the end is the end
             return [Interval(start-acc_lens[i-1]+exons[i-1].start, exons[i-1].end)] + \
-                    exons[i:] 
+                    exons[i:]
         else:
             return [Interval(start-acc_lens[i-1]+exons[i-1].start, exons[i-1].end)] + \
                 exons[i:j-1] + \
-               [Interval(exons[j-1].start, end-acc_lens[j-1]+exons[j-1].start)]
-    
+                [Interval(exons[j-1].start, end-acc_lens[j-1]+exons[j-1].start)]
+
 def consistute_genome_seq_from_exons(genome_dict, _chr, exons, strand):
     """
     genome_dict is expected to be SeqReaders.LazyFastaReader
@@ -191,4 +189,3 @@ def consistute_genome_seq_from_exons(genome_dict, _chr, exons, strand):
         return str(seq)
     else:
         return str(seq.reverse_complement())
-

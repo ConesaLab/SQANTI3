@@ -2,20 +2,18 @@
 
 __version__ = '1.0'
 
-import os, sys
-from Bio.Seq import Seq
+import sys
 from Bio import SeqIO
-import coordinate_mapper as sp
-import BioReaders
+import sqanti3.cupcake.sequence.coordinate_mapper as sp
+import sqanti3.cupcake.io.BioReaders
 
-
-###### MODIFY FILENAME BELOW #######
+# #### MODIFY FILENAME BELOW #######
 #genome_file = 'hg38.fa'
 #sam_file = 'alz.rep.fq.sam'
 #sam_file = 'isoseq_flnc.fasta.sam'
 #output_err_corrected_fasta = 'alz.rep.genome_corrected.fasta'
 #output_err_corrected_fasta = 'isoseq_flnc.genome_corrected.fasta'
-####################################
+# ##################################
 
 def err_correct(genome_file, sam_file, output_err_corrected_fasta, genome_dict=None):
     if genome_dict is None:
@@ -33,13 +31,13 @@ def err_correct(genome_file, sam_file, output_err_corrected_fasta, genome_dict=N
 
     f.close()
 
-    print("output written to ".format(output_err_corrected_fasta), file=sys.stderr)
+    print("output written to {}".format(output_err_corrected_fasta), file=sys.stderr)
 
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser = ArgumentParser("Generate sequences using genome bases and SAM alignment file")
-    parser.add_argument("genome_file",  help="Genome Fasta File")
+    parser.add_argument("genome_file", help="Genome Fasta File")
     parser.add_argument("sam_file", help="GMAP SAM File")
     parser.add_argument("output_file", help="Output Fasta File")
     args = parser.parse_args()

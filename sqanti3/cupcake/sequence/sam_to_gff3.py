@@ -19,16 +19,14 @@ ex: from GMAP
 """
 
 #!/usr/bin/env python
-import os, sys
-import subprocess
+import sys
 from collections import Counter
-from math import floor
 from BCBio import GFF as BCBio_GFF
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from cupcake.io.BioReaders import  GMAPSAMReader
+from sqanti3.cupcake.io.BioReaders import GMAPSAMReader
 
 def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
     """
@@ -44,12 +42,12 @@ def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
     rec = SeqRecord(seq, r.sID)
     strand = 1 if r.flag.strand == '+' else -1
 
-    indels = r.num_ins+r.num_del
-    mismatches = r.num_nonmatches
-    matches = r.num_mat_or_sub - r.num_nonmatches
+    # indels = r.num_ins+r.num_del
+    # mismatches = r.num_nonmatches
+    # matches = r.num_mat_or_sub - r.num_nonmatches
 
     if qid_index_dict is not None:
-        if r.qID in qid_index_dict: 
+        if r.qID in qid_index_dict:
             qid_index_dict[r.qID] += 1
             r.qID += '_dup' + str(qid_index_dict[r.qID])
         else: qid_index_dict[r.qID] += 1
