@@ -49,38 +49,21 @@ except ImportError:
     print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
     sys.exit(-1)
 
-try:
-    from err_correct_w_genome import err_correct
-    from sam_to_gff3 import convert_sam_to_gff3
-    from STAR import STARJunctionReader
-    from BED import LazyBEDPointReader
-    import coordinate_mapper as cordmap
-except ImportError:
-    print("Unable to import err_correct_w_genome or sam_to_gff3.py! Please make sure cDNA_Cupcake/sequence/ is in $PYTHONPATH.", file=sys.stderr)
-    sys.exit(-1)
-
-try:
-    from cupcake.tofu.compare_junctions import compare_junctions
-    from cupcake.tofu.filter_away_subset import read_count_file
-    from cupcake.io.BioReaders import GMAPSAMReader
-    from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
-except ImportError:
-    print("Unable to import cupcake.tofu! Please make sure you install cupcake.", file=sys.stderr)
-    sys.exit(-1)
-
-# check cupcake version
-import cupcake
-v1, v2 = [int(x) for x in cupcake.__version__.split('.')]
-if v1 < 8 or v2 < 6:
-    print("Cupcake version must be 8.6 or higher! Got {0} instead.".format(cupcake.__version__), file=sys.stderr)
-    sys.exit(-1)
-
+from err_correct_w_genome import err_correct
+from sam_to_gff3 import convert_sam_to_gff3
+from STAR import STARJunctionReader
+from BED import LazyBEDPointReader
+import coordinate_mapper as cordmap
+from sqanti3.tofu.compare_junctions import compare_junctions
+from sqanti3.tofu.filter_away_subset import read_count_file
+from sqanti3.io.BioReaders import GMAPSAMReader
+from sqanti3.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 #MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"
 MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {i} > {o}"
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
-ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq" 
+ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq"
 
 GMSP_PROG = os.path.join(utilitiesPath, "gmst", "gmst.pl")
 GMST_CMD = "perl " + GMSP_PROG + " -faa --strand direct --fnn --output {o} {i}"
@@ -221,7 +204,7 @@ class myQueryTranscripts:
                  min_cov_pos ="NA", min_samp_cov="NA", sd ="NA", FL ="NA", FL_dict={},
                  nIndels ="NA", nIndelsJunc ="NA", proteinID=None,
                  ORFlen="NA", CDS_start="NA", CDS_end="NA",
-                 CDS_genomic_start="NA", CDS_genomic_end="NA", 
+                 CDS_genomic_start="NA", CDS_genomic_end="NA",
                  ORFseq="NA",
                  is_NMD="NA",
                  isoExp ="NA", geneExp ="NA", coding ="non_coding",
@@ -511,7 +494,7 @@ def correctionPlusORFpred(args, genome_dict):
                                            g=args.genome,
                                            a=args.annotation,
                                            i=args.isoforms,
-                                           o_dir=args.dir + "/uLTRA_out/")                   
+                                           o_dir=args.dir + "/uLTRA_out/")
                 if subprocess.check_call(cmd, shell=True)!=0:
                     print("ERROR running alignment cmd: {0}".format(cmd), file=sys.stderr)
                     sys.exit(-1)
@@ -825,7 +808,7 @@ def expression_parser(expressionFile):
                 exp_sample[r[name_id]] = float(r[name_tpm])
 
         exp_all = mergeDict(exp_all, exp_sample)
-    
+
     exp_dict = {}
     if len(exp_paths)>1:
         for k in exp_all:
@@ -1084,7 +1067,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                         if isoform_hits_name:
                             with open(isoform_hits_name+'_tmp', 'a') as out_file:
                                 tsv_writer = csv.writer(out_file, delimiter='\t')
-                                tsv_writer.writerow([trec.id, trec.length, trec.exonCount, ref.id, ref.length, 
+                                tsv_writer.writerow([trec.id, trec.length, trec.exonCount, ref.id, ref.length,
                                                      ref.exonCount, 'ISM', diff_tss, diff_tts])
                         # assign as a new (ISM) hit if
                         # (1) no prev hit
@@ -1507,7 +1490,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
         isoform_hits_name = get_isoform_hits_name(args, dir=None)
         with open(isoform_hits_name+'_tmp', 'w') as out_file:
             tsv_writer = csv.writer(out_file, delimiter='\t')
-            tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 
+            tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
                                  'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
     else:
         isoform_hits_name = None
@@ -1853,7 +1836,7 @@ def FLcount_parser(fl_count_filename):
 def run(args):
     global outputClassPath
     global outputJuncPath
-    global corrFASTA 
+    global corrFASTA
     global isoform_hits_name
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
@@ -1940,7 +1923,7 @@ def run(args):
                     isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     else:
         print("Full-length read abundance files not provided.", file=sys.stderr)
-    
+
     ## TSS ratio dict reading
     if ratio_TSS_dict is not None:
         print('**** Adding TSS ratio data... ****')
@@ -2085,10 +2068,10 @@ def run(args):
 
     #isoform hits to file if requested
     if args.isoform_hits:
-        fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 
+        fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
                       'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
         with open(isoform_hits_name,'w') as h:
-            fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')    
+            fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')
             fout_hits.writeheader()
             data = DictReader(open(isoform_hits_name+"_tmp"), delimiter='\t')
             data = sorted(data, key=lambda row:(row['Isoform']))
@@ -2518,7 +2501,7 @@ def main():
         f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
         f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
         f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
-    
+
     # Running functionality
     print("**** Running SQANTI3...", file=sys.stdout)
     if args.chunks == 1:

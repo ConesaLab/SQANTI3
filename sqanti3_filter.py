@@ -25,8 +25,9 @@ import os, sys, argparse, subprocess
 import distutils.spawn
 from csv import DictReader, DictWriter
 from Bio import SeqIO
-from cupcake.io.BioReaders import GMAPSAMReader
-from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+
+from sqanti3.io.BioReaders import GMAPSAMReader
+from sqanti3.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
@@ -54,7 +55,7 @@ def filter_files(args, ids_to_keep, inclusion_f):
         print("Output written to: {0}".format(fout.name), file=sys.stdout)
 
     # filter GTF
-    if args.gtf is not None:       
+    if args.gtf is not None:
         outputGTF = prefix + '.filtered.gtf'
         with open(outputGTF, 'w') as f:
             for r in collapseGFFReader(args.gtf):
@@ -73,7 +74,7 @@ def filter_files(args, ids_to_keep, inclusion_f):
                     f.write(r.record_line + '\n')
             print("Output written to: {0}".format(f.name), file=sys.stdout)
 
-    # filter FAA 
+    # filter FAA
     if args.faa is not None:
         outputFAA = prefix + '.filtered.faa'
         with open(outputFAA, 'w') as f:
@@ -94,7 +95,7 @@ def run_ML(args):
     -e {e} -m {m} -z {z}".format(u=utilitiesPath, s=RSCRIPT_ML, c=args.sqanti_class, \
     o=args.output, d=args.dir, t=args.percent_training, j=args.threshold, i=args.intrapriming ,\
     f=args.force_fsm_in, e=args.filter_mono_exonic, m=args.intermediate_files, r=args.remove_columns, z=args.max_class_size)
-    
+
     report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f ml ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
     o=args.output, d=args.dir)
 
@@ -131,7 +132,7 @@ def run_rules(args):
 
     report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
     o=args.output, d=args.dir)
-    
+
     if args.json_filter is not None:
         if not os.path.isfile(args.json_filter):
             print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
@@ -242,7 +243,7 @@ def main():
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
       if args.subcommand == 'ml':
-          f.write("PercentTraining\t" + str(args.percent_training) + "\n")          
+          f.write("PercentTraining\t" + str(args.percent_training) + "\n")
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
           f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
           f.write("Threshold\t" + str(args.threshold) + "\n")
@@ -253,9 +254,9 @@ def main():
           f.write("Intrapriming\t" + str(args.intrapriming) + "\n")
 
 ### Checking presence of files for ML. Check arguments --> If ok run ML
-    
+
     print("\nRunning SQANTI3 filtering...\n", file=sys.stdout)
-    
+
     if args.subcommand == 'ml':
         if args.TP is not None and not os.path.exists(args.TP):
             print("ERROR: {0} doesn't exist. Abort!".format(args.TP), file=sys.stderr)
