@@ -16,7 +16,7 @@ dependencies:
   - desalt
   - gffread
   - gmap
-  - kallisto
+  - kallisto<0.50.1
   - minimap2
   - numpy
   - openssl
@@ -56,7 +56,7 @@ dependencies:
   - r-tibble
   - r-tidyr
   - samtools
-  - scipy
+  - scipy<=1.11.4
   - seqtk
   - star
   - slamem
