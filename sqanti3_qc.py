@@ -29,6 +29,16 @@ from rt_switching import rts
 from indels_annot import calc_indels_from_sam
 from short_reads import *
 
+from cupcake.sequence.err_correct_w_genome import err_correct
+from cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
+from cupcake.sequence.STAR import STARJunctionReader
+from cupcake.sequence.BED import LazyBEDPointReader
+import cupcake.sequence.coordinate_mapper as cordmap
+from cupcake.tofu.compare_junctions import compare_junctions
+from cupcake.tofu.filter_away_subset import read_count_file
+from cupcake.io.BioReaders import GMAPSAMReader
+from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+
 try:
     from Bio.Seq import Seq
     from Bio import SeqIO
@@ -48,16 +58,6 @@ try:
 except ImportError:
     print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
     sys.exit(-1)
-
-from sqanti3.cupcake.sequence.err_correct_w_genome import err_correct
-from sqanti3.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
-from sqanti3.cupcake.sequence.STAR import STARJunctionReader
-from sqanti3.cupcake.sequence.BED import LazyBEDPointReader
-import sqanti3.cupcake.sequence.coordinate_mapper as cordmap
-from sqanti3.cupcake.tofu.compare_junctions import compare_junctions
-from sqanti3.cupcake.tofu.filter_away_subset import read_count_file
-from sqanti3.cupcake.io.BioReaders import GMAPSAMReader
-from sqanti3.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
 #MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -O6,24 -B4 -u{sense} -t {cpus} {g} {i} > {o}"

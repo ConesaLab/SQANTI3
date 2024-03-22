@@ -28,8 +28,8 @@ from csv import DictReader, DictWriter
 
 from Bio import SeqIO
 
-from sqanti3.cupcake.io import GFF
-from sqanti3.cupcake.tofu import compare_junctions
+from utilities.cupcake.io import GFF
+from utilities.cupcake.tofu import compare_junctions
 
 def sanity_check_collapse_input(input_prefix):
     """

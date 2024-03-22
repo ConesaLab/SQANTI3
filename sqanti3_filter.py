@@ -26,8 +26,8 @@ import distutils.spawn
 from csv import DictReader, DictWriter
 from Bio import SeqIO
 
-from sqanti3.cupcake.io.BioReaders import GMAPSAMReader
-from sqanti3.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+from utilities.cupcake.io.BioReaders import GMAPSAMReader
+from utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')

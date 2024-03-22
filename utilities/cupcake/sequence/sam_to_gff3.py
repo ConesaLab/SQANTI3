@@ -26,7 +26,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.SeqFeature import SeqFeature, FeatureLocation
-from sqanti3.cupcake.io.BioReaders import GMAPSAMReader
+from utilities.cupcake.io.BioReaders import GMAPSAMReader
 
 def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
     """
