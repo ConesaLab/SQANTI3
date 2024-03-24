@@ -26,11 +26,8 @@ import distutils.spawn
 from csv import DictReader, DictWriter
 from Bio import SeqIO
 
-rootdir = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.join(rootdir, "utilities"))
-sys.path.insert(0, os.path.join(rootdir, "cupcake"))
-from cupcake.io.BioReaders import GMAPSAMReader
-from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+from utilities.cupcake.io.BioReaders import GMAPSAMReader
+from utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
