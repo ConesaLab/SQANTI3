@@ -23,8 +23,10 @@ from collections.abc import Iterable
 from csv import DictWriter, DictReader
 from multiprocessing import Process
 
+rootdir = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, os.path.join(rootdir, "utilities"))
+sys.path.insert(0, os.path.join(rootdir, "sqanti3"))
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
-sys.path.insert(0, utilitiesPath)
 from rt_switching import rts
 from indels_annot import calc_indels_from_sam
 from short_reads import *
