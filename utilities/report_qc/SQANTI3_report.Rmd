@@ -1205,7 +1205,7 @@ cat ('\n')
 
 ### TSS and TTS Support Percentages {.tabset .tabset-fade .tabset-dropdown}
 
-```{r}
+```{r, eval = exists("p28.a")}
 cat("#### Annotation support", '\n') 
 ggplotly(p28.a.annot)%>%
   layout(margin = list(r = 130))%>%
