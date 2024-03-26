@@ -522,7 +522,10 @@ generatePDFreport = function()
   if (!all(is.na(data.class$min_cov))) {
     print(p28.a.Cov)
   }
-  print(p28.a)
+  
+  if (nrow(t3.SJ) > 0) {
+    print(p28.a)
+  }
   
   if (!all(is.na(data.ratio$ratio_TSS))){
     print(p28.a.ratio.pdf)

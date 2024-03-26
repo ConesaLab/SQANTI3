@@ -2170,33 +2170,34 @@ if (nrow(data.junction) > 0){
   }
 
 }
-t3.aa <-  rbind(t3.annot[,c("structural_category", "perc", "Var")], t3.a.SJ[,c(1,5,6)])
 
-for(i in 1:length(t3.list)){
-  set=data.frame(t3.data.sets[i])
-  c=data.frame(t3.list[i])
-  if (!all(is.na(set))){
-    t.temp=t3.aa
-    t3.aa = rbind(t.temp, c[,c(1,5,6)])
+# Check if t3.SJ is not empty
+if (nrow(t3.SJ) > 0) {
+  t3.aa <-  rbind(t3.annot[,c("structural_category", "perc", "Var")], t3.a.SJ[,c(1,5,6)])
+  
+  for(i in 1:length(t3.list)){
+    set=data.frame(t3.data.sets[i])
+    c=data.frame(t3.list[i])
+    if (!all(is.na(set))){
+      t.temp=t3.aa
+      t3.aa = rbind(t.temp, c[,c(1,5,6)])
+    }
   }
+  
+  p28.a <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
+    geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
+    guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
+    scale_fill_manual(values = c(myPalette)) +
+    scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
+    ylab("Transcripts, %") +
+    xlab("") +
+    mytheme +
+    theme(legend.position="bottom", axis.title.x = element_blank()) +
+    ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
+    theme(axis.text.y = element_text(size=10),
+          axis.text.x  = element_text(size=10))+
+    theme(legend.title = element_blank())
 }
-
-
-p28.a <- ggplot(data=t3.aa, aes(x=structural_category, y=perc, fill= Var)) +
-  geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
-  guides(fill=guide_legend(nrow=2,byrow=TRUE)) +
-  scale_fill_manual(values = c(myPalette)) +
-  scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
-  ylab("Transcripts, %") +
-  xlab("") +
-  mytheme +
-  theme(legend.position="bottom", axis.title.x = element_blank()) +
-  ggtitle( "Good Quality Control Attributes Across Structural Categories\n\n" ) +
-  theme(axis.text.y = element_text(size=10),
-        axis.text.x  = element_text(size=10))+
-  theme(legend.title = element_blank())
- 
-
 
 #TSS ratio
 data.ratio = rbind(data.refmatch[,c(6,47)], data.ISM[,c(6,47)])
