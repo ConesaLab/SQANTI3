@@ -8,7 +8,7 @@ channels:
 dependencies:
   - bcbio-gff
   - bedtools
-  - biopython
+  - biopython<=1.81
   - bioconductor-noiseq
   - bioconductor-busparse
   - bx-python
@@ -16,7 +16,7 @@ dependencies:
   - desalt
   - gffread
   - gmap
-  - kallisto<0.50.1
+  - kallisto=0.48.0
   - minimap2
   - numpy
   - openssl

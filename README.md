@@ -44,7 +44,6 @@ Thank you for your patience!
 
 
 ## How to cite SQANTI3
-
 If you are using SQANTI3 in your research, please cite the following paper in addition to this repository:
 
 - Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
