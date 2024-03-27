@@ -159,7 +159,7 @@ nIso = nrow(data.class)
     <i class="fas fa-question-circle"></i> How to use the report?
   </a>
   
-  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="howToUse.png"></div>
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
 </body>
 
 <!--
