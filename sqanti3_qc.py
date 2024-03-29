@@ -402,7 +402,6 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
         reader = collapseGFFReader(input_gff)
         for r in reader:
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
-
             s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
             e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
             r.cds_exons = []
@@ -443,6 +442,12 @@ def get_class_junc_filenames(args, dir=None):
     outputClassPath = outputPathPrefix + "_classification.txt"
     outputJuncPath = outputPathPrefix + "_junctions.txt"
     return outputClassPath, outputJuncPath
+
+def get_omitted_name(args, dir=None):
+    d = dir if dir is not None else args.dir
+    corrPathPrefix = os.path.join(d, args.output)
+    omitted_name = corrPathPrefix +"_omitted_due_to_min_ref_len.txt"
+    return omitted_name
 
 def correctionPlusORFpred(args, genome_dict):
     """
@@ -655,7 +660,6 @@ def reference_parser(args, genome_chroms):
     known_5_3_by_gene = defaultdict(lambda: {'begin':set(), 'end': set()})
 
     for r in genePredReader(referenceFiles):
-        if r.length < args.min_ref_len and not args.is_fusion: continue # ignore miRNAs
         if r.exonCount == 1:
             refs_1exon_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
             known_5_3_by_gene[r.gene]['begin'].add(r.txStart)
@@ -2045,6 +2049,25 @@ def run(args):
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)
 
+    #write omitted isoforms if requested minimum reference length is more than 0
+    if args.min_ref_len > 0 and not args.is_fusion:
+        omitted_name = get_omitted_name(args)
+        omitted_iso = {}
+        for key in isoforms_info:
+            if not isoforms_info[key].refLen == 'NA':
+                if int(isoforms_info[key].refLen) <= int(args.min_ref_len):
+                    omitted_iso[key] = isoforms_info[key]
+        for key in omitted_iso:
+            del isoforms_info[key]
+        omitted_keys = list(omitted_iso.keys())
+        print(type(omitted_keys))
+        omitted_keys.sort(key=lambda x: (omitted_iso[x].chrom,omitted_iso[x].id))
+        print('Type omitted keys ', type(omitted_keys))
+        with open(omitted_name, 'w') as h:
+            fout_omitted = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
+            fout_omitted.writeheader()
+            for key in omitted_keys:
+                fout_omitted.writerow(omitted_iso[key].as_dict())
     # sort isoform keys
     iso_keys = list(isoforms_info.keys())
     iso_keys.sort(key=lambda x: (isoforms_info[x].chrom,isoforms_info[x].id))
@@ -2065,7 +2088,6 @@ def run(args):
                 else:
                     r['RTS_junction'] = 'FALSE'
             fout_junc.writerow(r)
-
     #isoform hits to file if requested
     if args.isoform_hits:
         fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
