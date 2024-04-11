@@ -25,6 +25,7 @@ from multiprocessing import Process
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
+import pandas as pd
 from rt_switching import rts
 from indels_annot import calc_indels_from_sam
 from short_reads import *
@@ -2264,19 +2265,44 @@ def split_input_run(args):
         os.makedirs(SPLIT_ROOT_DIR)
 
     if not args.fasta:
-        recs = [r for r in collapseGFFReader(args.isoforms)]
+        # check if the code work if not use np to read the isoform file
+        try:
+            recs = [r for r in collapseGFFReader(args.isoforms)]
+        except Exception as e:
+            # read the file args.isoforms as a np file since the GTF file is not in a formal format
+            recs_df = pd.read_csv(args.isoforms, sep='\t', comment='#', header=None)
+            # Extract transcript IDs and assign them to the new column
+            for i, value in enumerate(recs_df.iloc[:, 8]):
+                parts = value.split('; ')
+                for part in parts:
+                    if 'transcript_id' in part:
+                        transcript_id = part.split('"')[1]
+                        recs_df.at[i, 'transcript_id'] = transcript_id
+                        break  # Assuming only one transcript_id per row, break
+            recs = {transcript_id: group.iloc[:, :-1] for transcript_id, group in recs_df.groupby('transcript_id')}
+
         n = len(recs)
-        chunk_size = n//args.chunks + (n%args.chunks >0)
+        # if resc is empty, then the file is not in the correct format and ask user to check
+        if n == 0:
+            print("The input file is not in the correct format, please check the file contains transcript_id in "
+                  "column 9 and try again")
+            sys.exit(-1)
+        chunk_size = n // args.chunks + (n % args.chunks > 0)
         split_outs = []
-        #pdb.set_trace()
+        # pdb.set_trace()
         for i in range(args.chunks):
-            if i*chunk_size >= n:
+            if i * chunk_size >= n:
                 break
             d = os.path.join(SPLIT_ROOT_DIR, str(i))
             os.makedirs(d)
-            f = open(os.path.join(d, os.path.basename(args.isoforms)+'.split'+str(i)), 'w')
-            for j in range(i*chunk_size, min((i+1)*chunk_size, n)):
-                write_collapseGFF_format(f, recs[j])
+            f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(i)), 'w')
+            if type(recs) == dict:
+                for key in sorted(recs.keys())[i * chunk_size: min((i + 1) * chunk_size, n)]:
+                    # Append each DataFrame to the file without index and with tab separation
+                    recs[key].to_csv(f, sep='\t', index=False, header=False, quoting=csv.QUOTE_NONE, escapechar='\\')
+            else:
+                for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
+                        write_collapseGFF_format(f, recs[j])
             f.close()
             split_outs.append((os.path.abspath(d), f.name))
     else:
