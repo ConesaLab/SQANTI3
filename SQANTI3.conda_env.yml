@@ -20,6 +20,7 @@ dependencies:
   - minimap2
   - numpy
   - openssl
+  - pandas
   - pandoc
   - perl
   - pip
