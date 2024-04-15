@@ -131,5 +131,9 @@ example/Homo_sapiens.GRCh38.dna.chromosome.13.fa
 example/SQANTI3_output/STAR_index/SA
 example/SQANTI3_output/STAR_index/SAindex
 
-# Cupcake
-cDNA_Cupcake/
+# PyCharm
+.idea/
+
+.emacs.bak/
+
+/example/SQANTI3_output/
