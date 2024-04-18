@@ -32,17 +32,17 @@ RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 def run_sqantiReads(args):
     outputPathPrefix = os.path.join(args.dir, args.output)
     
-    # Reduce the junctions file
-    cmd_reduceJunctions = f"cat {outputPathPrefix}_junctions.txt | cut -f 1,2,3,4,5,6,8,11,12,15 > {outputPathPrefix}_r_junctions.txt"
+    if args.classification is not None:
+        # Reduce the junctions file
+        cmd_reduceJunctions = f"cat {outputPathPrefix}_junctions.txt | cut -f 1,2,3,4,5,6,8,11,12,15 > {outputPathPrefix}_r_junctions.txt"
 
-    if subprocess.check_call(cmd_reduceJunctions, shell = True) !=0:
-        print("Problem reducing the junction file")
-        sys.exit(-1)
-    if args.classification is None and args.junctions is None:
+        if subprocess.check_call(cmd_reduceJunctions, shell = True) !=0:
+            print("Problem reducing the junction file")
+            sys.exit(-1)
         os.remove(f"{outputPathPrefix}_junctions.txt")
-    cmd_sed = f"sed '1s/isoform/read/' {outputPathPrefix}_r_junctions.txt > {outputPathPrefix}_reads_junctions.txt"
-    subprocess.call(cmd_sed, shell = True)
-    os.remove(f"{outputPathPrefix}_r_junctions.txt")
+        cmd_sed = f"sed '1s/isoform/read/' {outputPathPrefix}_r_junctions.txt > {outputPathPrefix}_reads_junctions.txt"
+        subprocess.call(cmd_sed, shell = True)
+        os.remove(f"{outputPathPrefix}_r_junctions.txt")
 
 
     print("**** Calculating UJCs...", file = sys.stdout)
@@ -64,29 +64,37 @@ def run_sqantiReads(args):
     os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
     # Reduce the classification file
-    cmd_reduceClassification = f"cat {outputPathPrefix}_classification.txt | cut -f 1,2,3,4,5,6,7,8,9,10,15,16,17,37,38 | sed '1s/isoform/read/' > {outputPathPrefix}_r_classification.txt"
-    if subprocess.check_call(cmd_reduceClassification, shell = True) !=0:
-        print("Problem reducing the classification file")
-        sys.exit(-1)
-
-    if args.classification is None and args.junctions is None:
-        os.remove(f"{outputPathPrefix}_classification.txt")
+    if args.classification is not None:
+        classfile = f"{outputPathPrefix}_r_classification.txt"
+        cmd_reduceClassification = f"cat {outputPathPrefix}_classification.txt | cut -f 1,2,3,4,5,6,7,8,9,10,15,16,17,37,38 | sed '1s/isoform/read/' > {outputPathPrefix}_r_classification.txt"
+        if subprocess.check_call(cmd_reduceClassification, shell = True) !=0:
+            print("Problem reducing the classification file")
+            sys.exit(-1)
+    else:
+        classfile = f"{outputPathPrefix}_classification.txt"
         
 
     ## Pandas merge to the left
-    clas_df = pd.read_csv(f"{outputPathPrefix}_r_classification.txt", sep = "\t")
+    clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 7])
+    clas_df.columns = ["read", "associated_transcript"]
     ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["read", "jxn_string"])
     
     merged_df = pd.merge(clas_df, ujc_df, on = "read", how = "left")
     
     # Fill missing values in UJC column using the transcript ID
     merged_df["jxn_string"] = merged_df.apply(lambda row: 'Mono_' + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
-
-    merged_df.to_csv(f"{outputPathPrefix}_reads_classification.txt", index = False, sep = "\t")
-    os.remove(f"{outputPathPrefix}_r_classification.txt")
-    os.remove(f"{outputPathPrefix}tmp_UJC.txt")
     
-    print("SQANTI-READS run complete")
+    merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
+    
+    cmd_paste = ['bash -c "paste <(cat ', classfile, ') <(cut -f 3 ', outputPathPrefix, '_temp.txt) > ', outputPathPrefix, '_reads_classification.txt"']
+    subprocess.call("".join(cmd_paste), shell = True)
+    
+    if args.classification is not None:
+        os.remove(f"{outputPathPrefix}_r_classification.txt")
+    
+    os.remove(f"{outputPathPrefix}tmp_UJC.txt")
+    os.remove(f"{outputPathPrefix}_temp.txt")
+    os.remove(f"{outputPathPrefix}_classification.txt")
 
 
 
@@ -112,27 +120,24 @@ def main():
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     parser.add_argument('--saturation', action="store_true", default=False, help='\t\tInclude saturation curves into report')
     parser.add_argument('--fasta', help='\t\tUse when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms', action='store_true')
-    parser.add_argument('--classification', default = None, help = 'If you have already run SQANTI3_QC, you can directly run sqanti_reads report')
-    parser.add_argument('--junctions', default = None, help = "If you already ran SQANTIQC, you can directly run sqanti_reads report")
     args = parser.parse_args()
 
-    ## Check that gfftools and bedtools are installed
-
-    ## If they give us a classification and junction file, don't run sqanti
-
-    if args.classification is None and args.junctions is None:
-        if args.reads is not None and args.annotation is not None and args.genome is not None:
-            cmd_sqanti = f"python3 {sqantiqcPath}sqanti_qc.py {args.reads} {args.annotation} {args.genome} --min_ref_len {args.min_ref_len} --force_id_ignore {args.force_id_ignore} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir} -o {args.output} -s {args.sites} -v {args.version} --saturation {args.saturation} --fasta {args.fasta}"
+    ## If they give us a classification file, don't run sqanti, run only sqanti_reads
+    if args.reads is not None and args.annotation is not None and args.genome is not None:
+        cmd_sqanti = f"python3 {sqantiqcPath}sqanti_qc.py {args.reads} {args.annotation} {args.genome} --min_ref_len {args.min_ref_len} --force_id_ignore {args.force_id_ignore} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir} -o {args.output} -s {args.sites} -v {args.version} --saturation {args.saturation} --fasta {args.fasta}"
             
-            subprocess.call(cmd_sqanti, shell = True)
-        else:
-            print("ERROR: You either need to provide a classification and junction file to only run sqanti-reads, or provide a FASTA/FASTQ/GTF, annotation and reference genome to run full SQANTI3 QC")
-            sys.exit(-1)
+        subprocess.call(cmd_sqanti, shell = True)
+        args.classification = "caca"
     else:
-        print("Running SQANTI reads only")
-
-    ### Run SQANTI READS ###
-    run_sqantiReads(args)
+        args.classification = None
+    
+    ## Check that there is a classification and a corrected.gtf file in the output directory
+    if os.path.exists(os.path.join(args.dir, f"{args.output}_classification.txt")) and os.path.exists(os.path.join(args.dir, f"{args.output}_corrected.gtf")):
+        ### Run SQANTI READS ###
+        run_sqantiReads(args)
+        print("SQANTI-reads run complete")
+    else:
+        print(f"ERROR: There are no classification.txt and corrected.gtf files in your output directory: {args.dir}")
     
         
 
