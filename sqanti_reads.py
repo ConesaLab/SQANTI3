@@ -3,6 +3,7 @@ import subprocess, os, re, sys
 import argparse
 import pandas as pd
 import distutils.spawn
+import hashlib
 #!/usr/bin/env python3
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
 # Author: Carolina Monzo
@@ -75,25 +76,35 @@ def run_sqantiReads(args):
         
 
     ## Pandas merge to the left
-    clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 7])
-    clas_df.columns = ["read", "associated_transcript"]
+    clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7])
+    clas_df.columns = ["read", "chr", "strand", "associated_transcript"]
     ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["read", "jxn_string"])
     
     merged_df = pd.merge(clas_df, ujc_df, on = "read", how = "left")
     
     # Fill missing values in UJC column using the transcript ID
-    merged_df["jxn_string"] = merged_df.apply(lambda row: 'Mono_' + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
+    merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
+    
+    merged_df['jxn_hash'] = merged_df['jxn_string'].apply(
+                lambda x: hashlib.sha256(x.encode('utf-8')).hexdigest())
+
+    #if not merged_df['jxn_hash'].is_unique:
+    #    print ("Wow! A rare jxnHash collision: two jxnStrings have resulted in the exact same hash for these reads and transcripts: ")
+                
+    #    duplicateDf = merged_df[merged_df.duplicated(subset='jxnHash',keep=False) | merged_df.duplicated(subset='jxnHash',keep='first')]
+    #    for row in duplicateDf.to_dict('records'):
+    #        print(row['read'],row['associated_transcript'])
     
     merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
     
-    cmd_paste = ['bash -c "paste <(cat ', classfile, ') <(cut -f 3 ', outputPathPrefix, '_temp.txt) > ', outputPathPrefix, '_reads_classification.txt"']
+    cmd_paste = ['bash -c "paste <(cat ', classfile, ') <(cut -f 5,6 ', outputPathPrefix, '_temp.txt) > ', outputPathPrefix, '_reads_classification.txt"']
     subprocess.call("".join(cmd_paste), shell = True)
     
     if args.classification is not None:
         os.remove(f"{outputPathPrefix}_r_classification.txt")
     
     os.remove(f"{outputPathPrefix}tmp_UJC.txt")
-    os.remove(f"{outputPathPrefix}_temp.txt")
+    #os.remove(f"{outputPathPrefix}_temp.txt")
     os.remove(f"{outputPathPrefix}_classification.txt")
 
 
