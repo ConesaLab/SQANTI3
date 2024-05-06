@@ -10,6 +10,14 @@
 #********************** Taking arguments from python script
 
 args <- commandArgs(trailingOnly = TRUE)
+args <- c(
+  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG_classification.txt",
+  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG_junctions.txt",
+  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG.params.txt",
+  "/media/tian/ubuntu/GitHub/SQANTI3/utilities",
+  "False",
+  "html"
+)
 class.file <- args[1]
 junc.file <- args[2]
 utilities.path <- args[4]
@@ -1984,23 +1992,25 @@ if (nrow(data.junction) > 0){
       ggtitle("PolyA Support\n\n") +
       guides(fill = guide_legend(title = "QC Attributes") )
   }
-  
-  x[which(x$diff_to_gene_TSS<=50),"Annotation"] <- "Annotated"
-  x[which(x$diff_to_gene_TSS>50),"Annotation"] <- "Not annotated"
-  t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
-  t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
-  t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
-  t3.annot <- subset(t3.annot, Annotation=='Annotated');
-  t3.annot$Var=t3.annot$Annotation
-  p28.a.annot <- ggplot(t3.annot, aes(x=structural_category, y=perc)) +
-    geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[6] ,color="black") +
-    geom_text(label=paste(round(t3.annot$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
-    scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
-    ylab("Isoforms, %") +
-    xlab("") +
-    mytheme +
-    theme(legend.position="bottom", axis.title.x = element_blank()) +
-    ggtitle("Annotation Support\n\n") 
+  # Check for Non-empty Data
+  if (nrow(x) > 0) {
+    x[which(x$diff_to_gene_TSS<=50),"Annotation"] <- "Annotated"
+    x[which(x$diff_to_gene_TSS>50),"Annotation"] <- "Not annotated"
+    t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
+    t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
+    t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
+    t3.annot <- subset(t3.annot, Annotation=='Annotated');
+    t3.annot$Var=t3.annot$Annotation
+    p28.a.annot <- ggplot(t3.annot, aes(x=structural_category, y=perc)) +
+      geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[6] ,color="black") +
+      geom_text(label=paste(round(t3.annot$perc, 1),"%",sep=''), position = position_dodge(0.9),vjust = -0.8) + 
+      scale_y_continuous(expand = expansion(mult = c(0,0.1))) +
+      ylab("Isoforms, %") +
+      xlab("") +
+      mytheme +
+      theme(legend.position="bottom", axis.title.x = element_blank()) +
+      ggtitle("Annotation Support\n\n") 
+  }
   #p28.Cov <- ggplot(t3.Cov, aes(x=structural_category, y=perc)) +
   #  geom_col(position='dodge', width = 0.7,  size=0.3, fill='lightblue', color="black") +
   #  geom_text(label=paste(round(t3.SJ$perc, 1),"%",sep=''), nudge_y=0.5) +
