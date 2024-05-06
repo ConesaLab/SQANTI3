@@ -434,34 +434,46 @@ if (has_data(p5.s3)) {
 ```
 
 ```{r, eval = exists("pSTM")}
-cat ('\n###',"Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
+# Check if the plot object exists and is non-empty
+# TODO: use render_ggplotly in every plot
+render_ggplotly <- function(plot) {
+  if (exists("plot") && !is.null(plot$data) && nrow(plot$data) > 0) {
+    ggplotly(plot) %>% layout(showlegend = TRUE)
+  } else {
+    cat("Plot data is not available or is empty.")
+  }
+}
 
-cat ('\n####',"Structural Classification ", '\n')
+cat('\n###', "Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
 
-ggplotly(pSTM)%>%
-  layout(showlegend = T)
+cat('\n####', "Structural Classification", '\n')
+if (exists("pSTM")) {
+  render_ggplotly(pSTM)
+}
 
-ggplotly(pSTM_perc)%>%
-  layout(showlegend = T)
+if (exists("pSTM_perc")) {
+  render_ggplotly(pSTM_perc)
+}
 
-cat ('\n####',"Structural Subcategories FSM and ISM", '\n')
+cat('\n####', "Structural Subcategories FSM and ISM", '\n')
+if (exists("pSTM.s1")) {
+  render_ggplotly(pSTM.s1 + theme(axis.title.x = element_blank()))
+}
 
-ggplotly(pSTM.s1 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
+if (exists("pSTM_perc.s1")) {
+  render_ggplotly(pSTM_perc.s1 + theme(axis.title.x = element_blank()))
+}
 
-ggplotly(pSTM_perc.s1 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
+cat('\n####', "Structural Subcategories NIC and NNC", '\n')
+if (exists("pSTM.s2")) {
+  render_ggplotly(pSTM.s2 + theme(axis.title.x = element_blank()))
+}
 
-cat ('\n####',"Structural Subcategories NIC and NNC", '\n')
+if (exists("pSTM_perc.s2")) {
+  render_ggplotly(pSTM_perc.s2 + theme(axis.title.x = element_blank()))
+}
 
-ggplotly(pSTM.s2 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
-
-ggplotly(pSTM_perc.s2 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
-
-cat ('\n')
-
+cat('\n')
 ```
 
 ```{r, eval = exists("p2") || exists("p3") }
