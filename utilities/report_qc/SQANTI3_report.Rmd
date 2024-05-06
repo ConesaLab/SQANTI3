@@ -38,6 +38,14 @@ has_data <- function(df) {
   }
 }
 
+# TODO: use render_ggplotly in every plot
+render_ggplotly <- function(plot) {
+  if (exists("plot") && !is.null(plot$data) && nrow(plot$data) > 0) {
+    ggplotly(plot) %>% layout(showlegend = TRUE)
+  } else {
+    cat("Plot data is not available or is empty.")
+  }
+}
 
 #### Data preparation (change previous table format)
 
@@ -435,15 +443,6 @@ if (has_data(p5.s3)) {
 
 ```{r, eval = exists("pSTM")}
 # Check if the plot object exists and is non-empty
-# TODO: use render_ggplotly in every plot
-render_ggplotly <- function(plot) {
-  if (exists("plot") && !is.null(plot$data) && nrow(plot$data) > 0) {
-    ggplotly(plot) %>% layout(showlegend = TRUE)
-  } else {
-    cat("Plot data is not available or is empty.")
-  }
-}
-
 cat('\n###', "Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
 
 cat('\n####', "Structural Classification", '\n')
@@ -1120,15 +1119,9 @@ Intra−Priming Quality Check
 
 ```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
 cat ('\n###',"By Structural Category", '\n')
-if (has_data(p30.s1)) {
-  ggplotly(p30.s1)
-}    
-if (has_data(p30.s2)) {
-  ggplotly(p30.s2)
-}
-if (has_data(p30.s3)) {
-  ggplotly(p30.s3)
-}    
+render_ggplotly(p30.s1) 
+render_ggplotly(p30.s2)
+render_ggplotly(p30.s3) 
 cat ('\n')
 ```
 
