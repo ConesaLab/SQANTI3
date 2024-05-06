@@ -10,14 +10,6 @@
 #********************** Taking arguments from python script
 
 args <- commandArgs(trailingOnly = TRUE)
-args <- c(
-  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG_classification.txt",
-  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG_junctions.txt",
-  "/media/tian/ubuntu/BUSIG_Project/SQANTI_ONT_BUSIG/BUSIG.params.txt",
-  "/media/tian/ubuntu/GitHub/SQANTI3/utilities",
-  "False",
-  "html"
-)
 class.file <- args[1]
 junc.file <- args[2]
 utilities.path <- args[4]
