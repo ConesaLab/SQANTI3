@@ -5,7 +5,7 @@ __version__ = '1.0'
 import sys
 from Bio import SeqIO
 import utilities.cupcake.sequence.coordinate_mapper as sp
-import utilities.cupcake.io.BioReaders
+from utilities.cupcake.io import BioReaders
 
 # #### MODIFY FILENAME BELOW #######
 #genome_file = 'hg38.fa'
