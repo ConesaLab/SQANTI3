@@ -194,7 +194,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     if metric == "mean":
         ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
-        dratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
     elif metric == "max":
         ratio_rep_df['return_ratio'] = ratio_rep_df.max(axis=1, numeric_only=True, skipna=True)
     elif metric == "median":
