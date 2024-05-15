@@ -1483,8 +1483,17 @@ def get_fusion_component(fusion_gtf):
             _acc += _len
     return result
 
+def short_reads_mapping(args):
+    if args.short_reads is not None:
+        print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
+        star_out, star_index = star(args.genome, args.short_reads, args.dir, args.cpus)
+        SJcovNames, SJcovInfo = STARcov_parser(star_out)
+    else:
+        star_out, star_index, SJcovNames, SJcovInfo = None, None, None, None
+    return(star_out, star_index, SJcovNames, SJcovInfo)
 
-def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF):
+def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF,
+                          star_out, star_index, SJcovNames, SJcovInfo):
     global isoform_hits_name
     if args.is_fusion: # read GFF to get fusion components
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
@@ -1499,7 +1508,6 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     else:
         isoform_hits_name = None
     ## read coverage files if provided
-    star_out=None
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
         SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
@@ -1508,14 +1516,10 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             fields_junc_cur += [name + '_unique', name + '_multi']
     else:
         if args.short_reads is not None:
-            print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
-            star_out, star_index = star(args.genome, args.short_reads, args.dir, args.cpus)
-            SJcovNames, SJcovInfo = STARcov_parser(star_out)
             fields_junc_cur = FIELDS_JUNC
             for name in SJcovNames:
                 fields_junc_cur += [name + '_unique', name + '_multi']
         else:
-            SJcovNames, SJcovInfo = None, None
             print("Splice Junction Coverage files not provided.", file=sys.stdout)
             fields_junc_cur = FIELDS_JUNC
 
@@ -1538,9 +1542,6 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     else:
         if args.short_reads is not None:
             print("Running calculation of TSS ratio", file=sys.stdout)
-            if star_out is None:
-                print("Starting STAR mapping. We need this for calculating TSS ratio. It may take some time...")
-                star_out, star_index = star(args.genome, args.short_reads, args.dir, args.cpus)
             chr_order = star_index + "/chrNameLength.txt"
             inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
             bams=[]
@@ -1872,7 +1873,7 @@ def run(args):
         indelsTotal = None
 
     # isoform classification + intra-priming + id and junction characterization
-    isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF)
+    isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF, star_out, star_index, SJcovNames, SJcovInfo)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
 
@@ -2551,6 +2552,8 @@ def main():
 
     # Running functionality
     print("**** Running SQANTI3...", file=sys.stdout)
+    global star_out, star_index, SJcovNames, SJcovInfo
+    star_out, star_index, SJcovNames, SJcovInfo = short_reads_mapping(args)
     if args.chunks == 1:
         run(args)
         if args.isoAnnotLite:
