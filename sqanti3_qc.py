@@ -1238,19 +1238,20 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 # if we haven't exited here, then ISM hit is not found yet
                 # instead check if it's NIC by intron retention
                 # but we don't exit here since the next gene could be a ISM hit
-                if ref.txStart <= trec.txStart < trec.txEnd <= ref.txEnd:
-                    isoform_hit.str_class = "genic"
-                    isoform_hit.subtype = "mono-exon"
-                    # check for intron retention
-                    if len(ref.junctions) > 0:
-                        for (d,a) in ref.junctions:
-                            if trec.txStart < d < a < trec.txEnd:
-                                isoform_hit.str_class = "novel_in_catalog"
-                                isoform_hit.subtype = "mono-exon_by_intron_retention"
-                                break
-                    isoform_hit.modify("novel", ref.gene, 'NA', 'NA', ref.length, ref.exonCount)
-                    get_gene_diff_tss_tts(isoform_hit)
-                    return isoform_hit
+                #if ref.txStart <= trec.txStart < trec.txEnd <= ref.txEnd:
+                # isoform_hit.str_class = "genic"
+                # isoform_hit.subtype = "mono-exon"
+                # check for intron retention
+                if len(ref.junctions) > 0:
+                    for (d,a) in ref.junctions:
+                        if trec.txStart < d < a < trec.txEnd:
+                            isoform_hit.str_class = "novel_in_catalog"
+                            isoform_hit.subtype = "mono-exon_by_intron_retention"
+                            
+                            isoform_hit.modify("novel", ref.gene, 'NA', 'NA', ref.length, ref.exonCount)
+                            get_gene_diff_tss_tts(isoform_hit)
+
+                            return isoform_hit
 
                 # if we get to here, means neither ISM nor NIC, so just add a ref gene and categorize further later
                 isoform_hit.genes.append(ref.gene)
