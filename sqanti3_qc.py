@@ -1239,12 +1239,13 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 # instead check if it's NIC by intron retention
                 # but we don't exit here since the next gene could be a ISM hit
                 if ref.txStart <= trec.txStart < trec.txEnd <= ref.txEnd:
-                    isoform_hit.str_class = "novel_in_catalog"
+                    isoform_hit.str_class = "genic"
                     isoform_hit.subtype = "mono-exon"
                     # check for intron retention
                     if len(ref.junctions) > 0:
                         for (d,a) in ref.junctions:
                             if trec.txStart < d < a < trec.txEnd:
+                                isoform_hit.str_class = "novel_in_catalog"
                                 isoform_hit.subtype = "mono-exon_by_intron_retention"
                                 break
                     isoform_hit.modify("novel", ref.gene, 'NA', 'NA', ref.length, ref.exonCount)
