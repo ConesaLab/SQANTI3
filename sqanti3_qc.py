@@ -1214,7 +1214,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         if isoform_hit.str_class == "" and trec.chrom in refs_exons_by_chr:
             # no hits to single exon genes, let's see if it hits multi-exon genes
             # (1) if it overlaps with a ref exon and is contained in an exon, we call it ISM
-            # (2) else, if it is completely within a ref gene start-end region, we call it NIC by intron retention
+            # (2) else, if it spans one or more introns, we call it NIC by intron retention
             for ref in refs_exons_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
                 if calc_exon_overlap(trec.exons, ref.exons) == 0:   # no exonic overlap, skip!
                     continue
@@ -1238,11 +1238,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 # if we haven't exited here, then ISM hit is not found yet
                 # instead check if it's NIC by intron retention
                 # but we don't exit here since the next gene could be a ISM hit
-                #if ref.txStart <= trec.txStart < trec.txEnd <= ref.txEnd:
-                # isoform_hit.str_class = "genic"
-                # isoform_hit.subtype = "mono-exon"
-                # check for intron retention
-                if len(ref.junctions) > 0:
+                if len(ref.junctions) > 0: # This should always be true since we are checking on multi-exon references
                     for (d,a) in ref.junctions:
                         if trec.txStart < d < a < trec.txEnd:
                             isoform_hit.str_class = "novel_in_catalog"
@@ -1251,11 +1247,12 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                             isoform_hit.modify("novel", ref.gene, 'NA', 'NA', ref.length, ref.exonCount)
                             get_gene_diff_tss_tts(isoform_hit)
 
-                            return isoform_hit
+                            # return isoform_hit
 
-                # if we get to here, means neither ISM nor NIC, so just add a ref gene and categorize further later
+                # if we get to here, means not ISM, so just add a ref gene and categorize further later
                 isoform_hit.genes.append(ref.gene)
-
+            if isoform_hit.str_class == "novel_in_catalog":
+                return isoform_hit
     get_gene_diff_tss_tts(isoform_hit)
     isoform_hit.genes.sort(key=lambda x: start_ends_by_gene[x]['begin'])
     return isoform_hit
