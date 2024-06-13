@@ -2204,7 +2204,10 @@ class CAGEPeak:
             if strand=='-' and start0<int(query) and end1<int(query):
                 continue
 ##
-            within_out = (start0<=query<end1)
+            if strand == "+":
+                within_out = (start0<=query<end1)
+            if strand == "-":
+                within_out = (start0<query<=end1)
             if within_out:
                 w = 'TRUE'
             else:
