@@ -151,6 +151,7 @@ require(ggplot2)
 pkg <- installed.packages() %>% rownames
 
 if(!("RColorConesa" %in% pkg)){
+  options(repos = c(CRAN = "https://cran.rstudio.com/"))
   suppressMessages(install.packages("RColorConesa"))
 }
 
