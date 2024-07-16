@@ -61,8 +61,8 @@ def get_method_runSQANTI3(args, df):
                     print(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}", file=sys.stdout)
                 continue
         
-        # Check for .gtf file
-        gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.gtf")
+        # Check for .gtf or .gff file
+        gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
         try:
             gtf_files = glob.glob(gtf_pattern)[0]
         except IndexError:
@@ -163,23 +163,23 @@ def main():
 
     #arguments
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
-    parser.add_argument('--genome', type=str, help='\t\tReference genome (Fasta format)', default = False, required = False)
-    parser.add_argument('--annotation', type=str, help='\t\tReference annotation file (GTF format)', default = False, required = True)
-    parser.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID column, classification_file column and junction_file column')
-    parser.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs.')
-    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='Optional: This is the column name that plots are to be faceted by')
-    parser.add_argument('-p','--prefix', type=str, dest="PREFIX", required=False, help='SQANTI-reads output filename prefix')
+    parser.add_argument('--genome', type=str, help='\t\tReference genome (Fasta format).', default = False, required = False)
+    parser.add_argument('--annotation', type=str, help='\t\tReference annotation file (GTF format).', default = False, required = True)
+    parser.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID and file_acc column.')
+    parser.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs. Default: Directory where the script was run.')
+    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
+    parser.add_argument('-p','--prefix', type=str, dest="PREFIX", required=False, help='SQANTI-reads output filename prefix. Default: sqantiReads')
     parser.add_argument('-d','--dir', type=str, help='\t\tDirectory for output sqanti_reads files. Default: Directory where the script was run.', default = "./", required=False)
-    parser.add_argument('--min_ref_len', type=int, default=0, help="\t\tMinimum reference transcript length (default: 0 bp)")
+    parser.add_argument('--min_ref_len', type=int, default=0, help="\t\tMinimum reference transcript length. Default: 0 bp")
     parser.add_argument('--force_id_ignore', action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
-    parser.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2')
-    parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. (default: 10)')
-    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up (default: 1).')
+    parser.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2', help="\t\tDefault: minimap2")
+    parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. Default: 10')
+    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up. Default: 1')
     parser.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
-    parser.add_argument('-gp', '--generate_plots', action='store_true', dest="GENERATE_PLOTS", help='Generate plots if set (default: True)', default=True)
-    parser.add_argument('-ge','--gene_expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes', default = 10)
-    parser.add_argument('-je','--jxn_expression', type=int, dest="JXNEXP", required=False, help='Expression cut off level for junction cv plots', default = 3)
-    parser.add_argument('-pn','--perc_novel', type=int, dest="PERCNOVEL", required=False, help='Percent NIC+NNC for determining underannotated genes', default = 90)
+    parser.add_argument('-gp', '--generate_plots', action='store_true', dest="GENERATE_PLOTS", help='Generate plots if set. Default: True', default=True)
+    parser.add_argument('-ge','--gene_expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes. Default = 10', default = 10)
+    parser.add_argument('-je','--jxn_expression', type=int, dest="JXNEXP", required=False, help='Expression cut off level for junction coverage plots. Default = 3', default = 3)
+    parser.add_argument('-pn','--perc_novel', type=int, dest="PERCNOVEL", required=False, help='Percent NIC+NNC for determining underannotated genes. Default = 90', default = 90)
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
 
