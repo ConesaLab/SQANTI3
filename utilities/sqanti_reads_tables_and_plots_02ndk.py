@@ -14,6 +14,7 @@ import os
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -255,12 +256,12 @@ def proc_samples(design_file, ref):
                   'diff_to_Ref_start_site': 'Int64', 'diff_to_Ref_end_site': 'Int64', 'canonical': 'string'}
     
     class_cols = ['isoform','chrom','strand','exons','associated_gene','associated_transcript','structural_category','subcategory',
-                    'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical']
+                    'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical', "jxn_string", "jxnHash"]
     
     ##!!! predicted NMD dtype? - Not su
     class_dtypes = {'isoform': 'string', 'chrom': 'string', 'strand': 'string', 'exons': 'Int64', 'associated_gene': 'string','associated_transcript': 'string', 
                     'structural_category': 'string', 'subcategory': 'string','length': 'Int64', 'RTS_stage': 'boolean', 'perc_A_downstream_TTS': float, 
-                    'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string'}
+                    'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string', 'jxn_string':'string', "jxnHash":'string'}
     
     for index, row in design_DF.iterrows():
         # gtf = row['gtf_file']
@@ -1020,8 +1021,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         #lgd = g.fig.legend(handles, labels, title='Sample ID', loc='upper left', bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure)
         plt.subplots_adjust(right=0.8)
         plt.tight_layout(pad=3)
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         ### Plot 1 - Vertical Scatterplot -Structural Category - Annotated genes
@@ -1051,8 +1052,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         legend.set_frame_on(True)
         legend.get_frame().set_facecolor((1, 1, 1, 0.5))
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         ## Plot 2 - Barplot - structural category % - ALL genes
@@ -1069,8 +1070,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage Reads in Each Structural Category - All Genes", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         
@@ -1090,8 +1091,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage Reads in Each Structural Category - Annotated Genes", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
              ## Barplot subcategories
@@ -1108,8 +1109,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Number of Reads in Each Sub-Category - FSM ", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 5
@@ -1125,8 +1126,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage of FSM Reads in Each Sub-Category ", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 6
@@ -1142,8 +1143,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Number of Reads in Each Sub-Category - ISM ", y=1.02, fontsize=16)
         lgd =  plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 7
@@ -1159,8 +1160,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage of ISM Reads in Each Sub-Category ", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 8
@@ -1176,8 +1177,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Number of Reads in Each Sub-Category - NIC and NNC ", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 9
@@ -1193,8 +1194,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage of NIC/NNC Reads in Each Sub-Category ", y=1.02, fontsize=16)
         lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         
@@ -1212,8 +1213,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
             ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         
@@ -1230,8 +1231,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Number of Genes Detected", y=1.02, fontsize=16)
         lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
     
             
@@ -1255,8 +1256,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             
             title = plt.suptitle(f'Gene distribution - {category}', y= 1.02)
             plt.tight_layout()
+            matplotlib.rcParams['pdf.fonttype'] = 42
             pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-            plt.show()
             plt.close()
         
     
@@ -1285,8 +1286,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 title = g.fig.suptitle("Number of UJCs Detected", y=1.02, fontsize=16)
                 lgd = plt.legend(title=lab, bbox_to_anchor=(1.05, 1), loc='upper left')
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.show()
                 plt.close()
                 
                 g = sns.FacetGrid(ujc_percs_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.6, sharex=False, sharey=True)
@@ -1300,8 +1301,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 title = g.fig.suptitle("UJCs Detected", y=1.02, fontsize=16)
                 lgd = plt.legend(title=lab, bbox_to_anchor=(1.05, 1), loc='upper left')
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.show()
                 plt.close()
                 
             elif stack_by == 'structural_category':
@@ -1318,8 +1319,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 title = g.fig.suptitle("Number of UJCs detected", y=1.02, fontsize=16)
                 lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.show()
                 plt.close()
                 
             
@@ -1333,8 +1334,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 title = g.fig.suptitle("Percentage of UJCs detected", y=1.02, fontsize=16)
                 lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.show()
                 plt.close()
                 
                 
@@ -1352,8 +1353,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         plt.ylabel('Total Reads')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ## Plot 21 - Bar graph read length categories - counts
@@ -1372,8 +1373,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Lengths of All Mapped Reads", y=1.02, fontsize=16)
         lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
          
         ## Plot 22 Bar graph read length categories - %
@@ -1390,8 +1391,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 23 - Violin plots of lengths
@@ -1408,8 +1409,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
             ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.show()
         plt.close()
 
         ## Plots 24 - 29 Scatterplot % reads > 1kb vs % structural category
@@ -1427,8 +1428,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             plt.ylabel('Percentage of Reads > 1kb')
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
             plt.tight_layout()
+            matplotlib.rcParams['pdf.fonttype'] = 42
             pdf.savefig()
-            plt.show()
             plt.close()
             
         # Plot 30 - Bar graph RTS/intra priming
@@ -1445,8 +1446,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Number of Artefact Reads", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
     
         #Plot 31 - Bar graph RTS/intra priming (percentages)
@@ -1460,8 +1461,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Percentage of Artefact Reads", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 32 - PCA plot
@@ -1473,8 +1474,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         plt.xlabel('Principal Component 1')
         plt.ylabel('Principal Component 2')
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
                 
         #Plot 33 - Scree plot and loadings heatmap
@@ -1511,8 +1512,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         title = fig.suptitle('Screeplot and Heatmap of PC loadings',y=1.02, fontsize=16)
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         
@@ -1529,8 +1530,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Junctions by Category", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 35 - Barplot junction category percentages
@@ -1546,8 +1547,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Junctions by Category", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 36 - Barplot cv junction categories acceptors
@@ -1564,8 +1565,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Acceptors with > 3 reads", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 37 - Barplot cv junction categories donors
@@ -1580,8 +1581,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         title = g.fig.suptitle("Donors with > 3 reads", y=1.02, fontsize=16)
         lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.show()
         plt.close()
     
         
@@ -1654,8 +1655,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.title(' % reads in each structural category')
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Plot 1 - Vertical plot - reads in annotated genes by structural category
@@ -1667,8 +1668,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.title(' % reads in each structural category')
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Plot 2 - Barplot - reads in all genes by structural category
@@ -1692,8 +1693,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(ticks=np.arange(len(all_gene_percs_pivot_DF['sampleID'])), labels=all_gene_percs_pivot_DF['sampleID'], rotation=90, ha='right')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig() 
-        plt.show()
         plt.close()  
         
         ##Plots 3 - Barplot - reads in annotated genes by structural category
@@ -1708,8 +1709,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(ticks=np.arange(len(annot_gene_percs_pivot_DF['sampleID'])), labels=annot_gene_percs_pivot_DF['sampleID'], rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Subcategory plots
@@ -1725,8 +1726,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Plot 5
@@ -1741,8 +1742,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 6
@@ -1757,8 +1758,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 7
@@ -1773,8 +1774,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
        
         #Plot 8
@@ -1789,8 +1790,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 9
@@ -1805,13 +1806,17 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 10 - Barplot genes detyected colored by number of reads in gene
         categories = ['1 read','2-10 reads', '11-50 reads', '50-100 reads','100+ reads']
         cols = ['sampleID'] + categories
+        # Check all groups available, otherwise make them with 0s
+        for column in cols:
+            if column not in gene_agg_DF.columns:
+                gene_agg_DF[column] = 0
         gene_agg_DF = gene_agg_DF[cols]
         gene_agg_DF.set_index('sampleID', inplace=True)
         palette = sns.color_palette("rainbow", len(categories))
@@ -1824,12 +1829,14 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 11 - Barplot - % genes per sample coloured by number of reads in gene
-        
+        for column in cols:
+            if column not in gene_percs_unstacked.columns:
+                gene_percs_unstacked[column] = 0
         gene_percs_unstacked = gene_percs_unstacked[cols]
         gene_percs_unstacked.set_index('sampleID', inplace=True)
         plt.figure(figsize=(10, 7.5))
@@ -1840,8 +1847,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xticks(rotation=90, ha='right')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 12 -15 - Boxplots Distribution of % structural category (FSM ISM NIC NNC) 
@@ -1854,8 +1861,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
              plt.title(f'Gene distribution - {category}')
              plt.xticks(rotation=45)
              plt.tight_layout()
+             matplotlib.rcParams['pdf.fonttype'] = 42
              pdf.savefig()
-             plt.show()
              plt.close()
 
 
@@ -1890,8 +1897,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
                 axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
                 
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig()  # If saving to PDF, uncomment this line
-                plt.show()
                 plt.close(fig)  # Close the figure to free up memory
             elif stack_by == 'structural_category':
                 
@@ -1919,8 +1926,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
                 axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
                 
                 plt.tight_layout()
+                matplotlib.rcParams['pdf.fonttype'] = 42
                 pdf.savefig() 
-                plt.show()
                 plt.close(fig)  
                 
             
@@ -1934,8 +1941,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.ylabel('Total Reads')
         plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
 
@@ -1950,8 +1957,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.ylabel('Number of Reads')
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1), title='Read Length Category')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
 
         # Plot 22 - Barplot lengths of reads %
@@ -1965,8 +1972,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.ylabel('Percentage of Reads')
         plt.legend(title='Read Length Category', loc='upper left', bbox_to_anchor=(1, 1))
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 23 Violin plots
@@ -1974,8 +1981,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xlabel('Sample ID')
         plt.ylabel('Length')
         plt.title('Read Length Distribution')
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Plots 24 - 29 -  % structural category vs %reads greater than 1kb
@@ -1990,8 +1997,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
             plt.xlabel('%' + category)
             plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
             plt.tight_layout()
+            matplotlib.rcParams['pdf.fonttype'] = 42
             pdf.savefig() 
-            plt.show() 
             plt.close()
         
         ##Plot 30 - Artefact reads counts
@@ -2015,8 +2022,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         ##Plot 31 - Artefact reads %
@@ -2028,8 +2035,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 32 - PCA plot
@@ -2040,8 +2047,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.xlabel('Principal Component 1')
         plt.ylabel('Principal Component 2')
         plt.legend()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
 
@@ -2078,8 +2085,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         
         title = fig.suptitle('Screeplot and Heatmap of PC loadings',y=1.02, fontsize=16)
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.show()
         plt.close()
         
         #Plot 34 - Barplot junction category counts
@@ -2094,8 +2101,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 35 - Barplot junction category percentages
@@ -2110,8 +2117,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 36 - Barplot cv junction categories acceptors
@@ -2126,8 +2133,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
         
         #Plot 37 - Barplot cv junction categories donors
@@ -2142,8 +2149,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
-        plt.show()
         plt.close()
     
     
