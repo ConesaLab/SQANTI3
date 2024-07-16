@@ -163,10 +163,11 @@ def main():
 
     #arguments
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
-    parser.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID column, classification_file column and junction_file column')
-    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='Optional: This is the column name that plots are to be faceted by')
-    parser.add_argument('--annotation', type=str, help='\t\tReference annotation file (GTF format)', default = False, required = True)
     parser.add_argument('--genome', type=str, help='\t\tReference genome (Fasta format)', default = False, required = False)
+    parser.add_argument('--annotation', type=str, help='\t\tReference annotation file (GTF format)', default = False, required = True)
+    parser.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID column, classification_file column and junction_file column')
+    parser.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs.')
+    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='Optional: This is the column name that plots are to be faceted by')
     parser.add_argument('-p','--prefix', type=str, dest="PREFIX", required=False, help='SQANTI-reads output filename prefix')
     parser.add_argument('-d','--dir', type=str, help='\t\tDirectory for output sqanti_reads files. Default: Directory where the script was run.', default = "./", required=False)
     parser.add_argument('--min_ref_len', type=int, default=0, help="\t\tMinimum reference transcript length (default: 0 bp)")
@@ -179,7 +180,6 @@ def main():
     parser.add_argument('-ge','--gene_expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes', default = 10)
     parser.add_argument('-je','--jxn_expression', type=int, dest="JXNEXP", required=False, help='Expression cut off level for junction cv plots', default = 3)
     parser.add_argument('-pn','--perc_novel', type=int, dest="PERCNOVEL", required=False, help='Percent NIC+NNC for determining underannotated genes', default = 90)
-    parser.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs.')
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
 
