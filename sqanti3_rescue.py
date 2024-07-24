@@ -531,7 +531,7 @@ def main():
           os.makedirs(args.dir)
   
   if args.output is None:
-      args.output=args.sqanti_filter_classif[args.sqanti_filter_classif.rfind("/")+1:args.sqanti_filter_classif("_classification.txt")]
+      args.output=args.sqanti_filter_classif[args.sqanti_filter_classif.rfind("/")+1:args.sqanti_filter_classif.rfind("_classification.txt")]
       print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
   
   ## Check that ML-specific args are valid
