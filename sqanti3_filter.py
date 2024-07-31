@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
-__version__ = '5.2'  # Python 3.7 syntax!
+__version__ = '5.2.2'  # Python 3.7 syntax!
 
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
