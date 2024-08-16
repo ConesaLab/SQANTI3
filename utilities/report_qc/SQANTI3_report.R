@@ -2202,7 +2202,7 @@ if (nrow(t3.SJ) > 0) {
 }
 
 #TSS ratio
-data.ratio = rbind(data.refmatch[,c(6,47)], data.ISM[,c(6,47)])
+data.ratio = rbind(data.refmatch[,c(6,48)], data.ISM[,c(6,48)])
 if (!all(is.na(data.ratio$ratio_TSS))){
   require(scales)
   p28.a.ratio=ggplot(data.ratio, aes(x=ratio_TSS, fill=structural_category)) + 
