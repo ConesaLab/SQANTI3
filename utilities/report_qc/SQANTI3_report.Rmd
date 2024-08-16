@@ -684,10 +684,10 @@ if (length(p21.FSM.list) > 0) {
 ```{r p21.ISM.list, eval = exists("p21.ISM.list") && length(p21.ISM.list)}
 
 if (length(p21.ISM.list)>0) {
-  p21.stitles.ISM<-list("Alternative 3'End for ISM",
-                      "Alternative 3'5'End for ISM",
-                      "Alternative 5'End for ISM",
-                      "Reference Match for ISM")
+  p21.stitles.ISM<-list("3' Fragment for ISM",
+                      "Internal Fragment for ISM",
+                      "5' Fragment for ISM",
+                      "Intron Retention for ISM")
   for (i in 1:length(p21.ISM.list)) {
     cat ('\n####', p21.stitles.ISM[[i]][1], '\n')
     if (!is.null(p21.ISM.list[[i]])) {
@@ -743,10 +743,10 @@ if(length(p22.FSM.list)>0) {
 
 ```{r p22.ISM.list, eval = exists("p22.ISM.list") && length(p22.ISM.list)}
 if (length(p22.ISM.list)>0) {
-p22.stitles.ISM<-list("Alternative 3'End for ISM",
-                      "Alternative 3'5'End for ISM",
-                      "Alternative 5'End for ISM",
-                      "Reference Match for ISM")
+p22.stitles.ISM<-list("3' Fragment for ISM",
+                      "Internal Fragment for ISM",
+                      "5' Fragment for ISM",
+                      "Intron Retention for ISM")
 for (i in 1:length(p22.ISM.list)) {
   cat ('\n####', p22.stitles.ISM[[i]][1], '\n')
   if (!is.null(p22.ISM.list[[i]])) {
