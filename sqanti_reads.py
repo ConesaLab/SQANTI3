@@ -177,9 +177,12 @@ def main():
     parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up. Default: 1')
     parser.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     parser.add_argument('-gp', '--generate_plots', action='store_true', dest="GENERATE_PLOTS", help='Generate plots if set. Default: True', default=True)
-    parser.add_argument('-ge','--gene_expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes. Default = 10', default = 10)
-    parser.add_argument('-je','--jxn_expression', type=int, dest="JXNEXP", required=False, help='Expression cut off level for junction coverage plots. Default = 3', default = 3)
-    parser.add_argument('-pn','--perc_novel', type=int, dest="PERCNOVEL", required=False, help='Percent NIC+NNC for determining underannotated genes. Default = 90', default = 90)
+    parser.add_argument('-je','--jxn-expression', type=int, dest="JXNEXP", required=False, help='Coverage threshold for detected reference donors and acceptor', default = 10)
+    parser.add_argument('-pc','--perc-coverage', type=int, dest="PERCCOV", required=False, help='Percent gene coverage of UJC for determining well-covered unannotated transcripts', default = 20)
+    parser.add_argument('-pj','--perc-junctions', type=int, dest="PERCMAXJXN", required=False, help='Percent of the max junctions in gene for determining near full-length putative novel transcripts', default = 80)
+    parser.add_argument('-fl','--factor-level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
+    parser.add_argument('--all-tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and cand underannotated gene tables')
+    parser.add_argument('--pca-tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
 
@@ -199,15 +202,21 @@ def main():
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
 
-    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-novel {args.PERCNOVEL}"
+    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN}"
     if args.inFACTOR:
         cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
+    if args.FACTORLVL != None:
+        cmd_plotting = cmd_plotting + f" --factor-level {args.FACTORLVL}"
     if args.PREFIX:
         cmd_plotting = cmd_plotting + f" --prefix {args.PREFIX}"
     else:
         cmd_plotting = cmd_plotting + " --prefix sqantiReads"
     if args.GENERATE_PLOTS:
         cmd_plotting = cmd_plotting + " --generate-plots"
+    if args.ALLTABLES:
+        cmd_plotting = cmd_plotting + " --all-tables"
+    if args.PCATABLES:
+        cmd_plotting = cmd_plotting + "--pca-tables"
     
     subprocess.call(cmd_plotting, shell = True)
 
