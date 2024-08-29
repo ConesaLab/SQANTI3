@@ -17,6 +17,8 @@ import argparse
 import math
 import csv
 import numpy as np
+import gzip
+
 from statistics import mean
 from collections import defaultdict, Counter, namedtuple
 from collections.abc import Iterable
@@ -517,7 +519,13 @@ def correctionPlusORFpred(args, genome_dict):
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
 
             ind = 0
-            with open(args.isoforms, 'r') as isoforms_gtf:
+            # gzip.open and open have different default open modes:
+            # gzip.open uses "rb" (read in binary format)
+            # open uses "rt" (read in text format)
+            # This can be solved by making explicit read text mode
+            # as they share this parameter
+            open_function = gzip.open if args.isoforms.endswith('.gz') else open
+            with open_function(args.isoforms, mode='rt') as isoforms_gtf:
                 for line in isoforms_gtf:
                     if line[0] != "#" and len(line.split("\t"))!=9:
                         sys.stderr.write("\nERROR: input isoforms file with not GTF format.\n")
@@ -2149,10 +2157,16 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     :return: output fasta with the cleaned up sequence ID, is_fusion flag
     """
     type = 'fasta'
-    with open(input_fasta) as h:
+    # gzip.open and open have different default open modes:
+    # gzip.open uses "rb" (read in binary format)
+    # open uses "rt" (read in text format)
+    # This can be solved by making explicit the read text mode (which is required
+    # by SeqIO.parse)
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(input_fasta[:input_fasta.rfind('.')]+'.renamed.fasta', 'w')
-    for r in SeqIO.parse(open(input_fasta), type):
+    f = open_function(input_fasta[:input_fasta.rfind('.')]+'.renamed.fasta', mode='wt')
+    for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
         m1 = seqid_rex1.match(r.id)
         m2 = seqid_rex2.match(r.id)
         m3 = seqid_fusion.match(r.id)
