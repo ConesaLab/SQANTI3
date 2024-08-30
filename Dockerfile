@@ -7,11 +7,9 @@
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
 
-RUN apt update -y
-
 LABEL maintainer="aarzalluz" \
    base_image="ubuntu:22.04" \
-   version="v0.1.0"   \
+   version="v0.9.0"   \
    software="sqanti3/v5.2.2" \
    about.summary="SQANTI3: Tool for the Quality Control of Long-Read Defined Transcriptomes" \
    about.home="https://github.com/ConesaLab/SQANTI3" \
@@ -27,8 +25,8 @@ RUN mkdir -p /opt2 && mkdir -p /data2
 WORKDIR /opt2
 
 # Set time zone to Europe 
-ENV TZ=Europe/Madrid
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+#ENV TZ=Europe/Madrid
+#RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
        && echo $TZ > /etc/timezone
 
 ############### SETUP ################
@@ -47,7 +45,7 @@ RUN apt-get update \
        gawk \
        # gffread/0.12.7
        gffread \
-       git \
+       #git \
        # gmap/2021-12-17
        gmap \
        gzip \
@@ -63,10 +61,10 @@ RUN apt-get update \
        perl \
        pkg-config \
        # python/3.10.6
-       python3 \
-       python3-pip \
+       #python3 \
+       #python3-pip \
        # R/4.1.2-1
-       r-base \
+       #r-base \
        # STAR/2.7.10a
        rna-star \
        # samtools/1.13-4
@@ -84,11 +82,6 @@ RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 RUN cpanm FindBin Term::ReadLine
 
 ## Installing miniconda inside the container
-
-RUN mkdir -p /conda/miniconda3
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh
-RUN bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3
-RUN rm /conda/miniconda3/miniconda.sh
 
 ############### MANUAL ################
 # Install tools from src manually,
@@ -159,16 +152,18 @@ RUN mkdir -p /opt2/sqanti3/5.2.2/ \
 ENV PATH="${PATH}:/opt2/sqanti3/5.2.2/SQANTI3-5.2.2:/opt2/sqanti3/5.2.2/SQANTI3-5.2.2/utilities"
 WORKDIR /opt2/sqanti3/5.2.2/SQANTI3-5.2.2
 
-RUN /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml
-
-
+RUN mkdir -p /conda/miniconda3 && \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
+    bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
+    rm /conda/miniconda3/miniconda.sh && \
+    /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
+    /conda/miniconda3/bin/conda clean -a
 
 
 ################ POST #################
 # Add Dockerfile and export environment 
 # variables and update permissions
 ADD Dockerfile /opt2/sqanti3_5-1-2.dockerfile
-RUN chmod -R a+rX /opt2
 ENV PATH="/opt2:$PATH"
 # Hide deprecation warnings from sqanit
 ENV PYTHONWARNINGS="ignore::DeprecationWarning"
@@ -180,9 +175,12 @@ ENV PATH="${PATH}:/conda/miniconda3/bin/"
 #RUN echo "source /conda/miniconda3/bin/activate" >> ~/.bashrc
 #RUN echo "conda activate SQANTI3.env" >> ~/.bashrc
 
-RUN ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_qc.py sqanti3_qc.py
-RUN ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_filter.py sqanti3_filter.py
-RUN ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_rescue.py sqanti3_rescue.py
+RUN chmod -R a+rX /opt2 && \
+    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_qc.py sqanti3_qc.py && \
+    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_filter.py sqanti3_filter.py && \
+    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_rescue.py sqanti3_rescue.py && \
+    apt remove -y build-essential cmake && apt autoremove -y && apt clean -y && \
+    apt clean autoclean -y
 
 ENTRYPOINT ["conda", "run", "--no-capture-output" ,"-n","SQANTI3.env"]
 CMD ["/bin/bash"]
