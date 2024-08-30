@@ -61,5 +61,8 @@ dependencies:
   - seqtk
   - star
   - slamem
+  - gtftools
+  - seaborn
+  - scikit-learn
   - pip:
     - ultra-bioinformatics
