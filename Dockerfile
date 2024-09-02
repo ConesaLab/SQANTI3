@@ -4,17 +4,28 @@
 # Right now edlib doesn't work with python 3.12 which is the default version
 # of python in Ubuntu 24.04. edlib has had no updates since April 19, 2023
 # so no compatibility is expected for the time being.
+# Dockerfile originally developed by @skchronicles, updated and optimized
+# for version v5.2.2 by @Fabian-RY
+
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
+
+# Set the versions of different softwares dependencies and SQANTI3 version
+# To install
+ENV SQANTI3_VERSION="5.2.2"
+ENV DESALT_VERSION="1.5.6"
+ENV NAMFINDER_VERSION="0.1.3"
 
 LABEL maintainer="aarzalluz" \
    base_image="ubuntu:22.04" \
    version="v0.9.0"   \
-   software="sqanti3/v5.2.2" \
+   software="sqanti3/v${SQANTI3_VERSION}" \
    about.summary="SQANTI3: Tool for the Quality Control of Long-Read Defined Transcriptomes" \
    about.home="https://github.com/ConesaLab/SQANTI3" \
    about.documentation="https://github.com/ConesaLab/SQANTI3/wiki/" \
    about.tags="Transcriptomics"
+
+# Default Timeset inside the container: UTC
 
 ############### INIT ################
 # Create Container filesystem specific 
@@ -24,10 +35,6 @@ LABEL maintainer="aarzalluz" \
 RUN mkdir -p /opt2 && mkdir -p /data2
 WORKDIR /opt2
 
-# Set time zone to Europe 
-#ENV TZ=Europe/Madrid
-#RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-       && echo $TZ > /etc/timezone
 
 ############### SETUP ################
 # This section installs system packages 
@@ -45,7 +52,6 @@ RUN apt-get update \
        gawk \
        # gffread/0.12.7
        gffread \
-       #git \
        # gmap/2021-12-17
        gmap \
        gzip \
@@ -60,11 +66,6 @@ RUN apt-get update \
        # perl/5.34.0-3
        perl \
        pkg-config \
-       # python/3.10.6
-       #python3 \
-       #python3-pip \
-       # R/4.1.2-1
-       #r-base \
        # STAR/2.7.10a
        rna-star \
        # samtools/1.13-4
@@ -85,7 +86,7 @@ RUN cpanm FindBin Term::ReadLine
 
 ############### MANUAL ################
 # Install tools from src manually,
-# Installs deSALT/1.5.6 from GitHub:
+# Installs deSALT from GitHub: (current version, 1.5.6, defined in ENV variable)
 # https://github.com/ydLiu-HIT/deSALT/releases/tag/v1.5.6
 # This tool was created using an older
 # version of GCC that allowed multiple
@@ -94,49 +95,49 @@ RUN cpanm FindBin Term::ReadLine
 # allow multiple definitions. Adding
 # -Wl,--allow-multiple-definition
 # to the linker to fix this issue.
-RUN mkdir -p /opt2/desalt/1.5.6/ \
-   && wget https://github.com/ydLiu-HIT/deSALT/archive/refs/tags/v1.5.6.tar.gz -O /opt2/desalt/1.5.6/v1.5.6.tar.gz \
-   && tar -zvxf /opt2/desalt/1.5.6/v1.5.6.tar.gz -C /opt2/desalt/1.5.6/ \
-   && rm -f /opt2/desalt/1.5.6/v1.5.6.tar.gz \
-   && cd /opt2/desalt/1.5.6/deSALT-1.5.6/src/deBGA-master/ \
+RUN mkdir -p /opt2/desalt/${DESALT_VERSION}/ \
+   && wget https://github.com/ydLiu-HIT/deSALT/archive/refs/tags/v${DESALT_VERSION}.tar.gz -O /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz \
+   && tar -zvxf /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz -C /opt2/desalt/${DESALT_VERSION}/ \
+   && rm -f /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz \
+   && cd /opt2/desalt/${DESALT_VERSION}/deSALT-${DESALT_VERSION}/src/deBGA-master/ \
    && make CFLAGS="-g -Wall -O2 -Wl,--allow-multiple-definition" \
    && cd .. \
    && make CFLAGS="-g -Wall -O3 -Wc++-compat -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function -Wl,--allow-multiple-definition"
 
-ENV PATH="${PATH}:/opt2/desalt/1.5.6/deSALT-1.5.6/src"
+ENV PATH="${PATH}:/opt2/desalt/${DESALT_VERSION}/deSALT-${DESALT_VERSION}/src"
 WORKDIR /opt2
 
 # Installs namfinder, requirement of
 # ultra-bioinformatics tool from pypi.
-RUN mkdir -p /opt2/namfinder/0.1.3/ \
-   && wget https://github.com/ksahlin/namfinder/archive/refs/tags/v0.1.3.tar.gz -O /opt2/namfinder/0.1.3/v0.1.3.tar.gz \
-   && tar -zvxf /opt2/namfinder/0.1.3/v0.1.3.tar.gz -C /opt2/namfinder/0.1.3/ \
-   && rm -f /opt2/namfinder/0.1.3/v0.1.3.tar.gz \
-   && cd /opt2/namfinder/0.1.3/namfinder-0.1.3/ \
+RUN mkdir -p /opt2/namfinder/${NAMFINDER_VERSION}/ \
+   && wget https://github.com/ksahlin/namfinder/archive/refs/tags/v${NAMFINDER_VERSION}.tar.gz -O /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz \
+   && tar -zvxf /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz -C /opt2/namfinder/${NAMFINDER_VERSION}/ \
+   && rm -f /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz \
+   && cd /opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VERSION}/ \
    # Build to be compatiable with most
    # Intel x86 CPUs, should work with
    # old hardware, i.e. sandybridge
    && cmake -B build -DCMAKE_C_FLAGS="-msse4.2" -DCMAKE_CXX_FLAGS="-msse4.2" \
    && make -j -C build
 
-ENV PATH="${PATH}:/opt2/namfinder/0.1.3/namfinder-0.1.3/build"
+ENV PATH="${PATH}:/opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VERSION}/build"
 WORKDIR /opt2
 
-########### SQANTI3/v5.2.2 ############
-# Installs SQANTI3/v5.2.2, dependencies
-# and requirements have already been
+########### SQANTI3 (currentily v${NAMFINDER_VERSION}) ############
+# Installs SQANTI3 with the version defined in the ENV variable (currently 5.2.2)
+# dependenciesand requirements have already been
 # satisfied, for more info see:
 # https://github.com/ConesaLab/SQANTI3
-RUN mkdir -p /opt2/sqanti3/5.2.2/ \
-   && wget https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v5.2.2.tar.gz -O /opt2/sqanti3/5.2.2/v5.2.2.tar.gz \
-   && tar -zvxf /opt2/sqanti3/5.2.2/v5.2.2.tar.gz -C /opt2/sqanti3/5.2.2/ \
-   && rm -f /opt2/sqanti3/5.2.2/v5.2.2.tar.gz \
+RUN mkdir -p /opt2/sqanti3/${SQANTI3_VERSION}/ \
+   && wget https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v${SQANTI3_VERSION}.tar.gz -O /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
+   && tar -zvxf /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz -C /opt2/sqanti3/${SQANTI3_VERSION}/ \
+   && rm -f /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
    # Removing exec bit for non-exec files
    && chmod -x \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/LICENSE \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/.gitignore \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/*.md \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/*.yml \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/LICENSE \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/.gitignore \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.md \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.yml \
    # Patch: adding absolute PATH to howToUse.png
    # that gets embedded in the report. When running
    # sqanti_qc.py within docker/singularity container,
@@ -145,12 +146,12 @@ RUN mkdir -p /opt2/sqanti3/5.2.2/ \
    # path). Converting relative path in Rmd files to
    # an absolute path to avoid this issue altogether.
    && sed -i \
-       's@src="howToUse.png"@src="/opt2/sqanti3/5.2.2/SQANTI3-5.2.2/utilities/report_qc/howToUse.png"@g' \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/utilities/report_qc/SQANTI3_report.Rmd \
-       /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/utilities/report_pigeon/pigeon_report.Rmd
+       's@src="howToUse.png"@src="/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_qc/howToUse.png"@g' \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_qc/SQANTI3_report.Rmd \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_pigeon/pigeon_report.Rmd
 
-ENV PATH="${PATH}:/opt2/sqanti3/5.2.2/SQANTI3-5.2.2:/opt2/sqanti3/5.2.2/SQANTI3-5.2.2/utilities"
-WORKDIR /opt2/sqanti3/5.2.2/SQANTI3-5.2.2
+ENV PATH="${PATH}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities"
+WORKDIR /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}
 
 RUN mkdir -p /conda/miniconda3 && \
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
@@ -163,7 +164,7 @@ RUN mkdir -p /conda/miniconda3 && \
 ################ POST #################
 # Add Dockerfile and export environment 
 # variables and update permissions
-ADD Dockerfile /opt2/sqanti3_5-1-2.dockerfile
+ADD Dockerfile /opt2/sqanti3_${SQANTI3_VERSION}.dockerfile
 ENV PATH="/opt2:$PATH"
 # Hide deprecation warnings from sqanit
 ENV PYTHONWARNINGS="ignore::DeprecationWarning"
@@ -171,16 +172,18 @@ WORKDIR /data2
 
 ENV PATH="${PATH}:/conda/miniconda3/bin/"
 
-
-#RUN echo "source /conda/miniconda3/bin/activate" >> ~/.bashrc
-#RUN echo "conda activate SQANTI3.env" >> ~/.bashrc
-
 RUN chmod -R a+rX /opt2 && \
-    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_qc.py sqanti3_qc.py && \
-    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_filter.py sqanti3_filter.py && \
-    ln -s /opt2/sqanti3/5.2.2/SQANTI3-5.2.2/sqanti3_rescue.py sqanti3_rescue.py && \
-    apt remove -y build-essential cmake && apt autoremove -y && apt clean -y && \
-    apt clean autoclean -y
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_qc.py sqanti3_qc.py && \
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
+    apt-get remove -y build-essential cmake && apt-get autoremove -y && apt-get clean -y && \
+    apt-get clean autoclean -y
+
+# Creating an user for non root executions inside the container...
+RUN groupadd user && useradd -r -g user user && chown user:user .
+
+# ... and efectively using that user
+USER user
 
 ENTRYPOINT ["conda", "run", "--no-capture-output" ,"-n","SQANTI3.env"]
 CMD ["/bin/bash"]
