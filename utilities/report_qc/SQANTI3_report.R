@@ -15,14 +15,10 @@ junc.file <- args[2]
 utilities.path <- args[4]
 saturation.curves <- args[5]
 report.format <- args[6]
-ignore.errors <- args[7] == "True"
+ignore.errors <- args[7]
 
-if (ignore.errors) {
-  options(error = function(){})
-}
-
-if (length(args) < 6) {
-  stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both]. Abort!")
+if (length(args) != 7) {
+  stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both] [True/False to ignore errors]. Abort!")
 }
 
 if (!(saturation.curves %in% c('True', 'False'))) {
@@ -31,6 +27,14 @@ if (!(saturation.curves %in% c('True', 'False'))) {
 
 if (!(report.format %in% c('pdf', 'html', 'both'))) {
   stop("Report format needs to be: pdf, html, or both. Abort!")
+}
+
+if (!(ignore.errors %in% c('True', 'False'))) {
+  stop("Ignore errors needs to be 'True' or 'False'. Abort!")
+}
+
+if (ignore.errors == "True") {
+  options(error = function(){})
 }
 
 source(paste(utilities.path, "/report_qc/generatePDFreport.R", sep = "/"))
