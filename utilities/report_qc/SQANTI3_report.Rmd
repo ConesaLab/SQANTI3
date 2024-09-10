@@ -28,7 +28,7 @@ The code contains several parts:
 <!---Basic setting-->
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, cache = FALSE, warning = FALSE, results = 'asis', echo=FALSE)
+knitr::opts_chunk$set(cache = FALSE, warning = FALSE, results = 'asis', echo = FALSE, error = ignore.errors)
 
 has_data <- function(df) {
   if (!is.null(df) && length(df) > 0 && is.data.frame(df) && nrow(df) > 0) {

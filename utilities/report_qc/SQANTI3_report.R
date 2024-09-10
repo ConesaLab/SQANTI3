@@ -15,6 +15,11 @@ junc.file <- args[2]
 utilities.path <- args[4]
 saturation.curves <- args[5]
 report.format <- args[6]
+ignore.errors <- args[7] == "True"
+
+if (ignore.errors) {
+  options(error = function(){})
+}
 
 if (length(args) < 6) {
   stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both]. Abort!")
