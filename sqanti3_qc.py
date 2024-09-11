@@ -519,13 +519,7 @@ def correctionPlusORFpred(args, genome_dict):
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
 
             ind = 0
-            # gzip.open and open have different default open modes:
-            # gzip.open uses "rb" (read in binary format)
-            # open uses "rt" (read in text format)
-            # This can be solved by making explicit read text mode
-            # as they share this parameter
-            open_function = gzip.open if args.isoforms.endswith('.gz') else open
-            with open_function(args.isoforms, mode='rt') as isoforms_gtf:
+            with open(args.isoforms) as isoforms_gtf:
                 for line in isoforms_gtf:
                     if line[0] != "#" and len(line.split("\t"))!=9:
                         sys.stderr.write("\nERROR: input isoforms file with not GTF format.\n")
