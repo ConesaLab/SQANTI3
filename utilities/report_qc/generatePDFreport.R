@@ -1,3 +1,9 @@
+print_plot <- function(data){
+  if (nrow(data$data)){
+    print(data)
+  }
+}
+
 generatePDFreport = function() 
   {
   pdf(file=pdf.report.file, width = 7.5, height = 6.5)
@@ -85,20 +91,20 @@ generatePDFreport = function()
       print(p1.s.list[i])
     }
   }
-  print(p4)
-  print(p4.s1)
-  print(p4.s2)
-  print(p4.s3)
-  print(p5)
-  print(p5.s1)
-  print(p5.s2)
-  print(p5.s3)
-  print(pSTM)
-  print(pSTM_perc)
-  print(pSTM.s1)
-  print(pSTM_perc.s1)
-  print(pSTM.s2)
-  print(pSTM_perc.s2)
+  print_plot(p4)
+  print_plot(p4.s1)
+  print_plot(p4.s2)
+  print_plot(p4.s3)
+  print_plot(p5)
+  print_plot(p5.s1)
+  print_plot(p5.s2)
+  print_plot(p5.s3)
+  print_plot(pSTM)
+  print_plot(pSTM_perc)
+  print_plot(pSTM.s1)
+  print_plot(pSTM_perc.s1)
+  print_plot(pSTM.s2)
+  print_plot(pSTM_perc.s2)
 
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
@@ -472,11 +478,11 @@ generatePDFreport = function()
   
   s <- textGrob("Intra-Priming Quality Check", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
-  print(p30.s1)
-  print(p30.s2)
-  print(p30.s3)
-  print(p31)
-  print(p32)
+  print_plot(p30.s1)
+  print_plot(p30.s2)
+  print_plot(p30.s3)
+  print_plot(p31)
+  print_plot(p32)
   
   if (saturation.curves=='True'){
     if (!all(is.na(data.class$FL))) {
@@ -519,7 +525,7 @@ generatePDFreport = function()
   }
   print(p28.a.SJ)
   
-  if (!all(is.na(data.class$min_cov))) {
+  if (!all(is.na(data.class$min_cov)) && exists("p28.a.Cov")) {
     print(p28.a.Cov)
   }
   
