@@ -501,35 +501,43 @@ generatePDFreport = function()
   
   s <- textGrob("Features of Bad Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
-  print(p28.RTS)
-  print(p28.SJ)
-  if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(data.class$min_cov))) {
-    print(p28.Cov)
+  if (exists("p28.RTS")){
+    print(p28.RTS)  
   }
-  if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
-    print(p28.NMD)
-  }
-  if (n_t3.SJ>0 & n_t3.RTS>0) {
-    print(p28)
+  if (exists("p28.SJ")){
+    print(p28.SJ)  
   }
   
+  if(exists("n_t3.SJ") & exists("n_t3.RTS")){
+    if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(data.class$min_cov))) {
+      print(p28.Cov)
+    }
+    if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
+      print(p28.NMD)
+    }
+    if (n_t3.SJ>0 & n_t3.RTS>0) {
+      print(p28)
+    }
+  }
   s <- textGrob("Features of Good Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
   if (!all(is.na(data.class$dist_to_cage_peak))) {
     print(p28.a.Cage)
   }
-  print(p28.a.annot)
+  if(exists("p28.a.annot")){
+    print(p28.a.annot) 
+  }
   
-  if (!all(is.na(data.class$polyA_motif))) {
+  if (!all(is.na(data.class$polyA_motif)) && exists("p28.a.polyA")) {
     print(p28.a.polyA)
   }
-  print(p28.a.SJ)
+  if(exists("p28.a.SJ")){print(p28.a.SJ)}
   
   if (!all(is.na(data.class$min_cov)) && exists("p28.a.Cov")) {
     print(p28.a.Cov)
   }
   
-  if (nrow(t3.SJ) > 0) {
+  if (exists("t3.SJ") && nrow(t3.SJ) > 0) {
     print(p28.a)
   }
   
@@ -541,3 +549,4 @@ generatePDFreport = function()
   
   print("SQANTI3 report successfully generated!")
 }
+
