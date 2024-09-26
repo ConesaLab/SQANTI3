@@ -1173,7 +1173,7 @@ ggplotly(p28)%>%
 cat ('\n')
 ```
 
-```{r ,exists("p28.RTS")}
+```{r , eval = exists("p28.RTS")}
 cat("#### RT-switching {.tabset .tabset-fade }")
 ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
