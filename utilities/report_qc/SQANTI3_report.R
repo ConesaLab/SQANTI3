@@ -1940,7 +1940,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
     t3.NMD$Var=t3.NMD$predicted_NMD
   }
-  if (!all(is.na(x$min_cov))){
+ 
     x[which(x$min_cov==0),"Coverage_SJ"]="Not Coverage SJ"
     x[which(x$min_cov>0),"Coverage_SJ"]="Coverage SJ"
     t1.Cov <- group_by(x, structural_category, Coverage_SJ) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
@@ -1952,8 +1952,8 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.a.Cov$Var=t3.a.Cov$Coverage_SJ
     t3.data.sets[[length(t3.data.sets) + 1]]=x$min_cov
     t3.list[[length(t3.list) + 1]]=t3.a.Cov
-  }
-  
+    t3.Cov.colnames <- colnames(t3.Cov)
+
   if (!all(is.na(x$within_CAGE_peak))){
     x[which(!x$within_CAGE_peak),"Coverage_Cage"] <- "No Coverage CAGE"
     x[which(x$within_CAGE_peak),"Coverage_Cage"] <- "Has Coverage CAGE"
@@ -2088,7 +2088,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if(!("NNC" %in% t3.Cov$structural_category)){
     t3.Cov <- rbind(t3.Cov, c("NNC", "Coverage SJ",0,0,0,"Not Coverage SJ"))
   }
-  
+  colnames(t3.Cov) <- t3.Cov.colnames
   t3.Cov$perc <- as.numeric(t3.Cov$perc)
   
   
