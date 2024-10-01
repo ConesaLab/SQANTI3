@@ -546,10 +546,18 @@ def correctionPlusORFpred(args, genome_dict):
                         if line[0] != "#":
                             chrom = line.split("\t")[0]
                             type = line.split("\t")[2]
+                            strand = line.split("\t")[6]
                             if chrom not in list(genome_dict.keys()):
                                 sys.stderr.write("\nERROR: gtf \"%s\" chromosome not found in genome reference file.\n" % (chrom))
                                 sys.exit()
                             elif type in ('transcript', 'exon'):
+                                # In normal cirumstances, strand should be a string of values '-' or '+'
+                                # However, the strand can also be '.' , a dot, which means that
+                                # The strand is unknown. Transcripts without strand are unreliable, so they are discarded
+                                # and not taken into account downstream
+                                if(strand not in ['-','+']):
+                                    print("WARNING: Discarding uknown strand transcript ")
+                                    continue
                                 corrGTF_out.write(line)
             os.remove(corrGTF_tpm)
 
