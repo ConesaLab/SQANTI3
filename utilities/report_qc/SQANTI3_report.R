@@ -1916,6 +1916,22 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if (n_t3.RTS > 0) {
 	  t3.RTS$Var <- "RT switching"
   }
+  
+  column_names <- colnames(t3.RTS)
+  if(!("FSM" %in% t3.RTS$structural_category)){
+    t3.RTS <- rbind(t3.RTS, c("FSM", TRUE, 0,0,0,"RT switching"))
+  }
+  if(!("ISM" %in% t3.RTS$structural_category)){
+    t3.RTS <- rbind(t3.RTS, c("ISM", TRUE, 0,0,0,"RT switching"))
+  }
+  if(!("NIC" %in% t3.RTS$structural_category)){
+    t3.RTS <- rbind(t3.RTS, c("NIC", TRUE, 0,0,0,"RT switching"))
+  }
+  if(!("NNC" %in% t3.RTS$structural_category)){
+    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE,0,0,"RT switching"))
+  }
+  colnames(t3.RTS) <- column_names
+  t3.RTS$perc <- as.numeric(t3.RTS$perc)
 
   # Liz: this is a placeholder for dealing with all_canonical being NA instead of "Non-canonical"
   x[is.na(x$all_canonical), "all_canonical"] <- "Non-canonical"
@@ -1929,6 +1945,21 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.SJ$Var <- "Non-canonical"
     t3.a.SJ$Var <- 'Canonical'
   }
+  column_names <- colnames(t3.SJ)
+  levels(t3.SJ) <- structural_categories
+  #t3.SJ$structural_category <- relevel(t3.SJ$structural_category, )
+  if(!("FSM" %in% t3.SJ$structural_category)){
+    t3.SJ <- rbind(t3.SJ, c("FSM", "Non-canonical",0,0,0,"Non-canonical"))
+  }
+  if(!("ISM" %in% t3.SJ$structural_category)){
+    t3.SJ <- rbind(t3.SJ, c("ISM", "Non-canonical",0,0,0,"Non-canonical"))
+  }
+  if(!("NIC" %in% t3.SJ$structural_category)){
+    t3.SJ <- rbind(t3.SJ, c("NIC", "Non-canonical",0,0,0,"Non-canonical"))
+  }
+  if(!("NNC" %in% t3.SJ$structural_category)){
+    t3.SJ <- rbind(t3.SJ, c("NNC", "Non-canonical",0,0,0,"Non-canonical"))
+  }
   
 
   if (!all(is.na(x$predicted_NMD))){
@@ -1939,8 +1970,24 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.NMD$perc <- t3.NMD$count.x / t3.NMD$count.y * 100
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
     t3.NMD$Var=t3.NMD$predicted_NMD
+    
+    if(!("FSM" %in% t3.NMD$structural_category)){
+      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"NMD"))
+    }
+    if(!("ISM" %in% t3.NMD$structural_category)){
+      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"NMD"))
+    }
+    if(!("NIC" %in% t3.NMD$structural_category)){
+      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"NMD"))
+    }
+    if(!("NNC" %in% t3.NMD$structural_category)){
+      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"NMD"))
+    }
+    
+    t3.NMD$perc <- as.numeric(t3.NMD$perc)
+    
   }
- 
+  if (!all(is.na(x$min_cov))){
     x[which(x$min_cov==0),"Coverage_SJ"]="Not Coverage SJ"
     x[which(x$min_cov>0),"Coverage_SJ"]="Coverage SJ"
     t1.Cov <- group_by(x, structural_category, Coverage_SJ) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
@@ -1953,6 +2000,26 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.data.sets[[length(t3.data.sets) + 1]]=x$min_cov
     t3.list[[length(t3.list) + 1]]=t3.a.Cov
     t3.Cov.colnames <- colnames(t3.Cov)
+    
+    # We check whether all 4 categories are in the dataframes are filled
+    # To print the plot with all categories, even if they have 0 as value
+    # This applies to RTS, SJ, COV, NMD
+    
+    if(!("FSM" %in% t3.Cov$structural_category)){
+      t3.Cov <- rbind(t3.Cov, c("FSM", "Coverage SJ",0,0,0,"Not Coverage SJ"))
+    }
+    if(!("ISM" %in% t3.Cov$structural_category)){
+      t3.Cov <- rbind(t3.Cov, c("ISM", "Coverage SJ",0,0,0,"Not Coverage SJ"))
+    }
+    if(!("NIC" %in% t3.Cov$structural_category)){
+      t3.Cov <- rbind(t3.Cov, c("NIC", "Coverage SJ",0,0,0,"Not Coverage SJ"))
+    }
+    if(!("NNC" %in% t3.Cov$structural_category)){
+      t3.Cov <- rbind(t3.Cov, c("NNC", "Coverage SJ",0,0,0,"Not Coverage SJ"))
+    }
+    colnames(t3.Cov) <- t3.Cov.colnames
+    t3.Cov$perc <- as.numeric(t3.Cov$perc)
+  } 
 
   if (!all(is.na(x$within_CAGE_peak))){
     x[which(!x$within_CAGE_peak),"Coverage_Cage"] <- "No Coverage CAGE"
@@ -2025,72 +2092,6 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   #  theme(legend.position="bottom", axis.title.x = element_blank()) +
   #  ggtitle("Incidence of Non-Canonical Junctions\n\n") +
   #  guides(fill = guide_legend(title = "QC Attributes") )
-
-  # We check whether all 4 categories are in the dataframes are filled
-  # To print the plot with all categories, even if they have 0 as value
-  # This applies to RTS, SJ, COV, NMD
-  
-  column_names <- colnames(t3.RTS)
-  if(!("FSM" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("FSM", TRUE, 0,0,0,"RT switching"))
-  }
-  if(!("ISM" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("ISM", TRUE, 0,0,0,"RT switching"))
-  }
-  if(!("NIC" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("NIC", TRUE, 0,0,0,"RT switching"))
-  }
-  if(!("NNC" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE,0,0,"RT switching"))
-  }
-  colnames(t3.RTS) <- column_names
-  t3.RTS$perc <- as.numeric(t3.RTS$perc)
-  column_names <- colnames(t3.SJ)
-  levels(t3.SJ) <- structural_categories
-  #t3.SJ$structural_category <- relevel(t3.SJ$structural_category, )
-  if(!("FSM" %in% t3.SJ$structural_category)){
-    t3.SJ <- rbind(t3.SJ, c("FSM", "Non-canonical",0,0,0,"Non-canonical"))
-  }
-  if(!("ISM" %in% t3.SJ$structural_category)){
-    t3.SJ <- rbind(t3.SJ, c("ISM", "Non-canonical",0,0,0,"Non-canonical"))
-  }
-  if(!("NIC" %in% t3.SJ$structural_category)){
-    t3.SJ <- rbind(t3.SJ, c("NIC", "Non-canonical",0,0,0,"Non-canonical"))
-  }
-  if(!("NNC" %in% t3.SJ$structural_category)){
-    t3.SJ <- rbind(t3.SJ, c("NNC", "Non-canonical",0,0,0,"Non-canonical"))
-  }
-  
-  if(!("FSM" %in% t3.NMD$structural_category)){
-    t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"NMD"))
-  }
-  if(!("ISM" %in% t3.NMD$structural_category)){
-    t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"NMD"))
-  }
-  if(!("NIC" %in% t3.NMD$structural_category)){
-    t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"NMD"))
-  }
-  if(!("NNC" %in% t3.NMD$structural_category)){
-    t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"NMD"))
-  }
-  
-  t3.NMD$perc <- as.numeric(t3.NMD$perc)
-  
-  if(!("FSM" %in% t3.Cov$structural_category)){
-    t3.Cov <- rbind(t3.Cov, c("FSM", "Coverage SJ",0,0,0,"Not Coverage SJ"))
-  }
-  if(!("ISM" %in% t3.Cov$structural_category)){
-    t3.Cov <- rbind(t3.Cov, c("ISM", "Coverage SJ",0,0,0,"Not Coverage SJ"))
-  }
-  if(!("NIC" %in% t3.Cov$structural_category)){
-    t3.Cov <- rbind(t3.Cov, c("NIC", "Coverage SJ",0,0,0,"Not Coverage SJ"))
-  }
-  if(!("NNC" %in% t3.Cov$structural_category)){
-    t3.Cov <- rbind(t3.Cov, c("NNC", "Coverage SJ",0,0,0,"Not Coverage SJ"))
-  }
-  colnames(t3.Cov) <- t3.Cov.colnames
-  t3.Cov$perc <- as.numeric(t3.Cov$perc)
-  
   
   p28.RTS <- ggplot(t3.RTS, aes(x=structural_category, y=perc)) +
     geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[11], color="black") +
