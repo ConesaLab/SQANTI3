@@ -542,15 +542,25 @@ def correctionPlusORFpred(args, genome_dict):
             # check if gtf chromosomes inside genome file
             with open(corrGTF, 'w') as corrGTF_out:
                 with open(corrGTF_tpm, 'r') as isoforms_gtf:
-                    for line in isoforms_gtf:
-                        if line[0] != "#":
-                            chrom = line.split("\t")[0]
-                            type = line.split("\t")[2]
-                            if chrom not in list(genome_dict.keys()):
-                                sys.stderr.write("\nERROR: gtf \"%s\" chromosome not found in genome reference file.\n" % (chrom))
-                                sys.exit()
-                            elif type in ('transcript', 'exon'):
-                                corrGTF_out.write(line)
+                    with (open(badstrandGTF, 'w')) as discard_gtf:
+                        for line in isoforms_gtf:
+                            if line[0] != "#":
+                                chrom = line.split("\t")[0]
+                                type = line.split("\t")[2]
+                                strand = line.split("\t")[6]
+                                if chrom not in list(genome_dict.keys()):
+                                    sys.stderr.write("\nERROR: gtf \"%s\" chromosome not found in genome reference file.\n" % (chrom))
+                                    sys.exit()
+                                elif type in ('transcript', 'exon'):
+                                    # In normal cirumstances, strand should be a string of values '-' or '+'
+                                    # However, the strand can also be '.' , a dot, which means that
+                                    # The strand is unknown. The frequence of these varies according to technologies 
+                                    # and not taken into account downstream
+                                    if(strand not in ['-','+']):
+                                        print("WARNING: Discarding uknown strand transcript ")
+                                        discard_gtf.write(line)
+                                        continue
+                                    corrGTF_out.write(line)
             os.remove(corrGTF_tpm)
 
             if not os.path.exists(corrSAM):
@@ -1844,8 +1854,10 @@ def run(args):
     global outputJuncPath
     global corrFASTA
     global isoform_hits_name
+    global badstrandGTF
 
     corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    badstrandGTF = args.dir + "/unknown_strand.gtf"
     outputClassPath, outputJuncPath = get_class_junc_filenames(args)
 
     start3 = timeit.default_timer()
