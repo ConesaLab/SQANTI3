@@ -1,3 +1,9 @@
+print_plot <- function(data){
+  if (nrow(data$data)){
+    print(data)
+  }
+}
+
 generatePDFreport = function() 
   {
   pdf(file=pdf.report.file, width = 7.5, height = 6.5)
@@ -85,20 +91,20 @@ generatePDFreport = function()
       print(p1.s.list[i])
     }
   }
-  print(p4)
-  print(p4.s1)
-  print(p4.s2)
-  print(p4.s3)
-  print(p5)
-  print(p5.s1)
-  print(p5.s2)
-  print(p5.s3)
-  print(pSTM)
-  print(pSTM_perc)
-  print(pSTM.s1)
-  print(pSTM_perc.s1)
-  print(pSTM.s2)
-  print(pSTM_perc.s2)
+  print_plot(p4)
+  print_plot(p4.s1)
+  print_plot(p4.s2)
+  print_plot(p4.s3)
+  print_plot(p5)
+  print_plot(p5.s1)
+  print_plot(p5.s2)
+  print_plot(p5.s3)
+  print_plot(pSTM)
+  print_plot(pSTM_perc)
+  print_plot(pSTM.s1)
+  print_plot(pSTM_perc.s1)
+  print_plot(pSTM.s2)
+  print_plot(pSTM_perc.s2)
 
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
@@ -472,11 +478,11 @@ generatePDFreport = function()
   
   s <- textGrob("Intra-Priming Quality Check", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
-  print(p30.s1)
-  print(p30.s2)
-  print(p30.s3)
-  print(p31)
-  print(p32)
+  print_plot(p30.s1)
+  print_plot(p30.s2)
+  print_plot(p30.s3)
+  print_plot(p31)
+  print_plot(p32)
   
   if (saturation.curves=='True'){
     if (!all(is.na(data.class$FL))) {
@@ -495,34 +501,45 @@ generatePDFreport = function()
   
   s <- textGrob("Features of Bad Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
-  print(p28.RTS)
-  print(p28.SJ)
-  if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(data.class$min_cov))) {
-    print(p28.Cov)
+  if (exists("p28.RTS")){
+    print(p28.RTS)  
   }
-  if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
-    print(p28.NMD)
-  }
-  if (n_t3.SJ>0 & n_t3.RTS>0) {
-    print(p28)
+  if (exists("p28.SJ")){
+    print(p28.SJ)  
   }
   
+  if(exists("n_t3.SJ") & exists("n_t3.RTS")){
+    if (n_t3.SJ>0 & n_t3.RTS>0 & !all(is.na(data.class$min_cov))) {
+      print(p28.Cov)
+    }
+    if (n_t3.SJ>0 & n_t3.RTS>0 &!all(is.na(data.class$predicted_NMD))) {
+      print(p28.NMD)
+    }
+    if (n_t3.SJ>0 & n_t3.RTS>0) {
+      print(p28)
+    }
+  }
   s <- textGrob("Features of Good Quality", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
   grid.arrange(s)
   if (!all(is.na(data.class$dist_to_cage_peak))) {
     print(p28.a.Cage)
   }
-  print(p28.a.annot)
+  if(exists("p28.a.annot")){
+    print(p28.a.annot) 
+  }
   
-  if (!all(is.na(data.class$polyA_motif))) {
+  if (!all(is.na(data.class$polyA_motif)) && exists("p28.a.polyA")) {
     print(p28.a.polyA)
   }
-  print(p28.a.SJ)
+  if(exists("p28.a.SJ")){print(p28.a.SJ)}
   
-  if (!all(is.na(data.class$min_cov))) {
+  if (!all(is.na(data.class$min_cov)) && exists("p28.a.Cov")) {
     print(p28.a.Cov)
   }
-  print(p28.a)
+  
+  if (exists("t3.SJ") && nrow(t3.SJ) > 0) {
+    print(p28.a)
+  }
   
   if (!all(is.na(data.ratio$ratio_TSS))){
     print(p28.a.ratio.pdf)
@@ -532,3 +549,4 @@ generatePDFreport = function()
   
   print("SQANTI3 report successfully generated!")
 }
+

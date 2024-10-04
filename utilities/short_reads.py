@@ -9,7 +9,7 @@ except ImportError:
     print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
     sys.exit(-1)
 
-def star_mapping(index_dir, SR_fofn, output_dir, cpus): #added cpus argument for num of threads
+def star_mapping(index_dir, SR_fofn, output_dir, cpus):
     mapping_dir = output_dir + '/STAR_mapping'
     with open(SR_fofn) as fofn:
         for line in fofn:
@@ -42,7 +42,7 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus): #added cpus argument for
 
 
 def star(genome, SR_fofn, output_dir, cpus):
-    fasta_genome = genome #Fasta Format already checked
+    fasta_genome = genome 
     index_dir = output_dir + '/STAR_index/'
     index_dir_tmp = index_dir + '/_STARtmp/'
     index_dir_o = index_dir + 'SAindex' 
@@ -75,8 +75,12 @@ def kallisto_quantification(files,index,cpus, output_dir):
         if not os.path.exists(out_prefix):
             os.makedirs(out_prefix)
         print('Running Kallisto quantification for {0} sample'.format(sample_name))
-        os.system('kallisto quant -i ' + index + ' -o ' + out_prefix + ' -b 100 -t ' + str(cpus) + ' ' + r1 + ' ' + r2)
-        #subprocess.call(['kallisto', 'quant', '-i', index, '-o', out_prefix, '-b', '100', '-t', str(cpus), r1, r2 ],shell=True)
+        try:
+            subprocess.run(['kallisto quant -i {} -o {} -b 100 -t {} {} {}'.format(index, out_prefix, str(cpus), r1, r2)],
+                           shell=True, check = True)
+        except subprocess.CalledProcessError:
+            if os.path.exists(abundance_file):
+               os.remove(abundance_file) 
     else:
         print("Kallisto quantification output {0} found. Using it...".format(abundance_file))
     return(abundance_file)
@@ -90,15 +94,15 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
         os.makedirs(kallisto_output)
     if not os.path.exists(kallisto_index):
         print('Running kallisto index {0} using as reference {1}'.format(kallisto_index, corrected_fasta))
-        os.system('kallisto index -i ' + kallisto_index + ' ' + corrected_fasta + ' --make-unique')
-        #subprocess.call(['kallisto', 'index', '-i', kallisto_index, corrected_fasta, '--make-unique'],shell=True)
+        subprocess.run(['kallisto index -i {} {} --make-unique'.format(kallisto_index, corrected_fasta)],
+                        shell=True, check = True)
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')
             if len(files)==2:
                 abundance = kallisto_quantification(files, kallisto_index, cpus, kallisto_output)
             else:
-                print('SQANTI3 is only able to quantify isoforms using pair-end RNA-Seq data. Please check that your fofn contains the path to both read files in a space-separated format.')
+                print('SQANTI3 is only able to quantify isoforms using pair-end RNA-Seq data.\nPlease check that your fofn contains the path to both read files in a space-separated format.')
                 sys.exit()
             if len(expression_files)==0:
                 expression_files = abundance
@@ -106,11 +110,6 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
                 expression_files = expression_files + ',' + abundance
     return(expression_files)
 
-
-#if args.SR_fofn and not args.coverage:
-#	import utilities/short_reads as sr
-#	print ('Short-read files provided.')
-#	args.coverage = sr.star(args.genome, args.SR_fofn, args.dir)
 def get_TSS_bed(corrected_gtf, chr_order):
     limit_info = dict(gff_type=["transcript"])
     out_directory=os.path.dirname(corrected_gtf)
@@ -150,19 +149,20 @@ def get_TSS_bed(corrected_gtf, chr_order):
     outside_sorted = out_directory + "/outside_TSS.bed"
     i.sort(g=chr_order, output=inside_sorted)
     o.sort(g=chr_order, output=outside_sorted) 
-    os.system("rm {i} {o}".format(i=tmp_in , o=tmp_out))
+    [os.remove(i) for i in [tmp_in, tmp_out]]
     return(inside_sorted, outside_sorted)
 
 def get_bam_header(bam):
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
     if not os.path.isfile(out):
-        os.system("samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out))
+        subprocess.run(["samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out)],
+                        shell=True, check = True)
     return(out)
 
 def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
-## the idea would be to first calculate the average coverage per sample for in and out beds. Calculate each ratio
-## get the maximum the ratios across replicates and return it as a dictionary
+## calculate the average coverage per sample for in and out beds. Calculate each ratio
+## get ratios across replicates and return it as a dictionary
     print('BAM files identified: '+str(replicates))
     out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
@@ -189,14 +189,12 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
         renamed_ratioTSS = "ratio_TSS_" + str(b)
         ratio_rep_df = ratio_rep_df.rename(columns={'ratio_TSS':renamed_ratioTSS})
-
-    #ratio_rep_df.to_csv(out_TSS_file, index=False)
     
     # use metric value to get the final ratio_TSS that will be recorded in the classification file
     if metric == "mean":
         ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
-        dratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
     elif metric == "max":
         ratio_rep_df['return_ratio'] = ratio_rep_df.max(axis=1, numeric_only=True, skipna=True)
     elif metric == "median":
@@ -204,9 +202,8 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     else:
         raise ValueError("Invalid value for 'metric'. Use 'mean', '3quartile', 'max', or 'median'.")
 
-    #ratio_rep_df['max_ratio_TSS']=ratio_rep_df.max(axis=1, numeric_only=True)
     ratio_rep_df = ratio_rep_df[['id','return_ratio']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
-    os.system('rm {i} {o}'.format(i=inside_bed, o=outside_bed))
+    [os.remove(i) for i in [inside_bed, outside_bed]]
     print('Temp files removed.\n')
     return(ratio_rep_dict) 

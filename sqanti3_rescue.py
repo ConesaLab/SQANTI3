@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 __author__  = "angeles.arzalluz@gmail.com"
-__version__ = '5.2'
+__version__ = '5.2.2'
 
 ###################################################
 ##########     SQANTI3 RESCUE WRAPPER    ##########
