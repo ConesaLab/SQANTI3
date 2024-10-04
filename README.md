@@ -2,12 +2,18 @@
 
 # SQANTI3
 
+![GitHub Release](https://img.shields.io/github/v/release/ConesaLab/SQANTI3)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/ConesaLab/SQANTI3)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ConesaLab/SQANTI3)
+![GitHub Repo stars](https://img.shields.io/github/stars/ConesaLab/SQANTI3)
+
+
 SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) that merges features from [SQANTI](https://github.com/ConesaLab/SQANTI) and  [SQANTI2](https://github.com/Magdoll/SQANTI2), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
 
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.2) (04/10/2023) is **version 5.2**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.2.2) (31/07/2024) is **version 5.2.2**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For informacion about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
@@ -44,8 +50,7 @@ Thank you for your patience!
 
 
 ## How to cite SQANTI3
+If you are using SQANTI3 in your research, please cite the following paper in addition to this repository:
 
-SQANTI3 paper is currently in preparation. In the meantime, when using SQANTI3 in your research, please cite the [original SQANTI paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) as well as this repository:
-
-- Tardaguila M, de la Fuente L, Marti C, et al. SQANTI: extensive characterization of long-read transcript sequences for quality control in full-length transcriptome identification and quantification. *Genome Res*, 2018. **28**(3):396-411. doi:10.1101/gr.222976.117
+- Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
 

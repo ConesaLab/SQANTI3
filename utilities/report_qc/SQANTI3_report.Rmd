@@ -38,6 +38,14 @@ has_data <- function(df) {
   }
 }
 
+# TODO: use render_ggplotly in every plot
+render_ggplotly <- function(plot) {
+  if (exists("plot") && !is.null(plot$data) && nrow(plot$data) > 0) {
+    ggplotly(plot) %>% layout(showlegend = TRUE)
+  } else {
+    cat("Plot data is not available or is empty.")
+  }
+}
 
 #### Data preparation (change previous table format)
 
@@ -159,7 +167,7 @@ nIso = nrow(data.class)
     <i class="fas fa-question-circle"></i> How to use the report?
   </a>
   
-  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="howToUse.png"></div>
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
 </body>
 
 <!--
@@ -434,34 +442,37 @@ if (has_data(p5.s3)) {
 ```
 
 ```{r, eval = exists("pSTM")}
-cat ('\n###',"Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
+# Check if the plot object exists and is non-empty
+cat('\n###', "Supported Transcript Models {.tabset .tabset-fade .tabset-dropdown}", '\n')
 
-cat ('\n####',"Structural Classification ", '\n')
+cat('\n####', "Structural Classification", '\n')
+if (exists("pSTM")) {
+  render_ggplotly(pSTM)
+}
 
-ggplotly(pSTM)%>%
-  layout(showlegend = T)
+if (exists("pSTM_perc")) {
+  render_ggplotly(pSTM_perc)
+}
 
-ggplotly(pSTM_perc)%>%
-  layout(showlegend = T)
+cat('\n####', "Structural Subcategories FSM and ISM", '\n')
+if (exists("pSTM.s1")) {
+  render_ggplotly(pSTM.s1 + theme(axis.title.x = element_blank()))
+}
 
-cat ('\n####',"Structural Subcategories FSM and ISM", '\n')
+if (exists("pSTM_perc.s1")) {
+  render_ggplotly(pSTM_perc.s1 + theme(axis.title.x = element_blank()))
+}
 
-ggplotly(pSTM.s1 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
+cat('\n####', "Structural Subcategories NIC and NNC", '\n')
+if (exists("pSTM.s2")) {
+  render_ggplotly(pSTM.s2 + theme(axis.title.x = element_blank()))
+}
 
-ggplotly(pSTM_perc.s1 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
+if (exists("pSTM_perc.s2")) {
+  render_ggplotly(pSTM_perc.s2 + theme(axis.title.x = element_blank()))
+}
 
-cat ('\n####',"Structural Subcategories NIC and NNC", '\n')
-
-ggplotly(pSTM.s2 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
-
-ggplotly(pSTM_perc.s2 + theme(axis.title.x=element_blank()))%>%
-  layout(showlegend = T)
-
-cat ('\n')
-
+cat('\n')
 ```
 
 ```{r, eval = exists("p2") || exists("p3") }
@@ -673,10 +684,10 @@ if (length(p21.FSM.list) > 0) {
 ```{r p21.ISM.list, eval = exists("p21.ISM.list") && length(p21.ISM.list)}
 
 if (length(p21.ISM.list)>0) {
-  p21.stitles.ISM<-list("Alternative 3'End for ISM",
-                      "Alternative 3'5'End for ISM",
-                      "Alternative 5'End for ISM",
-                      "Reference Match for ISM")
+  p21.stitles.ISM<-list("3' Fragment for ISM",
+                      "Internal Fragment for ISM",
+                      "5' Fragment for ISM",
+                      "Intron Retention for ISM")
   for (i in 1:length(p21.ISM.list)) {
     cat ('\n####', p21.stitles.ISM[[i]][1], '\n')
     if (!is.null(p21.ISM.list[[i]])) {
@@ -732,10 +743,10 @@ if(length(p22.FSM.list)>0) {
 
 ```{r p22.ISM.list, eval = exists("p22.ISM.list") && length(p22.ISM.list)}
 if (length(p22.ISM.list)>0) {
-p22.stitles.ISM<-list("Alternative 3'End for ISM",
-                      "Alternative 3'5'End for ISM",
-                      "Alternative 5'End for ISM",
-                      "Reference Match for ISM")
+p22.stitles.ISM<-list("3' Fragment for ISM",
+                      "Internal Fragment for ISM",
+                      "5' Fragment for ISM",
+                      "Intron Retention for ISM")
 for (i in 1:length(p22.ISM.list)) {
   cat ('\n####', p22.stitles.ISM[[i]][1], '\n')
   if (!is.null(p22.ISM.list[[i]])) {
@@ -1108,15 +1119,9 @@ Intra−Priming Quality Check
 
 ```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
 cat ('\n###',"By Structural Category", '\n')
-if (has_data(p30.s1)) {
-  ggplotly(p30.s1)
-}    
-if (has_data(p30.s2)) {
-  ggplotly(p30.s2)
-}
-if (has_data(p30.s3)) {
-  ggplotly(p30.s3)
-}    
+render_ggplotly(p30.s1) 
+render_ggplotly(p30.s2)
+render_ggplotly(p30.s3) 
 cat ('\n')
 ```
 
@@ -1168,7 +1173,7 @@ ggplotly(p28)%>%
 cat ('\n')
 ```
 
-```{r ,exists("p28.RTS")}
+```{r , eval = exists("p28.RTS")}
 cat("#### RT-switching {.tabset .tabset-fade }")
 ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
@@ -1205,7 +1210,7 @@ cat ('\n')
 
 ### TSS and TTS Support Percentages {.tabset .tabset-fade .tabset-dropdown}
 
-```{r}
+```{r, eval = exists("p28.a")}
 cat("#### Annotation support", '\n') 
 ggplotly(p28.a.annot)%>%
   layout(margin = list(r = 130))%>%
