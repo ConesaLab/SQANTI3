@@ -1100,7 +1100,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, count")+
     xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
     labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
-              subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+              subtitle="Negative values indicate downstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1114,7 +1114,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
     labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
-              subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+              subtitle="Negative values indicate downstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1138,7 +1138,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to Annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.FSM[i],
-                  subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+                  subtitle="Negative values indicate downstream of annotated termination site\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
@@ -1150,7 +1150,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to Annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.FSM[i],
-                  subtitle="Negative values indicate upstream of annotated termination site\n\n") +
+                  subtitle="Negative values indicate downstream of annotated termination site\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
         
@@ -1178,7 +1178,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, count") +
     xlab("Distance to Annotated Transcription Start Site (TSS), bp") +
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1191,7 +1191,7 @@ if (nrow(data.FSM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to Annotated Transcription Start Site (TSS), bp")+
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
-         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1220,7 +1220,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to annotated Transcription Start Site (TSS), bp")+
         labs(     title=p22.stitles.FSM[i],
-                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1232,7 +1232,7 @@ if (nrow(data.FSM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to annotated Transcription Start Site (TSS), bp")+
         labs(     title=p22.stitles.FSM[i],
-                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.FSM.list[[i]] = p22.s
@@ -1265,7 +1265,7 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, count")+
     xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
-              subtitle="Negative values indicate upstream of annotated TTS\n\n") +
+              subtitle="Negative values indicate downstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1279,7 +1279,7 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to annotated polyadenylation site, bp")+
     labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
-              subtitle="Negative values indicate upstream of annotated TTS\n\n") +
+              subtitle="Negative values indicate downstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1292,7 +1292,7 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, count")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
-              subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+              subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   
@@ -1306,7 +1306,7 @@ if (nrow(data.ISM) > 0) {
     ylab("Transcripts, %")+
     xlab("Distance to annotated transcription start site, bp")+
     labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
-         subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+         subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
     theme(legend.justification=c(1,1), legend.position=c(1,1))
   p21.stitles.ISM<-list("Distance to Annotated Transcription Termination Site for ISM\n\n3' Fragment",
@@ -1330,7 +1330,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated TTS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
@@ -1342,7 +1342,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to annotated Transcription Termination Site (TTS), bp")+
         labs(     title=p21.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated TTS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       
@@ -1373,7 +1373,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, count")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
@@ -1385,7 +1385,7 @@ if (nrow(data.ISM) > 0) {
         ylab("Transcripts, %")+
         xlab("Distance to annotated transcription start site, bp")+
         labs(     title=p22.stitles.ISM[i],
-                  subtitle="Negative values indicate upstream of annotated TSS\n\n") +
+                  subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
         theme(legend.justification=c(1,1), legend.position=c(1,1))
       p22.ISM.list[[i]] = p22.s
