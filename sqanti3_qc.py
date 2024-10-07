@@ -885,9 +885,9 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     def get_diff_tss_tts(trec, ref):
         if trec.strand == '+':
             diff_tss = trec.txStart - ref.txStart
-            diff_tts = ref.txEnd - trec.txEnd
+            diff_tts = trec.txEnd - ref.txEnd
         else:
-            diff_tts = trec.txStart - ref.txStart
+            diff_tts = ref.txStart - trec.txStart
             diff_tss = ref.txEnd - trec.txEnd
         return diff_tss, diff_tts
 
