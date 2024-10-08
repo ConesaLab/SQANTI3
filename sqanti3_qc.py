@@ -431,7 +431,8 @@ def get_corr_filenames(args, dir=None):
     corrSAM = corrPathPrefix +"_corrected.sam"
     corrFASTA = corrPathPrefix +"_corrected.fasta"
     corrORF =  corrPathPrefix +"_corrected.faa"
-    return corrGTF, corrSAM, corrFASTA, corrORF
+    corrCDS_GTF_GFF = corrPathPrefix + "_corrected.gtf.cds.gff"
+    return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
 
 def get_isoform_hits_name(args, dir=None):
     d = dir if dir is not None else args.dir
@@ -461,7 +462,7 @@ def correctionPlusORFpred(args, genome_dict):
     global corrSAM
     global corrFASTA
 
-    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
     p = os.path.splitext(os.path.basename(corrSAM))[0]
     n_cpu = max(1, args.cpus // args.chunks)
 
@@ -1856,7 +1857,7 @@ def run(args):
     global isoform_hits_name
     global badstrandGTF
 
-    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
     badstrandGTF = args.dir + "/unknown_strand.gtf"
     outputClassPath, outputJuncPath = get_class_junc_filenames(args)
 
@@ -2365,7 +2366,7 @@ def combine_split_runs(args, split_dirs):
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
     Then write out the PDF report
     """
-    corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args)
 
     if not args.skipORF:
@@ -2374,9 +2375,10 @@ def combine_split_runs(args, split_dirs):
     f_gtf = open(corrGTF, 'w')
     f_class = open(outputClassPath, 'w')
     f_junc = open(outputJuncPath, 'w')
+    f_cds_gtf_gff = open(corrCDS_GTF_GFF, 'w')
 
     for i,split_d in enumerate(split_dirs):
-        _gtf, _sam, _fasta, _orf = get_corr_filenames(args, split_d)
+        _gtf, _sam, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(args, split_d)
         _class, _junc = get_class_junc_filenames(args, split_d)
         if not args.skipORF:
             with open(_orf) as h: f_faa.write(h.read())
@@ -2394,11 +2396,18 @@ def combine_split_runs(args, split_dirs):
             else:
                 h.readline()
             f_junc.write(h.read())
+        with open(_CDS_GTF_GFF) as h:
+            if i == 0: # This if condition checks if its the first file to write the header or not in the final file
+                f_cds_gtf_gff.write(h.readline())
+            else:
+                h.readline()
+            f_cds_gtf_gff.write(h.read())
 
     f_fasta.close()
     f_gtf.close()
     f_class.close()
     f_junc.close()
+    f_cds_gtf_gff.close()
     if not args.skipORF:
         f_faa.close()
 
@@ -2579,7 +2588,7 @@ def main():
     if args.chunks == 1:
         run(args)
         if args.isoAnnotLite:
-            corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+            corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
             run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
     else:
@@ -2588,7 +2597,7 @@ def main():
         SPLIT_ROOT_DIR = get_split_dir(args)
         shutil.rmtree(SPLIT_ROOT_DIR)
         if args.isoAnnotLite:
-            corrGTF, corrSAM, corrFASTA, corrORF = get_corr_filenames(args)
+            corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
             outputClassPath, outputJuncPath = get_class_junc_filenames(args)
             run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
 
