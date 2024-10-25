@@ -884,12 +884,33 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         return sum(q_bases.values())
 
     def get_diff_tss_tts(trec, ref):
+        # Calculating differences between transcript start sites (TSS) and
+        # Trasncript termination site (TTS) of two transcripts
         if trec.strand == '+':
-            diff_tss = trec.txStart - ref.txStart
-            diff_tts = trec.txEnd - ref.txEnd
+            # In positive (+) strand transcripts:
+            # TSS is calculated as reference start - transcript start
+            # TTS is calculated as transcript end - reference end
+            # This way,  TSS < 0 means the transcript is shortened, and 
+            # TSS > 0 means that transcript is elongated. Similarly, a
+            # TTS < 0 means that transcript is shortened, and a TTS > 0
+            # means that the transcript is elongated
+            diff_tss = ref.txStart - trec.txStart
+            diff_tts = trec.txEnd  - ref.txEnd
         else:
+            # In negative (-) strand transcripts:
+            # The transcripts in negative strands are loaded with trans.start = end
+            # and trans.end = start, to assure that trans.end > trans.start 
+            # regardless of the transcript. TTS and TSS are calculated with
+            # the same formula, but taking the loading fact into account,
+            # The formulas are inverted
+            # TTS is ref start - transcript start
+            # TSS is transcript end - treference end
+            # Being consistent in that  TSS < 0 means the transcript is shortened, and 
+            # TSS > 0 means that transcript is elongated. Similarly, a
+            # TTS < 0 means that transcript is shortened, and a TTS > 0
+            # means that the transcript is elongated
             diff_tts = ref.txStart - trec.txStart
-            diff_tss = ref.txEnd - trec.txEnd
+            diff_tss = trec.txEnd  - ref.txEnd
         return diff_tss, diff_tts
 
 
