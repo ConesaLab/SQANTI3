@@ -920,7 +920,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         nearest_start_diff, nearest_end_diff = float('inf'), float('inf')
         for ref_gene in isoform_hit.genes:
             for x in start_ends_by_gene[ref_gene]['begin']:
-                d = trec.txStart - x
+                d =  x - trec.txStart
                 if abs(d) < abs(nearest_start_diff):
                     nearest_start_diff = d
             for x in start_ends_by_gene[ref_gene]['end']:
@@ -930,10 +930,10 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
         if trec.strand == '+':
             isoform_hit.tss_gene_diff = nearest_start_diff if nearest_start_diff!=float('inf') else 'NA'
-            isoform_hit.tts_gene_diff = -nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
+            isoform_hit.tts_gene_diff = nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
         else:
             isoform_hit.tss_gene_diff = nearest_end_diff if nearest_start_diff!=float('inf') else 'NA'
-            isoform_hit.tts_gene_diff = -nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
+            isoform_hit.tts_gene_diff = nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
 
     def categorize_incomplete_matches(trec, ref):
         """
