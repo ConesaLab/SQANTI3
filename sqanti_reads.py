@@ -79,7 +79,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites}"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
 
@@ -101,7 +101,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {fastq_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites} --fasta"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
