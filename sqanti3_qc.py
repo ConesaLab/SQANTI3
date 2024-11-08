@@ -109,6 +109,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
 
 RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
+RSCRIPT_BUGSI_REPORT = '/report_qc/BUGSI_report.R'
 
 if os.system(RSCRIPTPATH + " --version")!=0:
     print("Rscript executable not found! Abort!", file=sys.stderr)
@@ -2142,6 +2143,18 @@ def run(args):
         os.remove(isoform_hits_name+'_tmp')
     ## Generating report
     if args.report != 'skip':
+        # Generate BUGSI Report (if --bugsi is provided)
+        if args.bugsi:
+            try:
+                print("**** Generating BUGSI report....", file=sys.stderr)
+                bugsi_file = os.path.join(utilitiesPath, "report_qc", f"bugsi_{args.bugsi}.txt")
+                cmd_bugsi = RSCRIPTPATH + " {d}/{f} {c} {b} {d}".format(d=utilitiesPath, f=RSCRIPT_BUGSI_REPORT, c=outputClassPath, b=bugsi_file)
+                subprocess.check_call(cmd_bugsi, shell=True)
+                print("BUGSI report generated successfully.", file=sys.stderr)
+            except subprocess.CalledProcessError as e:
+                print("WARNING: BUGSI report generation failed for command: {0}".format(cmd_bugsi), file=sys.stderr)
+                print("Continuing with SQANTI3 report generation.", file=sys.stderr)
+
         print("**** Generating SQANTI3 report....", file=sys.stderr)
         cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d} {a} {b}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc, a=args.saturation, b=args.report)
         if subprocess.check_call(cmd, shell=True)!=0:
@@ -2479,8 +2492,8 @@ def main():
     parser.add_argument('--SR_bam' , help='\t\t Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome', required=False)
     parser.add_argument('--isoform_hits' , help='\t\t Report all FSM/ISM isoform hits in a separate file', required=False, default = False, action='store_true')
     parser.add_argument('--ratio_TSS_metric' , help='\t\t Define which statistic metric should be reported in the ratio_TSS column', choices=['max', 'mean', 'median', '3quartile'], default='max')
-
-
+    # *** The 'bugsi' Optional Argument ***
+    parser.add_argument('--bugsi','-b',  choices=['human', 'mouse'],  help='Specify the species for bugsi benchmarking (options: human, mouse). Optional argument.', required=False)
 
     args = parser.parse_args()
 
