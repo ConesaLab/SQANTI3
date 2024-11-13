@@ -914,6 +914,30 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
             diff_tss = trec.txEnd  - ref.txEnd
         return diff_tss, diff_tts
 
+    def classify_fsm_subtype(diff_tss, diff_tts, threshold=50):
+        """
+        Classifies the subtype based on differences in TSS and TTS.
+
+        Parameters:
+        - diff_tss (int): Difference at the transcription start site (TSS).
+        - diff_tts (int): Difference at the transcription termination site (TTS).
+        - threshold (int): Threshold for matching (default is 50 bp).
+
+        Returns:
+        - str: The subtype classification.
+        """
+        # Check for matching 5' and matching 3'
+        if abs(diff_tss) <= threshold and abs(diff_tts) <= threshold:
+            return 'reference_match'
+        # Check for matching 5' and non-matching 3'
+        elif abs(diff_tss) <= threshold and abs(diff_tts) > threshold:
+            return 'alternative_3end'
+        # Check for matching 3' and non-matching 5'
+        elif abs(diff_tss) > threshold and abs(diff_tts) <= threshold:
+            return 'alternative_5end'
+        # Check for non-matching 3' and non-matching 5'
+        else:
+            return 'alternative_3end5end'
 
     def get_gene_diff_tss_tts(isoform_hit):
         # now that we know the reference (isoform) it hits
@@ -1072,17 +1096,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                         if cat_ranking[isoform_hit.str_class] < cat_ranking["full-splice_match"] or \
                                                     abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                             # subcategory for matching 5' and matching 3'
-                            if abs(diff_tss) <= 50 and abs(diff_tts) <= 50:
-                                    subtype = 'reference_match'
-                            # subcategory for matching 5' and non-matching 3'
-                            if abs(diff_tss) <= 50 and abs(diff_tts) > 50:
-                                subtype = 'alternative_3end'
-                            # subcategory for matching 3' and non-matching 5'
-                            if abs(diff_tss) > 50 and abs(diff_tts) <= 50:
-                                subtype = 'alternative_5end'
-                            # subcategory for non-matching 3' and non-matching 5'
-                            if abs(diff_tss) > 50 and abs(diff_tts) > 50:
-                                subtype = 'alternative_3end5end'
+                            subtype = classify_fsm_subtype(diff_tss, diff_tss)
                             isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length,
                                                               str_class="full-splice_match",
                                                               subtype=subtype,
@@ -1233,8 +1247,9 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                 # see if there's already an existing match AND if so, if this one is better
                 if isoform_hit.str_class == "": # no match so far
+                    subtype = classify_fsm_subtype(diff_tss, diff_tts)
                     isoform_hit = myQueryTranscripts(trec.id, diff_tss, diff_tts, trec.exonCount, trec.length, "full-splice_match",
-                                                            subtype="mono-exon",
+                                                            subtype=subtype,
                                                             chrom=trec.chrom,
                                                             strand=trec.strand,
                                                             genes=[ref.gene],
