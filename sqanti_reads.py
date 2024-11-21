@@ -1,4 +1,4 @@
-#!usr/bin/python
+#!/usr/bin/env python3
 import subprocess, os, re, sys, glob
 import argparse
 import pandas as pd
@@ -79,7 +79,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites}"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
 
@@ -101,7 +101,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {fastq_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites} --fasta"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
@@ -120,7 +120,7 @@ def make_UJC_hash(args, df):
         print("**** Calculating UJCs...", file = sys.stdout)
                 
         ## Take the corrected GTF
-        introns_cmd = f"gtftools -i {outputPathPrefix}tmp_introns.bed {outputPathPrefix}_corrected.gtf"
+        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
