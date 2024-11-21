@@ -1,4 +1,4 @@
-#!usr/bin/python
+#!/usr/bin/env python3
 import subprocess, os, re, sys, glob
 import argparse
 import pandas as pd
