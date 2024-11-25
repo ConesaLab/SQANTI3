@@ -25,7 +25,7 @@ Summary:
   <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
 </body>
 
-```{r, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE}
 # Load necessary libraries
 suppressPackageStartupMessages({
   library(tibble)
