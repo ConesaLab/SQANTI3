@@ -137,24 +137,27 @@ datatable(
 ## Benchmarking Figures
 
 ```{r echo=FALSE, message=FALSE}
-# Prepare data for radar plot
+# Calculate the metrics values
 metrics_values <- c(
   non_redundant_precision * 100,
-  1 / redundancy * 100,  # Inverse redundancy as in the plot
+  1 / redundancy * 100,           # Inverse redundancy as in the plot
   false_discovery_rate * 100,
   positive_detection_rate * 100,
-  redundant_precision * 100,
-  non_redundant_precision * 100  # Used twice to close the radar
+  redundant_precision * 100
 )
 
-metrics_data <- as.data.frame(matrix(metrics_values, nrow = 1))
-colnames(metrics_data) <- c("Pre", "1/red", "FDR", "nrPre", "PDR", "Sen")
+# Create labels for the metrics
+metrics_labels <- c("nrPre", "1/red", "FDR", "PDR", "rPre")
+
+# Close the radar plot by appending the first metric and label to the end
+metrics_values <- c(metrics_values, metrics_values[1])
+metrics_labels <- c(metrics_labels, metrics_labels[1])
 
 # Create interactive radar plot using plotly
 interactive_radar_plot <- plot_ly(
   type = 'scatterpolar',
   r = metrics_values,
-  theta = colnames(metrics_data),
+  theta = metrics_labels,
   fill = 'toself',
   mode = 'lines+markers',
   marker = list(
@@ -163,7 +166,7 @@ interactive_radar_plot <- plot_ly(
     line = list(color = '#1f77b4', width = 2)
   ),
   fillcolor = 'rgba(31, 119, 180, 0.3)',  # Soft, semi-transparent blue fill
-  line = list(width = 3)
+  line = list(width = 3, color = '#1f77b4')  # Explicitly set the line color to blue
 ) %>%
   layout(
     polar = list(
@@ -173,16 +176,16 @@ interactive_radar_plot <- plot_ly(
         tickvals = seq(0, 100, 25),
         tickfont = list(size = 14),  # Larger tick font for readability
         gridcolor = 'rgba(0, 0, 0, 0.1)',  # Subtle grid lines
-        linecolor = 'rgba(0, 0, 0, 0.2)'  # Light axis line color
+        linecolor = 'rgba(0, 0, 0, 0.2)'    # Light axis line color
       ),
       angularaxis = list(
         tickfont = list(size = 14),  # Larger font for metric labels
         linewidth = 2,
-        color = '#333333'  # Darker label color for contrast
+        color = '#333333'            # Darker label color for contrast
       )
     ),
     margin = list(l = 20, r = 20, b = 80, t = 20),  # Increased bottom margin if needed
-    paper_bgcolor = 'rgba(255, 255, 255, 0)',  # Transparent background
+    paper_bgcolor = 'rgba(255, 255, 255, 0)',       # Transparent background
     plot_bgcolor = 'rgba(255, 255, 255, 0)',
     showlegend = FALSE,
     title = list(
@@ -199,8 +202,8 @@ interactive_radar_plot <- plot_ly(
         yref = "paper",
         xanchor = "center",
         yanchor = "top",
-        arrowhead=2,
-        arrowsize=1,
+        arrowhead = 2,
+        arrowsize = 1,
         font = list(color = "grey", size = 12)
       )
     )
@@ -208,9 +211,10 @@ interactive_radar_plot <- plot_ly(
   # Add hover tooltips for precise metric values
   add_trace(
     hoverinfo = 'text',
-    text = paste(colnames(metrics_data), ':', round(metrics_values, 2), '%')
+    text = paste(metrics_labels, ':', round(metrics_values, 2), '%')
   )
 
+# Display the plot
 interactive_radar_plot
 ```
 
