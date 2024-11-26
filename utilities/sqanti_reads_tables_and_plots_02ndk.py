@@ -19,6 +19,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
 from matplotlib.ticker import FixedLocator
+from pdf2image import convert_from_path
+import base64
+from jinja2 import Template
+import io
 
 ## Update options
 def getOptions():
@@ -37,6 +41,7 @@ def getOptions():
     parser.add_argument('-fl','--factor-level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
     parser.add_argument('--all-tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and cand underannotated gene tables')
     parser.add_argument('--pca-tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
+    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
 
     args = parser.parse_args()
     return args
@@ -2508,6 +2513,44 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
         plt.close()
+        
+def makeHTML(drty, prefx, sufx):
+    pages = convert_from_path(drty + prefx + sufx)
+    # Encode each page as a base64 string
+    encoded_images = []
+    for page in pages:
+        buffer = io.BytesIO()
+        page.save(buffer, format="PNG")
+        buffer.seek(0)
+        encoded_images.append(base64.b64encode(buffer.read()).decode("utf-8"))
+
+    # HTML template for embedding images
+    html_template = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PDF to HTML</title>
+    </head>
+    <body>
+        <h1>PDF Report</h1>
+        {% for img in images %}
+        <div>
+            <img src="data:image/png;base64,{{ img }}" style="width: 100%; height: auto;">
+        </div>
+        {% endfor %}
+    </body>
+    </html>
+    """
+
+    # Render HTML with images
+    template = Template(html_template)
+    html_content = template.render(images=encoded_images)
+
+    # Save to HTML file
+    with open(drty + prefx + sufx[:-4] + ".html", "w") as f:
+        f.write(html_content)
+
+    print(f"HTML report saved as {drty + prefx + sufx[:-4]}.html")
     
     
 def main():
@@ -2524,6 +2567,15 @@ def main():
         plot_pdf(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
     else:
         plot_pdf_by_factor(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
+        
+    if args.report in ("both", "html"):
+        makeHTML(args.OUT, args.PREFIX, '_plots.pdf')
+        makeHTML(args.OUT, args.PREFIX, '_annotation_plots.pdf')
+        
+    if args.report == "html":
+        os.remove(f"{args.OUT}/{args.PREFIX}_plots.pdf")
+        os.remove(f"{args.OUT}/{args.PREFIX}_annotation_plots.pdf")
+    
         
 if __name__ == '__main__':
     #Parse command line arguments
