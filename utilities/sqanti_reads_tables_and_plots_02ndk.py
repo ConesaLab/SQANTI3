@@ -759,7 +759,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         #plt.title('Number of Genes in each annotation category')
         plt.xlabel('Gene Category')
         plt.ylabel('Number of Genes')
-        plt.xticks(rotation=45, ha="right")
+        plt.xticks(rotation=90, ha="right")
         plt.gca().spines['top'].set_visible(False)
         plt.gca().spines['right'].set_visible(False)
         # Add the counts on top of each bar
@@ -1286,6 +1286,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     "mono_in_multi": '#aec6cf'
     }
     
+    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
+    
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
@@ -1318,7 +1320,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             alpha=0.6, 
             legend=True,
             height=8, 
-            aspect=0.7 
+            aspect=0.7,
+            order = cat_order
         )
         g.set_xticklabels(rotation=0)
         g.set_axis_labels("Structural Category", "Percentages")
@@ -1351,7 +1354,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             alpha=0.6, 
             legend=True,
             height=8, 
-            aspect=0.7 
+            aspect=0.7,
+            order = cat_order
         )
         g.set_xticklabels(rotation=0)
         g.set_axis_labels("Structural Category", "Percentages")
@@ -1969,6 +1973,9 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     "mono_in_multi": '#aec6cf'
     }
     
+    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
+    cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
+    
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
@@ -1989,8 +1996,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         palette = sample_color_palette
         plt.figure(figsize=(10, 7.5))
         sns.stripplot(x='Category', y='Percentage', data=all_gene_percs_long_DF, jitter=0, 
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette)
-        plt.xticks(rotation=45)
+                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
+        plt.xticks(rotation=90)
         plt.ylabel('Percentage')
         plt.title(' Percent reads in each structural category - All Genes')
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -2001,10 +2008,10 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         
         plt.figure(figsize=(10, 7.5))
         sns.stripplot(x='Category', y='Percentage', data=annot_gene_percs_long_DF, jitter=0, 
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette)
-        plt.xticks(rotation=45)
+                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
+        plt.xticks(rotation=90)
         plt.ylabel('Percentage')
-        plt.title(' Percent reads in each structural category - ANnotated Gnes')
+        plt.title(' Percent reads in each structural category - Annotated Genes')
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -2012,6 +2019,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         categories = [col for col in all_gene_percs_pivot_DF.columns if col not in ['sampleID', exp_factor]]
+        categories = [cat for cat in cat_order_stacked if cat in categories]
         
         cols = ['sampleID'] + categories
         all_gene_percs_pivot_DF = all_gene_percs_pivot_DF[cols]
@@ -2037,7 +2045,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
      
         
         categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC', 'GI', 'GENIC'] if cat in annot_gene_percs_pivot_DF.columns]
-        palette = [category_color_palette[cat] for cat in categories]  
+        categories = [cat for cat in cat_order_stacked if cat in categories]
+        palette = [category_color_palette[cat] for cat in categories]
         
         annot_gene_percs_pivot_DF = annot_gene_percs_pivot_DF.sort_values(by= 'sampleID')
         plt.figure(figsize=(10, 7.5))
@@ -2194,7 +2203,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
              sns.boxplot(x='sampleID', y='percentage', hue='sampleID' ,data=melted_annotated_gene_DF[melted_annotated_gene_DF['category'] == category],
                     palette=sample_color_palette)
              plt.title(f'Gene distribution - {category}')
-             plt.xticks(rotation=45)
+             plt.xticks(rotation=90)
              plt.tight_layout()
              matplotlib.rcParams['pdf.fonttype'] = 42
              pdf.savefig()
@@ -2312,7 +2321,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         #Violin plots
-        sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette)
+        sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette, legend = False, hue = "sampleID")
         plt.xlabel('Sample ID')
         plt.ylabel('Length')
         plt.title('Read Length Distribution')
