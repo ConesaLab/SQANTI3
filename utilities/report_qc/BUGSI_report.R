@@ -10,7 +10,7 @@ bugsi.file <- args[2]
 utilities.path <- args[3]
 
 # Define file paths
-# class.file <- '/media/tian/ubuntu/LRGASP/bambu_cdna/bambu_cDNA_filtered_classification.txt'
+# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_ont_ls/WTC11_cdna_ont_ls_classification.txt'
 # bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.txt'
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/'
 
@@ -161,6 +161,19 @@ FP <- BUGSI_transcripts %>%
 fsm_ism_count <- BUGSI_transcripts %>%
   filter(structural_category %in% c("full-splice_match", "incomplete-splice_match")) %>%
   nrow()
+
+# Remove the specified columns and any columns that are all NA
+TP <- TP %>%
+  select(-associated_transcript, -id_type) %>%
+  select_if(~ !all(is.na(.)))
+
+PTP <- PTP %>%
+  select(-associated_transcript, -id_type) %>%
+  select_if(~ !all(is.na(.)))
+
+FP <- FP %>%
+  select(-associated_transcript, -id_type) %>%
+  select_if(~ !all(is.na(.)))
 
 # Calculate metrics
 message("Calculating evaluation metrics...")

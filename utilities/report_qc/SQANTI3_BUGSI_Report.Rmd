@@ -134,7 +134,7 @@ datatable(
 
 </div>
 
-## Benchmarking Figures
+## Benchmarking Result
 
 ```{r echo=FALSE, message=FALSE}
 # Calculate the metrics values
@@ -216,6 +216,100 @@ interactive_radar_plot <- plot_ly(
 
 # Display the plot
 interactive_radar_plot
+```
+
+## Decision Matrix {.tabset .tabset-fade}
+
+### TP
+
+```{r echo=FALSE}
+datatable(
+  data = TP,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'), # Download options
+    autoWidth = TRUE,
+    scrollX = TRUE, # Horizontal scrolling
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"), # Left-align content
+      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 3: classification metrics used in the evaluation of TP.'
+  )
+)
+```
+
+### PTP
+
+```{r echo=FALSE}
+datatable(
+  data = PTP,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'), # Download options
+    autoWidth = TRUE,
+    scrollX = TRUE, # Horizontal scrolling
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"), # Left-align content
+      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 4: classification metrics used in the evaluation of PTP.'
+  )
+)
+```
+
+### FN
+
+```{r echo=FALSE}
+datatable(
+  data = FN,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'), # Download options
+    autoWidth = TRUE,
+    scrollX = TRUE, # Horizontal scrolling
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"), # Left-align content
+      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 5: list of false negative BUGSI genes.'
+  )
+)
+```
+
+### FP
+
+```{r echo=FALSE}
+datatable(
+  data = FP,
+  extensions = 'Buttons',
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'), # Download options
+    autoWidth = TRUE,
+    scrollX = TRUE, # Horizontal scrolling
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"), # Left-align content
+      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 6: classification metrics used in the evaluation of FP.'
+  )
+)
 ```
 
 <script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
