@@ -137,12 +137,11 @@ def make_UJC_hash(args, df):
 
         ## Pandas merge to the left
         classfile = f"{outputPathPrefix}_classification.txt"
-        clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7])
+        clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
         clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
-        ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"])
+        ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
         
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
-        
         # Fill missing values in UJC column using the transcript ID
         merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
         
