@@ -2,7 +2,7 @@
 import subprocess, os, re, sys, glob
 import argparse
 import pandas as pd
-import distutils.spawn
+import shutil
 import hashlib
 #!/usr/bin/env python3
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
@@ -28,7 +28,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'subcategory', 'RTS_stage', 'all_canonical',
                 'predicted_NMD', 'perc_A_downstream_TTS', "jxn_string"]
 
-RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
+RSCRIPTPATH = shutil.which('Rscript')
 
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
