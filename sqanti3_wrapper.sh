@@ -1,4 +1,4 @@
-#! /bin/bash -xe
+filter_corrected_gtf#! /bin/bash -xe
 
 # Author: Fabián Robledo
 # Email: fabian.robledo@csic.es
@@ -155,7 +155,7 @@ function main () {
             if [ -z ${filter_mode} ] || [ ${filter_mode} == "ml" ] || [ $filter_mode == "both" ];
             then 
                 ${sqanti3_filter} ml ${filter_ml_ouput_folder} \
-                ${filter_ml_prefix} ${filter_isoforms} ${filter_isoannotgff3} \
+                ${filter_ml_prefix} ${filter_corrected_gtf} ${filter_isoforms} ${filter_isoannotgff3} \
                 ${filter_sam} ${filter_faa} ${monoexonic} ${filter_monoexonic} ${filter_ml_percent_training} ${filter_ml_TP} \
                 ${filter_ml_TN} ${filter_ml_threshold} \
                 ${filter_ml_max_class_size} ${filter_ml_intermediate_files} ${filter_ml_intrapriming} \
