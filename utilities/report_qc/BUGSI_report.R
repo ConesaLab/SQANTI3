@@ -3,21 +3,25 @@
 #####################################
 ### Author: Tianyuan Liu
 ### Last Modified: 11/07/2024 by tianyuan.liu@csic.es
+
 #********************** Taking arguments from python script
 args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 bugsi.file <- args[2]
-utilities.path <- args[3]
+transcript_gtf_file <- args[3]
+utilities.path <- args[4]
 
 # Define file paths
-# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_ont_ls/WTC11_cdna_ont_ls_classification.txt'
-# bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.txt'
-# utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/'
+# TODO: Check ENSG00000178397!!!!!!!!!!!!!!!!
+# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_drna_ont/WTC11_drna_ont_classification.txt'
+# bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.gtf'
+# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_drna_ont_ls.gtf'
+# utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
-report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1];
+report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
 output_directory <- dirname(class.file)
 output_name <- basename(report.prefix)
-html.report.file <- paste0(output_name, "_BUGSI_report.html");
+html.report.file <- paste0(output_name, "_BUGSI_report.html")
 
 # Load necessary libraries
 message("Loading necessary libraries...")
@@ -27,6 +31,9 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
   library(stringr)
+  library(rtracklayer)
+  library(GenomicRanges)
+  library(Gviz)
 })
 
 # Helper function to read TSV files with error handling
@@ -34,7 +41,7 @@ read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
   if (!file.exists(file_path)) {
     stop("File not found: ", file_path)
   }
-
+  
   tryCatch(
     {
       data <- read_tsv(file_path, col_names = col_names, ...)
@@ -49,10 +56,24 @@ read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
 
 # Read input files
 classification_data <- read_tsv_safe(class.file)
-annotation_data <- read_tsv_safe(
-  bugsi.file,
-  col_names = c("ensembl", "refseq", "gene_name")
-)
+
+# Read BUGSI GTF file
+message("Reading BUGSI GTF file...")
+bugsi_gtf <- rtracklayer::import(bugsi.file)
+bugsi_gtf_df <- as.data.frame(bugsi_gtf)
+
+# Extract gene-level information
+annotation_data <- bugsi_gtf_df %>%
+  filter(type == "gene") %>%
+  select(ensembl = ensembl, refseq = refseq, gene_name = gene_name) %>%
+  distinct()
+
+rBUGSI <- nrow(annotation_data)
+
+# Read transcript GTF file
+message("Reading transcript GTF file...")
+transcript_gtf <- rtracklayer::import(transcript_gtf_file)
+transcript_gtf_df <- as.data.frame(transcript_gtf)
 
 # Define regex patterns for ID classification
 message("Defining regex patterns for ID classification...")
@@ -75,8 +96,7 @@ classification_data <- classification_data %>%
   )
 
 # Generate and display summary of id_type counts
-id_summary <- classification_data %>%
-  count(id_type, sort = TRUE)
+id_summary <- dplyr::count(classification_data, id_type, sort = TRUE)
 
 message("Summary of id_type counts:")
 print(id_summary)
@@ -96,6 +116,12 @@ if (nrow(id_summary) > 0) {
   message("No id_type classifications were made.")
 }
 
+if (top_id_type == "ensembl") {
+  # Directly modify the 'gene_id' column
+  transcript_gtf_df$gene_id <- sub("\\..*", "", transcript_gtf_df$gene_id)
+}
+
+
 # Clean the classification data
 message("Cleaning the classification data...")
 classification_data_cleaned <- classification_data %>%
@@ -111,29 +137,7 @@ classification_data_cleaned <- classification_data %>%
   distinct(isoform, associated_gene, .keep_all = TRUE) %>%
   arrange(isoform)
 
-# FSM: full-splice_match
-# RM: reference_match
-# ISM: incomplete-splice_match
-# NIC: novel_in_catalog
-# NNC: novel_not_in_catalog
-# genic
-# fusion
-
 # Metrics and definitions for evaluation against BUGSI
-# annotation_data: Ground truth BUGSI model
-# BGUSI_transcripts: Transcripts mapping to rBUGSI
-# BUGSI_RM: BUGSI_transcripts matching a rBUGSI as Reference Match
-# True Positive detections (TP): rBUGSIs identified as RM
-# Partial True Positive detections (PTP): rBUGSIs identified as ISM or FSM_non_RM
-# False Negative (FN): rBUGSIs can't find any FSM or ISM
-# False Positive (FP): NIC + NNC + genic + fusion BUGSI_transcripts
-
-# Non_redundant Precision: TP/BUGSI_transcripts
-# Positive Detection Rate: unique(TP+PTP)/rBUGSIs
-# False Discovery Rate: (BUGSI_transcripts - BUGSI_RM)/BUGSI_transcripts
-# False Detection Rate: FP/BUGSI_transcripts
-# Redundancy: (FSM + ISM)/unique(TP+PTP)
-
 message("Defining BUGSI-related transcript mappings...")
 # BUGSI_transcripts: Transcripts mapping to BUGSI genes
 BUGSI_transcripts <- classification_data_cleaned %>%
@@ -145,6 +149,7 @@ BUGSI_RM <- BUGSI_transcripts %>%
 
 # Define True Positives (TP): BUGSI transcripts identified as Reference Match (RM)
 TP <- BUGSI_RM
+TP_BUGSI <- unique(BUGSI_RM$associated_gene)
 
 # Define Partial True Positives (PTP): BUGSI transcripts identified as FSM or ISM but not RM
 PTP <- BUGSI_transcripts %>%
@@ -178,9 +183,10 @@ FP <- FP %>%
 # Calculate metrics
 message("Calculating evaluation metrics...")
 
-
 # Initialize variables to store metric values
+non_redundant_sensitivity <- NA
 non_redundant_precision <- NA
+redundant_precision <- NA
 positive_detection_rate <- NA
 false_discovery_rate <- NA
 false_detection_rate <- NA
@@ -194,7 +200,7 @@ if (nrow(BUGSI_transcripts) > 0) {
 }
 
 # Calculate Precision: (TP + PTP) / BUGSI_transcripts
-message("Calculating Precision...")
+message("Calculating redundant Precision...")
 if (fsm_ism_count > 0) {
   redundant_precision <- (nrow(TP) + nrow(PTP)) /  nrow(BUGSI_transcripts)
   message("Precision calculated successfully.")
@@ -203,11 +209,14 @@ if (fsm_ism_count > 0) {
   warning("FSM + ISM count is zero. Redundant Precision set to NA.")
 }
 
-# Calculate Positive Detection Rate: unique(TP + PTP) / rBUGSIs
-total_rBUGSIs <- nrow(annotation_data)
+# Calculate Sensitivity: TP_BUGSI/rBUGSI
+message("Calculating Sensitivity...")
+non_redundant_sensitivity <- length(TP_BUGSI)/rBUGSI
+
+# Calculate Positive Detection Rate: unique(TP + PTP) / rBUGSI
 unique_detected_genes <- length(unique(c(TP$associated_gene, PTP$associated_gene)))
-if (total_rBUGSIs > 0) {
-  positive_detection_rate <- unique_detected_genes / total_rBUGSIs
+if (rBUGSI > 0) {
+  positive_detection_rate <- unique_detected_genes / rBUGSI
 } else {
   warning("annotation_data has zero rows. Positive Detection Rate set to NA.")
 }
@@ -236,14 +245,16 @@ if (unique_tp_ptp_genes > 0) {
 # Compile metrics into a data frame for better readability
 metrics <- tibble(
   Metric = c(
+    "Sensitivity",
     "Non-redundant Precision",
-    "Precision",
+    "Redundant Precision",
     "Positive Detection Rate",
     "False Discovery Rate",
     "False Detection Rate",
     "Redundancy"
   ),
   Value = c(
+    non_redundant_sensitivity,
     non_redundant_precision,
     redundant_precision,
     positive_detection_rate,
@@ -261,11 +272,221 @@ metrics <- tibble(
 message("Evaluation Metrics:")
 print(metrics)
 
+# Prepare data for plotting
+message("Preparing data for plotting...")
+# Combine TP, PTP, and FP datasets
+combined_data <- bind_rows(
+  TP %>% mutate(category = "TP"),
+  PTP %>% mutate(category = "PTP"),
+  FP %>% mutate(category = "FP")
+)
+
+# Extract unique associated_genes for each category
+associated_genes_list <- combined_data %>%
+  select(associated_gene, category) %>%
+  distinct()
+
+# Pass data to RMarkdown
+params <- list(
+  metrics = metrics,
+  bugsi_gtf_df = bugsi_gtf_df,
+  transcript_gtf_df = transcript_gtf_df,
+  associated_genes_list = associated_genes_list
+)
+
+# Generate IGV plots for each gene
+message("Generating IGV plots for each gene...")
+
+# Create a directory to save the plots
+plots_dir <- file.path(output_directory, "igv_plots")
+if (!dir.exists(plots_dir)) {
+  dir.create(plots_dir)
+}
+# Generate and save plots for each gene
+genes_to_plot <- associated_genes_list$associated_gene
+options(ucscChromosomeNames=FALSE)
+
+transcript_gtf_df <- within(transcript_gtf_df, {
+  gene_id <- ifelse(
+    transcript_id %in% classification_data_cleaned$isoform,
+    classification_data_cleaned$associated_gene[match(transcript_id, classification_data_cleaned$isoform)],
+    gene_id
+  )
+})
+for (gene in genes_to_plot) {
+  # Fetch BUGSI gene annotations (exons) for the current gene
+  bugsi_gene <- bugsi_gtf_df %>%
+    filter((gene_name == gene | ensembl == gene | refseq == gene ) & type == "exon")
+  
+  # Fetch transcript exons associated with this gene
+  gene_transcripts <- transcript_gtf_df %>%
+    filter(gene_id == gene & type == "exon")
+  
+  message(paste("Creating plot for gene:", gene))
+  
+  tryCatch({
+    message("Starting plot generation for gene: ", gene)
+    
+    # Merge gene_transcripts with classification_data_cleaned using transcript_id and isoform
+    gene_transcripts <- gene_transcripts %>%
+      left_join(classification_data_cleaned %>% select(isoform, structural_category), 
+                by = c("transcript_id" = "isoform"))
+    
+    # Map structural_category to abbreviations
+    category_abbr <- c(
+      "full-splice_match" = "FSM",
+      "incomplete-splice_match" = "ISM",
+      "novel_in_catalog" = "NIC",
+      "novel_not_in_catalog" = "NNC",
+      "genic" = "Genic\nGenomic",
+      "genic_intron" = "Genic\nIntron",
+      "intergenic" = "Intergenic",
+      "antisense" = "Antisense",
+      "fusion" = "Fusion"
+    )
+    gene_transcripts$structural_category_abbr <- category_abbr[gene_transcripts$structural_category]
+    
+    # Map abbreviations to colors
+    cat.palette <- c(
+      "FSM" = "#6BAED6",
+      "ISM" = "#FC8D59",
+      "NIC" = "#78C679",
+      "NNC" = "#EE6A50",
+      "Genic\nGenomic" = "#969696",
+      "Antisense" = "#66C2A4",
+      "Fusion" = "goldenrod1",
+      "Intergenic" = "darksalmon",
+      "Genic\nIntron" = "#41B6C4"
+    )
+    gene_transcripts$color <- cat.palette[gene_transcripts$structural_category_abbr]
+    
+    message("Creating GRangesList for sample transcripts...")
+    sample_transcripts_gr <- makeGRangesListFromDataFrame(
+      gene_transcripts,
+      keep.extra.columns = TRUE,
+      seqnames.field = "seqnames",
+      start.field = "start",
+      end.field = "end",
+      strand.field = "strand",
+      split.field = "transcript_id"
+    )
+    
+    sample_transcripts_gr_unlisted <- unlist(sample_transcripts_gr, use.names = TRUE)
+    mcols(sample_transcripts_gr_unlisted)$transcript <- rep(
+      names(sample_transcripts_gr),
+      elementNROWS(sample_transcripts_gr)
+    )
+    
+    # Assign colors to mcols
+    transcript_colors <- gene_transcripts %>%
+      select(transcript_id, color) %>%
+      distinct()
+    color_map <- setNames(transcript_colors$color, transcript_colors$transcript_id)
+    mcols(sample_transcripts_gr_unlisted)$fill <- color_map[mcols(sample_transcripts_gr_unlisted)$transcript]
+    mcols(sample_transcripts_gr_unlisted)$col <- color_map[mcols(sample_transcripts_gr_unlisted)$transcript]
+    
+    # Create GRangesList for BUGSI reference transcripts
+    message("Creating GRangesList for BUGSI reference transcripts...")
+    bugsi_transcripts_gr <- makeGRangesListFromDataFrame(
+      bugsi_gene,
+      keep.extra.columns = TRUE,
+      seqnames.field = "seqnames",
+      start.field = "start",
+      end.field = "end",
+      strand.field = "strand",
+      split.field = "ensembl"
+    )
+    
+    bugsi_transcripts_gr_unlisted <- unlist(bugsi_transcripts_gr, use.names = TRUE)
+    mcols(bugsi_transcripts_gr_unlisted)$transcript <- rep(
+      names(bugsi_transcripts_gr),
+      elementNROWS(bugsi_transcripts_gr)
+    )
+    
+    # Set fill and col to 'darkgrey' for BUGSI
+    mcols(bugsi_transcripts_gr_unlisted)$fill <- 'darkgrey'
+    mcols(bugsi_transcripts_gr_unlisted)$col <- 'darkgrey'
+    
+    # Define the plotting range
+    message("Defining the plotting range...")
+    gene_range_start <- min(c(gene_transcripts$start, bugsi_gene$start))
+    gene_range_end <- max(c(gene_transcripts$end, bugsi_gene$end))
+    gene_range <- GRanges(
+      seqnames = unique(c(gene_transcripts$seqnames, bugsi_gene$seqnames)),
+      ranges = IRanges(start = gene_range_start, end = gene_range_end),
+      strand = unique(c(gene_transcripts$strand, bugsi_gene$strand))
+    )
+    
+    genome_axis <- GenomeAxisTrack()
+    message("Genome axis created.")
+    
+    # Generate GeneRegionTrack for sample transcripts
+    message("Creating GeneRegionTrack for sample transcripts...")
+    sample_tracks <- lapply(unique(mcols(sample_transcripts_gr_unlisted)$transcript), function(transcript) {
+      # Subset GRanges for the current transcript
+      current_transcript_gr <- sample_transcripts_gr_unlisted[mcols(sample_transcripts_gr_unlisted)$transcript == transcript]
+      
+      # Fetch the color for the current transcript
+      current_color <- unique(mcols(current_transcript_gr)$fill)
+      
+      # Create a GeneRegionTrack for the current transcript
+      GeneRegionTrack(
+        current_transcript_gr,
+        genome = "hg38",
+        chromosome = as.character(seqnames(gene_range)[1]),
+        name = transcript,
+        background.title = current_color,
+        fill = current_color,
+        col = current_color
+      )
+    })
+    
+    # Create GeneRegionTrack for BUGSI reference
+    message("Creating GeneRegionTrack for BUGSI reference...")
+    bugsi_track <- GeneRegionTrack(
+      bugsi_transcripts_gr_unlisted,
+      genome = "hg38",
+      chromosome = as.character(seqnames(gene_range)[1]),
+      name = paste0(gene, " BUGSI Reference"),
+      background.title = "darkgrey",  # Set the title background color
+      fill = "darkgrey",             # Set fill color
+      col = "darkgrey"               # Set border color
+    )
+    # Combine all transcript tracks into a single list of tracks
+    sample_tracks <- unlist(sample_tracks, recursive = FALSE)
+    
+    # Combine all tracks for plotting
+    all_tracks <- c(genome_axis, bugsi_track, sample_tracks)
+    message("All tracks combined for plotting.")
+    
+    # Plot and save to file
+    plot_file <- file.path(plots_dir, paste0(gene, ".png"))
+    message("Saving plot to file: ", plot_file)
+    png(plot_file, width = 1000, height = 600)
+    plotTracks(
+      all_tracks,
+      from = gene_range_start,
+      to = gene_range_end,
+      chromosome = as.character(seqnames(gene_range)[1]),
+      main = paste("Gene:", gene)
+    )
+    dev.off()
+    message("Plot saved successfully.")
+    
+  }, error = function(e) {
+    message("Error while generating plot: ", e$message)
+  }) 
+}
+
+
 # Render the HTML report
 message("Rendering the HTML report...")
 rmarkdown::render(
-  input = paste(utilities.path, "/report_qc/SQANTI3_BUGSI_Report.Rmd", sep = "/"),
+  input = file.path(utilities.path, "report_qc", "SQANTI3_BUGSI_Report.Rmd"),
   intermediates_dir = output_directory,
   output_dir = output_directory,
-  output_file = html.report.file
+  output_file = html.report.file,
+  params = params,
+  envir = new.env()
 )
+

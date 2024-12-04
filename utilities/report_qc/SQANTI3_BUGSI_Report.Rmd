@@ -7,23 +7,27 @@ output:
     toc_float: true
     toc_depth: 3
     css: style.css
+runtime: shiny
+params:
+  metrics: NULL
+  bugsi_gtf_df: NULL
+  transcript_gtf_df: NULL
+  associated_genes_list: NULL
 ---
 
-<!--
-Summary:
-  1. Data Matrix for Calculations
-  2. Evaluation Metrics Table
-  3. Radar Plot of Metrics
--->
+
 
 <!-- Basic setup for the report layout -->
-<body>
-  <a class="show-modal" href="#">
-    <i class="fas fa-question-circle"></i> How to use the report?
-  </a>
+<a class="show-modal" href="#">
+  <i class="fas fa-question-circle"></i> How to use the report?
+</a>
 
-  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
-</body>
+<div class="overlay hidden">
+  <button class="close-modal">&times;</button>
+  <p class="header">How to read the report?</p>
+  <p>The report contains several parts, please see the following plot to get more detail about the report</p>
+  <img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png">
+</div>
 
 ```{r, echo=FALSE, warning=FALSE}
 # Load necessary libraries
@@ -32,11 +36,21 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(plotly)
   library(DT)
+  library(Gviz)
+  library(htmltools)
 })
-```
-## Summary {.tabset .tabset-fade}
+metrics <- params$metrics
+bugsi_gtf_df <- params$bugsi_gtf_df
+transcript_gtf_df <- params$transcript_gtf_df
+associated_genes_list <- params$associated_genes_list
+transcript_gtf_df$gene_id <- sub("\\.\\d+$", "", transcript_gtf_df$gene_id)
 
-### Data Matrix for Calculations
+# Ensure that the images are accessible
+plots_dir <- file.path(output_directory, "igv_plots")
+```
+
+## Summary {.tabset .tabset-fade}
+### Data Matrix
 
 ```{r echo=FALSE}
 data_matrix <- tibble(
@@ -71,18 +85,24 @@ datatable(
   )
 ```
 
-<!-- Inline HTML for Definitions Section -->
-<div style="border-left: 3px solid #ccc; padding-left: 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;">
-  <p><strong>Reference Match (RM):</strong> Isoform is FSM and within 50 bp of annotated transcription start and end sites.</p>
-  <p><strong>Full Splice Match (FSM):</strong> Isoform with identical exon count and matching internal junctions; start and end may vary.</p>
-  <p><strong>Incomplete Splice Match (ISM):</strong> Isoform missing some 5' exons but with matching internal junctions.</p>
-  <p><strong>Novel In Catalog (NIC):</strong> Isoform uses known splice sites but lacks FSM or ISM match.</p>
-  <p><strong>Novel Not in Catalog (NNC):</strong> Isoform contains unannotated splice sites.</p>
-  <p><strong>Genic Intron:</strong> Isoform entirely within an annotated intron.</p>
-</div>
+::: {style="border-left: 3px solid #ccc; padding-left: 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;"}
+
+**Reference Match (RM):** Isoform is FSM and within 50 bp of annotated transcription start and end sites.
+
+**Full Splice Match (FSM):** Isoform with identical exon count and matching internal junctions; start and end may vary.
+
+**Incomplete Splice Match (ISM):** Isoform missing some 5' exons but with matching internal junctions.
+
+**Novel In Catalog (NIC):** Isoform uses known splice sites but lacks FSM or ISM match.
+
+**Novel Not in Catalog (NNC):** Isoform contains unannotated splice sites.
+
+**Genic Intron:** Isoform entirely within an annotated intron.
+
+:::
 
 
-### Evaluation Metrics Table
+### Evaluation Metrics
 
 ```{r echo=FALSE}
 datatable(
@@ -98,56 +118,55 @@ datatable(
 )
 ```
 
-<!-- Evaluation Metrics Section -->
-<div style="border-left: 3px solid #ccc; padding: 10px 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;">
+::: {style="border-left: 3px solid #ccc; padding: 10px 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;"}
 
-<h4>1. Non-redundant Precision (nrPre):</h4>
-<p>
-    \[ \text{nrPre} = \frac{\text{True Positives (TP)}}{\text{Total BUGSI Match Transcripts}} \]
-</p>
+#### 1. Sensitivity (Sn):
 
-<h4>2. Precision (Pre):</h4>
-<p>
-    \[ \text{Pre} = \frac{\text{True Positives (TP)} + \text{Partial True Positives (PTP)}}{\text{Total BUGSI Match Transcripts}} \]
-</p>
+\[ \text{Sn} = \frac{\text{Unique (TP)}}{\text{Total BUGSI Genes}} \]
 
-<h4>3. Positive Detection Rate (PDR):</h4>
-<p>
-    \[ \text{PDR} = \frac{\text{Unique Detected Genes (TP + PTP)}}{\text{Total BUGSI Genes}} \]
-</p>
+#### 2. Non-redundant Precision (nrPre):
 
-<h4>4. False Discovery Rate (FDR):</h4>
-<p>
-    \[ \text{FDR} = \frac{\text{Total BUGSI Match Transcripts} - \text{BUGSI RM}}{\text{Total BUGSI Match Transcripts}} \]
-</p>
+\[ \text{nrPre} = \frac{\text{TP}}{\text{Total BUGSI Match Transcripts}} \]
 
-<h4>5. False Detection Rate (FDR):</h4>
-<p>
-    \[ \text{FDR} = \frac{\text{False Positives (FP)}}{\text{Total BUGSI Match Transcripts}} \]
-</p>
+#### 3. Precision (Pre):
 
-<h4>6. Redundancy (1/Red):</h4>
-<p>
-    \[ \text{Redundancy (1/Red)} = \frac{\text{FSM + ISM Count}}{\text{Unique True Positive (TP) + Partial True Positive (PTP) Genes}} \]
-</p>
+\[ \text{Pre} = \frac{\text{TP} + \text{PTP}}{\text{Total BUGSI Match Transcripts}} \]
 
+#### 4. Positive Detection Rate (PDR):
 
-</div>
+\[ \text{PDR} = \frac{\text{Unique (TP + PTP)}}{\text{Total BUGSI Genes}} \]
 
-## Benchmarking Result
+#### 5. False Discovery Rate (FDR):
+
+\[ \text{FDR} = \frac{\text{Total BUGSI Match Transcripts} - \text{TP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 6. False Detection Rate:
+
+\[ \text{False Detection Rate} = \frac{\text{FP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 7. Redundancy (1/Red):
+
+\[ \text{Redundancy (1/Red)} = \frac{\text{TP + PTP}}{\text{Unique (TP + PTP)}} \]
+
+:::
+
+## Benchmarking Result {.tabset .tabset-fade}
+
+### Radar Plot
 
 ```{r echo=FALSE, message=FALSE}
 # Calculate the metrics values
 metrics_values <- c(
+  non_redundant_sensitivity * 100,
   non_redundant_precision * 100,
   1 / redundancy * 100,           # Inverse redundancy as in the plot
-  false_discovery_rate * 100,
+  100 - false_discovery_rate * 100,
   positive_detection_rate * 100,
   redundant_precision * 100
 )
 
 # Create labels for the metrics
-metrics_labels <- c("nrPre", "1/red", "FDR", "PDR", "rPre")
+metrics_labels <- c("Sn", "nrPre", "1/red", "1-FDR", "PDR", "rPre")
 
 # Close the radar plot by appending the first metric and label to the end
 metrics_values <- c(metrics_values, metrics_values[1])
@@ -222,94 +241,145 @@ interactive_radar_plot
 
 ### TP
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=(nrow(TP) > 0)}
+# Add a column with the plot link
+TP <- TP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<a href="',
+        file.path(plots_dir, paste0(associated_gene, '.png')),
+        '" target="_blank">View Plot</a>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+# Display the table with the Plot column
 datatable(
   data = TP,
   extensions = 'Buttons',
+  escape = FALSE,  # Allow HTML rendering in the table
   options = list(
     dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel'), # Download options
+    buttons = c('copy', 'csv', 'excel'),
     autoWidth = TRUE,
-    scrollX = TRUE, # Horizontal scrolling
+    scrollX = TRUE,
     columnDefs = list(
-      list(className = 'dt-left', targets = "_all"), # Left-align content
-      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
     )
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 3: classification metrics used in the evaluation of TP.'
+    'Table 3: Classification metrics used in the evaluation of TP.'
   )
 )
 ```
 
 ### PTP
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=(nrow(PTP) > 0)}
+# Add a column with the plot link
+PTP <- PTP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<a href="',
+        file.path(plots_dir, paste0(associated_gene, '.png')),
+        '" target="_blank">View Plot</a>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+# Display the table with the Plot column
 datatable(
   data = PTP,
   extensions = 'Buttons',
+  escape = FALSE,
   options = list(
     dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel'), # Download options
+    buttons = c('copy', 'csv', 'excel'),
     autoWidth = TRUE,
-    scrollX = TRUE, # Horizontal scrolling
+    scrollX = TRUE,
     columnDefs = list(
-      list(className = 'dt-left', targets = "_all"), # Left-align content
-      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
     )
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 4: classification metrics used in the evaluation of PTP.'
+    'Table 4: Classification metrics used in the evaluation of PTP.'
   )
 )
 ```
 
 ### FN
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval=(nrow(FN) > 0)}
+# Display the table with the Plot column
 datatable(
   data = FN,
   extensions = 'Buttons',
+  escape = FALSE,
   options = list(
     dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel'), # Download options
+    buttons = c('copy', 'csv', 'excel'),
     autoWidth = TRUE,
-    scrollX = TRUE, # Horizontal scrolling
+    scrollX = TRUE,
     columnDefs = list(
-      list(className = 'dt-left', targets = "_all"), # Left-align content
-      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
     )
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 5: list of false negative BUGSI genes.'
+    'Table 5: List of false negative BUGSI genes.'
   )
 )
 ```
 
 ### FP
 
-```{r echo=FALSE}
+```{r echo=FALSE, eval = (nrow(FP) > 0)}
+# Add a column with the plot link
+FP <- FP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<a href="',
+        file.path(plots_dir, paste0(associated_gene, '.png')),
+        '" target="_blank">View Plot</a>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+# Display the table with the Plot column
 datatable(
   data = FP,
   extensions = 'Buttons',
+  escape = FALSE,
   options = list(
     dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel'), # Download options
+    buttons = c('copy', 'csv', 'excel'),
     autoWidth = TRUE,
-    scrollX = TRUE, # Horizontal scrolling
+    scrollX = TRUE,
     columnDefs = list(
-      list(className = 'dt-left', targets = "_all"), # Left-align content
-      list(whiteSpace = 'normal', targets = "_all") # Column wrapping
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
     )
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 6: classification metrics used in the evaluation of FP.'
+    'Table 6: Classification metrics used in the evaluation of FP.'
   )
 )
+
 ```
 
 <script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>

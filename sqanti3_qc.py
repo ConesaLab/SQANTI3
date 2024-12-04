@@ -2162,8 +2162,10 @@ def run(args):
         if args.bugsi:
             try:
                 print("**** Generating BUGSI report....", file=sys.stderr)
-                bugsi_file = os.path.join(utilitiesPath, "report_qc", f"bugsi_{args.bugsi}.txt")
-                cmd_bugsi = RSCRIPTPATH + " {d}/{f} {c} {b} {d}".format(d=utilitiesPath, f=RSCRIPT_BUGSI_REPORT, c=outputClassPath, b=bugsi_file)
+                bugsi_file = os.path.join(utilitiesPath, "report_qc", f"bugsi_{args.bugsi}.gtf")
+                cmd_bugsi = RSCRIPTPATH + " {d}/{f} {c} {b} {i} {d}".format(d=utilitiesPath, f=RSCRIPT_BUGSI_REPORT,
+                                                                            c=outputClassPath, b=bugsi_file,
+                                                                            i=args.isoforms)
                 subprocess.check_call(cmd_bugsi, shell=True)
                 print("BUGSI report generated successfully.", file=sys.stderr)
             except subprocess.CalledProcessError as e:
@@ -2463,9 +2465,10 @@ def combine_split_runs(args, split_dirs):
     if args.bugsi:
         try:
             print("**** Generating BUGSI report....", file=sys.stderr)
-            bugsi_file = os.path.join(utilitiesPath, "report_qc", f"bugsi_{args.bugsi}.txt")
-            cmd_bugsi = RSCRIPTPATH + " {d}/{f} {c} {b} {d}".format(d=utilitiesPath, f=RSCRIPT_BUGSI_REPORT,
-                                                                    c=outputClassPath, b=bugsi_file)
+            bugsi_file = os.path.join(utilitiesPath, "report_qc", f"bugsi_{args.bugsi}.gtf")
+            cmd_bugsi = RSCRIPTPATH + " {d}/{f} {c} {b} {i} {d}".format(d=utilitiesPath, f=RSCRIPT_BUGSI_REPORT,
+                                                                        c=outputClassPath, b=bugsi_file,
+                                                                        i=args.isoforms)
             subprocess.check_call(cmd_bugsi, shell=True)
             print("BUGSI report generated successfully.", file=sys.stderr)
         except subprocess.CalledProcessError as e:
