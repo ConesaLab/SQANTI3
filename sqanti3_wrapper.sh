@@ -2,7 +2,7 @@ filter_corrected_gtf#! /bin/bash -xe
 
 # Author: Fabián Robledo
 # Email: fabian.robledo@csic.es
-# Version: 0.9.1
+# Version: 1.0.0
 
 # One SQANTI3 to run them all
 # A wrapper, with a config file, to execute al three steps of a sqanti3 pipeline
@@ -10,8 +10,6 @@ filter_corrected_gtf#! /bin/bash -xe
 # Al three steps (QC, filter and rescue) can be executed at will , as long
 # as the conf is told to skip the script in question
 
-# EXPERIMENTAL: this Wrapper is in progress, so expect that some parameters 
-# are not perfectly tunned.
 # SQANTI3 (QC, Filter and Rescue) combined
 
 function main () {
