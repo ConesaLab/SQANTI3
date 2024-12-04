@@ -6,6 +6,7 @@ channels:
   - r
   - defaults
 dependencies:
+  - argcomplete=3.4.0
   - bcbio-gff
   - bedtools
   - biopython<=1.81
@@ -15,7 +16,9 @@ dependencies:
   - cython
   - desalt
   - gffread
+  - gtftools=0.9.0
   - gmap
+  - jinja2
   - kallisto=0.48.0
   - minimap2
   - numpy
@@ -61,8 +64,8 @@ dependencies:
   - seqtk
   - star
   - slamem
-  - gtftools
   - seaborn
   - scikit-learn
   - pip:
     - ultra-bioinformatics
+    - pdf2image
