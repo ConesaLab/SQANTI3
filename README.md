@@ -13,7 +13,7 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.2.2) (31/07/2024) is **version 5.2.2**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.0) (04/12/2024) is **version 5.3.0**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For informacion about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
@@ -42,7 +42,7 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 
 * [Running SQANTI3 rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)
 
-* [Running SQANTI-reads](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI%E2%80%90reads-(under-development))
+* [Running SQANTI-reads](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI%E2%80%90reads)
 
 * [Tutorial: running SQANTI3 on an example dataset](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset)
 
@@ -56,3 +56,4 @@ If you are using SQANTI3 in your research, please cite the following paper in ad
 
 - Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
 
+- Keil, N., Monzó, C., McIntyre, L., Conesa, A. **SQANTI-reads: a tool for the quality assessment of long read data in multi-sample lrRNA-seq experiments**. BioRxiv (2024) https://www.biorxiv.org/content/10.1101/2024.08.23.609463v2

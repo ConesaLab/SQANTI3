@@ -5,7 +5,7 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 
 __author__  = "etseng@pacb.com"
-__version__ = '5.2.2'  # Python 3.7
+__version__ = '5.3.0'  # Python 3.7
 
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
