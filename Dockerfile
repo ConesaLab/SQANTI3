@@ -1,18 +1,18 @@
-# Base image for SQANTI3/v5.2.2 with Ubuntu 22.04
+# Base image for SQANTI3/v5.3.0 with Ubuntu 22.04
 
 # Using ubuntu 22.04
 # Right now edlib doesn't work with python 3.12 which is the default version
 # of python in Ubuntu 24.04. edlib has had no updates since April 19, 2023
 # so no compatibility is expected for the time being.
 # Dockerfile originally developed by @skchronicles, updated and optimized
-# for version v5.2.2 by @Fabian-RY
+# for version v5.3.0 by @Fabian-RY
 
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the versions of different softwares dependencies and SQANTI3 version
 # To install
-ENV SQANTI3_VERSION="5.2.2"
+ENV SQANTI3_VERSION="5.3.0"
 ENV DESALT_VERSION="1.5.6"
 ENV NAMFINDER_VERSION="0.1.3"
 
@@ -124,7 +124,7 @@ ENV PATH="${PATH}:/opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VER
 WORKDIR /opt2
 
 ########### SQANTI3 (currentily v${NAMFINDER_VERSION}) ############
-# Installs SQANTI3 with the version defined in the ENV variable (currently 5.2.2)
+# Installs SQANTI3 with the version defined in the ENV variable (currently 5.3.0)
 # dependenciesand requirements have already been
 # satisfied, for more info see:
 # https://github.com/ConesaLab/SQANTI3
