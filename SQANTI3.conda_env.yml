@@ -1,4 +1,4 @@
-name: SQANTI3.env
+name: sqanti3
 channels:
   - conda-forge
   - bioconda
