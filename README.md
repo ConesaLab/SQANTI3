@@ -42,6 +42,8 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 
 * [Running SQANTI3 rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)
 
+* [Running SQANTI-reads](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI%E2%80%90reads-(under-development))
+
 * [Tutorial: running SQANTI3 on an example dataset](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset)
 
 Please, note that we are currently updating and expanding the wiki to provide as much information as possible and 
