@@ -10,7 +10,6 @@ __version__ = '5.3.0'  # Python 3.7
 import pdb
 import os, re, sys, subprocess, timeit, glob, copy
 import shutil
-import distutils.spawn
 import itertools
 import bisect
 import argparse
@@ -419,6 +418,8 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                     assert e < s
                     s, e = e, s
                     s = s - 1 # make it 0-based
+                # TODO: change the loop to a binary search (reduces complexity) 
+                # TODO: Include more checks into the intervals, with an equal condition
                 for i,exon in enumerate(r.ref_exons):
                     if exon.end > s: break
                 r.cds_exons = [Interval(s, min(e,exon.end))]
@@ -478,35 +479,48 @@ def correctionPlusORFpred(args, genome_dict):
             if os.path.exists(corrSAM):
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
-                if args.aligner_choice == "gmap":
-                    print("****Aligning reads with GMAP...", file=sys.stdout)
-                    cmd = GMAP_CMD.format(cpus=n_cpu,
-                                          dir=os.path.dirname(args.gmap_index),
-                                          name=os.path.basename(args.gmap_index),
-                                          sense=args.sense,
-                                          i=args.isoforms,
-                                          o=corrSAM)
-                elif args.aligner_choice == "minimap2":
-                    print("****Aligning reads with Minimap2...", file=sys.stdout)
-                    cmd = MINIMAP2_CMD.format(cpus=n_cpu,
-                                              sense=args.sense,
-                                              g=args.genome,
-                                              i=args.isoforms,
-                                              o=corrSAM)
-                elif args.aligner_choice == "deSALT":
-                    print("****Aligning reads with deSALT...", file=sys.stdout)
-                    cmd = DESALT_CMD.format(cpus=n_cpu,
-                                            dir=args.gmap_index,
-                                            i=args.isoforms,
-                                            o=corrSAM)
-                elif args.aligner_choice == "uLTRA":
-                    print("****Aligning reads with uLTRA...", file=sys.stdout)
-                    cmd = ULTRA_CMD.format(cpus=n_cpu,
-                                           prefix= "../" + p,
-                                           g=args.genome,
-                                           a=args.annotation,
-                                           i=args.isoforms,
-                                           o_dir=args.dir + "/uLTRA_out/")
+                # Even though the speed does not change form the ifelse, this is cleaner
+                match args.aligner_choice:
+                    case "gmap":
+                        print("****Aligning reads with GMAP...", file=sys.stdout)
+                        cmd = GMAP_CMD.format(
+                            cpus=n_cpu,
+                            dir=os.path.dirname(args.gmap_index),
+                            name=os.path.basename(args.gmap_index),
+                            sense=args.sense,
+                            i=args.isoforms,
+                            o=corrSAM,
+                        )
+                    case "minimap2":
+                        print("****Aligning reads with Minimap2...", file=sys.stdout)
+                        cmd = MINIMAP2_CMD.format(
+                            cpus=n_cpu,
+                            sense=args.sense,
+                            g=args.genome,
+                            i=args.isoforms,
+                            o=corrSAM,
+                        )
+                    case "deSALT":
+                        print("****Aligning reads with deSALT...", file=sys.stdout)
+                        cmd = DESALT_CMD.format(
+                            cpus=n_cpu,
+                            dir=args.gmap_index,
+                            i=args.isoforms,
+                            o=corrSAM,
+                        )
+                    case "uLTRA":
+                        print("****Aligning reads with uLTRA...", file=sys.stdout)
+                        cmd = ULTRA_CMD.format(
+                            cpus=n_cpu,
+                            prefix="../" + p,
+                            g=args.genome,
+                            a=args.annotation,
+                            i=args.isoforms,
+                            o_dir=args.dir + "/uLTRA_out/",
+                        )
+                    case _:
+                        raise ValueError(f"Unsupported aligner choice: {args.aligner_choice}")
+
                 if subprocess.check_call(cmd, shell=True)!=0:
                     print("ERROR running alignment cmd: {0}".format(cmd), file=sys.stderr)
                     sys.exit(-1)
@@ -516,9 +530,12 @@ def correctionPlusORFpred(args, genome_dict):
             # convert SAM to GFF --> GTF
             convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(args.genome).split('.')[0])  # convert SAM to GFF3
             cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
-            if subprocess.check_call(cmd, shell=True)!=0:
-                print("ERROR running cmd: {0}".format(cmd), file=sys.stderr)
-                sys.exit(-1)
+            # Try condition to better handle the error. Also, the exit code is corrected
+            try:
+                subprocess.check_call(cmd, shell=True)
+            except subprocess.CalledProcessError as e:
+                print(f"ERROR running alignment cmd: {cmd}", file=sys.stderr)
+            sys.exit(1)
         else:
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
 
@@ -2445,7 +2462,7 @@ def combine_split_runs(args, split_dirs):
 def main():
     global utilitiesPath
 
-    #arguments
+    # The arguments are divided into categories, based on their functionality to SQANTI3
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
     parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')
     parser.add_argument('annotation', help='\t\tReference annotation file (GTF format)')
