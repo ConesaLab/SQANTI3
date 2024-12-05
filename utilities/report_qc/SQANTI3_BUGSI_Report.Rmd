@@ -6,7 +6,7 @@ output:
     toc: true
     toc_float: true
     toc_depth: 3
-    css: style.css
+    css: bugsi_style.css   # Use the BUGSI-specific CSS
 runtime: shiny
 params:
   metrics: NULL
@@ -15,19 +15,15 @@ params:
   associated_genes_list: NULL
 ---
 
+<!-- "How to use the report?" Modal -->
+<body>
+  <a class="show-modal" href="#">
+    <i class="fas fa-question-circle"></i> How to use the report?
+  </a>
+  
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
+</body>
 
-
-<!-- Basic setup for the report layout -->
-<a class="show-modal" href="#">
-  <i class="fas fa-question-circle"></i> How to use the report?
-</a>
-
-<div class="overlay hidden">
-  <button class="close-modal">&times;</button>
-  <p class="header">How to read the report?</p>
-  <p>The report contains several parts, please see the following plot to get more detail about the report</p>
-  <img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png">
-</div>
 
 ```{r, echo=FALSE, warning=FALSE}
 # Load necessary libraries
@@ -242,15 +238,19 @@ interactive_radar_plot
 ### TP
 
 ```{r echo=FALSE, eval=(nrow(TP) > 0)}
-# Add a column with the plot link
+# Add a column with the modal HTML code
 TP <- TP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
       paste0(
-        '<a href="',
-        file.path(plots_dir, paste0(associated_gene, '.png')),
-        '" target="_blank">View Plot</a>'
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
       ),
       'No Plot Available'
     )
@@ -276,24 +276,30 @@ datatable(
     'Table 3: Classification metrics used in the evaluation of TP.'
   )
 )
+
 ```
 
 ### PTP
 
 ```{r echo=FALSE, eval=(nrow(PTP) > 0)}
-# Add a column with the plot link
+# Add a column with the modal HTML code
 PTP <- PTP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
       paste0(
-        '<a href="',
-        file.path(plots_dir, paste0(associated_gene, '.png')),
-        '" target="_blank">View Plot</a>'
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
       ),
       'No Plot Available'
     )
   )
+
 
 # Display the table with the Plot column
 datatable(
@@ -345,15 +351,19 @@ datatable(
 ### FP
 
 ```{r echo=FALSE, eval = (nrow(FP) > 0)}
-# Add a column with the plot link
+# Add a column with the modal HTML code
 FP <- FP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
       paste0(
-        '<a href="',
-        file.path(plots_dir, paste0(associated_gene, '.png')),
-        '" target="_blank">View Plot</a>'
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
       ),
       'No Plot Available'
     )
@@ -379,8 +389,8 @@ datatable(
     'Table 6: Classification metrics used in the evaluation of FP.'
   )
 )
-
 ```
 
 <script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
+<script src="bugsi_script.js"></script>
 <script src="script.js"></script>

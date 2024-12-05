@@ -12,10 +12,10 @@ transcript_gtf_file <- args[3]
 utilities.path <- args[4]
 
 # Define file paths
-# TODO: Check ENSG00000178397!!!!!!!!!!!!!!!!
-# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_drna_ont/WTC11_drna_ont_classification.txt'
+
+# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_ont/WTC11_cdna_ont_classification.txt'
 # bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.gtf'
-# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_drna_ont_ls.gtf'
+# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_ont.gtf'
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
