@@ -99,9 +99,17 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {fastq_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites} --fasta"
+
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
+                                {fastq_files} {args.annotation} {args.genome} \
+                                --skipORF --min_ref_len {args.min_ref_len} \
+                                --aligner_choice {args.aligner_choice} \
+                                -t {args.cpus} -d {args.input_dir}/{file_acc} \
+                                -o {sampleID} -s {args.sites} -n {args.chunks} \
+                                --fasta"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+                print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
