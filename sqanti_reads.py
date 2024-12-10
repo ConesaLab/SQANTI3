@@ -190,7 +190,7 @@ def main():
     parser.add_argument('-fl','--factor_level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
     parser.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and and underannotated gene tables')
     parser.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
-    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
+    parser.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
 
@@ -203,7 +203,8 @@ def main():
     get_method_runSQANTI3(args, df)
 
     # Make UJC and hash
-    make_UJC_hash(args, df)
+    if not args.SKIPHASH:
+        make_UJC_hash(args, df)
 
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
