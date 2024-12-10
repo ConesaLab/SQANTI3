@@ -37,10 +37,11 @@ from cupcake.sequence.STAR import STARJunctionReader
 from cupcake.sequence.BED import LazyBEDPointReader
 import cupcake.sequence.coordinate_mapper as cordmap
 from cupcake.tofu.compare_junctions import compare_junctions
-from cupcake.tofu.filter_away_subset import read_count_file
-from cupcake.io.BioReaders import GMAPSAMReader
+from cupcake.tofu.filter_away_subset import read_count_file # Import not used
+from cupcake.io.BioReaders import GMAPSAMReader # Import not used
 from cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
+# TODO: Change import errors to propper logging
 try:
     from Bio.Seq import Seq
     from Bio import SeqIO
@@ -443,6 +444,23 @@ def run_command(cmd, description="command execution"):
         print(f"Details: {e}", file=sys.stderr)
         sys.exit(1)
 
+def mergeDict(dict1, dict2):
+    """ Merge dictionaries to collect info from several files"""
+    dict3 = {**dict1, **dict2}
+    for key, value in dict3.items():
+        if key in dict1 and key in dict2:
+                dict3[key] = [value , dict1[key]]
+    return dict3
+
+def flatten(lis):
+     """ Recursively flattens a nested iterable"""
+     for item in lis:
+         if isinstance(item, Iterable) and not isinstance(item, str):
+             for x in flatten(item):
+                 yield x
+         else:
+             yield item
+
 def get_corr_filenames(args, dir=None):
     d = dir if dir is not None else args.dir
     corrPathPrefix = os.path.join(d, args.output)
@@ -562,6 +580,7 @@ def correctionPlusORFpred(args, genome_dict):
 
             # GFF to GTF (in case the user provides gff instead of gtf)
             corrGTF_tpm = corrGTF+".tmp"
+            # Use the run command?
             try:
                 subprocess.call([GFFREAD_PROG, args.isoforms , '-T', '-o', corrGTF_tpm])
             except (RuntimeError, TypeError, NameError):
@@ -665,6 +684,7 @@ def correctionPlusORFpred(args, genome_dict):
 
     return(orfDict)
 
+### PARSERS
 
 def reference_parser(args, genome_chroms):
     """
@@ -690,7 +710,7 @@ def reference_parser(args, genome_chroms):
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
     # 2. separately store single exon and multi-exon references
-    refs_1exon_by_chr = defaultdict(lambda: IntervalTree()) #
+    refs_1exon_by_chr = defaultdict(lambda: IntervalTree()) #IntervalTree is used to efficiently hangle genomic intervals
     refs_exons_by_chr = defaultdict(lambda: IntervalTree())
     # store donors as the exon end (1-based) and acceptor as the exon start (0-based)
     # will convert the sets to sorted list later
@@ -723,6 +743,7 @@ def reference_parser(args, genome_chroms):
         print("WARNING: ref annotation contains chromosomes not in genome: {0}\n".format(",".join(diff)), file=sys.stderr)
 
     # convert the content of junctions_by_chr to sorted list
+    # TODO: collapse in one line the sort command?
     for k in junctions_by_chr:
         junctions_by_chr[k]['donors'] = list(junctions_by_chr[k]['donors'])
         junctions_by_chr[k]['donors'].sort()
@@ -746,6 +767,8 @@ def isoforms_parser(args):
     # gtf to genePred
     cmd = GTF2GENEPRED_PROG + " {0} {1} -genePredExt -allErrors -ignoreGroupsWithoutExons".format(\
         corrGTF, queryFile)
+    
+    # TODO: Change to the run command function
     if subprocess.check_call(cmd, shell=True)!=0:
         print("ERROR running cmd: {0}".format(cmd), file=sys.stderr)
         sys.exit(1)
@@ -769,7 +792,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     """
     if os.path.isdir(coverageFiles):
         cov_files = glob.glob(coverageFiles + "/*SJ.out.tab")
-    elif coverageFiles.count(',') > 0:
+    elif coverageFiles.count(',') > 0: # In case the files are as a whole string and not a list
         cov_files = coverageFiles.split(",")
     else:
         cov_files = glob.glob(coverageFiles)
@@ -797,33 +820,16 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
 
     return samples, cov_by_chrom_strand
 
-EXP_KALLISTO_HEADERS = ['target_id', 'length', 'eff_length', 'est_counts', 'tpm']
-EXP_RSEM_HEADERS = ['transcript_id', 'length', 'effective_length', 'expected_count', 'TPM']
-
-def mergeDict(dict1, dict2):
-    """ Merge dictionaries to collect info from several files"""
-    dict3 = {**dict1, **dict2}
-    for key, value in dict3.items():
-        if key in dict1 and key in dict2:
-                dict3[key] = [value , dict1[key]]
-    return dict3
-
-def flatten(lis):
-     for item in lis:
-         if isinstance(item, Iterable) and not isinstance(item, str):
-             for x in flatten(item):
-                 yield x
-         else:
-             yield item
-
 
 def expression_parser(expressionFile):
     """
     Currently accepts expression format: Kallisto or RSEM
+    It need the functions mergeDict, flatten to be defined before it
     :param expressionFile: Kallisto or RSEM
     :return: dict of PBID --> TPM
     Include the possibility of providing an expression matrix --> first column must be "ID"
     """
+    # Similar to the STARcov_parser, the expression file can be a directory or a list of files
     if os.path.isdir(expressionFile)==True:
                 exp_paths = [os.path.join(expressionFile,fn) for fn in next(os.walk(expressionFile))[2]]
     else:
@@ -832,6 +838,7 @@ def expression_parser(expressionFile):
     ismatrix = False
     for exp_file in exp_paths:
         reader = DictReader(open(exp_file), delimiter='\t')
+        # Finds the file format based on the header
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
                 print("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.", file=sys.stderr)
                 name_id, name_tpm = 'target_id', 'tpm'
@@ -865,8 +872,17 @@ def expression_parser(expressionFile):
         return exp_dict
 
 
+
+# Move this headers to the definition of the script, not to the functions.
+# They must be before the function expression_parser is called.
+EXP_KALLISTO_HEADERS = ['target_id', 'length', 'eff_length', 'est_counts', 'tpm']
+EXP_RSEM_HEADERS = ['transcript_id', 'length', 'effective_length', 'expected_count', 'TPM']
+
+
 def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, trec, genome_dict, nPolyA):
     """
+    This function determines if the isoform hits a known splice site, categorizing it as either
+    FSM or ISM
     :param refs_1exon_by_chr: dict of single exon references (chr -> IntervalTree)
     :param refs_exons_by_chr: dict of multi exon references (chr -> IntervalTree)
     :param trec: id record (genePredRecord) to be compared against reference
@@ -874,13 +890,15 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     :param nPolyA: window size to look for polyA
     :return: myQueryTranscripts object that indicates the best reference hit
     """
+    #TODO: Move the functions to their onw file (transcriptKnowSpliceSites_functions.py)
     def calc_overlap(s1, e1, s2, e2):
+        """returns the overlap between two intervals"""
         if s1=='NA' or s2=='NA': return 0
         if s1 > s2:
             s1, e1, s2, e2 = s2, e2, s1, e1
         return max(0, min(e1,e2)-max(s1,s2))
 
-    def gene_overlap(ref1, ref2):
+    def gene_overlap(ref1, ref2): # TODO: It looks like this function is not being used anymore
         if ref1==ref2: return True  # same gene, diff isoforms
         # return True if the two reference genes overlap
         s1, e1 = min(start_ends_by_gene[ref1]['begin']), max(start_ends_by_gene[ref1]['end'])
@@ -891,6 +909,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
             return e2 <= s1
 
     def calc_splicesite_agreement(query_exons, ref_exons):
+        """Determines the number of splice sites that agree between query and reference"""
         q_sites = {}
         for e in query_exons:
             q_sites[e.start] = 0
@@ -901,6 +920,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         return sum(q_sites.values())
 
     def calc_exon_overlap(query_exons, ref_exons):
+        """Determines the number of bases that overlap between query and reference"""
         q_bases = {}
         for e in query_exons:
             for b in range(e.start, e.end): q_bases[b] = 0
@@ -911,37 +931,52 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         return sum(q_bases.values())
 
     def get_diff_tss_tts(trec, ref):
-        # Calculating differences between transcript start sites (TSS) and
-        # Trasncript termination site (TTS) of two transcripts
+        """
+        Calculate the differences between the Transcript Start Site (TSS) and 
+        Transcript Termination Site (TTS) of two transcripts.
+
+        For positive strand transcripts:
+        - TSS is the difference between the reference's start and the transcript's start.
+        - TTS is the difference between the transcript's end and the reference's end.
+        Positive values indicate elongation, negative values indicate shortening.
+
+        For negative strand transcripts:
+        - The start and end are reversed (i.e., `start` corresponds to the `end` in positive strand, and vice versa).
+        - TTS is calculated as the difference between the reference's start and the transcript's start.
+        - TSS is the difference between the transcript's end and the reference's end.
+        Again, positive values indicate elongation, negative values indicate shortening.
+
+        Parameters:
+        - trec: The transcript object representing the query transcript.
+        - ref: The reference transcript object.
+
+        Returns:
+        - diff_tss (int): Difference in the transcript start sites (positive for elongation, negative for shortening).
+        - diff_tts (int): Difference in the transcript termination sites (positive for elongation, negative for shortening).
+        """
         if trec.strand == '+':
-            # In positive (+) strand transcripts:
-            # TSS is calculated as reference start - transcript start
-            # TTS is calculated as transcript end - reference end
-            # This way,  TSS < 0 means the transcript is shortened, and 
-            # TSS > 0 means that transcript is elongated. Similarly, a
-            # TTS < 0 means that transcript is shortened, and a TTS > 0
-            # means that the transcript is elongated
             diff_tss = ref.txStart - trec.txStart
             diff_tts = trec.txEnd  - ref.txEnd
         else:
-            # In negative (-) strand transcripts:
-            # The transcripts in negative strands are loaded with trans.start = end
-            # and trans.end = start, to assure that trans.end > trans.start 
-            # regardless of the transcript. TTS and TSS are calculated with
-            # the same formula, but taking the loading fact into account,
-            # The formulas are inverted
-            # TTS is ref start - transcript start
-            # TSS is transcript end - treference end
-            # Being consistent in that  TSS < 0 means the transcript is shortened, and 
-            # TSS > 0 means that transcript is elongated. Similarly, a
-            # TTS < 0 means that transcript is shortened, and a TTS > 0
-            # means that the transcript is elongated
             diff_tts = ref.txStart - trec.txStart
             diff_tss = trec.txEnd  - ref.txEnd
         return diff_tss, diff_tts
 
 
     def get_gene_diff_tss_tts(isoform_hit):
+        """
+        Calculate the nearest transcription start site (TSS) and transcription termination site (TTS) 
+        differences for a given isoform hit relative to all isoforms of the gene.
+
+        Args:
+            isoform_hit: An object representing the isoform hit, which contains information about 
+                         the genes it hits and their start/end sites.
+
+        Modifies:
+            isoform_hit: Updates the `tss_gene_diff` and `tts_gene_diff` attributes with the nearest 
+                         TSS and TTS differences, respectively. If no valid difference is found, 
+                         the attribute is set to 'NA'.
+        """
         # now that we know the reference (isoform) it hits
         # add the nearest start/end site for that gene (all isoforms of the gene)
         nearest_start_diff, nearest_end_diff = float('inf'), float('inf')
@@ -1002,7 +1037,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
     percA = float(seq_downTTS.count('A'))/nPolyA*100
 
-
+    # Generation of the isoform hit object
     isoform_hit = myQueryTranscripts(id=trec.id, tts_diff="NA", tss_diff="NA",\
                                     num_exons=trec.exonCount,
                                     length=trec.length,
@@ -1019,9 +1054,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
     cat_ranking = {'full-splice_match': 5, 'incomplete-splice_match': 4, 'anyKnownJunction': 3, 'anyKnownSpliceSite': 2,
                    'geneOverlap': 1, '': 0}
-
-    #if trec.id.startswith('PB.1961.2'):
-    #    pdb.set_trace()
+    
+    # This treats different multi or mono-exonic queries
     if trec.exonCount >= 2:
 
         hits_by_gene = defaultdict(lambda: [])  # gene --> list of hits
@@ -1052,11 +1086,13 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
-
+                # TODO: Remove commented code
                 #if trec.id.startswith('PB.102.9'):
                 #    pdb.set_trace()
+
                 if ref.exonCount == 1: # mono-exonic reference, handle specially here
-                    if calc_exon_overlap(trec.exons, ref.exons) > 0 and cat_ranking[isoform_hit.str_class] < cat_ranking["geneOverlap"]:
+                    # TODO: calc exon overlap is called more than twice. Create a variable to store the value 
+                    if calc_exon_overlap(trec.exons, ref.exons) > 0 and cat_ranking[isoform_hit.str_class] < cat_ranking["geneOverlap"]: #CHECK wouldn't it be better with just a number?
                         isoform_hit = myQueryTranscripts(trec.id, "NA", "NA", trec.exonCount, trec.length,
                                                             "geneOverlap",
                                                              subtype="mono-exon",
@@ -1075,7 +1111,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                 else: # multi-exonic reference
                     match_type = compare_junctions(trec, ref, internal_fuzzy_max_dist=0, max_5_diff=999999, max_3_diff=999999)
-
+                    #TODO: Error handling in logs
                     if match_type not in ('exact', 'subset', 'partial', 'concordant', 'super', 'nomatch'):
                         raise Exception("Unknown match category {0}!".format(match_type))
 
@@ -1224,8 +1260,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
             best_by_gene[ref_gene] = isoform_hit
         # now we have best_by_gene:
         # start with the best scoring one (FSM is best) --> can add other genes if they don't overlap
-        #if trec.id.startswith('PB.1252.'):
-        #    pdb.set_trace()
+  
         geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'iso_hit'])
         best_by_gene = [geneHitTuple(cat_ranking[iso_hit.str_class],iso_hit.refStart,iso_hit.refEnd,ref_gene,iso_hit) for ref_gene,iso_hit in best_by_gene.items()]
         best_by_gene = list(filter(lambda x: x.score > 0, best_by_gene))
@@ -1233,9 +1268,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
             return isoform_hit
 
         # sort matching genes by ranking, allow for multi-gene match as long as they don't overlap
-        # cat_ranking = {'full-splice_match': 5, 'incomplete-splice_match': 4, 'anyKnownJunction': 3, 'anyKnownSpliceSite': 2,
-        #                    'geneOverlap': 1, '': 0}
-
         best_by_gene.sort(key=lambda x: (x.score,x.iso_hit.q_splicesite_hit+(x.iso_hit.q_exon_overlap)*1./sum(e.end-e.start for e in trec.exons)+calc_overlap(x.rStart,x.rEnd,trec.txStart,trec.txEnd)*1./(x.rEnd-x.rStart)-abs(trec.exonCount-x.iso_hit.refExons)), reverse=True)  # sort by (ranking score, overlap)
         isoform_hit = best_by_gene[0].iso_hit
         cur_start, cur_end = best_by_gene[0].rStart, best_by_gene[0].rEnd
@@ -1325,6 +1357,15 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
     :return isoforms_hit: updated isoforms hit (myQueryTranscripts object)
     """
     def has_intron_retention():
+        """
+        Checks if there is intron retention in the transcript record (trec).
+
+        This function iterates over the exons of the transcript record and uses binary search to find
+        if there are any junctions that indicate intron retention within the exons.
+
+        Returns:
+            bool: True if intron retention is detected, False otherwise.
+        """
         for e in trec.exons:
             m = bisect.bisect_left(junctions_by_chr[trec.chrom]['da_pairs'], (e.start, e.end))
             if m < len(junctions_by_chr[trec.chrom]['da_pairs']) and e.start <= junctions_by_chr[trec.chrom]['da_pairs'][m][0] < junctions_by_chr[trec.chrom]['da_pairs'][m][1] < e.end:
@@ -1333,13 +1374,10 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
 
     ref_genes = list(set(isoforms_hit.genes))
 
-    #if trec.id.startswith('PB.37872'):
-    #pdb.set_trace()
-    #
     # at this point, we have already found matching genes/transcripts
     # hence we do not need to update refLen or refExon
     # or tss_diff and tts_diff (always set to "NA" for non-FSM/ISM matches)
-    #
+    
     isoforms_hit.transcripts = ["novel"]
     if len(ref_genes) == 1:
         # hits exactly one gene, must be either NIC or NNC
@@ -1381,6 +1419,17 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
     return isoforms_hit
 
 def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
+    """
+    Classify the given isoform based on its overlap with known genes and junctions.
+
+    Parameters:
+    isoforms_hit (object): An object representing the isoform hit, which will be updated with classification information.
+    trec (object): An object representing the transcript record, containing information such as exon count, chromosome, start, and end positions.
+    junctions_by_chr (dict): A dictionary where keys are chromosome names and values are dictionaries containing junction information.
+
+    Returns:
+    object: The updated isoforms_hit object with classification information added.
+    """
     # at this point: definitely not FSM or ISM or NIC or NNC
     # possibly (in order of preference assignment):
     #  - antisense  (on opp strand of a known gene)
@@ -1414,6 +1463,7 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
             isoforms_hit.str_class = "antisense"
             isoforms_hit.genes = ["novelGene_{g}_AS".format(g=g) for g in isoforms_hit.AS_genes]
     else:
+        # TODO: REmove this comments??
         # (Liz) used to put NNC here - now just genic
         isoforms_hit.str_class = "genic"
         # overlaps with one or more genes on the same strand
@@ -1525,6 +1575,19 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
 
 
 def get_fusion_component(fusion_gtf):
+    """
+    Parses a GTF file containing fusion gene information and calculates the 
+    cumulative exon lengths for each isoform of each gene.
+
+    Args:
+        fusion_gtf (str): Path to the GTF file containing fusion gene data.
+
+    Returns:
+        dict: A dictionary where keys are fusion gene identifiers in the format 
+              "PBfusion.<gene>.<isoform>" and values are tuples containing:
+              - The cumulative number of exons up to and including the current isoform.
+              - The cumulative length of exons up to and including the current isoform.
+    """
     components = defaultdict(lambda: {})
     for r in collapseGFFReader(fusion_gtf):
         m = seqid_fusion.match(r.seqid)
@@ -1544,6 +1607,9 @@ def get_fusion_component(fusion_gtf):
     return result
 
 def short_reads_mapping(args):
+    """
+    Runs STAR for mapping short reads to the transcriptome
+    """
     if args.short_reads is not None:
         print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
         star_out, star_index = star(args.genome, args.short_reads, args.dir, args.cpus)
@@ -1553,12 +1619,39 @@ def short_reads_mapping(args):
     return(star_out, star_index, SJcovNames, SJcovInfo)
 
 def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF,
+
                           star_out, star_index, SJcovNames, SJcovInfo):
+    """
+    Classifies isoforms based on various criteria and writes the classification results to output files.
+
+    Parameters:
+    args (argparse.Namespace): Command-line arguments.
+    isoforms_by_chr (dict): Dictionary of isoforms grouped by chromosome.
+    refs_1exon_by_chr (dict): Dictionary of reference single-exon transcripts grouped by chromosome.
+    refs_exons_by_chr (dict): Dictionary of reference multi-exon transcripts grouped by chromosome.
+    junctions_by_chr (dict): Dictionary of junctions grouped by chromosome.
+    junctions_by_gene (dict): Dictionary of junctions grouped by gene.
+    start_ends_by_gene (dict): Dictionary of start and end positions grouped by gene.
+    genome_dict (dict): Dictionary containing genome sequences.
+    indelsJunc (dict): Dictionary of indels at junctions.
+    orfDict (dict): Dictionary containing ORF information.
+    corrGTF (str): Path to the corrected GTF file.
+    star_out (str): Path to the STAR output directory.
+    star_index (str): Path to the STAR index directory.
+    SJcovNames (list): List of splice junction coverage file names.
+    SJcovInfo (dict): Dictionary containing splice junction coverage information.
+
+    Returns:
+    tuple: A tuple containing:
+        - isoforms_info (dict): Dictionary containing classification information for each isoform.
+        - ratio_TSS_dict (dict): Dictionary containing TSS ratio information.
+    """
     global isoform_hits_name
-    if args.is_fusion: # read GFF to get fusion components
+    if args.is_fusion: # read GTF to get fusion components
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
         fusion_components = get_fusion_component(args.isoforms)
 
+    # If the isoform hits are present:
     if args.isoform_hits:
         isoform_hits_name = get_isoform_hits_name(args, dir=None)
         with open(isoform_hits_name+'_tmp', 'w') as out_file:
@@ -1567,6 +1660,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                                  'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
     else:
         isoform_hits_name = None
+
     ## read coverage files if provided
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
@@ -1579,7 +1673,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             fields_junc_cur = FIELDS_JUNC
             for name in SJcovNames:
                 fields_junc_cur += [name + '_unique', name + '_multi']
-        else:
+        else: #TODO: Logging
             print("Splice Junction Coverage files not provided.", file=sys.stdout)
             fields_junc_cur = FIELDS_JUNC
 
@@ -1596,11 +1690,12 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             bams = []
             for file in b:
                 bams.append(file.rstrip())
+        # TODO: where did this functions come from?
         chr_order = get_bam_header(bams[0])
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
         ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, args.ratio_TSS_metric)
     else:
-        if args.short_reads is not None:
+        if args.short_reads is not None: # If short reads are provided, it looks for the STAR output
             print("Running calculation of TSS ratio", file=sys.stdout)
             chr_order = star_index + "/chrNameLength.txt"
             inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
@@ -1650,12 +1745,11 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
 
 
     accepted_canonical_sites = list(args.sites.split(","))
-
+    # Creates a temporary file to write the classification and junction results
     handle_class = open(outputClassPath+"_tmp", "w")
     fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter='\t')
     fout_class.writeheader()
 
-    #outputJuncPath = outputPathPrefix+"_junctions.txt"
     handle_junc = open(outputJuncPath+"_tmp", "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter='\t')
     fout_junc.writeheader()
@@ -1749,6 +1843,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                 isoform_hit.CDS_end = orfDict[rec.id].cds_end      # 1-based end
                 isoform_hit.ORFseq  = orfDict[rec.id].orf_seq
 
+            # Assign the genomic coordinates of the CDS start and end
             if isoform_hit.coding == "coding":
                 m = {} # transcript coord (0-based) --> genomic coord (0-based)
                 if rec.strand == '+':
@@ -1810,6 +1905,7 @@ def find_polyA_motif(genome_seq, polyA_motif_list):
             return motif, -(len(genome_seq)-i-len(motif)+1), 'TRUE'
     return 'NA', 'NA', 'FALSE'
 
+# TODO: make it less specific
 def FLcount_parser(fl_count_filename):
     """
     :param fl_count_filename: could be a single sample or multi-sample (chained or demux) count file
@@ -2123,6 +2219,7 @@ def run(args):
         for key in omitted_iso:
             del isoforms_info[key]
         omitted_keys = list(omitted_iso.keys())
+        # TODO: check if this print is necessary
         print(type(omitted_keys))
         omitted_keys.sort(key=lambda x: (omitted_iso[x].chrom,omitted_iso[x].id))
         print('Type omitted keys ', type(omitted_keys))
@@ -2242,6 +2339,25 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
 
 
 class CAGEPeak:
+    """
+    A class to represent and query CAGE (Cap Analysis of Gene Expression) peaks from a BED file.
+
+    Attributes
+    ----------
+    cage_bed_filename : str
+        The filename of the BED file containing CAGE peak data.
+    cage_peaks : defaultdict
+        A dictionary where keys are tuples of (chromosome, strand) and values are IntervalTree objects containing intervals of peaks.
+
+    Methods
+    -------
+    __init__(cage_bed_filename):
+        Initializes the CAGEPeak object with the given BED filename and reads the BED file to populate the peaks.
+    read_bed():
+        Reads the BED file and populates the cage_peaks attribute with intervals of peaks.
+    find(chrom, strand, query, search_window=10000):
+        Queries the CAGE peaks to determine if a given position falls within a peak and calculates the distance to the nearest TSS.
+    """    
     def __init__(self, cage_bed_filename):
         self.cage_bed_filename = cage_bed_filename
         self.cage_peaks = defaultdict(lambda: IntervalTree()) # (chrom,strand) --> intervals of peaks
@@ -2291,6 +2407,25 @@ class CAGEPeak:
         return within_peak, dist_peak
 
 class PolyAPeak:
+    """
+    A class to represent and query polyA peaks from a BED file.
+
+    Attributes
+    ----------
+    polya_bed_filename : str
+        The filename of the BED file containing polyA peak information.
+    polya_peaks : defaultdict
+        A dictionary where keys are tuples of (chromosome, strand) and values are IntervalTree objects representing intervals of peaks.
+
+    Methods
+    -------
+    __init__(polya_bed_filename)
+        Initializes the PolyAPeak object with the given BED filename and reads the BED file to populate polyA peaks.
+    read_bed()
+        Reads the BED file and populates the polya_peaks attribute with intervals of peaks.
+    find(chrom, strand, query, search_window=100)
+        Queries the polyA peaks to determine if a given position falls within a specified search window of any peak.
+    """
     def __init__(self, polya_bed_filename):
         self.polya_bed_filename = polya_bed_filename
         self.polya_peaks = defaultdict(lambda: IntervalTree()) # (chrom,strand) --> intervals of peaks
@@ -2327,7 +2462,7 @@ class PolyAPeak:
                 min_dist = -min_dist
             return "TRUE", min_dist
 
-
+# TODO: Do the split based on isoform ID groups, not onj pure numbers
 def split_input_run(args):
     SPLIT_ROOT_DIR = get_split_dir(args)
     if os.path.exists(SPLIT_ROOT_DIR):
@@ -2469,6 +2604,7 @@ def combine_split_runs(args, split_dirs):
 def main():
     global utilitiesPath
 
+    # TODO: Take the parser out of here
     # The arguments are divided into categories, based on their functionality to SQANTI3
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
     parser.add_argument('isoforms', help='\tIsoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')
@@ -2507,10 +2643,8 @@ def main():
     parser.add_argument('--isoform_hits' , help='\t\t Report all FSM/ISM isoform hits in a separate file', required=False, default = False, action='store_true')
     parser.add_argument('--ratio_TSS_metric' , help='\t\t Define which statistic metric should be reported in the ratio_TSS column', choices=['max', 'mean', 'median', '3quartile'], default='max')
 
-
-
     args = parser.parse_args()
-
+    # Arguments checks
     if args.is_fusion:
         if args.orf_input is None:
             print("WARNING: Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!", file=sys.stderr)
@@ -2629,7 +2763,7 @@ def main():
         f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
         f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
 
-    # Running functionality
+    # Running functionality based on the chunks
     print("**** Running SQANTI3...", file=sys.stdout)
     global star_out, star_index, SJcovNames, SJcovInfo
     star_out, star_index, SJcovNames, SJcovInfo = short_reads_mapping(args)
