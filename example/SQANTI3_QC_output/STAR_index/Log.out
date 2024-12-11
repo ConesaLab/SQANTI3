@@ -1,0 +1,43 @@
+STAR version=2.7.11b
+STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
+##### Command Line:
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/ --genomeFastaFiles /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta --outTmpDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+##### Initial USER parameters from Command Line:
+outTmpDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+###### All USER parameters from Command Line:
+runThreadN                    4     ~RE-DEFINED
+runMode                       genomeGenerate        ~RE-DEFINED
+genomeDir                     /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
+genomeFastaFiles              /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+outTmpDir                     /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runMode                           genomeGenerate   
+runThreadN                        4
+genomeDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/
+genomeFastaFiles                  /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta   
+outTmpDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+
+-------------------------------
+##### Final effective command line:
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta      --outTmpDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+----------------------------------------
+
+Number of fastq files for each mate = 1
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+Finished loading and checking parameters
+--genomeDir directory exists and will be overwritten: /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/
+Dec 10 17:02:16 ... starting to generate Genome files
+/home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
+Chromosome sequence lengths: 
+chr22	50818468
+Genome sequence total length = 50818468
+Genome size with padding = 50855936
+!!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=50818468, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 11
+Estimated genome size with padding and SJs: total=genome+SJ=251855936 = 50855936 + 201000000
+GstrandBit=32
+Number of SA indices: 78319554
+Dec 10 17:02:17 ... starting to sort Suffix Array. This may take a long time...
+Number of chunks: 4;   chunks size limit: 208852144 bytes
+Dec 10 17:02:17 ... sorting Suffix Array chunks and saving them to disk...
