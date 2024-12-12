@@ -34,9 +34,6 @@ if shutil.which(GFFREAD_PROG) is None:
 
 # Rscript
 RSCRIPTPATH = shutil.which('Rscript')
-if os.system(RSCRIPTPATH + " --version")!=0:
-    print("Rscript executable not found! Abort!", file=sys.stderr)
-    sys.exit(1)
 
 RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 

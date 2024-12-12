@@ -50,92 +50,91 @@ import sys, os
 # Add the src directory to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 src_path = os.path.abspath(os.path.join(current_dir, ".."))
-sys.path.insert(0, src_path)
 
 
 def test_import_classification():
-    validate_import_own("src.classification", "isoformClassification", sys.path[0])
+    validate_import_own("src.classification", "isoformClassification", src_path)
 
 
 def test_import_commands():
-    validate_import_own("src.commands", "GTF2GENEPRED_PROG", sys.path[0])
-    validate_import_own("src.commands", "RSCRIPTPATH", sys.path[0])
-    validate_import_own("src.commands", "RSCRIPT_REPORT", sys.path[0])
-    validate_import_own("src.commands", "utilitiesPath", sys.path[0])
-    validate_import_own("src.commands", "GMAP_CMD", sys.path[0])
-    validate_import_own("src.commands", "MINIMAP2_CMD", sys.path[0])
-    validate_import_own("src.commands", "DESALT_CMD", sys.path[0])
-    validate_import_own("src.commands", "ULTRA_CMD", sys.path[0])
-    validate_import_own("src.commands", "GMST_CMD", sys.path[0])
-    validate_import_own("src.commands", "GFFREAD_PROG", sys.path[0])
+    validate_import_own("src.commands", "GTF2GENEPRED_PROG", src_path)
+    validate_import_own("src.commands", "RSCRIPTPATH", src_path)
+    validate_import_own("src.commands", "RSCRIPT_REPORT", src_path)
+    validate_import_own("src.commands", "utilitiesPath", src_path)
+    validate_import_own("src.commands", "GMAP_CMD", src_path)
+    validate_import_own("src.commands", "MINIMAP2_CMD", src_path)
+    validate_import_own("src.commands", "DESALT_CMD", src_path)
+    validate_import_own("src.commands", "ULTRA_CMD", src_path)
+    validate_import_own("src.commands", "GMST_CMD", src_path)
+    validate_import_own("src.commands", "GFFREAD_PROG", src_path)
 
 
 def test_import_config():
-    validate_import_own("src.config", "EXP_KALLISTO_HEADERS", sys.path[0])
-    validate_import_own("src.config", "EXP_RSEM_HEADERS", sys.path[0])
-    validate_import_own("src.config", "FIELDS_CLASS", sys.path[0])
-    validate_import_own("src.config", "FIELDS_JUNC", sys.path[0])
-    validate_import_own("src.config", "seqid_fusion", sys.path[0])
-    validate_import_own("src.config", "seqid_rex1", sys.path[0])
-    validate_import_own("src.config", "seqid_rex2", sys.path[0])
-    validate_import_own("src.config", "__version__", sys.path[0])
-    validate_import_own("src.config", "__author__", sys.path[0])
+    validate_import_own("src.config", "EXP_KALLISTO_HEADERS", src_path)
+    validate_import_own("src.config", "EXP_RSEM_HEADERS", src_path)
+    validate_import_own("src.config", "FIELDS_CLASS", src_path)
+    validate_import_own("src.config", "FIELDS_JUNC", src_path)
+    validate_import_own("src.config", "seqid_fusion", src_path)
+    validate_import_own("src.config", "seqid_rex1", src_path)
+    validate_import_own("src.config", "seqid_rex2", src_path)
+    validate_import_own("src.config", "__version__", src_path)
+    validate_import_own("src.config", "__author__", src_path)
 
 
 def test_import_helpers():
-    validate_import_own("src.helpers", "get_corr_filenames", sys.path[0])
-    validate_import_own("src.helpers", "get_class_junc_filenames", sys.path[0])
-    validate_import_own("src.helpers", "get_omitted_name", sys.path[0])
-    validate_import_own("src.helpers", "correctionPlusORFpred", sys.path[0])
-    validate_import_own("src.helpers", "write_collapsed_GFF_with_CDS", sys.path[0])
-    validate_import_own("src.helpers", "write_junctionInfo", sys.path[0])
-    validate_import_own("src.helpers", "get_isoform_hits_name", sys.path[0])
+    validate_import_own("src.helpers", "get_corr_filenames", src_path)
+    validate_import_own("src.helpers", "get_class_junc_filenames", src_path)
+    validate_import_own("src.helpers", "get_omitted_name", src_path)
+    validate_import_own("src.helpers", "correctionPlusORFpred", src_path)
+    validate_import_own("src.helpers", "write_collapsed_GFF_with_CDS", src_path)
+    validate_import_own("src.helpers", "write_junctionInfo", src_path)
+    validate_import_own("src.helpers", "get_isoform_hits_name", src_path)
 
 
 def test_import_multiprocessing():
-    validate_import_own("multiprocessing", "Process", sys.path[0])
+    validate_import_own("multiprocessing", "Process", src_path)
 
 
 def test_import_parsers():
-    validate_import_own("src.parsers", "get_fusion_component", sys.path[0])
-    validate_import_own("src.parsers", "STARcov_parser", sys.path[0])
-    validate_import_own("src.parsers", "reference_parser", sys.path[0])
-    validate_import_own("src.parsers", "isoforms_parser", sys.path[0])
-    validate_import_own("src.parsers", "FLcount_parser", sys.path[0])
-    validate_import_own("src.parsers", "expression_parser", sys.path[0])
+    validate_import_own("src.parsers", "get_fusion_component", src_path)
+    validate_import_own("src.parsers", "STARcov_parser", src_path)
+    validate_import_own("src.parsers", "reference_parser", src_path)
+    validate_import_own("src.parsers", "isoforms_parser", src_path)
+    validate_import_own("src.parsers", "FLcount_parser", src_path)
+    validate_import_own("src.parsers", "expression_parser", src_path)
 
 
 def test_import_qc_classes():
-    validate_import_own("src.qc_classes", "genePredReader", sys.path[0])
-    validate_import_own("src.qc_classes", "myQueryProteins", sys.path[0])
-    validate_import_own("src.qc_classes", "myQueryTranscripts", sys.path[0])
-    validate_import_own("src.qc_classes", "CAGEPeak", sys.path[0])
-    validate_import_own("src.qc_classes", "PolyAPeak", sys.path[0])
+    validate_import_own("src.qc_classes", "genePredReader", src_path)
+    validate_import_own("src.qc_classes", "myQueryProteins", src_path)
+    validate_import_own("src.qc_classes", "myQueryTranscripts", src_path)
+    validate_import_own("src.qc_classes", "CAGEPeak", src_path)
+    validate_import_own("src.qc_classes", "PolyAPeak", src_path)
 
 
 def test_import_qc_pipeline():
-    validate_import_own("src.qc_pipeline", "run", sys.path[0])
+    validate_import_own("src.qc_pipeline", "run", src_path)
 
 
 def test_import_utils():
-    validate_import_own("src.utils", "find_polyA_motif", sys.path[0])
-    validate_import_own("src.utils", "mergeDict", sys.path[0])
-    validate_import_own("src.utils", "flatten", sys.path[0])
-    validate_import_own("src.utils", "pstdev", sys.path[0])
+    validate_import_own("src.utils", "find_polyA_motif", src_path)
+    validate_import_own("src.utils", "mergeDict", src_path)
+    validate_import_own("src.utils", "flatten", src_path)
+    validate_import_own("src.utils", "pstdev", src_path)
 
 
 def test_import_utilities():
-    validate_import_own("src.utilities.cupcake.io.GFF", "collapseGFFReader", sys.path[0])
-    validate_import_own("src.utilities.cupcake.io.GFF", "write_collapseGFF_format", sys.path[0])
-    validate_import_own("src.utilities.cupcake.sequence.BED", "LazyBEDPointReader", sys.path[0])
-    validate_import_own("src.utilities.cupcake.sequence.err_correct_w_genome", "err_correct", sys.path[0])
-    validate_import_own("src.utilities.cupcake.sequence.sam_to_gff3", "convert_sam_to_gff3", sys.path[0])
-    validate_import_own("src.utilities.cupcake.sequence.STAR", "STARJunctionReader", sys.path[0])
-    validate_import_own("src.utilities.cupcake.tofu.compare_junctions", "compare_junctions", sys.path[0])
-    validate_import_own("src.utilities.short_reads", "get_bam_header", sys.path[0])
-    validate_import_own("src.utilities.short_reads", "get_ratio_TSS", sys.path[0])
-    validate_import_own("src.utilities.short_reads", "get_TSS_bed", sys.path[0])
-    validate_import_own("src.utilities.short_reads", "star", sys.path[0])
+    validate_import_own("src.utilities.cupcake.io.GFF", "collapseGFFReader", src_path)
+    validate_import_own("src.utilities.cupcake.io.GFF", "write_collapseGFF_format", src_path)
+    validate_import_own("src.utilities.cupcake.sequence.BED", "LazyBEDPointReader", src_path)
+    validate_import_own("src.utilities.cupcake.sequence.err_correct_w_genome", "err_correct", src_path)
+    validate_import_own("src.utilities.cupcake.sequence.sam_to_gff3", "convert_sam_to_gff3", src_path)
+    validate_import_own("src.utilities.cupcake.sequence.STAR", "STARJunctionReader", src_path)
+    validate_import_own("src.utilities.cupcake.tofu.compare_junctions", "compare_junctions", src_path)
+    validate_import_own("src.utilities.short_reads", "get_bam_header", src_path)
+    validate_import_own("src.utilities.short_reads", "get_ratio_TSS", src_path)
+    validate_import_own("src.utilities.short_reads", "get_TSS_bed", src_path)
+    validate_import_own("src.utilities.short_reads", "star", src_path)
 
 def test_import_statistics():
     validate_import("statistics", "mean")
