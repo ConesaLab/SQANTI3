@@ -13,28 +13,6 @@ from src.qc_argparse import qc_argparse, args_validation
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
-# TODO: Change import errors to propper logging
-# try:
-#     from Bio import SeqIO
-# except ImportError:
-#     print(f"ImportError: {e}", file=sys.stderr)
-#     print("Unable to import Biopython! Please make sure Biopython is installed.", file=sys.stderr)
-#     sys.exit(1)
-
-# try:
-#     from bx.intervals import Interval, IntervalTree
-# except ImportError:
-#     print(f"ImportError: {e}", file=sys.stderr)
-#     print("Unable to import bx-python! Please make sure bx-python is installed.", file=sys.stderr)
-#     sys.exit(1)
-
-# try:
-#     from BCBio import GFF as BCBio_GFF
-# except ImportError:
-#     print(f"ImportError: {e}", file=sys.stderr)
-#     print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
-#     sys.exit(1)
-
 
 def main():
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 
@@ -46,13 +46,13 @@ class genePredRecord(object):
     strand : str
         Strand information ('+' or '-').
     txStart : int
-        1-based transcription start position.
+        0-based transcription start position.
     txEnd : int
-        1-based transcription end position.
+        0-based transcription end position.
     cdsStart : int
-        1-based coding sequence start position.
+        0-based coding sequence start position.
     cdsEnd : int
-        1-based coding sequence end position.
+        0-based coding sequence end position.
     exonCount : int
         Number of exons.
     exonStarts : list of int
@@ -80,6 +80,10 @@ class genePredRecord(object):
         Returns the donor-acceptor splice site pattern for the i-th junction.
         """
     def __init__(self, id, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene=None):
+        # Validate inputs
+        self._validate_inputs(txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds)
+
+        
         self.id = id
         self.chrom = chrom
         self.strand = strand
@@ -102,6 +106,28 @@ class genePredRecord(object):
         # junctions are stored (1-based last base of prev exon, 1-based first base of next exon)
         self.junctions = [(self.exonEnds[i],self.exonStarts[i+1]) for i in range(self.exonCount-1)]
 
+    def _validate_inputs(self, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds):
+        if txStart < 0 or txEnd < 0 or cdsStart < 0 or cdsEnd < 0:
+            raise ValueError("Transcription and coding start/end positions must be non-negative.")
+
+        if txStart >= txEnd:
+            raise ValueError("Transcription start must be less than transcription end.")
+
+        if cdsStart >= cdsEnd:
+            raise ValueError("CDS start must be less than CDS end.")
+
+        if exonCount <= 0:
+            raise ValueError("Exon count must be a positive integer.")
+
+        if len(exonStarts) != exonCount or len(exonEnds) != exonCount:
+            raise ValueError("Exon starts and ends must match the exon count.")
+
+        for start, end in zip(exonStarts, exonEnds):
+            if start >= end:
+                raise ValueError("Exon start positions must be less than exon end positions.")
+
+        if txStart > min(exonStarts) or txEnd < max(exonEnds):
+            raise ValueError("Transcript boundaries must encompass all exons.")
     @property
     def segments(self):
         return self.exons
@@ -164,6 +190,8 @@ class myQueryTranscripts:
                  polyA_motif='NA', polyA_dist='NA',
                  polyA_motif_found='NA', ratio_TSS='NA'):
 
+        self._validate_inputs(id, num_exons, length, str_class,CDS_start,CDS_end)
+
         self.id  = id
         self.tss_diff    = tss_diff   # distance to TSS of best matching ref
         self.tts_diff    = tts_diff   # distance to TTS of best matching ref
@@ -218,6 +246,15 @@ class myQueryTranscripts:
         self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
         self.ratio_TSS = ratio_TSS
 
+    def _validate_inputs(self,id, num_exons, length, str_class,CDS_start,CDS_end):
+        if type(id) != str:
+            raise ValueError("ID must be provided in string format.")
+        if id == "":
+            raise ValueError("ID must be a non-empty string.")
+        if CDS_start > CDS_end:
+            raise ValueError("CDS start must be less than CDS end.")
+        
+
     def get_total_diff(self):
         return abs(self.tss_diff)+abs(self.tts_diff)
 
@@ -230,7 +267,7 @@ class myQueryTranscripts:
         self.refExons = refExons
 
     def geneName(self):
-        geneName = "_".join(set(self.genes))
+        geneName = "_".join(sorted(set(self.genes))) # If it is not sorted, the order will be random
         return geneName
 
     def ratioExp(self):
@@ -278,7 +315,7 @@ class myQueryTranscripts:
          'length': self.length,
          'exons': self.num_exons,
          'structural_category': self.str_class,
-         'associated_gene': "_".join(set(self.genes)),
+         'associated_gene': self.geneName(),
          'associated_transcript': "_".join(set(self.transcripts)),
          'ref_length': self.refLen,
          'ref_exons': self.refExons,
@@ -328,6 +365,8 @@ class myQueryTranscripts:
 class myQueryProteins:
 
     def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
+        self._validate_input(cds_start, cds_end, orf_length)
+        
         self.orf_length  = orf_length
         self.cds_start   = cds_start       # 1-based start on transcript
         self.cds_end     = cds_end         # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
@@ -336,6 +375,13 @@ class myQueryProteins:
         self.orf_seq     = orf_seq
         self.proteinID   = proteinID
 
+    def _validate_input(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
+        if cds_start > cds_end:
+            raise ValueError("CDS start must be less than CDS end.")
+        if orf_length < 0:
+            raise ValueError("ORF length must be non-negative.")
+        if cds_start < 0 or cds_end < 0:
+            raise ValueError("CDS start and end must be non-negative.")
 
 
 
@@ -365,9 +411,15 @@ class CAGEPeak:
 
         self.read_bed()
 
+    def _validate_input(self, cage_bed_filename):
+        if not cage_bed_filename.endswith('.bed'):
+            raise ValueError("CAGE peak file must be in BED format.")
+        if not os.path.exists(cage_bed_filename):
+            raise ValueError("CAGE peak file does not exist.")
+        
     def read_bed(self):
         for line in open(self.cage_bed_filename):
-            raw = line.strip().split()
+            raw = line.strip().split('\t')
             chrom = raw[0]
             start0 = int(raw[1])
             end1 = int(raw[2])
@@ -377,34 +429,29 @@ class CAGEPeak:
 
     def find(self, chrom, strand, query, search_window=10000):
         """
-        :param start0: 0-based start of the 5' end to query
-        :return: <True/False falls within a cage peak>, <nearest dist to TSS>
-        dist to TSS is 0 if right on spot
-        dist to TSS is + if downstream, - if upstream (watch for strand!!!)
+        :param chrom: Chromosome to query
+        :param strand: Strand of the query ('+' or '-')
+        :param query: Position to query
+        :param search_window: Window around the query position to search for peaks
+        :return: <True/False falls within a cage peak>, <nearest distance to TSS>
+        If the distance is negative, the query is upstream of the TSS.
+        If the query is outside of the peak upstream of it, the distance is NA
         """
         within_peak, dist_peak = 'FALSE', 'NA'
-        for (tss0,start0,end1) in self.cage_peaks[(chrom,strand)].find(query-search_window, query+search_window):
- # Skip those cage peaks that are downstream the detected TSS because degradation just make the transcript shorter
-            if strand=='+' and start0>int(query) and end1>int(query):
-                continue
-            if strand=='-' and start0<int(query) and end1<int(query):
-                continue
-##
-            if strand == "+":
-                within_out = (start0<=query<end1)
-            if strand == "-":
-                within_out = (start0<query<=end1)
-            if within_out:
-                w = 'TRUE'
-            else:
-                w = 'FALSE'
+        peaks = self.cage_peaks[(chrom, strand)].find(query - search_window, query + search_window)
 
-            if not within_peak=='TRUE':
-                within_peak, dist_peak = w, (query - tss0) * (-1 if strand=='-' else +1)
-            else:
-                d = (query - tss0) * (-1 if strand=='-' else +1)
-                if abs(d) < abs(dist_peak):
-                    within_peak, dist_peak = w, d
+        for tss0, start0, end1 in peaks:
+            # Checks if the TSS is upstream of a peak
+            if (strand == '+' and start0 > query and end1 > query) or \
+            (strand == '-' and start0 < query and end1 < query):
+                continue
+            # Checks if the query is within the peak and the distance to the TSS
+            within_out = start0 <= query < end1 if strand == '+' else start0 < query <= end1
+            distance = (tss0 - query) * (-1 if strand == '-' else 1)
+
+            if within_peak == 'FALSE' or abs(distance) < abs(dist_peak):
+                within_peak, dist_peak = 'TRUE' if within_out else 'FALSE', distance
+
         return within_peak, dist_peak
 
 class PolyAPeak:
@@ -444,21 +491,25 @@ class PolyAPeak:
 
     def find(self, chrom, strand, query, search_window=100):
         """
-        :param start0: 0-based start of the 5' end to query
-        :return: <True/False falls within some distance to polyA>, distance to closest
-        + if downstream, - if upstream (watch for strand!!!)
+        :param chrom: Chromosome to query
+        :param strand: Strand of the query ('+' or '-')
+        :param query: Position to query
+        :param search_window: Window around the query position to search for peaks
+        :return: <True/False falls within some distance to polyA>, <distance to closest>
+        - if downstream, + if upstream (watch for strand!!!)
         """
         assert strand in ('+', '-')
-        hits = self.polya_peaks[(chrom,strand)].find(query-search_window, query+search_window)
-        if len(hits) == 0:
-            return "FALSE", None
-        else:
-            s0, e1 = hits[0]
-            min_dist = query - s0
-            for s0, e1 in hits[1:]:
-                d = query - s0
-                if abs(d) < abs(min_dist):
-                    min_dist = d
-            if strand == '-':
-                min_dist = -min_dist
-            return "TRUE", min_dist
+        within_polyA, dist_polyA = 'FALSE', 'NA'
+        hits = self.polya_peaks[(chrom, strand)].find(query - search_window, query + search_window)
+
+        for start0, end1 in hits:
+            # Checks if the query is within the tail and the distance to the 5'
+            within_out = start0 <= query < end1 if strand == '+' else start0 < query <= end1
+            distance = start0 - query if strand == '+' else query - end1
+
+            if within_out:
+                within_polyA = 'TRUE'
+            if dist_polyA == 'NA' or abs(distance) < abs(dist_polyA):
+                dist_polyA = distance
+
+        return within_polyA, dist_polyA
