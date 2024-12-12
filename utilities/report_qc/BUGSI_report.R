@@ -18,6 +18,11 @@ utilities.path <- args[4]
 # transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_ont.gtf'
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
+# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_pacbio/WTC11_cdna_pacbio_classification.txt'
+# bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.gtf'
+# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_pacbio.gtf'
+# utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
+
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
 output_directory <- dirname(class.file)
 output_name <- basename(report.prefix)
@@ -26,6 +31,7 @@ html.report.file <- paste0(output_name, "_BUGSI_report.html")
 # Load necessary libraries
 message("Loading necessary libraries...")
 suppressPackageStartupMessages({
+  library(ggplot2)
   library(rmarkdown)
   library(tidyr)
   library(dplyr)
@@ -293,8 +299,161 @@ params <- list(
   transcript_gtf_df = transcript_gtf_df,
   associated_genes_list = associated_genes_list
 )
+####################################################################
+# BUGSI: SQANTI strutural category
+####################################################################
+# Filter BUGSI_only to keep transcripts that match BUGSI genes
+# BUGSI_only should already be defined as BUGSI_transcripts.
+BUGSI_only <- BUGSI_transcripts
 
+# Rename subcategories to match your palettes
+BUGSI_only <- BUGSI_only %>%
+  mutate(subcategory = case_when(
+    subcategory == "reference_match" ~ "Reference match",
+    subcategory == "alternative_3end" ~ "Alternative 3'end",
+    subcategory == "alternative_5end" ~ "Alternative 5'end",
+    subcategory == "alternative_3end5end" ~ "Alternative 3'5'end",
+    TRUE ~ subcategory
+  ))
+
+# Define big categories:
+# a (TP): FSM + Reference match = "RM"
+# b (PTP): FSM not RM (Alternative ends) + ISM
+# c (FP): NIC, NNC, Genic Intron, Genic Genomic, Antisense, Fusion, Intergenic
+# d (FN): Missing genes
+
+BUGSI_only <- BUGSI_only %>%
+  mutate(
+    big_category = case_when(
+      structural_category == "full-splice_match" & subcategory == "Reference match" ~ "TP", 
+      
+      # b: PTP
+      (structural_category == "full-splice_match" & subcategory %in% c("Alternative 3'end", 
+                                                                       "Alternative 5'end",
+                                                                       "Alternative 3'5'end")) ~ "PTP",
+      structural_category == "incomplete-splice_match" ~ "PTP",
+      
+      # c: FP
+      structural_category %in% c("novel_in_catalog","novel_not_in_catalog","genic_intron",
+                                 "genic","antisense","fusion","intergenic") ~ "FP",
+      
+      TRUE ~ NA_character_
+    )
+  )
+
+# final_label for plotting
+BUGSI_only <- BUGSI_only %>%
+  mutate(final_label = case_when(
+    big_category == "TP" ~ "RM",
+    big_category == "PTP" & subcategory == "Alternative 3'end" ~ "Alternative 3'end",
+    big_category == "PTP" & subcategory == "Alternative 5'end" ~ "Alternative 5'end",
+    big_category == "PTP" & subcategory == "Alternative 3'5'end" ~ "Alternative 3'5'end",
+    big_category == "PTP" & structural_category == "incomplete-splice_match" ~ "ISM",
+    big_category == "FP" & structural_category == "novel_in_catalog" ~ "NIC",
+    big_category == "FP" & structural_category == "novel_not_in_catalog" ~ "NNC",
+    big_category == "FP" & structural_category == "genic_intron" ~ "Genic Intron",
+    big_category == "FP" & structural_category == "genic" ~ "Genic Genomic",
+    big_category == "FP" & structural_category == "antisense" ~ "Antisense",
+    big_category == "FP" & structural_category == "fusion" ~ "Fusion",
+    big_category == "FP" & structural_category == "intergenic" ~ "Intergenic",
+    TRUE ~ NA_character_
+  ))
+
+# Create data frame for FN
+missing_df <- data.frame(
+  final_label = "Missing",
+  big_category = "FN",
+  count = nrow(FN)
+)
+
+# Summarize BUGSI_only counts
+plot_data <- BUGSI_only %>%
+  filter(!is.na(final_label)) %>%
+  group_by(big_category, final_label) %>%
+  summarise(count = n(), .groups="drop")
+
+# Add missing data
+plot_data <- bind_rows(plot_data, missing_df)
+
+# Calculate percentages
+plot_data <- plot_data %>%
+  mutate(percentage = count/sum(count)*100)
+
+# Palettes
+cat.palette <- c("FSM"="#6BAED6", "ISM"="#FC8D59", "NIC"="#78C679", 
+                 "NNC"="#EE6A50", "Genic Genomic"="#969696", "Antisense"="#66C2A4", 
+                 "Fusion"="goldenrod1","Intergenic"="darksalmon", "Genic Intron"="#41B6C4")
+
+subcat.palette <- c("Alternative 3'end"='#02314d',
+                    "Alternative 3'5'end"='#0e5a87',
+                    "Alternative 5'end"='#7ccdfc',
+                    "Reference match"='#c4e1f2',
+                    "3' fragment"='#c4531d',
+                    "Internal fragment"='#e37744',  
+                    "5' fragment"='#e0936e', 
+                    "Comb. of annot. junctions"='#014d02',
+                    "Comb. of annot. splice sites"='#379637',  
+                    "Intron retention"='#81eb82', 
+                    "Not comb. of annot. junctions"='#6ec091',
+                    "Mono-exon by intron ret."='#4aaa72',
+                    "At least 1 annot. don./accept."='#32734d',
+                    "Mono-exon"='#cec2d2',
+                    "Multi-exon"='#876a91')
+
+# Map final_label to colors:
+# a: RM (use "Reference match" color)
+# b: Alternative ends (from subcat.palette), ISM (cat.palette["ISM"])
+# c: NIC, NNC, Genic Intron, Genic Genomic, Antisense, Fusion, Intergenic (from cat.palette)
+# d: Missing (grey60)
+
+final_colors <- c(
+  "RM" = subcat.palette[["Reference match"]],
+  "Alternative 3'end" = subcat.palette[["Alternative 3'end"]],
+  "Alternative 5'end" = subcat.palette[["Alternative 5'end"]],
+  "Alternative 3'5'end" = subcat.palette[["Alternative 3'5'end"]],
+  "ISM" = cat.palette[["ISM"]],
+  "NIC" = cat.palette[["NIC"]],
+  "NNC" = cat.palette[["NNC"]],
+  "Genic Intron" = cat.palette[["Genic Intron"]],
+  "Genic Genomic" = cat.palette[["Genic Genomic"]],
+  "Antisense" = cat.palette[["Antisense"]],
+  "Fusion" = cat.palette[["Fusion"]],
+  "Intergenic" = cat.palette[["Intergenic"]],
+  "Missing" = "grey60"
+)
+
+
+# Set factor levels
+plot_data$big_category <- factor(plot_data$big_category, levels=c("TP","PTP","FP","FN"))
+plot_data$final_label <- factor(plot_data$final_label,
+                                levels = c("RM",
+                                           "Alternative 3'end","Alternative 5'end","Alternative 3'5'end","ISM",
+                                           "NIC","NNC","Genic Intron","Genic Genomic","Antisense","Fusion","Intergenic",
+                                           "Missing"))
+
+# Theme
+mytheme <- theme_classic(base_family = "Helvetica") +
+  theme(axis.line.x = element_line(color="black", size = 0.4),
+        axis.line.y = element_line(color="black", size = 0.4),
+        axis.title.x = element_text(size=13),
+        axis.text.x  = element_text(size=12, angle=45, hjust=1),
+        axis.title.y = element_text(size=13),
+        axis.text.y  = element_text(vjust=0.5, size=12),
+        legend.position="none",
+        plot.title = element_text(lineheight=.4, size=15, hjust = 0.5))
+
+# Plot
+p_bugsi_complex <- ggplot(plot_data, aes(x = final_label, y = percentage, fill = final_label)) +
+  geom_bar(stat="identity", color="black", size=0.3, width=0.7) +
+  xlab(NULL) +
+  facet_grid(~big_category, scales="free_x", space="free") +
+  scale_fill_manual(values = final_colors) +
+  scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
+  mytheme
+########################################################
 # Generate IGV plots for each gene
+########################################################
+
 message("Generating IGV plots for each gene...")
 
 # Create a directory to save the plots

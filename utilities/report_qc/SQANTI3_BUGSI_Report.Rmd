@@ -46,6 +46,7 @@ plots_dir <- file.path(output_directory, "igv_plots")
 ```
 
 ## Summary {.tabset .tabset-fade}
+
 ### Data Matrix
 
 ```{r echo=FALSE}
@@ -96,7 +97,6 @@ datatable(
 **Genic Intron:** Isoform entirely within an annotated intron.
 
 :::
-
 
 ### Evaluation Metrics
 
@@ -231,6 +231,37 @@ interactive_radar_plot <- plot_ly(
 
 # Display the plot
 interactive_radar_plot
+```
+
+### Structural Category
+
+```{r echo=FALSE, message=FALSE}
+# Convert ggplot to ggplotly
+p_plotly <- ggplotly(p_bugsi_complex) %>%
+  layout(
+    margin = list(
+      l = 50,  # Left margin
+      r = 50,  # Right margin
+      t = 50,  # Top margin
+      b = 160  # Increased bottom margin to fully accommodate annotation and rotated labels
+    ),
+    annotations = list(
+      list(
+        x = 0.5,  # Center of the plot horizontally
+        y = -0.5,  # Move annotation well below the plot area
+        text = "<span style='font-style:italic; color:grey;'> Figure 2: BUGSI transcripts distribution in SQANTI3 Structural Categories. </span>",
+        showarrow = FALSE,
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "top",
+        font = list(color = "grey", size = 12)
+      )
+    )
+  )
+
+# Display the final plot
+p_plotly
 ```
 
 ## Decision Matrix {.tabset .tabset-fade}
