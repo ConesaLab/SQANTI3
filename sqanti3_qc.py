@@ -12,7 +12,7 @@ import shutil
 from src.qc_argparse import qc_argparse, args_validation
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
-
+from src.config import __version__
 # TODO: Change import errors to propper logging
 # try:
 #     from Bio import SeqIO
