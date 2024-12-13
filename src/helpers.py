@@ -14,7 +14,7 @@ from .utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from .config import seqid_rex1, seqid_rex2, seqid_fusion
-from .commands import RSCRIPTPATH, RSCRIPT_REPORT, utilitiesPath, GMAP_CMD, MINIMAP2_CMD, DESALT_CMD, ULTRA_CMD, GMST_CMD, GFFREAD_PROG
+from .commands import GMAP_CMD, MINIMAP2_CMD, DESALT_CMD, ULTRA_CMD, GMST_CMD, GFFREAD_PROG
 from .qc_classes import myQueryProteins
 
 ### Environment manipulation functions ###
@@ -26,7 +26,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
 
     to just being "PB.1.1"
 
-    :param input_fasta: Could be either fasta or fastq, autodetect.
+    :param input_fasta: Could be either fasta or fastq, autodetect. Can be gzipped.
     :return: output fasta with the cleaned up sequence ID, is_fusion flag
     """
     type = 'fasta'
@@ -38,7 +38,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     open_function = gzip.open if input_fasta.endswith('.gz') else open
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(input_fasta[:input_fasta.rfind('.')]+'.renamed.fasta', mode='wt')
+    f = open(input_fasta[:input_fasta.rfind('.fast')]+'.renamed.fasta', mode='wt')
     for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
         m1 = seqid_rex1.match(r.id)
         m2 = seqid_rex2.match(r.id)
@@ -375,7 +375,7 @@ def correctionPlusORFpred(args, genome_dict, badstrandGTF):
         os.makedirs(gmst_dir) 
 
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
-    gmst_rex = re.compile('(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
+    gmst_rex = re.compile(r'(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
     orfDict = {}  # GMST seq id --> myQueryProteins object
     if args.skipORF:
         print("WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!", file=sys.stderr)

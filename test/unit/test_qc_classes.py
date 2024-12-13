@@ -1,6 +1,6 @@
 import pytest, sys, os
 from unittest.mock import mock_open, patch,MagicMock
-from bx.intervals import Interval
+from bx.intervals import Interval # type: ignore
 from collections import defaultdict
 
 # If the path to where the main sqanti3 directory is not in the system path, our modules wont be loaded

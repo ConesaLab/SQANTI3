@@ -27,10 +27,18 @@ def pstdev(data):
     return math.sqrt(var)  # standard deviation
 
 def find_polyA_motif(genome_seq, polyA_motif_list):
-    """
-    :param genome_seq: genomic sequence to search polyA motifs from, must already be oriented
-    :param polyA_motif_list: ranked list of motifs to find, report the top one found
-    :return: polyA_motif, polyA_dist (how many bases upstream is this found)
+    """    
+    Searches for the first occurrence of any polyA motif from a ranked list within a given genomic sequence.
+
+    Args:
+        genome_seq (str): The genomic sequence to search for polyA motifs. The sequence must already be oriented.
+        polyA_motif_list (list of str): A ranked list of motifs to search for. The function will report the first motif found.
+
+    Returns:
+        tuple: A tuple containing:
+            - polyA_motif (str): The first polyA motif found in the sequence. If no motif is found, returns 'NA'.
+            - polyA_dist (int or str): The distance (in bases) upstream from the end of the sequence where the motif is found. If no motif is found, returns 'NA'.
+            - found (str): 'TRUE' if a motif is found, otherwise 'FALSE'.
     """
     for motif in polyA_motif_list:
         i = genome_seq.find(motif)

@@ -1,0 +1,31 @@
+Write arguments to /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22.params.txt...
+**** Running SQANTI3...
+**** Parsing provided files....
+Reading genome fasta /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta....
+Skipping aligning of sequences because GTF file was provided.
+
+Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).
+**** Predicting ORF sequences...
+**** Parsing Reference Transcriptome....
+10736283 10736283 -
+Traceback (most recent call last):
+  File "/home/pabloati/Programs/sqanti3/sqanti3_qc.py", line 138, in <module>
+    main()
+  File "/home/pabloati/Programs/sqanti3/sqanti3_qc.py", line 122, in main
+    run(args)
+  File "/home/pabloati/Programs/sqanti3/src/qc_pipeline.py", line 40, in run
+    refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(args, list(genome_dict.keys()))
+                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pabloati/Programs/sqanti3/src/parsers.py", line 54, in reference_parser
+    for r in genePredReader(referenceFiles):
+  File "/home/pabloati/Programs/sqanti3/src/qc_classes.py", line 34, in __next__
+    return genePredRecord.from_line(line)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/pabloati/Programs/sqanti3/src/qc_classes.py", line 140, in from_line
+    return cls(id=raw[0],
+           ^^^^^^^^^^^^^^
+  File "/home/pabloati/Programs/sqanti3/src/qc_classes.py", line 84, in __init__
+    self._validate_inputs(txStart, txEnd, cdsStart, cdsEnd, strand, exonCount, exonStarts, exonEnds)
+  File "/home/pabloati/Programs/sqanti3/src/qc_classes.py", line 118, in _validate_inputs
+    raise ValueError("CDS start must be less than CDS end.")
+ValueError: CDS start must be less than CDS end.

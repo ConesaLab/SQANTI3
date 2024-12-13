@@ -81,7 +81,7 @@ class genePredRecord(object):
         """
     def __init__(self, id, chrom, strand, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene=None):
         # Validate inputs
-        self._validate_inputs(txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds)
+        self._validate_inputs(txStart, txEnd, cdsStart, cdsEnd, strand, exonCount, exonStarts, exonEnds)
 
         
         self.id = id
@@ -106,14 +106,15 @@ class genePredRecord(object):
         # junctions are stored (1-based last base of prev exon, 1-based first base of next exon)
         self.junctions = [(self.exonEnds[i],self.exonStarts[i+1]) for i in range(self.exonCount-1)]
 
-    def _validate_inputs(self, txStart, txEnd, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds):
+    def _validate_inputs(self, txStart, txEnd, cdsStart, cdsEnd,strand, exonCount, exonStarts, exonEnds):
+        print(cdsStart, cdsEnd,strand)
         if txStart < 0 or txEnd < 0 or cdsStart < 0 or cdsEnd < 0:
             raise ValueError("Transcription and coding start/end positions must be non-negative.")
 
         if txStart >= txEnd:
             raise ValueError("Transcription start must be less than transcription end.")
 
-        if cdsStart >= cdsEnd:
+        if (strand == "+" and cdsStart >= cdsEnd) or (strand == "-" and cdsStart <= cdsEnd):
             raise ValueError("CDS start must be less than CDS end.")
 
         if exonCount <= 0:
@@ -190,7 +191,7 @@ class myQueryTranscripts:
                  polyA_motif='NA', polyA_dist='NA',
                  polyA_motif_found='NA', ratio_TSS='NA'):
 
-        self._validate_inputs(id, num_exons, length, str_class,CDS_start,CDS_end)
+        self._validate_inputs(id,strand,CDS_start,CDS_end)
 
         self.id  = id
         self.tss_diff    = tss_diff   # distance to TSS of best matching ref
@@ -246,13 +247,13 @@ class myQueryTranscripts:
         self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
         self.ratio_TSS = ratio_TSS
 
-    def _validate_inputs(self,id, num_exons, length, str_class,CDS_start,CDS_end):
+    def _validate_inputs(self,id, strand,CDS_start,CDS_end):
         if type(id) != str:
             raise ValueError("ID must be provided in string format.")
         if id == "":
             raise ValueError("ID must be a non-empty string.")
-        if CDS_start > CDS_end:
-            raise ValueError("CDS start must be less than CDS end.")
+        if (strand == "+" and CDS_start > CDS_end ) or (strand == "-" and CDS_start < CDS_end):
+            raise ValueError("CDS start must be less than CDS end in the + strand, and greater in the - strand.")
         
 
     def get_total_diff(self):

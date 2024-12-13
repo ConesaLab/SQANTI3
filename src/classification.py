@@ -5,7 +5,7 @@ import bisect
 import itertools
 from csv import DictWriter
 from collections import defaultdict, namedtuple
-from bx.intervals import IntervalTree
+from bx.intervals import IntervalTree # type: ignore
 
 from .utilities.cupcake.tofu.compare_junctions import compare_junctions
 from .utilities.cupcake.sequence.BED import LazyBEDPointReader
@@ -16,13 +16,17 @@ from .helpers import write_junctionInfo, get_isoform_hits_name
 from .config import FIELDS_JUNC, FIELDS_CLASS, seqid_fusion
 from .parsers import get_fusion_component, STARcov_parser
 from .utils import find_polyA_motif
+from .classification_utils import (
+    calc_exon_overlap, calc_splicesite_agreement, get_diff_tss_tts,
+    calc_overlap, categorize_incomplete_matches, get_gene_diff_tss_tts
+)
 
 
 
 def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, trec, genome_dict, nPolyA):
     """
     This function determines if the isoform hits a known splice site, categorizing it as either
-    FSM or ISM
+    FSM or ISM.
     :param refs_1exon_by_chr: dict of single exon references (chr -> IntervalTree)
     :param refs_exons_by_chr: dict of multi exon references (chr -> IntervalTree)
     :param trec: id record (genePredRecord) to be compared against reference
@@ -30,140 +34,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     :param nPolyA: window size to look for polyA
     :return: myQueryTranscripts object that indicates the best reference hit
     """
-    #TODO: Move the functions to their onw file (transcriptKnowSpliceSites_functions.py)
-    def calc_overlap(s1, e1, s2, e2):
-        """returns the overlap between two intervals"""
-        if s1=='NA' or s2=='NA': return 0
-        if s1 > s2:
-            s1, e1, s2, e2 = s2, e2, s1, e1
-        return max(0, min(e1,e2)-max(s1,s2))
-
-    def gene_overlap(ref1, ref2): # TODO: It looks like this function is not being used anymore
-        if ref1==ref2: return True  # same gene, diff isoforms
-        # return True if the two reference genes overlap
-        s1, e1 = min(start_ends_by_gene[ref1]['begin']), max(start_ends_by_gene[ref1]['end'])
-        s2, e2 = min(start_ends_by_gene[ref2]['begin']), max(start_ends_by_gene[ref2]['end'])
-        if s1 <= s2:
-            return e1 <= s2
-        else:
-            return e2 <= s1
-
-    def calc_splicesite_agreement(query_exons, ref_exons):
-        """Determines the number of splice sites that agree between query and reference"""
-        q_sites = {}
-        for e in query_exons:
-            q_sites[e.start] = 0
-            q_sites[e.end] = 0
-        for e in ref_exons:
-            if e.start in q_sites: q_sites[e.start] = 1
-            if e.end in q_sites: q_sites[e.end] = 1
-        return sum(q_sites.values())
-
-    def calc_exon_overlap(query_exons, ref_exons):
-        """Determines the number of bases that overlap between query and reference"""
-        q_bases = {}
-        for e in query_exons:
-            for b in range(e.start, e.end): q_bases[b] = 0
-
-        for e in ref_exons:
-            for b in range(e.start, e.end):
-                if b in q_bases: q_bases[b] = 1
-        return sum(q_bases.values())
-
-    def get_diff_tss_tts(trec, ref):
-        """
-        Calculate the differences between the Transcript Start Site (TSS) and 
-        Transcript Termination Site (TTS) of two transcripts.
-
-        For positive strand transcripts:
-        - TSS is the difference between the reference's start and the transcript's start.
-        - TTS is the difference between the transcript's end and the reference's end.
-        Positive values indicate elongation, negative values indicate shortening.
-
-        For negative strand transcripts:
-        - The start and end are reversed (i.e., `start` corresponds to the `end` in positive strand, and vice versa).
-        - TTS is calculated as the difference between the reference's start and the transcript's start.
-        - TSS is the difference between the transcript's end and the reference's end.
-        Again, positive values indicate elongation, negative values indicate shortening.
-
-        Parameters:
-        - trec: The transcript object representing the query transcript.
-        - ref: The reference transcript object.
-
-        Returns:
-        - diff_tss (int): Difference in the transcript start sites (positive for elongation, negative for shortening).
-        - diff_tts (int): Difference in the transcript termination sites (positive for elongation, negative for shortening).
-        """
-        if trec.strand == '+':
-            diff_tss = ref.txStart - trec.txStart
-            diff_tts = trec.txEnd  - ref.txEnd
-        else:
-            diff_tts = ref.txStart - trec.txStart
-            diff_tss = trec.txEnd  - ref.txEnd
-        return diff_tss, diff_tts
-
-
-    def get_gene_diff_tss_tts(isoform_hit):
-        """
-        Calculate the nearest transcription start site (TSS) and transcription termination site (TTS) 
-        differences for a given isoform hit relative to all isoforms of the gene.
-
-        Args:
-            isoform_hit: An object representing the isoform hit, which contains information about 
-                         the genes it hits and their start/end sites.
-
-        Modifies:
-            isoform_hit: Updates the `tss_gene_diff` and `tts_gene_diff` attributes with the nearest 
-                         TSS and TTS differences, respectively. If no valid difference is found, 
-                         the attribute is set to 'NA'.
-        """
-        # now that we know the reference (isoform) it hits
-        # add the nearest start/end site for that gene (all isoforms of the gene)
-        nearest_start_diff, nearest_end_diff = float('inf'), float('inf')
-        for ref_gene in isoform_hit.genes:
-            for x in start_ends_by_gene[ref_gene]['begin']:
-                d =  x - trec.txStart
-                if abs(d) < abs(nearest_start_diff):
-                    nearest_start_diff = d
-            for x in start_ends_by_gene[ref_gene]['end']:
-                d = trec.txEnd - x
-                if abs(d) < abs(nearest_end_diff):
-                    nearest_end_diff = d
-
-        if trec.strand == '+':
-            isoform_hit.tss_gene_diff = nearest_start_diff if nearest_start_diff!=float('inf') else 'NA'
-            isoform_hit.tts_gene_diff = nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
-        else:
-            isoform_hit.tss_gene_diff = nearest_end_diff if nearest_start_diff!=float('inf') else 'NA'
-            isoform_hit.tts_gene_diff = nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
-
-    def categorize_incomplete_matches(trec, ref):
-        """
-        intron_retention --- at least one trec exon covers at least two adjacent ref exons
-        complete --- all junctions agree and is not IR
-        5prime_fragment --- all junctions agree but trec has less 5' exons. The isoform is a 5' fragment of the reference transcript
-        3prime_fragment --- all junctions agree but trec has less 3' exons. The isoform is a 3' fragment of the reference transcript
-        internal_fragment --- all junctions agree but trec has less 5' and 3' exons
-        """
-        # check intron retention
-        ref_exon_tree = IntervalTree()
-        for i,e in enumerate(ref.exons): ref_exon_tree.insert(e.start, e.end, i)
-        for e in trec.exons:
-            if len(ref_exon_tree.find(e.start, e.end)) > 1: # multiple ref exons covered
-                return "intron_retention"
-
-        agree_front = trec.junctions[0]==ref.junctions[0]
-        agree_end   = trec.junctions[-1]==ref.junctions[-1]
-        if agree_front:
-            if agree_end:
-                return "complete"
-            else: # front agrees, end does not
-                return ("5prime_fragment" if trec.strand=='+' else '3prime_fragment')
-        else:
-            if agree_end: # front does not agree, end agrees
-                return ("3prime_fragment" if trec.strand=='+' else '5prime_fragment')
-            else:
-                return "internal_fragment"
 
     # Transcript information for a single query id and comparison with reference.
 
@@ -463,7 +333,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                         isoform_hit.subtype = "mono-exon"
                         isoform_hit.modify(ref.id, ref.gene, diff_tss, diff_tts, ref.length, ref.exonCount)
                         # this is as good a match as it gets, we can stop the search here
-                        get_gene_diff_tss_tts(isoform_hit)
+                        get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
                         flag = True
                         return isoform_hit
                 if flag:
@@ -478,7 +348,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                             isoform_hit.subtype = "mono-exon_by_intron_retention"
                             
                             isoform_hit.modify("novel", ref.gene, 'NA', 'NA', ref.length, ref.exonCount)
-                            get_gene_diff_tss_tts(isoform_hit)
+                            get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
 
                             # return isoform_hit
 
@@ -486,7 +356,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 isoform_hit.genes.append(ref.gene)
             if isoform_hit.str_class == "novel_in_catalog":
                 return isoform_hit
-    get_gene_diff_tss_tts(isoform_hit)
+    get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
     isoform_hit.genes.sort(key=lambda x: start_ends_by_gene[x]['begin'])
     return isoform_hit
 
