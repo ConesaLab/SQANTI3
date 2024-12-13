@@ -24,9 +24,9 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
 
 # Sequence names
-seqid_rex1 = re.compile('PB\.(\d+)\.(\d+)$')
-seqid_rex2 = re.compile('PB\.(\d+)\.(\d+)\|\S+')
-seqid_fusion = re.compile("PBfusion\.(\d+)\.(\d+)\S*")
+seqid_rex1 = re.compile(r'PB\.(\d+)\.(\d+)$')
+seqid_rex2 = re.compile(r'PB\.(\d+)\.(\d+)\|\S+')
+seqid_fusion = re.compile(r'PBfusion\.(\d+)\.(\d+)\S*')
 
 EXP_KALLISTO_HEADERS = ['target_id', 'length', 'eff_length', 'est_counts', 'tpm']
 EXP_RSEM_HEADERS = ['transcript_id', 'length', 'effective_length', 'expected_count', 'TPM']
