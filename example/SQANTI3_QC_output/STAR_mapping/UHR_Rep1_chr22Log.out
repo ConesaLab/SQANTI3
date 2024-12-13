@@ -1,0 +1,81 @@
+STAR version=2.7.11b
+STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
+##### Command Line:
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/ --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
+##### Initial USER parameters from Command Line:
+outFileNamePrefix                 /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22
+###### All USER parameters from Command Line:
+runThreadN                    4     ~RE-DEFINED
+genomeDir                     /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
+readFilesIn                   example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz        ~RE-DEFINED
+outFileNamePrefix             /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22     ~RE-DEFINED
+alignSJoverhangMin            8     ~RE-DEFINED
+alignSJDBoverhangMin          1     ~RE-DEFINED
+outFilterType                 BySJout     ~RE-DEFINED
+outSAMunmapped                Within        ~RE-DEFINED
+outFilterMultimapNmax         20     ~RE-DEFINED
+outFilterMismatchNoverLmax    0.04     ~RE-DEFINED
+outFilterMismatchNmax         999     ~RE-DEFINED
+alignIntronMin                20     ~RE-DEFINED
+alignIntronMax                1000000     ~RE-DEFINED
+alignMatesGapMax              1000000     ~RE-DEFINED
+sjdbScore                     1     ~RE-DEFINED
+genomeLoad                    NoSharedMemory     ~RE-DEFINED
+outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
+twopassMode                   Basic     ~RE-DEFINED
+##### Finished reading parameters from all sources
+
+##### Final user re-defined parameters-----------------:
+runThreadN                        4
+genomeDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/
+genomeLoad                        NoSharedMemory
+readFilesIn                       example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz   
+readFilesCommand                  zcat   
+outFileNamePrefix                 /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22
+outSAMtype                        BAM   SortedByCoordinate   
+outSAMunmapped                    Within   
+outFilterType                     BySJout
+outFilterMultimapNmax             20
+outFilterMismatchNmax             999
+outFilterMismatchNoverLmax        0.04
+alignIntronMin                    20
+alignIntronMax                    1000000
+alignMatesGapMax                  1000000
+alignSJoverhangMin                8
+alignSJDBoverhangMin              1
+sjdbScore                         1
+twopassMode                       Basic
+
+-------------------------------
+##### Final effective command line:
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runThreadN 4   --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/   --genomeLoad NoSharedMemory   --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz      --readFilesCommand zcat      --outFileNamePrefix /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22   --outSAMtype BAM   SortedByCoordinate      --outSAMunmapped Within      --outFilterType BySJout   --outFilterMultimapNmax 20   --outFilterMismatchNmax 999   --outFilterMismatchNoverLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000   --alignSJoverhangMin 8   --alignSJDBoverhangMin 1   --sjdbScore 1   --twopassMode Basic
+----------------------------------------
+
+Number of fastq files for each mate = 1
+
+   Input read files for mate 1 :
+-rwxrwxr-x 1 pabloati pabloati 13464036 dic  9 12:15 example/UHR_Rep1_chr22.R1.fastq.gz
+
+   readsCommandsFile:
+exec > "/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read1"
+echo FILE 0
+zcat      "example/UHR_Rep1_chr22.R1.fastq.gz"
+
+
+   Input read files for mate 2 :
+-rwxrwxr-x 1 pabloati pabloati 14475272 dic  9 12:15 example/UHR_Rep1_chr22.R2.fastq.gz
+
+   readsCommandsFile:
+exec > "/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
+echo FILE 0
+zcat      "example/UHR_Rep1_chr22.R2.fastq.gz"
+
+ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
+WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting
+Finished loading and checking parameters
+
+EXITING because of FATAL ERROR: could not open genome file /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//genomeParameters.txt
+SOLUTION: check that the path to genome files, specified in --genomeDir is correct and the files are present, and have user read permsissions
+
+Dec 10 17:25:24 ...... FATAL ERROR, exiting
