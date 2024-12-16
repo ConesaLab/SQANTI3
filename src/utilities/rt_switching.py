@@ -31,7 +31,7 @@ FIELDS_RTS = ['isoform', 'junction_number', 'chrom', 'strand', 'genomic_start_co
 
 def loadSpliceJunctions(filepath):
     """
-    Process a splice junction file by SQANTI (see FIELDS_JUNC in sqanti_qc.py)
+    Process a splice junction file by SQANTI (see FIELDS_JUNC in src/config.py)
     :param filepath: the junctions.txt file
     :return: sj_dict (isoform --> junction info), sj_seen_counts ((chr,strand,start,end) --> count of this junction)
     """
@@ -56,7 +56,7 @@ def loadSpliceJunctions(filepath):
                                                 sjn=rec['junction_number'],
                                                 strpos=int(rec['genomic_start_coord']),
                                                 endpos=int(rec['genomic_end_coord']),
-                                                transpos=None,  # ToDo: fix this later
+                                                transpos=None,  # TODO: fix this later
                                                 category=rec['junction_category'],
                                                 startCat=rec['start_site_category'],
                                                 endCat=rec['end_site_category'],
@@ -64,7 +64,7 @@ def loadSpliceJunctions(filepath):
             #sj_type_counts[rec['junction_category']+'_'+rec['canonical']] += 1
         else:
             sj_seen_counts[sj_pair] += 1
-
+    print(f"PB.103684.2: {dict(sj_seen_counts).keys()}")
     return sj_dict, dict(sj_seen_counts)
 
 
@@ -85,7 +85,7 @@ def checkSJforRTS(sj_dict, genome_dict, wiggle_count, include_category, include_
 
     for isoform in sj_dict:
         RTS_info_by_isoform[isoform] = []
-        #if isoform=='PB.3441.1': pdb.set_trace()
+        
         # process all splice junctions
         for sj in sj_dict[isoform]:
             if (include_type=='c' and sj.type!='canonical') or \
@@ -148,41 +148,41 @@ def checkForRepeatPat(seq_exon, seq_intron, min_match, allow_mismatch=True):
     """
     :return: is_RTS (bool), matchLen, matchPattern, mismatch
     """
-    #if seq_exon=='TAAATGTACAGG': pdb.set_trace()
-    seedsize = int(min_match/2)
+    seedsize = min_match // 2  # Use integer division for clarity
     n = len(seq_exon)
-    for i in range(n-seedsize+1):
-        seed = seq_exon[i:i+seedsize]
+
+    for i in range(n - seedsize + 1):
+        seed = seq_exon[i:i + seedsize]
         offset = 0
+
         while True:
             j = seq_intron.find(seed, offset)
-            if j >= 0:
-                offset = j + 1
-                # try to extend the match
-                k = seedsize
-                while i+k < n and j+k < n and seq_exon[i+k]==seq_intron[j+k]: k += 1
-                # right now seq_exon[i:i+k] == seq_intron[j:j+k]
-                # we need (min_match - k) more matches on either side
-                m = min_match - k
-                if (i+k+m <= n) and (j+k+m <= n):
-                    flag, mismatch = seq_match(seq_exon[i+k:i+k+m], seq_intron[j+k:j+k+m], allow_mismatch)
-                    if flag:
-                        return True, k+m, seq_exon[i:i+k+m], mismatch
-                if (i-m >= 0) and (j-m >= 0): # try extending mismatch the other way
-                    flag, mismatch = seq_match(seq_exon[i-m:i], seq_intron[j-m:j], allow_mismatch)
-                    if flag:
-                        return True, k+m, seq_exon[i-m:i+k], mismatch
-            else:
-                break
+            if j == -1:
+                break  # Exit the loop if seed is not found
+
+            offset = j + 1  # Move past the found seed
+
+            # Try to extend the match
+            k = seedsize
+            while (i + k < n) and (j + k < len(seq_intron)) and (seq_exon[i + k] == seq_intron[j + k]):
+                k += 1
+
+            m = min_match - k
+            # Check if there's enough room to extend matches on both sides
+            if (i + k + m <= n) and (j + k + m <= len(seq_intron)):
+                flag, mismatch = seq_match(seq_exon[i + k:i + k + m], seq_intron[j + k:j + k + m], allow_mismatch)
+                if flag:
+                    return True, k + m, seq_exon[i:i + k + m], mismatch
+
+            # Try extending the match backwards
+            if (i - m >= 0) and (j - m >= 0):
+                flag, mismatch = seq_match(seq_exon[i - m:i], seq_intron[j - m:j], allow_mismatch)
+                if flag:
+                    return True, k + m, seq_exon[i - m:i + k], mismatch
 
     return False, None, None, None
 
-#
-# Check if sequences match - sequences must have the same length
-#
-# Note: If mismatch flag is set, will allow 1 mismatch in comparison
-#       Regardless of mismacth flag value, indels are not allowed
-#
+
 def seq_match(exseq, inseq, allowMismatch):
     """
     Return True if <exseq> and <inseq> are same length and either
@@ -191,20 +191,17 @@ def seq_match(exseq, inseq, allowMismatch):
 
     :return: bool, num_mismatch
     """
-    if len(exseq)!=len(inseq):
+    if len(exseq) != len(inseq):
         return False, None
-    elif exseq == inseq:
+    
+    if exseq == inseq:
         return True, 0
-    elif allowMismatch:
-        # allow at most one mismatch
-        num_mismatch = 0
-        for a,b in zip(exseq, inseq):
-            if a!=b:
-                if num_mismatch == 1: return False, None  # second mismatch, return False!
-                else: num_mismatch += 1
-        return True, num_mismatch
-    else:
-        return False, None
+    
+    if allowMismatch:
+        num_mismatch = sum(1 for a, b in zip(exseq, inseq) if a != b)
+        return num_mismatch <= 1, num_mismatch
+    
+    return False, None
 
 
 def rts(args, genome_dict):

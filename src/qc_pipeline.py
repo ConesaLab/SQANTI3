@@ -298,8 +298,8 @@ def run(args):
     stop3 = timeit.default_timer()
 
     print("Removing temporary files....", file=sys.stderr)
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
+    #os.remove(outputClassPath+"_tmp")
+    #os.remove(outputJuncPath+"_tmp")
 
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 
