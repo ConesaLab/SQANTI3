@@ -137,3 +137,8 @@ example/SQANTI3_output/STAR_index/SAindex
 .emacs.bak/
 
 /example/SQANTI3_output/
+
+#Examples Pablo
+/example/SQANTI3_QC_output2
+/example/run_sqanti3_pablo.sh
+sqanti_qc.out

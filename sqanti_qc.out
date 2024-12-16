@@ -1,61 +1,46 @@
-WARNING: output directory /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2 already exists. Overwriting!
-Error corrected FASTA /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22_corrected.fasta already exists. Using it...
-ORF file /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22_corrected.faa already exists. Using it....
 **** Parsing Isoforms....
 	/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_index/ --genomeFastaFiles /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta --outTmpDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_index//_STARtmp/
 	STAR version: 2.7.11b   compiled: 2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
-Dec 16 09:26:20 ..... started STAR run
-Dec 16 09:26:20 ... starting to generate Genome files
+Dec 16 15:04:45 ..... started STAR run
+Dec 16 15:04:45 ... starting to generate Genome files
 !!!!! WARNING: --genomeSAindexNbases 14 is too large for the genome size=50818468, which may cause seg-fault at the mapping step. Re-run genome generation with recommended --genomeSAindexNbases 11
-Dec 16 09:26:20 ... starting to sort Suffix Array. This may take a long time...
-Dec 16 09:26:21 ... sorting Suffix Array chunks and saving them to disk...
-Dec 16 09:26:56 ... loading chunks from disk, packing SA...
-Dec 16 09:26:57 ... finished generating suffix array
-Dec 16 09:26:57 ... generating Suffix Array index
-Dec 16 09:27:12 ... completed Suffix Array index
-Dec 16 09:27:12 ... writing Genome to disk ...
-Dec 16 09:27:12 ... writing Suffix Array to disk ...
-Dec 16 09:27:12 ... writing SAindex to disk
-Dec 16 09:27:13 ..... finished successfully
+Dec 16 15:04:46 ... starting to sort Suffix Array. This may take a long time...
+Dec 16 15:04:46 ... sorting Suffix Array chunks and saving them to disk...
+Dec 16 15:05:22 ... loading chunks from disk, packing SA...
+Dec 16 15:05:23 ... finished generating suffix array
+Dec 16 15:05:23 ... generating Suffix Array index
+Dec 16 15:05:36 ... completed Suffix Array index
+Dec 16 15:05:36 ... writing Genome to disk ...
+Dec 16 15:05:36 ... writing Suffix Array to disk ...
+Dec 16 15:05:36 ... writing SAindex to disk
+Dec 16 15:05:37 ..... finished successfully
 	/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_index/ --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
 	STAR version: 2.7.11b   compiled: 2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
-Dec 16 09:27:13 ..... started STAR run
-Dec 16 09:27:13 ..... loading genome
-Dec 16 09:27:13 ..... started 1st pass mapping
-Dec 16 09:27:51 ..... finished 1st pass mapping
-Dec 16 09:27:52 ..... inserting junctions into the genome indices
-Dec 16 09:28:03 ..... started mapping
-Dec 16 09:28:40 ..... finished mapping
-Dec 16 09:28:40 ..... started sorting BAM
-Dec 16 09:28:41 ..... finished successfully
+Dec 16 15:05:37 ..... started STAR run
+Dec 16 15:05:37 ..... loading genome
+Dec 16 15:05:38 ..... started 1st pass mapping
+Dec 16 15:06:16 ..... finished 1st pass mapping
+Dec 16 15:06:16 ..... inserting junctions into the genome indices
+Dec 16 15:06:27 ..... started mapping
+Dec 16 15:07:05 ..... finished mapping
+Dec 16 15:07:05 ..... started sorting BAM
+Dec 16 15:07:06 ..... finished successfully
 	/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_index/ --readFilesIn example/UHR_Rep2_chr22.R1.fastq.gz example/UHR_Rep2_chr22.R2.fastq.gz --outFileNamePrefix /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping/UHR_Rep2_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
 	STAR version: 2.7.11b   compiled: 2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
-Dec 16 09:28:41 ..... started STAR run
-Dec 16 09:28:41 ..... loading genome
-Dec 16 09:28:42 ..... started 1st pass mapping
-Dec 16 09:29:10 ..... finished 1st pass mapping
-Dec 16 09:29:10 ..... inserting junctions into the genome indices
-Dec 16 09:29:21 ..... started mapping
-Dec 16 09:29:49 ..... finished mapping
-Dec 16 09:29:49 ..... started sorting BAM
-Dec 16 09:29:50 ..... finished successfully
+Dec 16 15:07:06 ..... started STAR run
+Dec 16 15:07:06 ..... loading genome
+Dec 16 15:07:07 ..... started 1st pass mapping
+Dec 16 15:07:35 ..... finished 1st pass mapping
+Dec 16 15:07:35 ..... inserting junctions into the genome indices
+Dec 16 15:07:45 ..... started mapping
+Dec 16 15:08:13 ..... finished mapping
+Dec 16 15:08:13 ..... started sorting BAM
+Dec 16 15:08:14 ..... finished successfully
 Input pattern: /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping/.
 The following files found and to be read as junctions:
 /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping/UHR_Rep2_chr22SJ.out.tab
 /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping/UHR_Rep1_chr22SJ.out.tab
 6762 junctions read. 2 junctions added to both strands because no strand information from STAR.
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:177: FutureWarning: Series.bool is now deprecated and will be removed in future version of pandas
-  if (new_entry['inside'] < 3).bool():
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:179: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
-  inside_df = pandas.concat([inside_df,new_entry], ignore_index=True)
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:183: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
-  outside_df = pandas.concat([outside_df, new_entry], ignore_index=True)
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:177: FutureWarning: Series.bool is now deprecated and will be removed in future version of pandas
-  if (new_entry['inside'] < 3).bool():
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:179: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
-  inside_df = pandas.concat([inside_df,new_entry], ignore_index=True)
-/home/pabloati/Programs/sqanti3/src/utilities/short_reads.py:183: FutureWarning: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated. In a future version, this will no longer exclude empty or all-NA columns when determining the result dtypes. To retain the old behavior, exclude the relevant entries before the concat operation.
-  outside_df = pandas.concat([outside_df, new_entry], ignore_index=True)
 **** RT-switching computation....
 **** Reading Full-length read abundance files...
 Single-sample PacBio FL count format detected.
@@ -477,18 +462,20 @@ processing file: SQANTI3_report.Rmd
 202/202                                              
 output file: /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/SQANTI3_report.knit.md
 
-/home/pabloati/miniforge3/envs/sqanti3/bin/pandoc +RTS -K512m -RTS /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/SQANTI3_report.knit.md --to html4 --from markdown+autolink_bare_uris+tex_math_single_backslash --output /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22_SQANTI3_report.html --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/pagebreak.lua --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/latex-div.lua --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/table-classes.lua --embed-resources --standalone --variable bs3=TRUE --section-divs --table-of-contents --toc-depth 3 --variable toc_float=1 --variable toc_selectors=h1,h2,h3 --variable toc_collapsed=1 --variable toc_smooth_scroll=1 --variable toc_print=1 --template /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmd/h/default.html --no-highlight --variable highlightjs=1 --variable theme=bootstrap --css style.css --mathjax --variable 'mathjax-url=https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --include-in-header /tmp/RtmpAlEWZh/rmarkdown-str2e332331a363.html 
+/home/pabloati/miniforge3/envs/sqanti3/bin/pandoc +RTS -K512m -RTS /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/SQANTI3_report.knit.md --to html4 --from markdown+autolink_bare_uris+tex_math_single_backslash --output /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22_SQANTI3_report.html --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/pagebreak.lua --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/latex-div.lua --lua-filter /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmarkdown/lua/table-classes.lua --embed-resources --standalone --variable bs3=TRUE --section-divs --table-of-contents --toc-depth 3 --variable toc_float=1 --variable toc_selectors=h1,h2,h3 --variable toc_collapsed=1 --variable toc_smooth_scroll=1 --variable toc_print=1 --template /home/pabloati/miniforge3/envs/sqanti3/lib/R/library/rmarkdown/rmd/h/default.html --no-highlight --variable highlightjs=1 --variable theme=bootstrap --css style.css --mathjax --variable 'mathjax-url=https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML' --include-in-header /tmp/RtmppdTiyu/rmarkdown-strfaee771cacdf.html 
 
 Output created: example/SQANTI3_QC_output2/UHR_chr22_SQANTI3_report.html
 Removing temporary files....
-SQANTI3 complete in 292.956282829 sec.
+SQANTI3 complete in 291.1669342290006 sec.
 Write arguments to /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/UHR_chr22.params.txt...
 **** Running SQANTI3...
 **** Parsing provided files....
 Reading genome fasta /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta....
+Skipping aligning of sequences because GTF file was provided.
+
+Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).
 **** Predicting ORF sequences...
 **** Parsing Reference Transcriptome....
-/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/refAnnotation_UHR_chr22.genePred already exists. Using it.
 **** Running STAR for calculating Short-Read Coverage.
 START running STAR...
 Running indexing...
@@ -499,8 +486,6 @@ Mapping for  UHR_Rep2_chr22 : in progress...
 Mapping for  UHR_Rep2_chr22 : done.
 Running calculation of TSS ratio
 BAM files identified: ['/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping//UHR_Rep2_chr22Aligned.sortedByCoord.out.bam', '/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output2/STAR_mapping//UHR_Rep1_chr22Aligned.sortedByCoord.out.bam']
-Temp files removed.
-
 **** Reading CAGE Peak data.
 **** Reading PolyA motif list.
 **** Performing Classification of Isoforms....

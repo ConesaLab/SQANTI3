@@ -4,13 +4,8 @@ __version__ = '1.0'
 
 import sys
 from Bio import SeqIO
-<<<<<<< HEAD:src/utilities/cupcake/sequence/err_correct_w_genome.py
 import src.utilities.cupcake.sequence.coordinate_mapper as sp
 from src.utilities.cupcake.io import BioReaders
-=======
-import utilities.cupcake.sequence.coordinate_mapper as sp
-from utilities.cupcake.io import BioReaders
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/cupcake/sequence/err_correct_w_genome.py
 
 # #### MODIFY FILENAME BELOW #######
 #genome_file = 'hg38.fa'
