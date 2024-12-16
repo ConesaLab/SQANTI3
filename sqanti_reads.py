@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
+#!usr/bin/python
 import subprocess, os, re, sys, glob
 import argparse
 import pandas as pd
-import shutil
+import distutils.spawn
 import hashlib
 #!/usr/bin/env python3
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
@@ -28,7 +28,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'subcategory', 'RTS_stage', 'all_canonical',
                 'predicted_NMD', 'perc_A_downstream_TTS', "jxn_string"]
 
-RSCRIPTPATH = shutil.which('Rscript')
+RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
 
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
@@ -79,7 +79,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites}"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
 
@@ -101,7 +101,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {fastq_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites} --fasta"
                 if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+                    cmd_sqanti = cmd_sqanti + " --force_id_ignore True"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
@@ -120,7 +120,7 @@ def make_UJC_hash(args, df):
         print("**** Calculating UJCs...", file = sys.stdout)
                 
         ## Take the corrected GTF
-        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
+        introns_cmd = f"gtftools -i {outputPathPrefix}tmp_introns.bed {outputPathPrefix}_corrected.gtf"
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
@@ -137,11 +137,12 @@ def make_UJC_hash(args, df):
 
         ## Pandas merge to the left
         classfile = f"{outputPathPrefix}_classification.txt"
-        clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
+        clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7])
         clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
-        ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
+        ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"])
         
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
+        
         # Fill missing values in UJC column using the transcript ID
         merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
         
@@ -182,7 +183,6 @@ def main():
     parser.add_argument('-fl','--factor_level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
     parser.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and and underannotated gene tables')
     parser.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
-    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
 
@@ -200,7 +200,7 @@ def main():
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
 
-    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
+    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN}"
     if args.inFACTOR:
         cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
     if args.FACTORLVL != None:
