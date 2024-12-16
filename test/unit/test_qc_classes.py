@@ -365,6 +365,7 @@ def test_invalid_CDS():
             tts_diff=20,
             num_exons=3,
             length=1000,
+            strand="+",
             str_class="full-length",
             CDS_start=300,
             CDS_end=100,

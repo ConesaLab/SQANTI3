@@ -1,4 +1,4 @@
-from utils import validate_import, validate_import_own
+from test.utils import validate_import, validate_import_own
 
 # Standard Library Imports
 def test_import_argparse():
@@ -43,6 +43,8 @@ def test_import_bx_intervals():
     validate_import("bx.intervals", "Interval")
     validate_import("bx.intervals", "IntervalTree")
 
+def test_import_BCBio():
+    validate_import("BCBio.GFF", "GFFParser")
 
 # Project-Specific Imports
 import sys, os

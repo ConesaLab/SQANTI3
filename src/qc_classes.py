@@ -107,14 +107,15 @@ class genePredRecord(object):
         self.junctions = [(self.exonEnds[i],self.exonStarts[i+1]) for i in range(self.exonCount-1)]
 
     def _validate_inputs(self, txStart, txEnd, cdsStart, cdsEnd,strand, exonCount, exonStarts, exonEnds):
-        print(cdsStart, cdsEnd,strand)
+        
         if txStart < 0 or txEnd < 0 or cdsStart < 0 or cdsEnd < 0:
             raise ValueError("Transcription and coding start/end positions must be non-negative.")
 
         if txStart >= txEnd:
             raise ValueError("Transcription start must be less than transcription end.")
 
-        if (strand == "+" and cdsStart >= cdsEnd) or (strand == "-" and cdsStart <= cdsEnd):
+        if cdsStart > cdsEnd:
+            print(cdsStart, cdsEnd,strand)
             raise ValueError("CDS start must be less than CDS end.")
 
         if exonCount <= 0:
@@ -407,6 +408,7 @@ class CAGEPeak:
         Queries the CAGE peaks to determine if a given position falls within a peak and calculates the distance to the nearest TSS.
     """    
     def __init__(self, cage_bed_filename):
+        self._validate_input(cage_bed_filename)
         self.cage_bed_filename = cage_bed_filename
         self.cage_peaks = defaultdict(lambda: IntervalTree()) # (chrom,strand) --> intervals of peaks
 
@@ -416,7 +418,7 @@ class CAGEPeak:
         if not cage_bed_filename.endswith('.bed'):
             raise ValueError("CAGE peak file must be in BED format.")
         if not os.path.exists(cage_bed_filename):
-            raise ValueError("CAGE peak file does not exist.")
+            raise FileNotFoundError("CAGE peak file does not exist.")
         
     def read_bed(self):
         for line in open(self.cage_bed_filename):

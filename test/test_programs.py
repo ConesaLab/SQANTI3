@@ -1,6 +1,6 @@
 import pytest, os
 import warnings
-from utils import run_command
+from test.utils import run_command
 import shutil
 
 def test_checkRscript_installation():

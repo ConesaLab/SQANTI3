@@ -1,5 +1,5 @@
 import os, subprocess, sys
-import pandas
+import pandas as pd
 import numpy as np
 import pybedtools
 import re
@@ -10,6 +10,25 @@ except ImportError:
     sys.exit(-1)
 
 def star_mapping(index_dir, SR_fofn, output_dir, cpus):
+    """
+    Maps short reads to a reference genome using the STAR aligner.
+
+    Parameters:
+    index_dir (str): Path to the directory containing the STAR genome index.
+    SR_fofn (str): Path to a file of filenames (FOFN) containing paths to short read files.
+    output_dir (str): Directory where the output files will be saved.
+    cpus (int): Number of CPU threads to use for the STAR aligner.
+
+    Raises:
+    FileNotFoundError: If the index directory does not exist.
+
+    The function reads the FOFN file to get the list of short read files, checks if they are compressed,
+    and then runs the STAR aligner for each sample. The output files are saved in the specified output directory.
+    """
+
+    if not os.path.exists(index_dir):
+        raise FileNotFoundError(f"Directory {index_dir} does not exist.")
+
     mapping_dir = output_dir + '/STAR_mapping'
     with open(SR_fofn) as fofn:
         for line in fofn:
@@ -122,7 +141,7 @@ def get_TSS_bed(corrected_gtf, chr_order):
                 chr=rec.id
                 iso_id=rec.features[0].qualifiers["transcript_id"][0]
                 loc=str(rec.features[0].location)
-                loc=re.split('[\(\)\[\]\:]',loc)
+                loc=re.split(r'[\(\)\[\]\:]',loc)
                 loc=list(filter(None,loc))
                 strand=str(loc[2])
                 if strand=='+':
@@ -153,6 +172,8 @@ def get_TSS_bed(corrected_gtf, chr_order):
     return(inside_sorted, outside_sorted)
 
 def get_bam_header(bam):
+    if not os.path.isfile(bam):
+        raise FileNotFoundError(f"File {bam} not found")
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
     if not os.path.isfile(out):
@@ -160,37 +181,39 @@ def get_bam_header(bam):
                         shell=True, check = True)
     return(out)
 
+
+
 def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
 ## calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get ratios across replicates and return it as a dictionary
+    def process_coverage(cov, column_name):
+        data = [(entry.name, float(entry[6])) for entry in cov]
+        df = pd.DataFrame(data, columns=['id', column_name])
+        if column_name == 'inside':
+            df.loc[df[column_name] < 3, column_name] = np.nan
+        return df
     print('BAM files identified: '+str(replicates))
     out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)
-    for b in [*range(0,len(replicates))]:
-        bam_file=replicates[b] 
+    ratio_rep_df = None
+    for b,bam_file in enumerate(replicates):
         in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order)
         out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
-        inside_df = pandas.DataFrame(columns=['id','inside'])
-        for entry in in_cov:
-            new_entry = pandas.DataFrame({'id' : [entry.name] , 'inside' : [float(entry[6])]})
-            if (new_entry['inside'] < 3).bool():
-                new_entry['inside'] = np.nan
-            inside_df = pandas.concat([inside_df,new_entry], ignore_index=True)
-        outside_df = pandas.DataFrame(columns=['id','outside'])
-        for entry in out_cov:
-            new_entry = pandas.DataFrame({'id' : [entry.name] , 'outside' : [float(entry[6])]})
-            outside_df = pandas.concat([outside_df, new_entry], ignore_index=True)
-        merged = pandas.merge(inside_df, outside_df, on="id")
-        merged['ratio_TSS'] = (merged['inside']+0.01)/(merged['outside']+0.01)
-        merged['ratio_TSS'] = pandas.to_numeric(merged['ratio_TSS'])
-        if b == 0 :
-            ratio_rep_df = merged['id']
-        ratio_rep_df = pandas.merge(ratio_rep_df, merged[['id','ratio_TSS']], on='id')
-        renamed_ratioTSS = "ratio_TSS_" + str(b)
-        ratio_rep_df = ratio_rep_df.rename(columns={'ratio_TSS':renamed_ratioTSS})
+        inside_df = process_coverage(in_cov, 'inside')
+        outside_df = process_coverage(out_cov, 'outside')
+        merged = pd.merge(inside_df, outside_df, on="id")
+        merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
+        if ratio_rep_df is None:
+            ratio_rep_df = merged[['id', 'ratio_TSS']]
+        else:
+            ratio_rep_df = pd.merge(ratio_rep_df, merged[['id', 'ratio_TSS']], on='id')
+        
+        ratio_rep_df = ratio_rep_df.rename(columns={'ratio_TSS': f'ratio_TSS_{b}'})
+
+        # Convert all columns but id to numeric, coercing any non-numeric values to NaN
+        ratio_rep_df.iloc[:, 1:] = ratio_rep_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
     
-    # use metric value to get the final ratio_TSS that will be recorded in the classification file
     if metric == "mean":
         ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
@@ -204,6 +227,6 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
 
     ratio_rep_df = ratio_rep_df[['id','return_ratio']]
     ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
-    [os.remove(i) for i in [inside_bed, outside_bed]]
-    print('Temp files removed.\n')
+    # [os.remove(i) for i in [inside_bed, outside_bed]]
+    # print('Temp files removed.\n')
     return(ratio_rep_dict) 

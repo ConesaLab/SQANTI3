@@ -88,15 +88,15 @@ def test_find_polyA_motif_not_found():
 
 def test_find_polyA_motif_multiple_motifs():
     genome_seq = "ACGTATTAAATAAA"
-    polyA_motif_list = ["AATAAA", "ATTAAA"]
+    polyA_motif_list = ["ACTAAA", "ATTAAA"]
     result = find_polyA_motif(genome_seq, polyA_motif_list)
-    assert result == ("ATTAAA", -6, "TRUE")
+    assert result == ("ATTAAA", -5, "TRUE")
 
 def test_find_polyA_motif_at_start():
     genome_seq = "AATAAACGT"
     polyA_motif_list = ["AATAAA", "ATTAAA"]
     result = find_polyA_motif(genome_seq, polyA_motif_list)
-    assert result == ("AATAAA", -3, "TRUE")
+    assert result == ("AATAAA", -4, "TRUE")
 
 def test_find_polyA_motif_at_end():
     genome_seq = "ACGTAATAAA"

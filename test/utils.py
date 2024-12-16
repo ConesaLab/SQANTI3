@@ -1,5 +1,6 @@
 
 import pytest
+import sys
 
 # Helper function to validate imports
 def validate_import(import_path, import_name):
