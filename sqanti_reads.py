@@ -99,9 +99,17 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {fastq_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites} --fasta"
+
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
+                                {fastq_files} {args.annotation} {args.genome} \
+                                --skipORF --min_ref_len {args.min_ref_len} \
+                                --aligner_choice {args.aligner_choice} \
+                                -t {args.cpus} -d {args.input_dir}/{file_acc} \
+                                -o {sampleID} -s {args.sites} -n {args.chunks} \
+                                --fasta"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+                print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
@@ -182,6 +190,7 @@ def main():
     parser.add_argument('-fl','--factor_level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
     parser.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and and underannotated gene tables')
     parser.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
+    parser.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
     parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
@@ -195,7 +204,8 @@ def main():
     get_method_runSQANTI3(args, df)
 
     # Make UJC and hash
-    make_UJC_hash(args, df)
+    if not args.SKIPHASH:
+        make_UJC_hash(args, df)
 
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
