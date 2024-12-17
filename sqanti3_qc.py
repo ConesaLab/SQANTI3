@@ -13,71 +13,17 @@ from src.qc_argparse import qc_argparse, args_validation
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
+from src.argparse_utils import args_validation
 
 def main():
 
     args = qc_argparse()
-    args_validation(args)
+    args = args_validation(args)
 
 
     # path and prefix for output files
-    if args.output is None:
-        args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
-
-    if args.dir is None:
-        args.dir = os.getcwd()
-    else:
-        args.dir = os.path.abspath(args.dir)
-        if os.path.isdir(args.dir):
-            print("WARNING: output directory {0} already exists. Overwriting!".format(args.dir), file=sys.stderr)
-        else:
-            os.makedirs(args.dir)
-
-    args.genome = os.path.abspath(args.genome)
-    if not os.path.isfile(args.genome):
-        print("ERROR: genome fasta {0} doesn't exist. Abort!".format(args.genome), file=sys.stderr)
-        sys.exit()
-
-    args.isoforms = os.path.abspath(args.isoforms)
-    if not os.path.isfile(args.isoforms):
-        print("ERROR: Input isoforms {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
-        sys.exit()
-
-    if args.fasta:
-        if args.aligner_choice == 'gmap':
-            if not os.path.isdir(os.path.abspath(args.gmap_index)):
-                print("GMAP index {0} doesn't exist! Abort.".format(args.gmap_index), file=sys.stderr)
-                sys.exit()
-        elif args.aligner_choice == 'deSALT':
-            if not os.path.isdir(os.path.abspath(args.gmap_index)):
-                print("deSALT index {0} doesn't exist! Abort.".format(args.gmap_index), file=sys.stderr)
-                sys.exit()
-
-        print("Cleaning up isoform IDs...", file=sys.stderr)
-        from src.helpers import rename_isoform_seqids
-        args.isoforms = rename_isoform_seqids(args.isoforms, args.force_id_ignore)
-        print("Cleaned up isoform fasta file written to: {0}".format(args.isoforms), file=sys.stderr)
 
 
-    args.annotation = os.path.abspath(args.annotation)
-    if not os.path.isfile(args.annotation):
-        print("ERROR: Annotation doesn't exist. Abort!".format(args.annotation), file=sys.stderr)
-        sys.exit()
-
-    #if args.aligner_choice == "gmap":
-    #    args.sense = "sense_force" if args.sense else "auto"
-    #elif args.aligner_choice == "minimap2":
-    #    args.sense = "f" if args.sense else "b"
-    ## (Liz) turned off option for --sense, always TRUE
-    if args.aligner_choice == "gmap":
-        args.sense = "sense_force"
-    elif args.aligner_choice == "minimap2":
-        args.sense = "f"
-    #elif args.aligner_choice == "deSALT":  #deSALT does not support this yet
-    #    args.sense = "--trans-strand"
-
-
-    args.novel_gene_prefix = None
     # Print out parameters so can be put into report PDF later
     args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
     print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
