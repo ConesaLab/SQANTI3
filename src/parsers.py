@@ -17,7 +17,7 @@ from .qc_classes import genePredReader
 from .utils import mergeDict, flatten
 #from .commands import GTF2GENEPRED_PROG
 
-def reference_parser(args, genome_chroms):
+def reference_parser(out_dir,out_pref,gene_name,isoAnnot,annot, genome_chroms):
     """
     Read the reference GTF file
     :param args:
@@ -26,17 +26,17 @@ def reference_parser(args, genome_chroms):
     """
     from .commands import GTF2GENEPRED_PROG
 
-    referenceFiles = os.path.join(args.dir, "refAnnotation_"+args.output+".genePred")
+    referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
     print("**** Parsing Reference Transcriptome....", file=sys.stdout)
 
     if os.path.exists(referenceFiles):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
         ## gtf to genePred
-        if not (args.genename or args.isoAnnotLite):
-            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
+        if not (gene_name or isoAnnot):
+            subprocess.call([GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
         else:
-            subprocess.call([GTF2GENEPRED_PROG, args.annotation, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
+            subprocess.call([GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -86,7 +86,7 @@ def reference_parser(args, genome_chroms):
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 
-def isoforms_parser(args,corrGTF):
+def isoforms_parser(corrGTF):
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
