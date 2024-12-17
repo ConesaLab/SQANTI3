@@ -1,10 +1,12 @@
 import pytest,sys,os
+import csv
+from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, main_path)
 from src.utilities.rt_switching import (
     SpliceJunctions, loadSpliceJunctions,
-    checkForRepeatPat
+    checkForRepeatPat, checkSJforRTS, FIELDS_RTS
 )
 
 @pytest.fixture
@@ -187,3 +189,91 @@ def test_min_match_larger_than_sequence():
     assert matchLen == None
     assert matchPattern == None
     assert mismatch == None
+
+
+### checkSJfor RTS ###
+
+@pytest.fixture
+def mock_output_file(tmp_path):
+    return tmp_path / "output.tsv"
+
+@pytest.fixture
+def mock_sj_dict(loaded_data):
+    return loaded_data[0]
+
+@pytest.fixture
+def mock_genome_dict():
+    genome_path = os.path.join(main_path, "test/test_data/genome_test.fasta")
+    return dict((r.id, r) for r in SeqIO.parse(open(genome_path), 'fasta'))
+
+# Tests
+def test_checkSJforRTS_basic(mock_output_file,mock_sj_dict,mock_genome_dict):
+    result = checkSJforRTS(
+        mock_sj_dict,
+        mock_genome_dict,
+        wiggle_count=5,
+        include_category='a',
+        include_type='a',
+        min_match=6,
+        allow_mismatch=True,
+        output_filename=str(mock_output_file)
+    )
+    
+    assert isinstance(result, dict)
+    assert 'PB.103684.2' in result
+    assert isinstance(result['PB.103684.2'], list)
+
+def test_checkSJforRTS_output_file(mock_output_file,mock_sj_dict,mock_genome_dict):
+    checkSJforRTS(
+        mock_sj_dict,
+        mock_genome_dict,
+        wiggle_count=5,
+        include_category='a',
+        include_type='a',
+        min_match=6,
+        allow_mismatch=True,
+        output_filename=str(mock_output_file)
+    )
+    
+    assert mock_output_file.exists()
+    with open(mock_output_file, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        headers = reader.fieldnames
+        assert headers == FIELDS_RTS  # Assuming FIELDS_RTS is defined in your module
+
+def test_checkSJforRTS_filtering(mock_output_file,mock_sj_dict,mock_genome_dict):
+    result = checkSJforRTS(
+        mock_sj_dict,
+        mock_genome_dict,
+        wiggle_count=5,
+        include_category='k',  # Only novel
+        include_type='n',  # Only canonical
+        min_match=6,
+        allow_mismatch=True,
+        output_filename=str(mock_output_file)
+    )
+    
+    assert len(result['PB.103684.2']) == 0
+    assert len(result['PB.15672.2']) > 0
+
+def test_checkSJforRTS_strand_handling(mock_output_file,mock_sj_dict,mock_genome_dict):
+    result = checkSJforRTS(
+        mock_sj_dict,
+        mock_genome_dict,
+        wiggle_count=5,
+        include_category='a',
+        include_type='a',
+        min_match=6,
+        allow_mismatch=True,
+        output_filename=str(mock_output_file)
+    )
+    
+    # Check if both strands are processed
+    assert len(result['PB.83093.1']) > 0
+    assert len(result['PB.137289.1']) > 0
+
+    # Verify strand-specific processing in output file
+    with open(mock_output_file, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        strands = set(row['strand'] for row in reader)
+        assert strands == {'+', '-'}
