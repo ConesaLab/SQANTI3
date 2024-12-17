@@ -116,3 +116,10 @@ def test_reference_parser_correctStartEnds(reference_parser_input):
     assert len(start_ends_by_gene) == 34
     assert start_ends_by_gene["ENSG00000206195.11"]["begin"] == {15784958, 15784962, 15784976, 15784991, 15787699}
     assert start_ends_by_gene["ENSG00000206195.11"]["end"] == {15829984, 15827434, 15790573, 15791387, 15827708}
+
+
+### isoforms_parser ###
+
+@pytest.fixture
+def input_file():
+    return os.path.join(main_path, "test/test_data/test_isoforms.gtf")

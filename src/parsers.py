@@ -65,10 +65,10 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
     known_5_3_by_gene = defaultdict(lambda: {'begin':set(), 'end': set()})
 
     for r in genePredReader(referenceFiles):
+        known_5_3_by_gene[r.gene]['begin'].add(r.txStart)
+        known_5_3_by_gene[r.gene]['end'].add(r.txEnd)
         if r.exonCount == 1:
             refs_1exon_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
-            known_5_3_by_gene[r.gene]['begin'].add(r.txStart)
-            known_5_3_by_gene[r.gene]['end'].add(r.txEnd)
         else:
             refs_exons_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
             # only store junctions for multi-exon transcripts
@@ -77,8 +77,7 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
                 junctions_by_chr[r.chrom]['acceptors'].add(a)
                 junctions_by_chr[r.chrom]['da_pairs'].add((d,a))
                 junctions_by_gene[r.gene].add((d,a))
-            known_5_3_by_gene[r.gene]['begin'].add(r.txStart)
-            known_5_3_by_gene[r.gene]['end'].add(r.txEnd)
+            
 
     # check that all genes' chromosomes are in the genome file
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
@@ -87,14 +86,14 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
         print("WARNING: ref annotation contains chromosomes not in genome: {0}\n".format(",".join(diff)), file=sys.stderr)
 
     # convert the content of junctions_by_chr to sorted list
-    # TODO: collapse in one line the sort command?
-    for k in junctions_by_chr:
-        junctions_by_chr[k]['donors'] = list(junctions_by_chr[k]['donors'])
-        junctions_by_chr[k]['donors'].sort()
-        junctions_by_chr[k]['acceptors'] = list(junctions_by_chr[k]['acceptors'])
-        junctions_by_chr[k]['acceptors'].sort()
-        junctions_by_chr[k]['da_pairs'] = list(junctions_by_chr[k]['da_pairs'])
-        junctions_by_chr[k]['da_pairs'].sort()
+    # This uses dictionary to iterate over the chormoosomes, keeping the keys, but sorting the values
+    junctions_by_chr = {
+        k: {
+            key: sorted(list(value))
+            for key, value in v.items()
+        }
+        for k, v in junctions_by_chr.items()
+}
 
     print(dict(junctions_by_gene)["ENSG00000206195.11"])
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
