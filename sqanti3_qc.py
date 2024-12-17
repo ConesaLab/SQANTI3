@@ -417,10 +417,11 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                     s, e = e, s
                     s = s - 1 # make it 0-based
                 for i,exon in enumerate(r.ref_exons):
-                    if exon.end > s: break
-                r.cds_exons = [Interval(s, min(e,exon.end))]
-                for exon in r.ref_exons[i+1:]:
-                    if exon.start > e: break
+                    if s >= min(e,exon.end): break
+                if s < min(e,exon.end):
+                  r.cds_exons = [Interval(s, min(e,exon.end))]
+                  for exon in r.ref_exons[i+1:]:
+                    if exon.start >= min(e, exon.end): break
                     r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
             write_collapseGFF_format(f, r)
 
