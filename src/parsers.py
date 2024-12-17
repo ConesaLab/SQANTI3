@@ -4,7 +4,7 @@ import subprocess
 import glob
 from collections import defaultdict
 from csv import DictReader
-from bx.intervals import IntervalTree
+from bx.intervals.intersection import IntervalTree
 from statistics import mean
 
 import numpy as np
@@ -17,18 +17,31 @@ from .qc_classes import genePredReader
 from .utils import mergeDict, flatten
 #from .commands import GTF2GENEPRED_PROG
 
-def reference_parser(out_dir,out_pref,gene_name,isoAnnot,annot, genome_chroms):
+def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
     """
-    Read the reference GTF file
-    :param args:
-    :param genome_chroms: list of chromosome names from the genome fasta, used for sanity checking
-    :return: (refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene)
+    Parses the reference GTF file and generates various genomic interval data structures.
+
+    Args:
+        out_dir (str): Output directory where the reference annotation file will be saved.
+        out_pref (str): Prefix for the output reference annotation file.
+        gene_name (bool): Flag indicating whether to use gene names.
+        isoAnnot (bool): Flag indicating whether to use isoform annotations.
+        annot (str): Path to the input annotation GTF file.
+        genome_chroms (list): List of chromosome names from the genome fasta, used for sanity checking.
+
+    Returns:
+        tuple: A tuple containing:
+            - refs_1exon_by_chr (dict): Dictionary of single exon references by chromosome.
+            - refs_exons_by_chr (dict): Dictionary of multi-exon references by chromosome.
+            - junctions_by_chr (dict): Dictionary of junctions by chromosome.
+        - junctions_by_gene (dict): Dictionary of junctions by gene.
+        - known_5_3_by_gene (dict): Dictionary of known 5' and 3' ends by gene. 
     """
     from .commands import GTF2GENEPRED_PROG
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
     print("**** Parsing Reference Transcriptome....", file=sys.stdout)
-
+    print(referenceFiles)
     if os.path.exists(referenceFiles):
         print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
     else:
@@ -83,6 +96,7 @@ def reference_parser(out_dir,out_pref,gene_name,isoAnnot,annot, genome_chroms):
         junctions_by_chr[k]['da_pairs'] = list(junctions_by_chr[k]['da_pairs'])
         junctions_by_chr[k]['da_pairs'].sort()
 
+    print(dict(junctions_by_gene)["ENSG00000206195.11"])
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 

@@ -37,8 +37,8 @@ def run(args):
     orfDict = correctionPlusORFpred(args, genome_dict,badstrandGTF)
 
     ## parse reference id (GTF) to dicts
-    refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(args.dir,args.output,args.genename,
-                                                                                                                     args.isoAnnotLite,args.annotation, 
+    refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(args.annotation,args.dir,args.output,
+                                                                                                                     args.genename,                                                                                                                     args.isoAnnotLite, 
                                                                                                                      list(genome_dict.keys()))
 
     ## parse query isoforms
