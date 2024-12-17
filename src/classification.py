@@ -525,7 +525,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
 
     # If the isoform hits are present:
     if args.isoform_hits:
-        isoform_hits_name = get_isoform_hits_name(args, dir=None)
+        isoform_hits_name = get_isoform_hits_name(args.dir,args.output)
         with open(isoform_hits_name+'_tmp', 'w') as out_file:
             tsv_writer = csv.writer(out_file, delimiter='\t')
             tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',

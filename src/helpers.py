@@ -93,33 +93,29 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                     r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
             write_collapseGFF_format(f, r)
 
-def get_corr_filenames(args, dir=None):
-    d = dir if dir is not None else args.dir
-    corrPathPrefix = os.path.join(d, args.output)
-    corrGTF = corrPathPrefix +"_corrected.gtf"
-    corrSAM = corrPathPrefix +"_corrected.sam"
-    corrFASTA = corrPathPrefix +"_corrected.fasta"
-    corrORF =  corrPathPrefix +"_corrected.faa"
+def get_corr_filenames(outdir, prefix):
+    corrPathPrefix = os.path.join(outdir, prefix)
+    corrGTF = corrPathPrefix + "_corrected.gtf"
+    corrSAM = corrPathPrefix + "_corrected.sam"
+    corrFASTA = corrPathPrefix + "_corrected.fasta"
+    corrORF = corrPathPrefix + "_corrected.faa"
     corrCDS_GTF_GFF = corrPathPrefix + "_corrected.gtf.cds.gff"
     return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
 
-def get_isoform_hits_name(args, dir=None):
-    d = dir if dir is not None else args.dir
-    corrPathPrefix = os.path.join(d, args.output)
-    isoform_hits_name = corrPathPrefix +"_isoform_hits.txt"
+def get_isoform_hits_name(outdir, prefix):
+    corrPathPrefix = os.path.join(outdir, prefix)
+    isoform_hits_name = corrPathPrefix + "_isoform_hits.txt"
     return isoform_hits_name
 
-def get_class_junc_filenames(args, dir=None):
-    d = dir if dir is not None else args.dir
-    outputPathPrefix = os.path.join(d, args.output)
+def get_class_junc_filenames(outdir, prefix):
+    outputPathPrefix = os.path.join(outdir, prefix)
     outputClassPath = outputPathPrefix + "_classification.txt"
     outputJuncPath = outputPathPrefix + "_junctions.txt"
     return outputClassPath, outputJuncPath
 
-def get_omitted_name(args, dir=None):
-    d = dir if dir is not None else args.dir
-    corrPathPrefix = os.path.join(d, args.output)
-    omitted_name = corrPathPrefix +"_omitted_due_to_min_ref_len.txt"
+def get_omitted_name(outdir, prefix):
+    corrPathPrefix = os.path.join(outdir, prefix)
+    omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
 
 

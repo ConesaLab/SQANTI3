@@ -76,8 +76,8 @@ def main():
     if args.isoAnnotLite:
         from src.helpers import get_corr_filenames, get_class_junc_filenames
         from src.qc_pipeline import run_isoAnnotLite 
-        corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
-        outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+        corrGTF, _, _, _ , _ = get_corr_filenames(args.dir,args.output)
+        outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
         run_isoAnnotLite(corrGTF, outputClassPath, outputJuncPath, args.output, args.gff3)
 
 if __name__ == "__main__":

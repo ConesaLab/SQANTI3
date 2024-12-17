@@ -18,13 +18,9 @@ from .commands import RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG, utilitiesPath,
 from .utils import pstdev
 
 def run(args):
-    global corrFASTA
-    global isoform_hits_name
-    global badstrandGTF
-
-    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
+    corrGTF, corrSAM, corrFASTA, _ , _ = get_corr_filenames(args.dir, args.output)
     badstrandGTF = args.dir + "/unknown_strand.gtf"
-    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+    outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
 
     start3 = timeit.default_timer()
 
@@ -236,7 +232,7 @@ def run(args):
 
     #write omitted isoforms if requested minimum reference length is more than 0
     if args.min_ref_len > 0 and not args.is_fusion:
-        omitted_name = get_omitted_name(args)
+        omitted_name = get_omitted_name(args.dir, args.output)
         omitted_iso = {}
         for key in isoforms_info:
             if not isoforms_info[key].refLen == 'NA':
