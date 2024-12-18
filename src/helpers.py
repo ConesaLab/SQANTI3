@@ -234,7 +234,6 @@ def sequence_correction(
     """
     print("Correcting sequences")
     corrGTF, corrSAM, corrFASTA, _ , _ = get_corr_filenames(outdir, output)
-    p = os.path.splitext(os.path.basename(corrSAM))[0]
     n_cpu = max(1, cpus // chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
@@ -247,7 +246,7 @@ def sequence_correction(
             if os.path.exists(corrSAM):
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
-                cmd = get_aligner_command(cmd,aligner_choice, genome, isoforms, annotation, 
+                cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                                           outdir,corrSAM, n_cpu, gmap_index, sense)
                 run_command(cmd, description="aligning reads")
 

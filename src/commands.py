@@ -54,7 +54,7 @@ def short_reads_mapping(args):
     return(star_out, star_index, SJcovNames, SJcovInfo)
 
 
-def get_aligner_command(cmd,aligner_choice, genome, isoforms, annotation, 
+def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                         outdir, corrSAM, n_cpu, gmap_index, sense):
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
@@ -89,7 +89,7 @@ def get_aligner_command(cmd,aligner_choice, genome, isoforms, annotation,
             print("****Aligning reads with uLTRA...", file=sys.stdout)
             cmd = ULTRA_CMD.format(
                 cpus=n_cpu,
-                prefix="../" + p,
+                prefix="../" + os.path.splitext(os.path.basename(corrSAM))[0],
                 g=genome,
                 a=annotation,
                 i=isoforms,
@@ -114,5 +114,3 @@ def run_command(cmd, description="command execution"):
         print(f"Details: {e}", file=sys.stderr)
         sys.exit(1)
 
-
-### General functions ###
