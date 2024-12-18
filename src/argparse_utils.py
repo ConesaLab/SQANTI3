@@ -1,4 +1,6 @@
 import os, sys
+import subprocess
+from .commands import GFFREAD_PROG
 
 def valid_file(filename):
     if not os.path.isfile(filename):
@@ -16,8 +18,34 @@ def valid_fasta(filename):
 def valid_gtf(filename):
     valid_file(filename)
     if not filename.endswith('.gtf'):
-        print(f"ERROR: File {filename} is not a GTF file. Abort!", file=sys.stderr)
-        sys.exit(1)
+        if not filename.endswith('.gff'):
+            print(f"ERROR: File {filename} is not a GTF file. Abort!", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print("WARNING: GTF file is in GFF3 format. Converting to GTF format...", file=sys.stderr)
+            # GFF to GTF (in case the user provides gff instead of gtf)
+            gtf_name = filename.replace('.gff', '.gtf')
+            # Use the run command?
+            try:
+                subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
+            except (RuntimeError, TypeError, NameError):
+                sys.stderr.write('ERROR: File %s without GTF/GFF format.\n' % filename)
+                raise SystemExit(1)
+            print("GFF file converted to GTF format. New file: {0}".format(gtf_name), file=sys.stderr)
+            filename = gtf_name
+
+    # Check if the GTF file is in the correct format
+    ind = 0
+    with open(filename) as isoforms_gtf:
+        for line in isoforms_gtf:
+            if line[0] != "#" and len(line.split("\t"))!=9:
+                sys.stderr.write("\nERROR: input isoforms file with not GTF format.\n")
+                sys.exit()
+            elif len(line.split("\t"))==9:
+                ind += 1
+        if ind == 0:
+            print("WARNING: GTF has {0} no annotation lines.".format(filename), file=sys.stderr)
+
     return filename
 
 def valid_bed(filename):
@@ -41,10 +69,10 @@ def valid_matrix(filename):
         print(f"ERROR: File {filename} is not a TSV file. Abort!", file=sys.stderr)
         sys.exit(1)
 
-#TODO:
+#TODO: Get a condition to see if it is a pacbio file
 def valid_PacBio_abund(filename):
     valid_file(filename)
-    if not filename.endswith('.abundance.txt'):
+    if not filename.endswith('abundance.tsv'):
         print(f"ERROR: File {filename} is not a PacBio abundance file. Abort!", file=sys.stderr)
         sys.exit(1)
     return filename

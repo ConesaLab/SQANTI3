@@ -102,8 +102,8 @@ def combine_split_runs(args, split_dirs):
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
     Then write out the PDF report
     """
-    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
-    outputClassPath, outputJuncPath = get_class_junc_filenames(args)
+    corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
+    outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
 
     if not args.skipORF:
         f_faa = open(corrORF, 'w')
@@ -114,7 +114,7 @@ def combine_split_runs(args, split_dirs):
     f_cds_gtf_gff = open(corrCDS_GTF_GFF, 'w')
 
     for i,split_d in enumerate(split_dirs):
-        _gtf, _sam, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(split_d,args.output)
+        _gtf, _, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(split_d,args.output)
         _class, _junc = get_class_junc_filenames(split_d,args.output)
         if not args.skipORF:
             with open(_orf) as h: f_faa.write(h.read())

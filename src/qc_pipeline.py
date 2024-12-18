@@ -10,7 +10,10 @@ from src.utilities.rt_switching import rts
 from src.utilities.indels_annot import calc_indels_from_sam
 from src.utilities.short_reads import kallisto
 
-from .helpers import get_corr_filenames, get_class_junc_filenames, get_omitted_name,correctionPlusORFpred, write_collapsed_GFF_with_CDS
+from .helpers import (
+    get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name,
+    get_omitted_name,sequence_correction, predictORF, write_collapsed_GFF_with_CDS
+    )
 from .parsers import reference_parser, isoforms_parser, FLcount_parser, expression_parser
 from .classification import isoformClassification
 from .config import FIELDS_CLASS 
@@ -18,7 +21,10 @@ from .commands import RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG, utilitiesPath,
 from .utils import pstdev
 
 def run(args):
-    corrGTF, corrSAM, corrFASTA, _ , _ = get_corr_filenames(args.dir, args.output)
+
+    global isoform_hits_name
+
+    corrGTF, corrSAM, corrFASTA, corrORF , _ = get_corr_filenames(args.dir, args.output)
     badstrandGTF = args.dir + "/unknown_strand.gtf"
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
 
@@ -30,7 +36,17 @@ def run(args):
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), 'fasta'))
 
     ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
-    orfDict = correctionPlusORFpred(args, genome_dict,badstrandGTF)
+    sequence_correction(
+    args.dir, args.output, args.cpus, args.chunks, args.fasta,
+    genome_dict, badstrandGTF, args.genome, args.isoforms, args.aligner_choice,
+    gmap_index=args.gmap_index, sense=args.sense, annotation=args.annotation)
+    
+    if not os.path.exists(corrFASTA):
+        print("ERROR: corrected FASTA file {0} does not exist! Abort!".format(corrFASTA), file=sys.stderr)
+        sys.exit(1)
+    else:
+        print("Corrected FASTA file written to {0}.".format(corrFASTA), file=sys.stdout)
+    orfDict = predictORF(args, corrFASTA, corrORF)
 
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(args.annotation,args.dir,args.output,
@@ -274,6 +290,7 @@ def run(args):
     if args.isoform_hits:
         fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
                       'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
+        isoform_hits_name = get_isoform_hits_name(args.dir, args.output)
         with open(isoform_hits_name,'w') as h:
             fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')
             fout_hits.writeheader()

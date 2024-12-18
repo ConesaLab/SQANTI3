@@ -19,12 +19,13 @@ def qc_argparse():
     apc.add_argument('--genename', action='store_true' ,help='Use gene_name tag from GTF to define genes. Default: gene_id used to define genes',)
     apc.add_argument('--short_reads', type=valid_file, help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')
     apc.add_argument('--SR_bam' , help=' Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome')
-
+    apc.add_argument('--novel_gene_prefix', default=None, help='Prefix for novel isoforms (default: None)')
     # Aligner and mapping options
     apa = ap.add_argument_group("Aligner and mapping options")
     #TODO: set a default aligner
     apa.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2', help="Select your aligner of choice: minimap2, deSALT, gmap, uLTRA (default: %(default)s)")
     apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
+    apa.add_argument('-z', '--sense', action='store_true', help='Option that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences')
     apa.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='Set of splice sites to be considered as canonical, in a comma separated list. (default: %(default)s)')
 
     # ORF prediction

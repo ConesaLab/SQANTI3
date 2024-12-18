@@ -19,7 +19,7 @@ def validate_import_own(import_path, import_name,system_path):
         pytest.fail(f"ImportError: Failed to import '{import_name}' from '{import_path}'. Error: {e}")
 
 # Helper function to run a command and return the result
-def run_command(command):
+def run_command_test(command):
     import subprocess
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     return result

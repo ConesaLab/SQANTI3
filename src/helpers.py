@@ -6,6 +6,7 @@ import re
 import bisect
 
 from collections import defaultdict
+from typing import Dict, Optional
 from Bio import SeqIO
 from bx.intervals import Interval
 
@@ -14,7 +15,7 @@ from .utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from .config import seqid_rex1, seqid_rex2, seqid_fusion
-from .commands import GMAP_CMD, MINIMAP2_CMD, DESALT_CMD, ULTRA_CMD, GMST_CMD, GFFREAD_PROG
+from .commands import get_aligner_command, GMST_CMD, GFFREAD_PROG, run_command
 from .qc_classes import myQueryProteins
 
 ### Environment manipulation functions ###
@@ -94,7 +95,7 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
             write_collapseGFF_format(f, r)
 
 def get_corr_filenames(outdir, prefix):
-    corrPathPrefix = os.path.join(outdir, prefix)
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     corrGTF = corrPathPrefix + "_corrected.gtf"
     corrSAM = corrPathPrefix + "_corrected.sam"
     corrFASTA = corrPathPrefix + "_corrected.fasta"
@@ -103,21 +104,20 @@ def get_corr_filenames(outdir, prefix):
     return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
 
 def get_isoform_hits_name(outdir, prefix):
-    corrPathPrefix = os.path.join(outdir, prefix)
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     isoform_hits_name = corrPathPrefix + "_isoform_hits.txt"
     return isoform_hits_name
 
 def get_class_junc_filenames(outdir, prefix):
-    outputPathPrefix = os.path.join(outdir, prefix)
+    outputPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     outputClassPath = outputPathPrefix + "_classification.txt"
     outputJuncPath = outputPathPrefix + "_junctions.txt"
     return outputClassPath, outputJuncPath
 
 def get_omitted_name(outdir, prefix):
-    corrPathPrefix = os.path.join(outdir, prefix)
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
-
 
 def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict, fout, covInf=None, covNames=None, phyloP_reader=None):
     """
@@ -214,127 +214,56 @@ def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelIn
 
         fout.writerow(qj)
 
-
-### CMD related functions ###
-
-def run_command(cmd, description="command execution"):
-    """
-    Executes a shell command and handles errors gracefully.
-    
-    :param cmd: The command to execute (string).
-    :param description: A short description of the operation for better error messages (default: "command execution").
-    :raises SystemExit: Exits the script if the command fails.
-    """
-    try:
-        subprocess.check_call(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR during {description}: {cmd}", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1)
-
-
-### General functions ###
-def correctionPlusORFpred(args, genome_dict, badstrandGTF):
+def sequence_correction(
+    outdir: str,
+    output: str,
+    cpus: int,
+    chunks: int,
+    fasta: bool,
+    genome_dict: Dict[str, str],
+    badstrandGTF: str,
+    genome: str,
+    isoforms: str,
+    aligner_choice: str,
+    gmap_index: Optional[str] = None,
+    sense: Optional[bool] = False,
+    annotation: Optional[str] = None
+    ) -> None:
     """
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
     """
-    global corrORF
-    global corrGTF
-    global corrSAM
-    global corrFASTA
-
-    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args)
+    print("Correcting sequences")
+    corrGTF, corrSAM, corrFASTA, _ , _ = get_corr_filenames(outdir, output)
     p = os.path.splitext(os.path.basename(corrSAM))[0]
-    n_cpu = max(1, args.cpus // args.chunks)
+    n_cpu = max(1, cpus // chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
     #         IF sequence is provided, align as SAM then correct with genome
     if os.path.exists(corrFASTA):
         print("Error corrected FASTA {0} already exists. Using it...".format(corrFASTA), file=sys.stderr)
     else:
-        if args.fasta:
+        print("Correcting fasta")
+        if fasta:
             if os.path.exists(corrSAM):
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
-                # Even though the speed does not change form the ifelse, this is cleaner
-                match args.aligner_choice:
-                    case "gmap":
-                        print("****Aligning reads with GMAP...", file=sys.stdout)
-                        cmd = GMAP_CMD.format(
-                            cpus=n_cpu,
-                            dir=os.path.dirname(args.gmap_index),
-                            name=os.path.basename(args.gmap_index),
-                            sense=args.sense,
-                            i=args.isoforms,
-                            o=corrSAM,
-                        )
-                    case "minimap2":
-                        print("****Aligning reads with Minimap2...", file=sys.stdout)
-                        cmd = MINIMAP2_CMD.format(
-                            cpus=n_cpu,
-                            sense=args.sense,
-                            g=args.genome,
-                            i=args.isoforms,
-                            o=corrSAM,
-                        )
-                    case "deSALT":
-                        print("****Aligning reads with deSALT...", file=sys.stdout)
-                        cmd = DESALT_CMD.format(
-                            cpus=n_cpu,
-                            dir=args.gmap_index,
-                            i=args.isoforms,
-                            o=corrSAM,
-                        )
-                    case "uLTRA":
-                        print("****Aligning reads with uLTRA...", file=sys.stdout)
-                        cmd = ULTRA_CMD.format(
-                            cpus=n_cpu,
-                            prefix="../" + p,
-                            g=args.genome,
-                            a=args.annotation,
-                            i=args.isoforms,
-                            o_dir=args.dir + "/uLTRA_out/",
-                        )
-                    case _:
-                        raise ValueError(f"Unsupported aligner choice: {args.aligner_choice}")
-
+                cmd = get_aligner_command(cmd,aligner_choice, genome, isoforms, annotation, 
+                                          outdir,corrSAM, n_cpu, gmap_index, sense)
                 run_command(cmd, description="aligning reads")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
-            err_correct(args.genome, corrSAM, corrFASTA, genome_dict=genome_dict)
+            err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
-            convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(args.genome).split('.')[0])  # convert SAM to GFF3
+            convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
             cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
             # Try condition to better handle the error. Also, the exit code is corrected
             run_command(cmd, description="converting SAM to GTF")
         else:
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
 
-            ind = 0
-            with open(args.isoforms) as isoforms_gtf:
-                for line in isoforms_gtf:
-                    if line[0] != "#" and len(line.split("\t"))!=9:
-                        sys.stderr.write("\nERROR: input isoforms file with not GTF format.\n")
-                        sys.exit()
-                    elif len(line.split("\t"))==9:
-                        ind += 1
-                if ind == 0:
-                    print("WARNING: GTF has {0} no annotation lines.".format(args.isoforms), file=sys.stderr)
-
-
-            # GFF to GTF (in case the user provides gff instead of gtf)
-            corrGTF_tpm = corrGTF+".tmp"
-            # Use the run command?
-            try:
-                subprocess.call([GFFREAD_PROG, args.isoforms , '-T', '-o', corrGTF_tpm])
-            except (RuntimeError, TypeError, NameError):
-                sys.stderr.write('ERROR: File %s without GTF/GFF format.\n' % args.isoforms)
-                raise SystemExit(1)
-
-
             # check if gtf chromosomes inside genome file
             with open(corrGTF, 'w') as corrGTF_out:
-                with open(corrGTF_tpm, 'r') as isoforms_gtf:
+                with open(isoforms, 'r') as isoforms_gtf:
                     with (open(badstrandGTF, 'w')) as discard_gtf:
                         for line in isoforms_gtf:
                             if line[0] != "#":
@@ -354,14 +283,16 @@ def correctionPlusORFpred(args, genome_dict, badstrandGTF):
                                         discard_gtf.write(line)
                                         continue
                                     corrGTF_out.write(line)
-            os.remove(corrGTF_tpm)
 
             if not os.path.exists(corrSAM):
                 sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
-            subprocess.call([GFFREAD_PROG, corrGTF, '-g', args.genome, '-w', corrFASTA])
+            subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
 
+
+def predictORF(args, corrFASTA, corrORF):
+    
     # ORF generation
     print("**** Predicting ORF sequences...", file=sys.stdout)
 
@@ -390,6 +321,7 @@ def correctionPlusORFpred(args, genome_dict, badstrandGTF):
     else:
         cur_dir = os.path.abspath(os.getcwd())
         os.chdir(args.dir)
+        print("Running ORF prediction on {0}".format(corrFASTA))
         if args.orf_input is not None:
             print("Running ORF prediction of input on {0}...".format(args.orf_input))
             cmd = GMST_CMD.format(i=os.path.realpath(args.orf_input), o=gmst_pre)

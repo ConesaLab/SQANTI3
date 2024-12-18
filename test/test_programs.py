@@ -1,12 +1,12 @@
 import pytest, os
 import warnings
-from test.utils import run_command
+from test.utils import run_command_test
 import shutil
 
 def test_checkRscript_installation():
     """ Test if Rscript is installed and check its version. """
     command = "Rscript --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode == 0, f"Rscript is not installed or not functioning correctly: {result.stderr}"
     expected_version = "4.3.3"  # Modify this as per your required version
     if expected_version not in result.stdout:
@@ -15,7 +15,7 @@ def test_checkRscript_installation():
 def test_kallisto():
     """ Test if Kallisto is installed and check its version. """
     command = "kallisto version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"Kallisto command not found: {result.stderr}"
     assert result.returncode == 0, f"Kallisto failed to execute properly: {result.stderr}"
     expected_version = "0.48.0"  # Modify this as per your required version
@@ -25,7 +25,7 @@ def test_kallisto():
 def test_star():
     """ Test if STAR is installed and check its version. """
     command = "STAR --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"STAR command not found: {result.stderr}"
     assert result.returncode == 0, f"STAR failed to execute properly: {result.stderr}"
     expected_version = "2.7.11b"  # Modify this as per your required version
@@ -35,7 +35,7 @@ def test_star():
 def test_gmap():
     """ Test if GMAP is installed and check its version. """
     command = "gmap --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"GMAP command not found: {result.stderr}"
     assert result.returncode == 0, f"GMAP failed to execute properly: {result.stderr}"
     expected_version = "2024-11-20"  # Modify this as per your required version
@@ -45,7 +45,7 @@ def test_gmap():
 def test_minimap2():
     """ Test if Minimap2 is installed and check its version. """
     command = "minimap2 --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"Minimap2 command not found: {result.stderr}"
     assert result.returncode == 0, f"Minimap2 failed to execute properly: {result.stderr}"
     expected_version = "2.28-r1209"  # Modify this as per your required version
@@ -55,7 +55,7 @@ def test_minimap2():
 def test_desalt():
     """ Test if deSALT is installed and check its version. """
     command = "deSALT aln"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"deSALT command not found: {result.stderr}"
     assert result.returncode == 0, f"deSALT failed to execute properly: {result.stderr}"
     # No version checking for the werid way deSALT is installed
@@ -63,7 +63,7 @@ def test_desalt():
 def test_ultra():
     """ Test if uLTRA is installed and check its version. """
     command = "uLTRA --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"uLTRA command not found: {result.stderr}"
     assert result.returncode == 0, f"uLTRA failed to execute properly: {result.stderr}"
     expected_version = "0.1"  # Modify this as per your required version
@@ -73,7 +73,7 @@ def test_ultra():
 def test_gffread():
     """ Test if gffread is installed and check its version. """
     command = "gffread --version"
-    result = run_command(command)
+    result = run_command_test(command)
     assert result.returncode != 127, f"gffread command not found: {result.stderr}"
     assert result.returncode == 0, f"gffread failed to execute properly: {result.stderr}"
     expected_version = "0.12.7"  # Modify this as per your required version

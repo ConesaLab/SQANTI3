@@ -11,7 +11,8 @@ main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 
 from src.helpers import (
-    rename_isoform_seqids
+    rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
+    get_class_junc_filenames, get_omitted_name
 )
 
 ### rename_isoform_seqids ### 
@@ -136,6 +137,86 @@ def test_rename_isoform_seqids_force_ignore(mock_fasta_file):
     # Cleanup: Remove the output file after test
     os.remove(output_fasta)
 
+### Input reading functions ###
+
+@pytest.fixture
+def sample_paths():
+    return {
+        'outdir': '/tmp',
+        'prefix': 'test'
+    }
+
+def test_get_corr_filenames(sample_paths):
+    expected_prefix = os.path.join(sample_paths['outdir'], sample_paths['prefix'])
+    corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF = get_corr_filenames(**sample_paths)
+    
+    assert corrGTF == expected_prefix + "_corrected.gtf"
+    assert corrSAM == expected_prefix + "_corrected.sam"
+    assert corrFASTA == expected_prefix + "_corrected.fasta"
+    assert corrORF == expected_prefix + "_corrected.faa"
+    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.gtf.cds.gff"
+
+def test_get_isoform_hits_name(sample_paths):
+    expected_prefix = os.path.join(sample_paths['outdir'], sample_paths['prefix'])
+    isoform_hits_name = get_isoform_hits_name(**sample_paths)
+    
+    assert isoform_hits_name == expected_prefix + "_isoform_hits.txt"
+
+def test_get_class_junc_filenames(sample_paths):
+    expected_prefix = os.path.join(sample_paths['outdir'], sample_paths['prefix'])
+    outputClassPath, outputJuncPath = get_class_junc_filenames(**sample_paths)
+    
+    assert outputClassPath == expected_prefix + "_classification.txt"
+    assert outputJuncPath == expected_prefix + "_junctions.txt"
+
+def test_get_omitted_name(sample_paths):
+    expected_prefix = os.path.join(os.path.join(sample_paths['outdir'], sample_paths['prefix']))
+    omitted_name = get_omitted_name(**sample_paths)
+    
+    assert omitted_name == expected_prefix + "_omitted_due_to_min_ref_len.txt"
+
+@pytest.mark.parametrize("outdir,prefix", [
+    ("/var/log", "app"),
+    ("/home/user/documents", "report"),
+    (".", "test"),
+    ("/tmp/my folder", "test file"),
+])
+def test_all_functions_parametrized(outdir, prefix):
+    expected_prefix = os.path.abspath(os.path.join(outdir, prefix))
+    
+    # Test get_corr_filenames
+    corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF = get_corr_filenames(outdir, prefix)
+    assert corrGTF == expected_prefix + "_corrected.gtf"
+    assert corrSAM == expected_prefix + "_corrected.sam"
+    assert corrFASTA == expected_prefix + "_corrected.fasta"
+    assert corrORF == expected_prefix + "_corrected.faa"
+    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.gtf.cds.gff"
+    
+    # Test get_isoform_hits_name
+    isoform_hits_name = get_isoform_hits_name(outdir, prefix)
+    assert isoform_hits_name == expected_prefix + "_isoform_hits.txt"
+    
+    # Test get_class_junc_filenames
+    outputClassPath, outputJuncPath = get_class_junc_filenames(outdir, prefix)
+    assert outputClassPath == expected_prefix + "_classification.txt"
+    assert outputJuncPath == expected_prefix + "_junctions.txt"
+    
+    # Test get_omitted_name
+    omitted_name = get_omitted_name(outdir, prefix)
+    assert omitted_name == expected_prefix + "_omitted_due_to_min_ref_len.txt"
+
+def test_empty_prefix():
+    outdir = "/tmp"
+    prefix = ""
+    expected_prefix = os.path.abspath(os.path.join(outdir, prefix))
+    
+    # Test all functions with empty prefix
+    corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF = get_corr_filenames(outdir, prefix)
+    isoform_hits_name = get_isoform_hits_name(outdir, prefix)
+    outputClassPath, outputJuncPath = get_class_junc_filenames(outdir, prefix)
+    omitted_name = get_omitted_name(outdir, prefix)
+    
+    assert all(path.startswith(expected_prefix) for path in [corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF, isoform_hits_name, outputClassPath, outputJuncPath, omitted_name])
 
 ### write_collapsed_GFF_with_CDS ###
 

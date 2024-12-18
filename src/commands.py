@@ -1,6 +1,7 @@
 import os
 import sys
 import shutil
+import subprocess
 
 from .parsers import STARcov_parser
 from .utilities.short_reads import star
@@ -51,3 +52,67 @@ def short_reads_mapping(args):
     else:
         star_out, star_index, SJcovNames, SJcovInfo = None, None, None, None
     return(star_out, star_index, SJcovNames, SJcovInfo)
+
+
+def get_aligner_command(cmd,aligner_choice, genome, isoforms, annotation, 
+                        outdir, corrSAM, n_cpu, gmap_index, sense):
+    # Even though the speed does not change form the ifelse, this is cleaner
+    match aligner_choice:
+        case "gmap":
+            print("****Aligning reads with GMAP...", file=sys.stdout)
+            cmd = GMAP_CMD.format(
+                cpus=n_cpu,
+                dir=os.path.dirname(gmap_index),
+                name=os.path.basename(gmap_index),
+                sense=sense,
+                i=isoforms,
+                o=corrSAM,
+            )
+        case "minimap2":
+            print("****Aligning reads with Minimap2...", file=sys.stdout)
+            cmd = MINIMAP2_CMD.format(
+                cpus=n_cpu,
+                sense=sense,
+                g=genome,
+                i=isoforms,
+                o=corrSAM,
+            )
+        case "deSALT":
+            print("****Aligning reads with deSALT...", file=sys.stdout)
+            cmd = DESALT_CMD.format(
+                cpus=n_cpu,
+                dir=gmap_index,
+                i=isoforms,
+                o=corrSAM,
+            )
+        case "uLTRA":
+            print("****Aligning reads with uLTRA...", file=sys.stdout)
+            cmd = ULTRA_CMD.format(
+                cpus=n_cpu,
+                prefix="../" + p,
+                g=genome,
+                a=annotation,
+                i=isoforms,
+                o_dir=outdir + "/uLTRA_out/",
+            )
+        case _:
+            raise ValueError(f"Unsupported aligner choice: {aligner_choice}")
+    return cmd
+
+def run_command(cmd, description="command execution"):
+    """
+    Executes a shell command and handles errors gracefully.
+    
+    :param cmd: The command to execute (string).
+    :param description: A short description of the operation for better error messages (default: "command execution").
+    :raises SystemExit: Exits the script if the command fails.
+    """
+    try:
+        subprocess.check_call(cmd, shell=True)
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR during {description}: {cmd}", file=sys.stderr)
+        print(f"Details: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+### General functions ###
