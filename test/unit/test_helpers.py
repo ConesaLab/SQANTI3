@@ -1,5 +1,8 @@
+
+from io import StringIO
+from typing import Dict
 import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, mock_open
 from Bio import SeqIO
 from pathlib import Path
 import sys, os
@@ -9,8 +12,8 @@ main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 
 from src.helpers import (
-    rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
-    get_class_junc_filenames, get_omitted_name, sequence_correction
+    process_gtf_line, rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
+    get_class_junc_filenames, get_omitted_name
 )
 
 ### rename_isoform_seqids ### 
@@ -218,101 +221,80 @@ def test_empty_prefix():
 
 ### sequence_correction ###
 
+## process_gtf_line ##
 
 @pytest.fixture
-def mock_file_ops():
-    return Mock()
+def genome_dict() -> Dict[str, str]:
+    return {"chr1": "ATCG", "chr2": "GCTA"}
 
 @pytest.fixture
-def mock_cmd_runner():
-    return Mock()
+def mock_corrGTF_out():
+    return main_path + "/test/test_data/corrected.gtf"
 
 @pytest.fixture
-def mock_cmd_templates():
-    return {
-        "gmap": "gmap_cmd {cpus} {dir} {name} {sense} {i} {o}",
-        "minimap2": "minimap2_cmd {cpus} {sense} {g} {i} {o}",
-        "deSALT": "desalt_cmd {cpus} {dir} {i} {o}",
-        "uLTRA": "ultra_cmd {cpus} {prefix} {g} {a} {i} {o_dir}",
-        "GFFREAD": "gffread_cmd"
-    }
+def mock_discard_gtf():
+    return main_path + "/test/test_data/discard.gtf"
 
-@pytest.fixture
-def default_args():
-    return {
-        "outdir": "/out",
-        "output": "test",
-        "cpus": 4,
-        "chunks": 2,
-        "fasta": True,
-        "genome_dict": {"chr1": "ATCG"},
-        "badstrandGTF": "bad.gtf",
-        "genome": "genome.fa",
-        "isoforms": "iso.fa",
-        "aligner_choice": "minimap2",
-        "gmap_index": None,
-        "sense": False,
-        "annotation": None
-    }
+def test_comment_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    line = "# This is a comment\n"
+    result = process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    assert result == None
+    assert not os.path.exists(mock_corrGTF_out)
+    assert not os.path.exists(mock_discard_gtf)
 
-def test_sequence_correction_fasta_exists(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args):
-    mock_file_ops.exists.return_value = True
-    
-    with patch('src.helpers.get_corr_filenames', return_value=('corrGTF', 'corrSAM', 'corrFASTA', None, None)):
-        sequence_correction(**default_args)
-    
-    mock_file_ops.exists.assert_called_once()
-    mock_cmd_runner.assert_not_called()
 
-# def test_sequence_correction_fasta_not_exists(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args):
-#     mock_file_ops.exists.return_value = False
-#     mock_file_ops.splitext.return_value = ('corrSAM', '')
-#     mock_file_ops.basename.return_value = 'corrSAM'
-    
-#     with patch('src.helpers.get_corr_filenames', return_value=('corrGTF', 'corrSAM', 'corrFASTA', None, None)):
-#         with patch('src.helpers.err_correct'):
-#             with patch('src.helpers.convert_sam_to_gff3'):
-#                 sequence_correction(**default_args, file_ops=mock_file_ops, cmd_runner=mock_cmd_runner, cmd_templates=mock_cmd_templates)
-    
-#     assert mock_cmd_runner.call_count == 2  # One for alignment, one for GTF conversion
+def test_malformed_line(genome_dict, mock_corrGTF_out, mock_discard_gtf, capsys):
+    line = "chr1\tgene\n"
+    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    captured = capsys.readouterr()
+    assert "WARNING: Skipping malformed GTF line" in captured.out
+    assert not os.path.exists(mock_corrGTF_out)
+    assert not os.path.exists(mock_discard_gtf)
 
-# @pytest.mark.parametrize("aligner_choice", ["gmap", "minimap2", "deSALT", "uLTRA"])
-# def test_sequence_correction_different_aligners(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args, aligner_choice):
-#     mock_file_ops.exists.return_value = False
-#     mock_file_ops.splitext.return_value = ('corrSAM', '')
-#     mock_file_ops.basename.return_value = 'corrSAM'
-#     default_args['aligner_choice'] = aligner_choice
-    
-#     with patch('src.helpers.get_corr_filenames', return_value=('corrGTF', 'corrSAM', 'corrFASTA', None, None)):
-#         with patch('src.helpers.err_correct'):
-#             with patch('src.helpers.convert_sam_to_gff3'):
-#                 sequence_correction(**default_args, file_ops=mock_file_ops, cmd_runner=mock_cmd_runner, cmd_templates=mock_cmd_templates)
-    
-#     assert mock_cmd_runner.call_count == 2
-#     assert aligner_choice in mock_cmd_runner.call_args_list[0][0][0]
+def test_chromosome_not_in_genome(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    line = "chr3\tEnsembl\texon\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+    with pytest.raises(ValueError, match="ERROR: GTF chromosome 'chr3' not found in genome reference file."):
+        process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
 
-# def test_sequence_correction_gtf_input(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args):
-#     mock_file_ops.exists.return_value = False
-#     default_args['fasta'] = False
+def test_valid_transcript_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    line = "chr1\tEnsembl\ttranscript\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
     
-#     with patch('src.helpers.get_corr_filenames', return_value=('corrGTF', 'corrSAM', 'corrFASTA', None, None)):
-#         sequence_correction(**default_args, file_ops=mock_file_ops, cmd_runner=mock_cmd_runner, cmd_templates=mock_cmd_templates)
-    
-#     assert mock_cmd_runner.call_count == 1  # Only for GTF to FASTA conversion
-#     assert "gffread_cmd" in mock_cmd_runner.call_args[0][0]
+    process_gtf_line(line, genome_dict, Path(mock_corrGTF_out), mock_discard_gtf)
+    with open(mock_corrGTF_out, "r") as f:
+        assert f.read() == line
+    assert not os.path.exists(mock_discard_gtf)
+    os.remove(mock_corrGTF_out)
 
-# def test_sequence_correction_invalid_aligner(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args):
-#     default_args['aligner_choice'] = 'invalid_aligner'
-    
-#     with pytest.raises(ValueError, match="Unsupported aligner choice: invalid_aligner"):
-#         sequence_correction(**default_args, file_ops=mock_file_ops, cmd_runner=mock_cmd_runner, cmd_templates=mock_cmd_templates)
+def test_valid_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    line = "chr2\tEnsembl\texon\t1\t1000\t.\t-\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    with open(mock_corrGTF_out, "r") as f:
+        assert f.read() == line
+    assert not os.path.exists(mock_discard_gtf)
+    os.remove(mock_corrGTF_out)
 
-# def test_sequence_correction_gtf_chromosome_not_in_genome(mock_file_ops, mock_cmd_runner, mock_cmd_templates, default_args):
-#     mock_file_ops.exists.return_value = False
-#     default_args['fasta'] = False
-#     mock_file_ops.open.return_value.__enter__.return_value.readlines.return_value = [
-#         "chr2\tsome\texon\t1\t100\t.\t+\t.\tgene_id \"gene1\"; transcript_id \"trans1\";\n"
-#     ]
-    
-#     with pytest.raises(ValueError, match="ERROR: gtf chromosome 'chr2' not found in genome reference file."):
-#         sequence_correction(**default_args, file_ops=mock_file_ops, cmd_runner=mock_cmd_runner, cmd_templates=mock_cmd_templates)
+def test_unknown_strand(genome_dict, mock_corrGTF_out, mock_discard_gtf, capsys):
+    line = "chr1\tEnsembl\texon\t1\t1000\t.\t.\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    captured = capsys.readouterr()
+    assert "WARNING: Discarding unknown strand transcript" in captured.out
+    assert not os.path.exists(mock_corrGTF_out)
+    with open(mock_discard_gtf, "r") as f:
+        assert f.read() == line
+    os.remove(mock_discard_gtf)
+
+def test_non_transcript_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    line = "chr1\tEnsembl\tgene\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\";\n"
+    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    assert not os.path.exists(mock_corrGTF_out)
+    assert not os.path.exists(mock_discard_gtf)
+
+def test_adding_lines_to_file(genome_dict,mock_corrGTF_out,mock_discard_gtf):
+    line1 = "chr1\tEnsembl\ttranscript\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+    line2 = "chr2\tEnsembl\texon\t1\t1000\t.\t-\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+    process_gtf_line(line1, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    process_gtf_line(line2, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    with open(mock_corrGTF_out, "r") as f:
+        assert f.read() == line1 + line2
+    assert not os.path.exists(mock_discard_gtf)
+    os.remove(mock_corrGTF_out)

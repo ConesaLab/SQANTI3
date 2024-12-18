@@ -6,7 +6,7 @@ import re
 import bisect
 
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Dict, Optional, TextIO
 from Bio import SeqIO
 from bx.intervals import Interval
 
@@ -259,35 +259,45 @@ def sequence_correction(
             run_command(cmd, description="converting SAM to GTF")
         else:
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
-
-            # check if gtf chromosomes inside genome file
-            with open(corrGTF, 'w') as corrGTF_out:
-                with open(isoforms, 'r') as isoforms_gtf:
-                    with (open(badstrandGTF, 'w')) as discard_gtf:
-                        for line in isoforms_gtf:
-                            if line[0] != "#":
-                                chrom = line.split("\t")[0]
-                                type = line.split("\t")[2]
-                                strand = line.split("\t")[6]
-                                if chrom not in list(genome_dict.keys()):
-                                    sys.stderr.write("\nERROR: gtf \"%s\" chromosome not found in genome reference file.\n" % (chrom))
-                                    sys.exit()
-                                elif type in ('transcript', 'exon'):
-                                    # In normal cirumstances, strand should be a string of values '-' or '+'
-                                    # However, the strand can also be '.' , a dot, which means that
-                                    # The strand is unknown. The frequence of these varies according to technologies 
-                                    # and not taken into account downstream
-                                    if(strand not in ['-','+']):
-                                        print("WARNING: Discarding uknown strand transcript ")
-                                        discard_gtf.write(line)
-                                        continue
-                                    corrGTF_out.write(line)
+            filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
 
             if not os.path.exists(corrSAM):
                 sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
             subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
+
+def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: TextIO, discard_gtf: TextIO) -> None:
+    if line.startswith("#"):
+        return
+
+    fields = line.strip().split("\t")
+    if len(fields) < 7:
+        print(f"WARNING: Skipping malformed GTF line: {line.strip()}")
+        return
+
+    chrom, feature_type, strand = fields[0], fields[2], fields[6]
+
+    if chrom not in genome_dict:
+        raise ValueError(f"ERROR: GTF chromosome '{chrom}' not found in genome reference file.")
+
+    if feature_type in ('transcript', 'exon'):
+        if strand not in ['-', '+']:
+            print(f"WARNING: Discarding unknown strand transcript: {line.strip()}")
+            with open(discard_gtf, 'a') as discard_gtf:
+                discard_gtf.write(line)
+        else:
+            with open(corrGTF_out, 'a') as corrGTF_out:
+                corrGTF_out.write(line)
+
+def filter_gtf(isoforms: str, corrGTF: str, badstrandGTF: str, genome_dict: Dict[str, str]) -> None:
+    try:
+        with open(corrGTF, 'w') as corrGTF_out, open(isoforms, 'r') as isoforms_gtf, open(badstrandGTF, 'w') as discard_gtf:
+            for line in isoforms_gtf:
+                process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
+    except IOError as e:
+        print(f"ERROR: Error processing GTF files: {e}")
+        raise
 
 
 def predictORF(args, corrFASTA, corrORF):
