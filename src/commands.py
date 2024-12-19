@@ -3,8 +3,6 @@ import sys
 import shutil
 import subprocess
 
-from .parsers import STARcov_parser
-from .utilities.short_reads import star
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
@@ -17,7 +15,6 @@ ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --i
 # To dynamically get the utilities path
 def get_gmst_prog(utilities_path):
     return os.path.join(utilities_path, "gmst", "gmst.pl")
-
 
 GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --output {{o}} {{i}}"
 
@@ -39,20 +36,6 @@ RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
-
-
-def short_reads_mapping(args):
-    """
-    Runs STAR for mapping short reads to the transcriptome
-    """
-    if args.short_reads is not None:
-        print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
-        star_out, star_index = star(args.genome, args.short_reads, args.dir, args.cpus)
-        SJcovNames, SJcovInfo = STARcov_parser(star_out)
-    else:
-        star_out, star_index, SJcovNames, SJcovInfo = None, None, None, None
-    return(star_out, star_index, SJcovNames, SJcovInfo)
-
 
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                         outdir, corrSAM, n_cpu, gmap_index, sense):
@@ -107,6 +90,19 @@ def run_gmst(corrFASTA,orf_input,gmst_pre):
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
     run_command(cmd, description="GMST ORF prediction")
 
+def GTF_to_genePred(corrGTF):
+    """
+    Converts a GTF file to a genePred file.
+    """
+    queryFile = os.path.splitext(corrGTF)[0] +".genePred"
+    if os.path.exists(queryFile):
+        print(f"{queryFile} already exists. Using it.", file=sys.stderr)
+    else:
+        # gtf to genePred
+        cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
+        run_command(cmd, "GTF to genePred conversion")
+    return queryFile
+   
 
 def run_command(cmd, description="command execution"):
     """

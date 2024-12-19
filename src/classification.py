@@ -523,6 +523,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
         fusion_components = get_fusion_component(args.isoforms)
 
+    # TODO: Move this to another part? All the saving together
     # If the isoform hits are present:
     if args.isoform_hits:
         isoform_hits_name = get_isoform_hits_name(args.dir,args.output)
@@ -534,20 +535,19 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
         isoform_hits_name = None
 
     ## read coverage files if provided
+    fields_junc_cur = FIELDS_JUNC # add the samples to the header
     if args.coverage is not None:
         print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
         SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
-        fields_junc_cur = FIELDS_JUNC # add the samples to the header
         for name in SJcovNames:
             fields_junc_cur += [name + '_unique', name + '_multi']
     else:
         if args.short_reads is not None:
-            fields_junc_cur = FIELDS_JUNC
             for name in SJcovNames:
                 fields_junc_cur += [name + '_unique', name + '_multi']
         else: #TODO: Logging
             print("Splice Junction Coverage files not provided.", file=sys.stdout)
-            fields_junc_cur = FIELDS_JUNC
+            
 
     ## TSS ratio calculation
     if  args.SR_bam is not None:

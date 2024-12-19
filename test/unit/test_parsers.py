@@ -5,7 +5,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import parse_GMST, parse_corrORF, reference_parser
+from src.parsers import isoforms_parser, parse_GMST, parse_corrORF, reference_parser
 from bx.intervals.intersection import IntervalTree
 
 ### reference_parser ###
@@ -125,8 +125,18 @@ def test_reference_parser_correctStartEnds(reference_parser_input):
 
 @pytest.fixture
 def input_file():
-    return os.path.join(main_path, "test/test_data/test_isoforms.gtf")
+    return os.path.join(main_path, "test/test_data/test_isoforms.genePred")
 
+def test_isoforms_parser(input_file):
+    isoforms_by_chr = isoforms_parser(input_file)
+    assert len(isoforms_by_chr.keys()) == 1
+    assert len(isoforms_by_chr["chr22"]) == 35
+    
+def test_isoforms_parser_sorted(input_file):
+    isoforms_by_chr = isoforms_parser(input_file)
+    # Check if the isoforms are sorted by txStart
+    txStarts = [isoform.txStart for isoform in isoforms_by_chr["chr22"]]
+    assert txStarts == sorted(txStarts)
 
 
 ### parse_corrORF ###
@@ -226,3 +236,4 @@ def test_parse_GMST_goodORF(corrORF_gmst_file, corrORF_file, gmst_rex, gmst_file
 
     # Clean up: remove the output file after the test
     os.remove(corrORF_gmst_file)
+

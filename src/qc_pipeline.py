@@ -8,16 +8,22 @@ from Bio import SeqIO
 import pandas as pd
 from src.utilities.rt_switching import rts
 from src.utilities.indels_annot import calc_indels_from_sam
-from src.utilities.short_reads import kallisto
+from src.utilities.short_reads import kallisto, star
 
 from .helpers import (
     get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name,
     get_omitted_name,sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
-from .parsers import reference_parser, isoforms_parser, FLcount_parser, expression_parser
+from .parsers import (
+    STARcov_parser, reference_parser, isoforms_parser, 
+    FLcount_parser, expression_parser
+)
 from .classification import isoformClassification
 from .config import FIELDS_CLASS 
-from .commands import RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG, utilitiesPath, short_reads_mapping
+from .commands import (
+    RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG,
+    utilitiesPath, GTF_to_genePred
+)
 from .utils import pstdev
 
 def run(args):
@@ -52,7 +58,8 @@ def run(args):
                                                                                                                      list(genome_dict.keys()))
 
     ## parse query isoforms
-    isoforms_by_chr = isoforms_parser(corrGTF)
+    corrgenPred = GTF_to_genePred(corrGTF)
+    isoforms_by_chr = isoforms_parser(corrgenPred)
 
     ## Run indel computation if sam exists
     # indelsJunc: dict of pbid --> list of junctions near indel (in Interval format)
@@ -63,9 +70,15 @@ def run(args):
         indelsJunc = None
         indelsTotal = None
 
+    
     ## Short-read mapping
-    star_out, star_index, SJcovNames, SJcovInfo = short_reads_mapping(args)
-
+    if args.short_reads is not None:
+        print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
+        star_out, star_index = star(args.genome,args.short_reads,args.dir,args.cpus)
+        SJcovNames, SJcovInfo = STARcov_parser(star_out)
+    else:
+        star_out, star_index, SJcovNames, SJcovInfo = None, None, None, None
+    
     # isoform classification + intra-priming + id and junction characterization
     isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, 
                                                           corrGTF, star_out, star_index, SJcovNames, SJcovInfo,outputClassPath, outputJuncPath )

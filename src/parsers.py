@@ -99,25 +99,12 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 
-def isoforms_parser(corrGTF):
+def isoforms_parser(queryFile):
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
-    from .commands import GTF2GENEPRED_PROG
-
-    queryFile = os.path.splitext(corrGTF)[0] +".genePred"
-
     print("**** Parsing Isoforms....", file=sys.stderr)
-
-    # gtf to genePred
-    cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
     
-    # TODO: Change to the run command function
-    if subprocess.check_call(cmd, shell=True)!=0:
-        print(f"ERROR running cmd: {cmd}", file=sys.stderr)
-        sys.exit(1)
-
-
     isoforms_list = defaultdict(lambda: []) # chr --> list to be sorted later
 
     for r in genePredReader(queryFile):

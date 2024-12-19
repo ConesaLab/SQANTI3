@@ -1,7 +1,12 @@
-import pytest, os
+import pytest, os,sys
 import warnings
 from test.utils import run_command_test
 import shutil
+
+main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, main_path)
+from src.commands import GTF_to_genePred
+
 
 def test_checkRscript_installation():
     """ Test if Rscript is installed and check its version. """
@@ -95,9 +100,15 @@ def test_gtf2genepred(utiltiesPath=utilitiesPath):
     gtf2genepred_path = os.path.join(utilitiesPath,"gtfToGenePred")
     if shutil.which(gtf2genepred_path) is None:
         pytest.fail(f"Cannot find executable {gtf2genepred_path}. Abort!")
+    # Remove the genePred file and run it again
+    os.remove(os.path.join(main_path,"test","test_data","test_isoforms.genePred"))
+    genePred_file = GTF_to_genePred(os.path.join(main_path,"test","test_data","test_isoforms.gtf"))
+    assert os.path.exists(genePred_file), f"Cannot find genePred file {genePred_file}. Abort!"
+    #os.remove(genePred_file)
 
 def test_isoannotlite(utiltiesPath=utilitiesPath):
     """ Test if can be found """
     isoannotlite_path = os.path.join(utilitiesPath,"IsoAnnotLite_SQ3.py")
     if shutil.which(isoannotlite_path) is None:
         pytest.fail(f"Cannot find executable {isoannotlite_path}. Abort!")
+
