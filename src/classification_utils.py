@@ -180,3 +180,19 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
         else:
             print('**** TSS ratio will not be calculated since SR information was not provided')
     return ratio_TSS_dict
+
+
+def full_splice_match_subtype(diff_tss,diff_tts):
+    # subcategory for matching 5' and matching 3'
+    if abs(diff_tss) <= 50 and abs(diff_tts) <= 50:
+            subtype = 'reference_match'
+    # subcategory for matching 5' and non-matching 3'
+    if abs(diff_tss) <= 50 and abs(diff_tts) > 50:
+        subtype = 'alternative_3end'
+    # subcategory for matching 3' and non-matching 5'
+    if abs(diff_tss) > 50 and abs(diff_tts) <= 50:
+        subtype = 'alternative_5end'
+    # subcategory for non-matching 3' and non-matching 5'
+    if abs(diff_tss) > 50 and abs(diff_tts) > 50:
+        subtype = 'alternative_3end5end'
+    return subtype

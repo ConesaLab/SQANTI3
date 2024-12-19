@@ -18,7 +18,7 @@ from .parsers import (
     STARcov_parser, reference_parser, isoforms_parser, 
     FLcount_parser, expression_parser
 )
-from .classification import isoformClassification
+from .classification import isoformClassification, preprocess_isoform_data
 from .config import FIELDS_CLASS 
 from .commands import (
     RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG,
@@ -69,19 +69,16 @@ def run(args):
     else:
         indelsJunc = None
         indelsTotal = None
-
     
-    ## Short-read mapping
-    if args.short_reads is not None:
-        print("**** Running STAR for calculating Short-Read Coverage.", file=sys.stdout)
-        star_out, star_index = star(args.genome,args.short_reads,args.dir,args.cpus)
-        SJcovNames, SJcovInfo = STARcov_parser(star_out)
-    else:
-        star_out, star_index, SJcovNames, SJcovInfo = None, None, None, None
+    fusion_components, isoform_hits_name, SJcovNames, SJcovInfo, \
+    fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj, \
+    polyA_motif_list, phyloP_reader = preprocess_isoform_data(args, corrGTF)
     
     # isoform classification + intra-priming + id and junction characterization
-    isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, 
-                                                          corrGTF, star_out, star_index, SJcovNames, SJcovInfo,outputClassPath, outputJuncPath )
+    isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
+                          junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
+                          outputClassPath, outputJuncPath,fusion_components, isoform_hits_name,SJcovNames, SJcovInfo,
+                          fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj, polyA_motif_list, phyloP_reader)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
 

@@ -488,37 +488,36 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
     return isoforms_hit
 
 
-def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict, corrGTF,
-
-                          star_out, star_index, SJcovNames, SJcovInfo,outputClassPath, outputJuncPath ):
+def preprocess_isoform_data(args, corrGTF):
     """
-    Classifies isoforms based on various criteria and writes the classification results to output files.
+    Preprocesses isoform data and initializes various objects for isoform classification.
 
     Parameters:
     args (argparse.Namespace): Command-line arguments.
-    isoforms_by_chr (dict): Dictionary of isoforms grouped by chromosome.
-    refs_1exon_by_chr (dict): Dictionary of reference single-exon transcripts grouped by chromosome.
-    refs_exons_by_chr (dict): Dictionary of reference multi-exon transcripts grouped by chromosome.
-    junctions_by_chr (dict): Dictionary of junctions grouped by chromosome.
-    junctions_by_gene (dict): Dictionary of junctions grouped by gene.
-    start_ends_by_gene (dict): Dictionary of start and end positions grouped by gene.
-    genome_dict (dict): Dictionary containing genome sequences.
-    indelsJunc (dict): Dictionary of indels at junctions.
-    orfDict (dict): Dictionary containing ORF information.
     corrGTF (str): Path to the corrected GTF file.
-    star_out (str): Path to the STAR output directory.
-    star_index (str): Path to the STAR index directory.
-    SJcovNames (list): List of splice junction coverage file names.
-    SJcovInfo (dict): Dictionary containing splice junction coverage information.
-    outputClassPath (str): Path to the output classification file.
-    outputJuncPath (str): Path to the output junction file.
 
     Returns:
     tuple: A tuple containing:
-        - isoforms_info (dict): Dictionary containing classification information for each isoform.
+        - isoform_hits_name (str): Name of the isoform hits file.
+        - star_out (str): Path to the STAR output directory.
+        - star_index (str): Path to the STAR index directory.
+        - SJcovNames (list): List of splice junction coverage file names.
+        - SJcovInfo (dict): Dictionary containing splice junction coverage information.
+        - fields_junc_cur (list): List of fields for junction information.
         - ratio_TSS_dict (dict): Dictionary containing TSS ratio information.
+        - cage_peak_obj (CAGEPeak): CAGE peak object.
+        - polya_peak_obj (PolyAPeak): PolyA peak object.
+        - polyA_motif_list (list): List of PolyA motifs.
+        - phyloP_reader (LazyBEDPointReader): PhyloP BED reader object.
     """
     global isoform_hits_name
+    isoform_hits_name = None
+    fusion_components = {}
+    cage_peak_obj = None
+    polya_peak_obj = None
+    polyA_motif_list = None
+    phyloP_reader = None
+
     if args.is_fusion: # read GTF to get fusion components
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
         fusion_components = get_fusion_component(args.isoforms)
@@ -531,8 +530,6 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
             tsv_writer = csv.writer(out_file, delimiter='\t')
             tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
                                  'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
-    else:
-        isoform_hits_name = None
 
     ## read coverage files if provided
     star_out, star_index, \
@@ -543,19 +540,17 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     ## TSS ratio calculation
     ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam,args.short_reads,
                                            star_out,star_index,corrGTF,args.ratio_TSS_metric)
-
+    # CAGE peaks
     if args.CAGE_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)
         cage_peak_obj = CAGEPeak(args.CAGE_peak)
-    else:
-        cage_peak_obj = None
 
+    # PolyA peaks
     if args.polyA_peak is not None:
         print("**** Reading polyA Peak data.", file=sys.stdout)
         polya_peak_obj = PolyAPeak(args.polyA_peak)
-    else:
-        polya_peak_obj = None
 
+    # PolyA motif list
     if args.polyA_motif_list is not None:
         print("**** Reading PolyA motif list.", file=sys.stdout)
         polyA_motif_list = []
@@ -565,16 +560,21 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                 print("PolyA motif must be A/T/C/G only! Saw: {0}. Abort!".format(x), file=sys.stderr)
                 sys.exit(1)
             polyA_motif_list.append(x)
-    else:
-        polyA_motif_list = None
 
-
+    # PhyloP
     if args.phyloP_bed is not None:
         print("**** Reading PhyloP BED file.", file=sys.stdout)
         phyloP_reader = LazyBEDPointReader(args.phyloP_bed)
-    else:
-        phyloP_reader = None
 
+    return (fusion_components,isoform_hits_name, SJcovNames, SJcovInfo, fields_junc_cur,
+            ratio_TSS_dict, cage_peak_obj, polya_peak_obj, polyA_motif_list, phyloP_reader)
+
+
+def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
+                          junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
+                          outputClassPath, outputJuncPath, fusion_components,isoform_hits_name,SJcovNames, 
+                          SJcovInfo, fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj,
+                          polyA_motif_list, phyloP_reader):
     # running classification
     print("**** Performing Classification of Isoforms....", file=sys.stdout)
 
@@ -592,7 +592,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     isoforms_info = {}
     novel_gene_index = 1
 
-    for chrom,records in isoforms_by_chr.items():
+    for _,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit
             isoform_hit = transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, rec, genome_dict, nPolyA=args.window)
