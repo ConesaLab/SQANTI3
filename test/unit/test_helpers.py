@@ -259,7 +259,9 @@ def test_chromosome_not_in_genome(genome_dict, mock_corrGTF_out, mock_discard_gt
 def test_valid_transcript_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
     line = "chr1\tEnsembl\ttranscript\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
     
-    process_gtf_line(line, genome_dict, Path(mock_corrGTF_out), mock_discard_gtf)
+    with open(mock_corrGTF_out, "w") as f:
+        process_gtf_line(line, genome_dict, f, mock_discard_gtf)
+    f.close()
     with open(mock_corrGTF_out, "r") as f:
         assert f.read() == line
     assert not os.path.exists(mock_discard_gtf)
@@ -267,7 +269,9 @@ def test_valid_transcript_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
 
 def test_valid_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
     line = "chr2\tEnsembl\texon\t1\t1000\t.\t-\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
-    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    with open(mock_corrGTF_out, "w") as f:
+        process_gtf_line(line, genome_dict, f, mock_discard_gtf)
+    f.close()
     with open(mock_corrGTF_out, "r") as f:
         assert f.read() == line
     assert not os.path.exists(mock_discard_gtf)
@@ -275,7 +279,9 @@ def test_valid_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
 
 def test_unknown_strand(genome_dict, mock_corrGTF_out, mock_discard_gtf, capsys):
     line = "chr1\tEnsembl\texon\t1\t1000\t.\t.\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
-    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    with open(mock_discard_gtf, "w") as f:
+        process_gtf_line(line, genome_dict, mock_corrGTF_out, f)
+    f.close()
     captured = capsys.readouterr()
     assert "WARNING: Discarding unknown strand transcript" in captured.out
     assert not os.path.exists(mock_corrGTF_out)
@@ -292,8 +298,10 @@ def test_non_transcript_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gt
 def test_adding_lines_to_file(genome_dict,mock_corrGTF_out,mock_discard_gtf):
     line1 = "chr1\tEnsembl\ttranscript\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
     line2 = "chr2\tEnsembl\texon\t1\t1000\t.\t-\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
-    process_gtf_line(line1, genome_dict, mock_corrGTF_out, mock_discard_gtf)
-    process_gtf_line(line2, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    with open(mock_corrGTF_out, "w") as f:
+        process_gtf_line(line1, genome_dict, f, mock_discard_gtf)
+        process_gtf_line(line2, genome_dict, f, mock_discard_gtf)
+    f.close()
     with open(mock_corrGTF_out, "r") as f:
         assert f.read() == line1 + line2
     assert not os.path.exists(mock_discard_gtf)

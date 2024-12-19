@@ -268,15 +268,15 @@ def sequence_correction(
             # GTF to FASTA
             subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
 
-def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: TextIO, discard_gtf: TextIO) -> None:
+def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """
     Processes a single line from a GTF file, validating and categorizing it based on certain criteria.
 
     Args:
         line (str): A single line from a GTF file.
         genome_dict (Dict[str, str]): A dictionary containing genome reference data, where keys are chromosome names.
-        corrGTF_out (TextIO): A file object to write valid GTF lines with known strand information.
-        discard_gtf (TextIO): A file object to write GTF lines with unknown strand information.
+        corrGTF_out (str): Path to a file to write valid GTF lines with known strand information.
+        discard_gtf (str): Path to a file to write GTF lines with unknown strand information.
     Raises:
         ValueError: If the chromosome in the GTF line is not found in the genome reference dictionary.
 
@@ -303,13 +303,11 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: TextIO
     if feature_type in ('transcript', 'exon'):
         if strand not in ['-', '+']:
             print(f"WARNING: Discarding unknown strand transcript: {line.strip()}")
-            with open(discard_gtf, 'a') as discard_gtf:
-                discard_gtf.write(line)
+            discard_gtf.write(line)
         else:
-            with open(corrGTF_out, 'a') as corrGTF_out:
-                corrGTF_out.write(line)
+            corrGTF_out.write(line)
 
-def filter_gtf(isoforms: str, corrGTF: str, badstrandGTF: str, genome_dict: Dict[str, str]) -> None:
+def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
     try:
         with open(corrGTF, 'w') as corrGTF_out, open(isoforms, 'r') as isoforms_gtf, open(badstrandGTF, 'w') as discard_gtf:
             for line in isoforms_gtf:
