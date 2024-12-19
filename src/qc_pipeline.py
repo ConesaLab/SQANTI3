@@ -41,15 +41,13 @@ def run(args):
     genome_dict, badstrandGTF, args.genome, args.isoforms, args.aligner_choice,
     gmap_index=args.gmap_index, sense=args.sense, annotation=args.annotation)
     
-    if not os.path.exists(corrFASTA):
-        print("ERROR: corrected FASTA file {0} does not exist! Abort!".format(corrFASTA), file=sys.stderr)
-        sys.exit(1)
-    else:
-        print("Corrected FASTA file written to {0}.".format(corrFASTA), file=sys.stdout)
-    orfDict = predictORF(args, corrFASTA, corrORF)
+    orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
+                         corrFASTA, corrORF)
 
     ## parse reference id (GTF) to dicts
-    refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(args.annotation,args.dir,args.output,
+    refs_1exon_by_chr, refs_exons_by_chr, \
+        junctions_by_chr, junctions_by_gene, start_ends_by_gene = \
+            reference_parser(args.annotation,args.dir,args.output,
                                                                                                                      args.genename,                                                                                                                     args.isoAnnotLite, 
                                                                                                                      list(genome_dict.keys()))
 

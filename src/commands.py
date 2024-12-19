@@ -99,6 +99,15 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
             raise ValueError(f"Unsupported aligner choice: {aligner_choice}")
     return cmd
 
+def run_gmst(corrFASTA,orf_input,gmst_pre):
+    if orf_input is not None:
+        print("Running ORF prediction of input on {0}...".format(orf_input))
+        cmd = GMST_CMD.format(i=os.path.realpath(orf_input), o=gmst_pre)
+    else:
+        cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
+    run_command(cmd, description="GMST ORF prediction")
+
+
 def run_command(cmd, description="command execution"):
     """
     Executes a shell command and handles errors gracefully.

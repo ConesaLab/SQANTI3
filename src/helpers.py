@@ -15,8 +15,9 @@ from .utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from .config import seqid_rex1, seqid_rex2, seqid_fusion
-from .commands import get_aligner_command, GMST_CMD, GFFREAD_PROG, run_command
+from .commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
 from .qc_classes import myQueryProteins
+from .parsers import parse_GMST, parse_corrORF
 
 ### Environment manipulation functions ###
 def rename_isoform_seqids(input_fasta, force_id_ignore=False):
@@ -268,6 +269,24 @@ def sequence_correction(
             subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: TextIO, discard_gtf: TextIO) -> None:
+    """
+    Processes a single line from a GTF file, validating and categorizing it based on certain criteria.
+
+    Args:
+        line (str): A single line from a GTF file.
+        genome_dict (Dict[str, str]): A dictionary containing genome reference data, where keys are chromosome names.
+        corrGTF_out (TextIO): A file object to write valid GTF lines with known strand information.
+        discard_gtf (TextIO): A file object to write GTF lines with unknown strand information.
+    Raises:
+        ValueError: If the chromosome in the GTF line is not found in the genome reference dictionary.
+
+    Notes:
+        - Lines starting with '#' are ignored.
+        - Lines with fewer than 7 fields are considered malformed and skipped with a warning.
+        - Lines with 'transcript' or 'exon' feature types are further processed:
+            - If the strand is unknown ('-' or '+'), the line is written to the discard_gtf file with a warning.
+            - Otherwise, the line is written to the corrGTF_out file.
+    """
     if line.startswith("#"):
         return
 
@@ -300,70 +319,28 @@ def filter_gtf(isoforms: str, corrGTF: str, badstrandGTF: str, genome_dict: Dict
         raise
 
 
-def predictORF(args, corrFASTA, corrORF):
-    
+def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     # ORF generation
     print("**** Predicting ORF sequences...", file=sys.stdout)
 
-    gmst_dir = os.path.join(os.path.abspath(args.dir), "GMST")
+    gmst_dir = os.path.join(os.path.abspath(outdir), "GMST")
     gmst_pre = os.path.join(gmst_dir, "GMST_tmp")
     if not os.path.exists(gmst_dir):
         os.makedirs(gmst_dir) 
 
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
     gmst_rex = re.compile(r'(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
-    orfDict = {}  # GMST seq id --> myQueryProteins object
-    if args.skipORF:
+    # GMST seq id --> myQueryProteins object
+    if skipORF:
         print("WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!", file=sys.stderr)
     elif os.path.exists(corrORF):
-        print("ORF file {0} already exists. Using it....".format(corrORF), file=sys.stderr)
-        for r in SeqIO.parse(open(corrORF), 'fasta'):
-            # now process ORFs into myQueryProtein objects
-            m = gmst_rex.match(r.description)
-            if m is None:
-                print("Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {0}! Abort!".format(r.description), file=sys.stderr)
-                sys.exit(1)
-            orf_length = int(m.group(2))
-            cds_start = int(m.group(4))
-            cds_end = int(m.group(5))
-            orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
+        print(f"ORF file {corrORF} already exists. Using it....", file=sys.stderr)
+        orfDict = parse_corrORF(corrORF,gmst_rex)
     else:
-        cur_dir = os.path.abspath(os.getcwd())
-        os.chdir(args.dir)
-        print("Running ORF prediction on {0}".format(corrFASTA))
-        if args.orf_input is not None:
-            print("Running ORF prediction of input on {0}...".format(args.orf_input))
-            cmd = GMST_CMD.format(i=os.path.realpath(args.orf_input), o=gmst_pre)
-        else:
-            cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
-        run_command(cmd, description="GMST ORF prediction")
-        os.chdir(cur_dir)
+        print(f"Running ORF prediction on {corrFASTA}")
+        run_gmst(corrFASTA,orf_input,gmst_pre)
         # Modifying ORF sequences by removing sequence before ATG
-        with open(corrORF, "w") as f:
-            for r in SeqIO.parse(open(gmst_pre+'.faa'), 'fasta'):
-                m = gmst_rex.match(r.description)
-                if m is None:
-                    print("Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {0}! Abort!".format(r.description), file=sys.stderr)
-                    sys.exit(1)
-                id_pre = m.group(1)
-                orf_length = int(m.group(2))
-                orf_strand = m.group(3)
-                cds_start = int(m.group(4))
-                cds_end = int(m.group(5))
-                pos = r.seq.find('M')
-                if pos!=-1:
-                    # must modify both the sequence ID and the sequence
-                    orf_length -= pos
-                    cds_start += pos*3
-                    newid = "{0}|{1}_aa|{2}|{3}|{4}".format(id_pre, orf_length, orf_strand, cds_start, cds_end)
-                    newseq = str(r.seq)[pos:]
-                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, newseq, proteinID=newid)
-                    f.write(">{0}\n{1}\n".format(newid, newseq))
-                else:
-                    new_rec = r
-                    orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
-                    f.write(">{0}\n{1}\n".format(new_rec.description, new_rec.seq))
-
+        orfDict = parse_GMST(corrORF, gmst_rex, gmst_pre)
     if len(orfDict) == 0:
         print("WARNING: All input isoforms were predicted as non-coding", file=sys.stderr)
 

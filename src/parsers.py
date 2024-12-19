@@ -6,14 +6,14 @@ from collections import defaultdict
 from csv import DictReader
 from bx.intervals.intersection import IntervalTree
 from statistics import mean
-
+from Bio import SeqIO
 import numpy as np
 
 from .utilities.cupcake.sequence.STAR import STARJunctionReader
 from .utilities.cupcake.io.GFF import collapseGFFReader
 
 from .config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
-from .qc_classes import genePredReader
+from .qc_classes import genePredReader, myQueryProteins
 from .utils import mergeDict, flatten
 #from .commands import GTF2GENEPRED_PROG
 
@@ -43,7 +43,7 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
     print("**** Parsing Reference Transcriptome....", file=sys.stdout)
     print(referenceFiles)
     if os.path.exists(referenceFiles):
-        print("{0} already exists. Using it.".format(referenceFiles), file=sys.stdout)
+        print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
     else:
         ## gtf to genePred
         if not (gene_name or isoAnnot):
@@ -83,7 +83,7 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
-        print("WARNING: ref annotation contains chromosomes not in genome: {0}\n".format(",".join(diff)), file=sys.stderr)
+        print(f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n", file=sys.stderr)
 
     # convert the content of junctions_by_chr to sorted list
     # This uses dictionary to iterate over the chormoosomes, keeping the keys, but sorting the values
@@ -110,12 +110,11 @@ def isoforms_parser(corrGTF):
     print("**** Parsing Isoforms....", file=sys.stderr)
 
     # gtf to genePred
-    cmd = GTF2GENEPRED_PROG + " {0} {1} -genePredExt -allErrors -ignoreGroupsWithoutExons".format(\
-        corrGTF, queryFile)
+    cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
     
     # TODO: Change to the run command function
     if subprocess.check_call(cmd, shell=True)!=0:
-        print("ERROR running cmd: {0}".format(cmd), file=sys.stderr)
+        print(f"ERROR running cmd: {cmd}", file=sys.stderr)
         sys.exit(1)
 
 
@@ -142,8 +141,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     else:
         cov_files = glob.glob(coverageFiles)
 
-    print("Input pattern: {0}.\nThe following files found and to be read as junctions:\n{1}".format(\
-        coverageFiles, "\n".join(cov_files) ), file=sys.stderr)
+    print(f"Input pattern: {coverageFiles}.\nThe following files found and to be read as junctions:\n" + '\n'.join(cov_files), file=sys.stderr)
 
     cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: (0,0))))
     undefined_strand_count = 0
@@ -161,7 +159,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
             else:
                 cov_by_chrom_strand[(r.chrom, r.strand)][(r.start, r.end)][prefix] = (r.unique_count, r.multi_count)
             all_read += 1
-    print("{0} junctions read. {1} junctions added to both strands because no strand information from STAR.".format(all_read, undefined_strand_count), file=sys.stderr)
+    print(f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR.", file=sys.stderr)
 
     return samples, cov_by_chrom_strand
 
@@ -195,7 +193,7 @@ def expression_parser(expressionFile):
                 ismatrix = True
                 name_id = 'ID'
         else:
-                print("Expected Kallisto or RSEM file format from {0}. Abort!".format(expressionFile), file=sys.stderr)
+                print(f"Expected Kallisto or RSEM file format from {expressionFile}. Abort!", file=sys.stderr)
         exp_sample = {}
         if ismatrix:
             for r in reader:
@@ -243,9 +241,9 @@ def get_fusion_component(fusion_gtf):
         comp.sort(key=lambda x: x[0])  # now comp is (<isoform indx>, <length>)
         _iso, _len = comp[0]
         _acc = _len
-        result["PBfusion.{0}.{1}".format(gene, _iso)] = (1, _len)
+        result[f"PBfusion.{gene}.{_iso}"] = (1, _len)
         for _iso, _len in comp[1:]:
-            result["PBfusion.{0}.{1}".format(gene, _iso)] = (_acc+1, _acc+_len)
+            result[f"PBfusion.{gene}.{_iso}"] = (_acc+1, _acc+_len)
             _acc += _len
     return result
 
@@ -299,7 +297,7 @@ def FLcount_parser(fl_count_filename):
     count_header = reader.fieldnames
     if type=='SINGLE_SAMPLE':
         if 'count_fl' not in count_header:
-            print("Expected `count_fl` field in count file {0}. Abort!".format(fl_count_filename), file=sys.stderr)
+            print(f"Expected `count_fl` field in count file {fl_count_filename}. Abort!", file=sys.stderr)
             sys.exit(1)
         d = dict((r['pbid'], r) for r in reader)
     elif type=='MULTI_CHAIN':
@@ -309,7 +307,7 @@ def FLcount_parser(fl_count_filename):
         d = dict((r['id'], r) for r in reader)
         flag_single_sample = False
     else:
-        print("Expected pbid or superPBID as a column in count file {0}. Abort!".format(fl_count_filename), file=sys.stderr)
+        print(f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!", file=sys.stderr)
         sys.exit(1)
     f.close()
 
@@ -339,3 +337,47 @@ def FLcount_parser(fl_count_filename):
         samples.remove('id')
 
     return samples, fl_count_dict
+
+
+def parse_corrORF(corrORF,gmst_rex):
+    orfDict = {}
+    for r in SeqIO.parse(open(corrORF), 'fasta'):
+        # now process ORFs into myQueryProtein objects
+        m = gmst_rex.match(r.description)
+        if m is None:
+            print(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!", file=sys.stderr)
+            sys.exit(1)
+        orf_length = int(m.group(2))
+        cds_start = int(m.group(4))
+        cds_end = int(m.group(5))
+        orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
+    return orfDict
+
+def parse_GMST(corrORF,gmst_rex,gmst_pre):
+    orfDict = {}
+    # Modifying ORF sequences by removing sequence before ATG
+    with open(corrORF, "w") as f:
+        for r in SeqIO.parse(open(gmst_pre+'.faa'), 'fasta'):
+            m = gmst_rex.match(r.description)
+            if m is None:
+                print(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!", file=sys.stderr)
+                sys.exit(1)
+            id_pre = m.group(1)
+            orf_length = int(m.group(2))
+            orf_strand = m.group(3)
+            cds_start = int(m.group(4))
+            cds_end = int(m.group(5))
+            pos = r.seq.find('M')
+            # TODO: Revisit when the predictor has been
+            if pos!= -1: # 
+                # must modify both the sequence ID and the sequence
+                orf_length -= pos
+                cds_start += pos*3
+                newid = f"{id_pre}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
+                newseq = str(r.seq)[pos:]
+                orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, newseq, proteinID=r.id)
+                f.write(f">{newid}\n{newseq}\n")
+            else:
+                orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
+                f.write(f">{r.description}\n{r.seq}\n")
+    return orfDict
