@@ -16,7 +16,6 @@ from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from .config import seqid_rex1, seqid_rex2, seqid_fusion
 from .commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
-from .qc_classes import myQueryProteins
 from .parsers import parse_GMST, parse_corrORF
 
 ### Environment manipulation functions ###
@@ -343,3 +342,5 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
         print("WARNING: All input isoforms were predicted as non-coding", file=sys.stderr)
 
     return(orfDict)
+
+

@@ -14,10 +14,10 @@ from .utilities.short_reads import get_bam_header,get_ratio_TSS, get_TSS_bed
 from .qc_classes import myQueryTranscripts, CAGEPeak, PolyAPeak
 from .helpers import write_junctionInfo, get_isoform_hits_name
 from .config import FIELDS_JUNC, FIELDS_CLASS, seqid_fusion
-from .parsers import get_fusion_component, STARcov_parser
+from .parsers import get_fusion_component
 from .utils import find_polyA_motif
 from .classification_utils import (
-    calc_exon_overlap, calc_splicesite_agreement, get_diff_tss_tts,
+    SJ_coverage, TSS_ratio_calculation, calc_exon_overlap, calc_splicesite_agreement, get_diff_tss_tts,
     calc_overlap, categorize_incomplete_matches, get_gene_diff_tss_tts
 )
 
@@ -523,7 +523,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
         # ex: PBfusion.1.1 --> (1-based start, 1-based end) of where the fusion component is w.r.t to entire fusion
         fusion_components = get_fusion_component(args.isoforms)
 
-    # TODO: Move this to another part? All the saving together
+    # TODO: Create a new module to do all of the pre-classification steps.
     # If the isoform hits are present:
     if args.isoform_hits:
         isoform_hits_name = get_isoform_hits_name(args.dir,args.output)
@@ -535,51 +535,14 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
         isoform_hits_name = None
 
     ## read coverage files if provided
-    fields_junc_cur = FIELDS_JUNC # add the samples to the header
-    if args.coverage is not None:
-        print("**** Reading Splice Junctions coverage files.", file=sys.stdout)
-        SJcovNames, SJcovInfo = STARcov_parser(args.coverage)
-        for name in SJcovNames:
-            fields_junc_cur += [name + '_unique', name + '_multi']
-    else:
-        if args.short_reads is not None:
-            for name in SJcovNames:
-                fields_junc_cur += [name + '_unique', name + '_multi']
-        else: #TODO: Logging
-            print("Splice Junction Coverage files not provided.", file=sys.stdout)
-            
+    star_out, star_index, \
+        SJcovNames, SJcovInfo, fields_junc_cur \
+            = SJ_coverage(args.short_reads, args.coverage, 
+                          args.genome, args.dir, args.cpus)
 
     ## TSS ratio calculation
-    if  args.SR_bam is not None:
-        print("Using provided BAM files for calculating TSS ratio", file=sys.stdout)
-        if os.path.isdir(args.SR_bam):
-            bams = []
-            for files in os.listdir(args.SR_bam):
-                if files.endswith('.bam'):
-                    bams.append(args.SR_bam + '/' + files)
-        else:
-            b = open(args.SR_bam , "r")
-            bams = []
-            for file in b:
-                bams.append(file.rstrip())
-        # TODO: where did this functions come from?
-        chr_order = get_bam_header(bams[0])
-        inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
-        ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, args.ratio_TSS_metric)
-    else:
-        if args.short_reads is not None: # If short reads are provided, it looks for the STAR output
-            print("Running calculation of TSS ratio", file=sys.stdout)
-            chr_order = star_index + "/chrNameLength.txt"
-            inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
-            bams=[]
-            for filename in os.listdir(star_out):
-                if filename.endswith('.bam'):
-                    bams.append(star_out + '/' + filename)
-            ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, args.ratio_TSS_metric)
-        else:
-            print('**** TSS ratio will not be calculated since SR information was not provided')
-            bams = None
-            ratio_TSS_dict = None
+    ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam,args.short_reads,
+                                           star_out,star_index,corrGTF,args.ratio_TSS_metric)
 
     if args.CAGE_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)

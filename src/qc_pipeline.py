@@ -135,7 +135,7 @@ def run(args):
                     isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     else:
         print("Full-length read abundance files not provided.", file=sys.stderr)
-
+    
     ## TSS ratio dict reading
     if ratio_TSS_dict is not None:
         print('**** Adding TSS ratio data... ****')
