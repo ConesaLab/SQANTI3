@@ -584,7 +584,6 @@ def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr
             isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
 
         if isoform_hit.str_class in ("intergenic", "genic_intron"):
-            print(novel_gene_index)
             # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
             prefix = f'novelGene_{novel_gene_prefix}_' if novel_gene_prefix is not None else 'novelGene_'
             isoform_hit.genes = [f'{prefix}{novel_gene_index}']

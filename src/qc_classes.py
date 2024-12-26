@@ -115,7 +115,6 @@ class genePredRecord(object):
             raise ValueError("Transcription start must be less than transcription end.")
 
         if cdsStart > cdsEnd:
-            print(cdsStart, cdsEnd,strand)
             raise ValueError("CDS start must be less than CDS end.")
 
         if exonCount <= 0:
@@ -259,7 +258,9 @@ class myQueryTranscripts:
 
     def get_total_diff(self):
         return abs(self.tss_diff)+abs(self.tts_diff)
-
+    def add_gene(self, gene):
+        self.genes.append(gene)
+        
     def modify(self, ref_transcript, ref_gene, tss_diff, tts_diff, refLen, refExons):
         self.transcripts = [ref_transcript]
         self.genes = [ref_gene]

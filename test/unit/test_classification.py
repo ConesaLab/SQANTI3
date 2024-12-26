@@ -48,7 +48,7 @@ def test_isoformClassification(reference_data, result_dataframe, isoform_data, g
     for _, records in isoform_data.items():
     
         for record in records:
-            result,novel_gene_index = classify_isoform(record, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+            result, novel_gene_index = classify_isoform(record, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
                                       junctions_by_gene, start_ends_by_gene, genome_dict,novel_gene_index)
             
             expected_row = expected_results.loc[expected_results["isoform"] == result.id]
@@ -65,3 +65,4 @@ def test_isoformClassification(reference_data, result_dataframe, isoform_data, g
             assert detected_genes == expected_genes, (
                 f"Isoform {result.id}. Expected {expected_genes}, got {result.genes}"
             )
+

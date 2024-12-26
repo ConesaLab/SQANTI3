@@ -65,6 +65,8 @@ def get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene):
     Args:
         isoform_hit: An object representing the isoform hit, which contains information about 
                         the genes it hits and their start/end sites.
+        trec: The transcript record object representing the query transcript.
+        start_ends_by_gene: A dictionary containing the start and end sites for all isoforms of a gene.
 
     Modifies:
         isoform_hit: Updates the `tss_gene_diff` and `tts_gene_diff` attributes with the nearest 
@@ -116,7 +118,7 @@ def categorize_incomplete_matches(trec, ref):
     else:
         if agree_end: # front does not agree, end agrees
             return ("3prime_fragment" if trec.strand=='+' else '5prime_fragment')
-        else:
+        else: # TODO: check if the case of the test would be possible
             return "internal_fragment"
 
 

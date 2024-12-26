@@ -74,7 +74,8 @@ def run(args):
     polyA_motif_list, phyloP_reader = preprocess_isoform_data(args, corrGTF)
     
     # isoform classification + intra-priming + id and junction characterization
-    isoforms_info, ratio_TSS_dict = isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
+    isoforms_info, ratio_TSS_dict = isoformClassification(args.sites,args.window,args.novel_gene_prefix,args.is_fusion,
+                                                          isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
                           junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
                           outputClassPath, outputJuncPath,fusion_components, isoform_hits_name,SJcovNames, SJcovInfo,
                           fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj, polyA_motif_list, phyloP_reader)
@@ -107,6 +108,7 @@ def run(args):
         if not os.path.exists(args.fl_count):
             print("FL count file {0} does not exist!".format(args.fl_count), file=sys.stderr)
             sys.exit(1)
+        
         print("**** Reading Full-length read abundance files...", file=sys.stderr)
         fl_samples, fl_count_dict = FLcount_parser(args.fl_count)
         for pbid in fl_count_dict:
@@ -265,7 +267,6 @@ def run(args):
             del isoforms_info[key]
         omitted_keys = list(omitted_iso.keys())
         # TODO: check if this print is necessary
-        print(type(omitted_keys))
         omitted_keys.sort(key=lambda x: (omitted_iso[x].chrom,omitted_iso[x].id))
         print('Type omitted keys ', type(omitted_keys))
         with open(omitted_name, 'w') as h:

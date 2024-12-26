@@ -64,7 +64,6 @@ def loadSpliceJunctions(filepath):
             #sj_type_counts[rec['junction_category']+'_'+rec['canonical']] += 1
         else:
             sj_seen_counts[sj_pair] += 1
-    print(f"PB.103684.2: {dict(sj_seen_counts).keys()}")
     return sj_dict, dict(sj_seen_counts)
 
 
