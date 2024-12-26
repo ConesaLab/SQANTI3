@@ -2,21 +2,16 @@ import os, timeit, sys
 import subprocess
 
 from csv import DictReader, DictWriter
-from collections import defaultdict
 from Bio import SeqIO
 
-import pandas as pd
-from src.utilities.rt_switching import rts
 from src.utilities.indels_annot import calc_indels_from_sam
-from src.utilities.short_reads import kallisto, star
 
 from .helpers import (
     get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name,
     get_omitted_name,sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
 from .parsers import (
-    reference_parser, isoforms_parser, 
-    FLcount_parser, expression_parser
+    reference_parser, isoforms_parser
 )
 from .classification import isoformClassification, preprocess_isoform_data
 from .config import FIELDS_CLASS 
@@ -24,7 +19,11 @@ from .commands import (
     RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG,
     utilitiesPath, GTF_to_genePred
 )
-from .utils import pstdev
+from src.qc_computations import (
+    classify_fsm, isoform_expression_info, isoforms_junctions,
+    process_rts_swiching, ratio_TSS_dict_reading,
+    full_length_quantification
+)
 
 def run(args):
 
@@ -88,115 +87,29 @@ def run(args):
     print("**** RT-switching computation....", file=sys.stderr)
 
     # RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
-    RTS_info = rts([outputJuncPath+"_tmp", args.genome, "-a"], genome_dict)
-    for pbid in isoforms_info:
-        if pbid in RTS_info and len(RTS_info[pbid]) > 0:
-            isoforms_info[pbid].RT_switching = "TRUE"
-        else:
-            isoforms_info[pbid].RT_switching = "FALSE"
-
+    
+    isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
+                                                    args.genome,genome_dict)
+    print(f"After RTS classificaion: {len(isoforms_info)}")
 
     ## FSM classification
-    geneFSM_dict = defaultdict(lambda: [])
-    for iso in isoforms_info:
-        gene = isoforms_info[iso].geneName()  # if multi-gene, returns "geneA_geneB_geneC..."
-        geneFSM_dict[gene].append(isoforms_info[iso].str_class)
+    isoforms_info = classify_fsm(isoforms_info)
+    print(f"After classify fsm: {len(isoforms_info)}")
 
     fields_class_cur = FIELDS_CLASS
     ## FL count file
     if args.fl_count:
-        if not os.path.exists(args.fl_count):
-            print("FL count file {0} does not exist!".format(args.fl_count), file=sys.stderr)
-            sys.exit(1)
-        
-        print("**** Reading Full-length read abundance files...", file=sys.stderr)
-        fl_samples, fl_count_dict = FLcount_parser(args.fl_count)
-        for pbid in fl_count_dict:
-            if pbid not in isoforms_info:
-                print("WARNING: {0} found in FL count file but not in input fasta.".format(pbid), file=sys.stderr)
-        if len(fl_samples) == 1: # single sample from PacBio
-            print("Single-sample PacBio FL count format detected.", file=sys.stderr)
-            for iso in isoforms_info:
-                if iso in fl_count_dict:
-                    isoforms_info[iso].FL = fl_count_dict[iso]
-                else:
-                    print("WARNING: {0} not found in FL count file. Assign count as 0.".format(iso), file=sys.stderr)
-                    isoforms_info[iso].FL = 0
-        else: # multi-sample
-            print("Multi-sample PacBio FL count format detected.", file=sys.stderr)
-            fields_class_cur = FIELDS_CLASS + ["FL."+s for s in fl_samples]
-            for iso in isoforms_info:
-                if iso in fl_count_dict:
-                    isoforms_info[iso].FL_dict = fl_count_dict[iso]
-                else:
-                    print("WARNING: {0} not found in FL count file. Assign count as 0.".format(iso), file=sys.stderr)
-                    isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
+        isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
     else:
         print("Full-length read abundance files not provided.", file=sys.stderr)
     
     ## TSS ratio dict reading
     if ratio_TSS_dict is not None:
-        print('**** Adding TSS ratio data... ****')
-        for iso in ratio_TSS_dict:
-            if iso not in isoforms_info:
-                print("WARNING: {0} found in ratio TSS file but not in input FASTA/GTF".format(iso), file=sys.stderr)
-        for iso in isoforms_info:
-            if iso in ratio_TSS_dict:
-                if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
-                    isoforms_info[iso].ratio_TSS = 'NA'
-                else:
-                    isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
-            else:
-                print("WARNING: {0} not found in ratio TSS file. Assign count as 1.".format(iso), file=sys.stderr)
-                isoforms_info[iso].ratio_TSS = 1
+        isoforms_info = ratio_TSS_dict_reading(isoforms_info, ratio_TSS_dict)
 
     ## Isoform expression information
-    if args.expression:
-        print("**** Reading Isoform Expression Information.", file=sys.stderr)
-        exp_dict = expression_parser(args.expression)
-        gene_exp_dict = {}
-        for iso in isoforms_info:
-            if iso not in exp_dict:
-                exp_dict[iso] = 0
-                print("WARNING: isoform {0} not found in expression matrix. Assigning TPM of 0.".format(iso), file=sys.stderr)
-            gene = isoforms_info[iso].geneName()
-            if gene not in gene_exp_dict:
-                gene_exp_dict[gene] = exp_dict[iso]
-            else:
-                gene_exp_dict[gene] = gene_exp_dict[gene]+exp_dict[iso]
-    else:
-        if args.short_reads is not None:
-            print("**** Running Kallisto to calculate isoform expressions. ")
-            expression_files = kallisto(corrFASTA, args.short_reads, args.dir, args.cpus)
-            exp_dict = expression_parser(expression_files)
-            gene_exp_dict = {}
-            for iso in isoforms_info:
-                if iso not in exp_dict:
-                    exp_dict[iso] = 0
-                    print("WARNING: isoform {0} not found in expression matrix. Assigning TPM of 0.".format(iso), file=sys.stderr)
-                gene = isoforms_info[iso].geneName()
-                if gene not in gene_exp_dict:
-                    gene_exp_dict[gene] = exp_dict[iso]
-                else:
-                    gene_exp_dict[gene] = gene_exp_dict[gene]+exp_dict[iso]
-        else:
-            exp_dict = None
-            gene_exp_dict = None
-            print("Isoforms expression files not provided.", file=sys.stderr)
-
-
-    ## Adding indel, FSM class and expression information
-    for iso in isoforms_info:
-        gene = isoforms_info[iso].geneName()
-        if exp_dict is not None and gene_exp_dict is not None:
-            isoforms_info[iso].geneExp = gene_exp_dict[gene]
-            isoforms_info[iso].isoExp  = exp_dict[iso]
-        if len(geneFSM_dict[gene])==1:
-            isoforms_info[iso].FSM_class = "A"
-        elif "full-splice_match" in geneFSM_dict[gene]:
-            isoforms_info[iso].FSM_class = "C"
-        else:
-            isoforms_info[iso].FSM_class = "B"
+    isoforms_info = isoform_expression_info(isoforms_info,args.expression,args.short_reads,
+                                           args.dir,corrFASTA,args.cpus)
 
     if indelsTotal is not None:
         for iso in isoforms_info:
@@ -207,50 +120,9 @@ def run(args):
 
 
     ## Read junction files and create attributes per id
-    # Read the junction information to fill in several remaining unfilled fields in classification
-    # (1) "canonical": is "canonical" if all junctions are canonical, otherwise "non_canonical"
-    # (2) "bite": is TRUE if any of the junction "bite_junction" field is TRUE
-
     reader = DictReader(open(outputJuncPath+"_tmp"), delimiter='\t')
     fields_junc_cur = reader.fieldnames
-
-    sj_covs_by_isoform = defaultdict(lambda: [])  # pbid --> list of total_cov for each junction so we can calculate SD later
-    for r in reader:
-        # only need to do assignment if:
-        # (1) the .canonical field is still "NA"
-        # (2) the junction is non-canonical
-        assert r['canonical'] in ('canonical', 'non_canonical')
-        if (isoforms_info[r['isoform']].canonical == 'NA') or \
-            (r['canonical'] == 'non_canonical'):
-            isoforms_info[r['isoform']].canonical = r['canonical']
-
-        if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'TRUE'):
-            isoforms_info[r['isoform']].bite = r['bite_junction']
-
-        if r['indel_near_junct'] == 'TRUE':
-            if isoforms_info[r['isoform']].nIndelsJunc == 'NA':
-                isoforms_info[r['isoform']].nIndelsJunc = 0
-            isoforms_info[r['isoform']].nIndelsJunc += 1
-
-        # min_cov: min( total_cov[j] for each junction j in this isoform )
-        # min_cov_pos: the junction [j] that attributed to argmin(total_cov[j])
-        # min_sample_cov: min( sample_cov[j] for each junction in this isoform )
-        # sd_cov: sd( total_cov[j] for each junction j in this isoform )
-        if r['sample_with_cov'] != 'NA':
-            sample_with_cov = int(r['sample_with_cov'])
-            if (isoforms_info[r['isoform']].min_samp_cov == 'NA') or (isoforms_info[r['isoform']].min_samp_cov > sample_with_cov):
-                isoforms_info[r['isoform']].min_samp_cov = sample_with_cov
-
-        if r['total_coverage_unique'] != 'NA':
-            total_cov = int(r['total_coverage_unique'])
-            sj_covs_by_isoform[r['isoform']].append(total_cov)
-            if (isoforms_info[r['isoform']].min_cov == 'NA') or (isoforms_info[r['isoform']].min_cov > total_cov):
-                isoforms_info[r['isoform']].min_cov = total_cov
-                isoforms_info[r['isoform']].min_cov_pos = r['junction_number']
-
-
-    for pbid, covs in sj_covs_by_isoform.items():
-        isoforms_info[pbid].sd = pstdev(covs)
+    isoforms_info = isoforms_junctions(isoforms_info, reader)
 
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)
@@ -321,8 +193,8 @@ def run(args):
     stop3 = timeit.default_timer()
 
     print("Removing temporary files....", file=sys.stderr)
-    #os.remove(outputClassPath+"_tmp")
-    #os.remove(outputJuncPath+"_tmp")
+    os.remove(outputClassPath+"_tmp")
+    os.remove(outputJuncPath+"_tmp")
 
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 
