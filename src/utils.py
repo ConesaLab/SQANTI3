@@ -47,10 +47,11 @@ def find_polyA_motif(genome_seq, polyA_motif_list):
             return motif, -(len(genome_seq)-i-len(motif)+1), 'TRUE'
     return 'NA', 'NA', 'FALSE'
 
+
 def get_files_from_dir(directory, extension):
     """ Get all files with a given extension from a directory or a file"""
     if os.path.isfile(directory):
         with open(directory) as f:
-            return [line.strip for line in f]
+            return [line.strip() for line in f]  # Corrected strip method call
     else:
-        return [os.path.join(directory,f) for f in os.listdir(directory) if f.endswith(extension)] 
+        return [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(extension)]

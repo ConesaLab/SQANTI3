@@ -569,8 +569,30 @@ def preprocess_isoform_data(args, corrGTF):
     return (fusion_components,isoform_hits_name, SJcovNames, SJcovInfo, fields_junc_cur,
             ratio_TSS_dict, cage_peak_obj, polya_peak_obj, polyA_motif_list, phyloP_reader)
 
+def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene,
+                     start_ends_by_gene, genome_dict, novel_gene_index, isoform_hits_name=None,novel_gene_prefix=None,window=20):
+        # Find best reference hit
+        isoform_hit = transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, 
+                                                  start_ends_by_gene, rec, genome_dict, nPolyA=window)
 
-def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
+        if isoform_hit.str_class in ("anyKnownJunction", "anyKnownSpliceSite"):
+            # not FSM or ISM --> see if it is NIC, NNC, or fusion
+            isoform_hit = novelIsoformsKnownGenes(isoform_hit, rec, junctions_by_chr, junctions_by_gene, 
+                                                  start_ends_by_gene)
+        elif isoform_hit.str_class in ("", "geneOverlap"):
+            # possibly NNC, genic, genic intron, anti-sense, or intergenic
+            isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
+
+        if isoform_hit.str_class in ("intergenic", "genic_intron"):
+            print(novel_gene_index)
+            # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
+            prefix = f'novelGene_{novel_gene_prefix}_' if novel_gene_prefix is not None else 'novelGene_'
+            isoform_hit.genes = [f'{prefix}{novel_gene_index}']
+            isoform_hit.transcripts = ['novel']
+            novel_gene_index += 1
+        return isoform_hit, novel_gene_index
+
+def isoformClassification(sites,window,novel_gene_prefix,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
                           junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
                           outputClassPath, outputJuncPath, fusion_components,isoform_hits_name,SJcovNames, 
                           SJcovInfo, fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj,
@@ -579,7 +601,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
     print("**** Performing Classification of Isoforms....", file=sys.stdout)
 
 
-    accepted_canonical_sites = list(args.sites.split(","))
+    accepted_canonical_sites = list(sites.split(","))
     # Creates a temporary file to write the classification and junction results
     handle_class = open(outputClassPath+"_tmp", "w")
     fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter='\t')
@@ -591,30 +613,14 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
 
     isoforms_info = {}
     novel_gene_index = 1
-
     for _,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit
-            isoform_hit = transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, rec, genome_dict, nPolyA=args.window)
-
-            if isoform_hit.str_class in ("anyKnownJunction", "anyKnownSpliceSite"):
-                # not FSM or ISM --> see if it is NIC, NNC, or fusion
-                isoform_hit = novelIsoformsKnownGenes(isoform_hit, rec, junctions_by_chr, junctions_by_gene, start_ends_by_gene)
-            elif isoform_hit.str_class in ("", "geneOverlap"):
-                # possibly NNC, genic, genic intron, anti-sense, or intergenic
-                isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
-
+            isoform_hit,novel_gene_index = classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+                                            junctions_by_gene, start_ends_by_gene, genome_dict, novel_gene_index,
+                                            isoform_hits_name, novel_gene_prefix,window)
             # write out junction information
             write_junctionInfo(rec, junctions_by_chr, accepted_canonical_sites, indelsJunc, genome_dict, fout_junc, covInf=SJcovInfo, covNames=SJcovNames, phyloP_reader=phyloP_reader)
-
-            if isoform_hit.str_class in ("intergenic", "genic_intron"):
-                # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
-                if args.novel_gene_prefix is not None:  # used by splits to not have redundant novelGene IDs
-                    isoform_hit.genes = ['novelGene_' + str(args.novel_gene_prefix) + '_' + str(novel_gene_index)]
-                else:
-                    isoform_hit.genes = ['novelGene_' + str(novel_gene_index)]
-                isoform_hit.transcripts = ['novel']
-                novel_gene_index += 1
 
             # look at Cage Peak info (if available)
             if cage_peak_obj is not None:
@@ -645,7 +651,7 @@ def isoformClassification(args, isoforms_by_chr, refs_1exon_by_chr, refs_exons_b
                 isoform_hit.polyA_motif_found = polyA_motif_found
 
             # Fill in ORF/coding info and NMD detection
-            if args.is_fusion:
+            if is_fusion:
                 #pdb.set_trace()
                 # fusion - special case handling, need to see which part of the ORF this segment falls on
                 fusion_gene = 'PBfusion.' + str(seqid_fusion.match(rec.id).group(1))

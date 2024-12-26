@@ -17,7 +17,7 @@ from .qc_classes import genePredReader, myQueryProteins
 from .utils import mergeDict, flatten
 #from .commands import GTF2GENEPRED_PROG
 
-def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
+def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
     """
     Parses the reference GTF file and generates various genomic interval data structures.
 
@@ -41,15 +41,16 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
     print("**** Parsing Reference Transcriptome....", file=sys.stdout)
-    print(referenceFiles)
     if os.path.exists(referenceFiles):
         print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
     else:
-        ## gtf to genePred
-        if not (gene_name or isoAnnot):
-            subprocess.call([GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons'])
-        else:
-            subprocess.call([GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons', '-geneNameAsName2'])
+        # gtf to genePred
+        gtf2genepred_args = [GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
+
+        if gene_name or isoAnnot:
+            gtf2genepred_args.append('-geneNameAsName2')
+
+        subprocess.call(gtf2genepred_args)
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -94,8 +95,6 @@ def reference_parser(annot,out_dir,out_pref,gene_name,isoAnnot, genome_chroms):
         }
         for k, v in junctions_by_chr.items()
 }
-
-    print(dict(junctions_by_gene)["ENSG00000206195.11"])
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 

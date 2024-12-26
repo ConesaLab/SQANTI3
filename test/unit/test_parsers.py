@@ -16,9 +16,9 @@ def reference_parser_input():
         "gtf": os.path.join(main_path, "test/test_data/test_reference.gtf"),
         "outdir": os.path.join(main_path, "test/test_data"),
         "prefix": "test",
+        "genome_dict": {"chr22": "Sequence"},
         "gene_name": False,
-        "isoAnnot": False,
-        "genome_dict": {"chr22": "Sequence"}
+        "isoAnnot": False
     }
     return data
 

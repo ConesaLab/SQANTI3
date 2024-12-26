@@ -4,7 +4,7 @@ from collections.abc import Iterable
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 # Assuming the functions are in a file named 'utils.py'
-from src.utils import mergeDict, flatten, pstdev, find_polyA_motif
+from src.utils import get_files_from_dir, mergeDict, flatten, pstdev, find_polyA_motif
 
 # Tests for mergeDict function
 def test_merge_non_overlapping_dicts():
@@ -115,3 +115,32 @@ def test_find_polyA_motif_empty_motif_list():
     polyA_motif_list = []
     result = find_polyA_motif(genome_seq, polyA_motif_list)
     assert result == ("NA", "NA", "FALSE")
+    
+@pytest.fixture
+def setup_test_files(tmp_path):
+    # Create a temporary directory and files for testing
+    test_dir = tmp_path / "test_dir"
+    test_dir.mkdir()
+
+    # Create some test files with different extensions
+    (test_dir / "file1.txt").write_text("content1")
+    (test_dir / "file2.txt").write_text("content2")
+    (test_dir / "file3.csv").write_text("content3")
+
+    # Create a file containing a list of files
+    file_list = tmp_path / "file_list.txt"
+    file_list.write_text(str(test_dir / "file1.txt") + "\n" + str(test_dir / "file2.txt") + "\n")
+
+    return test_dir, file_list
+
+def test_get_files_from_dir_with_directory(setup_test_files):
+    test_dir, _ = setup_test_files
+    result = get_files_from_dir(test_dir, ".txt")
+    expected = [str(test_dir / "file1.txt"), str(test_dir / "file2.txt")]
+    assert sorted(result) == sorted(expected)
+
+def test_get_files_from_dir_with_file(setup_test_files):
+    _, file_list = setup_test_files
+    result = get_files_from_dir(file_list, ".txt")
+    expected = [str(file_list.parent / "test_dir" / "file1.txt"), str(file_list.parent / "test_dir" / "file2.txt")]
+    assert sorted(result) == sorted(expected)

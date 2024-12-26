@@ -46,8 +46,8 @@ def qc_argparse():
     apout.add_argument('-d','--dir', type=valid_dir, default='./', help='Directory for output files. (Default: Directory where the script was run.)')
     apout.add_argument("--saturation", action="store_true", default=False, help='Include saturation curves into report')
     apout.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help=f"Select report format: {', '.join(['html', 'pdf', 'both', 'skip'])} (default: %(default)s)")
-    apout.add_argument('--isoform_hits' , help=' Report all FSM/ISM isoform hits in a separate file', required=False, default = False, action='store_true')
-    apout.add_argument('--ratio_TSS_metric' , help=' Define which statistic metric should be reported in the ratio_TSS column', choices=['max', 'mean', 'median', '3quartile'], default='max')
+    apout.add_argument('--isoform_hits' , action='store_true', help=' Report all FSM/ISM isoform hits in a separate file')
+    apout.add_argument('--ratio_TSS_metric' , choices=['max', 'mean', 'median', '3quartile'], default='max', help=' Define which statistic metric should be reported in the ratio_TSS column (default: %(default)s)')
 
     # Performance options
     app = ap.add_argument_group("Performance options")
@@ -59,7 +59,7 @@ def qc_argparse():
     apm.add_argument("--is_fusion", action="store_true", help="Input are fusion isoforms, must supply GTF as input")
     apm.add_argument('-e','--expression', type=valid_matrix, help='Expression matrix (supported: Kallisto tsv)')
     apm.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
-    apm.add_argument('-w','--window', default="20", type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: 20 bp)')
+    apm.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
     apm.add_argument('-fl', '--fl_count',type=valid_PacBio_abund, help='Full-length PacBio abundance file')
     apm.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')

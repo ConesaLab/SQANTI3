@@ -15,7 +15,7 @@ from .helpers import (
     get_omitted_name,sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
 from .parsers import (
-    STARcov_parser, reference_parser, isoforms_parser, 
+    reference_parser, isoforms_parser, 
     FLcount_parser, expression_parser
 )
 from .classification import isoformClassification, preprocess_isoform_data
@@ -53,9 +53,8 @@ def run(args):
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
         junctions_by_chr, junctions_by_gene, start_ends_by_gene = \
-            reference_parser(args.annotation,args.dir,args.output,
-                                                                                                                     args.genename,                                                                                                                     args.isoAnnotLite, 
-                                                                                                                     list(genome_dict.keys()))
+            reference_parser(args.annotation,args.dir,args.output, list(genome_dict.keys()),
+                             args.genename, args.isoAnnotLite)
 
     ## parse query isoforms
     corrgenPred = GTF_to_genePred(corrGTF)
