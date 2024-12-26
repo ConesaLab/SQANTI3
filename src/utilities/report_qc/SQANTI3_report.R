@@ -12,11 +12,11 @@
 args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 junc.file <- args[2]
-utilities.path <- args[4]
-saturation.curves <- args[5]
-report.format <- args[6]
+utilities.path <- args[3]
+saturation.curves <- args[4]
+report.format <- args[5]
 
-if (length(args) < 6) {
+if (length(args) < 5) {
   stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both]. Abort!")
 }
 
@@ -2991,7 +2991,7 @@ if (report.format == 'both') {
                     intermediates_dir = output_directory, 
                     output_dir =  output_directory, 
                     output_file=html.report.file)
-} else if (args[6] == 'pdf' & args[6] != 'html'){
+} else if (args[5] == 'pdf' & args[5] != 'html'){
   invisible(generatePDFreport())
 } else {
   rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), 

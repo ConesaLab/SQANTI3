@@ -4,6 +4,7 @@ import subprocess
 from csv import DictReader, DictWriter
 from Bio import SeqIO
 
+from src.qc_output import generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
 from src.utilities.indels_annot import calc_indels_from_sam
 
 from .helpers import (
@@ -128,68 +129,19 @@ def run(args):
     print("**** Writing output files....", file=sys.stderr)
 
     #write omitted isoforms if requested minimum reference length is more than 0
-    if args.min_ref_len > 0 and not args.is_fusion:
-        omitted_name = get_omitted_name(args.dir, args.output)
-        omitted_iso = {}
-        for key in isoforms_info:
-            if not isoforms_info[key].refLen == 'NA':
-                if int(isoforms_info[key].refLen) <= int(args.min_ref_len):
-                    omitted_iso[key] = isoforms_info[key]
-        for key in omitted_iso:
-            del isoforms_info[key]
-        omitted_keys = list(omitted_iso.keys())
-        # TODO: check if this print is necessary
-        omitted_keys.sort(key=lambda x: (omitted_iso[x].chrom,omitted_iso[x].id))
-        print('Type omitted keys ', type(omitted_keys))
-        with open(omitted_name, 'w') as h:
-            fout_omitted = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
-            fout_omitted.writeheader()
-            for key in omitted_keys:
-                fout_omitted.writerow(omitted_iso[key].as_dict())
+    isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
+                                           args.min_ref_len, args.is_fusion, fields_class_cur)
     # sort isoform keys
-    iso_keys = list(isoforms_info.keys())
-    iso_keys.sort(key=lambda x: (isoforms_info[x].chrom,isoforms_info[x].id))
-    with open(outputClassPath, 'w') as h:
-        fout_class = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
-        fout_class.writeheader()
-        for iso_key in iso_keys:
-            fout_class.writerow(isoforms_info[iso_key].as_dict())
+    write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
 
     # Now that RTS info is obtained, we can write the final junctions.txt
-    with open(outputJuncPath, 'w') as h:
-        fout_junc = DictWriter(h, fieldnames=fields_junc_cur, delimiter='\t')
-        fout_junc.writeheader()
-        for r in DictReader(open(outputJuncPath+"_tmp"), delimiter='\t'):
-            if r['isoform'] in RTS_info:
-                if r['junction_number'] in RTS_info[r['isoform']]:
-                    r['RTS_junction'] = 'TRUE'
-                else:
-                    r['RTS_junction'] = 'FALSE'
-            fout_junc.writerow(r)
+    write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
     #isoform hits to file if requested
     if args.isoform_hits:
-        fields_hits =['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length',
-                      'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
-        isoform_hits_name = get_isoform_hits_name(args.dir, args.output)
-        with open(isoform_hits_name,'w') as h:
-            fout_hits = DictWriter(h, fieldnames=fields_hits, delimiter='\t')
-            fout_hits.writeheader()
-            data = DictReader(open(isoform_hits_name+"_tmp"), delimiter='\t')
-            data = sorted(data, key=lambda row:(row['Isoform']))
-            for r in data:
-                if r['Hit'] in isoforms_info[r['Isoform']].transcripts:
-                    r['Matching_type'] = 'primary'
-                else:
-                    r['Matching_type'] = 'secondary'
-                fout_hits.writerow(r)
-        os.remove(isoform_hits_name+'_tmp')
+        write_isoform_hits(args.dir, args.output, isoforms_info)
     ## Generating report
     if args.report != 'skip':
-        print("**** Generating SQANTI3 report....", file=sys.stderr)
-        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d} {a} {b}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc, a=args.saturation, b=args.report)
-        if subprocess.check_call(cmd, shell=True)!=0:
-            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
-            sys.exit(1)
+        generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
     stop3 = timeit.default_timer()
 
     print("Removing temporary files....", file=sys.stderr)
