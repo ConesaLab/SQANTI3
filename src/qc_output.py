@@ -1,6 +1,5 @@
 from csv import DictReader, DictWriter
 import os
-import subprocess
 import sys
 
 from .commands import (

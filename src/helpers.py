@@ -119,7 +119,7 @@ def get_omitted_name(outdir, prefix):
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
 
-def write_junctionInfo(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict, fout, covInf=None, covNames=None, phyloP_reader=None):
+def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict, fout, covInf=None, covNames=None, phyloP_reader=None):
     """
     :param trec: query isoform genePredRecord
     :param junctions_by_chr: dict of chr -> {'donors': <sorted list of donors>, 'acceptors': <sorted list of acceptors>, 'da_pairs': <sorted list of junctions>}

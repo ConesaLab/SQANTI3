@@ -1,30 +1,36 @@
 import os, timeit, sys
 import subprocess
 
-from csv import DictReader, DictWriter
+from csv import DictReader
 from Bio import SeqIO
 
-from src.qc_output import generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
 from src.utilities.indels_annot import calc_indels_from_sam
 
+from src.qc_output import (
+    generate_report, write_classification_output,
+    write_isoform_hits, write_junction_output, write_omitted_isoforms
+)
 from .helpers import (
-    get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name,
-    get_omitted_name,sequence_correction, predictORF, write_collapsed_GFF_with_CDS
+    get_corr_filenames, get_class_junc_filenames, 
+    sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
 from .parsers import (
-    reference_parser, isoforms_parser
+    get_fusion_component, reference_parser, isoforms_parser
 )
-from .classification import isoformClassification, preprocess_isoform_data
 from .config import FIELDS_CLASS 
 from .commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, ISOANNOT_PROG,
-    utilitiesPath, GTF_to_genePred
+    ISOANNOT_PROG, GTF_to_genePred
 )
 from src.qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
     process_rts_swiching, ratio_TSS_dict_reading,
     full_length_quantification
 )
+from .classification_preprocessing import (
+    initialize_isoform_hits, read_CAGE_peaks, read_polyA_peaks,
+    read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
+)
+from src.classification import isoform_classification_pipeline
 
 def run(args):
 
@@ -69,16 +75,27 @@ def run(args):
         indelsJunc = None
         indelsTotal = None
     
-    fusion_components, isoform_hits_name, SJcovNames, SJcovInfo, \
-    fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj, \
-    polyA_motif_list, phyloP_reader = preprocess_isoform_data(args, corrGTF)
-    
+    # Preprocess isoform data
+    fusion_components =  get_fusion_component(args.isoforms) if args.is_fusion else {}
+    isoform_hits_name = initialize_isoform_hits(args.dir, args.output, args.isoform_hits)
+    star_out, star_index, SJcovNames,\
+        SJcovInfo, fields_junc_cur = SJ_coverage(args.short_reads, args.coverage, 
+                                                 args.genome, args.dir, args.cpus)
+    ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam, args.short_reads, star_out,
+                                           star_index, corrGTF, args.ratio_TSS_metric)
+    cage_peak_obj = read_CAGE_peaks(args.CAGE_peak)
+    polya_peak_obj = read_polyA_peaks(args.polyA_peak)
+    polyA_motif_list = read_polyA_motifs(args.polyA_motif_list)
+    phyloP_reader = read_phyloP_bed(args.phyloP_bed)
+
     # isoform classification + intra-priming + id and junction characterization
-    isoforms_info, ratio_TSS_dict = isoformClassification(args.sites,args.window,args.novel_gene_prefix,args.is_fusion,
-                                                          isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, 
-                          junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
-                          outputClassPath, outputJuncPath,fusion_components, isoform_hits_name,SJcovNames, SJcovInfo,
-                          fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj, polyA_motif_list, phyloP_reader)
+    isoforms_info, ratio_TSS_dict = isoform_classification_pipeline(
+        args.sites, args.window, args.novel_gene_prefix, args.is_fusion,
+        isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+        junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
+        outputClassPath, outputJuncPath, fusion_components, isoform_hits_name,
+        SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
+        polya_peak_obj, polyA_motif_list, phyloP_reader)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
 
