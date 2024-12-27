@@ -1,4 +1,5 @@
 # unctions with no imports within SQANTI3
+import bisect
 from collections.abc import Iterable
 import math
 import os
@@ -55,3 +56,30 @@ def get_files_from_dir(directory, extension):
             return [line.strip() for line in f]  # Corrected strip method call
     else:
         return [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(extension)]
+    
+
+def find_closest_in_list(lst, pos):
+    """
+    Finds the closest value in a sorted list to a given position.
+
+    Args:
+        lst (list of int/float): A sorted list of numbers.
+        pos (int/float): The position to find the closest value to.
+
+    Returns:
+        int/float: The difference between the closest value in the list and the given position.
+
+    Example:
+        >>> find_closest_in_list([1, 3, 5, 7], 4)
+        -1
+    """
+    i = bisect.bisect_left(lst, pos)
+    print(i)
+    if i == 0:
+        return lst[0]-pos
+    elif i == len(lst):
+        return lst[-1]-pos
+    else:
+        a, b = lst[i-1]-pos, lst[i]-pos
+        if abs(a) < abs(b): return a
+        else: return b

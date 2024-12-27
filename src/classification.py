@@ -36,7 +36,8 @@ def isoform_classification_pipeline(
                                             junctions_by_gene, start_ends_by_gene, genome_dict, novel_gene_index,
                                             isoform_hits_name, novel_gene_prefix,window)
             # write out junction information
-            write_junction_info(rec, junctions_by_chr, accepted_canonical_sites, indelsJunc, genome_dict, fout_junc, covInf=SJcovInfo, covNames=SJcovNames, phyloP_reader=phyloP_reader)
+            write_junction_info(rec, junctions_by_chr, accepted_canonical_sites, indelsJunc, 
+                                genome_dict, fout_junc, SJcovInfo, SJcovNames, phyloP_reader)
 
             # look at Cage Peak info (if available)
             if cage_peak_obj is not None:

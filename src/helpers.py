@@ -10,6 +10,8 @@ from typing import Dict, Optional, TextIO
 from Bio import SeqIO
 from bx.intervals import Interval
 
+from src.utils import find_closest_in_list
+
 from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from .utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
@@ -119,7 +121,8 @@ def get_omitted_name(outdir, prefix):
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
 
-def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict, fout, covInf=None, covNames=None, phyloP_reader=None):
+def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict,
+                        fout, covInf=None, covNames=None, phyloP_reader=None):
     """
     :param trec: query isoform genePredRecord
     :param junctions_by_chr: dict of chr -> {'donors': <sorted list of donors>, 'acceptors': <sorted list of acceptors>, 'da_pairs': <sorted list of junctions>}
@@ -133,16 +136,6 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
 
     Write a record for each junction in query isoform
     """
-    def find_closest_in_list(lst, pos):
-        i = bisect.bisect_left(lst, pos)
-        if i == 0:
-            return lst[0]-pos
-        elif i == len(lst):
-            return lst[-1]-pos
-        else:
-            a, b = lst[i-1]-pos, lst[i]-pos
-            if abs(a) < abs(b): return a
-            else: return b
 
     # go through each trec junction
     for junction_index, (d, a) in enumerate(trec.junctions):

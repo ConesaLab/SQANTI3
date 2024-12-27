@@ -4,7 +4,7 @@ from collections.abc import Iterable
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 # Assuming the functions are in a file named 'utils.py'
-from src.utils import get_files_from_dir, mergeDict, flatten, pstdev, find_polyA_motif
+from src.utils import find_closest_in_list, get_files_from_dir, mergeDict, flatten, pstdev, find_polyA_motif
 
 # Tests for mergeDict function
 def test_merge_non_overlapping_dicts():
@@ -144,3 +144,26 @@ def test_get_files_from_dir_with_file(setup_test_files):
     result = get_files_from_dir(file_list, ".txt")
     expected = [str(file_list.parent / "test_dir" / "file1.txt"), str(file_list.parent / "test_dir" / "file2.txt")]
     assert sorted(result) == sorted(expected)
+
+
+## find_closest_in_list ##
+
+@pytest.mark.parametrize("lst, pos, expected", [
+    ([1, 3, 5, 7, 9], 4, 1),
+    ([1, 3, 5, 7, 9], 6, 1),
+    ([1, 3, 5, 7, 9], 0, 1),
+    ([1, 3, 5, 7, 9], 10, -1),
+    ([1, 3, 5, 7, 9], 5, 0),
+    ([1, 3, 5, 7, 9], 2, 1),
+    ([1, 3, 5, 7, 9], 8, 1),
+    ([-5, -2, 0, 3, 6], -3, 1),
+    ([-5, -2, 0, 3, 6], 4, -1),
+    ([10], 5, 5),
+    ([10], 15, -5),
+])
+def test_find_closest_in_list(lst, pos, expected):
+    assert find_closest_in_list(lst, pos) == expected
+
+def test_empty_list():
+    with pytest.raises(IndexError):
+        find_closest_in_list([], 5)
