@@ -18,11 +18,6 @@ utilities.path <- args[4]
 # transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_ont.gtf'
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
-# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_pacbio/WTC11_cdna_pacbio_classification.txt'
-# bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.gtf'
-# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_pacbio.gtf'
-# utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
-
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
 output_directory <- dirname(class.file)
 output_name <- basename(report.prefix)
@@ -109,13 +104,24 @@ print(id_summary)
 
 # Identify and display the id_type with the highest count
 if (nrow(id_summary) > 0) {
-  top_id <- id_summary %>% slice_max(n, n = 1)
-  top_id_type <- top_id$id_type
+  # Sort by count in descending order
+  id_summary_ordered <- id_summary %>% arrange(desc(n))
+  
+  # If the highest count category is "unknown" and there is at least another category,
+  # use the second-highest instead
+  if (id_summary_ordered$id_type[1] == "unknown" && nrow(id_summary_ordered) > 1) {
+    top_id_type <- id_summary_ordered$id_type[2]
+    top_id_n <- id_summary_ordered$n[2]
+  } else {
+    top_id_type <- id_summary_ordered$id_type[1]
+    top_id_n <- id_summary_ordered$n[1]
+  }
+  
   message(
     "The id_type with the highest count is: ",
     top_id_type,
     " with ",
-    top_id$n,
+    top_id_n,
     " entries."
   )
 } else {
@@ -138,9 +144,10 @@ classification_data_cleaned <- classification_data %>%
       separate_rows(associated_gene, sep = "_")
   ) %>%
   mutate(
-    associated_gene = str_remove(associated_gene, "\\.\\d+$")
+    associated_gene = str_remove(associated_gene, "\\.\\d+$"),         # Remove version number from associated_gene
+    associated_transcript = str_remove(associated_transcript, "\\.\\d+$") # Remove version number from associated_transcript
   ) %>%
-  distinct(isoform, associated_gene, .keep_all = TRUE) %>%
+  distinct(isoform, associated_gene, associated_transcript, .keep_all = TRUE) %>%
   arrange(isoform)
 
 # Metrics and definitions for evaluation against BUGSI
@@ -636,7 +643,6 @@ for (gene in genes_to_plot) {
     message("Error while generating plot: ", e$message)
   }) 
 }
-
 
 # Render the HTML report
 message("Rendering the HTML report...")
