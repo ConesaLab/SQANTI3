@@ -1,7 +1,11 @@
 import sys
 from csv import DictWriter
 
-from .classification_steps import assign_genomic_coordinates, classify_isoform, detect_nmd, fill_orf_info, find_polya_motif_info, process_cage_peak_info, process_polya_peak_info # type: ignore
+from .classification_steps import (
+    assign_genomic_coordinates, classify_isoform, 
+    detect_nmd, fill_orf_info, find_polya_motif_info,
+    process_cage_peak_info, process_polya_peak_info
+) # type: ignore
 from .helpers import write_junction_info
 from .config import  FIELDS_CLASS
 

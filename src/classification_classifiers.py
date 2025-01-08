@@ -451,7 +451,7 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
                 # see if it is completely contained within a junction
                 da_pairs = junctions_by_chr[trec.chrom]['da_pairs']
                 i = bisect.bisect_left(da_pairs, (trec.txStart, trec.txEnd))
-                for j in range(i-1, min(i+1, len(da_pairs)-1)):
+                for j in range(i-1, min(i+1, len(da_pairs)-1)): #TODO: Fix this changing the interval pairs with an IntervalTree object.
                     if da_pairs[j][0] <= trec.txStart <= trec.txEnd <= da_pairs[j][1]:
                         isoforms_hit.str_class = "genic_intron"
                         break

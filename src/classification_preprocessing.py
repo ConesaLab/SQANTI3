@@ -1,13 +1,16 @@
 import os
 import csv
 import sys
-from .parsers import get_fusion_component
-from .qc_classes import CAGEPeak, PolyAPeak
+
 from .utilities.cupcake.sequence.BED import LazyBEDPointReader
-from src.config import FIELDS_JUNC
-from src.parsers import STARcov_parser
-from src.utilities.short_reads import get_TSS_bed, get_bam_header, get_ratio_TSS, star
-from src.utils import get_files_from_dir
+from .utilities.short_reads import (
+    get_TSS_bed, get_bam_header, get_ratio_TSS, star
+)
+
+from .parsers import STARcov_parser
+from .qc_classes import CAGEPeak, PolyAPeak
+from .config import FIELDS_JUNC
+from .utils import get_files_from_dir
 
 def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
     """
@@ -35,7 +38,7 @@ def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
             mapping_out, star_index = star(genome,short_reads,outdir,cpus)
         else:
             print("No short-reads or coverage provided. Skipping short-read coverage calculation.", file=sys.stdout)
-            return mapping_out, star_index, SJcovInfo, SJcovNames 
+            return mapping_out, star_index, SJcovInfo, SJcovNames, fields_junc_cur
     else:
         mapping_out = coverage_file
         star_index = None
@@ -70,11 +73,6 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             print('**** TSS ratio will not be calculated since SR information was not provided')
     return ratio_TSS_dict
 
-
-def read_fusion_components(isoforms, is_fusion):
-    if is_fusion:
-        return get_fusion_component(isoforms)
-    return {}
 
 def initialize_isoform_hits(outdir, prefix, isoform_hits):
     if isoform_hits:

@@ -4,7 +4,7 @@ import pandas as pd
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 
-from src.classification import (
+from src.classification_main import (
     classify_isoform
 )
 

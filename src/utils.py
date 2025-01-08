@@ -74,7 +74,6 @@ def find_closest_in_list(lst, pos):
         -1
     """
     i = bisect.bisect_left(lst, pos)
-    print(i)
     if i == 0:
         return lst[0]-pos
     elif i == len(lst):

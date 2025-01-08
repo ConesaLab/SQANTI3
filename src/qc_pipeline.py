@@ -4,9 +4,9 @@ import subprocess
 from csv import DictReader
 from Bio import SeqIO
 
-from src.utilities.indels_annot import calc_indels_from_sam
+from .utilities.indels_annot import calc_indels_from_sam
 
-from src.qc_output import (
+from .qc_output import (
     generate_report, write_classification_output,
     write_isoform_hits, write_junction_output, write_omitted_isoforms
 )
@@ -21,7 +21,7 @@ from .config import FIELDS_CLASS
 from .commands import (
     ISOANNOT_PROG, GTF_to_genePred
 )
-from src.qc_computations import (
+from .qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
     process_rts_swiching, ratio_TSS_dict_reading,
     full_length_quantification
@@ -30,7 +30,7 @@ from .classification_preprocessing import (
     initialize_isoform_hits, read_CAGE_peaks, read_polyA_peaks,
     read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
 )
-from src.classification import isoform_classification_pipeline
+from .classification_main import isoform_classification_pipeline
 
 def run(args):
 
@@ -77,7 +77,7 @@ def run(args):
     
     # Preprocess isoform data
     fusion_components =  get_fusion_component(args.isoforms) if args.is_fusion else {}
-    isoform_hits_name = initialize_isoform_hits(args.dir, args.output, args.isoform_hits)
+    isoform_hits_name = initialize_isoform_hits(args.dir, args.output,args.isoform_hits)
     star_out, star_index, SJcovNames,\
         SJcovInfo, fields_junc_cur = SJ_coverage(args.short_reads, args.coverage, 
                                                  args.genome, args.dir, args.cpus)

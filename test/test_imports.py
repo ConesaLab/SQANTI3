@@ -55,7 +55,7 @@ src_path = os.path.abspath(os.path.join(current_dir, ".."))
 
 
 def test_import_classification():
-    validate_import_own("src.classification", "isoformClassification", src_path)
+    validate_import_own("src.classification_main", "isoform_classification_pipeline", src_path)
 
 
 def test_import_commands():
