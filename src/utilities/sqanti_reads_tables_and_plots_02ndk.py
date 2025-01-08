@@ -19,19 +19,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
 from matplotlib.ticker import FixedLocator
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
 from pdf2image import convert_from_path
 import base64
 from jinja2 import Template
 import io
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
 
 ## Update options
 def getOptions():
@@ -50,14 +41,7 @@ def getOptions():
     parser.add_argument('-fl','--factor-level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
     parser.add_argument('--all-tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and cand underannotated gene tables')
     parser.add_argument('--pca-tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
     parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
 
     args = parser.parse_args()
     return args
@@ -775,15 +759,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         #plt.title('Number of Genes in each annotation category')
         plt.xlabel('Gene Category')
         plt.ylabel('Number of Genes')
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
         plt.xticks(rotation=90, ha="right")
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-        plt.xticks(rotation=90, ha="right")
-=======
-        plt.xticks(rotation=45, ha="right")
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         plt.gca().spines['top'].set_visible(False)
         plt.gca().spines['right'].set_visible(False)
         # Add the counts on top of each bar
@@ -1310,16 +1286,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     "mono_in_multi": '#aec6cf'
     }
     
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
     cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
     
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
-    
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
@@ -1352,17 +1320,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             alpha=0.6, 
             legend=True,
             height=8, 
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
             aspect=0.7,
             order = cat_order
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-            aspect=0.7,
-            order = cat_order
-=======
-            aspect=0.7 
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         )
         g.set_xticklabels(rotation=0)
         g.set_axis_labels("Structural Category", "Percentages")
@@ -1395,17 +1354,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             alpha=0.6, 
             legend=True,
             height=8, 
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
             aspect=0.7,
             order = cat_order
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-            aspect=0.7,
-            order = cat_order
-=======
-            aspect=0.7 
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         )
         g.set_xticklabels(rotation=0)
         g.set_axis_labels("Structural Category", "Percentages")
@@ -2023,18 +1973,9 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     "mono_in_multi": '#aec6cf'
     }
     
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
     cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
     cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
     
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
-    cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
-    
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
@@ -2055,18 +1996,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         palette = sample_color_palette
         plt.figure(figsize=(10, 7.5))
         sns.stripplot(x='Category', y='Percentage', data=all_gene_percs_long_DF, jitter=0, 
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
                       alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
         plt.xticks(rotation=90)
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
-        plt.xticks(rotation=90)
-=======
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette)
-        plt.xticks(rotation=45)
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         plt.ylabel('Percentage')
         plt.title(' Percent reads in each structural category - All Genes')
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
@@ -2077,23 +2008,10 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         
         plt.figure(figsize=(10, 7.5))
         sns.stripplot(x='Category', y='Percentage', data=annot_gene_percs_long_DF, jitter=0, 
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
                       alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
         plt.xticks(rotation=90)
         plt.ylabel('Percentage')
         plt.title(' Percent reads in each structural category - Annotated Genes')
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-=======
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette)
-        plt.xticks(rotation=45)
-        plt.ylabel('Percentage')
-        plt.title(' Percent reads in each structural category - ANnotated Gnes')
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
@@ -2101,14 +2019,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         categories = [col for col in all_gene_percs_pivot_DF.columns if col not in ['sampleID', exp_factor]]
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
         categories = [cat for cat in cat_order_stacked if cat in categories]
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-        categories = [cat for cat in cat_order_stacked if cat in categories]
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         
         cols = ['sampleID'] + categories
         all_gene_percs_pivot_DF = all_gene_percs_pivot_DF[cols]
@@ -2134,17 +2045,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
      
         
         categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC', 'GI', 'GENIC'] if cat in annot_gene_percs_pivot_DF.columns]
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
         categories = [cat for cat in cat_order_stacked if cat in categories]
         palette = [category_color_palette[cat] for cat in categories]
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-        categories = [cat for cat in cat_order_stacked if cat in categories]
-        palette = [category_color_palette[cat] for cat in categories]
-=======
-        palette = [category_color_palette[cat] for cat in categories]  
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         
         annot_gene_percs_pivot_DF = annot_gene_percs_pivot_DF.sort_values(by= 'sampleID')
         plt.figure(figsize=(10, 7.5))
@@ -2301,15 +2203,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
              sns.boxplot(x='sampleID', y='percentage', hue='sampleID' ,data=melted_annotated_gene_DF[melted_annotated_gene_DF['category'] == category],
                     palette=sample_color_palette)
              plt.title(f'Gene distribution - {category}')
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
              plt.xticks(rotation=90)
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-             plt.xticks(rotation=90)
-=======
-             plt.xticks(rotation=45)
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
              plt.tight_layout()
              matplotlib.rcParams['pdf.fonttype'] = 42
              pdf.savefig()
@@ -2427,15 +2321,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         #Violin plots
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
         sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette, legend = False, hue = "sampleID")
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
-        sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette, legend = False, hue = "sampleID")
-=======
-        sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette)
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         plt.xlabel('Sample ID')
         plt.ylabel('Length')
         plt.title('Read Length Distribution')
@@ -2636,10 +2522,6 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
         plt.close()
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
         
 def makeHTML(drty, prefx, sufx):
     pages = convert_from_path(drty + prefx + sufx)
@@ -2678,11 +2560,6 @@ def makeHTML(drty, prefx, sufx):
         f.write(html_content)
 
     print(f"HTML report saved as {drty + prefx + sufx[:-4]}.html")
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
     
     
 def main():
@@ -2700,10 +2577,6 @@ def main():
     else:
         plot_pdf_by_factor(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
         
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-<<<<<<< HEAD:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
     if args.report in ("both", "html"):
         makeHTML(args.OUT, args.PREFIX, '_plots.pdf')
         makeHTML(args.OUT, args.PREFIX, '_annotation_plots.pdf')
@@ -2713,14 +2586,8 @@ def main():
         os.remove(f"{args.OUT}/{args.PREFIX}_annotation_plots.pdf")
     
         
-<<<<<<< HEAD:utilities/sqanti_reads_tables_and_plots_02ndk.py
-=======
-=======
->>>>>>> 3b8ced902569d303b3de3e3316970a46c81d24ab:utilities/sqanti_reads_tables_and_plots_02ndk.py
->>>>>>> test:src/utilities/sqanti_reads_tables_and_plots_02ndk.py
 if __name__ == '__main__':
     #Parse command line arguments
     global args
     args = getOptions()
     main()
-
