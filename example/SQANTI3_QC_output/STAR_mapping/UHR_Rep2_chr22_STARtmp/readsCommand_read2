@@ -1,0 +1,3 @@
+exec > "/home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_mapping/UHR_Rep2_chr22_STARtmp/tmp.fifo.read2"
+echo FILE 0
+zcat      "example/UHR_Rep2_chr22.R2.fastq.gz"

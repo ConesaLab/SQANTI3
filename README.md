@@ -1,6 +1,13 @@
 ![SQANTI3 logo](https://github.com/FJPardoPalacios/public_figures/blob/master/sq3-logo.png)
 
+![SQANTI3 logo](https://github.com/FJPardoPalacios/public_figures/blob/master/sq3-logo.png)
+
 # SQANTI3
+
+![GitHub Release](https://img.shields.io/github/v/release/ConesaLab/SQANTI3)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/ConesaLab/SQANTI3)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ConesaLab/SQANTI3)
+![GitHub Repo stars](https://img.shields.io/github/stars/ConesaLab/SQANTI3)
 
 ![GitHub Release](https://img.shields.io/github/v/release/ConesaLab/SQANTI3)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/ConesaLab/SQANTI3)
@@ -9,7 +16,9 @@
 
 
 SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) that merges features from [SQANTI](https://github.com/ConesaLab/SQANTI) and  [SQANTI2](https://github.com/Magdoll/SQANTI2), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
+SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) that merges features from [SQANTI](https://github.com/ConesaLab/SQANTI) and  [SQANTI2](https://github.com/Magdoll/SQANTI2), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
 
+SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
