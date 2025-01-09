@@ -463,7 +463,8 @@ class CAGEPeak:
                 d = (tss0 - query) * (-1 if strand=='-' else +1)
                 if abs(d) < abs(dist_peak) and not(w == 'FALSE' and within_peak == 'TRUE'):
                     within_peak, dist_peak = w, d 
-
+        if dist_peak == float('inf'):
+            dist_peak = 'NA'
         return within_peak, dist_peak
 
 class PolyAPeak:
