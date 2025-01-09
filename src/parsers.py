@@ -31,9 +31,9 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
 
     Returns:
         tuple: A tuple containing:
-            - refs_1exon_by_chr (dict): Dictionary of single exon references by chromosome.
-            - refs_exons_by_chr (dict): Dictionary of multi-exon references by chromosome.
-            - junctions_by_chr (dict): Dictionary of junctions by chromosome.
+        - refs_1exon_by_chr (dict): Dictionary of single exon references by chromosome.
+        - refs_exons_by_chr (dict): Dictionary of multi-exon references by chromosome.
+        - junctions_by_chr (dict): Dictionary of junctions by chromosome.
         - junctions_by_gene (dict): Dictionary of junctions by gene.
         - known_5_3_by_gene (dict): Dictionary of known 5' and 3' ends by gene. 
     """

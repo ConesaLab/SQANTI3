@@ -321,6 +321,7 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
     gmst_rex = re.compile(r'(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
     # GMST seq id --> myQueryProteins object
+    orfDict = {}
     if skipORF:
         print("WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!", file=sys.stderr)
     elif os.path.exists(corrORF):
