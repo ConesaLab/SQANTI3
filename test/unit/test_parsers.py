@@ -61,7 +61,7 @@ def test_reference_parser_correctOutput_length(reference_parser_input):
     assert len(refs_1exon_by_chr.keys()) == 1
     assert len(refs_1exon_by_chr["chr22"].find(0,50000000)) == 4
     assert len(refs_exons_by_chr["chr22"].find(0,50000000)) == 60
-    assert len(junctions_by_chr["chr22"]) == 3
+    assert len(junctions_by_chr["chr22"]) == 4
     assert len(junctions_by_gene.keys()) == 30
     assert len(start_ends_by_gene) == 34
 
@@ -101,7 +101,7 @@ def test_reference_parser_correctExons(reference_parser_input):
 
 def test_reference_parser_correctJunctionsChr(reference_parser_input):
     _, _, junctions_by_chr, _, _ = reference_parser(*list(reference_parser_input.values()))
-    assert len(junctions_by_chr["chr22"]) == 3
+    assert len(junctions_by_chr["chr22"]) == 4
     assert len(junctions_by_chr["chr22"]["donors"]) == 256
     assert junctions_by_chr["chr22"]["donors"][0] == 15785057
     assert len(junctions_by_chr["chr22"]["acceptors"]) == 256
