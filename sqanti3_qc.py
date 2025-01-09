@@ -68,9 +68,9 @@ def main():
         run(args)
 
     else:
-        split_dirs = split_input_run(args)
-        combine_split_runs(args, split_dirs)
-        SPLIT_ROOT_DIR = get_split_dir(args)
+        SPLIT_ROOT_DIR = get_split_dir(args.dir,args.output)
+        split_dirs = split_input_run(args, SPLIT_ROOT_DIR)
+        combine_split_runs(args,split_dirs)
         shutil.rmtree(SPLIT_ROOT_DIR)
 
     if args.isoAnnotLite:

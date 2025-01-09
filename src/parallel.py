@@ -1,26 +1,26 @@
 import os,sys,copy,csv
 import pandas as pd
-import subprocess
+
 from multiprocessing import Process
 from Bio import SeqIO
 from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from .qc_pipeline import run
 from .helpers import get_corr_filenames, get_class_junc_filenames
-from .commands import utilitiesPath, RSCRIPTPATH, RSCRIPT_REPORT
-# TODO: Do the split based on isoform ID groups, not onj pure numbers
+from .qc_output import generate_report
+# TODO: Do the split based on isoform ID groups, not on pure numbers
 
 
-def get_split_dir(args):
-    split_prefix=os.path.join(os.path.abspath(args.dir), args.output)
+def get_split_dir(outdir,prefix):
+    split_prefix=os.path.join(os.path.abspath(outdir), prefix)
     split_directory = split_prefix+'_splits/'
     return split_directory
 
-def split_input_run(args):
-    SPLIT_ROOT_DIR = get_split_dir(args)
+def split_input_run(args,outdir):
+
+    SPLIT_ROOT_DIR = outdir
     if os.path.exists(SPLIT_ROOT_DIR):
-        print("WARNING: {0} directory already exists! Abort!".format(SPLIT_ROOT_DIR), file=sys.stderr)
-        sys.exit(1)
+        print("WARNING: {0} directory already exists!".format(SPLIT_ROOT_DIR), file=sys.stderr)
     else:
         os.makedirs(SPLIT_ROOT_DIR)
 
@@ -49,12 +49,15 @@ def split_input_run(args):
             sys.exit(1)
         chunk_size = n // args.chunks + (n % args.chunks > 0)
         split_outs = []
-        # pdb.set_trace()
+
         for i in range(args.chunks):
             if i * chunk_size >= n:
                 break
             d = os.path.join(SPLIT_ROOT_DIR, str(i))
-            os.makedirs(d)
+            try:
+                os.makedirs(d)
+            except FileExistsError:
+                pass
             f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(i)), 'w')
             if type(recs) == dict:
                 for key in sorted(recs.keys())[i * chunk_size: min((i + 1) * chunk_size, n)]:
@@ -83,7 +86,7 @@ def split_input_run(args):
 
     pools = []
     for i,(d,x) in enumerate(split_outs):
-        print("launching worker on on {0}....".format(x))
+        print("launching worker on {0}....".format(x))
         args2 = copy.deepcopy(args)
         args2.isoforms = x
         args2.novel_gene_prefix = str(i)
@@ -148,8 +151,4 @@ def combine_split_runs(args, split_dirs):
         f_faa.close()
 
     if args.report != 'skip':
-        print("**** Generating SQANTI3 report....", file=sys.stderr)
-        cmd = RSCRIPTPATH + " {d}/{f} {c} {j} {p} {d} {a} {b}".format(d=utilitiesPath, f=RSCRIPT_REPORT, c=outputClassPath, j=outputJuncPath, p=args.doc, a=args.saturation, b=args.report)
-        if subprocess.check_call(cmd, shell=True)!=0:
-            print("ERROR running command: {0}".format(cmd), file=sys.stderr)
-            sys.exit(1)
+        generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)

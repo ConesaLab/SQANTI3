@@ -67,6 +67,12 @@ def isoform_classification_pipeline(
             isoforms_info[rec.id] = isoform_hit
             fout_class.writerow(isoform_hit.as_dict())
 
+    # Sort isoforms_info by the chromosome and then id.
+    # Take into account that the ID is a string with numbers
+
+    iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, int(isoforms_info[x].id.split('.')[1])))
+    isoforms_info = {key: isoforms_info[key] for key in iso_keys}
+    
     handle_class.close()
     handle_junc.close()
     return (isoforms_info, ratio_TSS_dict)

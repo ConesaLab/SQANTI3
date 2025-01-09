@@ -3,10 +3,9 @@ import sys
 import subprocess
 import gzip
 import re
-import bisect
 
 from collections import defaultdict
-from typing import Dict, Optional, TextIO
+from typing import Dict, Optional
 from Bio import SeqIO
 from bx.intervals import Interval
 
@@ -338,3 +337,12 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     return(orfDict)
 
 
+def rename_novel_genes(isoform_info):
+    """
+    Rename novel genes to be "novel_X" where X is a number
+    """
+    novel_gene_counter = 1
+    for iso in isoform_info.values():
+        if iso.geneName() == "novel":
+            iso.set_geneName("novel_{0}".format(novel_gene_counter))
+            novel_gene_counter += 1
