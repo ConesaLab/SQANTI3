@@ -408,11 +408,11 @@ def test_cagepeak_init(mock_bed_file):
 def test_cagepeak_find(mock_bed_file):
     cage = CAGEPeak(mock_bed_file)
     assert cage.find("chr1", "+", 17) == ("TRUE", 0)  # Query within peak in TSS
-    assert cage.find("chr1", "+", 20) == ("TRUE", -3)  # Within peak but donwstream TSS
-    assert cage.find("chr1", "+", 14) == ("TRUE", +3)  # Within peak but downstream TSS (degradation)
-    assert cage.find("chr1", "+", 8) == ("FALSE","NA")  # Outside peak uptream of TSS
+    assert cage.find("chr1", "+", 20) == ("TRUE", -3)  # Within peak but downstream TSS
+    assert cage.find("chr1", "+", 14) == ("TRUE", +3)  # Within peak but upstream TSS (degradation)
+    assert cage.find("chr1", "+", 8) == ("FALSE",float('inf'))  # Outside peak uptream of TSS
     assert cage.find("chr1", "+", 25) == ("FALSE", -8)  # Outside peak downstream of TSS
-    assert cage.find("chr1", "-", 17) == ("FALSE", -39)  # Inside peak but on opposite strand (close to another TSS)
+    assert cage.find("chr1", "-", 17) == ("FALSE", -14)  # Inside peak but on opposite strand (close to another TSS)
     assert cage.find("chr1","+",105) == ("FALSE",-59) # This is to check that it is chromosme specific
 
 def test_cagepeak_invalid_file():

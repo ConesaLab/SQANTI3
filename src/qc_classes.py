@@ -441,7 +441,7 @@ class CAGEPeak:
         If the distance is negative, the query is upstream of the TSS.
         If the query is outside of the peak upstream of it, the distance is NA
         """
-        within_peak, dist_peak = 'FALSE', 'NA'
+        within_peak, dist_peak = 'FALSE', float('inf')
         peaks = self.cage_peaks[(chrom, strand)].find(query - search_window, query + search_window)
 
         for tss0, start0, end1 in peaks:
@@ -451,10 +451,18 @@ class CAGEPeak:
                 continue
             # Checks if the query is within the peak and the distance to the TSS
             within_out = start0 <= query < end1 if strand == '+' else start0 < query <= end1
-            distance = (tss0 - query) * (-1 if strand == '-' else 1)
-
-            if within_peak == 'FALSE' or abs(distance) < abs(dist_peak):
-                within_peak, dist_peak = 'TRUE' if within_out else 'FALSE', distance
+            d = (tss0 - query) * (-1 if strand == '-' else 1)
+            w = 'TRUE' if within_out else 'FALSE'
+            
+            if not within_peak=='TRUE':
+                within_peak, d = w, (tss0 - query) * (-1 if strand=='-' else +1)
+                if within_peak == 'TRUE' or abs(d) < abs(dist_peak):
+                    dist_peak = d
+                
+            else:
+                d = (tss0 - query) * (-1 if strand=='-' else +1)
+                if abs(d) < abs(dist_peak) and not(w == 'FALSE' and within_peak == 'TRUE'):
+                    within_peak, dist_peak = w, d 
 
         return within_peak, dist_peak
 
