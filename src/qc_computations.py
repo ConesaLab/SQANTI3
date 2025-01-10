@@ -1,13 +1,19 @@
 from collections import defaultdict
 import os
 import sys
-
+from Bio  import SeqIO
 from src.utilities.rt_switching import rts
 from src.parsers import FLcount_parser, expression_parser
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 
-def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict):
+def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None):
+    """
+    RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
+    """
+    if genome_dict is None:
+        genome_dict = dict((r.name, r) for r in SeqIO.parse(open(genome), 'fasta'))
+
     RTS_info = rts([outputJuncPath+"_tmp", genome, "-a"], genome_dict)
     for pbid in isoforms_info:
         if pbid in RTS_info and len(RTS_info[pbid]) > 0:

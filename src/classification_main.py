@@ -4,15 +4,15 @@ from csv import DictWriter
 from .classification_steps import (
     assign_genomic_coordinates, classify_isoform, 
     detect_nmd, fill_orf_info, find_polya_motif_info,
-    process_cage_peak_info, process_polya_peak_info
+    process_cage_peak_info, process_polya_peak_info,
+    write_junction_info
 ) # type: ignore
-from .helpers import write_junction_info
 from .config import  FIELDS_CLASS
 
 
 
 def isoform_classification_pipeline(
-        sites,window,novel_gene_prefix,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+        sites,window,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
         junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
         outputClassPath, outputJuncPath, fusion_components,isoform_hits_name,SJcovNames, 
         SJcovInfo, fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj,
@@ -32,7 +32,6 @@ def isoform_classification_pipeline(
     fout_junc.writeheader()
 
     isoforms_info = {}
-    novel_gene_index = 1
     for _,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit

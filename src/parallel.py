@@ -5,12 +5,12 @@ import re
 from multiprocessing import Process
 from Bio import SeqIO
 from src.config import FIELDS_CLASS
-from src.qc_computations import classify_fsm #type: ignore
+from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
 from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from .qc_pipeline import run
 from .helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes
-from .qc_output import generate_report, write_classification_output
+from .qc_output import generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
 # TODO: Do the split based on isoform ID groups, not on pure numbers
 
 
@@ -152,33 +152,29 @@ def combine_split_runs(args, split_dirs):
         f_faa = open(corrORF, 'w')
     f_fasta = open(corrFASTA, 'w')
     f_gtf = open(corrGTF, 'w')
-    f_class = open(outputClassPath, 'w')
-    f_junc = open(outputJuncPath, 'w')
+    f_junc_temp = open(outputJuncPath+"_tmp", "w")
     f_cds_gtf_gff = open(corrCDS_GTF_GFF, 'w')
     isoforms_info = {}
+    headers = []
     
     for i,split_d in enumerate(split_dirs):
         _gtf, _, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(split_d,args.output)
-        _class, _junc = get_class_junc_filenames(split_d,args.output)
+        _, _junc = get_class_junc_filenames(split_d,args.output)
         _info = get_pickle_filename(split_d,args.output)
         if not args.skipORF:
             with open(_orf) as h: f_faa.write(h.read())
         with open(_gtf) as h: f_gtf.write(h.read())
         with open(_fasta) as h: f_fasta.write(h.read())
-        # with open(_class) as h:
-        #     if i == 0:
-        #         f_class.write(h.readline())
-        #     else:
-        #         h.readline()
-        #     f_class.write(h.read())
-        with open(_info, 'rb') as h:
-            isoforms_info.update(pickle.load(h))
-        with open(_junc) as h:
+        with open(f"{_junc}_tmp") as h:
             if i == 0:
-                f_junc.write(h.readline())
+                f_junc_temp.write(h.readline())
             else:
                 h.readline()
-            f_junc.write(h.read())
+            f_junc_temp.write(h.read())
+        # Retrieving the isoform object and the junctions header
+        with open(_info, 'rb') as h:
+            isoforms_info.update(pickle.load(h))
+            headers.append(pickle.load(h))
         with open(_CDS_GTF_GFF) as h:
             if i == 0: # This if condition checks if its the first file to write the header or not in the final file
                 f_cds_gtf_gff.write(h.readline())
@@ -188,14 +184,29 @@ def combine_split_runs(args, split_dirs):
 
     f_fasta.close()
     f_gtf.close()
-    f_class.close()
-    f_junc.close()
+    f_junc_temp.close()
     f_cds_gtf_gff.close()
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
-    #isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.genome,genome_dict)
+    ## FL count file
+    fields_class_cur = FIELDS_CLASS
+    if args.fl_count:
+        isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.genome)
+
+    fields_junc_cur = headers[0]
     write_classification_output(isoforms_info, outputClassPath, FIELDS_CLASS)
+    print(fields_junc_cur)
+    write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
+    #write omitted isoforms if requested minimum reference length is more than 0
+    isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
+                                            args.min_ref_len, args.is_fusion, fields_class_cur)
+        
+    #isoform hits to file if requested
+    if args.isoform_hits:
+        write_isoform_hits(args.dir, args.output, isoforms_info)
+
     if not args.skipORF:
         f_faa.close()
 
