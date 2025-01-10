@@ -115,6 +115,11 @@ def get_class_junc_filenames(outdir, prefix):
     outputJuncPath = outputPathPrefix + "_junctions.txt"
     return outputClassPath, outputJuncPath
 
+def get_pickle_filename(outdir, prefix):
+    pklPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
+    pklFilePath = pklPathPrefix + ".isoforms_info.pkl"
+    return pklFilePath
+
 def get_omitted_name(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"

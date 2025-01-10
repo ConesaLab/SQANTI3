@@ -7,7 +7,7 @@ from Bio import SeqIO
 from .utilities.indels_annot import calc_indels_from_sam
 
 from .qc_output import (
-    generate_report, write_classification_output,
+    cleanup, generate_report, save_isoforms_info, write_classification_output,
     write_isoform_hits, write_junction_output, write_omitted_isoforms
 )
 from .helpers import (
@@ -98,9 +98,13 @@ def run(args):
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
-
+    ## Rename novel genes
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
-
+    ## FSM classification
+    if args.chunks == 1:
+        isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
+        isoforms_info = classify_fsm(isoforms_info)
+        print(f"After classify fsm: {len(isoforms_info)}")
     ## RT-switching computation
     print("**** RT-switching computation....", file=sys.stderr)
 
@@ -110,9 +114,7 @@ def run(args):
                                                     args.genome,genome_dict)
     print(f"After RTS classificaion: {len(isoforms_info)}")
 
-    ## FSM classification
-    isoforms_info = classify_fsm(isoforms_info)
-    print(f"After classify fsm: {len(isoforms_info)}")
+
 
     fields_class_cur = FIELDS_CLASS
     ## FL count file
@@ -142,8 +144,7 @@ def run(args):
     fields_junc_cur = reader.fieldnames
     isoforms_info = isoforms_junctions(isoforms_info, reader)
 
-    ## Rename novel genes
-    isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
+    
 
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)
@@ -164,9 +165,10 @@ def run(args):
         generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
     stop3 = timeit.default_timer()
 
-    print("Removing temporary files....", file=sys.stderr)
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
+    cleanup(outputClassPath, outputJuncPath)
+
+    if args.chunks != 1:
+        save_isoforms_info(isoforms_info, args.dir, args.output)
 
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 

@@ -1,5 +1,6 @@
 from csv import DictReader, DictWriter
 import os
+import pickle
 import sys
 
 from .commands import (
@@ -67,4 +68,9 @@ def cleanup(outputClassPath, outputJuncPath):
     print("Removing temporary files....", file=sys.stderr)
     os.remove(outputClassPath+"_tmp")
     os.remove(outputJuncPath+"_tmp")
+
+def save_isoforms_info(isoforms_info, outdir, prefix):
+    print("Saving isoforms_info object to file....", file=sys.stderr)
+    with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
+        pickle.dump(isoforms_info, h)
 
