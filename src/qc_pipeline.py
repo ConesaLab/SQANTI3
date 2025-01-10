@@ -2,7 +2,7 @@ import os, timeit, sys
 import subprocess
 
 from csv import DictReader
-from Bio import SeqIO
+from Bio import SeqIO  # type: ignore
 
 from .utilities.indels_annot import calc_indels_from_sam
 

@@ -6,8 +6,8 @@ import re
 
 from collections import defaultdict
 from typing import Dict, Optional
-from Bio import SeqIO
-from bx.intervals import Interval
+from Bio import SeqIO #type: ignore
+from bx.intervals import Interval #type: ignore
 
 from src.utils import find_closest_in_list
 
