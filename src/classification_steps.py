@@ -6,7 +6,7 @@ from .classification_classifiers import (
 )
 
 def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene,
-                     start_ends_by_gene, genome_dict, novel_gene_index, isoform_hits_name=None,novel_gene_prefix=None,window=20):
+                     start_ends_by_gene, genome_dict, isoform_hits_name=None,window=20):
         # Find best reference hit
         isoform_hit = transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, 
                                                   start_ends_by_gene, rec, genome_dict, nPolyA=window)
@@ -19,13 +19,7 @@ def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr
             # possibly NNC, genic, genic intron, anti-sense, or intergenic
             isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
 
-        if isoform_hit.str_class in ("intergenic", "genic_intron"):
-            # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
-            prefix = f'novelGene_{novel_gene_prefix}_' if novel_gene_prefix is not None else 'novelGene_'
-            isoform_hit.genes = [f'{prefix}{novel_gene_index}']
-            isoform_hit.transcripts = ['novel']
-            novel_gene_index += 1
-        return isoform_hit, novel_gene_index
+        return isoform_hit
 
 def process_cage_peak_info(isoform_hit,rec, cage_peak_obj):
     if rec.strand == '+':

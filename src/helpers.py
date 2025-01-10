@@ -337,12 +337,16 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     return(orfDict)
 
 
-def rename_novel_genes(isoform_info):
+def rename_novel_genes(isoform_info,novel_gene_prefix=None):
     """
     Rename novel genes to be "novel_X" where X is a number
     """
-    novel_gene_counter = 1
-    for iso in isoform_info.values():
-        if iso.geneName() == "novel":
-            iso.set_geneName("novel_{0}".format(novel_gene_counter))
-            novel_gene_counter += 1
+    novel_gene_index= 1
+    for isoform_hit in isoform_info.values():
+        if isoform_hit.str_class in ("intergenic", "genic_intron"):
+            # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
+            prefix = f'novelGene_{novel_gene_prefix}_' if novel_gene_prefix is not None else 'novelGene_'
+            isoform_hit.genes = [f'{prefix}{novel_gene_index}']
+            isoform_hit.transcripts = ['novel']
+            novel_gene_index += 1
+    return isoform_info

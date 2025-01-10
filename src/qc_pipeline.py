@@ -11,7 +11,7 @@ from .qc_output import (
     write_isoform_hits, write_junction_output, write_omitted_isoforms
 )
 from .helpers import (
-    get_corr_filenames, get_class_junc_filenames, 
+    get_corr_filenames, get_class_junc_filenames, rename_novel_genes, 
     sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
 from .parsers import (
@@ -141,6 +141,9 @@ def run(args):
     reader = DictReader(open(outputJuncPath+"_tmp"), delimiter='\t')
     fields_junc_cur = reader.fieldnames
     isoforms_info = isoforms_junctions(isoforms_info, reader)
+
+    ## Rename novel genes
+    isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
 
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)

@@ -1,6 +1,6 @@
 import os,sys,copy,csv
 import pandas as pd
-
+import re
 from multiprocessing import Process
 from Bio import SeqIO
 from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
@@ -16,8 +16,10 @@ def get_split_dir(outdir,prefix):
     split_directory = split_prefix+'_splits/'
     return split_directory
 
-def split_input_run(args,outdir):
+def natural_sort_key(s):
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
 
+def split_input_run(args, outdir):
     SPLIT_ROOT_DIR = outdir
     if os.path.exists(SPLIT_ROOT_DIR):
         print("WARNING: {0} directory already exists!".format(SPLIT_ROOT_DIR), file=sys.stderr)
@@ -25,50 +27,62 @@ def split_input_run(args,outdir):
         os.makedirs(SPLIT_ROOT_DIR)
 
     if not args.fasta:
-        # check if the code work if not use np to read the isoform file
         try:
+            print("GOOD SPLIT")
             recs = [r for r in collapseGFFReader(args.isoforms)]
+            # Group records by gene_id
+            gene_groups = {}
+            for rec in recs:
+                gene_id = rec.gene_id  # Assuming gene_id is an attribute of the record
+                if gene_id not in gene_groups:
+                    gene_groups[gene_id] = []
+                gene_groups[gene_id].append(rec)
         except Exception as e:
-            # read the file args.isoforms as a np file since the GTF file is not in a formal format
+            print("BAD SPLIT")
             recs_df = pd.read_csv(args.isoforms, sep='\t', comment='#', header=None)
-            # Extract transcript IDs and assign them to the new column
             for i, value in enumerate(recs_df.iloc[:, 8]):
                 parts = value.split('; ')
                 for part in parts:
-                    if 'transcript_id' in part:
-                        transcript_id = part.split('"')[1]
-                        recs_df.at[i, 'transcript_id'] = transcript_id
-                        break  # Assuming only one transcript_id per row, break
-            recs = {transcript_id: group.iloc[:, :-1] for transcript_id, group in recs_df.groupby('transcript_id')}
+                    if 'gene_id' in part:
+                        gene_id = part.split('"')[1]
+                        recs_df.at[i, 'gene_id'] = gene_id
+                        break
+            gene_groups = {gene_id: group.iloc[:, :-1] for gene_id, group in recs_df.groupby('gene_id')}
 
-        n = len(recs)
-        # if resc is empty, then the file is not in the correct format and ask user to check
+        n = len(gene_groups)
         if n == 0:
-            print("The input file is not in the correct format, please check the file contains transcript_id in "
+            print("The input file is not in the correct format, please check the file contains gene_id in "
                   "column 9 and try again")
             sys.exit(1)
-        chunk_size = n // args.chunks + (n % args.chunks > 0)
-        split_outs = []
 
-        for i in range(args.chunks):
-            if i * chunk_size >= n:
-                break
+        # Sort gene IDs numerically
+        gene_ids = sorted(gene_groups.keys(), key=natural_sort_key)
+
+        # Distribute gene groups evenly across chunks
+        chunks = [[] for _ in range(args.chunks)]
+        for i, gene_id in enumerate(gene_ids):
+            chunks[i % args.chunks].append(gene_id)
+
+        split_outs = []
+        for i, chunk in enumerate(chunks):
+            if not chunk:
+                continue
             d = os.path.join(SPLIT_ROOT_DIR, str(i))
             try:
                 os.makedirs(d)
             except FileExistsError:
                 pass
             f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(i)), 'w')
-            if type(recs) == dict:
-                for key in sorted(recs.keys())[i * chunk_size: min((i + 1) * chunk_size, n)]:
-                    # Append each DataFrame to the file without index and with tab separation
-                    recs[key].to_csv(f, sep='\t', index=False, header=False, quoting=csv.QUOTE_NONE, escapechar='\\')
-            else:
-                for j in range(i * chunk_size, min((i + 1) * chunk_size, n)):
-                        write_collapseGFF_format(f, recs[j])
+            for gene_id in chunk:
+                if isinstance(gene_groups[gene_id], pd.DataFrame):
+                    gene_groups[gene_id].to_csv(f, sep='\t', index=False, header=False, quoting=csv.QUOTE_NONE, escapechar='\\')
+                else:
+                    for rec in gene_groups[gene_id]:
+                        write_collapseGFF_format(f, rec)
             f.close()
             split_outs.append((os.path.abspath(d), f.name))
     else:
+        # FASTA file handling remains unchanged
         recs = [r for r in SeqIO.parse(open(args.isoforms),'fasta')]
         n = len(recs)
         chunk_size = n//args.chunks + (n%args.chunks >0)
@@ -115,7 +129,7 @@ def combine_split_runs(args, split_dirs):
     f_class = open(outputClassPath, 'w')
     f_junc = open(outputJuncPath, 'w')
     f_cds_gtf_gff = open(corrCDS_GTF_GFF, 'w')
-
+    
     for i,split_d in enumerate(split_dirs):
         _gtf, _, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(split_d,args.output)
         _class, _junc = get_class_junc_filenames(split_d,args.output)

@@ -71,7 +71,7 @@ def main():
         SPLIT_ROOT_DIR = get_split_dir(args.dir,args.output)
         split_dirs = split_input_run(args, SPLIT_ROOT_DIR)
         combine_split_runs(args,split_dirs)
-        shutil.rmtree(SPLIT_ROOT_DIR)
+        #shutil.rmtree(SPLIT_ROOT_DIR)
 
     if args.isoAnnotLite:
         from src.helpers import get_corr_filenames, get_class_junc_filenames

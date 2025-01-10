@@ -36,9 +36,8 @@ def isoform_classification_pipeline(
     for _,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit
-            isoform_hit,novel_gene_index = classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
-                                            junctions_by_gene, start_ends_by_gene, genome_dict, novel_gene_index,
-                                            isoform_hits_name, novel_gene_prefix,window)
+            isoform_hit = classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+                                            junctions_by_gene, start_ends_by_gene, genome_dict, isoform_hits_name,window)
             # write out junction information
             write_junction_info(rec, junctions_by_chr, accepted_canonical_sites, indelsJunc, 
                                 genome_dict, fout_junc, SJcovInfo, SJcovNames, phyloP_reader)
