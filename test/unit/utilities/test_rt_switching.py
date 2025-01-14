@@ -52,12 +52,14 @@ def test_sj_seen_counts_structure(loaded_data):
     sample_junction = list(sj_seen_counts.keys())[0]
     assert isinstance(sample_junction, tuple)
     assert len(sample_junction) == 4  # (chrom, strand, start, end)
-    assert isinstance(sj_seen_counts[sample_junction], int)
+    assert isinstance(sj_seen_counts[sample_junction][0], str)
 
 def test_no_duplicate_junctions(loaded_data):
     sj_dict, sj_seen_counts = loaded_data
     unique_junctions = sum(len(junctions) for junctions in sj_dict.values())
-    total_junctions = sum(sj_seen_counts.values())
+    total_junctions = 0
+    for val in sj_seen_counts.values():
+        total_junctions += len(val)
     assert total_junctions >= unique_junctions
 
 def test_all_junctions_in_seen_counts(loaded_data):
@@ -78,7 +80,8 @@ def test_valid_junction(loaded_data):
     sj_dict, sj_dict_count = loaded_data
     assert sj_dict["PB.103684.1"] == []
     assert len(sj_dict["PB.103684.2"]) == 1
-    assert sj_dict_count[ ('chr22', '+', '15815567', '15817907')] == 2
+    assert len(sj_dict_count[('chr22', '+', '15815567', '15817907')]) == 2
+    assert sj_dict_count[('chr22', '+', '15815567', '15817907')] == ['PB.8631.2-junction_5', 'PB.3796.2-junction_7']
 
 ### checkForRepeatPat ###
 
@@ -202,14 +205,20 @@ def mock_sj_dict(loaded_data):
     return loaded_data[0]
 
 @pytest.fixture
+def mock_sj_relations_dict(loaded_data):
+    return loaded_data[1]
+
+@pytest.fixture
 def mock_genome_dict():
     genome_path = os.path.join(main_path, "test/test_data/genome_test.fasta")
     return dict((r.id, r) for r in SeqIO.parse(open(genome_path), 'fasta'))
 
 # Tests
-def test_checkSJforRTS_basic(mock_output_file,mock_sj_dict,mock_genome_dict):
+def test_checkSJforRTS_basic(mock_output_file,mock_sj_relations_dict,
+                             mock_sj_dict,mock_genome_dict):
     result = checkSJforRTS(
         mock_sj_dict,
+        mock_sj_relations_dict,
         mock_genome_dict,
         wiggle_count=5,
         include_category='a',
@@ -223,9 +232,11 @@ def test_checkSJforRTS_basic(mock_output_file,mock_sj_dict,mock_genome_dict):
     assert 'PB.103684.2' in result
     assert isinstance(result['PB.103684.2'], list)
 
-def test_checkSJforRTS_output_file(mock_output_file,mock_sj_dict,mock_genome_dict):
+def test_checkSJforRTS_output_file(mock_output_file,mock_sj_relations_dict,
+                                   mock_sj_dict,mock_genome_dict):
     checkSJforRTS(
         mock_sj_dict,
+        mock_sj_relations_dict,
         mock_genome_dict,
         wiggle_count=5,
         include_category='a',
@@ -241,9 +252,11 @@ def test_checkSJforRTS_output_file(mock_output_file,mock_sj_dict,mock_genome_dic
         headers = reader.fieldnames
         assert headers == FIELDS_RTS  # Assuming FIELDS_RTS is defined in your module
 
-def test_checkSJforRTS_filtering(mock_output_file,mock_sj_dict,mock_genome_dict):
+def test_checkSJforRTS_filtering(mock_output_file,mock_sj_relations_dict,
+                                 mock_sj_dict,mock_genome_dict):
     result = checkSJforRTS(
         mock_sj_dict,
+        mock_sj_relations_dict,
         mock_genome_dict,
         wiggle_count=5,
         include_category='k',  # Only novel
@@ -253,12 +266,16 @@ def test_checkSJforRTS_filtering(mock_output_file,mock_sj_dict,mock_genome_dict)
         output_filename=str(mock_output_file)
     )
     
-    assert len(result['PB.103684.2']) == 0
+    with pytest.raises(KeyError):
+        assert result['PB.103684.2']
+
     assert len(result['PB.15672.2']) > 0
 
-def test_checkSJforRTS_strand_handling(mock_output_file,mock_sj_dict,mock_genome_dict):
+def test_checkSJforRTS_strand_handling(mock_output_file,mock_sj_relations_dict,
+                                       mock_sj_dict,mock_genome_dict):
     result = checkSJforRTS(
         mock_sj_dict,
+        mock_sj_relations_dict,
         mock_genome_dict,
         wiggle_count=5,
         include_category='a',

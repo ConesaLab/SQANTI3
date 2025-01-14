@@ -2,16 +2,16 @@ import os, timeit, sys
 import subprocess
 
 from csv import DictReader
-from Bio import SeqIO
+from Bio import SeqIO  # type: ignore
 
 from .utilities.indels_annot import calc_indels_from_sam
 
 from .qc_output import (
-    generate_report, write_classification_output,
+    cleanup, generate_report, save_isoforms_info, write_classification_output,
     write_isoform_hits, write_junction_output, write_omitted_isoforms
 )
 from .helpers import (
-    get_corr_filenames, get_class_junc_filenames, 
+    get_corr_filenames, get_class_junc_filenames, rename_novel_genes, 
     sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
 from .parsers import (
@@ -90,7 +90,7 @@ def run(args):
 
     # isoform classification + intra-priming + id and junction characterization
     isoforms_info, ratio_TSS_dict = isoform_classification_pipeline(
-        args.sites, args.window, args.novel_gene_prefix, args.is_fusion,
+        args.sites, args.window, args.is_fusion,
         isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
         junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
         outputClassPath, outputJuncPath, fusion_components, isoform_hits_name,
@@ -98,28 +98,30 @@ def run(args):
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
-
+    ## Rename novel genes
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
-
-    ## RT-switching computation
-    print("**** RT-switching computation....", file=sys.stderr)
-
-    # RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
     
-    isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
-                                                    args.genome,genome_dict)
-    print(f"After RTS classificaion: {len(isoforms_info)}")
+    # This steps are avoided in the parallel implementation
+    # They are run instead after combining the chunks
+    if args.chunks == 1:
+        ## FSM classification
+        isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
+        isoforms_info = classify_fsm(isoforms_info)
+        print(f"After classify fsm: {len(isoforms_info)}")
+        
+        ## FL count file
+        fields_class_cur = FIELDS_CLASS
+        if args.fl_count:
+            isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+        else:
+            print("Full-length read abundance files not provided.", file=sys.stderr)
 
-    ## FSM classification
-    isoforms_info = classify_fsm(isoforms_info)
-    print(f"After classify fsm: {len(isoforms_info)}")
+        ## RT-switching computation
+        print("**** RT-switching computation....", file=sys.stderr)
+        isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
+                                                        args.genome,genome_dict)
+        print(f"After RTS classificaion: {len(isoforms_info)}")
 
-    fields_class_cur = FIELDS_CLASS
-    ## FL count file
-    if args.fl_count:
-        isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
-    else:
-        print("Full-length read abundance files not provided.", file=sys.stderr)
     
     ## TSS ratio dict reading
     if ratio_TSS_dict is not None:
@@ -136,7 +138,6 @@ def run(args):
             else:
                 isoforms_info[iso].nIndels = 0
 
-
     ## Read junction files and create attributes per id
     reader = DictReader(open(outputJuncPath+"_tmp"), delimiter='\t')
     fields_junc_cur = reader.fieldnames
@@ -145,26 +146,31 @@ def run(args):
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)
 
-    #write omitted isoforms if requested minimum reference length is more than 0
-    isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
-                                           args.min_ref_len, args.is_fusion, fields_class_cur)
-    # sort isoform keys
-    write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
+    if args.chunks != 1:
+        save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
+        
+    else:
+        # Write final classification
+        write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
 
-    # Now that RTS info is obtained, we can write the final junctions.txt
-    write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
-    #isoform hits to file if requested
-    if args.isoform_hits:
-        write_isoform_hits(args.dir, args.output, isoforms_info)
-    ## Generating report
-    if args.report != 'skip':
-        generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
+        # Now that RTS info is obtained, we can write the final junctions.txt
+        write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
+
+        #write omitted isoforms if requested minimum reference length is more than 0
+        isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
+                                            args.min_ref_len, args.is_fusion, fields_class_cur)
+        
+        #isoform hits to file if requested
+        if args.isoform_hits:
+            write_isoform_hits(args.dir, args.output, isoforms_info)
+        
+        ## Generating report
+        if args.report != 'skip':
+            generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
+
+        cleanup(outputClassPath, outputJuncPath)
+
     stop3 = timeit.default_timer()
-
-    print("Removing temporary files....", file=sys.stderr)
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
-
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 
 

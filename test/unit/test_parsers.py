@@ -130,7 +130,7 @@ def input_file():
 def test_isoforms_parser(input_file):
     isoforms_by_chr = isoforms_parser(input_file)
     assert len(isoforms_by_chr.keys()) == 1
-    assert len(isoforms_by_chr["chr22"]) == 35
+    assert len(isoforms_by_chr["chr22"]) == 36
     
 def test_isoforms_parser_sorted(input_file):
     isoforms_by_chr = isoforms_parser(input_file)

@@ -1,5 +1,6 @@
 from csv import DictReader, DictWriter
 import os
+import pickle
 import sys
 
 from .commands import (
@@ -29,11 +30,12 @@ def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, f
     return isoforms_info
 
 def write_classification_output(isoforms_info, outputClassPath, fields_class_cur):
-    iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, isoforms_info[x].id))
+     
+    # iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, isoforms_info[x].id))
     with open(outputClassPath, 'w') as h:
         fout_class = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
         fout_class.writeheader()
-        for iso_key in iso_keys:
+        for iso_key in isoforms_info.keys():
             fout_class.writerow(isoforms_info[iso_key].as_dict())
 
 def write_junction_output(outputJuncPath, RTS_info, fields_junc_cur):
@@ -66,4 +68,10 @@ def cleanup(outputClassPath, outputJuncPath):
     print("Removing temporary files....", file=sys.stderr)
     os.remove(outputClassPath+"_tmp")
     os.remove(outputJuncPath+"_tmp")
+
+def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
+    print("Saving isoforms_info object to file....", file=sys.stderr)
+    with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
+        pickle.dump(isoforms_info, h)
+        pickle.dump(junctions_header, h)
 

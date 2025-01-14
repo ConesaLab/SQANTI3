@@ -4,15 +4,15 @@ from csv import DictWriter
 from .classification_steps import (
     assign_genomic_coordinates, classify_isoform, 
     detect_nmd, fill_orf_info, find_polya_motif_info,
-    process_cage_peak_info, process_polya_peak_info
+    process_cage_peak_info, process_polya_peak_info,
+    write_junction_info
 ) # type: ignore
-from .helpers import write_junction_info
 from .config import  FIELDS_CLASS
 
 
 
 def isoform_classification_pipeline(
-        sites,window,novel_gene_prefix,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+        sites,window,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
         junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
         outputClassPath, outputJuncPath, fusion_components,isoform_hits_name,SJcovNames, 
         SJcovInfo, fields_junc_cur,ratio_TSS_dict, cage_peak_obj, polya_peak_obj,
@@ -32,13 +32,11 @@ def isoform_classification_pipeline(
     fout_junc.writeheader()
 
     isoforms_info = {}
-    novel_gene_index = 1
     for _,records in isoforms_by_chr.items():
         for rec in records:
             # Find best reference hit
-            isoform_hit,novel_gene_index = classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
-                                            junctions_by_gene, start_ends_by_gene, genome_dict, novel_gene_index,
-                                            isoform_hits_name, novel_gene_prefix,window)
+            isoform_hit = classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
+                                            junctions_by_gene, start_ends_by_gene, genome_dict, isoform_hits_name,window)
             # write out junction information
             write_junction_info(rec, junctions_by_chr, accepted_canonical_sites, indelsJunc, 
                                 genome_dict, fout_junc, SJcovInfo, SJcovNames, phyloP_reader)
@@ -67,6 +65,12 @@ def isoform_classification_pipeline(
             isoforms_info[rec.id] = isoform_hit
             fout_class.writerow(isoform_hit.as_dict())
 
+    # Sort isoforms_info by the chromosome and then id.
+    # Take into account that the ID is a string with numbers
+
+    iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, int(isoforms_info[x].id.split('.')[1])))
+    isoforms_info = {key: isoforms_info[key] for key in iso_keys}
+    
     handle_class.close()
     handle_junc.close()
     return (isoforms_info, ratio_TSS_dict)
