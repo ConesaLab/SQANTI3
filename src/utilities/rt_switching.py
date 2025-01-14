@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import os, re, sys, time, subprocess, argparse, pdb
-from collections import namedtuple, Counter, defaultdict
+import os, sys, argparse
+from collections import namedtuple, Counter
 from csv import DictReader, DictWriter
 
 from Bio import SeqIO
@@ -37,7 +37,7 @@ def loadSpliceJunctions(filepath):
     """
     sj_dict = {}
     #sj_type_counts = {'known_canonical':0, 'known_non_canonical':0, 'novel_canonical':0, 'novel_non_canonical':0}
-    sj_seen_counts = Counter()
+    sj_seen_relations = {}
 
     for rec in DictReader(open(filepath), delimiter='\t'):
         trans = rec['isoform']
@@ -46,8 +46,9 @@ def loadSpliceJunctions(filepath):
 
         # check for unique splice junctions, does not make sense to use duplicates
         sj_pair = (rec['chrom'], rec['strand'], rec['genomic_start_coord'], rec['genomic_end_coord'])
-        if sj_pair not in sj_seen_counts:
-            sj_seen_counts[sj_pair] = 1
+
+        if sj_pair not in sj_seen_relations:
+            sj_seen_relations[sj_pair] = [f"{trans}-{rec['junction_number']}"]
             assert rec['canonical'] in ('canonical', 'non_canonical')
             assert rec['junction_category'] in ('novel', 'known')
             sj_dict[trans].append(SpliceJunctions(trans,
@@ -63,11 +64,14 @@ def loadSpliceJunctions(filepath):
                                                 type=rec['canonical']))
             #sj_type_counts[rec['junction_category']+'_'+rec['canonical']] += 1
         else:
-            sj_seen_counts[sj_pair] += 1
-    return sj_dict, dict(sj_seen_counts)
+            sj_seen_relations[sj_pair].append(f"{trans}-{rec['junction_number']}")
+
+    
+    return sj_dict, sj_seen_relations
 
 
-def checkSJforRTS(sj_dict, genome_dict, wiggle_count, include_category, include_type, min_match, allow_mismatch, output_filename):
+def checkSJforRTS(sj_dict, sj_relations_dict, genome_dict, wiggle_count, include_category, 
+                  include_type, min_match, allow_mismatch, output_filename):
     """
     :param sj_dict: dict of (isoform --> junction info)
     :param genome_dict: dict of (chr --> SeqRecord)
@@ -81,10 +85,7 @@ def checkSJforRTS(sj_dict, genome_dict, wiggle_count, include_category, include_
     f = open(output_filename, 'w')
     fout = DictWriter(f, fieldnames=FIELDS_RTS, delimiter='\t')
     fout.writeheader()
-
-    for isoform in sj_dict:
-        RTS_info_by_isoform[isoform] = []
-        
+    for isoform in sj_dict:        
         # process all splice junctions
         for sj in sj_dict[isoform]:
             if (include_type=='c' and sj.type!='canonical') or \
@@ -119,22 +120,29 @@ def checkSJforRTS(sj_dict, genome_dict, wiggle_count, include_category, include_
             if len(seq_exon) > 0 and len(seq_intron) > 0:
                 flag, matchLen, matchPat, mismatch = checkForRepeatPat(seq_exon, seq_intron, min_match, allow_mismatch)
                 if flag:
-                    RTS_info_by_isoform[isoform].append(sj.sjn)
-
-                    rec = {'isoform': isoform,
-                           'junction_number': sj.sjn,
-                           'chrom': sj.chromo,
-                           'strand': sj.strand,
-                           'genomic_start_coord': sj.strpos,
-                           'genomic_end_coord': sj.endpos,
-                           'category': sj.category,
-                           'type': sj.type,
-                           'exonSeq': seq_exon,
-                           'intronSeq': seq_intron,
-                           'matchLen': matchLen,
-                           'matchPat': matchPat,
-                           'mismatch': mismatch }
-                    fout.writerow(rec)
+                    for junction in sj_relations_dict[(sj.chromo, sj.strand, str(sj.strpos), str(sj.endpos))]:  # get all junctions with the same start and end
+                        isoform = junction.split('-')[0]
+                        junc_number = junction.split('-')[1]
+                        
+                        try:
+                            RTS_info_by_isoform[isoform].append(junc_number)
+                        except KeyError:
+                            RTS_info_by_isoform[isoform] = []
+                            RTS_info_by_isoform[isoform].append(junc_number)
+                        rec = {'isoform': isoform,
+                            'junction_number': junc_number,
+                            'chrom': sj.chromo,
+                            'strand': sj.strand,
+                            'genomic_start_coord': sj.strpos,
+                            'genomic_end_coord': sj.endpos,
+                            'category': sj.category,
+                            'type': sj.type,
+                            'exonSeq': seq_exon,
+                            'intronSeq': seq_intron,
+                            'matchLen': matchLen,
+                            'matchPat': matchPat,
+                            'mismatch': mismatch }
+                        fout.writerow(rec)
 
     return RTS_info_by_isoform
 
@@ -202,6 +210,8 @@ def seq_match(exseq, inseq, allowMismatch):
     
     return False, None
 
+def complete_RTSinfo(RTSinfo,sjdict):
+    return RTSinfo
 
 def rts(args, genome_dict):
     #
@@ -230,13 +240,15 @@ def rts(args, genome_dict):
     rtsResultsFilepath = os.path.join(rts_dir, "sj.rts.results.tsv")
 
     # load required data
-    sjIdx, sjCounts = loadSpliceJunctions(args.sjFilepath)
+    sjIdx, sjRelations = loadSpliceJunctions(args.sjFilepath)
 
     # perform RTS analysis
-    RTSinfo = checkSJforRTS(sjIdx, genome_dict, args.wiggle_count, args.include_category, args.include_type,
+    RTSinfo = checkSJforRTS(sjIdx, sjRelations, genome_dict, args.wiggle_count, args.include_category, args.include_type,
                             args.min_match, args.allow_mismatch, rtsResultsFilepath)
 
     return RTSinfo
+
+
 
 def get_parser():
     # parse command line arguments

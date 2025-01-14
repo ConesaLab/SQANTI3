@@ -146,12 +146,6 @@ def run(args):
     #### Printing output file:
     print("**** Writing output files....", file=sys.stderr)
 
-
-    ## Generating report
-    if args.report != 'skip':
-        generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
-    stop3 = timeit.default_timer()
-
     if args.chunks != 1:
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
         
@@ -169,10 +163,14 @@ def run(args):
         #isoform hits to file if requested
         if args.isoform_hits:
             write_isoform_hits(args.dir, args.output, isoforms_info)
+        
+        ## Generating report
+        if args.report != 'skip':
+            generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
 
         cleanup(outputClassPath, outputJuncPath)
 
-
+    stop3 = timeit.default_timer()
     print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
 
 

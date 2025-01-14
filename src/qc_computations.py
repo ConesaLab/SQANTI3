@@ -7,19 +7,20 @@ from src.parsers import FLcount_parser, expression_parser
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 
-def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None):
+def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
     RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
     """
     if genome_dict is None:
         genome_dict = dict((r.name, r) for r in SeqIO.parse(open(genome), 'fasta'))
 
-    RTS_info = rts([outputJuncPath+"_tmp", genome, "-a"], genome_dict)
+    RTS_info = rts([outputJuncPath+extension, genome, "-a"], genome_dict)
     for pbid in isoforms_info:
-        if pbid in RTS_info and len(RTS_info[pbid]) > 0:
+        if pbid in RTS_info:
             isoforms_info[pbid].RT_switching = "TRUE"
         else:
             isoforms_info[pbid].RT_switching = "FALSE"
+
     return isoforms_info, RTS_info
 
 def classify_fsm(isoforms_info):

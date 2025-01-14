@@ -32,8 +32,7 @@ def genome_dict(data_path: str):
 
 @pytest.fixture
 def reference_data(data_path: str,genome_dict: dict):
-    annotation = os.path.join(data_path,"test_isoforms.gtf")
-    
+    annotation = os.path.join(data_path,"test_reference.gtf")
     return reference_parser(annotation,data_path,"test",list(genome_dict.keys()))
      
 @pytest.fixture
@@ -42,7 +41,8 @@ def isoform_data(data_path: str):
     isoforms_dict = isoforms_parser(isoform)
     return isoforms_dict
 
-def test_isoformClassification(reference_data: tuple[dict, dict, dict[Any, dict[str, list]], dict[Any, set], dict[Any, dict[str, set]]], result_dataframe: pd.DataFrame, isoform_data: defaultdict[Any, list[Any]], genome_dict: dict):
+def test_isoformClassification(reference_data: tuple[dict, dict, dict[Any, dict[str, list]], dict[Any, set], dict[Any, dict[str, set]]], 
+                               result_dataframe: pd.DataFrame, isoform_data: defaultdict[Any, list[Any]], genome_dict: dict):
     refs_1exon_by_chr, refs_exons_by_chr, \
     junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_data
 
