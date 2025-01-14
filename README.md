@@ -1,7 +1,5 @@
 ![SQANTI3 logo](https://github.com/FJPardoPalacios/public_figures/blob/master/sq3-logo.png)
 
-![SQANTI3 logo](https://github.com/FJPardoPalacios/public_figures/blob/master/sq3-logo.png)
-
 # SQANTI3
 
 ![GitHub Release](https://img.shields.io/github/v/release/ConesaLab/SQANTI3)
