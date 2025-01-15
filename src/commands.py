@@ -12,12 +12,6 @@ MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq"
 
-# To dynamically get the utilities path
-def get_gmst_prog(utilities_path):
-    return os.path.join(utilities_path, "gmst", "gmst.pl")
-
-GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --output {{o}} {{i}}"
-
 # GTF
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
@@ -82,12 +76,19 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
             raise ValueError(f"Unsupported aligner choice: {aligner_choice}")
     return cmd
 
+# To dynamically get the utilities path
+def get_gmst_prog(utilities_path):
+    return os.path.join(utilities_path, "gmst", "gmst.pl")
+
+GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --output {{o}} {{i}}"
+
 def run_gmst(corrFASTA,orf_input,gmst_pre):
     if orf_input is not None:
         print("Running ORF prediction of input on {0}...".format(orf_input))
         cmd = GMST_CMD.format(i=os.path.realpath(orf_input), o=gmst_pre)
     else:
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
+    cmd = f"cd {os.path.dirname(gmst_pre)}; {cmd}"
     run_command(cmd, description="GMST ORF prediction")
 
 def GTF_to_genePred(corrGTF):
