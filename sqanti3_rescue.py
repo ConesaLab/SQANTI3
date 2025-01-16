@@ -12,6 +12,7 @@ from src.config import __version__
 import os, sys, argparse, subprocess
 import pandas as pd
 
+from src.rescue_argparse import rescue_argparse
 ## Set general path variables
 Rscript_path = shutil.which('Rscript')
 gffread_path = shutil.which('gffread')

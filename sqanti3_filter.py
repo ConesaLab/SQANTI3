@@ -30,6 +30,10 @@ from Bio import SeqIO
 
 from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
+from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+
+from src.filter_argparse import filter_argparse
 
 from src.filter_argparse import filter_argparse
 
