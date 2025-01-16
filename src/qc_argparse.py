@@ -4,7 +4,8 @@ from .argparse_utils import *
 
 
 def qc_argparse():
-    ap = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
+    ap = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms",
+                                 exit_on_error=True)
     # Required arguments
     apr = ap.add_argument_group("Required arguments")
     apr.add_argument('--isoforms', type=valid_file, required= True,help='Isoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')

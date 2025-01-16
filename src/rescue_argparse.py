@@ -18,7 +18,7 @@ def rescue_argparse():
                         help = "GTF file output by SQANTI3 filter (*.filtered.gtf).")
     common.add_argument("refGTF", 
                         help = "Full path to reference transcriptome GTF used when running SQANTI3 QC.")
-    common.add_argument("refGenome", 
+    common.add_argument("refFasta", 
                         help = "Full path to reference genome FASTA used when running SQANTI3 QC.")
     common.add_argument("-k", "--refClassif", 
                         help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
@@ -42,6 +42,12 @@ def rescue_argparse():
                         version=f"SQANTI3 f{__version__}")
     # Subparsers
     subparsers = parser.add_subparsers(dest = 'subcommand')
+    ## Rules rescue arguments
+    rules = subparsers.add_parser("rules", parents = [common], \
+    description = "Rescue for rules-filtered transcriptomes.")
+
+    rules.add_argument("-j", "--json", \
+    help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
 
     ## ML rescue arguments
     ml = subparsers.add_parser("ml", parents = [common], \
@@ -53,12 +59,6 @@ def rescue_argparse():
                     type = float, default = 0.7, 
                     help = "Default: 0.7. Machine learning probability threshold to filter elegible rescue targets (mapping hits).")
 
-    ## Rules rescue arguments
-    rules = subparsers.add_parser("rules", parents = [common], \
-    description = "Rescue for rules-filtered transcriptomes.")
-
-    rules.add_argument("-j", "--json", \
-    help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
 
   # parse arguments
     return parser

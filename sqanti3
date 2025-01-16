@@ -3,13 +3,19 @@
 # Crafting the Python wrapper based on the described requirements and the inspected bash script structure.
 
 import argparse
-import subprocess
+import os
 import yaml
 import sys
 from pathlib import Path
 
 from src.commands import run_command 
-from src.wrapper_utils import create_config
+from src.wrapper_utils import (
+    create_config, format_options, 
+    sqanti_path, run_sqanti_module
+)
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 def main():
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.")
@@ -34,24 +40,25 @@ def main():
         config = yaml.safe_load(f)
 
     commands = {
-        "qc": f"{sys.executable} sqanti3_qc.py {{main_options}} {{step_options}}",
-        "filter": f"{sys.executable} sqanti3_filter.py {{main_options}} {{step_options}}",
-        "rescue": f"{sys.executable} sqanti3_rescue.py {{main_options}} {{step_options}}"
+        "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
+        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} {{options}}"
     }
     main_opt = config.get("main", {})
     # I want the user to be able to dinamically select which module they want to run. 
     if args.command == "all":
         for step in ["qc", "filter", "rescue"]:
             if config.get(step, {}).get("enabled", False):
-                cmd = commands[step].format(main_options=main_opt,
-                                            step_options=config[step].get("options", ""))
+                options = main_opt | config[step].get("options", "")
+                cmd = commands[step].format(options = format_options(options))
                 print(f"Running {step.upper()}...")
-                run_command(cmd, "Running {step.upper()}...")
+                run_command(cmd, f"Running {step.upper()}...")
     else:
         if config.get(args.command, {}).get("enabled", False):
-            cmd = commands[args.command].format(options=config[args.command].get("options", ""))
+            options = main_opt | config[args.command].get("options", "")
+            cmd = commands[args.command].format(options = format_options(options))
             print(f"Running {args.command.upper()}...")
-            run_command(cmd, f"Running {args.command.upper()}...")
+            run_sqanti_module(cmd)
         else:
             print(f"{args.command.upper()} is disabled in the configuration file.", file=sys.stderr)
 
