@@ -17,7 +17,7 @@ import pandas as pd
 Rscript_path = distutils.spawn.find_executable('Rscript')
 gffread_path = distutils.spawn.find_executable('gffread')
 python_path = distutils.spawn.find_executable('python')
-utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
@@ -401,7 +401,7 @@ def run_rules_rescue(args):
       
       # run R script via terminal
       if subprocess.check_call(rescue_cmd, shell = True) != 0:
-        print("ERROR running rescue by mapping: {0}".format(rescue-cmd), \
+        print("ERROR running rescue by mapping: {0}".format(rescue_cmd), \
         file = sys.stderr)
         sys.exit(1)
         
