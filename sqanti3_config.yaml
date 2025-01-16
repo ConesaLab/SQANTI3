@@ -1,0 +1,97 @@
+# SQANTI3 configuration file
+
+main:
+  reference_gtf: "example/gencode.v38.basic_chr22.gtf"
+  reference_fasta: "example/GRCh38.p13_chr22.fasta"
+  cpus: 4
+  json_for_rules: "utilities/filter/filter_default.json"
+  threshold: 0.7
+
+qc:
+  skip: true
+  input: "example/UHR_chr22.gtf"
+  min_ref_length: ""
+  force_id_ignore: ""
+  cage_peak_bed_file: "data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed"
+  aligner_choice: ""
+  polyA_motif_list: "data/polyA_motifs/mouse_and_human.polyA_motif.txt"
+  polyA_peak: ""
+  phylobed: ""
+  skipORF: true
+  is_fusion: false
+  orf_input: ""
+  is_fastq: false
+  expression_matrix: ""
+  gmap_index: ""
+  chunks: 1
+  output_prefix: "UHR_chr22"
+  destination_folder: "/tmp/sqanti3_wrapper/QC/"
+  coverage: ""
+  sites: ""
+  window: ""
+  genename: ""
+  full_length_pacbio_abundance_tsv: "example/UHR_abundance.tsv"
+  saturation: true
+  report_file: "both"
+  isoAnnotLite: ""
+  gff3: ""
+  short_reads_fofn: "example/UHR_chr22_short_reads.fofn"
+  SR_bam: ""
+  isoform_hits: ""
+  ratio_TSS_metric: ""
+  reference_gtf: ${main.reference_gtf}
+  reference_fasta: ${main.reference_fasta}
+  cpus: ${main.cpus}
+
+filter:
+  skip: true
+  mode: "both"
+  skip_report: false
+  input_classification: "${qc.destination_folder}/${qc.output_prefix}_classification.txt"
+  corrected_gtf: "${qc.destination_folder}/${qc.output_prefix}_corrected.gtf"
+  isoforms: "GMST/GMST_tmp.faa"
+  isoannotgff3: "example/SQANTI3_QC_output/UHR_chr22.gff3"
+  sam: ""
+  faa: "${qc.destination_folder}/${qc.output_prefix}_corrected.faa"
+  monoexonic: true
+  rules:
+    output_folder: "/tmp/sqanti3_wrapper/sqanti3_filter_rules"
+    prefix: "${qc.output_prefix}"
+    json_file: ${main.json_for_rules}
+  ml:
+    output_folder: "/tmp/sqanti3_wrapper/sqanti3_filter_ml"
+    prefix: "${qc.output_prefix}"
+    percent_training: 0.8
+    TP: ""
+    TN: ""
+    threshold: ${main.threshold}
+    remove_columns: ""
+    intermediate_files: ""
+    max_class_size: ""
+    intrapriming: ""
+
+rescue:
+  skip: false
+  mode: "both"
+  rules:
+    filtered_classification: "${filter.rules.output_folder}/${filter.rules.prefix}_RulesFilter_result_classification.txt"
+    reference_classification: "${qc.destination_folder}/${qc.output_prefix}_classification.txt"
+    isoforms: "${qc.destination_folder}/${qc.output_prefix}_corrected.fasta"
+    gtf: "${filter.rules.output_folder}/${filter.rules.prefix}.filtered.gtf"
+    monoexons: "all"
+    mode: "full"
+    output_prefix: "${qc.output_prefix}"
+    output_folder: "/tmp/sqanti3_wrapper/sqanti3_rescue_rules"
+  ml:
+    filtered_classification: "${filter.ml.output_folder}/${filter.ml.prefix}_MLresult_classification.txt"
+    reference_classification: "${qc.destination_folder}/${qc.output_prefix}_classification.txt"
+    isoforms: "${qc.destination_folder}/${qc.output_prefix}_corrected.fasta"
+    gtf: "${filter.ml.output_folder}/${filter.ml.prefix}.filtered.gtf"
+    monoexons: "all"
+    mode: "full"
+    output_prefix: "${qc.output_prefix}"
+    output_folder: "/tmp/sqanti3_wrapper/sqanti3_rescue_ml"
+    randomforest_rdata: "${filter.ml.output_folder}/randomforest.RData"
+    reference_genome: ${main.reference_fasta}
+    reference_gtf: ${main.reference_gtf}
+    threshold: ${main.threshold}

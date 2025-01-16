@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+# Crafting the Python wrapper based on the described requirements and the inspected bash script structure.
+
+import argparse
+import subprocess
+import yaml
+import sys
+from pathlib import Path
+
+from src.commands import run_command 
+
+def create_config(config_path):
+    config = {
+        "main": {"reference_gtf": "",
+                "reference_fasta": "",
+                "cpus": 4,
+                "json_for_rules": "utilities/filter/filter_default.json",
+                "threshold": 0.7},
+        "qc": {"enabled": True, "options": ""},
+        "filter": {"enabled": True, "options": ""},
+        "rescue": {"enabled": True, "options": ""}
+    }
+    with open(config_path, "w") as f:
+        yaml.dump(config, f)
+    print(f"Config file created at {config_path}")
+
+def main():
+    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.")
+    parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
+                        help="Action to perform: 'all', 'qc', 'filter', 'rescue', or 'init'.")
+    parser.add_argument("-c","--config", type=str, default="sqanti3_config.yaml",
+                        help="Path to the configuration file (default: sqanti3_config.yaml).")
+
+    args = parser.parse_args()
+
+    config_path = Path(args.config)
+
+    if args.command == "init":
+        create_config(config_path)
+        return
+
+    if not config_path.exists():
+        print(f"Configuration file {config_path} not found. Please run 'init' first.", file=sys.stderr)
+        sys.exit(1)
+
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+
+    commands = {
+        "qc": f"{sys.executable} sqanti3_qc.py {{main_options}} {{step_options}}",
+        "filter": f"{sys.executable} sqanti3_filter.py {{main_options}} {{step_options}}",
+        "rescue": f"{sys.executable} sqanti3_rescue.py {{main_options}} {{step_options}}"
+    }
+    main_opt = config.get("main", {})
+    # I want the user to be able to dinamically select which module they want to run. 
+    if args.command == "all":
+        for step in ["qc", "filter", "rescue"]:
+            if config.get(step, {}).get("enabled", False):
+                cmd = commands[step].format(main_options=main_opt,
+                                            step_options=config[step].get("options", ""))
+                print(f"Running {step.upper()}...")
+                run_command(cmd, "Running {step.upper()}...")
+    else:
+        if config.get(args.command, {}).get("enabled", False):
+            cmd = commands[args.command].format(options=config[args.command].get("options", ""))
+            print(f"Running {args.command.upper()}...")
+            run_command(cmd, f"Running {args.command.upper()}...")
+        else:
+            print(f"{args.command.upper()} is disabled in the configuration file.", file=sys.stderr)
+
+if __name__ == "__main__":
+    main()
