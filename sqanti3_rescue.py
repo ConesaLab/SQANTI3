@@ -2,6 +2,8 @@
 __author__  = "angeles.arzalluz@gmail.com"
 __version__ = '5.3.0'
 
+from src.rescue_argparse import rescue_argparse
+
 ###################################################
 ##########     SQANTI3 RESCUE WRAPPER    ##########
 ###################################################
@@ -17,7 +19,7 @@ import pandas as pd
 Rscript_path = distutils.spawn.find_executable('Rscript')
 gffread_path = distutils.spawn.find_executable('gffread')
 python_path = distutils.spawn.find_executable('python')
-utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 ## Set path variables to call R scripts
 automatic_rescue_path = "rescue/automatic_rescue.R"
@@ -401,7 +403,7 @@ def run_rules_rescue(args):
       
       # run R script via terminal
       if subprocess.check_call(rescue_cmd, shell = True) != 0:
-        print("ERROR running rescue by mapping: {0}".format(rescue-cmd), \
+        print("ERROR running rescue by mapping: {0}".format(rescue_cmd), \
         file = sys.stderr)
         sys.exit(1)
         
@@ -430,72 +432,7 @@ def run_rules_rescue(args):
 ## Define main()
 def main():
   
-  ## Arguments and help
-  parser = argparse.ArgumentParser(description = "Rescue artifacts discarded by \
-  the SQANTI3 filter, i.e. find closest match for the artifacts in the reference \
-  transcriptome and add them to the transcriptome.")
-  
-  ## Common arguments
-  common = argparse.ArgumentParser(add_help = False)
-  
-  common.add_argument("sqanti_filter_classif", \
-  help = "\t\tSQANTI filter (ML or rules) output classification file.")
-  
-  common.add_argument("--isoforms", \
-  help = "\t\tFASTA file output by SQANTI3 QC (*_corrected.fasta), i.e. the full long read transcriptome.")
-  
-  common.add_argument("--gtf", \
-  help = "\t\tGTF file output by SQANTI3 filter (*.filtered.gtf).")
-  
-  common.add_argument("-g", "--refGTF", \
-  help = "\t\tFull path to reference transcriptome GTF used when running SQANTI3 QC.")
-  
-  common.add_argument("-f", "--refGenome", \
-  help = "\t\tFull path to reference genome FASTA used when running SQANTI3 QC.")
-  
-  common.add_argument("-k", "--refClassif", \
-  help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")
-  
-  common.add_argument("-e","--rescue_mono_exonic", \
-  choices = ['all', 'fsm', 'none'], default = "all", \
-  help='\t\tWhether or not to include mono-exonic artifacts in the rescue. Options include: none, fsm and all (default).')
-  
-  common.add_argument("--mode", \
-  choices = ["automatic", "full"], default = "automatic", \
-  help = "\t\tIf 'automatic' (default), only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
-  
-  common.add_argument("-o","--output", \
-  help = "\t\tPrefix for output files.", required = False)
-  
-  common.add_argument("-d","--dir", \
-  help = "\t\tDirectory for output files. Default: Directory where the script was run.", \
-  required = False)
-  
-  common.add_argument("-v", "--version", help="Display program version number.", \
-  action='version', version='SQANTI3 '+str(__version__))
-
-  subparsers = parser.add_subparsers(dest = 'subcommand')
-
-  ## ML rescue arguments
-  ml = subparsers.add_parser("ml", parents = [common], \
-  description = "Rescue for ML-filtered transcriptomes.")
-  
-  ml.add_argument("-r", "--randomforest", \
-  help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
-  ml.add_argument("-j", "--threshold", type = float, default = 0.7, \
-  help = "Default: 0.7. Machine learning probability threshold to filter elegible rescue targets (mapping hits).")
-  
-  ## Rules rescue arguments
-  rules = subparsers.add_parser("rules", parents = [common], \
-  description = "Rescue for rules-filtered transcriptomes.")
-  
-  rules.add_argument("-j", "--json", \
-  help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
-  
-  # parse arguments
-  args = parser.parse_args()
-  
-  
+  args = rescue_argparse().parse_args()
   ## Check that common arguments are valid
   args.sqanti_filter_classif = os.path.abspath(args.sqanti_filter_classif)
   if not os.path.isfile(args.sqanti_filter_classif):

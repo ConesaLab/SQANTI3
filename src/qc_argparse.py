@@ -1,4 +1,4 @@
-import argparse, sys, os
+import argparse
 from .config import __version__,__author__
 from .argparse_utils import *
 
@@ -7,9 +7,9 @@ def qc_argparse():
     ap = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
     # Required arguments
     apr = ap.add_argument_group("Required arguments")
-    apr.add_argument('isoforms', type=valid_file, help='Isoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')
-    apr.add_argument('annotation', type=valid_gtf, help='Reference annotation file (GTF format)')
-    apr.add_argument('genome', type=valid_fasta, help='Reference genome (Fasta format)')
+    apr.add_argument('--isoforms', type=valid_file, required= True,help='Isoforms (FASTA/FASTQ) or GTF format. It is recommended to provide them in GTF format, but if it is needed to map the sequences to the genome use a FASTA/FASTQ file with the --fasta option.')
+    apr.add_argument('--refGTF', type=valid_gtf, required= True, help='Reference annotation file (GTF format)')
+    apr.add_argument('--refFasta', type=valid_fasta, required=True, help='Reference genome (Fasta format)')
 
     # Customization and filtering args
     apc = ap.add_argument_group("Customization and filtering")
@@ -42,8 +42,8 @@ def qc_argparse():
 
     # Output options
     apout = ap.add_argument_group("Output options")
-    apout.add_argument('-o','--output', help='Prefix for output files')
-    apout.add_argument('-d','--dir', type=valid_dir, default='./', help='Directory for output files. (Default: Directory where the script was run.)')
+    apout.add_argument('-o','--output',default= "isoforms", help='Prefix for output files')
+    apout.add_argument('-d','--dir', type=valid_dir, default='./sqanti3_results', help='Directory for output files. (Default: Directory where the script was run.)')
     apout.add_argument("--saturation", action="store_true", default=False, help='Include saturation curves into report')
     apout.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help=f"Select report format: {', '.join(['html', 'pdf', 'both', 'skip'])} (default: %(default)s)")
     apout.add_argument('--isoform_hits' , action='store_true', help=' Report all FSM/ISM isoform hits in a separate file')
@@ -65,5 +65,5 @@ def qc_argparse():
     apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
     apm.add_argument('--gff3' ,type=valid_gff3, help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')
 
-    return ap.parse_args()
+    return ap
 

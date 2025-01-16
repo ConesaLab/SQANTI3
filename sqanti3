@@ -9,21 +9,7 @@ import sys
 from pathlib import Path
 
 from src.commands import run_command 
-
-def create_config(config_path):
-    config = {
-        "main": {"reference_gtf": "",
-                "reference_fasta": "",
-                "cpus": 4,
-                "json_for_rules": "utilities/filter/filter_default.json",
-                "threshold": 0.7},
-        "qc": {"enabled": True, "options": ""},
-        "filter": {"enabled": True, "options": ""},
-        "rescue": {"enabled": True, "options": ""}
-    }
-    with open(config_path, "w") as f:
-        yaml.dump(config, f)
-    print(f"Config file created at {config_path}")
+from src.wrapper_utils import create_config
 
 def main():
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.")
