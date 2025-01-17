@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
-__version__ = '5.3.0.'  # Python 3.7 syntax!
+from src.config import __version__
 
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
@@ -24,7 +24,7 @@ bad quality transcripts.
 """
 
 import os, sys, argparse, subprocess
-import distutils.spawn
+import shutil
 from csv import DictReader, DictWriter
 from Bio import SeqIO
 
@@ -34,7 +34,7 @@ from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_fo
 from src.filter_argparse import filter_argparse
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
-RSCRIPTPATH = distutils.spawn.find_executable('Rscript')
+RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_REPORT = 'report_filter/SQANTI3_filter_report.R'
 RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
 RSCRIPT_RULES = 'filter/SQANTI3_rules_filter.R'
