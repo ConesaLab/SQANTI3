@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 __author__  = "angeles.arzalluz@gmail.com"
-__version__ = '5.3.0'
-
+import shutil
+from src.config import __version__
 ###################################################
 ##########     SQANTI3 RESCUE WRAPPER    ##########
 ###################################################
@@ -10,13 +10,12 @@ __version__ = '5.3.0'
 
 ## Module import
 import os, sys, argparse, subprocess
-import distutils.spawn
 import pandas as pd
 
 ## Set general path variables
-Rscript_path = distutils.spawn.find_executable('Rscript')
-gffread_path = distutils.spawn.find_executable('gffread')
-python_path = distutils.spawn.find_executable('python')
+Rscript_path = shutil.which('Rscript')
+gffread_path = shutil.which('gffread')
+python_path = shutil.which('python')
 utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 ## Set path variables to call R scripts
