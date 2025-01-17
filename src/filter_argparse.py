@@ -19,6 +19,7 @@ def filter_argparse():
     common.add_argument('-d','--dir', help='Directory for output files. Default: Directory where the script was run.', required=False)
     common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='When TRUE, all mono-exonic transcripts are automatically filtered (default: False)')
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
+    common.add_argument("-c", "--cpus", type=int, default=4, help="Number of CPUs to use. Default: 4")
     common.add_argument("--skip_report", action="store_true", default=False, help='Skip creation of a report about the filtering')
     subparsers = parser.add_subparsers(dest='subcommand')
 

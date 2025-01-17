@@ -36,6 +36,9 @@ def rescue_argparse():
     common.add_argument("-d","--dir", 
                         help = "Directory for output files. Default: Directory where the script was run.", 
                         required = False)
+    common.add_argument("-c", "--cpus",
+                        type = int, default = 4, 
+                        help = "Number of CPUs to use. Default: 4")
     common.add_argument("-v", "--version", 
                         help="Display program version number.", 
                         action='version', 

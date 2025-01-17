@@ -8,10 +8,8 @@ import yaml
 import sys
 from pathlib import Path
 
-from src.commands import run_command 
 from src.wrapper_utils import (
-    create_config, format_options, 
-    sqanti_path, run_sqanti_module
+    create_config, run_step
 )
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,9 +18,13 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 def main():
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.")
     parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
-                        help="Action to perform: 'all', 'qc', 'filter', 'rescue', or 'init'.")
+                        help="Action to perform")
     parser.add_argument("-c","--config", type=str, default="sqanti3_config.yaml",
-                        help="Path to the configuration file (default: sqanti3_config.yaml).")
+                        help="Path to the configuration file (default:  %(default)s ).")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Print the commands that would be executed")
+    parser.add_argument("--option", type=str, nargs="+",
+                        help="Additional options to pass to the SQANTI3 modules.")
 
     args = parser.parse_args()
 
@@ -38,27 +40,14 @@ def main():
 
     with open(config_path) as f:
         config = yaml.safe_load(f)
-
-    commands = {
-        "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
-        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} {{options}}"
-    }
-    main_opt = config.get("main", {})
     # I want the user to be able to dinamically select which module they want to run. 
     if args.command == "all":
         for step in ["qc", "filter", "rescue"]:
-            if config.get(step, {}).get("enabled", False):
-                options = main_opt | config[step].get("options", "")
-                cmd = commands[step].format(options = format_options(options))
-                print(f"Running {step.upper()}...")
-                run_command(cmd, f"Running {step.upper()}...")
+            if config.get(step, {}).get("enabled", False): # Runs only the enabled modules in the configuration
+                run_step(step, config)
     else:
-        if config.get(args.command, {}).get("enabled", False):
-            options = main_opt | config[args.command].get("options", "")
-            cmd = commands[args.command].format(options = format_options(options))
-            print(f"Running {args.command.upper()}...")
-            run_sqanti_module(cmd)
+        if config.get(args.command, {}).get("enabled", False): # I want to check if the module is enabled in the configuration file.
+            run_step(args.command, config)
         else:
             print(f"{args.command.upper()} is disabled in the configuration file.", file=sys.stderr)
 

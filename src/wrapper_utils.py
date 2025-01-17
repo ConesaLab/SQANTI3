@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import yaml, os
 from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
@@ -54,23 +55,48 @@ def get_parser_specific_args_complex(parser,shared_args):
         i += 1
     options_to_move = []
     
-    # Iterate over a copy of the dictionary
+    # Check with arguments are common in both subparsers
     for option, value in parser_args["options"][subparsers_names[0]]["options"].copy().items():
         if option in parser_args["options"][subparsers_names[1]]["options"]:
             parser_args["options"]["common"][option] = value
             options_to_move.append(option)
     
-    # Remove the options from subparsers after iteration
+    # Remove the common options from subparsers after iteration
     for option in options_to_move:
         del parser_args["options"][subparsers_names[0]]["options"][option]
         del parser_args["options"][subparsers_names[1]]["options"][option]
     
-        
     return parser_args  
 
 def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
     return ' '.join(f'--{key} {value}' for key, value in options.items() if value not in ['',False])
+
+def run_step(step,config):
+    commands = {
+        "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
+        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} {{options}}"
+    }
+
+    main_opt = config.get("main", {})
+    if step == "qc":
+        options = main_opt | config[step].get("options", "")
+        cmd = commands[step].format(options = format_options(options))
+        
+    else:
+        for subparser, subparser_args in config[step].get("options", {}).items():
+            if subparser == "common":
+                options = main_opt | subparser_args
+            else:
+                print(subparser_args)
+                if subparser_args["enabled"]:
+                    options = options | subparser_args.get("options", {})
+                    cmd = commands[step].format(type = subparser, options = format_options(options))
+    print(f"Running {step.upper()}...")
+    run_sqanti_module(cmd)
+
+
 
 def run_sqanti_module(cmd):
     print(f"Running: {cmd}")
