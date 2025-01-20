@@ -72,7 +72,7 @@ def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
     return ' '.join(f'--{key} {value}' for key, value in options.items() if value not in ['',False])
 
-def run_step(step,config):
+def run_step(step,config,dry_run):
     commands = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
@@ -94,7 +94,10 @@ def run_step(step,config):
                     options = options | subparser_args.get("options", {})
                     cmd = commands[step].format(type = subparser, options = format_options(options))
     print(f"Running {step.upper()}...")
-    run_sqanti_module(cmd)
+    if dry_run:
+        print(f"{cmd}")
+    else:
+        run_sqanti_module(cmd)
 
 
 
