@@ -10,7 +10,7 @@ def sqanti_path(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename)
 
 
-def create_config(config_path):
+def create_config(config_path,options):
     main_args = get_shared_args()
     config = {
         "main" : main_args,
@@ -18,6 +18,9 @@ def create_config(config_path):
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
         "rescue": get_parser_specific_args_complex(rescue_argparse(),main_args)
     }
+    if options is not None:
+        user_options = get_user_options(options,list(flatten_dict(config).keys()))
+        replace_value(config,user_options)
     with open(config_path, "w") as f:
         yaml.dump(config, f,sort_keys=False)
     print(f"Config file created at {config_path}")
@@ -30,6 +33,35 @@ def get_shared_args():
         "dir": "sqanti3_results",
         "output": "isoforms"
     }
+
+def get_user_options(options, sqanti_options):
+    """Parse the -a options into a dictionary and convert numeric values."""
+    options_dict = {}
+    for option in options:
+        key, value = option.split('=')
+        if key not in sqanti_options:
+            print(f"Warning: Option '{key}' not found in the default configuration.", file=sys.stderr)
+            continue
+        # Try to convert the value to an integer or float
+        if value.isdigit():
+            value = int(value)
+        else:
+            try:
+                value = float(value)
+            except ValueError:
+                pass  # Keep the value as a string if it cannot be converted
+        options_dict[key] = value
+    return options_dict
+
+def replace_value(default_dict, user_config):
+    for key, value in default_dict.items():
+        if isinstance(value, dict):
+            replace_value(value, user_config)
+        else:
+            if key in user_config:
+                default_dict[key] = user_config[key]
+    return default_dict
+
 
 def get_parser_specific_args_simple(parser,shared_args):
     parser_args = {"enabled": True, "options": {}}
@@ -68,11 +100,34 @@ def get_parser_specific_args_complex(parser,shared_args):
     
     return parser_args  
 
+def flatten_dict(d):
+    """Flatten a nested dictionary without changing key names."""
+    items = []
+    for k, v in d.items():
+        if isinstance(v, dict):
+            items.extend(flatten_dict(v).items())
+        else:
+            items.append((k, v))
+    return dict(items)
+
 def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
     return ' '.join(f'--{key} {value}' for key, value in options.items() if value not in ['',False])
 
-def run_step(step,config,dry_run):
+def validate_user_options(user_options, valid_keys):
+    """Check if any user option is not in the list of valid keys."""
+    for key in user_options:
+        if key not in valid_keys:
+            print(f"Warning: Option '{key}' not found in the default configuration.", file=sys.stderr)
+
+def modify_options(options,user_options):
+    user_options = get_user_options(user_options, list(options.keys()))
+    for key, _ in options.items():
+        if key in user_options:
+            options[key] = user_options[key]
+    return options
+
+def run_step(step,config,dry_run, user_options):
     commands = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
@@ -82,6 +137,8 @@ def run_step(step,config,dry_run):
     main_opt = config.get("main", {})
     if step == "qc":
         options = main_opt | config[step].get("options", "")
+        if user_options is not None:
+            modify_options(options,user_options)
         cmd = commands[step].format(options = format_options(options))
         
     else:
@@ -89,9 +146,10 @@ def run_step(step,config,dry_run):
             if subparser == "common":
                 options = main_opt | subparser_args
             else:
-                print(subparser_args)
                 if subparser_args["enabled"]:
                     options = options | subparser_args.get("options", {})
+                    if user_options is not None:
+                        modify_options(options,user_options)
                     cmd = commands[step].format(type = subparser, options = format_options(options))
     print(f"Running {step.upper()}...")
     if dry_run:

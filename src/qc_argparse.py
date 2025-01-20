@@ -19,7 +19,7 @@ def qc_argparse():
     apc.add_argument('--fasta', action='store_true', help='Use when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms')
     apc.add_argument('--genename', action='store_true' ,help='Use gene_name tag from GTF to define genes. Default: gene_id used to define genes',)
     apc.add_argument('--short_reads', type=valid_file, help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')
-    apc.add_argument('--SR_bam' , help=' Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome')
+    apc.add_argument('--SR_bam', help=' Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome')
     apc.add_argument('--novel_gene_prefix', default=None, help='Prefix for novel isoforms (default: None)')
     # Aligner and mapping options
     apa = ap.add_argument_group("Aligner and mapping options")
