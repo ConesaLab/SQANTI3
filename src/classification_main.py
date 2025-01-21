@@ -7,6 +7,7 @@ from .classification_steps import (
     process_cage_peak_info, process_polya_peak_info,
     write_junction_info
 ) # type: ignore
+from .utils import alphanum_key
 from .config import  FIELDS_CLASS
 
 
@@ -68,7 +69,8 @@ def isoform_classification_pipeline(
     # Sort isoforms_info by the chromosome and then id.
     # Take into account that the ID is a string with numbers
 
-    iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, int(isoforms_info[x].id.split('.')[1])))
+    iso_keys = sorted(isoforms_info.keys(), key=lambda x: (alphanum_key(isoforms_info[x].chrom),
+                                                           alphanum_key(isoforms_info[x].id)))
     isoforms_info = {key: isoforms_info[key] for key in iso_keys}
     
     handle_class.close()
