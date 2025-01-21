@@ -110,7 +110,6 @@ def isoforms_parser(queryFile):
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
     print("**** Parsing Isoforms....", file=sys.stderr)
-    
     isoforms_list = defaultdict(lambda: []) # chr --> list to be sorted later
 
     for r in genePredReader(queryFile):
