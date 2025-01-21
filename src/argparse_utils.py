@@ -84,6 +84,17 @@ def valid_gff3(filename):
         sys.exit(1)
     return filename
 
+def valid_sr(filename):
+    if not os.path.isdir(filename):
+        if not filename.endswith('.fofn') and not filename.endswith('.bam'):
+            print(f"ERROR: File {filename} is not a BAM file, a directory, or a FOFN file. Abort!", file=sys.stderr)
+            sys.exit(1)
+        else:
+            if not os.path.isfile(filename):
+                print(f"ERROR: File {filename} not found. Abort!", file=sys.stderr)
+                sys.exit(1)
+    return filename
+
 ### Validation for the arguments
 
 def args_validation(args):

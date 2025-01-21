@@ -56,7 +56,10 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
     ## TSS ratio calculation
     if  SR_bam is not None:
         print("Using provided BAM files for calculating TSS ratio", file=sys.stdout)
-        bams = get_files_from_dir(SR_bam,".bam")
+        if SR_bam.endswith('.bam'):
+            bams = [SR_bam]
+        else:
+            bams = get_files_from_dir(SR_bam,".bam")
 
         # TODO: where did this functions come from?
         chr_order = get_bam_header(bams[0])
