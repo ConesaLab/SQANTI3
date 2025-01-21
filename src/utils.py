@@ -3,6 +3,7 @@ import bisect
 from collections.abc import Iterable
 import math
 import os
+import re
 
 def mergeDict(dict1, dict2):
     """ Merge dictionaries to collect info from several files"""
@@ -82,3 +83,6 @@ def find_closest_in_list(lst, pos):
         a, b = lst[i-1]-pos, lst[i]-pos
         if abs(a) < abs(b): return a
         else: return b
+    
+def alphanum_key(s):
+    return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
