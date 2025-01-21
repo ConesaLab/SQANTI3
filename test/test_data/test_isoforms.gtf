@@ -181,3 +181,13 @@ chr22	PacBio	exon	19036290	19039121	.	-	.	gene_id "PB.137296"; transcript_id "PB
 chr22	PacBio	exon	19041058	19041303	.	-	.	gene_id "PB.137296"; transcript_id "PB.137296.2";
 chr22	PacBio	exon	19041807	19041846	.	-	.	gene_id "PB.137296"; transcript_id "PB.137296.2";
 chr22	PacBio	exon	19122358	19122395	.	-	.	gene_id "PB.137296"; transcript_id "PB.137296.2";
+chr22	PacBio	transcript	23659620	23717337	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23659620	23660000	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23683725	23683867	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23690236	23695517	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23705429	23705541	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23709130	23709241	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23709786	23709867	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23714187	23714342	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23715009	23715194	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
+chr22	PacBio	exon	23717031	23717337	.	-	.	gene_id "PB.3818"; transcript_id "PB.3818.1";
