@@ -59,7 +59,9 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     refs_exons_by_chr = defaultdict(lambda: IntervalTree())
     # store donors as the exon end (1-based) and acceptor as the exon start (0-based)
     # will convert the sets to sorted list later
-    junctions_by_chr = defaultdict(lambda: {'donors': set(), 'acceptors': set(), 'da_pairs': set()})
+    junctions_by_chr = defaultdict(lambda: {'donors': set(), 
+                                            'acceptors': set(),
+                                            'da_pairs': {'+': set(), '-': set()}})
     # dict of gene name --> set of junctions (don't need to record chromosome)
     junctions_by_gene = defaultdict(lambda: set())
     # dict of gene name --> list of known begins and ends (begin always < end, regardless of strand)
@@ -73,13 +75,11 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         else:
             refs_exons_by_chr[r.chrom].insert(r.txStart, r.txEnd, r)
             # only store junctions for multi-exon transcripts
-            j=1
             for d, a in r.junctions:
                 junctions_by_chr[r.chrom]['donors'].add(d)
                 junctions_by_chr[r.chrom]['acceptors'].add(a)
-                junctions_by_chr[r.chrom]['da_pairs'].add((d,a))
+                junctions_by_chr[r.chrom]['da_pairs'][r.strand].add((d,a))
                 junctions_by_gene[r.gene].add((d,a))
-                j+=1
 
     # check that all genes' chromosomes are in the genome file
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
@@ -91,16 +91,20 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     # This uses dictionary to iterate over the chromosomes, keeping the keys, but sorting the values
     junctions_by_chr = {
         k: {
-            key: sorted(list(value))
+            key: sorted(list(value)) if key != 'da_pairs' else {
+                strand: sorted(list(pairs)) for strand, pairs in value.items()
+            }
             for key, value in v.items()
         }
         for k, v in junctions_by_chr.items()
-}
+    }
+    
     # TODO: Find a more efficient way to fix this
     for chr in junctions_by_chr.keys():
-        junctions_by_chr[chr]['da_tree'] = IntervalTree()
-        for junction in junctions_by_chr[chr]['da_pairs']:
-            junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], junction)
+        for strand in junctions_by_chr[chr]['da_pairs'].keys():
+            junctions_by_chr[chr]['da_tree'] = IntervalTree()
+            for junction in junctions_by_chr[chr]['da_pairs'][strand]:
+                junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], (*junction,strand))
 
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 

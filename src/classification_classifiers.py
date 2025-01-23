@@ -85,9 +85,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
-                # TODO: Remove commented code
-                #if trec.id.startswith('PB.102.9'):
-                #    pdb.set_trace()
 
                 if ref.exonCount == 1: # mono-exonic reference, handle specially here
                     # TODO: calc exon overlap is called more than twice. Create a variable to store the value 
@@ -350,7 +347,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     return isoform_hit
 
 
-def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_gene, start_ends_by_gene):
+def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_gene):
     """
     At this point: definitely not FSM or ISM, see if it is NIC, NNC, or fusion
     :return isoforms_hit: updated isoforms hit (myQueryTranscripts object)
@@ -365,9 +362,9 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
         Returns:
             bool: True if intron retention is detected, False otherwise.
         """
-        for e in trec.exons:
-            m = bisect.bisect_left(junctions_by_chr[trec.chrom]['da_pairs'], (e.start, e.end))
-            if m < len(junctions_by_chr[trec.chrom]['da_pairs']) and e.start <= junctions_by_chr[trec.chrom]['da_pairs'][m][0] < junctions_by_chr[trec.chrom]['da_pairs'][m][1] < e.end:
+        for e in trec.exons: # TODO:check for strandness
+            m = bisect.bisect_left(junctions_by_chr[trec.chrom]['da_pairs'][trec.strand], (e.start, e.end))
+            if m < len(junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]) and e.start <= junctions_by_chr[trec.chrom]['da_pairs'][trec.strand][m][0] < junctions_by_chr[trec.chrom]['da_pairs'][trec.strand][m][1] < e.end:
                 return True
         return False
 
@@ -451,7 +448,7 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
                 # see if it is completely contained within a junction
                 da_pairs = junctions_by_chr[trec.chrom]['da_tree'].find(trec.txStart, trec.txEnd)
                 for junction in da_pairs:
-                    if junction[0] <= trec.txStart <= trec.txEnd <= junction[1]:
+                    if junction[0] <= trec.txStart <= trec.txEnd <= junction[1] and trec.strand == junction[2]:
                         isoforms_hit.str_class = "genic_intron"
                         break
             else:

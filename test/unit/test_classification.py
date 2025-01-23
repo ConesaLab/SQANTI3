@@ -23,7 +23,7 @@ def data_path():
 
 @pytest.fixture
 def result_dataframe(data_path: str):
-    return pd.read_csv(os.path.join(data_path,"test_isoforms_classification.csv"))
+    return pd.read_csv(os.path.join(data_path,"test_isoforms_classification.tsv"),sep="\t")
 
 @pytest.fixture
 def genome_dict(data_path: str):

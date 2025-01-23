@@ -59,64 +59,65 @@ def test_reference_parser_correctOutput_length(reference_parser_input):
     refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(*list(reference_parser_input.values()))
     # Check if the output is correct
     assert len(refs_1exon_by_chr.keys()) == 1
-    assert len(refs_1exon_by_chr["chr22"].find(0,50000000)) == 4
-    assert len(refs_exons_by_chr["chr22"].find(0,50000000)) == 60
+    assert len(refs_1exon_by_chr["chr22"].find(0,50000000)) == 486
+    assert len(refs_exons_by_chr["chr22"].find(0,50000000)) == 1824
     assert len(junctions_by_chr["chr22"]) == 4
-    assert len(junctions_by_gene.keys()) == 30
-    assert len(start_ends_by_gene) == 34
+    assert len(junctions_by_gene.keys()) == 913
+    assert len(start_ends_by_gene) == 1388
 
 def test_reference_parser_correct1exon(reference_parser_input):
     refs_1exon_by_chr, _, _, _, _ = reference_parser(*list(reference_parser_input.values()))
     # Check if the output is correct
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].id == "ENST00000340857.4"
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].id == "ENST00000615943.1"
     assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].chrom == "chr22"
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].strand == "+"
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].txStart == 37805228
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].txEnd == 37807432
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].cdsStart == 37805544
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].cdsEnd == 37806129
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].strand == "-"
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].txStart == 10736170
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].txEnd == 10736283
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].cdsStart == 10736283
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].cdsEnd == 10736283
     assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].exonCount == 1
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].exonStarts == [37805228]
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].exonEnds == [37807432]
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].gene == "ENSG00000189060.6"
-    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].length == 2204
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].exonStarts == [10736170]
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].exonEnds == [10736283]
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].gene == "ENSG00000277248.1"
+    assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].length == 113
     assert refs_1exon_by_chr["chr22"].find(0,50000000)[0].junctions == []
 
 def test_reference_parser_correctExons(reference_parser_input):
     _, refs_exons_by_chr, _, _, _ = reference_parser(*list(reference_parser_input.values()))
     # Check if the output is correct
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].id == "ENST00000413768.5"
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].id == "ENST00000635667.1"
     assert refs_exons_by_chr["chr22"].find(0,50000000)[0].chrom == "chr22"
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].strand == "+"
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].txStart == 15784958
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].txEnd == 15827434
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].cdsStart == 15827434
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].cdsEnd == 15827434
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonCount == 8
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonStarts == [15784958, 15787171, 15788584, 15788819, 15790660, 15791009, 15815475, 15826141]
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonEnds == [15785057, 15787282, 15788699, 15788931, 15790798, 15791152, 15815566, 15827434]
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].gene == "ENSG00000206195.11"
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].length == 2102
-    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].junctions == [(15785057, 15787171), (15787282, 15788584), (15788699, 15788819), (15788931, 15790660), (15790798, 15791009), (15791152, 15815475), (15815566, 15826141)]
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].strand == "-"
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].txStart == 10939387
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].txEnd == 10961338
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].cdsStart == 10961338
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].cdsEnd == 10961338
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonCount == 9
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonStarts == [10939387, 10940596, 10941690, 10944966, 10947303, 10949211, 10950048, 10959066, 10961282]
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].exonEnds == [10939423, 10940707, 10941780, 10945053, 10947418, 10949269, 10950174, 10959136, 10961338] 
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].gene == "ENSG00000283047.1"
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].length == 749
+    assert refs_exons_by_chr["chr22"].find(0,50000000)[0].junctions == [(10939423, 10940596), (10940707, 10941690), (10941780, 10944966), (10945053, 10947303), (10947418, 10949211), (10949269, 10950048), (10950174, 10959066), (10959136, 10961282)]
 
 def test_reference_parser_correctJunctionsChr(reference_parser_input):
     _, _, junctions_by_chr, _, _ = reference_parser(*list(reference_parser_input.values()))
     assert len(junctions_by_chr["chr22"]) == 4
-    assert len(junctions_by_chr["chr22"]["donors"]) == 256
-    assert junctions_by_chr["chr22"]["donors"][0] == 15785057
-    assert len(junctions_by_chr["chr22"]["acceptors"]) == 256
-    assert junctions_by_chr["chr22"]["acceptors"][0] == 15787171
-    assert junctions_by_chr["chr22"]["da_pairs"][0] == (15785057, 15787171)
+    assert len(junctions_by_chr["chr22"]["donors"]) == 5550
+    assert junctions_by_chr["chr22"]["donors"][0] == 10939423
+    assert len(junctions_by_chr["chr22"]["acceptors"]) == 5576
+    assert junctions_by_chr["chr22"]["acceptors"][0] == 10940596
+    assert junctions_by_chr["chr22"]["da_pairs"]['+'][0] == (11066515, 11067984)
+    assert junctions_by_chr["chr22"]["da_pairs"]['-'][0] == (10939423, 10940596)
 
 def test_reference_parserc_correctJunctionsGene(reference_parser_input):
     _, _, _, junctions_by_gene, _ = reference_parser(*list(reference_parser_input.values()))
-    assert len(junctions_by_gene.keys()) == 30
+    assert len(junctions_by_gene.keys()) == 913
     assert len(junctions_by_gene["ENSG00000206195.11"]) == 11
     assert junctions_by_gene["ENSG00000206195.11"].pop() == (15791152, 15815475)
 
 def test_reference_parser_correctStartEnds(reference_parser_input):
     _, _, _, _, start_ends_by_gene = reference_parser(*list(reference_parser_input.values()))
-    assert len(start_ends_by_gene) == 34
+    assert len(start_ends_by_gene) == 1388
     assert start_ends_by_gene["ENSG00000206195.11"]["begin"] == {15784958, 15784962, 15784976, 15784991, 15787699}
     assert start_ends_by_gene["ENSG00000206195.11"]["end"] == {15829984, 15827434, 15790573, 15791387, 15827708}
 
@@ -130,7 +131,7 @@ def input_file():
 def test_isoforms_parser(input_file):
     isoforms_by_chr = isoforms_parser(input_file)
     assert len(isoforms_by_chr.keys()) == 1
-    assert len(isoforms_by_chr["chr22"]) == 36
+    assert len(isoforms_by_chr["chr22"]) == 37
     
 def test_isoforms_parser_sorted(input_file):
     isoforms_by_chr = isoforms_parser(input_file)

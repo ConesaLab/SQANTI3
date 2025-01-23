@@ -59,7 +59,7 @@ def isoforms_info(genome_dict):
 
 @pytest.fixture
 def result_dataframe():
-    return pd.read_csv(os.path.join(main_path,"test/test_data/test_isoforms_classification.csv"))
+    return pd.read_csv(os.path.join(main_path,"test/test_data/test_isoforms_classification.tsv"),sep="\t")
     
 
 def test_isoforms_output(isoforms_info,junction_file,genome,genome_dict,result_dataframe):
