@@ -85,9 +85,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
-                # TODO: Remove commented code
-                #if trec.id.startswith('PB.102.9'):
-                #    pdb.set_trace()
 
                 if ref.exonCount == 1: # mono-exonic reference, handle specially here
                     # TODO: calc exon overlap is called more than twice. Create a variable to store the value 
