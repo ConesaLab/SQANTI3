@@ -167,7 +167,9 @@ def run_sqanti_module(cmd):
 def run_step_help(step):
     help = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
-        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} -h",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} -h"
+        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} rules -h;\
+                   {sys.executable} {sqanti_path('sqanti3_filter.py')} ml -h",
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} rules -h; \
+                   {sys.executable} {sqanti_path('sqanti3_rescue.py')} ml -h"
     }
     run_sqanti_module(help[step])

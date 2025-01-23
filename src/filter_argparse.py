@@ -6,7 +6,7 @@ from .commands import utilitiesPath
 def filter_argparse():
     default_json = utilitiesPath + "/filter/filter_default.json"
     parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes.\
-\nChoose between a rules filter or a Machine-Learning based filter.")
+\nChoose between a rules filter or a Machine-Learning based filter.") 
 ### Common arguments for both modes
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('sqanti_class', help='SQANTI3 QC classification file.')
