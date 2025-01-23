@@ -157,11 +157,17 @@ def run_step(step,config,dry_run, user_options):
     else:
         run_sqanti_module(cmd)
 
-
-
 def run_sqanti_module(cmd):
     print(f"Running: {cmd}")
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
         print("ERROR during SQANTI3 module execution")
+
+def run_step_help(step):
+    help = {
+        "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
+        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} -h",
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} -h"
+    }
+    run_sqanti_module(help[step])

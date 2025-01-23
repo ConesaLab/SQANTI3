@@ -9,14 +9,14 @@ import sys
 from pathlib import Path
 
 from src.wrapper_utils import (
-    create_config, run_step
+    create_config, run_step, run_step_help
 )
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.")
+    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",add_help=False)
     parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
                         help="Action to perform")
     parser.add_argument("-c","--config", type=str, default="sqanti3_config.yaml",
@@ -25,10 +25,25 @@ def main():
                         help="Print the commands that would be executed")
     parser.add_argument("-a","--arguments", type=str, nargs="+",
                         help="Non-default arguments to pass to the SQANTI3 modules.")
+    parser.add_argument("-h","--help", action="store_true",
+                        help="Show the help message and exit.")
 
     args = parser.parse_args()
 
     config_path = Path(args.config)
+
+    if args.help:
+        if args.command is None or args.command == "init":
+            parser.print_help()
+            sys.exit(0)
+        elif args.command == "all":
+            print("Run all the enabled modules in the configuration file.")
+            parser.print_help()
+            sys.exit(0)
+        else:
+            print(f"Run the {args.command.upper()} module.")
+            run_step_help(args.command)
+            sys.exit(0)
 
     if args.command == "init":
         create_config(config_path, args.arguments)

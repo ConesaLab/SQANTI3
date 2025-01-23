@@ -1,18 +1,18 @@
 main:
-  refGTF: "example/gencode.v38.basic_chr22.gtf"
-  refFasta: "example/GRCh38.p13_chr22.fasta"
+  refGTF: ''
+  refFasta: ''
   cpus: 4
-  dir: pablo_tests/wrapper
+  dir: sqanti3_results
   output: isoforms
 qc:
   enabled: true
   options:
-    isoforms: 'example/UHR_chr22.gtf'
+    isoforms: ''
     min_ref_len: 0
     force_id_ignore: false
     fasta: false
     genename: false
-    short_reads: 'example/UHR_chr22_short_reads.fofn'
+    short_reads: ''
     SR_bam: ''
     novel_gene_prefix: ''
     aligner_choice: minimap2
@@ -21,12 +21,12 @@ qc:
     sites: ATAC,GCAG,GTAG
     skipORF: false
     orf_input: ''
-    CAGE_peak: 'data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed'
-    polyA_motif_list: 'data/polyA_motifs/mouse_and_human.polyA_motif.txt'
+    CAGE_peak: ''
+    polyA_motif_list: ''
     polyA_peak: ''
     phyloP_bed: ''
     saturation: false
-    report: both
+    report: html
     isoform_hits: false
     ratio_TSS_metric: max
     chunks: 1
@@ -38,7 +38,7 @@ qc:
     isoAnnotLite: false
     gff3: ''
 filter:
-  enabled: false
+  enabled: true
   options:
     common:
       sqanti_class: ''
@@ -66,7 +66,7 @@ filter:
         max_class_size: 3000
         intrapriming: 60
 rescue:
-  enabled: false
+  enabled: true
   options:
     common:
       sqanti_filter_classif: ''
