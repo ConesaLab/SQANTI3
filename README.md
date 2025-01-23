@@ -7,20 +7,13 @@
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ConesaLab/SQANTI3)
 ![GitHub Repo stars](https://img.shields.io/github/stars/ConesaLab/SQANTI3)
 
-![GitHub Release](https://img.shields.io/github/v/release/ConesaLab/SQANTI3)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/ConesaLab/SQANTI3)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-closed/ConesaLab/SQANTI3)
-![GitHub Repo stars](https://img.shields.io/github/stars/ConesaLab/SQANTI3)
-
 
 SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) that merges features from [SQANTI](https://github.com/ConesaLab/SQANTI) and  [SQANTI2](https://github.com/Magdoll/SQANTI2), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
-SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/) that merges features from [SQANTI](https://github.com/ConesaLab/SQANTI) and  [SQANTI2](https://github.com/Magdoll/SQANTI2), together with new additions. SQANTI3 will continue as an integrated development aiming to provide the best characterization for your new long read-defined transcriptome. 
 
-SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.0) (04/12/2024) is **version 5.3.0**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.4) (23/01/2025) is **version 5.3.4**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For informacion about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
