@@ -12,15 +12,19 @@ def sqanti_path(filename):
 
 def create_config(config_path,options):
     main_args = get_shared_args()
+    user_options = None
     config = {
         "main" : main_args,
         "qc": get_parser_specific_args_simple(qc_argparse(),main_args),
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
         "rescue": get_parser_specific_args_complex(rescue_argparse(),main_args)
-    }
+    } 
     if options is not None:
         user_options = get_user_options(options,list(flatten_dict(config).keys()))
         replace_value(config,user_options)
+    
+    config = set_default_values(config,user_options)
+
     with open(config_path, "w") as f:
         yaml.dump(config, f,sort_keys=False)
     print(f"Config file created at {config_path}")
@@ -62,6 +66,11 @@ def replace_value(default_dict, user_config):
                 default_dict[key] = user_config[key]
     return default_dict
 
+def set_default_values(config,user_options):
+    if 'sqanti_class' not in user_options:
+        config['filter']['options']['common']['sqanti_class'] = f"{config['main']['dir']}/{config['main']['output']}_classification.txt"
+    
+    return config
 
 def get_parser_specific_args_simple(parser,shared_args):
     parser_args = {"enabled": True, "options": {}}
@@ -167,9 +176,13 @@ def run_sqanti_module(cmd):
 def run_step_help(step):
     help = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
-        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} rules -h;\
-                   {sys.executable} {sqanti_path('sqanti3_filter.py')} ml -h",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} rules -h; \
-                   {sys.executable} {sqanti_path('sqanti3_rescue.py')} ml -h"
+        "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} -h",
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} -h"
     }
+    if step != "qc":
+        filter_type = input(f"Which {step} option do you want to see the help from (rules/ml)? ")
+        if filter_type != "rules" and filter_type != "ml":
+            print("Invalid option")
+            return
+        help[step] = help[step].format(type=filter_type)
     run_sqanti_module(help[step])
