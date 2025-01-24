@@ -31,7 +31,7 @@ from .classification_preprocessing import (
     read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
 )
 from .classification_main import isoform_classification_pipeline
-
+from .logging_config import logger
 def run(args):
 
     global isoform_hits_name
@@ -42,8 +42,8 @@ def run(args):
 
     start3 = timeit.default_timer()
 
-    print("**** Parsing provided files....", file=sys.stdout)
-    print("Reading genome fasta {0}....".format(args.genome), file=sys.stdout)
+    logger.info("Parsing provided files")
+    logger.info(f"Reading genome fasta {args.genome}")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), 'fasta'))
 
@@ -97,7 +97,7 @@ def run(args):
         SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
-    print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
+    logger.info(f"Number of classified isoforms: {len(isoforms_info)}")
     ## Rename novel genes
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
     
@@ -107,20 +107,20 @@ def run(args):
         ## FSM classification
         isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
         isoforms_info = classify_fsm(isoforms_info)
-        print(f"After classify fsm: {len(isoforms_info)}")
+        logger.info(f"After classify fsm: {len(isoforms_info)}")
         
         ## FL count file
         fields_class_cur = FIELDS_CLASS
         if args.fl_count:
             isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
         else:
-            print("Full-length read abundance files not provided.", file=sys.stderr)
+            logger.info("Full-length read abundance files not provided.")
 
         ## RT-switching computation
-        print("**** RT-switching computation....", file=sys.stderr)
+        logger.info("RT-switching computation")
         isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
                                                         args.genome,genome_dict)
-        print(f"After RTS classificaion: {len(isoforms_info)}")
+        logger.info(f"After RTS classificaion: {len(isoforms_info)}")
 
     
     ## TSS ratio dict reading
@@ -143,8 +143,8 @@ def run(args):
     fields_junc_cur = reader.fieldnames
     isoforms_info = isoforms_junctions(isoforms_info, reader)
 
-    #### Printing output file:
-    print("**** Writing output files....", file=sys.stderr)
+    #### logger.infoing output file:
+    logger.info("Writing output files")
 
     if args.chunks != 1:
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
@@ -171,7 +171,7 @@ def run(args):
         cleanup(outputClassPath, outputJuncPath)
 
     stop3 = timeit.default_timer()
-    print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
+    logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
 
 
 ### IsoAnnot Lite implementation
@@ -181,12 +181,12 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
     if gff3_opt:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         isoAnnot_sum = iso_out + ".isoAnnotLite_stats.txt"
-        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
+        ISOANNOT_CMD = f"python3 {ISOANNOT_PROG} {correctedGTF} {outClassFile} {outJuncFile} -gff3 {gff3_opt} -o {iso_out} -novel -stdout {isoAnnot_sum}"
     else:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
-        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
+        ISOANNOT_CMD = f"python3 {ISOANNOT_PROG} {correctedGTF} {outClassFile} {outJuncFile} -o {iso_out} -novel"
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
-        print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
+        logger.error(f"Command failed: {ISOANNOT_CMD}")
         sys.exit(1)
 
 
