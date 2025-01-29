@@ -448,7 +448,7 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
                 # see if it is completely contained within a junction
                 da_pairs = junctions_by_chr[trec.chrom]['da_tree'].find(trec.txStart, trec.txEnd)
                 for junction in da_pairs:
-                    if junction[0] <= trec.txStart <= trec.txEnd <= junction[1] and trec.strand == junction[2]:
+                    if junction[0] <= trec.txStart <= trec.txEnd <= junction[1]:
                         isoforms_hit.str_class = "genic_intron"
                         break
             else:
