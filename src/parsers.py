@@ -101,8 +101,8 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     
     # TODO: Find a more efficient way to fix this
     for chr in junctions_by_chr.keys():
+        junctions_by_chr[chr]['da_tree'] = IntervalTree()
         for strand in junctions_by_chr[chr]['da_pairs'].keys():
-            junctions_by_chr[chr]['da_tree'] = IntervalTree()
             for junction in junctions_by_chr[chr]['da_pairs'][strand]:
                 junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], (*junction,strand))
 
