@@ -100,7 +100,7 @@ def valid_sr(filename):
 
 def args_validation(args):
     # Required arguments
-    if args.isoforms.endswith('.gtf'):
+    if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
     elif args.isoforms.endswith('.fasta') or args.isoforms.endswith('.fastq'):
         args.fasta = True

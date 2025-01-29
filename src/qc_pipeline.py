@@ -150,6 +150,8 @@ def run(args):
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
         
     else:
+        write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
+
         # Write final classification
         write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
 

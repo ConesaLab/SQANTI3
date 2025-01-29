@@ -153,12 +153,11 @@ def combine_split_runs(args, split_dirs):
     f_fasta = open(corrFASTA, 'w')
     f_gtf = open(corrGTF, 'w')
     f_junc_temp = open(outputJuncPath+"_tmp", "w")
-    f_cds_gtf_gff = open(corrCDS_GTF_GFF, 'w')
     isoforms_info = {}
     headers = []
     
     for i,split_d in enumerate(split_dirs):
-        _gtf, _, _fasta, _orf , _CDS_GTF_GFF = get_corr_filenames(split_d,args.output)
+        _gtf, _, _fasta, _orf , _ = get_corr_filenames(split_d,args.output)
         _, _junc = get_class_junc_filenames(split_d,args.output)
         _info = get_pickle_filename(split_d,args.output)
         if not args.skipORF:
@@ -175,17 +174,10 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-        with open(_CDS_GTF_GFF) as h:
-            if i == 0: # This if condition checks if its the first file to write the header or not in the final file
-                f_cds_gtf_gff.write(h.readline())
-            else:
-                h.readline()
-            f_cds_gtf_gff.write(h.read())
 
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
-    f_cds_gtf_gff.close()
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
@@ -196,12 +188,13 @@ def combine_split_runs(args, split_dirs):
     isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
+    write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
     write_classification_output(isoforms_info, outputClassPath, FIELDS_CLASS)
     write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
     #write omitted isoforms if requested minimum reference length is more than 0
     isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
                                             args.min_ref_len, args.is_fusion, fields_class_cur)
-        
+    cleanup(outputClassPath, outputJuncPath)
     #isoform hits to file if requested
     if args.isoform_hits:
         write_isoform_hits(args.dir, args.output, isoforms_info)
