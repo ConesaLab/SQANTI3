@@ -48,7 +48,7 @@ def run_automatic_rescue(args):
   # define Rscript command with automatic_rescue.R args
   auto_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} \
   -g {g} -e {e} -m {m}".format(u = utilities_path, s = automatic_rescue_path, \
-  c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
+  c = args.filter_class, o = args.output, d = args.dir, \
   g = args.refGTF, e = args.rescue_mono_exonic, m = args.mode)
   
   # print command
@@ -147,7 +147,7 @@ def run_candidate_mapping(args):
   LR_target_fasta = args.dir +  "/" + args.output + "_rescue_targets.LR.fasta"
 
   # make command
-  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.rescue_isoforms, \
   t = target_file, f = LR_target_fasta)
 
   # run
@@ -204,7 +204,7 @@ def run_candidate_mapping(args):
   candidate_fasta = args.dir + "/" + args.output + "_rescue_candidates.fasta"
 
   # make command
-  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.isoforms, \
+  fasta_cmd = "seqtk subseq {i} {t} > {f}".format(i = args.rescue_isoforms, \
   t = candidate_file, f = candidate_fasta)
 
   # run
@@ -321,7 +321,7 @@ def run_ML_rescue(args):
       # define Rscsript command with rescue_by_mapping_ML.R args
       rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} -m {m} -r {r} -j {j}".format( \
       u = utilities_path, s = rescue_by_mapping_ML_path, \
-      c = args.sqanti_filter_classif, o = args.output, d = args.dir, m = mapping_hits, \
+      c = args.filter_class, o = args.output, d = args.dir, m = mapping_hits, \
       r = ref_isoform_predict, j = args.threshold)
 
       # expected output name
@@ -393,7 +393,7 @@ def run_rules_rescue(args):
       # define Rscsript command with rescue_by_mapping_ML.R args
       rescue_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} -m {m} -r {r}".format( \
       u = utilities_path, s = rescue_by_mapping_rules_path, \
-      c = args.sqanti_filter_classif, o = args.output, d = args.dir, \
+      c = args.filter_class, o = args.output, d = args.dir, \
       m = mapping_hits, r = ref_rules)
       
       # expected output name
@@ -432,17 +432,17 @@ def main():
   
   args = rescue_argparse().parse_args()
   ## Check that common arguments are valid
-  args.sqanti_filter_classif = os.path.abspath(args.sqanti_filter_classif)
-  if not os.path.isfile(args.sqanti_filter_classif):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_filter_classif), file=sys.stderr)
+  args.filter_class = os.path.abspath(args.filter_class)
+  if not os.path.isfile(args.filter_class):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.filter_class), file=sys.stderr)
     sys.exit(-1)
     
-  if not os.path.isfile(args.isoforms):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
+  if not os.path.isfile(args.rescue_isoforms):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.rescue_isoforms), file=sys.stderr)
     sys.exit(-1)
 
-  if not os.path.isfile(args.gtf):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
+  if not os.path.isfile(args.rescue_gtf):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.rescue_gtf), file=sys.stderr)
     sys.exit(-1)
     
   if not os.path.isfile(args.refGTF):
@@ -459,14 +459,14 @@ def main():
       
   ## Define output dir and output name in case it was not defined
   if args.dir is None:
-      args.dir=os.path.dirname(args.sqanti_filter_classif)
+      args.dir=os.path.dirname(args.filter_class)
       print("Output directory not defined. All the outputs will be stored at {0} directory".format(args.dir), file=sys.stderr)
   else:
       if not os.path.exists(args.dir):
           os.makedirs(args.dir)
   
   if args.output is None:
-      args.output=args.sqanti_filter_classif[args.sqanti_filter_classif.rfind("/")+1:args.sqanti_filter_classif("_classification.txt")]
+      args.output=args.filter_class[args.filter_class.rfind("/")+1:args.filter_class("_classification.txt")]
       print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
   
   ## Check that ML-specific args are valid
@@ -568,7 +568,7 @@ def main():
     
   else:
     # concatenate with filtered GTF
-    cat_cmd = "cat {g} {t} > {o}".format(g = args.gtf, t = tmp_gtf, \
+    cat_cmd = "cat {g} {t} > {o}".format(g = args.rescue_gtf, t = tmp_gtf, \
     o = output_gtf)
     
     if subprocess.check_call(cat_cmd, shell = True) != 0:
@@ -577,7 +577,7 @@ def main():
       sys.exit(1)
     
     else:
-      print("\nAdded rescued reference transcripts to provided GTF (" + args.gtf + ")\n")
+      print("\nAdded rescued reference transcripts to provided GTF (" + args.rescue_gtf + ")\n")
       print("\nFinal output GTF written to file: " + output_gtf  + "\n")
     
       # remove tmp_gtf

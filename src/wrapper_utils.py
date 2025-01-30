@@ -80,6 +80,19 @@ def set_default_values(config,user_options):
     if 'filter_faa' not in user_options or config['qc']['options']['skipORF']:
         config['filter']['options']['common']['filter_faa'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.faa"
     
+    # Rescue
+    if 'filter_class' not in user_options:
+        if config['filter']['options']['rules']['enabled']:
+            config['rescue']['options']['common']['filter_class'] = f"{config['main']['dir']}/{config['main']['output']}_RulesFilter_result_classification.txt"
+        else:
+            config['rescue']['options']['common']['filter_class'] = f"{config['main']['dir']}/{config['main']['output']}_MLFilter_result_classification.txt"
+    
+    if 'rescue_isoforms' not in user_options:
+        config['rescue']['options']['common']['rescue_isoforms'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.fasta"
+    
+    if 'rescue_gtf' not in user_options:
+        config['rescue']['options']['common']['rescue_gtf'] = f"{config['main']['dir']}/{config['main']['output']}.filtered.gtf"
+    
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):

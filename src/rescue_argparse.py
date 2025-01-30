@@ -10,11 +10,12 @@ def rescue_argparse():
 
     ## Common arguments
     common = argparse.ArgumentParser(add_help = False)
-    common.add_argument("--sqanti_filter_classif", 
+    common.add_argument("--filter_class", 
                         help = "SQANTI filter (ML or rules) output classification file.")
-    common.add_argument("--isoforms", 
+    common.add_argument("--rescue_isoforms", 
                         help = "FASTA file output by SQANTI3 QC (*_corrected.fasta), i.e. the full long read transcriptome.")
-    common.add_argument("--gtf", 
+    # TODO: check why here is the filtered, but not above??
+    common.add_argument("--rescue_gtf", 
                         help = "GTF file output by SQANTI3 filter (*.filtered.gtf).")
     common.add_argument("refGTF", 
                         help = "Full path to reference transcriptome GTF used when running SQANTI3 QC.")
