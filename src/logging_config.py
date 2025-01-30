@@ -20,7 +20,6 @@ class OnlyInfo:
         else:
             return 0
         
-# TODO: Adapt the config so the log is written to the terminal directly
 MY_LOGGING_CONFIG = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -58,6 +57,12 @@ MY_LOGGING_CONFIG = {
             'level': 'DEBUG',
             'filters': ['info_filter'],
             'formatter': 'error_formatter',
+        },
+        'error_qc_handler': {
+            'class': 'logging.FileHandler',
+            'level': 'WARNING',
+            'filename': '%(output_dir)s',
+            'formatter': 'error_formatter'
         }
     },
     'loggers': {
@@ -66,8 +71,8 @@ MY_LOGGING_CONFIG = {
             'level': 'INFO',
             'propagate': True
         },
-        'QC_logger': {
-            'handlers': ['stream_handler'],
+        'qc_logger': {
+            'handlers': ['stream_handler', 'error_qc_handler'],
             'level': 'INFO',
             'propagate': True
         },
@@ -76,9 +81,14 @@ MY_LOGGING_CONFIG = {
 
 logging.config.dictConfig(MY_LOGGING_CONFIG)
 main_logger = logging.getLogger('main_logger')
-logger = logging.getLogger('QC_logger')
+qc_logger = logging.getLogger('qc_logger')
+def setup_logger(output_dir,module,config=MY_LOGGING_CONFIG):
+    log_file= f'{output_dir}/log/{module}_module.err'
+    config['handlers']['error_qc_handler']['filename']= log_file
+    logging.config.dictConfig(config)
+    return logging.getLogger('module_logger')
 
-def sqanti_art(main_logger):
+def sqanti_art():
     message= f"""
     ░██████╗░██████╗░░█████╗░███╗░░██╗████████╗██╗██████╗░
     ██╔════╝██╔═══██╗██╔══██╗████╗░██║╚══██╔══╝██║╚════██╗
@@ -87,5 +97,44 @@ def sqanti_art(main_logger):
     ██████╔╝░╚═██╔═╝░██║░░██║██║░╚███║░░░██║░░░██║██████╔╝
     ╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝╚═════╝░
     Version {__version__}
+    """
+    print(message)
+
+def qc_art():
+    message= f"""
+    =====================
+      ░██████╗░░█████╗░
+      ██╔═══██╗██╔══██╗
+      ██║██╗██║██║░░╚═╝
+      ╚██████╔╝██║░░██╗
+      ░╚═██╔═╝░╚█████╔╝
+      ░░░╚═╝░░░░╚════╝░
+    =====================
+    """
+    print(message)
+
+def filter_art():
+    message= f"""
+    ================================================     
+      ███████╗██╗██╗░░░░░████████╗███████╗██████╗░
+      ██╔════╝██║██║░░░░░╚══██╔══╝██╔════╝██╔══██╗
+      █████╗░░██║██║░░░░░░░░██║░░░█████╗░░██████╔╝
+      ██╔══╝░░██║██║░░░░░░░░██║░░░██╔══╝░░██╔══██╗
+      ██║░░░░░██║███████╗░░░██║░░░███████╗██║░░██║
+      ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝
+    ================================================
+    """
+    print(message)
+
+def rescue_art():
+    message= f"""
+    =====================================================
+      ██████╗░███████╗░██████╗░█████╗░██╗░░░██╗███████╗
+      ██╔══██╗██╔════╝██╔════╝██╔══██╗██║░░░██║██╔════╝
+      ██████╔╝█████╗░░╚█████╗░██║░░╚═╝██║░░░██║█████╗░░
+      ██╔══██╗██╔══╝░░░╚═══██╗██║░░██╗██║░░░██║██╔══╝░░
+      ██║░░██║███████╗██████╔╝╚█████╔╝╚██████╔╝███████╗
+      ╚═╝░░╚═╝╚══════╝╚═════╝░░╚════╝░░╚═════╝░╚══════╝
+    =====================================================
     """
     print(message)

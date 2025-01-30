@@ -3,6 +3,7 @@ import sys
 import shutil
 import subprocess
 
+from .logging_config import qc_logger
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
@@ -17,10 +18,10 @@ GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
 if shutil.which(GTF2GENEPRED_PROG) is None:
-    print("Cannot find executable {0}. Abort!".format(GTF2GENEPRED_PROG), file=sys.stderr)
+    qc_logger.info(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
     sys.exit(1)
 if shutil.which(GFFREAD_PROG) is None:
-    print("Cannot find executable {0}. Abort!".format(GFFREAD_PROG), file=sys.stderr)
+    qc_logger.error("Cannot find executable {GFFREAD_PROG}. Abort!")
     sys.exit(1)
 
 
@@ -36,7 +37,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
         case "gmap":
-            print("****Aligning reads with GMAP...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with GMAP...")
             cmd = GMAP_CMD.format(
                 cpus=n_cpu,
                 dir=os.path.dirname(gmap_index),
@@ -46,7 +47,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "minimap2":
-            print("****Aligning reads with Minimap2...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with Minimap2...")
             cmd = MINIMAP2_CMD.format(
                 cpus=n_cpu,
                 sense=sense,
@@ -55,7 +56,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "deSALT":
-            print("****Aligning reads with deSALT...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with deSALT...")
             cmd = DESALT_CMD.format(
                 cpus=n_cpu,
                 dir=gmap_index,
@@ -63,7 +64,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "uLTRA":
-            print("****Aligning reads with uLTRA...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with uLTRA...")
             cmd = ULTRA_CMD.format(
                 cpus=n_cpu,
                 prefix="../" + os.path.splitext(os.path.basename(corrSAM))[0],
@@ -73,7 +74,8 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o_dir=outdir + "/uLTRA_out/",
             )
         case _:
-            raise ValueError(f"Unsupported aligner choice: {aligner_choice}")
+            qc_logger.error(f"Unsupported aligner choice: {aligner_choice}")
+            raise ValueError()
     return cmd
 
 # To dynamically get the utilities path
@@ -84,7 +86,7 @@ GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --ou
 
 def run_gmst(corrFASTA,orf_input,gmst_pre):
     if orf_input is not None:
-        print("Running ORF prediction of input on {0}...".format(orf_input))
+        qc_logger.info(f"Running ORF prediction of input on {orf_input}...")
         cmd = GMST_CMD.format(i=os.path.realpath(orf_input), o=gmst_pre)
     else:
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
@@ -97,7 +99,7 @@ def GTF_to_genePred(corrGTF):
     """
     queryFile = os.path.splitext(corrGTF)[0] +".genePred"
     if os.path.exists(queryFile):
-        print(f"{queryFile} already exists. Using it.", file=sys.stderr)
+        qc_logger.info(f"{queryFile} already exists. Using it.")
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
@@ -116,7 +118,7 @@ def run_command(cmd, description="command execution"):
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
-        print(f"ERROR during {description}: {cmd}", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
+        qc_logger.error(f"Something went wrong during {description}: {cmd}")
+        qc_logger.error(f"Details: {e}")
         sys.exit(1)
 

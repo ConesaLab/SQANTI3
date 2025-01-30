@@ -31,7 +31,7 @@ from .classification_preprocessing import (
     read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
 )
 from .classification_main import isoform_classification_pipeline
-from .logging_config import logger
+from .logging_config import qc_logger
 def run(args):
 
     global isoform_hits_name
@@ -42,8 +42,8 @@ def run(args):
 
     start3 = timeit.default_timer()
 
-    logger.info("Parsing provided files")
-    logger.info(f"Reading genome fasta {args.genome}")
+    qc_logger.info("Parsing provided files")
+    qc_logger.info(f"Reading genome fasta {args.refFasta}")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
 
@@ -97,7 +97,7 @@ def run(args):
         SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
-    logger.info(f"Number of classified isoforms: {len(isoforms_info)}")
+    qc_logger.info(f"Number of classified isoforms: {len(isoforms_info)}")
     ## Rename novel genes
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
     
@@ -107,20 +107,20 @@ def run(args):
         ## FSM classification
         isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
         isoforms_info = classify_fsm(isoforms_info)
-        logger.info(f"After classify fsm: {len(isoforms_info)}")
+        qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
         
         ## FL count file
         fields_class_cur = FIELDS_CLASS
         if args.fl_count:
             isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
         else:
-            logger.info("Full-length read abundance files not provided.")
+            qc_logger.info("Full-length read abundance files not provided.")
 
         ## RT-switching computation
-        logger.info("RT-switching computation")
+        qc_logger.info("RT-switching computation")
         isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
                                                         args.genome,genome_dict)
-        logger.info(f"After RTS classificaion: {len(isoforms_info)}")
+        qc_logger.info(f"After RTS classificaion: {len(isoforms_info)}")
 
     
     ## TSS ratio dict reading
@@ -143,8 +143,8 @@ def run(args):
     fields_junc_cur = reader.fieldnames
     isoforms_info = isoforms_junctions(isoforms_info, reader)
 
-    #### logger.infoing output file:
-    logger.info("Writing output files")
+    #### qc_logger.infoing output file:
+    qc_logger.info("Writing output files")
 
     if args.chunks != 1:
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
@@ -171,7 +171,7 @@ def run(args):
         cleanup(outputClassPath, outputJuncPath)
 
     stop3 = timeit.default_timer()
-    logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
+    qc_logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
 
 
 ### IsoAnnot Lite implementation
@@ -186,7 +186,7 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         ISOANNOT_CMD = f"python3 {ISOANNOT_PROG} {correctedGTF} {outClassFile} {outJuncFile} -o {iso_out} -novel"
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
-        logger.error(f"Command failed: {ISOANNOT_CMD}")
+        qc_logger.error(f"Command failed: {ISOANNOT_CMD}")
         sys.exit(1)
 
 

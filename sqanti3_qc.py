@@ -15,10 +15,10 @@ from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import args_validation
-from src.logging_config import logger
+from src.logging_config import qc_logger,qc_art
 
 def main():
-
+    qc_art()
     args = qc_argparse().parse_args()
     args = args_validation(args)
 
@@ -27,8 +27,8 @@ def main():
 
 
     # Print out parameters so can be put into report PDF later
-    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
-    logger.info("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
+    qc_logger.info(f"Write arguments to {args.doc}...")
     with open(args.doc, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
         f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
@@ -64,7 +64,7 @@ def main():
         f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
 
     # Running functionality based on the chunks
-    logger.info(f"Running SQANTI3 v{__version__}.\nInitialising QC pipeline.")
+    qc_logger.info(f"Initialising QC pipeline.")
     
     if args.chunks == 1:
         run(args)

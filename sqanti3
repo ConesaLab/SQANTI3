@@ -16,7 +16,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    sqanti_art(main_logger) # Print the ASCII art  
+    sqanti_art() # Print the ASCII art  
 
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
                                      add_help=False)

@@ -9,7 +9,7 @@ from .classification_steps import (
 ) # type: ignore
 from .utils import alphanum_key
 from .config import  FIELDS_CLASS
-
+from .logging_config import qc_logger
 
 
 def isoform_classification_pipeline(
@@ -20,7 +20,7 @@ def isoform_classification_pipeline(
         polyA_motif_list, phyloP_reader
         ):
     # running classification
-    print("**** Performing Classification of Isoforms....", file=sys.stdout)
+    qc_logger.info("**** Performing Classification of Isoforms")
 
     accepted_canonical_sites = list(sites.split(","))
     # Creates a temporary file to write the classification and junction results

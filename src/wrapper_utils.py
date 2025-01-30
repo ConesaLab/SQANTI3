@@ -201,7 +201,8 @@ def run_sqanti_module(cmd):
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
-        main_logger.error("There was an unexpected issue during SQANTI3 module execution")
+        step = cmd.split(" ")[1].split("/")[-1].split("_")[-1].split(".py")[0]
+        main_logger.error(f"There was an unexpected issue during SQANTI3 {step.upper()} module execution")
         sys.exit(1)
 
 def run_step_help(step):
