@@ -1,6 +1,6 @@
 GeneMark.hmm PROKARYOTIC (Version 3.20)
-Date: Thu Jul  1 11:19:51 2021
-Sequence file name: /blue/conesa/fpardopalacios/github/SQANTI3/example/SQANTI_out/UHR_chr22_corrected.fasta
+Date: Tue Dec 10 17:23:36 2024
+Sequence file name: /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
 Model file name: GeneMark_hmm.mod
 RBS: true
 
