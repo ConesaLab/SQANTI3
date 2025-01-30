@@ -9,8 +9,11 @@ from src.rescue_argparse import rescue_argparse
 def sqanti_path(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename)
 
-
 def create_config(config_path,options):
+    """
+    Create a YAML configuration file. 
+    It uses the default values from the parsers, unless the user has specified any of them.
+    """
     main_args = get_shared_args()
     user_options = None
     config = {
@@ -67,8 +70,15 @@ def replace_value(default_dict, user_config):
     return default_dict
 
 def set_default_values(config,user_options):
+    # Filter
     if 'sqanti_class' not in user_options:
         config['filter']['options']['common']['sqanti_class'] = f"{config['main']['dir']}/{config['main']['output']}_classification.txt"
+    if 'filter_isoforms' not in user_options:
+        config['filter']['options']['common']['filter_isoforms'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.fasta"
+    if 'filter_gtf' not in user_options:
+        config['filter']['options']['common']['filter_gtf'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.gtf"
+    if 'filter_faa' not in user_options or config['qc']['options']['skipORF']:
+        config['filter']['options']['common']['filter_faa'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.faa"
     
     return config
 

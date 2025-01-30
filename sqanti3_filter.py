@@ -49,33 +49,34 @@ if os.system(RSCRIPTPATH + " --version")!=0:
     sys.exit(-1)
 
 def filter_files(args, ids_to_keep, inclusion_f):
+    # TODO: Update this prefix so it dinamically detects if it is a corrected file or not
     prefix = args.dir + "/" + args.output
     # filter FASTA/FASTQ file
-    if args.isoforms is not None:
+    if args.filter_isoforms is not None:
         fafq_type = 'fasta'
-        with open(args.isoforms) as h:
+        with open(args.filter_isoforms) as h:
             if h.readline().startswith('@'): fafq_type = 'fastq'
         fout=open(prefix + '.filtered.' + fafq_type, 'w')
-        for r in SeqIO.parse(open(args.isoforms), fafq_type):
+        for r in SeqIO.parse(open(args.filter_isoforms), fafq_type):
             if r.id in ids_to_keep:
                 SeqIO.write(r, fout, fafq_type)
         fout.close()
         print("Output written to: {0}".format(fout.name), file=sys.stdout)
 
     # filter GTF
-    if args.gtf is not None:
+    if args.filter_gtf is not None:
         outputGTF = prefix + '.filtered.gtf'
         with open(outputGTF, 'w') as f:
-            for r in collapseGFFReader(args.gtf):
+            for r in collapseGFFReader(args.filter_gtf):
                 if r.seqid in ids_to_keep:
                     write_collapseGFF_format(f, r)
             print("Output written to: {0}".format(f.name), file=sys.stdout)
 
     # filter SAM
-    if args.sam is not None:
+    if args.filter_sam is not None:
         outputSam = prefix + '.filtered.sam'
         with open(outputSam, 'w') as f:
-            reader = GMAPSAMReader(args.sam, True)
+            reader = GMAPSAMReader(args.filter_sam, True)
             f.write(reader.header)
             for r in reader:
                 if r.qID in ids_to_keep:
@@ -83,10 +84,10 @@ def filter_files(args, ids_to_keep, inclusion_f):
             print("Output written to: {0}".format(f.name), file=sys.stdout)
 
     # filter FAA
-    if args.faa is not None:
+    if args.filter_faa is not None:
         outputFAA = prefix + '.filtered.faa'
         with open(outputFAA, 'w') as f:
-            for r in SeqIO.parse(open(args.faa), 'fasta'):
+            for r in SeqIO.parse(open(args.filter_faa), 'fasta'):
                 if r.id in ids_to_keep:
                     f.write(">{0}\n{1}\n".format(r.description, r.seq))
         print("Output written to: {0}".format(f.name), file=sys.stdout)
@@ -164,20 +165,20 @@ def main():
         print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_class), file=sys.stderr)
         sys.exit(-1)
 
-    if args.isoforms is not None and not os.path.exists(args.isoforms):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
+    if args.filter_isoforms is not None and not os.path.exists(args.filter_isoforms):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_isoforms), file=sys.stderr)
         sys.exit(-1)
 
-    if args.gtf is not None and not os.path.exists(args.gtf):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
+    if args.filter_gtf is not None and not os.path.exists(args.filter_gtf):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_gtf), file=sys.stderr)
         sys.exit(-1)
 
-    if args.sam is not None and not os.path.exists(args.sam):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.sam), file=sys.stderr)
+    if args.filter_sam is not None and not os.path.exists(args.filter_sam):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_sam), file=sys.stderr)
         sys.exit(-1)
 
-    if args.faa is not None and not os.path.exists(args.faa):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.faa), file=sys.stderr)
+    if args.filter_faa is not None and not os.path.exists(args.filter_faa):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_faa), file=sys.stderr)
         sys.exit(-1)
 ### Define output dir and output name in case it was not defined
     if args.dir is None:
@@ -197,10 +198,10 @@ def main():
       f.write("Version\t" + __version__ + "\n")
       f.write("Mode\t" + args.subcommand + "\n")
       f.write("ClassificationFile\t" + str(args.sqanti_class) + "\n")
-      f.write("Isoforms\t" + (str(args.isoforms) if args.isoforms is not None else "NA")+ "\n")
-      f.write("GTF\t" + (str(args.gtf) if args.gtf is not None else "NA") + "\n")
-      f.write("SAM\t" + (str(args.sam) if args.sam is not None else "NA") + "\n")
-      f.write("FAA\t" + (str(args.faa) if args.faa is not None else "NA") + "\n")
+      f.write("Isoforms\t" + (str(args.filter_isoforms) if args.filter_isoforms is not None else "NA")+ "\n")
+      f.write("GTF\t" + (str(args.filter_gtf) if args.filter_gtf is not None else "NA") + "\n")
+      f.write("SAM\t" + (str(args.filter_sam) if args.filter_sam is not None else "NA") + "\n")
+      f.write("FAA\t" + (str(args.filter_faa) if args.filter_faa is not None else "NA") + "\n")
       f.write("isoAnnotGFF3\t" + (str(args.isoAnnotGFF3) if args.isoAnnotGFF3 is not None else "NA") + "\n")
       f.write("OutputPrefix\t" + str(args.output) + "\n")
       f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
