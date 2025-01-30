@@ -12,10 +12,10 @@ __author__  = "carolina.monzo@csic.es"
 __version__ = '1.0'  # Python 3.7
 
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sys.path.insert(0, utilitiesPath)
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
 
@@ -208,7 +208,7 @@ def main():
         make_UJC_hash(args, df)
 
     # Run plotting script
-    plotting_script_path = os.path.join(os.path.dirname(__file__), 'utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
+    plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
 
     cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
     if args.inFACTOR:
