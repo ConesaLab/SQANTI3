@@ -17,6 +17,7 @@ from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 from .config import seqid_rex1, seqid_rex2, seqid_fusion
 from .commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
 from .parsers import parse_GMST, parse_corrORF
+from .logging_config import qc_logger
 
 ### Environment manipulation functions ###
 def rename_isoform_seqids(input_fasta, force_id_ignore=False):
@@ -45,7 +46,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
         m2 = seqid_rex2.match(r.id)
         m3 = seqid_fusion.match(r.id)
         if not force_id_ignore and (m1 is None and m2 is None and m3 is None):
-            print("Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw {0} instead. Abort!".format(r.id), file=sys.stderr)
+            qc_logger.error(f"Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw {r.id} instead. Abort!")
             sys.exit(1)
         if r.id.startswith('PB.') or r.id.startswith('PBfusion.'):  # PacBio fasta header
             newid = r.id.split('|')[0]
@@ -142,19 +143,19 @@ def sequence_correction(
     """
     Use the reference genome to correct the sequences (unless a pre-corrected GTF is given)
     """
-    print("Correcting sequences")
+    qc_logger.info("**** Correcting sequences")
     corrGTF, corrSAM, corrFASTA, _ , _ = get_corr_filenames(outdir, output)
     n_cpu = max(1, cpus // chunks)
 
     # Step 1. IF GFF or GTF is provided, make it into a genome-based fasta
     #         IF sequence is provided, align as SAM then correct with genome
     if os.path.exists(corrFASTA):
-        print("Error corrected FASTA {0} already exists. Using it...".format(corrFASTA), file=sys.stderr)
+        qc_logger.info(f"Error corrected FASTA {corrFASTA} already exists. Using it...")
     else:
-        print("Correcting fasta")
+        qc_logger.info("Correcting fasta")
         if fasta:
             if os.path.exists(corrSAM):
-                print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
+                qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
             else:
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                                           outdir,corrSAM, n_cpu, gmap_index, sense)
@@ -168,11 +169,11 @@ def sequence_correction(
             # Try condition to better handle the error. Also, the exit code is corrected
             run_command(cmd, description="converting SAM to GTF")
         else:
-            print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
+            qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
             filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
 
             if not os.path.exists(corrSAM):
-                sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
+                qc_logger.info("Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).")
 
             # GTF to FASTA
             subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
@@ -201,17 +202,18 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
 
     fields = line.strip().split("\t")
     if len(fields) < 7:
-        print(f"WARNING: Skipping malformed GTF line: {line.strip()}")
+        qc_logger.warning(f"Skipping malformed GTF line: {line.strip()}")
         return
 
     chrom, feature_type, strand = fields[0], fields[2], fields[6]
 
     if chrom not in genome_dict:
-        raise ValueError(f"ERROR: GTF chromosome '{chrom}' not found in genome reference file.")
+        qc_logger.error(f"GTF chromsome {chrom} not found in genome reference file")
+        raise ValueError()
 
     if feature_type in ('transcript', 'exon'):
         if strand not in ['-', '+']:
-            print(f"WARNING: Discarding unknown strand transcript: {line.strip()}")
+            qc_logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
             discard_gtf.write(line)
         else:
             corrGTF_out.write(line)
@@ -222,13 +224,13 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
             for line in isoforms_gtf:
                 process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
     except IOError as e:
-        print(f"ERROR: Error processing GTF files: {e}")
+        qc_logger.error(f"Something went wrong processing GTF files: {e}")
         raise
 
 
 def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     # ORF generation
-    print("**** Predicting ORF sequences...", file=sys.stdout)
+    qc_logger.info("**** Predicting ORF sequences...")
 
     gmst_dir = os.path.join(os.path.abspath(outdir), "GMST")
     gmst_pre = os.path.join(gmst_dir, "GMST_tmp")
@@ -240,17 +242,17 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     # GMST seq id --> myQueryProteins object
     orfDict = {}
     if skipORF:
-        print("WARNING: Skipping ORF prediction because user requested it. All isoforms will be non-coding!", file=sys.stderr)
+        qc_logger.warning("Skipping ORF prediction because user requested it. All isoforms will be non-coding!")
     elif os.path.exists(corrORF):
-        print(f"ORF file {corrORF} already exists. Using it....", file=sys.stderr)
+        qc_logger.info(f"ORF file {corrORF} already exists. Using it.")
         orfDict = parse_corrORF(corrORF,gmst_rex)
     else:
-        print(f"Running ORF prediction on {corrFASTA}")
+        qc_logger.info(f"Running ORF prediction on {corrFASTA}")
         run_gmst(corrFASTA,orf_input,gmst_pre)
         # Modifying ORF sequences by removing sequence before ATG
         orfDict = parse_GMST(corrORF, gmst_rex, gmst_pre)
     if len(orfDict) == 0:
-        print("WARNING: All input isoforms were predicted as non-coding", file=sys.stderr)
+        qc_logger.warning("All input isoforms were predicted as non-coding")
 
     return(orfDict)
 

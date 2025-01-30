@@ -8,7 +8,7 @@ from .commands import (
     utilitiesPath
 )
 from src.helpers import get_isoform_hits_name, get_omitted_name
-
+from src.logging_config import qc_logger
 
 def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, fields_class_cur):
     if min_ref_len > 0 and not is_fusion:
@@ -60,17 +60,17 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
     os.remove(isoform_hits_name+'_tmp')
 
 def generate_report(saturation,report, outputClassPath, outputJuncPath):
-    print("**** Generating SQANTI3 report....", file=sys.stderr)
+    qc_logger.info("**** Generating SQANTI3 report.")
     cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     run_command(cmd,"SQANTI3 report")
 
 def cleanup(outputClassPath, outputJuncPath):
-    print("Removing temporary files....", file=sys.stderr)
+    qc_logger.info("Removing temporary files.")
     os.remove(outputClassPath+"_tmp")
     os.remove(outputJuncPath+"_tmp")
 
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
-    print("Saving isoforms_info object to file....", file=sys.stderr)
+    qc_logger.info("Saving isoforms_info object to file.")
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
         pickle.dump(isoforms_info, h)
         pickle.dump(junctions_header, h)
