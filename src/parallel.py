@@ -193,7 +193,7 @@ def combine_split_runs(args, split_dirs):
     fields_class_cur = FIELDS_CLASS
     if args.fl_count:
         isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
-    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.genome)
+    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
     write_classification_output(isoforms_info, outputClassPath, FIELDS_CLASS)

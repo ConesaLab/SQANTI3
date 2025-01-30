@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+# Crafting the Python wrapper based on the described requirements and the inspected bash script structure.
+
+import argparse
+import os
+import yaml
+import sys
+from pathlib import Path
+
+from src.wrapper_utils import (
+    create_config, run_step, run_step_help
+)
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
+                                     add_help=False)
+    parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
+                        help="Action to perform",nargs="?")
+    parser.add_argument("-c","--config", type=str, default="sqanti3_config.yaml",
+                        help="Path to the configuration file (default:  %(default)s ).")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Print the commands that would be executed")
+    parser.add_argument("-a","--arguments", type=str, nargs="+",
+                        help="Non-default arguments to pass to the SQANTI3 modules.")
+    parser.add_argument("-h","--help", action="store_true",
+                        help="Show the help message and exit.")
+
+    args = parser.parse_args()
+    if not args.command:
+        if args.help:
+            parser.print_help()
+            sys.exit(0)
+        else:
+            parser.error("Please, use a command or the help message.")
+
+    if args.help:
+        if args.command == "init":
+            parser.print_help()
+            sys.exit(0)
+        elif args.command == "all":
+            print("Run all the enabled modules in the configuration file.")
+            parser.print_help()
+            sys.exit(0)
+        else:
+            print(f"Run the {args.command.upper()} module.")
+            run_step_help(args.command)
+            sys.exit(0)
+            
+    if not args.config.endswith(".yaml"):
+        print("Configuration file must be a YAML file.")
+        sys.exit(1)
+    else:
+        config_path = Path(args.config)
+
+    if args.command == "init":
+        create_config(config_path, args.arguments)
+        return
+
+    if not config_path.exists():
+        print(f"Configuration file {config_path} not found. Please run 'init' first.", file=sys.stderr)
+        sys.exit(1)
+
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+    # I want the user to be able to dinamically select which module they want to run. 
+    if args.command == "all":
+        for step in ["qc", "filter", "rescue"]:
+            if config.get(step, {}).get("enabled", False): # Runs only the enabled modules in the configuration
+                run_step(step, config,args.dry_run, args.arguments)
+    else:
+        if config.get(args.command, {}).get("enabled", False): # I want to check if the module is enabled in the configuration file.
+            run_step(args.command, config,args.dry_run, args.arguments)
+        else:
+            print(f"{args.command.upper()} is disabled in the configuration file.", file=sys.stderr)
+
+
+
+if __name__ == "__main__":
+    main()

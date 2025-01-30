@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
 from src.config import __version__
@@ -29,7 +31,9 @@ from Bio import SeqIO
 from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+from src.filter_argparse import filter_argparse
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
+
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_REPORT = 'report_filter/SQANTI3_filter_report.R'
 RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
@@ -41,33 +45,34 @@ if os.system(RSCRIPTPATH + " --version")!=0:
     sys.exit(-1)
 
 def filter_files(args, ids_to_keep, inclusion_f):
+    # TODO: Update this prefix so it dinamically detects if it is a corrected file or not
     prefix = args.dir + "/" + args.output
     # filter FASTA/FASTQ file
-    if args.isoforms is not None:
+    if args.filter_isoforms is not None:
         fafq_type = 'fasta'
-        with open(args.isoforms) as h:
+        with open(args.filter_isoforms) as h:
             if h.readline().startswith('@'): fafq_type = 'fastq'
         fout=open(prefix + '.filtered.' + fafq_type, 'w')
-        for r in SeqIO.parse(open(args.isoforms), fafq_type):
+        for r in SeqIO.parse(open(args.filter_isoforms), fafq_type):
             if r.id in ids_to_keep:
                 SeqIO.write(r, fout, fafq_type)
         fout.close()
         print("Output written to: {0}".format(fout.name), file=sys.stdout)
 
     # filter GTF
-    if args.gtf is not None:
+    if args.filter_gtf is not None:
         outputGTF = prefix + '.filtered.gtf'
         with open(outputGTF, 'w') as f:
-            for r in collapseGFFReader(args.gtf):
+            for r in collapseGFFReader(args.filter_gtf):
                 if r.seqid in ids_to_keep:
                     write_collapseGFF_format(f, r)
             print("Output written to: {0}".format(f.name), file=sys.stdout)
 
     # filter SAM
-    if args.sam is not None:
+    if args.filter_sam is not None:
         outputSam = prefix + '.filtered.sam'
         with open(outputSam, 'w') as f:
-            reader = GMAPSAMReader(args.sam, True)
+            reader = GMAPSAMReader(args.filter_sam, True)
             f.write(reader.header)
             for r in reader:
                 if r.qID in ids_to_keep:
@@ -75,10 +80,10 @@ def filter_files(args, ids_to_keep, inclusion_f):
             print("Output written to: {0}".format(f.name), file=sys.stdout)
 
     # filter FAA
-    if args.faa is not None:
+    if args.filter_faa is not None:
         outputFAA = prefix + '.filtered.faa'
         with open(outputFAA, 'w') as f:
-            for r in SeqIO.parse(open(args.faa), 'fasta'):
+            for r in SeqIO.parse(open(args.filter_faa), 'fasta'):
                 if r.id in ids_to_keep:
                     f.write(">{0}\n{1}\n".format(r.description, r.seq))
         print("Output written to: {0}".format(f.name), file=sys.stdout)
@@ -148,49 +153,7 @@ def run_rules(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes.\
-\nChoose between a rules filter or a Machine-Learning based filter.")
-### Common arguments for both modes
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('sqanti_class', help='\t\tSQANTI3 QC classification file.')
-    common.add_argument('--isoAnnotGFF3', help='\t\tisoAnnotLite GFF3 file to be filtered')
-    common.add_argument('--isoforms', help='\t\tfasta/fastq isoform file to be filtered')
-    common.add_argument('--gtf', help='\t\tGTF file to be filtered')
-    common.add_argument('--sam', help='\t\tSAM alignment of the input fasta/fastq')
-    common.add_argument('--faa', help='\t\tORF prediction faa file to be filtered by SQANTI3')
-    common.add_argument('-o','--output', help='\t\tPrefix for output files.', required=False)
-    common.add_argument('-d','--dir', help='\t\tDirectory for output files. Default: Directory where the script was run.', required=False)
-    common.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='\t\tWhen TRUE, all mono-exonic transcripts are automatically filtered (default: False)')
-    common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    common.add_argument("--skip_report", action="store_true", default=False, help='\t\tSkip creation of a report about the filtering')
-    subparsers = parser.add_subparsers(dest='subcommand')
-
-### Rules filter arguments
-    rules = subparsers.add_parser('rules', parents=[common], description="Rules filter selected")
-    rules.add_argument('-j', "--json_filter", default=default_json, help='\t\tJSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept. Default: utilities/filter/filter_default.json')
-
-### ML filter arguments
-    ml = subparsers.add_parser('ml', parents=[common],  description='ML filter selected')
-    ml.add_argument('-t','--percent_training', type=float, default=0.8, \
-    help="Proportion of the data that goes to training (parameter p of the function createDataPartition). \
-    \nDefault: 0.8")
-    ml.add_argument('-p', '--TP', \
-    help="Path to file containing the list of the TP transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
-    ml.add_argument('-n', '--TN', \
-    help="Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
-    ml.add_argument('-j', '--threshold', type=float, default=0.7, \
-    help="Machine Learning probability threshold to classify transcripts as positive isoforms. Default: 0.7.")
-    ml.add_argument('-f', '--force_fsm_in', default=False, \
-    help="When TRUE, forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms). Default: FALSE.")
-    ml.add_argument('--intermediate_files', default=False, \
-    help="When TRUE, outputs ML filter intermediate files. Default: FALSE.")
-    ml.add_argument('-r','--remove_columns', \
-    help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
-    ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
-    help="Maximum number of isoforms to include in True Positive and True Negative sets (default: 3000). TP and TN sets will be downsized to this value if they are larger.")
-    ml.add_argument('-i',"--intrapriming", type=float, default=60, help='\t\tAdenine percentage at genomic 3\' end to flag an isoform as intra-priming (default: 60 )')
-
-    args = parser.parse_args()
+    args = filter_argparse().parse_args()
 
 ### Checking presence of files. Common arguments
     args.sqanti_class = os.path.abspath(args.sqanti_class)
@@ -198,20 +161,20 @@ def main():
         print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_class), file=sys.stderr)
         sys.exit(-1)
 
-    if args.isoforms is not None and not os.path.exists(args.isoforms):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.isoforms), file=sys.stderr)
+    if args.filter_isoforms is not None and not os.path.exists(args.filter_isoforms):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_isoforms), file=sys.stderr)
         sys.exit(-1)
 
-    if args.gtf is not None and not os.path.exists(args.gtf):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.gtf), file=sys.stderr)
+    if args.filter_gtf is not None and not os.path.exists(args.filter_gtf):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_gtf), file=sys.stderr)
         sys.exit(-1)
 
-    if args.sam is not None and not os.path.exists(args.sam):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.sam), file=sys.stderr)
+    if args.filter_sam is not None and not os.path.exists(args.filter_sam):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_sam), file=sys.stderr)
         sys.exit(-1)
 
-    if args.faa is not None and not os.path.exists(args.faa):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.faa), file=sys.stderr)
+    if args.filter_faa is not None and not os.path.exists(args.filter_faa):
+        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_faa), file=sys.stderr)
         sys.exit(-1)
 ### Define output dir and output name in case it was not defined
     if args.dir is None:
@@ -231,10 +194,10 @@ def main():
       f.write("Version\t" + __version__ + "\n")
       f.write("Mode\t" + args.subcommand + "\n")
       f.write("ClassificationFile\t" + str(args.sqanti_class) + "\n")
-      f.write("Isoforms\t" + (str(args.isoforms) if args.isoforms is not None else "NA")+ "\n")
-      f.write("GTF\t" + (str(args.gtf) if args.gtf is not None else "NA") + "\n")
-      f.write("SAM\t" + (str(args.sam) if args.sam is not None else "NA") + "\n")
-      f.write("FAA\t" + (str(args.faa) if args.faa is not None else "NA") + "\n")
+      f.write("Isoforms\t" + (str(args.filter_isoforms) if args.filter_isoforms is not None else "NA")+ "\n")
+      f.write("GTF\t" + (str(args.filter_gtf) if args.filter_gtf is not None else "NA") + "\n")
+      f.write("SAM\t" + (str(args.filter_sam) if args.filter_sam is not None else "NA") + "\n")
+      f.write("FAA\t" + (str(args.filter_faa) if args.filter_faa is not None else "NA") + "\n")
       f.write("isoAnnotGFF3\t" + (str(args.isoAnnotGFF3) if args.isoAnnotGFF3 is not None else "NA") + "\n")
       f.write("OutputPrefix\t" + str(args.output) + "\n")
       f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")

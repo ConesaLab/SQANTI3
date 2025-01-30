@@ -19,7 +19,7 @@ from src.logging_config import logger
 
 def main():
 
-    args = qc_argparse()
+    args = qc_argparse().parse_args()
     args = args_validation(args)
 
 
@@ -32,8 +32,8 @@ def main():
     with open(args.doc, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
         f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
-        f.write("Annotation\t" + os.path.abspath(args.annotation) + "\n")
-        f.write("Genome\t" + os.path.abspath(args.genome) + "\n")
+        f.write("Annotation\t" + os.path.abspath(args.refGTF) + "\n")
+        f.write("Genome\t" + os.path.abspath(args.refFasta) + "\n")
         f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
         f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
         f.write("Aligner\t" + str(args.aligner_choice) + "\n")

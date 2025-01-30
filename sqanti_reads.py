@@ -12,10 +12,10 @@ __author__  = "carolina.monzo@csic.es"
 __version__ = '1.0'  # Python 3.7
 
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sys.path.insert(0, utilitiesPath)
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
 
