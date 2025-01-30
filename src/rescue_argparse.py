@@ -17,9 +17,9 @@ def rescue_argparse():
     # TODO: check why here is the filtered, but not above??
     common.add_argument("--rescue_gtf", 
                         help = "GTF file output by SQANTI3 filter (*.filtered.gtf).")
-    common.add_argument("refGTF", 
+    common.add_argument("--refGTF", 
                         help = "Full path to reference transcriptome GTF used when running SQANTI3 QC.")
-    common.add_argument("refFasta", 
+    common.add_argument("--refFasta", 
                         help = "Full path to reference genome FASTA used when running SQANTI3 QC.")
     common.add_argument("-k", "--refClassif", 
                         help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.")

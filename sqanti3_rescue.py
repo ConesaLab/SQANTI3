@@ -87,10 +87,10 @@ def run_candidate_mapping(args):
 
   # make FASTA file name
   pre, ext = os.path.splitext(os.path.basename(args.refGTF))
-  refFASTA = args.dir + "/" + pre + ".fasta"
+  ref_trans_Fasta = args.dir + "/" + pre + ".fasta"
   
   # build gffread command
-  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = refFASTA, g = args.refGenome, \
+  ref_cmd = "gffread -w {w} -g {g} {a}".format(w = ref_trans_Fasta, g = args.refFasta, \
   a = args.refGTF)
   
   # run gffread
@@ -99,8 +99,8 @@ def run_candidate_mapping(args):
     file = sys.stderr)
     sys.exit(1)
     
-  elif os.path.isfile(refFASTA):
-    print("\nReference transcriptome FASTA was saved to ", refFASTA, "\n")
+  elif os.path.isfile(ref_trans_Fasta):
+    print("\nReference transcriptome FASTA was saved to ", ref_trans_Fasta, "\n")
     print("\n\tgffread command used:\n")
     print(ref_cmd, "\n")
     
@@ -119,7 +119,7 @@ def run_candidate_mapping(args):
   ref_target_fasta = args.dir +	"/" + args.output + "_rescue_targets.ref.fasta"
 
   # make command
-  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = refFASTA, \
+  fasta_cmd = "seqtk subseq {i}	{t} > {f}".format(i = ref_trans_Fasta, \
   t = target_file, f = ref_target_fasta)
 
   # run	
@@ -129,7 +129,7 @@ def run_candidate_mapping(args):
     sys.exit(1)
     
   elif os.path.isfile(ref_target_fasta):
-    print("\nTarget reference transcript sequences were saved to ", refFASTA, "\n")
+    print("\nTarget reference transcript sequences were saved to ", ref_trans_Fasta, "\n")
     print("\n\tseqtk command used:\n")
     print(fasta_cmd, "\n")
     
@@ -157,7 +157,7 @@ def run_candidate_mapping(args):
     sys.exit(1)
     
   elif os.path.isfile(LR_target_fasta):
-    print("\nTarget long read transcript sequences were saved to ", refFASTA, "\n")
+    print("\nTarget long read transcript sequences were saved to ", ref_trans_Fasta, "\n")
     print("\n\tseqtk command used:\n")
     print(fasta_cmd, "\n")
     
@@ -449,10 +449,11 @@ def main():
     print("ERROR: {0} doesn't exist. Abort!".format(args.refGTF), file=sys.stderr)
     sys.exit(-1)
     
-  if not os.path.isfile(args.refGenome):
-    print("ERROR: {0} doesn't exist. Abort!".format(args.refGenome), file=sys.stderr)
+  if not os.path.isfile(args.refFasta):
+    print("ERROR: {0} doesn't exist. Abort!".format(args.refFasta), file=sys.stderr)
     sys.exit(-1)
-    
+  
+  # TODO: Condition to run SQANTI_QC on the reference transcriptome
   if not os.path.isfile(args.refClassif):
       print("ERROR: {0} doesn't exist. Abort!".format(args.refClassif), file=sys.stderr)
       sys.exit(-1)

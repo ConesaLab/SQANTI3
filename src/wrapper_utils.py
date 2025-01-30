@@ -177,6 +177,9 @@ def run_step(step,config,dry_run, user_options):
         for subparser, subparser_args in config[step].get("options", {}).items():
             if subparser == "common":
                 options = main_opt | subparser_args
+                if step == "filter": # In filter we don't need the reference files
+                    options.pop("refGTF")
+                    options.pop("refFasta")
             else:
                 if subparser_args["enabled"]:
                     options = options | subparser_args.get("options", {})
@@ -195,6 +198,7 @@ def run_sqanti_module(cmd):
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
         print("ERROR during SQANTI3 module execution")
+        sys.exit(1)
 
 def run_step_help(step):
     help = {

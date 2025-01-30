@@ -8,7 +8,7 @@ def filter_argparse():
 
 ### Common arguments for both modes
     common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('sqanti_class', help='SQANTI3 QC classification file.')
+    common.add_argument('--sqanti_class', help='SQANTI3 QC classification file.',required=True)
     common.add_argument('--isoAnnotGFF3', help='isoAnnotLite GFF3 file to be filtered')
     common.add_argument('--filter_isoforms', help='fasta/fastq isoform file to be filtered')
     common.add_argument('--filter_gtf', help='GTF file to be filtered')
