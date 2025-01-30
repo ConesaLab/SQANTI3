@@ -11,11 +11,13 @@ from pathlib import Path
 from src.wrapper_utils import (
     create_config, run_step, run_step_help
 )
-
+from src.logging_config import sqanti_art, main_logger
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
+    sqanti_art(main_logger) # Print the ASCII art  
+
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
                                      add_help=False)
     parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
@@ -42,16 +44,14 @@ def main():
             parser.print_help()
             sys.exit(0)
         elif args.command == "all":
-            print("Run all the enabled modules in the configuration file.")
             parser.print_help()
             sys.exit(0)
         else:
-            print(f"Run the {args.command.upper()} module.")
             run_step_help(args.command)
             sys.exit(0)
             
     if not args.config.endswith(".yaml"):
-        print("Configuration file must be a YAML file.")
+        main_logger.error("Configuration file must be a YAML file.")
         sys.exit(1)
     else:
         config_path = Path(args.config)
@@ -61,7 +61,7 @@ def main():
         return
 
     if not config_path.exists():
-        print(f"Configuration file {config_path} not found. Please run 'init' first.", file=sys.stderr)
+        main_logger.error(f"Configuration file {config_path} not found. Please run 'init' first.")
         sys.exit(1)
 
     with open(config_path) as f:
@@ -75,7 +75,7 @@ def main():
         if config.get(args.command, {}).get("enabled", False): # I want to check if the module is enabled in the configuration file.
             run_step(args.command, config,args.dry_run, args.arguments)
         else:
-            print(f"{args.command.upper()} is disabled in the configuration file.", file=sys.stderr)
+            main_logger.error(f"{args.command.upper()} is disabled in the configuration file.")
 
 
 

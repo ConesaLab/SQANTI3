@@ -41,12 +41,12 @@ filter:
   enabled: true
   options:
     common:
-      sqanti_class: ''
+      sqanti_class: sqanti3_results/isoforms_classification.txt
       isoAnnotGFF3: ''
-      isoforms: ''
-      gtf: ''
-      sam: ''
-      faa: ''
+      filter_isoforms: sqanti3_results/isoforms_corrected.fasta
+      filter_gtf: sqanti3_results/isoforms_corrected.gtf
+      filter_sam: ''
+      filter_faa: sqanti3_results/isoforms_corrected.faa
       filter_mono_exonic: false
       skip_report: false
     rules:
@@ -69,9 +69,9 @@ rescue:
   enabled: true
   options:
     common:
-      sqanti_filter_classif: ''
-      isoforms: ''
-      gtf: ''
+      filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
+      rescue_isoforms: sqanti3_results/isoforms_corrected.fasta
+      rescue_gtf: sqanti3_results/isoforms_.filtered.gtf
       refClassif: ''
       rescue_mono_exonic: all
       mode: automatic

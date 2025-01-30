@@ -4,7 +4,7 @@ import yaml, os
 from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
 from src.rescue_argparse import rescue_argparse
-
+from src.logging_config import main_logger
 
 def sqanti_path(filename):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename)
@@ -30,7 +30,7 @@ def create_config(config_path,options):
 
     with open(config_path, "w") as f:
         yaml.dump(config, f,sort_keys=False)
-    print(f"Config file created at {config_path}")
+    main_logger.info(f"Config file created at {config_path}")
 
 def get_shared_args():
     return {
@@ -47,7 +47,7 @@ def get_user_options(options, sqanti_options):
     for option in options:
         key, value = option.split('=')
         if key not in sqanti_options:
-            print(f"Warning: Option '{key}' not found in the default configuration.", file=sys.stderr)
+            main_logger.warning(f"Option '{key}' not found in the default configuration.")
             continue
         # Try to convert the value to an integer or float
         if value.isdigit():
@@ -69,30 +69,34 @@ def replace_value(default_dict, user_config):
                 default_dict[key] = user_config[key]
     return default_dict
 
+def generate_default_path(config, filename):
+    return f"{config['main']['dir']}/{config['main']['output']}_{filename}"
+
 def set_default_values(config,user_options):
-    # Filter
-    if 'sqanti_class' not in user_options:
-        config['filter']['options']['common']['sqanti_class'] = f"{config['main']['dir']}/{config['main']['output']}_classification.txt"
-    if 'filter_isoforms' not in user_options:
-        config['filter']['options']['common']['filter_isoforms'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.fasta"
-    if 'filter_gtf' not in user_options:
-        config['filter']['options']['common']['filter_gtf'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.gtf"
-    if 'filter_faa' not in user_options or config['qc']['options']['skipORF']:
-        config['filter']['options']['common']['filter_faa'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.faa"
+    user_options = user_options or {}
     
-    # Rescue
-    if 'filter_class' not in user_options:
-        if config['filter']['options']['rules']['enabled']:
-            config['rescue']['options']['common']['filter_class'] = f"{config['main']['dir']}/{config['main']['output']}_RulesFilter_result_classification.txt"
-        else:
-            config['rescue']['options']['common']['filter_class'] = f"{config['main']['dir']}/{config['main']['output']}_MLFilter_result_classification.txt"
-    
-    if 'rescue_isoforms' not in user_options:
-        config['rescue']['options']['common']['rescue_isoforms'] = f"{config['main']['dir']}/{config['main']['output']}_corrected.fasta"
-    
-    if 'rescue_gtf' not in user_options:
-        config['rescue']['options']['common']['rescue_gtf'] = f"{config['main']['dir']}/{config['main']['output']}.filtered.gtf"
-    
+    default_values = {
+        'filter': {
+            'sqanti_class': 'classification.txt',
+            'filter_isoforms': 'corrected.fasta',
+            'filter_gtf': 'corrected.gtf',
+            'filter_faa': 'corrected.faa'
+        },
+        'rescue': {
+            'filter_class': 'RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else 'MLFilter_result_classification.txt',
+            'rescue_isoforms': 'corrected.fasta',
+            'rescue_gtf': '.filtered.gtf'
+        }
+    }
+
+    for section, options in default_values.items():
+        for key, default_filename in options.items():
+            if key not in user_options:
+                if section == 'filter' and key == 'filter_faa' and config['qc']['options']['skipORF']:
+                    config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+                else:
+                    config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):
@@ -150,7 +154,7 @@ def validate_user_options(user_options, valid_keys):
     """Check if any user option is not in the list of valid keys."""
     for key in user_options:
         if key not in valid_keys:
-            print(f"Warning: Option '{key}' not found in the default configuration.", file=sys.stderr)
+            main_logger.warning(f"Option '{key}' not found in the default configuration.")
 
 def modify_options(options,user_options):
     user_options = get_user_options(user_options, list(options.keys()))
@@ -186,18 +190,18 @@ def run_step(step,config,dry_run, user_options):
                     if user_options is not None:
                         modify_options(options,user_options)
                     cmd = commands[step].format(type = subparser, options = format_options(options))
-    print(f"Running {step.upper()}...")
+    main_logger.info(f"Running {step.upper()}")
     if dry_run:
-        print(f"{cmd}")
+        main_logger.info(f"{cmd}")
     else:
         run_sqanti_module(cmd)
 
 def run_sqanti_module(cmd):
-    print(f"Running: {cmd}")
+    main_logger.info(f"{cmd}")
     try:
         subprocess.check_call(cmd, shell=True)
     except subprocess.CalledProcessError as e:
-        print("ERROR during SQANTI3 module execution")
+        main_logger.error("There was an unexpected issue during SQANTI3 module execution")
         sys.exit(1)
 
 def run_step_help(step):
@@ -209,7 +213,7 @@ def run_step_help(step):
     if step != "qc":
         filter_type = input(f"Which {step} option do you want to see the help from (rules/ml)? ")
         if filter_type != "rules" and filter_type != "ml":
-            print("Invalid option")
+            main_logger.error("Invalid option")
             return
         help[step] = help[step].format(type=filter_type)
-    run_sqanti_module(help[step])
+    subprocess.check_call(help[step], shell=True)
