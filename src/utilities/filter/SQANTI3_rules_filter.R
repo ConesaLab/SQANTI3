@@ -11,7 +11,7 @@
 # Last updated: Sept/27/2021
 #
 # Rules filter will take as input a JSON file where the user will set the rules for the filtering.
-# It will be a JSON with nested objects so you can define any column you want to use for filtering.
+# It will be a JSON with nested objects so you can define any column you want to use for filtering. 
 # Filtering values will ALWAYS be in "positive", so the values set in the JSON will be the attributes that the filter will keep
 
 library(optparse)

@@ -43,15 +43,15 @@ def run(args):
     start3 = timeit.default_timer()
 
     print("**** Parsing provided files....", file=sys.stdout)
-    print("Reading genome fasta {0}....".format(args.genome), file=sys.stdout)
+    print("Reading genome fasta {0}....".format(args.refFasta), file=sys.stdout)
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
-    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), 'fasta'))
+    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
 
     ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     sequence_correction(
     args.dir, args.output, args.cpus, args.chunks, args.fasta,
-    genome_dict, badstrandGTF, args.genome, args.isoforms, args.aligner_choice,
-    gmap_index=args.gmap_index, sense=args.sense, annotation=args.annotation)
+    genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
+    gmap_index=args.gmap_index, sense=args.sense, annotation=args.refGTF)
     
     orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
                          corrFASTA, corrORF)
@@ -59,7 +59,7 @@ def run(args):
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
         junctions_by_chr, junctions_by_gene, start_ends_by_gene = \
-            reference_parser(args.annotation,args.dir,args.output, list(genome_dict.keys()),
+            reference_parser(args.refGTF,args.dir,args.output, list(genome_dict.keys()),
                              args.genename, args.isoAnnotLite)
 
     ## parse query isoforms
@@ -80,7 +80,7 @@ def run(args):
     isoform_hits_name = initialize_isoform_hits(args.dir, args.output,args.isoform_hits)
     star_out, star_index, SJcovNames,\
         SJcovInfo, fields_junc_cur = SJ_coverage(args.short_reads, args.coverage, 
-                                                 args.genome, args.dir, args.cpus)
+                                                 args.refFasta, args.dir, args.cpus)
     ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam, args.short_reads, star_out,
                                            star_index, corrGTF, args.ratio_TSS_metric)
     cage_peak_obj = read_CAGE_peaks(args.CAGE_peak)
@@ -119,7 +119,7 @@ def run(args):
         ## RT-switching computation
         print("**** RT-switching computation....", file=sys.stderr)
         isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
-                                                        args.genome,genome_dict)
+                                                        args.refFasta,genome_dict)
         print(f"After RTS classificaion: {len(isoforms_info)}")
 
     

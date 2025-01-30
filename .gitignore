@@ -128,8 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 example/Homo_sapiens.GRCh38.dna.chromosome.13.fa
-example/SQANTI3_output/STAR_index/SA
-example/SQANTI3_output/STAR_index/SAindex
+example/SQANTI3_QC_output/STAR_index/SA
+example/SQANTI3_QC_output/STAR_index/SAindex
 
 # PyCharm
 .idea/
