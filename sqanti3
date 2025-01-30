@@ -16,9 +16,10 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",add_help=False)
+    parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
+                                     add_help=False)
     parser.add_argument("command", choices=["all", "qc", "filter", "rescue", "init"],
-                        help="Action to perform")
+                        help="Action to perform",nargs="?")
     parser.add_argument("-c","--config", type=str, default="sqanti3_config.yaml",
                         help="Path to the configuration file (default:  %(default)s ).")
     parser.add_argument("--dry-run", action="store_true",
@@ -29,11 +30,15 @@ def main():
                         help="Show the help message and exit.")
 
     args = parser.parse_args()
-
-    config_path = Path(args.config)
-
+    if not args.command:
+        if args.help:
+            parser.print_help()
+            sys.exit(0)
+        else:
+            parser.error("Please, use a command or the help message.")
+            
     if args.help:
-        if args.command is None or args.command == "init":
+        if args.command == "init":
             parser.print_help()
             sys.exit(0)
         elif args.command == "all":
@@ -44,6 +49,7 @@ def main():
             print(f"Run the {args.command.upper()} module.")
             run_step_help(args.command)
             sys.exit(0)
+    config_path = Path(args.config)
 
     if args.command == "init":
         create_config(config_path, args.arguments)
