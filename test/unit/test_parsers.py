@@ -128,11 +128,15 @@ def test_reference_parser_correctStartEnds(reference_parser_input):
 def input_file():
     return os.path.join(main_path, "test/test_data/test_isoforms.genePred")
 
+def count_lines(filename):
+    with open(filename) as f:
+        return sum(1 for line in f)
+
 def test_isoforms_parser(input_file):
     isoforms_by_chr = isoforms_parser(input_file)
     assert len(isoforms_by_chr.keys()) == 1
-    assert len(isoforms_by_chr["chr22"]) == 37
-    
+    assert len(isoforms_by_chr["chr22"]) == count_lines(input_file)
+
 def test_isoforms_parser_sorted(input_file):
     isoforms_by_chr = isoforms_parser(input_file)
     # Check if the isoforms are sorted by txStart

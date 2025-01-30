@@ -60,7 +60,7 @@ def qc_argparse():
     apm.add_argument('-e','--expression', type=valid_matrix, help='Expression matrix (supported: Kallisto tsv)')
     apm.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apm.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
-    apm.add_argument('-fl', '--fl_count',type=valid_PacBio_abund, help='Full-length PacBio abundance file')
+    apm.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')
     apm.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
     apm.add_argument('--gff3' ,type=valid_gff3, help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')

@@ -1,35 +1,35 @@
 STAR version=2.7.11b
 STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
 ##### Command Line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/ --genomeFastaFiles /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta --outTmpDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir example/SQANTI3_QC_output/STAR_index/ --genomeFastaFiles example/GRCh38.p13_chr22.fasta --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ##### Initial USER parameters from Command Line:
-outTmpDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+outTmpDir                         example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ###### All USER parameters from Command Line:
 runThreadN                    4     ~RE-DEFINED
 runMode                       genomeGenerate        ~RE-DEFINED
-genomeDir                     /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
-genomeFastaFiles              /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
-outTmpDir                     /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/     ~RE-DEFINED
+genomeDir                     example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
+genomeFastaFiles              example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+outTmpDir                     example/SQANTI3_QC_output/STAR_index//_STARtmp/     ~RE-DEFINED
 ##### Finished reading parameters from all sources
 
 ##### Final user re-defined parameters-----------------:
 runMode                           genomeGenerate   
 runThreadN                        4
-genomeDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/
-genomeFastaFiles                  /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta   
-outTmpDir                         /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+genomeDir                         example/SQANTI3_QC_output/STAR_index/
+genomeFastaFiles                  example/GRCh38.p13_chr22.fasta   
+outTmpDir                         example/SQANTI3_QC_output/STAR_index//_STARtmp/
 
 -------------------------------
 ##### Final effective command line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles /home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta      --outTmpDir /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index//_STARtmp/
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles example/GRCh38.p13_chr22.fasta      --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ----------------------------------------
 
 Number of fastq files for each mate = 1
 ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
 Finished loading and checking parameters
---genomeDir directory exists and will be overwritten: /home/pabloati/Programs/sqanti3/example/SQANTI3_QC_output/STAR_index/
-Dec 10 17:02:16 ... starting to generate Genome files
-/home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
+--genomeDir directory exists and will be overwritten: example/SQANTI3_QC_output/STAR_index/
+Jan 29 15:06:56 ... starting to generate Genome files
+example/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
 Chromosome sequence lengths: 
 chr22	50818468
 Genome sequence total length = 50818468
@@ -38,6 +38,25 @@ Genome size with padding = 50855936
 Estimated genome size with padding and SJs: total=genome+SJ=251855936 = 50855936 + 201000000
 GstrandBit=32
 Number of SA indices: 78319554
-Dec 10 17:02:17 ... starting to sort Suffix Array. This may take a long time...
+Jan 29 15:06:57 ... starting to sort Suffix Array. This may take a long time...
 Number of chunks: 4;   chunks size limit: 208852144 bytes
-Dec 10 17:02:17 ... sorting Suffix Array chunks and saving them to disk...
+Jan 29 15:06:57 ... sorting Suffix Array chunks and saving them to disk...
+Writing 208178008 bytes into example/SQANTI3_QC_output/STAR_index//SA_0 ; empty space on disk = 140059475968 bytes ... done
+Writing 206604960 bytes into example/SQANTI3_QC_output/STAR_index//SA_1 ; empty space on disk = 139851251712 bytes ... done
+Writing 203895040 bytes into example/SQANTI3_QC_output/STAR_index//SA_2 ; empty space on disk = 139644608512 bytes ... done
+Writing 7878424 bytes into example/SQANTI3_QC_output/STAR_index//SA_3 ; empty space on disk = 139440717824 bytes ... done
+Jan 29 15:07:33 ... loading chunks from disk, packing SA...
+Jan 29 15:07:34 ... finished generating suffix array
+Jan 29 15:07:34 ... generating Suffix Array index
+Jan 29 15:07:48 ... completed Suffix Array index
+Jan 29 15:07:48 ... writing Genome to disk ...
+Writing 50855936 bytes into example/SQANTI3_QC_output/STAR_index//Genome ; empty space on disk = 140059385856 bytes ... done
+SA size in bytes: 323068164
+Jan 29 15:07:48 ... writing Suffix Array to disk ...
+Writing 323068164 bytes into example/SQANTI3_QC_output/STAR_index//SA ; empty space on disk = 140008529920 bytes ... done
+Jan 29 15:07:48 ... writing SAindex to disk
+Writing 8 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 139685457920 bytes ... done
+Writing 120 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 139685457920 bytes ... done
+Writing 1565873491 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 139685453824 bytes ... done
+Jan 29 15:07:49 ..... finished successfully
+DONE: Genome generation, EXITING
