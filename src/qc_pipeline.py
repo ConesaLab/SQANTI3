@@ -119,7 +119,7 @@ def run(args):
         ## RT-switching computation
         qc_logger.info("RT-switching computation")
         isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
-                                                        args.genome,genome_dict)
+                                                        args.refFasta,genome_dict)
         qc_logger.info(f"After RTS classificaion: {len(isoforms_info)}")
 
     

@@ -38,7 +38,7 @@ def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
             qc_logger.info("**** Running STAR for calculating Short-Read Coverage.")
             mapping_out, star_index = star(genome,short_reads,outdir,cpus)
         else:
-            qc_logger.warning("No short-reads or coverage provided. Skipping short-read coverage calculation.")
+            qc_logger.info("No short-reads or coverage provided. Skipping short-read coverage calculation.")
             return mapping_out, star_index, SJcovInfo, SJcovNames, fields_junc_cur
     else:
         mapping_out = coverage_file
@@ -72,7 +72,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             bams = get_files_from_dir(star_out,"SJ.out.tab")
             ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, ratio_TSS_metric)
         else:
-            qc_logger.warning('**** TSS ratio will not be calculated since SR information was not provided')
+            qc_logger.info('TSS ratio will not be calculated since SR information was not provided')
     return ratio_TSS_dict
 
 

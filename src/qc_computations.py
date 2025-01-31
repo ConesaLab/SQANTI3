@@ -120,7 +120,7 @@ def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFAST
         else:
             exp_dict = None
             gene_exp_dict = None
-            qc_logger.error("Isoforms expression files not provided.")
+            qc_logger.info("Isoforms expression files not provided.")
     # Add expression information to isoforms_info
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()

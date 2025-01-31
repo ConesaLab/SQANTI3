@@ -6,6 +6,7 @@ from .qc_classes import CAGEPeak, PolyAPeak
 from .classification_utils import SJ_coverage, TSS_ratio_calculation
 from .utilities.cupcake.sequence.BED import LazyBEDPointReader
 from .logging_config import qc_logger
+
 def initialize_isoform_hits(outdir, prefix, isoform_hits):
     if isoform_hits:
         isoform_hits_name = os.path.join(outdir, prefix + '_isoform_hits')
@@ -14,7 +15,6 @@ def initialize_isoform_hits(outdir, prefix, isoform_hits):
             tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
         return isoform_hits_name
     return None
-
 
 def read_CAGE_peaks(CAGE_peak):
     if CAGE_peak:

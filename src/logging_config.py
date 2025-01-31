@@ -61,7 +61,7 @@ MY_LOGGING_CONFIG = {
         'error_qc_handler': {
             'class': 'logging.FileHandler',
             'level': 'WARNING',
-            'filename': '%(output_dir)s',
+            'filename': 'qc_module.err',
             'formatter': 'error_formatter'
         }
     },
