@@ -16,7 +16,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    sqanti_art() # Print the ASCII art  
+    main_logger.info(sqanti_art()) # Print the ASCII art  
 
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
                                      add_help=False)
@@ -30,8 +30,11 @@ def main():
                         help="Non-default arguments to pass to the SQANTI3 modules.")
     parser.add_argument("-h","--help", action="store_true",
                         help="Show the help message and exit.")
+    parser.add_argument("-l","--log_level", default="INFO",choices=["ERROR","WARNING","INFO","DEBUG"],
+                        help="Set the logging level %(default)s")
 
     args = parser.parse_args()
+    main_logger.setLevel(args.log_level)
     if not args.command:
         if args.help:
             parser.print_help()

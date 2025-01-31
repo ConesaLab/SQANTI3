@@ -1,9 +1,10 @@
+import logging
 import os
 import sys
 import shutil
 import subprocess
 
-from .logging_config import qc_logger
+from .logging_config import MY_LOGGING_CONFIG, qc_logger
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
@@ -107,7 +108,7 @@ def GTF_to_genePred(corrGTF):
     return queryFile
    
 
-def run_command(cmd, description="command execution"):
+def run_command(cmd, out_file='log/program.log',description="command execution"):
     """
     Executes a shell command and handles errors gracefully.
     
@@ -116,9 +117,27 @@ def run_command(cmd, description="command execution"):
     :raises SystemExit: Exits the script if the command fails.
     """
     try:
-        subprocess.check_call(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-        qc_logger.error(f"Something went wrong during {description}: {cmd}")
-        qc_logger.error(f"Details: {e}")
-        sys.exit(1)
+        qc_logger.debug(out_file)
+        MY_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
+        logging.config.dictConfig(MY_LOGGING_CONFIG)
+        process_logger = logging.getLogger('process_logger')
 
+        result = subprocess.run(cmd, shell=True,capture_output=True,
+                                check=True,encoding="utf-8")
+        
+        qc_logger.debug(f"Process {cmd} had {result.returncode}")
+        qc_logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
+        process_logger.info(result.stdout)
+        if result.returncode !=0:
+            qc_logger.debug("EROOOOOOR")
+            raise BrokenPipeError(result.stderr)
+    except subprocess.CalledProcessError as e:
+        process_logger.error(f"Details: {e}")
+        process_logger.info(e.stdout)
+        process_logger.error(e.stderr)
+        qc_logger.error(f"Something went wrong during {description}")
+        qc_logger.error(f"For more inflo, check {out_file}")
+        sys.exit(1)
+    except BrokenPipeError as e:
+
+        sys.exit(1)

@@ -5,27 +5,24 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 # Modified by Pablo (pabloatienzalo@gmail.com)
 
-import os, sys
+import os
 import shutil
-
-
 # Import SQANTI3 modules
 from src.qc_argparse import qc_argparse, args_validation
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import args_validation
-from src.logging_config import qc_logger,qc_art
+from src.logging_config import qc_logger,qc_art,art_logger
 
 def main():
-    qc_art()
+    art_logger.info(qc_art())
     args = qc_argparse().parse_args()
     args = args_validation(args)
 
-
+    if not os.path.exists(os.path.join(args.dir,'log')):
+        os.makedirs(os.path.join(args.dir,'log'))
     # path and prefix for output files
-
-
     # Print out parameters so can be put into report PDF later
     args.doc = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
     qc_logger.info(f"Write arguments to {args.doc}...")

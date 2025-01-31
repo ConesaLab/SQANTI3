@@ -32,6 +32,9 @@ MY_LOGGING_CONFIG = {
         },
         'error_formatter': {
             'format': '%(levelname)s: %(message)s'
+        },
+        'process_formatter': {
+            'format': '%(levelname)s:\n%(message)s'
         }
     },
     'filters': {
@@ -63,6 +66,13 @@ MY_LOGGING_CONFIG = {
             'level': 'WARNING',
             'filename': 'qc_module.err',
             'formatter': 'error_formatter'
+        },
+        'process_handler': {
+            'class': 'logging.FileHandler',
+            'filename': 'none',
+            'mode': 'w',
+            'formatter': 'process_formatter',
+            'encoding': 'utf8'
         }
     },
     'loggers': {
@@ -72,16 +82,29 @@ MY_LOGGING_CONFIG = {
             'propagate': True
         },
         'qc_logger': {
-            'handlers': ['stream_handler', 'error_qc_handler'],
+            'handlers': ['stream_handler'], # TODO: Find a way to dinamically assing the file handler
+            'level': 'DEBUG',
+            #TODO: Set log level info as default but changeable from the wrapper
+            'propagate': True
+        },
+        'art_logger': {
+            'handlers': ['main_script_handler'],
             'level': 'INFO',
             'propagate': True
         },
+        'process_logger': {
+            'handlers': ['process_handler'],
+            'level': 'INFO',
+            'propagate': True
+        }
     }
 }
 
 logging.config.dictConfig(MY_LOGGING_CONFIG)
 main_logger = logging.getLogger('main_logger')
 qc_logger = logging.getLogger('qc_logger')
+art_logger = logging.getLogger('art_logger')
+
 def setup_logger(output_dir,module,config=MY_LOGGING_CONFIG):
     log_file= f'{output_dir}/log/{module}_module.err'
     config['handlers']['error_qc_handler']['filename']= log_file
@@ -98,7 +121,7 @@ def sqanti_art():
     ╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚══╝░░░╚═╝░░░╚═╝╚═════╝░
     Version {__version__}
     """
-    print(message)
+    return message
 
 def qc_art():
     message= f"""
@@ -111,7 +134,7 @@ def qc_art():
       ░░░╚═╝░░░░╚════╝░
     =====================
     """
-    print(message)
+    return message
 
 def filter_art():
     message= f"""
@@ -124,7 +147,7 @@ def filter_art():
       ╚═╝░░░░░╚═╝╚══════╝░░░╚═╝░░░╚══════╝╚═╝░░╚═╝
     ================================================
     """
-    print(message)
+    art_logger(message)
 
 def rescue_art():
     message= f"""
