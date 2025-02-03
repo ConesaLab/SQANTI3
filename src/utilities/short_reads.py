@@ -103,15 +103,12 @@ def kallisto_quantification(files,index,cpus, output_dir):
         if not os.path.exists(out_prefix):
             os.makedirs(out_prefix)
         qc_logger.info(f'** Running Kallisto quantification for {sample_name} sample')
-        try:
-            subprocess.run(['kallisto quant -i {} -o {} -b 100 -t {} {} {}'.format(index, out_prefix, str(cpus), r1, r2)],
-                           shell=True, check = True)
-        except subprocess.CalledProcessError:
-            if os.path.exists(abundance_file):
-               os.remove(abundance_file) 
+        cmd = f'kallisto quant -i {index} -o {out_prefix} -b 100 -t {cpus} {r1} {r2}'
+        run_command(cmd,f"{output_dir}/logs/kallisto_{sample_name}.log","Kallisto quantification")
+                           
     else:
         qc_logger.info(f"Kallisto quantification output {abundance_file} found. Using it.")
-    return(abundance_file)
+    return abundance_file
 
 
 def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
@@ -122,8 +119,8 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
         os.makedirs(kallisto_output)
     if not os.path.exists(kallisto_index):
         qc_logger.info(f'Running kallisto index {kallisto_index} using as reference {corrected_fasta}')
-        subprocess.run(['kallisto index -i {} {} --make-unique'.format(kallisto_index, corrected_fasta)],
-                        shell=True, check = True)
+        cmd = f"kallito index -i {kallisto_index} {corrected_fasta} --make-unique"
+        run_command(cmd,f"{output_dir}/logs/kallito_index.log")
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')
