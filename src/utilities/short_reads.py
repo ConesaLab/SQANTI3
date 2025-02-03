@@ -45,7 +45,8 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus):
                 qc_logger.info(f'Mapping for {sample_name}: in progress.')
                 cmd = star_cmd(cpus,index_dir,files,sample_prefix,compressed) 
                 qc_logger.debug(cmd)
-                run_command(cmd,f"{output_dir}/log/STAR_mapping_{sample_name}.log",'STAR mapping')
+                logFile = f"{output_dir}/logs/STAR_mapping_{sample_name}.log"
+                run_command(cmd,logFile,f'STAR mapping {sample_name}')
                 qc_logger.info(f'Mapping for {sample_name}: done.')
             else:
                 qc_logger.info(f'Mapping for {sample_name}: already completed.')
@@ -82,7 +83,8 @@ def star(genome, SR_fofn, output_dir, cpus):
         if not os.path.exists(index_dir_o):
             qc_logger.info('Running indexing...')
             cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
-            run_command(cmd,os.path.join(output_dir,'log','STAR_index.log'))
+            logFile = f"{output_dir}/logs/STAR_idex.log"
+            run_command(cmd,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')
     else:
         qc_logger.info('Index identified. Proceeding to mapping.')

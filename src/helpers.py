@@ -157,9 +157,10 @@ def sequence_correction(
             if os.path.exists(corrSAM):
                 qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
             else:
+                logFile = f"{os.path.dirname(corrSAM)}/logs/{aligner_choice}_alignment.log"
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                                           outdir,corrSAM, n_cpu, gmap_index, sense)
-                run_command(cmd, description="aligning reads")
+                run_command(cmd, logFile,description="aligning reads")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
@@ -167,7 +168,7 @@ def sequence_correction(
             convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
             cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
             # Try condition to better handle the error. Also, the exit code is corrected
-            run_command(cmd, description="converting SAM to GTF")
+            run_command(cmd,f"{outdir}/logs/sam2gtf.log", description="converting SAM to GTF")
         else:
             qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
             filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
@@ -176,7 +177,9 @@ def sequence_correction(
                 qc_logger.info("Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).")
 
             # GTF to FASTA
-            subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
+            cmd = f"{GFFREAD_PROG} {corrGTF} -g {genome} -w {corrFASTA}"
+            logFile = f"{outdir}/logs/gtf2fasta.log"
+            run_command(cmd,logFile,description="Converting corrected GTF to FASTA")
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """

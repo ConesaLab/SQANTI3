@@ -92,19 +92,22 @@ def run_gmst(corrFASTA,orf_input,gmst_pre):
     else:
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
     cmd = f"cd {os.path.dirname(gmst_pre)}; {cmd}"
-    run_command(cmd, description="GMST ORF prediction")
+    qc_logger.debug(f"GMST: {gmst_pre}")
+    logFile = f"{os.path.dirname(gmst_pre)}/GMST_python.log"
+    run_command(cmd,logFile,description="GMST ORF prediction")
 
 def GTF_to_genePred(corrGTF):
     """
     Converts a GTF file to a genePred file.
     """
     queryFile = os.path.splitext(corrGTF)[0] +".genePred"
+    logFile = f"{os.path.dirname(corrGTF)}/logs/GTF_to_genePred.log"
     if os.path.exists(queryFile):
         qc_logger.info(f"{queryFile} already exists. Using it.")
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
-        run_command(cmd, "GTF to genePred conversion")
+        run_command(cmd,logFile, "GTF to genePred conversion")
     return queryFile
    
 

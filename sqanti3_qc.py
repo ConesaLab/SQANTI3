@@ -20,8 +20,8 @@ def main():
     args = qc_argparse().parse_args()
     args = args_validation(args)
 
-    if not os.path.exists(os.path.join(args.dir,'log')):
-        os.makedirs(os.path.join(args.dir,'log'))
+    if not os.path.exists(os.path.join(args.dir,'logs')):
+        os.makedirs(os.path.join(args.dir,'logs'))
     # path and prefix for output files
     # Print out parameters so can be put into report PDF later
     args.doc = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
