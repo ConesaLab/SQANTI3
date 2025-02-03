@@ -107,6 +107,7 @@ def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFAST
             qc_logger.info("**** Running Kallisto to calculate isoform expressions. ")
             expression_files = kallisto(corrFASTA, short_reads, outdir, cpus)
             exp_dict = expression_parser(expression_files)
+            qc_logger.debug(exp_dict)
             gene_exp_dict = {}
             for iso in isoforms_info:
                 if iso not in exp_dict:
@@ -114,8 +115,11 @@ def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFAST
                     qc_logger.warning(f"Isoform {iso} not found in expression matrix. Assigning TPM of 0.")
                 gene = isoforms_info[iso].geneName()
                 if gene not in gene_exp_dict:
-                    gene_exp_dict[gene] = exp_dict[iso], 
+                    gene_exp_dict[gene] = exp_dict[iso]
                 else:
+                    qc_logger.debug(f"Gene expression: {gene_exp_dict[gene]}")
+                    qc_logger.debug(f"Expression dict: {exp_dict[iso]}")
+                    qc_logger.debug(f"Isoform: {iso}")
                     gene_exp_dict[gene] = gene_exp_dict[gene]+exp_dict[iso]
         else:
             exp_dict = None
