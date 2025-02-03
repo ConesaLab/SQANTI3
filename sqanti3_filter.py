@@ -29,7 +29,7 @@ from Bio import SeqIO
 from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
+utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities/src")
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_REPORT = 'report_filter/SQANTI3_filter_report.R'
 RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
