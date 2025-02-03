@@ -98,8 +98,6 @@ def run(args):
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
     print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
-    ## Rename novel genes
-    write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
     
     # This steps are avoided in the parallel implementation
     # They are run instead after combining the chunks
@@ -150,6 +148,8 @@ def run(args):
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
         
     else:
+        write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
+
         # Write final classification
         write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
 
