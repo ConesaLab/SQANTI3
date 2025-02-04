@@ -13,6 +13,7 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.5) (30/01/2025) is **version 5.3.5**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.4) (23/01/2025) is **version 5.4**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For informacion about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
