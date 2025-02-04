@@ -4,19 +4,19 @@ import subprocess
 import glob
 from collections import defaultdict
 from csv import DictReader
-from bx.intervals.intersection import Interval,IntervalTree
+from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
 import numpy as np
 
-from .utilities.cupcake.sequence.STAR import STARJunctionReader
-from .utilities.cupcake.io.GFF import collapseGFFReader
+from src.utilities.cupcake.sequence.STAR import STARJunctionReader
+from src.utilities.cupcake.io.GFF import collapseGFFReader
 
-from .config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
-from .qc_classes import genePredReader, myQueryProteins
-from .utils import mergeDict, flatten
-from .logging_config import qc_logger
-#from .commands import GTF2GENEPRED_PROG
+from src.config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
+from src.qc_classes import genePredReader, myQueryProteins
+from src.utils import mergeDict, flatten
+from src.module_logging import qc_logger
+#from src.commands import GTF2GENEPRED_PROG
 
 def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
     """
@@ -38,7 +38,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         - junctions_by_gene (dict): Dictionary of junctions by gene.
         - known_5_3_by_gene (dict): Dictionary of known 5' and 3' ends by gene. 
     """
-    from .commands import GTF2GENEPRED_PROG
+    from src.commands import GTF2GENEPRED_PROG
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
     qc_logger.info("**** Parsing Reference Transcriptome....")

@@ -4,17 +4,17 @@ import yaml, os
 from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
 from src.rescue_argparse import rescue_argparse
-from src.logging_config import main_logger
+from src.logging_config import main_logger,save_module_logger_info
 
 def sqanti_path(filename):
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename)
+    return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename))
 
-def create_config(config_path,options):
+def create_config(config_path,options,level):
     """
     Create a YAML configuration file. 
     It uses the default values from the parsers, unless the user has specified any of them.
     """
-    main_args = get_shared_args()
+    main_args = get_shared_args(level)
     user_options = None
     config = {
         "main" : main_args,
@@ -32,13 +32,14 @@ def create_config(config_path,options):
         yaml.dump(config, f,sort_keys=False)
     main_logger.info(f"Config file created at {config_path}")
 
-def get_shared_args():
+def get_shared_args(level):
     return {
         "refGTF": "",
         "refFasta": "",
         "cpus": 4,
         "dir": "sqanti3_results",
-        "output": "isoforms"
+        "output": "isoforms",
+        "log_level": level
     }
 
 def get_user_options(options, sqanti_options):
@@ -169,7 +170,6 @@ def run_step(step,config,dry_run, user_options):
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
         "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} {{options}}"
     }
-
     main_opt = config.get("main", {})
     if step == "qc":
         options = main_opt | config[step].get("options", "")
@@ -194,6 +194,8 @@ def run_step(step,config,dry_run, user_options):
     if dry_run:
         main_logger.info(f"{cmd}")
     else:
+        main_logger.debug(main_opt['log_level'])
+        save_module_logger_info(f"{main_opt['dir']}/logs",step,main_opt['log_level'],sqanti_path('src/data/module_logger_config.json'))
         run_sqanti_module(cmd)
 
 def run_sqanti_module(cmd):

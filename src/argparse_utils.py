@@ -1,8 +1,9 @@
 import os, sys
 import subprocess
 
-from .commands import GFFREAD_PROG
-from .logging_config import qc_logger
+from src.commands import GFFREAD_PROG
+from src.module_logging import qc_logger
+
 def valid_file(filename):
     if not os.path.isfile(filename):
         qc_logger.error(f"File {filename} not found. Abort!")
@@ -60,7 +61,10 @@ def valid_dir(dirname):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
     else:
-        qc_logger.warning(f"output directory {dirname} already exists. Overwriting!")
+        contents = os.listdir(dirname)
+        non_log_items = [item for item in contents if item != "logs" or not os.path.isdir(os.path.join(dirname, item))]
+        if non_log_items:
+            qc_logger.warning(f"output directory {dirname} already exists. Overwriting!")
     return dirname
 
 # TODO: Add specific validation for Kallisto output
@@ -100,6 +104,7 @@ def valid_sr(filename):
 
 def args_validation(args):
     # Required arguments
+    valid_file(args.isoforms)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
     elif args.isoforms.endswith('.fasta') or args.isoforms.endswith('.fastq'):
@@ -107,6 +112,15 @@ def args_validation(args):
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
+    
+    valid_gtf(args.refGTF)
+    valid_fasta(args.refFasta)
+
+    # Customization validation
+    if args.short_reads is not None:
+        valid_file(args.short_reads)
+    if args.SR_bam is not None:
+        valid_sr(args.SR_bam)
 
     # Mappers checks
     if args.fasta:
@@ -124,6 +138,30 @@ def args_validation(args):
         args.isoforms = rename_isoform_seqids(args.isoforms, args.force_id_ignore)
         qc_logger.info(f"Cleaned up isoform fasta file written to: {args.isoforms}")
     
+    # ORF prediction checks
+    if args.orf_input is not None:
+        valid_fasta(args.orf_input)
+
+    # Functional annotation checks
+    if args.CAGE_peak is not None:
+        valid_bed(args.CAGE_peak)
+    if args.polyA_motif_list is not None:
+        valid_file(args.polyA_motif_list)
+    if args.polyA_peak is not None:
+        valid_bed(args.polyA_peak)
+    if args.phyloP_bed is not None:
+        valid_bed(args.phyloP_bed)
+
+    # Output options checks
+    valid_dir(args.dir)
+
+    # Optional arguments
+    if args.expression is not None:
+        valid_matrix(args.expression)
+    if args.gff3 is not None:
+        valid_gff3(args.gff3)
+
+
     # Fusion isoforms checks
     if args.is_fusion:
         if args.orf_input is None:

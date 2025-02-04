@@ -1,14 +1,14 @@
 from csv import DictReader, DictWriter
 import os
 import pickle
-import sys
 
-from .commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, run_command,
-    utilitiesPath
+
+from src.commands import (
+    RSCRIPTPATH, RSCRIPT_REPORT, run_command
 )
+from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
-from src.logging_config import qc_logger
+from src.module_logging import qc_logger
 
 def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, fields_class_cur):
     if min_ref_len > 0 and not is_fusion:

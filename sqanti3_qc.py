@@ -8,18 +8,20 @@
 import os
 import shutil
 # Import SQANTI3 modules
-from src.qc_argparse import qc_argparse, args_validation
+from src.qc_argparse import qc_argparse
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import args_validation
-from src.logging_config import qc_logger,qc_art,art_logger
+from src.logging_config import qc_art,art_logger
+from src.module_logging import qc_logger
 
 def main():
+
     art_logger.info(qc_art())
     args = qc_argparse().parse_args()
     args = args_validation(args)
-
+    qc_logger.debug("hello")
     if not os.path.exists(os.path.join(args.dir,'logs')):
         os.makedirs(os.path.join(args.dir,'logs'))
     # path and prefix for output files

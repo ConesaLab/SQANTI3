@@ -4,9 +4,10 @@ import sys
 import shutil
 import subprocess
 
-from .logging_config import MY_LOGGING_CONFIG, qc_logger
+from src.module_logging import qc_logger
+from src.logging_config import MAIN_LOGGING_CONFIG
+from src.config import utilitiesPath
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
@@ -121,8 +122,8 @@ def run_command(cmd, out_file='log/program.log',description="command execution")
     """
     try:
         qc_logger.debug(out_file)
-        MY_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
-        logging.config.dictConfig(MY_LOGGING_CONFIG)
+        MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
+        logging.config.dictConfig(MAIN_LOGGING_CONFIG)
         process_logger = logging.getLogger('process_logger')
 
         result = subprocess.run(cmd, shell=True,capture_output=True,

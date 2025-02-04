@@ -10,14 +10,14 @@ from bx.intervals import Interval #type: ignore
 
 from src.utils import find_closest_in_list
 
-from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
-from .utilities.cupcake.sequence.err_correct_w_genome import err_correct
-from .utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
+from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
+from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
-from .config import seqid_rex1, seqid_rex2, seqid_fusion
-from .commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
-from .parsers import parse_GMST, parse_corrORF
-from .logging_config import qc_logger
+from src.config import seqid_rex1, seqid_rex2, seqid_fusion
+from src.commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
+from src.parsers import parse_GMST, parse_corrORF
+from src.module_logging import qc_logger
 
 ### Environment manipulation functions ###
 def rename_isoform_seqids(input_fasta, force_id_ignore=False):

@@ -5,7 +5,7 @@ import pybedtools
 import re
 
 from src.commands import run_command
-from src.logging_config import qc_logger
+from src.module_logging import qc_logger
 
 try:
     from BCBio import GFF as BCBio_GFF
@@ -75,19 +75,19 @@ def star(genome, SR_fofn, output_dir, cpus):
     index_dir_tmp = index_dir + '/_STARtmp/'
     index_dir_o = index_dir + 'SAindex' 
     mapping_dir = output_dir + '/STAR_mapping/'
-    qc_logger.info('** Running STAR...')
     if not os.path.exists(mapping_dir):
         os.makedirs(mapping_dir)
     if not os.path.exists(index_dir):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
-            qc_logger.info('Running indexing...')
+            qc_logger.info('**Running indexing.')
             cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             logFile = f"{output_dir}/logs/STAR_idex.log"
             run_command(cmd,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')
     else:
-        qc_logger.info('Index identified. Proceeding to mapping.')
+        qc_logger.info('Index identified.')
+    qc_logger.info('** Running mapping.')
     star_mapping(index_dir, SR_fofn, output_dir, cpus)
     return(mapping_dir, index_dir)
 
@@ -106,7 +106,8 @@ def kallisto_quantification(files,index,cpus, output_dir):
             os.makedirs(out_prefix)
         qc_logger.info(f'** Running Kallisto quantification for {sample_name} sample')
         cmd = f'kallisto quant -i {index} -o {out_prefix} -b 100 -t {cpus} {r1} {r2}'
-        run_command(cmd,f"{output_dir}/logs/kallisto_{sample_name}.log","Kallisto quantification")
+        logFile=os.path.normpath(os.path.join(output_dir,"..","logs",f"kallisto_{sample_name}.log"))
+        run_command(cmd,logFile,"Kallisto quantification")
                            
     else:
         qc_logger.info(f"Kallisto quantification output {abundance_file} found. Using it.")
@@ -121,8 +122,8 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
         os.makedirs(kallisto_output)
     if not os.path.exists(kallisto_index):
         qc_logger.info(f'Running kallisto index {kallisto_index} using as reference {corrected_fasta}')
-        cmd = f"kallito index -i {kallisto_index} {corrected_fasta} --make-unique"
-        run_command(cmd,f"{output_dir}/logs/kallito_index.log")
+        cmd = f"kallisto index -i {kallisto_index} {corrected_fasta} --make-unique"
+        run_command(cmd,f"{output_dir}/logs/kallisto_index.log")
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')

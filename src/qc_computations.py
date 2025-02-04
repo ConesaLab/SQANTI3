@@ -7,7 +7,7 @@ from src.utilities.rt_switching import rts
 from src.parsers import FLcount_parser, expression_parser
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
-from src.logging_config import qc_logger
+from src.module_logging import qc_logger
 
 def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """

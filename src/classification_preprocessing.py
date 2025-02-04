@@ -2,16 +2,16 @@ import os
 import csv
 import sys
 
-from .utilities.cupcake.sequence.BED import LazyBEDPointReader
-from .utilities.short_reads import (
+from src.utilities.cupcake.sequence.BED import LazyBEDPointReader
+from src.utilities.short_reads import (
     get_TSS_bed, get_bam_header, get_ratio_TSS, star
 )
 
-from .parsers import STARcov_parser
-from .qc_classes import CAGEPeak, PolyAPeak
-from .config import FIELDS_JUNC
-from .utils import get_files_from_dir
-from .logging_config import qc_logger
+from src.parsers import STARcov_parser
+from src.qc_classes import CAGEPeak, PolyAPeak
+from src.config import FIELDS_JUNC
+from src.utils import get_files_from_dir
+from src.module_logging import qc_logger
 
 def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
     """

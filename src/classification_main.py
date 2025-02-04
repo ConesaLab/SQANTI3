@@ -1,15 +1,15 @@
 import sys
 from csv import DictWriter
 
-from .classification_steps import (
+from src.classification_steps import (
     assign_genomic_coordinates, classify_isoform, 
     detect_nmd, fill_orf_info, find_polya_motif_info,
     process_cage_peak_info, process_polya_peak_info,
     write_junction_info
 ) # type: ignore
-from .utils import alphanum_key
-from .config import  FIELDS_CLASS
-from .logging_config import qc_logger
+from src.utils import alphanum_key
+from src.config import  FIELDS_CLASS
+from src.module_logging import qc_logger
 
 
 def isoform_classification_pipeline(
