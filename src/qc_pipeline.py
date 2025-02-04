@@ -51,7 +51,7 @@ def run(args):
     sequence_correction(
     args.dir, args.output, args.cpus, args.chunks, args.fasta,
     genome_dict, badstrandGTF, args.genome, args.isoforms, args.aligner_choice,
-    gmap_index=args.gmap_index, sense=args.sense, annotation=args.annotation)
+    gmap_index=args.gmap_index, annotation=args.annotation)
     
     orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
                          corrFASTA, corrORF)

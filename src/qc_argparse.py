@@ -25,7 +25,6 @@ def qc_argparse():
     #TODO: set a default aligner
     apa.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2', help="Select your aligner of choice: minimap2, deSALT, gmap, uLTRA (default: %(default)s)")
     apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
-    apa.add_argument('-z', '--sense', action='store_true', help='Option that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences')
     apa.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='Set of splice sites to be considered as canonical, in a comma separated list. (default: %(default)s)')
 
     # ORF prediction

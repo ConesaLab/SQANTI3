@@ -136,7 +136,6 @@ def sequence_correction(
     isoforms: str,
     aligner_choice: str,
     gmap_index: Optional[str] = None,
-    sense: Optional[bool] = False,
     annotation: Optional[str] = None
     ) -> None:
     """
@@ -157,7 +156,7 @@ def sequence_correction(
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                                          outdir,corrSAM, n_cpu, gmap_index, sense)
+                                          outdir,corrSAM, n_cpu, gmap_index)
                 run_command(cmd, description="aligning reads")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
