@@ -66,9 +66,15 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
 
 def cleanup(outputClassPath, outputJuncPath):
     print("Removing temporary files....", file=sys.stderr)
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
-
+    try:
+        os.remove(outputClassPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(outputJuncPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
     print("Saving isoforms_info object to file....", file=sys.stderr)
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
