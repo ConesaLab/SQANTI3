@@ -8,8 +8,10 @@ with open('src/data/module_logger_config.json','r') as f:
 
 # Create log directory and reinitialize the log file
 os.makedirs(os.path.dirname(MODULE_LOGGING_CONFIG['handlers']['module_file_handler']['filename']), exist_ok=True)
-os.remove(MODULE_LOGGING_CONFIG['handlers']['module_file_handler']['filename'])
-
+try:
+    os.remove(MODULE_LOGGING_CONFIG['handlers']['module_file_handler']['filename'])
+except FileNotFoundError:
+    pass
 # Create the loggers
 logging.config.dictConfig(MODULE_LOGGING_CONFIG)
 qc_logger = logging.getLogger('module_logger')

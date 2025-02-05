@@ -2,7 +2,6 @@
 
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
-from src.config import __version__
 
 """
 New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
@@ -23,7 +22,7 @@ bad quality transcripts.
 
 """
 
-import os, sys, argparse, subprocess
+import os, sys, subprocess
 import shutil
 from csv import DictReader, DictWriter
 from Bio import SeqIO
@@ -32,6 +31,9 @@ from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.filter_argparse import filter_argparse
+from src.module_logging import filter_logger
+from src.config import __version__
+from src.logging_config import art_logger,filter_art
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 RSCRIPTPATH = shutil.which('Rscript')
@@ -41,7 +43,7 @@ RSCRIPT_RULES = 'filter/SQANTI3_rules_filter.R'
 default_json = utilitiesPath + "/filter/filter_default.json"
 
 if os.system(RSCRIPTPATH + " --version")!=0:
-    print("Rscript executable not found! Abort!", file=sys.stderr)
+    filter_logger.error("Rscript executable not found! Abort!")
     sys.exit(-1)
 
 def filter_files(args, ids_to_keep, inclusion_f):
@@ -57,7 +59,7 @@ def filter_files(args, ids_to_keep, inclusion_f):
             if r.id in ids_to_keep:
                 SeqIO.write(r, fout, fafq_type)
         fout.close()
-        print("Output written to: {0}".format(fout.name), file=sys.stdout)
+        filter_logger.info(f"Output written to: {fout.name}")
 
     # filter GTF
     if args.filter_gtf is not None:
@@ -66,7 +68,7 @@ def filter_files(args, ids_to_keep, inclusion_f):
             for r in collapseGFFReader(args.filter_gtf):
                 if r.seqid in ids_to_keep:
                     write_collapseGFF_format(f, r)
-            print("Output written to: {0}".format(f.name), file=sys.stdout)
+            filter_logger.info(f"Output written to: {f.name}")
 
     # filter SAM
     if args.filter_sam is not None:
@@ -77,7 +79,7 @@ def filter_files(args, ids_to_keep, inclusion_f):
             for r in reader:
                 if r.qID in ids_to_keep:
                     f.write(r.record_line + '\n')
-            print("Output written to: {0}".format(f.name), file=sys.stdout)
+            filter_logger.info(f"Output written to: {f.name}")
 
     # filter FAA
     if args.filter_faa is not None:
@@ -86,14 +88,14 @@ def filter_files(args, ids_to_keep, inclusion_f):
             for r in SeqIO.parse(open(args.filter_faa), 'fasta'):
                 if r.id in ids_to_keep:
                     f.write(">{0}\n{1}\n".format(r.description, r.seq))
-        print("Output written to: {0}".format(f.name), file=sys.stdout)
+        filter_logger.info(f"Output written to: {f.name}")
 
     # filter isoAnnot GFF3
     if args.isoAnnotGFF3 is not None:
         outputGFF3 = prefix + '.filtered.gff3'
         awk_cmd = """awk 'FNR==NR {{ a[$1]; next }} ($1 in a)' {l} {g} > {o}""".format(l=inclusion_f, g=args.isoAnnotGFF3, o=outputGFF3)
         subprocess.call(awk_cmd, shell=True)
-        print("Output written to: {0}".format(outputGFF3), file=sys.stdout)
+        filter_logger.info(f"Output written to: {outputGFF3}")
 
 def run_ML(args):
     cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -t {t} -j {j} -i {i} -f {f} \
@@ -106,23 +108,23 @@ def run_ML(args):
 
     if args.TP is not None:
         if not os.path.isfile(args.TP):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.TP), file=sys.stderr)
+            filter_logger.error(f"{args.TP} doesn't exist. Abort!")
             sys.exit(-1)
         else:
-            cmd = cmd + " -p {0}".format(args.TP)
+            cmd = cmd + f" -p {args.TP}"
     if args.TN is not None:
         if not os.path.isfile(args.TN):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.TN), file=sys.stderr)
+            filter_logger.error(f"{args.TN} doesn't exist. Abort!")
             sys.exit(-1)
         else:
-            cmd = cmd + " -n {0}".format(args.TN)
+            cmd = cmd + f" -n {args.TN}"
     if args.remove_columns is not None:
         if not os.path.isfile(args.remove_columns):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.remove_columns), file=sys.stderr)
+            filter_logger.error(f"{args.remove_columns} doesn't exist. Abort!")
             sys.exit(-1)
         else:
-            cmd = cmd + " -r {0}".format(args.remove_columns)
-    print(cmd)
+            cmd = cmd + f" -r {args.remove_columns}"
+    filter_logger.debug(cmd)
     subprocess.call(cmd, shell=True)
     if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
@@ -140,9 +142,9 @@ def run_rules(args):
 
     if args.json_filter is not None:
         if not os.path.isfile(args.json_filter):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
+            filter_logger.error(f"{args.json_filter} doesn't exist. Abort!")
             sys.exit(-1)
-    print(cmd)
+    filter_logger.debug(cmd)
     subprocess.call(cmd, shell=True)
     if not args.skip_report:
       subprocess.call(report_cmd, shell=True)
@@ -153,43 +155,46 @@ def run_rules(args):
 
 
 def main():
+    art_logger.info(filter_art())
     args = filter_argparse().parse_args()
 
-### Checking presence of files. Common arguments
+    ### Checking presence of files. Common arguments
     args.sqanti_class = os.path.abspath(args.sqanti_class)
     if not os.path.isfile(args.sqanti_class):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.sqanti_class), file=sys.stderr)
+        filter_logger.error(f"{args.sqanti_class} doesn't exist. Abort!")
         sys.exit(-1)
 
     if args.filter_isoforms is not None and not os.path.exists(args.filter_isoforms):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_isoforms), file=sys.stderr)
+        filter_logger.error(f"{args.filter_isoforms} doesn't exist. Abort!")
         sys.exit(-1)
 
     if args.filter_gtf is not None and not os.path.exists(args.filter_gtf):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_gtf), file=sys.stderr)
+        filter_logger.error(f"{args.filter_gtf} doesn't exist. Abort!")
         sys.exit(-1)
 
     if args.filter_sam is not None and not os.path.exists(args.filter_sam):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_sam), file=sys.stderr)
+        filter_logger.error(f"{args.filter_sam} doesn't exist. Abort!")
         sys.exit(-1)
 
     if args.filter_faa is not None and not os.path.exists(args.filter_faa):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.filter_faa), file=sys.stderr)
+        filter_logger.error(f"{args.filter_faa} doesn't exist. Abort!")
         sys.exit(-1)
-### Define output dir and output name in case it was not defined
+
+    ### Define output dir and output name in case it was not defined
     if args.dir is None:
-        args.dir=os.path.dirname(args.sqanti_class)
-        print("Output directory not defined. All the outputs will be stored at {0} directory".format(args.dir), file=sys.stderr)
+        args.dir = os.path.dirname(args.sqanti_class)
+        filter_logger.warning(f"Output directory not defined. All the outputs will be stored at {args.dir} directory")
     else:
         if not os.path.exists(args.dir):
             os.makedirs(args.dir)
+
     if args.output is None:
-        args.output=args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]
-        print("Output name not defined. All the outputs will have the prefix {0}".format(args.output), file=sys.stderr)
+        args.output = args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]
+        filter_logger.warning(f"Output name not defined. All the outputs will have the prefix {args.output}")
 
 ### Print out parameters so can be reproduced the same SQ run
     args.doc = os.path.join(os.path.abspath(args.dir), args.output+"_params.txt")
-    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    filter_logger.info(f"Write arguments to {args.doc}...")
     with open(args.doc, 'w') as f:
       f.write("Version\t" + __version__ + "\n")
       f.write("Mode\t" + args.subcommand + "\n")
@@ -218,23 +223,23 @@ def main():
 
 ### Checking presence of files for ML. Check arguments --> If ok run ML
 
-    print("\nRunning SQANTI3 filtering...\n", file=sys.stdout)
+    filter_logger.info("Running SQANTI3 filtering...")
 
     if args.subcommand == 'ml':
         if args.TP is not None and not os.path.exists(args.TP):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.TP), file=sys.stderr)
+            filter_logger.error(f"{args.TP} doesn't exist. Abort!")
             sys.exit(-1)
         if args.TN is not None and not os.path.exists(args.TN):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.TN), file=sys.stderr)
+            filter_logger.error(f"{args.TN} doesn't exist. Abort!")
             sys.exit(-1)
         if args.remove_columns is not None and not os.path.exists(args.remove_columns):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.remove_columns), file=sys.stderr)
+            filter_logger.error(f"{args.remove_columns} doesn't exist. Abort!")
             sys.exit(-1)
         if args.percent_training < 0 or args.percent_training > 1.:
-            print("ERROR: --percent_training must be between 0-1, instead given {0}! Abort!".format(args.percent_training), file=sys.stderr)
+            filter_logger.error(f"--percent_training must be between 0-1, instead given {args.percent_training}! Abort!")
             sys.exit(-1)
         if args.intrapriming < 25 or args.intrapriming > 100:
-            print("ERROR: --intrapriming must be between 25-100, instead given {0}! Remember to use the percentage value. Abort!".format(args.intrapriming), file=sys.stderr)
+            filter_logger.error(f"--intrapriming must be between 25-100, instead given {args.intrapriming}! Remember to use the percentage value. Abort!")
             sys.exit(-1)
 
 
@@ -245,7 +250,7 @@ def main():
 
     if args.subcommand == 'rules':
         if args.json_filter is not None and not os.path.exists(args.json_filter):
-            print("ERROR: {0} doesn't exist. Abort!".format(args.json_filter), file=sys.stderr)
+            filter_logger.error(f"{args.json_filter} doesn't exist. Abort!")
             sys.exit(-1)
 
         ids, inclusion_file = run_rules(args)
