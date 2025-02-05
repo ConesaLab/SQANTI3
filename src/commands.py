@@ -122,11 +122,11 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
     """
     try:
         logger.debug(out_file)
-        MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
         os.makedirs(os.path.dirname(out_file), exist_ok=True) # Just in case
+
+        MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
         logging.config.dictConfig(MAIN_LOGGING_CONFIG)
         process_logger = logging.getLogger('process_logger')
-
         result = subprocess.run(cmd, shell=True,capture_output=True,
                                 check=True,encoding="utf-8")
         

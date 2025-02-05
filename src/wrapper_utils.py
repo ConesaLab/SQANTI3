@@ -71,21 +71,21 @@ def replace_value(default_dict, user_config):
     return default_dict
 
 def generate_default_path(config, filename):
-    return f"{config['main']['dir']}/{config['main']['output']}_{filename}"
+    return f"{config['main']['dir']}/{config['main']['output']}{filename}"
 
 def set_default_values(config,user_options):
     user_options = user_options or {}
     
     default_values = {
         'filter': {
-            'sqanti_class': 'classification.txt',
-            'filter_isoforms': 'corrected.fasta',
-            'filter_gtf': 'corrected.gtf',
-            'filter_faa': 'corrected.faa'
+            'sqanti_class': '_classification.txt',
+            'filter_isoforms': '_corrected.fasta',
+            'filter_gtf': '_corrected.gtf',
+            'filter_faa': '_corrected.faa'
         },
         'rescue': {
-            'filter_class': 'RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else 'MLFilter_result_classification.txt',
-            'rescue_isoforms': 'corrected.fasta',
+            'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_MLFilter_result_classification.txt',
+            'rescue_isoforms': '_corrected.fasta',
             'rescue_gtf': '.filtered.gtf'
         }
     }

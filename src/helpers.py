@@ -71,6 +71,7 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
     :param output_gff: output GFF filename
     """
     with open(output_gff, 'w') as f:
+        qc_logger.debug(input_gff)
         reader = collapseGFFReader(input_gff)
         for r in reader:
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name

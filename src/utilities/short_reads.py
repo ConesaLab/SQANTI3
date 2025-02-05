@@ -44,7 +44,6 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus):
             if not os.path.exists(f'{sample_prefix}Log.final.out'):
                 qc_logger.info(f'Mapping for {sample_name}: in progress.')
                 cmd = star_cmd(cpus,index_dir,files,sample_prefix,compressed) 
-                qc_logger.debug(cmd)
                 logFile = f"{output_dir}/logs/STAR_mapping_{sample_name}.log"
                 run_command(cmd,qc_logger,logFile,f'STAR mapping {sample_name}')
                 qc_logger.info(f'Mapping for {sample_name}: done.')
@@ -80,7 +79,7 @@ def star(genome, SR_fofn, output_dir, cpus):
     if not os.path.exists(index_dir):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
-            qc_logger.info('**Running indexing.')
+            qc_logger.info('** Running indexing.')
             cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             logFile = f"{output_dir}/logs/STAR_idex.log"
             run_command(cmd,qc_logger,logFile,"STAR genome indexing")
@@ -124,7 +123,7 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
         qc_logger.info(f'Running kallisto index {kallisto_index} using as reference {corrected_fasta}')
         cmd = f"kallisto index -i {kallisto_index} {corrected_fasta} --make-unique"
         logFile=f"{output_dir}/logs/kallisto_index.log"
-        run_command(cmd,qc_logger,logFile,"Kallisto index")
+        run_command(cmd,qc_logger,logFile,"Kallisto index") 
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')
