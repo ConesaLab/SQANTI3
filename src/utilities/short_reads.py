@@ -46,7 +46,7 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus):
                 cmd = star_cmd(cpus,index_dir,files,sample_prefix,compressed) 
                 qc_logger.debug(cmd)
                 logFile = f"{output_dir}/logs/STAR_mapping_{sample_name}.log"
-                run_command(cmd,logFile,f'STAR mapping {sample_name}')
+                run_command(cmd,qc_logger,logFile,f'STAR mapping {sample_name}')
                 qc_logger.info(f'Mapping for {sample_name}: done.')
             else:
                 qc_logger.info(f'Mapping for {sample_name}: already completed.')
@@ -83,7 +83,7 @@ def star(genome, SR_fofn, output_dir, cpus):
             qc_logger.info('**Running indexing.')
             cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             logFile = f"{output_dir}/logs/STAR_idex.log"
-            run_command(cmd,logFile,"STAR genome indexing")
+            run_command(cmd,qc_logger,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')
     else:
         qc_logger.info('Index identified.')
@@ -107,7 +107,7 @@ def kallisto_quantification(files,index,cpus, output_dir):
         qc_logger.info(f'** Running Kallisto quantification for {sample_name} sample')
         cmd = f'kallisto quant -i {index} -o {out_prefix} -b 100 -t {cpus} {r1} {r2}'
         logFile=os.path.normpath(os.path.join(output_dir,"..","logs",f"kallisto_{sample_name}.log"))
-        run_command(cmd,logFile,"Kallisto quantification")
+        run_command(cmd,qc_logger,logFile,"Kallisto quantification")
                            
     else:
         qc_logger.info(f"Kallisto quantification output {abundance_file} found. Using it.")
@@ -123,7 +123,8 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
     if not os.path.exists(kallisto_index):
         qc_logger.info(f'Running kallisto index {kallisto_index} using as reference {corrected_fasta}')
         cmd = f"kallisto index -i {kallisto_index} {corrected_fasta} --make-unique"
-        run_command(cmd,f"{output_dir}/logs/kallisto_index.log")
+        logFile=f"{output_dir}/logs/kallisto_index.log"
+        run_command(cmd,qc_logger,logFile,"Kallisto index")
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')

@@ -95,7 +95,7 @@ def run_gmst(corrFASTA,orf_input,gmst_pre):
     cmd = f"cd {os.path.dirname(gmst_pre)}; {cmd}"
     qc_logger.debug(f"GMST: {gmst_pre}")
     logFile = f"{os.path.dirname(gmst_pre)}/GMST_python.log"
-    run_command(cmd,logFile,description="GMST ORF prediction")
+    run_command(cmd,qc_logger,logFile,description="GMST ORF prediction")
 
 def GTF_to_genePred(corrGTF):
     """
@@ -108,11 +108,11 @@ def GTF_to_genePred(corrGTF):
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
-        run_command(cmd,logFile, "GTF to genePred conversion")
+        run_command(cmd,qc_logger,logFile, "GTF to genePred conversion")
     return queryFile
    
 
-def run_command(cmd, out_file='log/program.log',description="command execution"):
+def run_command(cmd,logger,out_file='log/program.log',description="command execution"):
     """
     Executes a shell command and handles errors gracefully.
     
@@ -121,26 +121,27 @@ def run_command(cmd, out_file='log/program.log',description="command execution")
     :raises SystemExit: Exits the script if the command fails.
     """
     try:
-        qc_logger.debug(out_file)
+        logger.debug(out_file)
         MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
+        os.makedirs(os.path.dirname(out_file), exist_ok=True) # Just in case
         logging.config.dictConfig(MAIN_LOGGING_CONFIG)
         process_logger = logging.getLogger('process_logger')
 
         result = subprocess.run(cmd, shell=True,capture_output=True,
                                 check=True,encoding="utf-8")
         
-        qc_logger.debug(f"Process {cmd} had {result.returncode}")
-        qc_logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
+        logger.debug(f"Process {cmd} had {result.returncode}")
+        logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
         process_logger.info(result.stdout)
         if result.returncode !=0:
-            qc_logger.debug("EROOOOOOR")
+            logger.debug("EROOOOOOR")
             raise BrokenPipeError(result.stderr)
     except subprocess.CalledProcessError as e:
         process_logger.error(f"Details: {e}")
         process_logger.info(e.stdout)
         process_logger.error(e.stderr)
-        qc_logger.error(f"Something went wrong during {description}")
-        qc_logger.error(f"For more inflo, check {out_file}")
+        logger.error(f"Something went wrong during {description}")
+        logger.error(f"For more inflo, check {out_file}")
         sys.exit(1)
     except BrokenPipeError as e:
 

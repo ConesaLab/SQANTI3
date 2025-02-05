@@ -63,7 +63,7 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     qc_logger.info("**** Generating SQANTI3 report.")
     cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     logFile = f"{os.path.dirname(report)}/logs/final_report.log"
-    run_command(cmd,"SQANTI3 report")
+    run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
