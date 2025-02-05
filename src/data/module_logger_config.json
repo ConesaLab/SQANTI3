@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "pablo_tests/logger_trials/logs/rescue_module.log",
+            "filename": "bugfix/gtf_order_ref/logs/qc_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"

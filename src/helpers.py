@@ -174,7 +174,7 @@ def sequence_correction(
         else:
             qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
             filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
-
+            input()
             if not os.path.exists(corrSAM):
                 qc_logger.info("Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).")
 
