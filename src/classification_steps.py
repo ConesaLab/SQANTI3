@@ -142,10 +142,10 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
                 junction_cat = "known"
                 min_diff_s = min_diff_e = 0
                 else:
-                # Find the closest junction start site
-                min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
-                # find the closest junction end site
-                min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
+                    # Find the closest junction start site
+                    min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
+                    # find the closest junction end site
+                    min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
                
         else:
             # if there is no record in the reference of junctions in this chromosome, minimum distances will be NA
