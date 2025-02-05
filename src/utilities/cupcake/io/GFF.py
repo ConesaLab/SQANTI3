@@ -387,11 +387,12 @@ class gmapRecord:
     def add_exon(self, rStart0, rEnd1, sStart0, sEnd1, rstrand, score):
         assert rStart0 < rEnd1 and sStart0 < sEnd1
         if rstrand == '-':
-            assert len(self.ref_exons) == 0 or self.ref_exons[0].start > rEnd1
+            # TODO: Find a way to correctly orient the gtf before
+            assert len(self.ref_exons) == 0 or self.ref_exons[0].start >= rEnd1
             self.scores.insert(0, score)
             self.ref_exons.insert(0, Interval(rStart0, rEnd1))
         else:
-            assert len(self.ref_exons) == 0 or self.ref_exons[-1].end < rStart0
+            assert len(self.ref_exons) == 0 or self.ref_exons[-1].end <= rStart0
             self.scores.append(score)
             self.ref_exons.append(Interval(rStart0, rEnd1))
         if rstrand == '-':

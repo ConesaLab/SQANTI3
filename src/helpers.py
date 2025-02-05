@@ -183,6 +183,16 @@ def sequence_correction(
             logFile = f"{outdir}/logs/gtf2fasta.log"
             run_command(cmd,qc_logger,logFile,description="Converting corrected GTF to FASTA")
 
+def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
+    try:
+        with open(corrGTF, 'w') as corrGTF_out, open(isoforms, 'r') as isoforms_gtf, open(badstrandGTF, 'w') as discard_gtf:
+            for line in isoforms_gtf:
+                qc_logger.debug(line)
+                process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
+    except IOError as e:
+        qc_logger.error(f"Something went wrong processing GTF files: {e}")
+        raise
+
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """
     Processes a single line from a GTF file, validating and categorizing it based on certain criteria.
@@ -222,16 +232,6 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
             discard_gtf.write(line)
         else:
             corrGTF_out.write(line)
-
-def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
-    try:
-        with open(corrGTF, 'w') as corrGTF_out, open(isoforms, 'r') as isoforms_gtf, open(badstrandGTF, 'w') as discard_gtf:
-            for line in isoforms_gtf:
-                process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
-    except IOError as e:
-        qc_logger.error(f"Something went wrong processing GTF files: {e}")
-        raise
-
 
 def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
     # ORF generation
