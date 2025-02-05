@@ -9,8 +9,8 @@ from src.qc_computations import classify_fsm, full_length_quantification, proces
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes
-from src.qc_output import generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes, write_collapsed_GFF_with_CDS
+from src.qc_output import cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
 from src.module_logging import qc_logger
 # TODO: Create a special logging for the parallelization, to handle the individual logs of the splits into  their own files
 

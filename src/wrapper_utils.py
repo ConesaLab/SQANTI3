@@ -194,7 +194,6 @@ def run_step(step,config,dry_run, user_options):
     if dry_run:
         main_logger.info(f"{cmd}")
     else:
-        main_logger.debug(main_opt['log_level'])
         save_module_logger_info(f"{main_opt['dir']}/logs",step,main_opt['log_level'],sqanti_path('src/data/module_logger_config.json'))
         run_sqanti_module(cmd)
 

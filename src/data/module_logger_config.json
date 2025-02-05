@@ -16,8 +16,8 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "pablo_tests/logger_trials/logs/qc_module.log",
-            "mode": "w",
+            "filename": "pablo_tests/logger_trials/logs/filter_module.log",
+            "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"
         }
@@ -25,10 +25,10 @@
     "loggers": {
         "module_logger": {
             "handlers": [
-                "stream_handler",
-                "module_file_handler"
+                "module_file_handler",
+                "stream_handler"
             ],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": true
         }
     }
