@@ -166,22 +166,21 @@ def sequence_correction(
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
-            convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
-            cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
-            logFile= f"{outdir}/logs/sam2gtf.log"
-            # Try condition to better handle the error. Also, the exit code is corrected
-            run_command(cmd,qc_logger,logFile, description="converting SAM to GTF")
+            convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
         else:
             qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
-            filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
-            input()
+            filter_gtf(isoforms, f'{corrGTF}.tmp', badstrandGTF, genome_dict)
             if not os.path.exists(corrSAM):
                 qc_logger.info("Indels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).")
 
             # GTF to FASTA
-            cmd = f"{GFFREAD_PROG} {corrGTF} -g {genome} -w {corrFASTA}"
+            cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -g {genome} -w {corrFASTA}"
             logFile = f"{outdir}/logs/gtf2fasta.log"
             run_command(cmd,qc_logger,logFile,description="Converting corrected GTF to FASTA")
+        # Final step of converting the GFF3 to GTF or normalizing the GTF
+        cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -T -o {corrGTF}"
+        logFile= f"{outdir}/logs/normalize_gtf.log"
+        run_command(cmd,qc_logger,logFile, description="converting SAM to GTF")
 
 def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
     try:
