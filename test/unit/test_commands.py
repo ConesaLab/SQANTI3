@@ -1,5 +1,5 @@
 import os,sys,pytest
-
+import logging
 main_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../..")
 sys.path.append(main_path)
 from src.commands import get_aligner_command
@@ -46,11 +46,12 @@ def test_ultra_command(default_args):
     expected = "uLTRA map -t 4 --prefix ../out -g genome.fa -a anno.gtf -i iso.fa -o /out/uLTRA_out/"
     assert cmd == expected
 
-def test_invalid_aligner(default_args):
-    with pytest.raises(ValueError, match="Unsupported aligner choice: invalid_aligner"):
+def test_invalid_aligner(default_args,caplog):
+    caplog.set_level(logging.ERROR)
+    with pytest.raises(ValueError):
         get_aligner_command("invalid_aligner", **default_args)
+    assert "Unsupported aligner choice: invalid_aligner" in caplog.text
 
-def test_output_capture(default_args, capsys):
+def test_output_capture(default_args, caplog):
     get_aligner_command("gmap", **default_args)
-    captured = capsys.readouterr()
-    assert "****Aligning reads with GMAP..." in captured.out
+    assert "****Aligning reads with GMAP..." in caplog.text

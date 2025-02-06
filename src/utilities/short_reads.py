@@ -166,7 +166,7 @@ def get_TSS_bed(corrected_gtf, chr_order):
                     start_out=int(loc[1])+1
                     end_out=int(loc[1])+101
                 if end_out<=0 or start_in<=0: 
-                    print.warning(f'{iso_id} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome')
+                    qc_logger.warning(f'{iso_id} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome')
                 else:
                     inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
                     outside.write(chr + "\t" + str(start_out) + "\t" + str(end_out) + "\t" + iso_id + "\t0\t" + strand + "\n")

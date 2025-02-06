@@ -185,7 +185,9 @@ def sequence_correction(
 
 def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
     try:
-        with open(corrGTF, 'w') as corrGTF_out, open(isoforms, 'r') as isoforms_gtf, open(badstrandGTF, 'w') as discard_gtf:
+        with open(corrGTF, 'w') as corrGTF_out, \
+            open(isoforms, 'r') as isoforms_gtf, \
+            open(badstrandGTF, 'w') as discard_gtf:
             for line in isoforms_gtf:
                 qc_logger.debug(line)
                 process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
@@ -223,7 +225,7 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
     chrom, feature_type, strand = fields[0], fields[2], fields[6]
 
     if chrom not in genome_dict:
-        qc_logger.error(f"GTF chromsome {chrom} not found in genome reference file")
+        qc_logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
         raise ValueError()
 
     if feature_type in ('transcript', 'exon'):
