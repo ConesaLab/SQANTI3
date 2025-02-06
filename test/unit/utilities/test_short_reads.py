@@ -213,22 +213,16 @@ def test_get_bam_header_file_exists(setup_test_environment_bam):
 @patch('subprocess.run')
 def test_get_bam_header_file_not_exists(mock_subprocess, setup_test_environment_bam):
     bam_file = setup_test_environment_bam
-    expected_output = os.path.dirname(bam_file) + "/chr_order.txt"
+    with pytest.raises(SystemExit):
+        get_bam_header(bam_file)
     
-    result = get_bam_header(bam_file)
-    
-    assert result == expected_output
-    mock_subprocess.assert_called_once_with(
-        [f"samtools view -H {bam_file} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {expected_output}"],
-        shell=True, check=True
-    )
 
 @patch('subprocess.run')
 def test_get_bam_header_subprocess_error(mock_subprocess, setup_test_environment_bam):
     bam_file = setup_test_environment_bam
     mock_subprocess.side_effect = subprocess.CalledProcessError(1, 'cmd')
     
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(SystemExit):
         get_bam_header(bam_file)
 
 def test_get_bam_header_invalid_bam(tmp_path):
