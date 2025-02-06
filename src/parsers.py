@@ -4,18 +4,19 @@ import subprocess
 import glob
 from collections import defaultdict
 from csv import DictReader
-from bx.intervals.intersection import Interval,IntervalTree
+from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
 import numpy as np
 
-from .utilities.cupcake.sequence.STAR import STARJunctionReader
-from .utilities.cupcake.io.GFF import collapseGFFReader
+from src.utilities.cupcake.sequence.STAR import STARJunctionReader
+from src.utilities.cupcake.io.GFF import collapseGFFReader
 
-from .config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
-from .qc_classes import genePredReader, myQueryProteins
-from .utils import mergeDict, flatten
-#from .commands import GTF2GENEPRED_PROG
+from src.config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
+from src.qc_classes import genePredReader, myQueryProteins
+from src.utils import mergeDict, flatten
+from src.module_logging import qc_logger
+#from src.commands import GTF2GENEPRED_PROG
 
 def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
     """
@@ -37,12 +38,12 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         - junctions_by_gene (dict): Dictionary of junctions by gene.
         - known_5_3_by_gene (dict): Dictionary of known 5' and 3' ends by gene. 
     """
-    from .commands import GTF2GENEPRED_PROG
+    from src.commands import GTF2GENEPRED_PROG
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
-    print("**** Parsing Reference Transcriptome....", file=sys.stdout)
+    qc_logger.info("**** Parsing Reference Transcriptome....")
     if os.path.exists(referenceFiles):
-        print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
+        qc_logger.info(f"{referenceFiles} already exists. Using it.")
     else:
         # gtf to genePred
         gtf2genepred_args = [GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
@@ -85,7 +86,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
-        print(f"WARNING: ref annotation contains chromosomes not in genome: {','.join(diff)}\n", file=sys.stderr)
+        qc_logger.warning(f"Reference annotation contains chromosomes not in genome: {','.join(diff)}\n")
 
     # convert the content of junctions_by_chr to sorted list
     # This uses dictionary to iterate over the chromosomes, keeping the keys, but sorting the values
@@ -113,7 +114,7 @@ def isoforms_parser(queryFile):
     """
     Parse input isoforms (GTF) to dict (chr --> sorted list)
     """
-    print("**** Parsing Isoforms....", file=sys.stderr)
+    qc_logger.info("**** Parsing Isoforms.")
     isoforms_list = defaultdict(lambda: []) # chr --> list to be sorted later
 
     for r in genePredReader(queryFile):
@@ -137,7 +138,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
     else:
         cov_files = glob.glob(coverageFiles)
 
-    print(f"Input pattern: {coverageFiles}.\nThe following files found and to be read as junctions:\n" + '\n'.join(cov_files), file=sys.stderr)
+    qc_logger.info(f"Input pattern: {coverageFiles}.\nThe following files found and to be read as junctions:\n" + '\n'.join(cov_files))
 
     cov_by_chrom_strand = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: (0,0))))
     undefined_strand_count = 0
@@ -155,7 +156,7 @@ def STARcov_parser(coverageFiles): # just valid with unstrand-specific RNA-seq p
             else:
                 cov_by_chrom_strand[(r.chrom, r.strand)][(r.start, r.end)][prefix] = (r.unique_count, r.multi_count)
             all_read += 1
-    print(f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR.", file=sys.stderr)
+    qc_logger.info(f"{all_read} junctions read. {undefined_strand_count} junctions added to both strands because no strand information from STAR.")
 
     return samples, cov_by_chrom_strand
 
@@ -179,17 +180,18 @@ def expression_parser(expressionFile):
         reader = DictReader(open(exp_file), delimiter='\t')
         # Finds the file format based on the header
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
-                print("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.", file=sys.stderr)
+                qc_logger.info("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.")
                 name_id, name_tpm = 'target_id', 'tpm'
         elif all(k in reader.fieldnames for k in EXP_RSEM_HEADERS):
-                print("Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.", file=sys.stderr)
+                qc_logger.info("Detected RSEM expression format. Using 'transcript_id' and 'TPM' field.")
                 name_id, name_tpm = 'transcript_id', 'TPM'
         elif reader.fieldnames[0]=="ID":
-                print("Detected expression matrix format")
+                qc_logger.info("Detected expression matrix format")
                 ismatrix = True
                 name_id = 'ID'
         else:
-                print(f"Expected Kallisto or RSEM file format from {expressionFile}. Abort!", file=sys.stderr)
+                qc_logger.error(f"Expected Kallisto or RSEM file format from {expressionFile}. Abort!")
+                sys.exit(1)
         exp_sample = {}
         if ismatrix:
             for r in reader:
@@ -293,7 +295,7 @@ def FLcount_parser(fl_count_filename):
     count_header = reader.fieldnames
     if type=='SINGLE_SAMPLE':
         if 'count_fl' not in count_header:
-            print(f"Expected `count_fl` field in count file {fl_count_filename}. Abort!", file=sys.stderr)
+            qc_logger.error(f"Expected `count_fl` field in count file {fl_count_filename}. Abort!")
             sys.exit(1)
         d = dict((r['pbid'], r) for r in reader)
     elif type=='MULTI_CHAIN':
@@ -303,7 +305,7 @@ def FLcount_parser(fl_count_filename):
         d = dict((r['id'], r) for r in reader)
         flag_single_sample = False
     else:
-        print(f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!", file=sys.stderr)
+        qc_logger.error(f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!")
         sys.exit(1)
     f.close()
 
@@ -341,7 +343,7 @@ def parse_corrORF(corrORF,gmst_rex):
         # now process ORFs into myQueryProtein objects
         m = gmst_rex.match(r.description)
         if m is None:
-            print(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!", file=sys.stderr)
+            qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
             sys.exit(1)
         orf_length = int(m.group(2))
         cds_start = int(m.group(4))
@@ -356,7 +358,7 @@ def parse_GMST(corrORF,gmst_rex,gmst_pre):
         for r in SeqIO.parse(open(gmst_pre+'.faa'), 'fasta'):
             m = gmst_rex.match(r.description)
             if m is None:
-                print(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!", file=sys.stderr)
+                qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
                 sys.exit(1)
             id_pre = m.group(1)
             orf_length = int(m.group(2))

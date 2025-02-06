@@ -1,7 +1,5 @@
 import argparse
-from .config import __version__,__author__
-from .argparse_utils import *
-from .commands import utilitiesPath
+from src.config import __version__,__author__, utilitiesPath
 
 def filter_argparse():
     default_json = utilitiesPath + "/filter/filter_default.json"
@@ -20,6 +18,8 @@ def filter_argparse():
     common.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     common.add_argument("-c", "--cpus", type=int, default=4, help="Number of CPUs to use. Default: 4")
     common.add_argument("--skip_report", action="store_true", default=False, help='Skip creation of a report about the filtering')
+    common.add_argument("-l","--log_level", default="INFO",choices=["ERROR","WARNING","INFO","DEBUG"],
+                        help="Set the logging level %(default)s")
 
 # Parser creations
     parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes.\

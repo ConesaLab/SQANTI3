@@ -44,6 +44,8 @@ def rescue_argparse():
                         help="Display program version number.", 
                         action='version', 
                         version=f"SQANTI3 f{__version__}")
+    common.add_argument("-l","--log_level", default="INFO",choices=["ERROR","WARNING","INFO","DEBUG"],
+                        help="Set the logging level %(default)s")
     # Subparsers
     subparsers = parser.add_subparsers(dest = 'subcommand')
     ## Rules rescue arguments

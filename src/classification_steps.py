@@ -138,15 +138,16 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
         missing_chr=[]
         junction_cat = "novel"
         if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
-            if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs']):
+
+            if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]):
                 junction_cat = "known"
                 min_diff_s = min_diff_e = 0
-                else:
-                    # Find the closest junction start site
-                    min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
-                    # find the closest junction end site
-                    min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
-               
+            else:
+                # Find the closest junction start site
+                min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
+                # find the closest junction end site
+                min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
+            
         else:
             # if there is no record in the reference of junctions in this chromosome, minimum distances will be NA
             # add also new chromosome to the junctions_by_chr with one dummy SJ d=1, a=2

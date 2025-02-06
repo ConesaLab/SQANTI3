@@ -387,7 +387,11 @@ class gmapRecord:
     def add_exon(self, rStart0, rEnd1, sStart0, sEnd1, rstrand, score):
         assert rStart0 < rEnd1 and sStart0 < sEnd1
         if rstrand == '-':
-            assert len(self.ref_exons) == 0 or self.ref_exons[0].start >= rEnd1
+            try:
+                assert len(self.ref_exons) == 0 or self.ref_exons[0].start >= rEnd1
+            except AssertionError: # In the case of the - strand being ordered as the + strand
+                assert len(self.ref_exons) == 0 or self.ref_exons[-1].end <= rStart0
+
             self.scores.insert(0, score)
             self.ref_exons.insert(0, Interval(rStart0, rEnd1))
         else:
@@ -610,7 +614,7 @@ class collapseGFFReader(gmapGFFReader):
             raw = line.split('\t')
             if raw[2] == 'exon':
                 s, e = int(raw[3])-1, int(raw[4])
-                rec.add_exon(s, e, s, e, rstrand='+', score=None)
+                rec.add_exon(s, e, s, e, rstrand=raw[6], score=None)
             elif raw[2] == 'CDS':
                 s, e = int(raw[3])-1, int(raw[4])
                 rec.add_cds_exon(s, e)
