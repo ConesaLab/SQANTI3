@@ -128,10 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 example/Homo_sapiens.GRCh38.dna.chromosome.13.fa
-<<<<<<< HEAD
-=======
+
 # SQANTI example big output files
->>>>>>> a0f4008 (Updated SQANTI3 QC example)
 example/SQANTI3_QC_output/STAR_index/SA
 example/SQANTI3_QC_output/STAR_index/SAindex
 
@@ -139,19 +137,10 @@ example/SQANTI3_QC_output/STAR_index/SAindex
 .idea/
 .emacs.bak/
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> a0f4008 (Updated SQANTI3 QC example)
 # Hidden directories
 .pytest_cache
 .vscode
 #Examples Pablo
-<<<<<<< HEAD
-/example/run_sqanti3_pablo.sh
-=======
->>>>>>> a0f4008 (Updated SQANTI3 QC example)
 sqanti_qc.out
 /pablo_tests
 /wiki

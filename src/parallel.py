@@ -6,6 +6,7 @@ from multiprocessing import Process
 from Bio import SeqIO
 from src.config import FIELDS_CLASS
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
+
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.qc_pipeline import run

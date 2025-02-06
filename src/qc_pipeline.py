@@ -98,9 +98,8 @@ def run(args):
         SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
+
     qc_logger.info(f"Number of classified isoforms: {len(isoforms_info)}")
-    ## Rename novel genes
-    write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrGTF+'.cds.gff')
     
     # This steps are avoided in the parallel implementation
     # They are run instead after combining the chunks

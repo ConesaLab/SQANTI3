@@ -138,6 +138,7 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
         missing_chr=[]
         junction_cat = "novel"
         if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
+
             if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]):
                 junction_cat = "known"
                 min_diff_s = min_diff_e = 0
