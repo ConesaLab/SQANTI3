@@ -163,18 +163,19 @@ def sequence_correction(
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
             convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
-            cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
-            # Try condition to better handle the error. Also, the exit code is corrected
-            run_command(cmd, description="converting SAM to GTF")
         else:
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
-            filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
+            filter_gtf(isoforms, corrGTF+'.tmp', badstrandGTF, genome_dict)
 
             if not os.path.exists(corrSAM):
                 sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
-            subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
+            subprocess.call([GFFREAD_PROG, corrGTF+'.tmp', '-g', genome, '-w', corrFASTA])
+        cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
+        # Try condition to better handle the error. Also, the exit code is corrected
+        run_command(cmd, description="converting GFF3 to GTF")
+        os.remove(corrGTF+'.tmp')
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """
