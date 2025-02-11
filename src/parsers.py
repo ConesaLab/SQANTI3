@@ -310,7 +310,10 @@ def FLcount_parser(fl_count_filename):
 
     if flag_single_sample: # single sample
         for k,v in d.items():
-            fl_count_dict[k] = int(v['count_fl'])
+            try:
+                fl_count_dict[k] = int(v['count_fl'])
+            except ValueError:
+                fl_count_dict[k] = float(v['count_fl'])
     else: # multi-sample
         for k,v in d.items():
             fl_count_dict[k] = {}
