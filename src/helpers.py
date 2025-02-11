@@ -175,6 +175,7 @@ def sequence_correction(
         cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
         # Try condition to better handle the error. Also, the exit code is corrected
         run_command(cmd, description="converting GFF3 to GTF")
+        os.remove(corrGTF+'.tmp')
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """
