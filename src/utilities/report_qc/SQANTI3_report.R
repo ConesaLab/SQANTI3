@@ -1403,7 +1403,7 @@ if (nrow(data.junction) > 0){
   data.junction$junctionLabel = with(data.junction, paste(chrom, strand,genomic_start_coord, genomic_end_coord, sep="_"))
   
   data.junction$canonical_known = with(data.junction, paste(junction_category,canonical,"SJ", sep="_"))
-  data.junction$canonical_known=as.factor(data.junction$canonical_known)
+  data.junction$canonical_known = as.factor(data.junction$canonical_known)
   data.junction$canonical_known = factor(data.junction$canonical_known, levels=c("known_canonical_SJ", "known_non_canonical_SJ", "novel_canonical_SJ", "novel_non_canonical_SJ"),
                                          labels=c("Known\ncanonical ", "Known\nNon-canonical ", "Novel\ncanonical ", "Novel\nNon-canonical "), order=T) 
   data.junction$structural_category = data.class[data.junction$isoform,"structural_category"]
@@ -1944,9 +1944,14 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if (n_t3.SJ > 0) {
     t3.SJ$Var <- "Non-canonical"
     t3.a.SJ$Var <- 'Canonical'
+  } else {
+    t3.SJ[1,] <- NA
+    t3.a.SJ$Var <- 'Canonical'
+    t3.SJ$Var <- NA
   }
   column_names <- colnames(t3.SJ)
   levels(t3.SJ) <- structural_categories
+  
   #t3.SJ$structural_category <- relevel(t3.SJ$structural_category, )
   if(!("FSM" %in% t3.SJ$structural_category)){
     t3.SJ <- rbind(t3.SJ, c("FSM", "Non-canonical",0,0,0,"Non-canonical"))
@@ -1960,7 +1965,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if(!("NNC" %in% t3.SJ$structural_category)){
     t3.SJ <- rbind(t3.SJ, c("NNC", "Non-canonical",0,0,0,"Non-canonical"))
   }
-  
+    
 
   if (!all(is.na(x$predicted_NMD))){
     x[which(x$predicted_NMD=="TRUE"),"predicted_NMD"]="Predicted NMD"
@@ -2149,6 +2154,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle("Splice Junctions With Short Reads Coverage\n\n") 
 
+    
 
     t3 <- rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
 
