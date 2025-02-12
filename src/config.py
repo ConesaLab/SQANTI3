@@ -1,7 +1,7 @@
 import re
 
 __author__  = "etseng@pacb.com"
-__version__ = '5.3.5'  # Python 3.7
+__version__ = '5.3.6'  # Python 3.7
 
 FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
                    'genomic_end_coord', 'transcript_coord', 'junction_category',
