@@ -1948,6 +1948,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.SJ[1,] <- NA
     t3.a.SJ$Var <- 'Canonical'
     t3.SJ$Var <- NA
+    t3.SJ <- na.omit(t3.SJ)
   }
   column_names <- colnames(t3.SJ)
   levels(t3.SJ) <- structural_categories
@@ -2157,7 +2158,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     
 
     t3 <- rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
-
+    
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_fill_manual(values = myPalette[9:11]) +
