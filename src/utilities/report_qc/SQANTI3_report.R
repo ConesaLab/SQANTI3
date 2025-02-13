@@ -256,7 +256,8 @@ uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction"
 
 #*** Global plot parameters
 
-myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
+myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696",
+              "#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
 subcat.palette = c("Alternative 3'end"='#02314d',
                    "Alternative 3'5'end"='#0e5a87',
                    "Alternative 5'end"='#7ccdfc',
