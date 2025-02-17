@@ -39,7 +39,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     open_function = gzip.open if input_fasta.endswith('.gz') else open
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(input_fasta[:input_fasta.rfind('.fast')]+'.renamed.fasta', mode='wt')
+    f = open(os.path.splitext(input_fasta)[0] + '.renamed.fasta', mode='wt')
     for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
         m1 = seqid_rex1.match(r.id)
         m2 = seqid_rex2.match(r.id)
