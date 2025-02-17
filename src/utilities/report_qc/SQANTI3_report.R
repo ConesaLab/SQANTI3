@@ -1928,7 +1928,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.RTS <- rbind(t3.RTS, c("NIC", TRUE, 0,0,0,"RT switching"))
   }
   if(!("NNC" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE,0,0,"RT switching"))
+    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE, 0,0,0,"RT switching"))
   }
   colnames(t3.RTS) <- column_names
   t3.RTS$perc <- as.numeric(t3.RTS$perc)
@@ -1978,16 +1978,16 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.NMD$Var=t3.NMD$predicted_NMD
     
     if(!("FSM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"NMD"))
+      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
     }
     if(!("ISM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"NMD"))
+      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
     }
     if(!("NIC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"NMD"))
+      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
     }
     if(!("NNC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"NMD"))
+      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
     }
     
     t3.NMD$perc <- as.numeric(t3.NMD$perc)
