@@ -67,9 +67,15 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
-
+    try:
+        os.remove(outputClassPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(outputJuncPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
     qc_logger.info("Saving isoforms_info object to file.")
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:

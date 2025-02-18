@@ -26,7 +26,7 @@ def err_correct(genome_file, sam_file, output_err_corrected_fasta, genome_dict=N
     reader = BioReaders.GMAPSAMReader(sam_file, True)
     for r in reader:
         if r.sID == '*': continue
-        seq = sp.consistute_genome_seq_from_exons(genome_dict, r.sID, r.segments, r.flag.strand)
+        seq = sp.consistute_genome_seq_from_exons(genome_dict, r.sID, r.segments, r.flag.strand) #TODO: Check if the alignmentis supplementary to save it with a different name
         f.write(">{0}\n{1}\n".format(r.qID, seq))
 
     f.close()

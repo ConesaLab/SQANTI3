@@ -12,7 +12,7 @@ def valid_file(filename):
 
 def valid_fasta(filename):
     valid_file(filename)
-    if not filename.endswith('.fasta') and not filename.endswith('.fa'):
+    if not filename.endswith('.fasta') and not filename.endswith('.fa') and not filename.endswith('.fastq') and not filename.endswith('.fq'):
         qc_logger.error(f"File {filename} is not a FASTA file. Abort!")
         sys.exit(1)
     return filename
@@ -107,7 +107,7 @@ def args_validation(args):
     valid_file(args.isoforms)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
-    elif args.isoforms.endswith('.fasta') or args.isoforms.endswith('.fastq'):
+    elif valid_fasta(args.isoforms):
         args.fasta = True
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")

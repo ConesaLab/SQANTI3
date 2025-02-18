@@ -1,4 +1,5 @@
 import pickle
+import shutil
 import os,sys,copy,csv
 import pandas as pd #type: ignore
 import re
@@ -156,7 +157,6 @@ def combine_split_runs(args, split_dirs):
     f_junc_temp = open(outputJuncPath+"_tmp", "w")
     isoforms_info = {}
     headers = []
-    
     for i,split_d in enumerate(split_dirs):
         _gtf, _, _fasta, _orf , _ = get_corr_filenames(split_d,args.output)
         _, _junc = get_class_junc_filenames(split_d,args.output)
@@ -175,10 +175,11 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-
+        shutil.move(os.path.join(split_d,"GMST"),os.path.join(args.dir,"GMST",f"GMST_{i}"))
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
+    
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
