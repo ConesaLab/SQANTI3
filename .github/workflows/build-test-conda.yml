@@ -24,8 +24,14 @@ jobs:
           activate-environment: sqanti3
           auto-activate-base: false
       - name: List conda packages
-        run: conda list
+        run: |
+          conda activate sqanti3
+          conda list
       - name: Test numpy dependency
-        run: python3 -c "import numpy"
+        run: |
+          conda activate sqanti3
+          python3 -c "import numpy"
       - name: Run unittests
-        run: pytest
+        run: |
+          conda activate sqanti3
+          pytest
