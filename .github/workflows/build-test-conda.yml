@@ -14,10 +14,10 @@ jobs:
     steps:
       - name: Create and test conda environment
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3.1.1
         with:
           miniconda-version: 'latest'
-          channels: [ conda-forge, bioconda, anaconda, r, defaults]
+          channels: conda-forge,bioconda,anaconda,r,defaults
           environment-file: SQANTI3.conda_env.yml
           activate-environment: sqanti3
       - run: conda list
