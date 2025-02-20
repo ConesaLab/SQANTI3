@@ -1,4 +1,4 @@
-Version	5.3.0
+Version	5.3.4
 Input	/home/pabloati/Programs/sqanti3/example/UHR_chr22.gtf
 Annotation	/home/pabloati/Programs/sqanti3/example/gencode.v38.basic_chr22.gtf
 Genome	/home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta

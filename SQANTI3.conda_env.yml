@@ -30,7 +30,7 @@ dependencies:
   - psutil
   - pybedtools
   - pysam
-  - python>=3.7.6,<=3.11
+  - python>=3.10,<=3.11
   - r>=4.3.0
   - r-biocmanager
   - r-caret

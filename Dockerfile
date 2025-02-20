@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the versions of different softwares dependencies and SQANTI3 version
 # To install
-ENV SQANTI3_VERSION="5.3.0"
+ENV SQANTI3_VERSION="5.3.6"
 ENV DESALT_VERSION="1.5.6"
 ENV NAMFINDER_VERSION="0.1.3"
 
@@ -146,11 +146,11 @@ RUN mkdir -p /opt2/sqanti3/${SQANTI3_VERSION}/ \
    # path). Converting relative path in Rmd files to
    # an absolute path to avoid this issue altogether.
    && sed -i \
-       's@src="howToUse.png"@src="/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_qc/howToUse.png"@g' \
-       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_qc/SQANTI3_report.Rmd \
-       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities/report_pigeon/pigeon_report.Rmd
+       's@src="howToUse.png"@src="/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/src/utilities/report_qc/howToUse.png"@g' \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/src/utilities/report_qc/SQANTI3_report.Rmd \
+       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/src/utilities/report_pigeon/pigeon_report.Rmd
 
-ENV PATH="${PATH}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/utilities"
+ENV PATH="${PATH}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}:/opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/src/utilities"
 WORKDIR /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}
 
 RUN mkdir -p /conda/miniconda3 && \
@@ -176,6 +176,7 @@ RUN chmod -R a+rX /opt2 && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_qc.py sqanti3_qc.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_reads.py sqanti3_reads.py && \
     apt-get remove -y build-essential cmake && apt-get autoremove -y && apt-get clean -y && \
     apt-get clean autoclean -y
 

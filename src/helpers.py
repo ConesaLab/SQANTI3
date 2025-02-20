@@ -36,10 +36,16 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     # open uses "rt" (read in text format)
     # This can be solved by making explicit the read text mode (which is required
     # by SeqIO.parse)
-    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    if input_fasta.endswith('.gz'):
+        open_function = gzip.open
+        in_file = os.path.splitext(input_fasta)[0]
+        out_file = os.path.splitext(in_file)[0] + '.renamed.fasta'
+    else:
+        open_function = open
+        out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(input_fasta[:input_fasta.rfind('.fast')]+'.renamed.fasta', mode='wt')
+    f = open(out_file, mode='wt')
     for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
         m1 = seqid_rex1.match(r.id)
         m2 = seqid_rex2.match(r.id)
@@ -57,7 +63,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = r.id.split()[0]  # Ensembl fasta header
         f.write(">{0}\n{1}\n".format(newid, r.seq))
     f.close()
-    return f.name
+    return out_file
 
 
 ### Input/Output functions ###
@@ -136,7 +142,6 @@ def sequence_correction(
     isoforms: str,
     aligner_choice: str,
     gmap_index: Optional[str] = None,
-    sense: Optional[bool] = False,
     annotation: Optional[str] = None
     ) -> None:
     """
@@ -157,25 +162,26 @@ def sequence_correction(
                 print("Aligned SAM {0} already exists. Using it...".format(corrSAM), file=sys.stderr)
             else:
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                                          outdir,corrSAM, n_cpu, gmap_index, sense)
+                                          outdir,corrSAM, n_cpu, gmap_index)
                 run_command(cmd, description="aligning reads")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             # convert SAM to GFF --> GTF
             convert_sam_to_gff3(corrSAM, corrGTF+'.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
-            cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
-            # Try condition to better handle the error. Also, the exit code is corrected
-            run_command(cmd, description="converting SAM to GTF")
         else:
             print("Skipping aligning of sequences because GTF file was provided.", file=sys.stdout)
-            filter_gtf(isoforms, corrGTF, badstrandGTF, genome_dict)
+            filter_gtf(isoforms, corrGTF+'.tmp', badstrandGTF, genome_dict)
 
             if not os.path.exists(corrSAM):
                 sys.stdout.write("\nIndels will be not calculated since you ran SQANTI3 without alignment step (SQANTI3 with gtf format as transcriptome input).\n")
 
             # GTF to FASTA
-            subprocess.call([GFFREAD_PROG, corrGTF, '-g', genome, '-w', corrFASTA])
+            subprocess.call([GFFREAD_PROG, corrGTF+'.tmp', '-g', genome, '-w', corrFASTA])
+        cmd = "{p} {o}.tmp -T -o {o}".format(o=corrGTF, p=GFFREAD_PROG)
+        # Try condition to better handle the error. Also, the exit code is corrected
+        run_command(cmd, description="converting GFF3 to GTF")
+        os.remove(corrGTF+'.tmp')
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
     """

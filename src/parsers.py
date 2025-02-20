@@ -9,6 +9,8 @@ from statistics import mean
 from Bio import SeqIO
 import numpy as np
 
+from src.commands import run_command
+
 from .utilities.cupcake.sequence.STAR import STARJunctionReader
 from .utilities.cupcake.io.GFF import collapseGFFReader
 
@@ -45,12 +47,11 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         print(f"{referenceFiles} already exists. Using it.", file=sys.stdout)
     else:
         # gtf to genePred
-        gtf2genepred_args = [GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
+        cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
 
         if gene_name or isoAnnot:
-            gtf2genepred_args.append('-geneNameAsName2')
-
-        subprocess.call(gtf2genepred_args)
+            cmd += ' -geneNameAsName2'
+        run_command(cmd)
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -101,11 +102,10 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     
     # TODO: Find a more efficient way to fix this
     for chr in junctions_by_chr.keys():
+        junctions_by_chr[chr]['da_tree'] = IntervalTree()
         for strand in junctions_by_chr[chr]['da_pairs'].keys():
-            junctions_by_chr[chr]['da_tree'] = IntervalTree()
             for junction in junctions_by_chr[chr]['da_pairs'][strand]:
                 junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], (*junction,strand))
-
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 
@@ -310,7 +310,10 @@ def FLcount_parser(fl_count_filename):
 
     if flag_single_sample: # single sample
         for k,v in d.items():
-            fl_count_dict[k] = int(v['count_fl'])
+            try:
+                fl_count_dict[k] = int(v['count_fl'])
+            except ValueError:
+                fl_count_dict[k] = float(v['count_fl'])
     else: # multi-sample
         for k,v in d.items():
             fl_count_dict[k] = {}

@@ -25,7 +25,6 @@ def qc_argparse():
     #TODO: set a default aligner
     apa.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2', help="Select your aligner of choice: minimap2, deSALT, gmap, uLTRA (default: %(default)s)")
     apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
-    apa.add_argument('-z', '--sense', action='store_true', help='Option that helps aligners know that the exons in you cDNA sequences are in the correct sense. Applicable just when you have a high quality set of cDNA sequences')
     apa.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='Set of splice sites to be considered as canonical, in a comma separated list. (default: %(default)s)')
 
     # ORF prediction
@@ -60,7 +59,7 @@ def qc_argparse():
     apm.add_argument('-e','--expression', type=valid_matrix, help='Expression matrix (supported: Kallisto tsv)')
     apm.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apm.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
-    apm.add_argument('-fl', '--fl_count',type=valid_PacBio_abund, help='Full-length PacBio abundance file')
+    apm.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')
     apm.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
     apm.add_argument('--gff3' ,type=valid_gff3, help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')
