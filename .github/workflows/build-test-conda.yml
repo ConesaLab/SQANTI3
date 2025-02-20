@@ -1,4 +1,5 @@
 # Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
+name: Run tests in conda
 
 on:
   push:
@@ -21,6 +22,7 @@ jobs:
           channels: conda-forge,bioconda,anaconda,r,defaults
           environment-file: SQANTI3.conda_env.yml
           activate-environment: sqanti3
+          auto-activate-base: false
       - name: List conda packages
         run: conda list
       - name: Test numpy dependency
