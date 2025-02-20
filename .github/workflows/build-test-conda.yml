@@ -1,0 +1,25 @@
+# Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - 'master'
+
+jobs:
+  test-on-conda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create and test conda environment
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: 'latest'
+          channels: [ conda-forge, bioconda, anaconda, r, defaults]
+          environment-file: SQANTI3.conda_env.yml
+          activate-environment: sqanti3
+      - run: conda list
+      - run: python3 -c "import numpy"
+      - run: pytest
