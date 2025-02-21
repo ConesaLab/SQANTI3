@@ -11,6 +11,9 @@ on:
 
 jobs:
   test-on-conda:
+    defaults:
+      run:
+        shell: bash -l {0}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -25,16 +28,10 @@ jobs:
           auto-activate-base: false
       - name: List conda packages
         run: |
-          conda init
-          conda activate sqanti3
           conda list
       - name: Test numpy dependency
         run: |
-          conda init
-          conda activate sqanti3
           python3 -c "import numpy"
       - name: Run unittests
         run: |
-          conda init
-          conda activate sqanti3
           pytest
