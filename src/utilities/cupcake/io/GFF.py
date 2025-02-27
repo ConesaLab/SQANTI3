@@ -590,15 +590,13 @@ class collapseGFFReader(gmapGFFReader):
         assert raw[2] == 'transcript'
         chr = raw[0]
         strand = raw[6]
-        seqid = None
-        geneid = None
-        for stuff in raw[8].split(';'):
-            if len(stuff.strip()) > 0:
-                a, b = stuff.strip().split()
-                if a == 'transcript_id':
-                    seqid = b[1:-1]
-                if a == 'gene_id':
-                    geneid = b[1:-1]
+        attributes = raw[8]
+
+        geneid_match = re.search(r'gene_id\s+"([^"]+)"', attributes)
+        seqid_match = re.search(r'transcript_id\s+"([^"]+)"', attributes)
+
+        geneid = geneid_match.group(1) if geneid_match else None
+        seqid = seqid_match.group(1) if seqid_match else None
 
         rec = gmapRecord(chr, coverage=None, identity=None, strand=strand, seqid=seqid, geneid=geneid)
 
