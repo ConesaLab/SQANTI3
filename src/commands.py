@@ -27,10 +27,14 @@ if shutil.which(GFFREAD_PROG) is None:
     sys.exit(1)
 
 
-# Rscript
+# Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
+RSCRIPT_QC_REPORT = '/report_qc/SQANTI3_report.R'
 
-RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
+# Rscript filter
+RSCRIPT_FILTER_REPORT = 'report_filter/SQANTI3_filter_report.R'
+RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
+RSCRIPT_RULES = 'filter/SQANTI3_rules_filter.R'
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
