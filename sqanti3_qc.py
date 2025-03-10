@@ -21,7 +21,6 @@ def main():
     art_logger.info(qc_art())
     args = qc_argparse().parse_args()
     args = args_validation(args)
-    qc_logger.debug("hello")
     if not os.path.exists(os.path.join(args.dir,'logs')):
         os.makedirs(os.path.join(args.dir,'logs'))
     # path and prefix for output files

@@ -3,7 +3,9 @@ import logging.config
 import json
 import os
 
-with open('src/data/module_logger_config.json','r') as f:
+data_path = os.path.join(os.path.dirname(__file__), 'data','module_logger_config.json')
+
+with open(data_path,'r') as f:
     MODULE_LOGGING_CONFIG = json.load(f)
 
 # Create log directory and reinitialize the log file
