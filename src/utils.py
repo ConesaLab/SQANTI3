@@ -86,3 +86,21 @@ def find_closest_in_list(lst, pos):
     
 def alphanum_key(s):
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
+
+    
+def calculate_tss(strand, start0, end1):
+    """
+    Strand aware calculation of the middle of the peak in the bed file
+    If the cage peak length is of 1 nucleotide, the average is not calculcated
+    """
+    if end1 - start0 > 1:
+        tss0 = int((start0 + end1) / 2)
+        if strand == '+':
+            return tss0
+        else:
+            return tss0 + 1
+    else:
+        if strand == '+':
+            return start0
+        else:
+            return end1

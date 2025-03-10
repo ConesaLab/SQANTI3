@@ -16,6 +16,7 @@ from src.config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
 from src.qc_classes import genePredReader, myQueryProteins
 from src.utils import mergeDict, flatten
 from src.module_logging import qc_logger
+from src.commands import run_command
 #from src.commands import GTF2GENEPRED_PROG
 
 def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
@@ -46,12 +47,11 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         qc_logger.info(f"{referenceFiles} already exists. Using it.")
     else:
         # gtf to genePred
-        gtf2genepred_args = [GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
+        cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
 
         if gene_name or isoAnnot:
-            gtf2genepred_args.append('-geneNameAsName2')
-
-        subprocess.call(gtf2genepred_args)
+            cmd += ' -geneNameAsName2'
+        run_command(cmd,qc_logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -106,7 +106,6 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         for strand in junctions_by_chr[chr]['da_pairs'].keys():
             for junction in junctions_by_chr[chr]['da_pairs'][strand]:
                 junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], (*junction,strand))
-
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 
@@ -312,7 +311,10 @@ def FLcount_parser(fl_count_filename):
 
     if flag_single_sample: # single sample
         for k,v in d.items():
-            fl_count_dict[k] = int(v['count_fl'])
+            try:
+                fl_count_dict[k] = int(v['count_fl'])
+            except ValueError:
+                fl_count_dict[k] = float(v['count_fl'])
     else: # multi-sample
         for k,v in d.items():
             fl_count_dict[k] = {}

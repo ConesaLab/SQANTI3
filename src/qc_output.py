@@ -62,14 +62,20 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
 def generate_report(saturation,report, outputClassPath, outputJuncPath):
     qc_logger.info("**** Generating SQANTI3 report.")
     cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
-    logFile = f"{os.path.dirname(report)}/logs/final_report.log"
+    logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
-
+    try:
+        os.remove(outputClassPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(outputJuncPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
     qc_logger.info("Saving isoforms_info object to file.")
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:

@@ -81,8 +81,9 @@ def main():
             run_step(args.command, config,args.dry_run, args.arguments)
         else:
             main_logger.error(f"{args.command.upper()} is disabled in the configuration file.")
-
-    os.remove(sqanti_path("none"))
-
+    try:
+        os.remove(sqanti_path("none"))
+    except FileNotFoundError:
+        pass
 if __name__ == "__main__":
     main()

@@ -10,8 +10,8 @@ from src.config import utilitiesPath
 
 sys.path.insert(0, utilitiesPath)
 
-GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z {sense} {i} > {o}"
-MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -u{sense} -t {cpus} {g} {i} > {o}"
+GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z sense-force {i} > {o}"
+MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -uf -t {cpus} {g} {i} > {o}"
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq"
 
@@ -35,7 +35,7 @@ RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                        outdir, corrSAM, n_cpu, gmap_index, sense):
+                        outdir, corrSAM, n_cpu, gmap_index):
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
         case "gmap":
@@ -44,7 +44,6 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 cpus=n_cpu,
                 dir=os.path.dirname(gmap_index),
                 name=os.path.basename(gmap_index),
-                sense=sense,
                 i=isoforms,
                 o=corrSAM,
             )
@@ -52,7 +51,6 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
             qc_logger.info("****Aligning reads with Minimap2...")
             cmd = MINIMAP2_CMD.format(
                 cpus=n_cpu,
-                sense=sense,
                 g=genome,
                 i=isoforms,
                 o=corrSAM,

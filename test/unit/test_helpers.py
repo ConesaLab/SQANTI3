@@ -41,7 +41,6 @@ def test_rename_isoform_seqids_fasta(mock_fasta_file):
 
     # Act
     result_file = rename_isoform_seqids(str(mock_fasta_file))
-
     # Assert
     assert result_file == output_fasta, "Output file name does not match expected."
     assert os.path.exists(output_fasta), "Output file was not created."

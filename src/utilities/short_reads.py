@@ -186,8 +186,9 @@ def get_bam_header(bam):
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
     if not os.path.isfile(out):
-        subprocess.run(["samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out)],
-                        shell=True, check = True)
+        cmd = rf"samtools view -H {bam} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {out}"
+        logFile=os.path.normpath(os.path.join(o_dir,"..","logs","samtools_header.log"))
+        run_command(cmd,qc_logger,logFile,"samtools header")
     return(out)
 
 

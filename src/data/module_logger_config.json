@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "bugfix/gtf_order_ref2/logs/qc_module.log",
+            "filename": "results/logs/qc_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"
@@ -28,7 +28,7 @@
                 "module_file_handler",
                 "stream_handler"
             ],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": true
         }
     }

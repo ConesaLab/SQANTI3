@@ -8,8 +8,8 @@ from src.commands import get_aligner_command
 # Mock the global command templates
 @pytest.fixture(autouse=True)
 def mock_cmd_templates(monkeypatch):
-    monkeypatch.setattr('src.commands.GMAP_CMD', "gmap -t {cpus} -d {name} -D {dir} {sense} {i} > {o}")
-    monkeypatch.setattr('src.commands.MINIMAP2_CMD', "minimap2 -t {cpus} {sense} {g} {i} > {o}")
+    monkeypatch.setattr('src.commands.GMAP_CMD', "gmap -t {cpus} -d {name} -D {dir} --sense-force {i} > {o}")
+    monkeypatch.setattr('src.commands.MINIMAP2_CMD', "minimap2 -ax splice --secondary=no -C5 -uf -t {cpus} {g} {i} > {o}")
     monkeypatch.setattr('src.commands.DESALT_CMD', "deSALT aln -t {cpus} {dir} {i} -o {o}")
     monkeypatch.setattr('src.commands.ULTRA_CMD', "uLTRA map -t {cpus} --prefix {prefix} -g {g} -a {a} -i {i} -o {o_dir}")
 
@@ -22,8 +22,7 @@ def default_args():
         "outdir": "/out",
         "corrSAM": "out.sam",
         "n_cpu": 4,
-        "gmap_index": "/index/gmap",
-        "sense": "--sense-force"
+        "gmap_index": "/index/gmap"
     }
 
 def test_gmap_command(default_args):
@@ -33,7 +32,7 @@ def test_gmap_command(default_args):
 
 def test_minimap2_command(default_args):
     cmd = get_aligner_command("minimap2", **default_args)
-    expected = "minimap2 -t 4 --sense-force genome.fa iso.fa > out.sam"
+    expected = "minimap2 -ax splice --secondary=no -C5 -uf -t 4 genome.fa iso.fa > out.sam"
     assert cmd == expected
 
 def test_desalt_command(default_args):
