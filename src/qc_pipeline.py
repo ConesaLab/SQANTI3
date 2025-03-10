@@ -34,7 +34,6 @@ from src.classification_main import isoform_classification_pipeline
 from src.module_logging import qc_logger
 
 def run(args):
-
     global isoform_hits_name
 
     corrGTF, corrSAM, corrFASTA, corrORF , _ = get_corr_filenames(args.dir, args.output)
@@ -47,12 +46,11 @@ def run(args):
     qc_logger.info(f"Reading genome fasta {args.refFasta}")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
     genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
-
     ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     sequence_correction(
     args.dir, args.output, args.cpus, args.chunks, args.fasta,
     genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
-    gmap_index=args.gmap_index, sense=args.sense, annotation=args.refGTF)
+    gmap_index=args.gmap_index, annotation=args.refGTF)
     
     orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
                          corrFASTA, corrORF)
