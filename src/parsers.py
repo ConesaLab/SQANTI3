@@ -51,7 +51,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
 
         if gene_name or isoAnnot:
             cmd += ' -geneNameAsName2'
-        run_command(cmd)
+        run_command(cmd,qc_logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
