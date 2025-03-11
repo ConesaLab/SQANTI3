@@ -7,6 +7,7 @@ Created on Mon Apr 15 16:32:18 2024
 """
 
 
+import sys
 import pandas as pd
 import argparse
 import os
@@ -706,7 +707,11 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
-
+    
+    # if merged_df is an empty dataframe, raise an error
+    if merged_df.empty:
+        print("ERROR: The filtering was too scrict and no genes were found that meet the criteria.")
+        sys.exit(1)
     # Apply the categorization function to each group
     gene_categories = grouped.apply(categorize_gene,include_groups=False)
 
