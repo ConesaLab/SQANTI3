@@ -20,7 +20,7 @@ def valid_fasta(filename):
 def valid_gtf(filename):
     valid_file(filename)
     if not filename.endswith('.gtf'):
-        if not filename.endswith('.gff'):
+        if not filename.endswith('.gff') or not filename.endswith('.gff3'):
             qc_logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:

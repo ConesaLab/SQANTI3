@@ -173,6 +173,7 @@ WORKDIR /data2
 ENV PATH="${PATH}:/conda/miniconda3/bin/"
 
 RUN chmod -R a+rX /opt2 && \
+    chmod 777 -R /conda/miniconda3/envs && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_qc.py sqanti3_qc.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
@@ -186,5 +187,5 @@ RUN groupadd user && useradd -r -g user user && chown user:user .
 # ... and efectively using that user
 USER user
 
-ENTRYPOINT ["conda", "run", "--no-capture-output" ,"-n","SQANTI3.env"]
+ENTRYPOINT ["conda", "run", "--no-capture-output" ,"-n","sqanti3"]
 CMD ["/bin/bash"]
