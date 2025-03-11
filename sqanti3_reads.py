@@ -36,8 +36,8 @@ def fill_design_table(args):
         sys.exit(-1)
     
     # Create the new columns
-    df['classification_file'] = args.input_dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
-    df['junction_file'] = args.input_dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
+    df['classification_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    df['junction_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
     df.to_csv(args.inDESIGN, sep = ',', index = False)
     return(df)
 
@@ -46,11 +46,11 @@ def get_method_runSQANTI3(args, df):
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
-        classification_file = os.path.join(args.input_dir, file_acc, f"{sampleID}_classification.txt")
+        classification_file = os.path.join(args.dir, file_acc, f"{sampleID}_classification.txt")
         junction_file = row["junction_file"]
 
         # Check for directory containing classification and junction file
-        directory_path = os.path.join(args.input_dir, file_acc)
+        directory_path = os.path.join(args.dir, file_acc)
         if os.path.isdir(directory_path):
             classification_file_path = os.path.join(classification_file)
             junction_file_path = os.path.join(junction_file)
@@ -75,7 +75,7 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.input_dir}/{file_acc} -o {sampleID} -s {args.sites}"
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
@@ -107,6 +107,7 @@ def get_method_runSQANTI3(args, df):
                                 --fasta"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+
                 print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
@@ -121,7 +122,7 @@ def make_UJC_hash(args, df):
         file_acc = row['file_acc']
         sampleID = row['sampleID']
         # Input dir, sqanti3 dir, samplename
-        outputPathPrefix = os.path.join(args.input_dir, file_acc, sampleID)
+        outputPathPrefix = os.path.join(args.dir, file_acc, sampleID)
 
         print("**** Calculating UJCs...", file = sys.stdout)
                 

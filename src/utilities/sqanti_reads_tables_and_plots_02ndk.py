@@ -774,7 +774,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         #UJC scatterplots
         for gene_category in merged_df['gene_category'].unique():
             # Filter the DataFrame for the current gene category
-            df = merged_df[merged_df['gene_category'] == gene_category]
+            df = merged_df[merged_df['gene_category'] == gene_category].copy() # copy is used to avoid SettingWithCopyWarning
             
             # Create a new column to indicate the color based on the thresholds
             df.loc[:,'Putative Unannotated'] = df.apply(
@@ -1027,7 +1027,8 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
                     'ref_match': (x['mean_abs_diff'] == 0).sum(),
                     'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
                     'cv_gt_0': (x['cv'] > 0).sum()
-                    })
+                    }),
+                    include_groups=False,
                     ).reset_index()
     cv_don_summary.fillna(0, inplace=True)
     
@@ -1036,7 +1037,8 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
                     'ref_match': (x['mean_abs_diff'] == 0).sum(),
                     'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
                     'cv_gt_0': (x['cv'] > 0).sum()
-                    })
+                    }),
+                    include_groups=False,
                     ).reset_index()
     cv_acc_summary.fillna(0, inplace=True)
    
@@ -2577,8 +2579,8 @@ def main():
         plot_pdf_by_factor(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
         
     if args.report in ("both", "html"):
-        makeHTML(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
-        makeHTML(os.path.join(args.OUT, f'{args.PREFIX}_annotation_plots.pdf'))
+        makeHTML(f'{args.OUT}/', args.PREFIX,'_plots.pdf')
+        makeHTML(f'{args.OUT}/', args.PREFIX,'_annotation_plots.pdf')
         
     if args.report == "html":
         os.remove(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
