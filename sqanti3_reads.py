@@ -14,8 +14,6 @@ __version__ = '1.0'  # Python 3.7
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sys.path.insert(0, utilitiesPath)
-
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
 
@@ -104,7 +102,7 @@ def get_method_runSQANTI3(args, df):
                                 {fastq_files} {args.annotation} {args.genome} \
                                 --skipORF --min_ref_len {args.min_ref_len} \
                                 --aligner_choice {args.aligner_choice} \
-                                -t {args.cpus} -d {args.input_dir}/{file_acc} \
+                                -t {args.cpus} -d {args.dir}/{file_acc} \
                                 -o {sampleID} -s {args.sites} -n {args.chunks} \
                                 --fasta"
                 if args.force_id_ignore:
@@ -223,7 +221,7 @@ def main():
         cmd_plotting = cmd_plotting + " --all-tables"
     if args.PCATABLES:
         cmd_plotting = cmd_plotting + "--pca-tables"
-    
+    print(cmd_plotting)
     subprocess.call(cmd_plotting, shell = True)
 
 

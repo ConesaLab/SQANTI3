@@ -18,7 +18,7 @@ def valid_fasta(filename):
 def valid_gtf(filename):
     valid_file(filename)
     if not filename.endswith('.gtf'):
-        if not filename.endswith('.gff'):
+        if not filename.endswith('.gff') or not filename.endswith('.gff3'):
             print(f"ERROR: File {filename} is not a GTF file. Abort!", file=sys.stderr)
             sys.exit(1)
         else:
@@ -39,7 +39,7 @@ def valid_gtf(filename):
     with open(filename) as isoforms_gtf:
         for line in isoforms_gtf:
             if line[0] != "#" and len(line.split("\t"))!=9:
-                sys.stderr.write("\nERROR: input isoforms file with not GTF format.\n")
+                sys.stderr.write("\nERROR: input isoforms file not in a correct GTF format.\n")
                 sys.exit()
             elif len(line.split("\t"))==9:
                 ind += 1
