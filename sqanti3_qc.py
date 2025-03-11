@@ -5,33 +5,33 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 # Modified by Pablo (pabloatienzalo@gmail.com)
 
-import os, sys
+import os
 import shutil
-
 # Import SQANTI3 modules
-from src.qc_argparse import qc_argparse, args_validation
+from src.qc_argparse import qc_argparse
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import args_validation
+from src.logging_config import qc_art,art_logger
+from src.module_logging import qc_logger
 
 def main():
 
-    args = qc_argparse()
+    art_logger.info(qc_art())
+    args = qc_argparse().parse_args()
     args = args_validation(args)
-
-
+    if not os.path.exists(os.path.join(args.dir,'logs')):
+        os.makedirs(os.path.join(args.dir,'logs'))
     # path and prefix for output files
-
-
     # Print out parameters so can be put into report PDF later
-    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
-    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
+    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
+    qc_logger.info(f"Write arguments to {args.doc}...")
     with open(args.doc, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
         f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
-        f.write("Annotation\t" + os.path.abspath(args.annotation) + "\n")
-        f.write("Genome\t" + os.path.abspath(args.genome) + "\n")
+        f.write("Annotation\t" + os.path.abspath(args.refGTF) + "\n")
+        f.write("Genome\t" + os.path.abspath(args.refFasta) + "\n")
         f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
         f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
         f.write("Aligner\t" + str(args.aligner_choice) + "\n")
@@ -62,7 +62,7 @@ def main():
         f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
 
     # Running functionality based on the chunks
-    print("**** Running SQANTI3...", file=sys.stdout)
+    qc_logger.info(f"Initialising QC pipeline.")
     
     if args.chunks == 1:
         run(args)

@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "default_formatter": {
+            "format": "[%(levelname)s:%(asctime)s] %(message)s"
+        },
+        "error_formatter": {
+            "format": "%(levelname)s: %(message)s"
+        }
+    },
+    "handlers": {
+        "stream_handler": {
+            "class": "logging.StreamHandler",
+            "formatter": "default_formatter"
+        },
+        "module_file_handler": {
+            "class": "logging.FileHandler",
+            "filename": "results/logs/qc_module.log",
+            "mode": "a",
+            "formatter": "default_formatter",
+            "encoding": "utf8"
+        }
+    },
+    "loggers": {
+        "module_logger": {
+            "handlers": [
+                "module_file_handler",
+                "stream_handler"
+            ],
+            "level": "DEBUG",
+            "propagate": true
+        }
+    }
+}

@@ -2,10 +2,12 @@ from collections import defaultdict
 import os
 import sys
 from Bio  import SeqIO
+
 from src.utilities.rt_switching import rts
 from src.parsers import FLcount_parser, expression_parser
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
+from src.module_logging import qc_logger
 
 def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
@@ -41,10 +43,10 @@ def classify_fsm(isoforms_info):
     return isoforms_info
 
 def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
-    print('**** Adding TSS ratio data... ****')
+    qc_logger.info('**** Adding TSS ratio data.')
     for iso in ratio_TSS_dict:
         if iso not in isoforms_info:
-            print("WARNING: {0} found in ratio TSS file but not in input FASTA/GTF".format(iso), file=sys.stderr)
+            qc_logger.warning(f"Isoform {iso} found in ratio TSS file but not in input FASTA/GTF")
     for iso in isoforms_info:
         if iso in ratio_TSS_dict:
             if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
@@ -52,49 +54,49 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             else:
                 isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
         else:
-            print("WARNING: {0} not found in ratio TSS file. Assign count as 1.".format(iso), file=sys.stderr)
+            qc_logger.warning(f"Isoform {iso} not found in ratio TSS file. Assign count as 1.")
             isoforms_info[iso].ratio_TSS = 1
     return isoforms_info
 
 def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
-    print(f"Inside function {len(isoforms_info)}")
+    qc_logger.debug(f"Inside function {len(isoforms_info)}")
     if not os.path.exists(fl_count):
-        print("FL count file {0} does not exist!".format(fl_count), file=sys.stderr)
+        qc_logger.error(f"FL count file {fl_count} does not exist!")
         sys.exit(1)
 
-    print("**** Reading Full-length read abundance files...", file=sys.stderr)
+    qc_logger.info("**** Reading Full-length read abundance files.")
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
     for pbid in fl_count_dict:
         if pbid not in isoforms_info:
-            print("WARNING: {0} found in FL count file but not in input fasta.".format(pbid), file=sys.stderr)
+            qc_logger.warning(f"{pbid} found in FL count file but not in input fasta.")
     if len(fl_samples) == 1: # single sample from PacBio
-        print("Single-sample PacBio FL count format detected.", file=sys.stderr)
+        qc_logger.info("Single-sample PacBio FL count format detected.")
         for iso in isoforms_info:
             if iso in fl_count_dict:
                 isoforms_info[iso].FL = fl_count_dict[iso]
             else:
-                print("WARNING: {0} not found in FL count file. Assign count as 0.".format(iso), file=sys.stderr)
+                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
                 isoforms_info[iso].FL = 0
     else: # multi-sample
-        print("Multi-sample PacBio FL count format detected.", file=sys.stderr)
+        qc_logger.info("Multi-sample PacBio FL count format detected.")
         fields_class_cur = fields_class_cur + ["FL."+s for s in fl_samples]
         for iso in isoforms_info:
             if iso in fl_count_dict:
                 isoforms_info[iso].FL_dict = fl_count_dict[iso]
             else:
-                print("WARNING: {0} not found in FL count file. Assign count as 0.".format(iso), file=sys.stderr)
+                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
                 isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
     return isoforms_info, fields_class_cur
 
 def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFASTA,cpus):
     if expression:
-        print("**** Reading Isoform Expression Information.", file=sys.stderr)
+        qc_logger.info("**** Reading Isoform Expression Information.")
         exp_dict = expression_parser(expression)
         gene_exp_dict = {}
         for iso in isoforms_info:
             if iso not in exp_dict:
                 exp_dict[iso] = 0
-                print("WARNING: isoform {0} not found in expression matrix. Assigning TPM of 0.".format(iso), file=sys.stderr)
+                qc_logger.warning(f"Isoform {iso} not found in expression matrix. Assigning TPM of 0.")
             gene = isoforms_info[iso].geneName()
             if gene not in gene_exp_dict:
                 gene_exp_dict[gene] = exp_dict[iso]
@@ -102,23 +104,27 @@ def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFAST
                 gene_exp_dict[gene] = gene_exp_dict[gene]+exp_dict[iso]
     else:
         if short_reads is not None:
-            print("**** Running Kallisto to calculate isoform expressions. ")
+            qc_logger.info("**** Running Kallisto to calculate isoform expressions. ")
             expression_files = kallisto(corrFASTA, short_reads, outdir, cpus)
             exp_dict = expression_parser(expression_files)
+            qc_logger.debug(exp_dict)
             gene_exp_dict = {}
             for iso in isoforms_info:
                 if iso not in exp_dict:
                     exp_dict[iso] = 0
-                    print("WARNING: isoform {0} not found in expression matrix. Assigning TPM of 0.".format(iso), file=sys.stderr)
+                    qc_logger.warning(f"Isoform {iso} not found in expression matrix. Assigning TPM of 0.")
                 gene = isoforms_info[iso].geneName()
                 if gene not in gene_exp_dict:
                     gene_exp_dict[gene] = exp_dict[iso]
                 else:
+                    qc_logger.debug(f"Gene expression: {gene_exp_dict[gene]}")
+                    qc_logger.debug(f"Expression dict: {exp_dict[iso]}")
+                    qc_logger.debug(f"Isoform: {iso}")
                     gene_exp_dict[gene] = gene_exp_dict[gene]+exp_dict[iso]
         else:
             exp_dict = None
             gene_exp_dict = None
-            print("Isoforms expression files not provided.", file=sys.stderr)
+            qc_logger.info("Isoforms expression files not provided.")
     # Add expression information to isoforms_info
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()

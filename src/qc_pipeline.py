@@ -4,36 +4,36 @@ import subprocess
 from csv import DictReader
 from Bio import SeqIO  # type: ignore
 
-from .utilities.indels_annot import calc_indels_from_sam
+from src.utilities.indels_annot import calc_indels_from_sam
 
-from .qc_output import (
+from src.qc_output import (
     cleanup, generate_report, save_isoforms_info, write_classification_output,
     write_isoform_hits, write_junction_output, write_omitted_isoforms
 )
-from .helpers import (
+from src.helpers import (
     get_corr_filenames, get_class_junc_filenames, rename_novel_genes, 
     sequence_correction, predictORF, write_collapsed_GFF_with_CDS
     )
-from .parsers import (
+from src.parsers import (
     get_fusion_component, reference_parser, isoforms_parser
 )
-from .config import FIELDS_CLASS 
-from .commands import (
+from src.config import FIELDS_CLASS 
+from src.commands import (
     ISOANNOT_PROG, GTF_to_genePred
 )
-from .qc_computations import (
+from src.qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
     process_rts_swiching, ratio_TSS_dict_reading,
     full_length_quantification
 )
-from .classification_preprocessing import (
+from src.classification_preprocessing import (
     initialize_isoform_hits, read_CAGE_peaks, read_polyA_peaks,
     read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
 )
-from .classification_main import isoform_classification_pipeline
+from src.classification_main import isoform_classification_pipeline
+from src.module_logging import qc_logger
 
 def run(args):
-
     global isoform_hits_name
 
     corrGTF, corrSAM, corrFASTA, corrORF , _ = get_corr_filenames(args.dir, args.output)
@@ -42,16 +42,15 @@ def run(args):
 
     start3 = timeit.default_timer()
 
-    print("**** Parsing provided files....", file=sys.stdout)
-    print("Reading genome fasta {0}....".format(args.genome), file=sys.stdout)
+    qc_logger.info("Parsing provided files")
+    qc_logger.info(f"Reading genome fasta {args.refFasta}")
     # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
-    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.genome), 'fasta'))
-
+    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
     ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     sequence_correction(
     args.dir, args.output, args.cpus, args.chunks, args.fasta,
-    genome_dict, badstrandGTF, args.genome, args.isoforms, args.aligner_choice,
-    gmap_index=args.gmap_index, annotation=args.annotation)
+    genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
+    gmap_index=args.gmap_index, annotation=args.refGTF)
     
     orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
                          corrFASTA, corrORF)
@@ -59,7 +58,7 @@ def run(args):
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
         junctions_by_chr, junctions_by_gene, start_ends_by_gene = \
-            reference_parser(args.annotation,args.dir,args.output, list(genome_dict.keys()),
+            reference_parser(args.refGTF,args.dir,args.output, list(genome_dict.keys()),
                              args.genename, args.isoAnnotLite)
 
     ## parse query isoforms
@@ -80,7 +79,7 @@ def run(args):
     isoform_hits_name = initialize_isoform_hits(args.dir, args.output,args.isoform_hits)
     star_out, star_index, SJcovNames,\
         SJcovInfo, fields_junc_cur = SJ_coverage(args.short_reads, args.coverage, 
-                                                 args.genome, args.dir, args.cpus)
+                                                 args.refFasta, args.dir, args.cpus)
     ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam, args.short_reads, star_out,
                                            star_index, corrGTF, args.ratio_TSS_metric)
     cage_peak_obj = read_CAGE_peaks(args.CAGE_peak)
@@ -97,7 +96,8 @@ def run(args):
         SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
-    print("Number of classified isoforms: {0}".format(len(isoforms_info)), file=sys.stdout)
+
+    qc_logger.info(f"Number of classified isoforms: {len(isoforms_info)}")
     
     # This steps are avoided in the parallel implementation
     # They are run instead after combining the chunks
@@ -105,20 +105,20 @@ def run(args):
         ## FSM classification
         isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
         isoforms_info = classify_fsm(isoforms_info)
-        print(f"After classify fsm: {len(isoforms_info)}")
+        qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
         
         ## FL count file
         fields_class_cur = FIELDS_CLASS
         if args.fl_count:
             isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
         else:
-            print("Full-length read abundance files not provided.", file=sys.stderr)
+            qc_logger.info("Full-length read abundance files not provided.")
 
         ## RT-switching computation
-        print("**** RT-switching computation....", file=sys.stderr)
+        qc_logger.info("RT-switching computation")
         isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
-                                                        args.genome,genome_dict)
-        print(f"After RTS classificaion: {len(isoforms_info)}")
+                                                        args.refFasta,genome_dict)
+        qc_logger.info(f"After RTS classificaion: {len(isoforms_info)}")
 
     
     ## TSS ratio dict reading
@@ -141,8 +141,8 @@ def run(args):
     fields_junc_cur = reader.fieldnames
     isoforms_info = isoforms_junctions(isoforms_info, reader)
 
-    #### Printing output file:
-    print("**** Writing output files....", file=sys.stderr)
+    #### qc_logger.infoing output file:
+    qc_logger.info("Writing output files")
 
     if args.chunks != 1:
         save_isoforms_info(isoforms_info, fields_junc_cur, args.dir, args.output)
@@ -171,7 +171,7 @@ def run(args):
         cleanup(outputClassPath, outputJuncPath)
 
     stop3 = timeit.default_timer()
-    print("SQANTI3 complete in {0} sec.".format(stop3 - start3), file=sys.stderr)
+    qc_logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
 
 
 ### IsoAnnot Lite implementation
@@ -181,12 +181,12 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
     if gff3_opt:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
         isoAnnot_sum = iso_out + ".isoAnnotLite_stats.txt"
-        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -gff3 {t} -o {o} -novel -stdout {i}".format(g=correctedGTF , c=outClassFile, j=outJuncFile, t=gff3_opt, o=iso_out, i=isoAnnot_sum)
+        ISOANNOT_CMD = f"python3 {ISOANNOT_PROG} {correctedGTF} {outClassFile} {outJuncFile} -gff3 {gff3_opt} -o {iso_out} -novel -stdout {isoAnnot_sum}"
     else:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
-        ISOANNOT_CMD = "python3 "+ ISOANNOT_PROG + " {g} {c} {j} -o {o} -novel".format(g=correctedGTF , c=outClassFile, j=outJuncFile, o=iso_out)
+        ISOANNOT_CMD = f"python3 {ISOANNOT_PROG} {correctedGTF} {outClassFile} {outJuncFile} -o {iso_out} -novel"
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
-        print("ERROR running command: {0}".format(ISOANNOT_CMD), file=sys.stderr)
+        qc_logger.error(f"Command failed: {ISOANNOT_CMD}")
         sys.exit(1)
 
 

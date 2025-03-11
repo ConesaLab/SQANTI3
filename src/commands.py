@@ -1,10 +1,13 @@
+import logging
 import os
 import sys
 import shutil
 import subprocess
 
+from src.module_logging import qc_logger
+from src.logging_config import MAIN_LOGGING_CONFIG
+from src.config import utilitiesPath
 
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 sys.path.insert(0, utilitiesPath)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z sense-force {i} > {o}"
@@ -17,10 +20,10 @@ GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
 if shutil.which(GTF2GENEPRED_PROG) is None:
-    print("Cannot find executable {0}. Abort!".format(GTF2GENEPRED_PROG), file=sys.stderr)
+    qc_logger.info(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
     sys.exit(1)
 if shutil.which(GFFREAD_PROG) is None:
-    print("Cannot find executable {0}. Abort!".format(GFFREAD_PROG), file=sys.stderr)
+    qc_logger.error("Cannot find executable {GFFREAD_PROG}. Abort!")
     sys.exit(1)
 
 
@@ -36,7 +39,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
         case "gmap":
-            print("****Aligning reads with GMAP...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with GMAP...")
             cmd = GMAP_CMD.format(
                 cpus=n_cpu,
                 dir=os.path.dirname(gmap_index),
@@ -45,7 +48,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "minimap2":
-            print("****Aligning reads with Minimap2...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with Minimap2...")
             cmd = MINIMAP2_CMD.format(
                 cpus=n_cpu,
                 g=genome,
@@ -53,7 +56,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "deSALT":
-            print("****Aligning reads with deSALT...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with deSALT...")
             cmd = DESALT_CMD.format(
                 cpus=n_cpu,
                 dir=gmap_index,
@@ -61,7 +64,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "uLTRA":
-            print("****Aligning reads with uLTRA...", file=sys.stdout)
+            qc_logger.info("****Aligning reads with uLTRA...")
             cmd = ULTRA_CMD.format(
                 cpus=n_cpu,
                 prefix="../" + os.path.splitext(os.path.basename(corrSAM))[0],
@@ -71,7 +74,8 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o_dir=outdir + "/uLTRA_out/",
             )
         case _:
-            raise ValueError(f"Unsupported aligner choice: {aligner_choice}")
+            qc_logger.error(f"Unsupported aligner choice: {aligner_choice}")
+            raise ValueError()
     return cmd
 
 # To dynamically get the utilities path
@@ -82,28 +86,31 @@ GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --ou
 
 def run_gmst(corrFASTA,orf_input,gmst_pre):
     if orf_input is not None:
-        print("Running ORF prediction of input on {0}...".format(orf_input))
+        qc_logger.info(f"Running ORF prediction of input on {orf_input}...")
         cmd = GMST_CMD.format(i=os.path.realpath(orf_input), o=gmst_pre)
     else:
         cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
     cmd = f"cd {os.path.dirname(gmst_pre)}; {cmd}"
-    run_command(cmd, description="GMST ORF prediction")
+    qc_logger.debug(f"GMST: {gmst_pre}")
+    logFile = f"{os.path.dirname(gmst_pre)}/GMST_python.log"
+    run_command(cmd,qc_logger,logFile,description="GMST ORF prediction")
 
 def GTF_to_genePred(corrGTF):
     """
     Converts a GTF file to a genePred file.
     """
     queryFile = os.path.splitext(corrGTF)[0] +".genePred"
+    logFile = f"{os.path.dirname(corrGTF)}/logs/GTF_to_genePred.log"
     if os.path.exists(queryFile):
-        print(f"{queryFile} already exists. Using it.", file=sys.stderr)
+        qc_logger.info(f"{queryFile} already exists. Using it.")
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
-        run_command(cmd, "GTF to genePred conversion")
+        run_command(cmd,qc_logger,logFile, "GTF to genePred conversion")
     return queryFile
    
 
-def run_command(cmd, description="command execution"):
+def run_command(cmd,logger,out_file='log/program.log',description="command execution"):
     """
     Executes a shell command and handles errors gracefully.
     
@@ -112,9 +119,28 @@ def run_command(cmd, description="command execution"):
     :raises SystemExit: Exits the script if the command fails.
     """
     try:
-        subprocess.check_call(cmd, shell=True)
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR during {description}: {cmd}", file=sys.stderr)
-        print(f"Details: {e}", file=sys.stderr)
-        sys.exit(1)
+        logger.debug(out_file)
+        os.makedirs(os.path.dirname(out_file), exist_ok=True) # Just in case
 
+        MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
+        logging.config.dictConfig(MAIN_LOGGING_CONFIG)
+        process_logger = logging.getLogger('process_logger')
+        result = subprocess.run(cmd, shell=True,capture_output=True,
+                                check=True,encoding="utf-8")
+        
+        logger.debug(f"Process {cmd} had {result.returncode}")
+        logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
+        process_logger.info(result.stdout)
+        if result.returncode !=0:
+            logger.debug("EROOOOOOR")
+            raise BrokenPipeError(result.stderr)
+    except subprocess.CalledProcessError as e:
+        process_logger.error(f"Details: {e}")
+        process_logger.info(e.stdout)
+        process_logger.error(e.stderr)
+        logger.error(f"Something went wrong during {description}")
+        logger.error(f"For more inflo, check {out_file}")
+        sys.exit(1)
+    except BrokenPipeError as e:
+
+        sys.exit(1)

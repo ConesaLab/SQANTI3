@@ -3,10 +3,14 @@ import pandas as pd
 import numpy as np
 import pybedtools
 import re
+
+from src.commands import run_command
+from src.module_logging import qc_logger
+
 try:
     from BCBio import GFF as BCBio_GFF
 except ImportError:
-    print("Unable to import BCBio! Please make sure bcbiogff is installed.", file=sys.stderr)
+    qc_logger.error("Unable to import BCBio! Please make sure bcbiogff is installed.")
     sys.exit(-1)
 
 def star_mapping(index_dir, SR_fofn, output_dir, cpus):
@@ -27,56 +31,62 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus):
     """
 
     if not os.path.exists(index_dir):
-        raise FileNotFoundError(f"Directory {index_dir} does not exist.")
+        qc_logger.error(f"Directory {index_dir} does not exist.")
+        raise FileNotFoundError()
 
     mapping_dir = output_dir + '/STAR_mapping'
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = [x.strip() for x in line.split(' ')]
-            compressed = False
-            if files[0][-3:] == '.gz':
-                compressed = True
-            if compressed :
-                sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
-                sample_name = sample_name.split('.')[:-1][0]
+            compressed = files[0].endswith('.gz')
+            sample_name = os.path.splitext(os.path.basename(files[0]))[0].split('.')[0]
+            sample_prefix = os.path.join(mapping_dir, sample_name)
+            if not os.path.exists(f'{sample_prefix}Log.final.out'):
+                qc_logger.info(f'Mapping for {sample_name}: in progress.')
+                cmd = star_cmd(cpus,index_dir,files,sample_prefix,compressed) 
+                logFile = f"{output_dir}/logs/STAR_mapping_{sample_name}.log"
+                run_command(cmd,qc_logger,logFile,f'STAR mapping {sample_name}')
+                qc_logger.info(f'Mapping for {sample_name}: done.')
             else:
-                sample_name = os.path.splitext(files[0])[-2].split('/')[-1]
-            sample_prefix = mapping_dir + '/' + sample_name
-            if not os.path.exists(sample_prefix + 'Log.final.out'):
-                print('Mapping for ', sample_name, ': in progress...')
-                if not compressed:
-                    if len(files) == 1:
-                        print('Mapping for ', sample_name, ': done.')
-                        subprocess.call(['STAR', '--runThreadN',  str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--twopassMode', 'Basic'])
-                    else:
-                        print('Mapping for ', sample_name, ': done.')
-                        subprocess.call(['STAR', '--runThreadN', str(cpus),  '--genomeDir', index_dir, '--readFilesIn', files[0], files[1], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--twopassMode', 'Basic'])
-                else:
-                    if len(files) == 1:
-                        print('Mapping for ', sample_name, ': done.')
-                        subprocess.call(['STAR', '--runThreadN',  str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--readFilesCommand', 'zcat', '--twopassMode', 'Basic'])
-                    else:
-                        print('Mapping for ', sample_name, ': done.')
-                        subprocess.call(['STAR', '--runThreadN', str(cpus), '--genomeDir', index_dir, '--readFilesIn', files[0], files[1], '--outFileNamePrefix', sample_prefix,'--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1', '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within', '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04', '--outFilterMismatchNmax', '999', '--alignIntronMin', '20', '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000', '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory', '--outSAMtype', 'BAM', 'SortedByCoordinate', '--readFilesCommand', 'zcat', '--twopassMode', 'Basic'])
+                qc_logger.info(f'Mapping for {sample_name}: already completed.')
 
 
+def star_cmd(cpus,index_dir,files,sample_prefix,compressed):
+    base_command = [
+            'STAR', '--runThreadN', str(cpus), '--genomeDir', index_dir,
+            '--readFilesIn'] + files + [
+            '--outFileNamePrefix', sample_prefix,
+            '--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1',
+            '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within',
+            '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04',
+            '--outFilterMismatchNmax', '999', '--alignIntronMin', '20',
+            '--alignIntronMax', '1000000', '--alignMatesGapMax', '1000000',
+            '--sjdbScore', '1', '--genomeLoad', 'NoSharedMemory',
+            '--outSAMtype', 'BAM', 'SortedByCoordinate', '--twopassMode', 'Basic'
+        ]
+    if compressed:
+        base_command.extend(['--readFilesCommand', 'zcat'])
+    return ' '.join(base_command)
+        
 def star(genome, SR_fofn, output_dir, cpus):
     fasta_genome = genome 
     index_dir = output_dir + '/STAR_index/'
     index_dir_tmp = index_dir + '/_STARtmp/'
     index_dir_o = index_dir + 'SAindex' 
     mapping_dir = output_dir + '/STAR_mapping/'
-    print('START running STAR...')
     if not os.path.exists(mapping_dir):
         os.makedirs(mapping_dir)
     if not os.path.exists(index_dir):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
-            print('Running indexing...')
-            subprocess.call(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
-            print('Indexing done.')
+            qc_logger.info('** Running indexing.')
+            cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
+            logFile = f"{output_dir}/logs/STAR_idex.log"
+            run_command(cmd,qc_logger,logFile,"STAR genome indexing")
+            qc_logger.info('Indexing done.')
     else:
-        print('Index identified. Proceeding to mapping.')
+        qc_logger.info('Index identified.')
+    qc_logger.info('** Running mapping.')
     star_mapping(index_dir, SR_fofn, output_dir, cpus)
     return(mapping_dir, index_dir)
 
@@ -93,16 +103,14 @@ def kallisto_quantification(files,index,cpus, output_dir):
     if not os.path.exists(abundance_file):
         if not os.path.exists(out_prefix):
             os.makedirs(out_prefix)
-        print('Running Kallisto quantification for {0} sample'.format(sample_name))
-        try:
-            subprocess.run(['kallisto quant -i {} -o {} -b 100 -t {} {} {}'.format(index, out_prefix, str(cpus), r1, r2)],
-                           shell=True, check = True)
-        except subprocess.CalledProcessError:
-            if os.path.exists(abundance_file):
-               os.remove(abundance_file) 
+        qc_logger.info(f'** Running Kallisto quantification for {sample_name} sample')
+        cmd = f'kallisto quant -i {index} -o {out_prefix} -b 100 -t {cpus} {r1} {r2}'
+        logFile=os.path.normpath(os.path.join(output_dir,"..","logs",f"kallisto_{sample_name}.log"))
+        run_command(cmd,qc_logger,logFile,"Kallisto quantification")
+                           
     else:
-        print("Kallisto quantification output {0} found. Using it...".format(abundance_file))
-    return(abundance_file)
+        qc_logger.info(f"Kallisto quantification output {abundance_file} found. Using it.")
+    return abundance_file
 
 
 def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
@@ -112,16 +120,17 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
     if not os.path.exists(kallisto_output):
         os.makedirs(kallisto_output)
     if not os.path.exists(kallisto_index):
-        print('Running kallisto index {0} using as reference {1}'.format(kallisto_index, corrected_fasta))
-        subprocess.run(['kallisto index -i {} {} --make-unique'.format(kallisto_index, corrected_fasta)],
-                        shell=True, check = True)
+        qc_logger.info(f'Running kallisto index {kallisto_index} using as reference {corrected_fasta}')
+        cmd = f"kallisto index -i {kallisto_index} {corrected_fasta} --make-unique"
+        logFile=f"{output_dir}/logs/kallisto_index.log"
+        run_command(cmd,qc_logger,logFile,"Kallisto index") 
     with open(SR_fofn) as fofn:
         for line in fofn:
             files = line.split(' ')
             if len(files)==2:
                 abundance = kallisto_quantification(files, kallisto_index, cpus, kallisto_output)
             else:
-                print('SQANTI3 is only able to quantify isoforms using pair-end RNA-Seq data.\nPlease check that your fofn contains the path to both read files in a space-separated format.')
+                qc_logger.error('SQANTI3 is only able to quantify isoforms using pair-end RNA-Seq data.\nPlease check that your fofn contains the path to both read files in a space-separated format.')
                 sys.exit()
             if len(expression_files)==0:
                 expression_files = abundance
@@ -157,7 +166,7 @@ def get_TSS_bed(corrected_gtf, chr_order):
                     start_out=int(loc[1])+1
                     end_out=int(loc[1])+101
                 if end_out<=0 or start_in<=0: 
-                    print('{iso} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome'.format(iso=iso_id))
+                    qc_logger.warning(f'{iso_id} will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome')
                 else:
                     inside.write(chr + "\t" + str(start_in) + "\t" + str(end_in) + "\t" + iso_id + "\t0\t" + strand + "\n")
                     outside.write(chr + "\t" + str(start_out) + "\t" + str(end_out) + "\t" + iso_id + "\t0\t" + strand + "\n")
@@ -177,8 +186,9 @@ def get_bam_header(bam):
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
     if not os.path.isfile(out):
-        subprocess.run(["samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out)],
-                        shell=True, check = True)
+        cmd = rf"samtools view -H {bam} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {out}"
+        logFile=os.path.normpath(os.path.join(o_dir,"..","logs","samtools_header.log"))
+        run_command(cmd,qc_logger,logFile,"samtools header")
     return(out)
 
 
@@ -192,7 +202,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         if column_name == 'inside':
             df.loc[df[column_name] < 3, column_name] = np.nan
         return df
-    print('BAM files identified: '+str(replicates))
+    qc_logger.info('BAM files identified: '+str(replicates))
     out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)

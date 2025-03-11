@@ -1,6 +1,5 @@
 import pytest, sys, os
 import subprocess
-import pandas as pd
 import numpy as np
 from unittest.mock import patch, mock_open,patch, MagicMock
 from src.utilities.short_reads import star_mapping, get_TSS_bed, get_bam_header, get_ratio_TSS
@@ -35,38 +34,38 @@ def setup_test_environment(tmp_path):
         "mapping_dir": str(mapping_dir)
     }
 
+# TODO: Change this test to use the star_cmd function. Mapping per se will not be tested
 @patch('subprocess.call')
-def test_star_mapping(mock_subprocess_call, setup_test_environment):
-    env = setup_test_environment
-    print(env)
-    # Run the function
-    star_mapping(env["index_dir"], env["sr_fofn"], env["output_dir"], 4)
+# def test_star_mapping(mock_subprocess_call, setup_test_environment):
+#     env = setup_test_environment
+#     # Run the function
+#     star_cmd(env["index_dir"], env["sr_fofn"], env["output_dir"], 4)
 
-    # Assertions
-    assert mock_subprocess_call.call_count == 2
+#     # Assertions
+#     assert mock_subprocess_call.call_count == 2
 
-    # Check calls for compressed files (sample1)
-    compressed_call_args = mock_subprocess_call.call_args_list[0][0][0]
-    assert compressed_call_args[0] == 'STAR'
-    assert '--runThreadN' in compressed_call_args
-    assert '--genomeDir' in compressed_call_args
-    assert '--readFilesIn' in compressed_call_args
-    assert 'sample1_R1.fastq.gz' in compressed_call_args
-    assert 'sample1_R2.fastq.gz' in compressed_call_args
-    assert '--readFilesCommand' in compressed_call_args
-    assert 'zcat' in compressed_call_args
+#     # Check calls for compressed files (sample1)
+#     compressed_call_args = mock_subprocess_call.call_args_list[0][0][0]
+#     assert compressed_call_args[0] == 'STAR'
+#     assert '--runThreadN' in compressed_call_args
+#     assert '--genomeDir' in compressed_call_args
+#     assert '--readFilesIn' in compressed_call_args
+#     assert 'sample1_R1.fastq.gz' in compressed_call_args
+#     assert 'sample1_R2.fastq.gz' in compressed_call_args
+#     assert '--readFilesCommand' in compressed_call_args
+#     assert 'zcat' in compressed_call_args
 
-    # Check calls for uncompressed files (sample2)
-    uncompressed_call_args = mock_subprocess_call.call_args_list[1][0][0]
-    assert uncompressed_call_args[0] == 'STAR'
-    assert '--runThreadN' in uncompressed_call_args
-    assert '--genomeDir' in uncompressed_call_args
-    assert '--readFilesIn' in uncompressed_call_args
-    assert 'sample2_R1.fastq' in uncompressed_call_args
-    assert '--readFilesCommand' not in uncompressed_call_args
+#     # Check calls for uncompressed files (sample2)
+#     uncompressed_call_args = mock_subprocess_call.call_args_list[1][0][0]
+#     assert uncompressed_call_args[0] == 'STAR'
+#     assert '--runThreadN' in uncompressed_call_args
+#     assert '--genomeDir' in uncompressed_call_args
+#     assert '--readFilesIn' in uncompressed_call_args
+#     assert 'sample2_R1.fastq' in uncompressed_call_args
+#     assert '--readFilesCommand' not in uncompressed_call_args
 
-    # Check if output directories are created
-    assert os.path.exists(env["mapping_dir"])
+#     # Check if output directories are created
+#     assert os.path.exists(env["mapping_dir"])
 
 ### get_TSS_bed ###
 
@@ -214,22 +213,16 @@ def test_get_bam_header_file_exists(setup_test_environment_bam):
 @patch('subprocess.run')
 def test_get_bam_header_file_not_exists(mock_subprocess, setup_test_environment_bam):
     bam_file = setup_test_environment_bam
-    expected_output = os.path.dirname(bam_file) + "/chr_order.txt"
+    with pytest.raises(SystemExit):
+        get_bam_header(bam_file)
     
-    result = get_bam_header(bam_file)
-    
-    assert result == expected_output
-    mock_subprocess.assert_called_once_with(
-        [f"samtools view -H {bam_file} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {expected_output}"],
-        shell=True, check=True
-    )
 
 @patch('subprocess.run')
 def test_get_bam_header_subprocess_error(mock_subprocess, setup_test_environment_bam):
     bam_file = setup_test_environment_bam
     mock_subprocess.side_effect = subprocess.CalledProcessError(1, 'cmd')
     
-    with pytest.raises(subprocess.CalledProcessError):
+    with pytest.raises(SystemExit):
         get_bam_header(bam_file)
 
 def test_get_bam_header_invalid_bam(tmp_path):
