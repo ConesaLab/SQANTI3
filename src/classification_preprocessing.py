@@ -11,6 +11,8 @@ from .parsers import STARcov_parser
 from .qc_classes import CAGEPeak, PolyAPeak
 from .config import FIELDS_JUNC
 from .utils import get_files_from_dir
+from src.helpers import get_isoform_hits_name
+
 
 def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
     """
@@ -79,7 +81,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
 
 def initialize_isoform_hits(outdir, prefix, isoform_hits):
     if isoform_hits:
-        isoform_hits_name = os.path.join(outdir, prefix + '_isoform_hits')
+        isoform_hits_name = get_isoform_hits_name(outdir, prefix)
         with open(isoform_hits_name + '_tmp', 'w') as out_file:
             tsv_writer = csv.writer(out_file, delimiter='\t')
             tsv_writer.writerow(['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type'])
