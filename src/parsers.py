@@ -1,7 +1,7 @@
 import os
 import sys
-import subprocess
 import glob
+
 from collections import defaultdict
 from csv import DictReader
 from bx.intervals.intersection import Interval,IntervalTree
@@ -49,7 +49,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
 
-        if gene_name or isoAnnot:
+        if gene_name: #TODO: Discover why this flag was here or isoAnnot:
             cmd += ' -geneNameAsName2'
         run_command(cmd)
 

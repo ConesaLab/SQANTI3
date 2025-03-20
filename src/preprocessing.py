@@ -1,10 +1,11 @@
 import os
 import csv
 import sys
-from .parsers import get_fusion_component
-from .qc_classes import CAGEPeak, PolyAPeak
-from .classification_utils import SJ_coverage, TSS_ratio_calculation
-from .utilities.cupcake.sequence.BED import LazyBEDPointReader
+
+from src.utilities.cupcake.sequence.BED import LazyBEDPointReader
+
+from src.parsers import get_fusion_component
+from src.qc_classes import CAGEPeak, PolyAPeak
 
 def initialize_isoform_hits(outdir, prefix, isoform_hits):
     if isoform_hits:

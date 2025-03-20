@@ -1,9 +1,9 @@
 
 from bx.intervals import Interval
 from collections import defaultdict
-from .utils import find_closest_in_list, find_polyA_motif
-from .config import seqid_fusion
-from .classification_classifiers import (
+from src.utils import find_closest_in_list, find_polyA_motif
+from src.config import seqid_fusion
+from src.classification_classifiers import (
     transcriptsKnownSpliceSites, novelIsoformsKnownGenes, associationOverlapping
 )
 

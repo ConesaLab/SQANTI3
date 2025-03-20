@@ -3,17 +3,17 @@ import shutil
 import os,sys,copy,csv
 import pandas as pd #type: ignore
 import re
+
 from multiprocessing import Process
 from Bio import SeqIO
+
+from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+
+from src.qc_pipeline import run
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes
+from src.qc_output import cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS
 from src.config import FIELDS_CLASS
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
-from .utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
-
-from .qc_pipeline import run
-from .helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes, write_collapsed_GFF_with_CDS
-from .qc_output import cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
-# TODO: Do the split based on isoform ID groups, not on pure numbers
-
 
 def get_split_dir(outdir,prefix):
     split_prefix=os.path.join(os.path.abspath(outdir), prefix)

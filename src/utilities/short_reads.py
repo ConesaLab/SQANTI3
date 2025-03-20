@@ -177,7 +177,7 @@ def get_bam_header(bam):
     o_dir=os.path.dirname(bam)
     out=o_dir + "/chr_order.txt"
     if not os.path.isfile(out):
-        subprocess.run(["samtools view -H {b} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {o}".format(b=bam, o=out)],
+        subprocess.run([fr"samtools view -H {bam} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {out}"],
                         shell=True, check = True)
     return(out)
 

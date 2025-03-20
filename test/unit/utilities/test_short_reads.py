@@ -220,7 +220,7 @@ def test_get_bam_header_file_not_exists(mock_subprocess, setup_test_environment_
     
     assert result == expected_output
     mock_subprocess.assert_called_once_with(
-        [f"samtools view -H {bam_file} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {expected_output}"],
+        [fr"samtools view -H {bam_file} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {expected_output}"],
         shell=True, check=True
     )
 

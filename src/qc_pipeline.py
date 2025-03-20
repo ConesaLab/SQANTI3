@@ -4,33 +4,33 @@ import subprocess
 from csv import DictReader
 from Bio import SeqIO  # type: ignore
 
-from .utilities.indels_annot import calc_indels_from_sam
+from src.utilities.indels_annot import calc_indels_from_sam
 
-from .qc_output import (
+from src.qc_output import (
     cleanup, generate_report, save_isoforms_info, write_classification_output,
-    write_isoform_hits, write_junction_output, write_omitted_isoforms
+    write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS
 )
-from .helpers import (
+from src.helpers import (
     get_corr_filenames, get_class_junc_filenames, rename_novel_genes, 
-    sequence_correction, predictORF, write_collapsed_GFF_with_CDS
+    sequence_correction, predictORF
     )
-from .parsers import (
+from src.parsers import (
     get_fusion_component, reference_parser, isoforms_parser
 )
-from .config import FIELDS_CLASS 
-from .commands import (
+from src.config import FIELDS_CLASS 
+from src.commands import (
     ISOANNOT_PROG, GTF_to_genePred
 )
-from .qc_computations import (
+from src.qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
     process_rts_swiching, ratio_TSS_dict_reading,
     full_length_quantification
 )
-from .classification_preprocessing import (
+from src.classification_preprocessing import (
     initialize_isoform_hits, read_CAGE_peaks, read_polyA_peaks,
     read_polyA_motifs, read_phyloP_bed, SJ_coverage, TSS_ratio_calculation
 )
-from .classification_main import isoform_classification_pipeline
+from src.classification_main import isoform_classification_pipeline
 
 def run(args):
 

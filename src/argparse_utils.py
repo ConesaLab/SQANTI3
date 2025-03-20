@@ -1,6 +1,6 @@
 import os, sys
 import subprocess
-from .commands import GFFREAD_PROG
+from src.commands import GFFREAD_PROG
 
 def valid_file(filename):
     if not os.path.isfile(filename):
