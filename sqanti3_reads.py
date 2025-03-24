@@ -222,7 +222,7 @@ def main():
     if args.ALLTABLES:
         cmd_plotting = cmd_plotting + " --all-tables"
     if args.PCATABLES:
-        cmd_plotting = cmd_plotting + "--pca-tables"
+        cmd_plotting = cmd_plotting + " --pca-tables"
     
     subprocess.call(cmd_plotting, shell = True)
 
