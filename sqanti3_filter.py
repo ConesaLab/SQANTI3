@@ -22,137 +22,14 @@ bad quality transcripts.
 
 """
 
-import os, sys, subprocess
-import shutil
-from csv import DictReader, DictWriter
-from Bio import SeqIO
-
-from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+import os, sys
 
 from src.filter_argparse import filter_argparse
 from src.module_logging import filter_logger
 from src.config import __version__
 from src.logging_config import art_logger,filter_art
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
-
-RSCRIPTPATH = shutil.which('Rscript')
-RSCRIPT_REPORT = 'report_filter/SQANTI3_filter_report.R'
-RSCRIPT_ML = 'filter/SQANTI3_MLfilter.R'
-RSCRIPT_RULES = 'filter/SQANTI3_rules_filter.R'
-default_json = utilitiesPath + "/filter/filter_default.json"
-
-if os.system(RSCRIPTPATH + " --version")!=0:
-    filter_logger.error("Rscript executable not found! Abort!")
-    sys.exit(-1)
-
-def filter_files(args, ids_to_keep, inclusion_f):
-    # TODO: Update this prefix so it dinamically detects if it is a corrected file or not
-    prefix = args.dir + "/" + args.output
-    # filter FASTA/FASTQ file
-    if args.filter_isoforms is not None:
-        fafq_type = 'fasta'
-        with open(args.filter_isoforms) as h:
-            if h.readline().startswith('@'): fafq_type = 'fastq'
-        fout=open(prefix + '.filtered.' + fafq_type, 'w')
-        for r in SeqIO.parse(open(args.filter_isoforms), fafq_type):
-            if r.id in ids_to_keep:
-                SeqIO.write(r, fout, fafq_type)
-        fout.close()
-        filter_logger.info(f"Output written to: {fout.name}")
-
-    # filter GTF
-    if args.filter_gtf is not None:
-        outputGTF = prefix + '.filtered.gtf'
-        with open(outputGTF, 'w') as f:
-            for r in collapseGFFReader(args.filter_gtf):
-                if r.seqid in ids_to_keep:
-                    write_collapseGFF_format(f, r)
-            filter_logger.info(f"Output written to: {f.name}")
-
-    # filter SAM
-    if args.filter_sam is not None:
-        outputSam = prefix + '.filtered.sam'
-        with open(outputSam, 'w') as f:
-            reader = GMAPSAMReader(args.filter_sam, True)
-            f.write(reader.header)
-            for r in reader:
-                if r.qID in ids_to_keep:
-                    f.write(r.record_line + '\n')
-            filter_logger.info(f"Output written to: {f.name}")
-
-    # filter FAA
-    if args.filter_faa is not None:
-        outputFAA = prefix + '.filtered.faa'
-        with open(outputFAA, 'w') as f:
-            for r in SeqIO.parse(open(args.filter_faa), 'fasta'):
-                if r.id in ids_to_keep:
-                    f.write(">{0}\n{1}\n".format(r.description, r.seq))
-        filter_logger.info(f"Output written to: {f.name}")
-
-    # filter isoAnnot GFF3
-    if args.isoAnnotGFF3 is not None:
-        outputGFF3 = prefix + '.filtered.gff3'
-        awk_cmd = """awk 'FNR==NR {{ a[$1]; next }} ($1 in a)' {l} {g} > {o}""".format(l=inclusion_f, g=args.isoAnnotGFF3, o=outputGFF3)
-        subprocess.call(awk_cmd, shell=True)
-        filter_logger.info(f"Output written to: {outputGFF3}")
-
-def run_ML(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -t {t} -j {j} -i {i} -f {f} \
-    -e {e} -m {m} -z {z}".format(u=utilitiesPath, s=RSCRIPT_ML, c=args.sqanti_class, \
-    o=args.output, d=args.dir, t=args.percent_training, j=args.threshold, i=args.intrapriming ,\
-    f=args.force_fsm_in, e=args.filter_mono_exonic, m=args.intermediate_files, r=args.remove_columns, z=args.max_class_size)
-
-    report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f ml ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
-    o=args.output, d=args.dir)
-
-    if args.TP is not None:
-        if not os.path.isfile(args.TP):
-            filter_logger.error(f"{args.TP} doesn't exist. Abort!")
-            sys.exit(-1)
-        else:
-            cmd = cmd + f" -p {args.TP}"
-    if args.TN is not None:
-        if not os.path.isfile(args.TN):
-            filter_logger.error(f"{args.TN} doesn't exist. Abort!")
-            sys.exit(-1)
-        else:
-            cmd = cmd + f" -n {args.TN}"
-    if args.remove_columns is not None:
-        if not os.path.isfile(args.remove_columns):
-            filter_logger.error(f"{args.remove_columns} doesn't exist. Abort!")
-            sys.exit(-1)
-        else:
-            cmd = cmd + f" -r {args.remove_columns}"
-    filter_logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
-    if not args.skip_report:
-      subprocess.call(report_cmd, shell=True)
-    # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
-    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
-    return(seqs_to_keep, inclusion_list)
-
-def run_rules(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u} -e {e}".format(u=utilitiesPath, \
-     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter, e=args.filter_mono_exonic)
-
-    report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_REPORT, \
-    o=args.output, d=args.dir)
-
-    if args.json_filter is not None:
-        if not os.path.isfile(args.json_filter):
-            filter_logger.error(f"{args.json_filter} doesn't exist. Abort!")
-            sys.exit(-1)
-    filter_logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
-    if not args.skip_report:
-      subprocess.call(report_cmd, shell=True)
-    # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
-    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
-    return(seqs_to_keep, inclusion_list)
-
+from src.filter_steps import filter_files
+from src.commands import utilitiesPath
 
 def main():
     art_logger.info(filter_art())
