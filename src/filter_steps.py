@@ -1,79 +1,37 @@
-import os,sys
-from Bio import SeqIO
-
-from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
+import os
 
 from src.module_logging import filter_logger
-from src.commands import run_command, RSCRIPTPATH,RSCRIPT_ML,RSCRIPT_RULES,RSCRIPT_FILTER_REPORT,utilitiesPath
+from src.commands import (
+    run_command, RSCRIPTPATH,RSCRIPT_ML,RSCRIPT_RULES,
+    RSCRIPT_FILTER_REPORT,utilitiesPath
+)
+from src.filter_output import (
+    filter_isoforms, filter_gtf, filter_sam, filter_gff3, filter_faa
+)
 
-def filter_isoforms(filename,prefix,ids_to_keep):
-    fafq_type = 'fasta'
-    with open(filename) as h:
-            if h.readline().startswith('@'): fafq_type = 'fastq'
-    fout=open(prefix + '.filtered.' + fafq_type, 'w')
-    for r in SeqIO.parse(open(filename), fafq_type):
-        if r.id in ids_to_keep:
-            SeqIO.write(r, fout, fafq_type)
-    fout.close()
-    filter_logger.info(f"Output written to: {fout.name}")
-
-def filter_gtf(filename,prefix,ids_to_keep):
-    outputGTF = prefix + '.filtered.gtf'
-    with open(outputGTF, 'w') as f:
-        for r in collapseGFFReader(filename):
-            if r.seqid in ids_to_keep:
-                write_collapseGFF_format(f, r)
-        filter_logger.info(f"Output written to: {f.name}")
-    f.close()
-
-def filter_sam(filename,prefix,ids_to_keep):
-    outputSAM = prefix + '.filtered.sam'
-    with open(outputSAM, 'w') as f:
-        for r in GMAPSAMReader(filename):
-            if r.qID in ids_to_keep:
-                f.write(r)
-        filter_logger.info(f"Output written to: {f.name}")
-    f.close()
-
-def filter_gff3(filename,prefix,inclusion_f):
-    outputGFF3 = prefix + '.filtered.gff3'
-    awk_cmd = """awk 'FNR==NR {{ a[$1]; next }} ($1 in a)' {l} {g} > {o}""".format(l=inclusion_f, g=filename, o=outputGFF3)
-    logFile = os.path.join(os.path.dirname(prefix), 'logs', 'filter_gff3.log')
-    run_command(awk_cmd,filter_logger,logFile,"Filtering GFF3 file")
-    filter_logger.info(f"Output written to: {outputGFF3}")
-
-def filter_faa(filename,prefix,ids_to_keep):
-    outputFAA = prefix + '.filtered.faa'
-    with open(outputFAA, 'w') as f:
-        for r in SeqIO.parse(open(filename), 'fasta'):
-            if r.id in ids_to_keep:
-                f.write(">{0}\n{1}\n".format(r.description, r.seq))
-        filter_logger.info(f"Output written to: {f.name}")
-    f.close()
-
-def filter_files(args,outdir,prefix, ids_to_keep, inclusion_f):
+def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
+                 outdir,prefix, ids_to_keep, inclusion_f):
     # TODO: Update this prefix so it dinamically detects if it is a corrected file or not
     prefix = f"{outdir}/{prefix}" 
     # filter FASTA/FASTQ file
-    if args.filter_isoforms is not None:
-        filter_isoforms(args.filter_isoforms, prefix, ids_to_keep)
+    if isoforms is not None:
+        filter_isoforms(isoforms, prefix, ids_to_keep)
 
     # filter GTF
-    if args.filter_gtf is not None:
-        filter_gtf(args.filter_gtf, prefix, ids_to_keep)
+    if gtf is not None:
+        filter_gtf(gtf, prefix, ids_to_keep)
 
     # filter SAM
-    if args.filter_sam is not None:
-        filter_sam(args.filter_sam, prefix, ids_to_keep)
+    if sam is not None:
+        filter_sam(sam, prefix, ids_to_keep)
 
     # filter FAA
-    if args.filter_faa is not None:
-        filter_faa(args.filter_faa, prefix, ids_to_keep)
+    if faa is not None:
+        filter_faa(faa, prefix, ids_to_keep)
 
     # filter isoAnnot GFF3
-    if args.isoAnnotGFF3 is not None:
-        filter_gff3(args.isoAnnotGFF3, prefix, inclusion_f)
+    if isoAnnotGFF3 is not None:
+        filter_gff3(isoAnnotGFF3, prefix, inclusion_f)
 
 
 def prepare_ml_cmd(sq_class,prefix,outdir,percent_training,threshold,intrapriming,force_fsm_in,filter_mono_exonic,intermediate_files,max_class_size,TP=None,TN=None,remove_columns=None):

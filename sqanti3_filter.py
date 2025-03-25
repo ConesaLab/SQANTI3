@@ -49,8 +49,9 @@ def main():
 ### Checking presence of files for Rules. Check arguments --> If ok run Rules
     if args.subcommand == 'rules':
         ids, inclusion_file = run_rules(args)
-    print(ids,inclusion_file)
-    filter_files(args, ids, inclusion_file)
+    
+    filter_files(args.filter_isoforms, args.filter_gtf, args.filter_sam, args.filter_faa,
+                 args.isoAnnotGFF3, args.dir,args.output, ids, inclusion_file)
 
 if __name__ == "__main__":
     main()
