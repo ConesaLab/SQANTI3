@@ -48,7 +48,6 @@ apply_rules <- function(isoform_info, force_multiexon){
       for (i in c(1:length(rules$rule))){
         parameter <- rules[i, "column"]
         if (! is.na(isoform_info[parameter])){
-          if (target){print("Valid parameter")}
           if (rules[i, "type"] == "Min_Threshold"){
             if (as.numeric(isoform_info[parameter]) < as.numeric(rules[i, "rule"])){
               is_isoform=FALSE

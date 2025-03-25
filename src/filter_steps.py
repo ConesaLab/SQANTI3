@@ -71,7 +71,7 @@ def run_ML(args):
                         args.TN,args.remove_columns)
     
     logFile = os.path.join(args.dir, 'logs', 'filter_ml.log')
-    run_command(cmd,filter_logger,logFile,"Machine learning filtering")
+    run_command(cmd,filter_logger,logFile,"Machine learning filtering", silent=False)
 
     if not args.skip_report:
       report_cmd=f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f ml "
@@ -79,7 +79,7 @@ def run_ML(args):
       run_command(report_cmd,filter_logger,logFile,"Machine learning filtering report")
 
     # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = os.path.join(args.dir,"{args.output}_inclusion-list.txt")
+    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
 

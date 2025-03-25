@@ -17,7 +17,7 @@
 library(optparse)
 library(jsonlite)
 library(magrittr)
-library(dplyr)
+suppressMessages(library(dplyr))
 
 ### Define arguments
 option_list = list(
@@ -51,13 +51,13 @@ source(paste0(utilities, "/filter/rules_filter_functions.R"))
 
 
 ### read files
-print("-------------------------------------------------")
-print("           Reading classification file")
-print("-------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("           Reading classification file\n")
+cat("-------------------------------------------------\n")
 classif <- read.table(classif_file, sep="\t", header = T, as.is = T)
-print("-------------------------------------------------")
-print("       Reading JSON file with rules to filter")
-print("-------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("       Reading JSON file with rules to filter\n")
+cat("-------------------------------------------------\n")
 json_df <- jsonlite::fromJSON(txt = json_file ,simplifyDataFrame = T)
 
 ### json list will be transformed into a list of data frames with the rules. Rules DF have 4 columns:
@@ -131,9 +131,9 @@ for (sc in names(json_df)){
 names(rules_list) <- names_rules_list
 
 
-print("-------------------------------------------------")
-print("             Performing filtering                ")
-print("-------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("             Performing filtering                \n")
+cat("-------------------------------------------------\n")
 
 
 classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
@@ -141,12 +141,11 @@ classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
 inclusion_list <- classif[classif$filter_result == "Isoform", "isoform"]
 
 artifacts_classif <- classif[classif$filter_result == "Artifact", ]
-print(force_multiexon)
 reasons_df <- apply(artifacts_classif,1, get_reasons, force_multiexon) %>% bind_rows()
 
-print("-------------------------------------------------")
-print("                Writting results                 ")
-print("-------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("                Writting results                 \n")
+cat("-------------------------------------------------\n")
 
 write.table(classif, file=paste0(opt$dir, "/", opt$output, "_RulesFilter_result_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
