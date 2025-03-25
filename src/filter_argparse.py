@@ -1,10 +1,10 @@
-import argparse
+import argparse, os
 from src.config import __version__,__author__, utilitiesPath
 
 def filter_argparse():
-    default_json = utilitiesPath + "/filter/filter_default.json"
+    default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
-### Common arguments for both modes
+    ### Common arguments for both modes
     common = argparse.ArgumentParser(add_help=False)
     # Required arguments
     cr = common.add_argument_group("Required arguments")
@@ -18,8 +18,8 @@ def filter_argparse():
     ci.add_argument('--filter_faa', help='ORF prediction faa file to be filtered by SQANTI3')
     # Output options
     co = common.add_argument_group("Output options")
-    co.add_argument('-o','--output', default='isoforms', help='Prefix for output files.')
-    co.add_argument('-d','--dir', default='./sqanti3_results', help='Directory for output files. Default: Directory where the script was run.')
+    co.add_argument('-o','--output', help='Prefix for output files.')
+    co.add_argument('-d','--dir', default='./sqanti3_results', help='Directory for output files. Default: %(default)s')
     co.add_argument("--skip_report", action="store_true", help='Skip creation of a report about the filtering')
     # Filtering options
     cf = common.add_argument_group("Filtering options")
@@ -55,23 +55,23 @@ def filter_argparse():
     # ML options
     ml = machine_learning.add_argument_group("Machine Learning specific options")
     ml.add_argument('-t','--percent_training', type=float, default=0.8, \
-    help="Proportion of the data that goes to training (parameter p of the function createDataPartition). \
-        \nDefault: %(default)s")
+                    help="Proportion of the data that goes to training (parameter p of the function createDataPartition). \
+                    \nDefault: %(default)s")
     ml.add_argument('-p', '--TP', \
-    help="Path to file containing the list of the TP transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
+                    help="Path to file containing the list of the TP transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
     ml.add_argument('-n', '--TN', \
-    help="Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
+                    help="Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.")
     ml.add_argument('-j', '--threshold', type=float, default=0.7, \
-    help="Machine Learning probability threshold to classify transcripts as positive isoforms. \
+                    help="Machine Learning probability threshold to classify transcripts as positive isoforms. \
         \nDefault: %(default)s")
     ml.add_argument('-f', '--force_fsm_in', action="store_true", \
-    help="Forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms).")
+                    help="Forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms).")
     ml.add_argument('--intermediate_files', action="store_true", \
-    help="Outputs ML filter intermediate files.")
+                    help="Outputs ML filter intermediate files.")
     ml.add_argument('-r','--remove_columns', \
-    help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
+                    help="Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).")
     ml.add_argument('-z', '--max_class_size', type=int , default=3000, \
-    help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.\nDefault: %(default)s")
+                    help="Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.\nDefault: %(default)s")
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='Adenine percentage at genomic 3\' end to flag an isoform as intra-priming. Default: %(default)s')
 
     return parser

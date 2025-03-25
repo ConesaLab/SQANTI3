@@ -29,7 +29,7 @@ if shutil.which(GFFREAD_PROG) is None:
 
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
-RSCRIPT_QC_REPORT = '/report_qc/SQANTI3_report.R'
+RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
 
 # Rscript filter
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")

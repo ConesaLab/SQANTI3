@@ -2,38 +2,40 @@ import os, sys
 import subprocess
 
 from src.commands import GFFREAD_PROG
-from src.module_logging import qc_logger
+from src.module_logging import qc_logger, filter_logger
 
-def valid_file(filename):
+def valid_file(filename,logger):
     if not os.path.isfile(filename):
-        qc_logger.error(f"File {filename} not found. Abort!")
+        logger.error(f"File {filename} not found. Abort!")
         sys.exit(1)
     return filename
 
-def valid_fasta(filename):
-    valid_file(filename)
-    if not filename.endswith('.fasta') and not filename.endswith('.fa') and not filename.endswith('.fastq') and not filename.endswith('.fq'):
-        qc_logger.error(f"File {filename} is not a FASTA file. Abort!")
+def valid_fasta(filename,logger):
+    valid_file(filename,logger)
+    extension = filename.split('.')[-1]
+    valid_extensions = ['fasta', 'fa', 'fastq', 'fq', 'faa', 'fna']
+    if extension not in valid_extensions:
+        logger.error(f"File {filename} is not a FASTA file. Abort!")
         sys.exit(1)
     return filename
 
-def valid_gtf(filename):
-    valid_file(filename)
+def valid_gtf(filename,logger):
+    valid_file(filename,logger)
     if not filename.endswith('.gtf'):
         if not filename.endswith('.gff'):
-            qc_logger.error(f"File {filename} is not a GTF file. Abort!")
+            logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:
-            qc_logger.warning("GTF file is in GFF3 format. Converting to GTF format.")
+            logger.warning("GTF file is in GFF3 format. Converting to GTF format.")
             # GFF to GTF (in case the user provides gff instead of gtf)
             gtf_name = filename.replace('.gff', '.gtf')
             # Use the run command?
             try:
                 subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
             except (RuntimeError, TypeError, NameError):
-                qc_logger.error(f'File {filename} without GTF/GFF format.')
+                logger.error(f'File {filename} without GTF/GFF format.')
                 raise SystemExit(1)
-            qc_logger.info(f"GFF file converted to GTF format. New file: {gtf_name}")
+            logger.info(f"GFF file converted to GTF format. New file: {gtf_name}")
             filename = gtf_name
 
     # Check if the GTF file is in the correct format
@@ -41,86 +43,86 @@ def valid_gtf(filename):
     with open(filename) as isoforms_gtf:
         for line in isoforms_gtf:
             if line[0] != "#" and len(line.split("\t"))!=9:
-                qc_logger.error("Input isoforms file not in expected GTF format.")
+                logger.error("Input isoforms file not in expected GTF format.")
                 sys.exit()
             elif len(line.split("\t"))==9:
                 ind += 1
         if ind == 0:
-            qc_logger.warning(f"GTF has {filename} no annotation lines.")
+            logger.warning(f"GTF has {filename} no annotation lines.")
 
     return filename
 
-def valid_bed(filename):
-    valid_file(filename)
+def valid_bed(filename,logger):
+    valid_file(filename,logger)
     if not filename.endswith('.bed'):
-        qc_logger.error(f"File {filename} is not a BED file. Abort!")
+        logger.error(f"File {filename} is not a BED file. Abort!")
         sys.exit(1)
     return filename
 
-def valid_dir(dirname):
+def valid_dir(dirname,logger):
     if not os.path.isdir(dirname):
         os.makedirs(dirname)
     else:
         contents = os.listdir(dirname)
         non_log_items = [item for item in contents if item != "logs" or not os.path.isdir(os.path.join(dirname, item))]
         if non_log_items:
-            qc_logger.warning(f"output directory {dirname} already exists. Overwriting!")
+            logger.warning(f"Output directory {dirname} already exists. Overwriting!")
     return dirname
 
 # TODO: Add specific validation for Kallisto output
-def valid_matrix(filename):
-    valid_file(filename)
+def valid_matrix(filename,logger):
+    valid_file(filename,logger)
     if not filename.endswith('.tsv'):
-        qc_logger.error(f"File {filename} is not a TSV file. Abort!")
+        logger.error(f"File {filename} is not a TSV file. Abort!")
         sys.exit(1)
 
 #TODO: Get a condition to see if it is a pacbio file
-def valid_PacBio_abund(filename):
-    valid_file(filename)
+def valid_PacBio_abund(filename,logger):
+    valid_file(filename,logger)
     if not filename.endswith('abundance.tsv'):
-        qc_logger.error(f"File {filename} is not a PacBio abundance file. Abort!")
+        logger.error(f"File {filename} is not a PacBio abundance file. Abort!")
         sys.exit(1)
     return filename
 
-def valid_gff3(filename):
-    valid_file(filename)
+def valid_gff3(filename,logger):
+    valid_file(filename,logger)
     if not filename.endswith('.gff3'):
-        qc_logger.error(f"File {filename} is not a GFF3 file. Abort!")
+        logger.error(f"File {filename} is not a GFF3 file. Abort!")
         sys.exit(1)
     return filename
 
-def valid_sr(filename):
+def valid_sr(filename,logger):
     if not os.path.isdir(filename):
         if not filename.endswith('.fofn') and not filename.endswith('.bam'):
-            qc_logger.error(f"File {filename} is not a BAM file, a directory, or a FOFN file. Abort!")
+            logger.error(f"File {filename} is not a BAM file, a directory, or a FOFN file. Abort!")
             sys.exit(1)
         else:
             if not os.path.isfile(filename):
-                qc_logger.error(f"File {filename} not found. Abort!")
+                logger.error(f"File {filename} not found. Abort!")
                 sys.exit(1)
     return filename
 
 ### Validation for the arguments
 
-def qc_args_validation_qc(args):
+def qc_args_validation(args):
     # Required arguments
-    valid_file(args.isoforms)
+    valid_file(args.isoforms,qc_logger)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
-    elif valid_fasta(args.isoforms):
+    elif valid_fasta(args.isoforms,qc_logger):
         args.fasta = True
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
     
-    valid_gtf(args.refGTF)
-    valid_fasta(args.refFasta)
+    valid_gtf(args.refGTF,qc_logger)
+    valid_fasta(args.refFasta,qc_logger)
 
     # Customization validation
     if args.short_reads is not None:
-        valid_file(args.short_reads)
+        valid_file(args.short_reads,qc_logger)
     if args.SR_bam is not None:
-        valid_sr(args.SR_bam)
+        valid_sr(args.SR_bam,qc_logger)
 
     # Mappers checks
     if args.fasta:
@@ -140,26 +142,26 @@ def qc_args_validation_qc(args):
     
     # ORF prediction checks
     if args.orf_input is not None:
-        valid_fasta(args.orf_input)
+        valid_fasta(args.orf_input,qc_logger)
 
     # Functional annotation checks
     if args.CAGE_peak is not None:
-        valid_bed(args.CAGE_peak)
+        valid_bed(args.CAGE_peak,qc_logger)
     if args.polyA_motif_list is not None:
-        valid_file(args.polyA_motif_list)
+        valid_file(args.polyA_motif_list,qc_logger)
     if args.polyA_peak is not None:
-        valid_bed(args.polyA_peak)
+        valid_bed(args.polyA_peak,qc_logger)
     if args.phyloP_bed is not None:
-        valid_bed(args.phyloP_bed)
+        valid_bed(args.phyloP_bed,qc_logger)
 
     # Output options checks
-    valid_dir(args.dir)
+    valid_dir(args.dir,qc_logger)
 
     # Optional arguments
     if args.expression is not None:
-        valid_matrix(args.expression)
+        valid_matrix(args.expression,qc_logger)
     if args.gff3 is not None:
-        valid_gff3(args.gff3)
+        valid_gff3(args.gff3,qc_logger)
 
 
     # Fusion isoforms checks
@@ -197,3 +199,37 @@ def qc_args_validation_qc(args):
     #elif args.aligner_choice == "deSALT":  #deSALT does not support this yet
     #    args.sense = "--trans-strand"
 
+def filter_args_validation(args):
+    # Mandatory + possible inputs
+    valid_file(args.sqanti_class, filter_logger)
+    if args.filter_isoforms is not None:
+        valid_fasta(args.filter_isoforms, filter_logger)
+    if args.filter_gtf is not None:
+        valid_gtf(args.filter_gtf, filter_logger)
+    if args.filter_sam is not None:
+        valid_file(args.filter_sam, filter_logger)
+    if args.filter_faa is not None:
+        valid_fasta(args.filter_faa, filter_logger)
+
+    valid_dir(args.dir,filter_logger)
+    if args.subcommand == 'rules':
+        valid_file(args.json_filter, filter_logger)
+    if args.subcommand == 'ml':
+        if args.TP is not None:
+            valid_file(args.TP, filter_logger)
+        if args.TN is not None:
+            valid_file(args.TN, filter_logger)
+        if args.remove_columns is not None:
+            valid_file(args.remove_columns, filter_logger)
+        if args.percent_training < 0 or args.percent_training > 1.:
+            filter_logger.error(f"--percent_training must be between 0-1, instead given {args.percent_training}! Abort!")
+            sys.exit(-1)
+        if args.threshold < 0 or args.threshold > 1.:
+            filter_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
+            sys.exit(-1)
+        if args.intrapriming < 25 or args.intrapriming > 100:
+            filter_logger.error(f"--intrapriming must be between 25-100, instead given {args.intrapriming}! Remember to use the percentage value. Abort!")
+            sys.exit(-1)
+        if args.remove_columns is not None:
+            valid_file(args.remove_columns, filter_logger)
+    return
