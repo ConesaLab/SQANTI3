@@ -109,21 +109,17 @@ def run_ML(args):
     return(seqs_to_keep, inclusion_list)
 
 def run_rules(args):
-    cmd = RSCRIPTPATH + " {u}/{s} -c {c} -o {o} -d {d} -j {j} -u {u} -e {e}".format(u=utilitiesPath, \
-     s=RSCRIPT_RULES, c=args.sqanti_class, o=args.output, d=args.dir, j=args.json_filter, e=args.filter_mono_exonic)
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
 
-    report_cmd=RSCRIPTPATH + " {u}/{s} -d {d} -o {o} -u {u} -f rules ".format(u=utilitiesPath, s=RSCRIPT_FILTER_REPORT, \
-    o=args.output, d=args.dir)
+    report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
 
-    if args.json_filter is not None:
-        if not os.path.isfile(args.json_filter):
-            filter_logger.error(f"{args.json_filter} doesn't exist. Abort!")
-            sys.exit(-1)
-    filter_logger.debug(cmd)
-    subprocess.call(cmd, shell=True)
+    logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
+    run_command(cmd,filter_logger,logFile,"Rules filtering")
     if not args.skip_report:
-      subprocess.call(report_cmd, shell=True)
+      logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
+      run_command(report_cmd,filter_logger,logFile,"Rules filtering report")
+
     # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = args.dir + "/" + args.output + "_inclusion-list.txt"
+    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
