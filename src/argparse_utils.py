@@ -102,7 +102,7 @@ def valid_sr(filename):
 
 ### Validation for the arguments
 
-def args_validation(args):
+def qc_args_validation_qc(args):
     # Required arguments
     valid_file(args.isoforms)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
