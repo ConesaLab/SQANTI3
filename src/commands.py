@@ -115,7 +115,7 @@ def GTF_to_genePred(corrGTF):
     return queryFile
    
 
-def run_command(cmd,logger,out_file='log/program.log',description="command execution"):
+def run_command(cmd,logger,out_file='log/program.log',description="command execution",silent=True):
     """
     Executes a shell command and handles errors gracefully.
     
@@ -130,12 +130,13 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
         MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
         logging.config.dictConfig(MAIN_LOGGING_CONFIG)
         process_logger = logging.getLogger('process_logger')
-        result = subprocess.run(cmd, shell=True,capture_output=True,
+        result = subprocess.run(cmd, shell=True,capture_output=silent,
                                 check=True,encoding="utf-8")
-        
+        process_logger.info(result.stdout)
+
         logger.debug(f"Process {cmd} had {result.returncode}")
         logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
-        process_logger.info(result.stdout)
+        
         if result.returncode !=0:
             logger.debug("EROOOOOOR")
             raise BrokenPipeError(result.stderr)
@@ -147,5 +148,10 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
         logger.error(f"For more inflo, check {out_file}")
         sys.exit(1)
     except BrokenPipeError as e:
-
         sys.exit(1)
+    
+    def run_command_verbose(cmd,logger,out_file='log/program.log',description='command execution'):
+        """
+        Executes a shell command and handles errors gracefully. The output is printed to the console.
+        """
+

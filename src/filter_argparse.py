@@ -23,7 +23,7 @@ def filter_argparse():
     co.add_argument("--skip_report", action="store_true", help='Skip creation of a report about the filtering')
     # Filtering options
     cf = common.add_argument_group("Filtering options")
-    cf.add_argument("-e","--filter_mono_exonic", action="store_true", default=False, help='When TRUE, all mono-exonic transcripts are automatically filtered %(default)s')
+    cf.add_argument("-e","--filter_mono_exonic", action="store_true", help='All mono-exonic transcripts are automatically filtered')
     # Performance options
     cp = common.add_argument_group("Extra options")
     cp.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))

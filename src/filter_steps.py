@@ -33,6 +33,23 @@ def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
     if isoAnnotGFF3 is not None:
         filter_gff3(isoAnnotGFF3, prefix, inclusion_f)
 
+def run_rules(args):
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
+
+    report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
+
+    logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
+    # TODO: Create a function to run the command and get the logs in real time?
+    run_command(cmd,filter_logger,logFile,"Rules filtering",silent=False)
+    if not args.skip_report:
+      logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
+      run_command(report_cmd,filter_logger,logFile,"Rules filtering report")
+
+    # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
+    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
+    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
+    return(seqs_to_keep, inclusion_list)
+
 
 def prepare_ml_cmd(sq_class,prefix,outdir,percent_training,threshold,intrapriming,force_fsm_in,filter_mono_exonic,intermediate_files,max_class_size,TP=None,TN=None,remove_columns=None):
     cmd = f"{RSCRIPTPATH} {RSCRIPT_ML} -c {sq_class} -o {prefix} -d {outdir} -t {percent_training} \
@@ -66,18 +83,3 @@ def run_ML(args):
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
 
-def run_rules(args):
-    cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
-
-    report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
-
-    logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
-    run_command(cmd,filter_logger,logFile,"Rules filtering")
-    if not args.skip_report:
-      logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
-      run_command(report_cmd,filter_logger,logFile,"Rules filtering report")
-
-    # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
-    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
-    return(seqs_to_keep, inclusion_list)

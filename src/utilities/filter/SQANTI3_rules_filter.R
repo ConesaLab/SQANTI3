@@ -51,13 +51,13 @@ source(paste0(utilities, "/filter/rules_filter_functions.R"))
 
 
 ### read files
-message("-------------------------------------------------")
-message("\n \t Reading classification file")
-message("\n--------------------------------------------------")
+print("-------------------------------------------------")
+print("           Reading classification file")
+print("-------------------------------------------------")
 classif <- read.table(classif_file, sep="\t", header = T, as.is = T)
-message("-------------------------------------------------")
-message("\n \t Reading JSON file with rules to filter")
-message("\n--------------------------------------------------")
+print("-------------------------------------------------")
+print("       Reading JSON file with rules to filter")
+print("-------------------------------------------------")
 json_df <- jsonlite::fromJSON(txt = json_file ,simplifyDataFrame = T)
 
 ### json list will be transformed into a list of data frames with the rules. Rules DF have 4 columns:
@@ -131,9 +131,9 @@ for (sc in names(json_df)){
 names(rules_list) <- names_rules_list
 
 
-message("-------------------------------------------------")
-message("\n \t Performing filtering")
-message("\n--------------------------------------------------")
+print("-------------------------------------------------")
+print("             Performing filtering                ")
+print("-------------------------------------------------")
 
 
 classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
@@ -141,11 +141,12 @@ classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
 inclusion_list <- classif[classif$filter_result == "Isoform", "isoform"]
 
 artifacts_classif <- classif[classif$filter_result == "Artifact", ]
+print(force_multiexon)
 reasons_df <- apply(artifacts_classif,1, get_reasons, force_multiexon) %>% bind_rows()
 
-message("-------------------------------------------------")
-message("\n \t Writting results")
-message("\n--------------------------------------------------")
+print("-------------------------------------------------")
+print("                Writting results                 ")
+print("-------------------------------------------------")
 
 write.table(classif, file=paste0(opt$dir, "/", opt$output, "_RulesFilter_result_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
