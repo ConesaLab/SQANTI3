@@ -1,0 +1,71 @@
+import os
+
+from src.config import __version__
+from src.module_logging import qc_logger,filter_logger
+
+def write_qc_parameters(args):
+    params_file = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
+    qc_logger.info(f"Write arguments to {params_file}...")
+    with open(params_file, 'w') as f:
+        f.write("Version\t" + __version__ + "\n")
+        f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
+        f.write("Annotation\t" + os.path.abspath(args.refGTF) + "\n")
+        f.write("Genome\t" + os.path.abspath(args.refFasta) + "\n")
+        f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
+        f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
+        f.write("Aligner\t" + str(args.aligner_choice) + "\n")
+        f.write("FLCount\t" + (os.path.abspath(args.fl_count) if args.fl_count is not None else "NA") + "\n")
+        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA") + "\n")
+        f.write("Junction\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n")
+        f.write("CAGEPeak\t" + (os.path.abspath(args.CAGE_peak)  if args.CAGE_peak is not None else "NA") + "\n")
+        f.write("PolyAMotif\t" + (os.path.abspath(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
+        f.write("PolyAPeak\t" + (os.path.abspath(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
+        f.write("IsFusion\t" + str(args.is_fusion) + "\n")
+        f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
+        f.write("SkipORF\t" + str(args.skipORF) + "\n")
+        f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
+        f.write("FASTAused\t" + str(args.fasta) +"\n")
+        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA" ) + "\n")
+        f.write("GMAPindex\t" + (os.path.abspath(args.gmap_index) if args.gmap_index is not None else "NA" ) + "\n")
+        f.write("OutputPrefix\t" + str(args.output) + "\n")
+        f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+        f.write("Coverage\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n" )
+        f.write("CanonicalSites\t" + str(args.sites) + "\n")
+        f.write("PostTTSWindow\t" + str(args.window) + "\n")
+        f.write("GeneName\t" + str(args.genename) + "\n")
+        f.write("ReportType\t" + str(args.report) + "\n")
+        f.write("RunIsoAnnotLite\t" + str(args.isoAnnotLite) + "\n")
+        f.write("isoAnnotGFF3\t" + (os.path.abspath(args.gff3) if args.gff3 is not None else "NA") + "\n")
+        f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
+        f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
+        f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
+
+
+def write_filter_parameters(args):
+    params_file = os.path.join(os.path.abspath(args.dir), f"{args.output}_params.txt")
+    filter_logger.info(f"Write arguments to {params_file}...")
+    with open(params_file, 'w') as f:
+      f.write("Version\t" + __version__ + "\n")
+      f.write("Mode\t" + args.subcommand + "\n")
+      f.write("ClassificationFile\t" + str(args.sqanti_class) + "\n")
+      f.write("Isoforms\t" + (str(args.filter_isoforms) if args.filter_isoforms is not None else "NA")+ "\n")
+      f.write("GTF\t" + (str(args.filter_gtf) if args.filter_gtf is not None else "NA") + "\n")
+      f.write("SAM\t" + (str(args.filter_sam) if args.filter_sam is not None else "NA") + "\n")
+      f.write("FAA\t" + (str(args.filter_faa) if args.filter_faa is not None else "NA") + "\n")
+      f.write("isoAnnotGFF3\t" + (str(args.isoAnnotGFF3) if args.isoAnnotGFF3 is not None else "NA") + "\n")
+      f.write("OutputPrefix\t" + str(args.output) + "\n")
+      f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+      f.write("FilterMonoexonic\t" + str(args.filter_mono_exonic) + "\n")
+      f.write("SkipReport\t" + str(args.skip_report) + "\n")
+      if args.subcommand == 'rules':
+          f.write("JSON\t" + str(args.json_filter) + "\n")
+      if args.subcommand == 'ml':
+          f.write("PercentTraining\t" + str(args.percent_training) + "\n")
+          f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
+          f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
+          f.write("Threshold\t" + str(args.threshold) + "\n")
+          f.write("ForceFSM\t" + str(args.force_fsm_in) + "\n")
+          f.write("KeepIntermediate\t" + str(args.intermediate_files) + "\n")
+          f.write("ColumnsRemoved\t" + (str(args.remove_columns) if args.remove_columns is not None else "NA") + "\n")
+          f.write("MaxClassSize\t" + str(args.max_class_size) + "\n")
+          f.write("Intrapriming\t" + str(args.intrapriming) + "\n")

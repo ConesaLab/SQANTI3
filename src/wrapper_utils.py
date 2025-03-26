@@ -178,6 +178,7 @@ def run_step(step,config,dry_run, user_options):
         cmd = commands[step].format(options = format_options(options))
         
     else:
+        first_subparser=False
         for subparser, subparser_args in config[step].get("options", {}).items():
             if subparser == "common":
                 options = main_opt | subparser_args
@@ -186,6 +187,10 @@ def run_step(step,config,dry_run, user_options):
                     options.pop("refFasta")
             else:
                 if subparser_args["enabled"]:
+                    if first_subparser:
+                        main_logger.error("Both filter rules and machine learning are enabled. Only one can be used at a time.")
+                        sys.exit(1)
+                    first_subparser = True
                     options = options | subparser_args.get("options", {})
                     if user_options is not None:
                         modify_options(options,user_options)

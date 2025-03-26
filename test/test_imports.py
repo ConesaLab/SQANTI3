@@ -47,7 +47,7 @@ def test_import_BCBio():
     validate_import("BCBio.GFF", "GFFParser")
 
 # Project-Specific Imports
-import sys, os
+import os
 
 # Add the src directory to sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -61,7 +61,7 @@ def test_import_classification():
 def test_import_commands():
     validate_import_own("src.commands", "GTF2GENEPRED_PROG", src_path)
     validate_import_own("src.commands", "RSCRIPTPATH", src_path)
-    validate_import_own("src.commands", "RSCRIPT_REPORT", src_path)
+    validate_import_own("src.commands", "RSCRIPT_QC_REPORT", src_path)
     validate_import_own("src.commands", "utilitiesPath", src_path)
     validate_import_own("src.commands", "GMAP_CMD", src_path)
     validate_import_own("src.commands", "MINIMAP2_CMD", src_path)
