@@ -1,10 +1,10 @@
-#!/bin/bash Rscript
+#!/usr/bin/env Rscript
 #
 ##########################################################
 #########     SQANTI3 MACHINE LEARNING FILTER    #########
 ##########################################################
 #
-# Authors: Cecile Pereira, Lorena de la Fuente, Francisco Pardo, 
+# Authors: Cecile Pereira, Lorena de la Fuente, Francisco Pardo,
 # Leandro Balzano-Nogueira, Ana Conesa, Ángeles Arzalluz-Luque
 # Contact: f.pardo.palacios@gmail.com
 # Affiliation: Institute for Integrative Systems Biology, CSIC, Valencia, Spain
@@ -13,8 +13,8 @@
 #
 # Changes with respect to previous version
 # - RM instead of FSM are used as positive set.
-# - New SQANTI features are used in the ML, i.e. related to CAGE,  and Ratio_TSS.
-# - Outputs: 
+# - New SQANTI features are used in the ML, i.e. related to CAGE, and Ratio_TSS.
+# - Outputs:
 #   1. Classification table + ML results.
 #   2. Single-column text file with IDs of transcripts labeled as isoforms by
 #     ML filter and intra-priming prediction.
@@ -27,44 +27,44 @@
 
 ### Make script argument list
 
-option_list = list(
-  optparse::make_option(c("-c","--sqanti_classif"), type="character", default = NULL, 
+option_list <- list(
+  optparse::make_option(c("-c", "--sqanti_classif"), type = "character", default = NULL,
               help="SQANTI classification output file."),
-  optparse::make_option(c("-o","--output"), type="character", default = "SQANTI3", 
+  optparse::make_option(c("-o", "--output"), type = "character", default = "SQANTI3",
               help="Output classification file prefix."),
-  optparse::make_option(c("-d","--dir"), type="character", 
+  optparse::make_option(c("-d", "--dir"), type = "character",
               help="Output directory."),
-  optparse::make_option(c("-t","--percent_training"),type="double",default = 0.8,
+  optparse::make_option(c("-t", "--percent_training"), type = "double", default = 0.8,
               help="Default: 0.8. Proportion of the data that goes to training 
               (parameter p of the function createDataPartition)"),
-  optparse::make_option(c("-p","--TP"), type="character",default = NULL,
+  optparse::make_option(c("-p", "--TP"), type = "character", default = NULL,
               help="Path to file containing the list of the TP transcripts, 
               one ID by line, no header (optional). If not supplied, it will be 
               generated from input data."),
-  optparse::make_option(c("-n","--TN"), type="character",default = NULL,
+  optparse::make_option(c("-n", "--TN"), type = "character", default = NULL,
               help="Path to file containing the list of the TN transcripts, 
               one ID by line, no header (optional). If not supplied, it will be 
               generated from input data."),
-  optparse::make_option(c("-j","--threshold"), type="double", default=0.7,
+  optparse::make_option(c("-j", "--threshold"), type = "double", default = 0.7,
               help="Default: 0.7. Machine learning probability threshold to classify, 
               transcripts as positive isoforms."),
-  optparse::make_option(c("-i","--intrapriming"), type="integer", default=60, 
+  optparse::make_option(c("-i", "--intrapriming"), type = "integer", default = 60,
               help="Default: 60.  thereshold (i.e. number of A's downstream 
               the TTS) to flag an isoform as an intra-priming artifact."),
-  optparse::make_option(c("-f","--force_fsm_in"), type="logical", default = FALSE, 
+  optparse::make_option(c("-f", "--force_fsm_in"), type = "logical", default = FALSE,
               help="Default: FALSE. When TRUE, forces retaining FMS transcripts 
               regardless of ML filter, FSM are threfore not filtered."),
-  optparse::make_option(c("-e", "--force_multi_exon"), type="logical", default = FALSE,
+  optparse::make_option(c("-e", "--force_multi_exon"), type = "logical", default = FALSE,
               help="Default: FALSE. When TRUE, forces retaining only multi-exon 
               transcripts, all mono-exon isoforms will be automatically removed."),
-  optparse::make_option(c("-m", "--intermediate_files"), type="logical", default=FALSE,
+  optparse::make_option(c("-m", "--intermediate_files"), type="logical", default = FALSE,
               help="Default: FALSE. When TRUE, outputs ML filter intermediate 
               files."),
-  optparse::make_option(c("-r", "--remove_columns"), type="character", default=NULL,
+  optparse::make_option(c("-r", "--remove_columns"), type = "character", default = NULL,
               help="Path to single-column file (no header) containing the names of 
               the columns in SQ3's classification.txt file that are to be excluded 
               during random forest training (optional)."),
-  optparse::make_option(c("-z", "--max_class_size"), type="numeric", default=3000,
+  optparse::make_option(c("-z", "--max_class_size"), type = "numeric", default = 3000,
               help="Default: 3000. Maximum number of isoforms to include in True 
               Positive and True Negative sets. TP and TN sets will be downsized 
               to this value if they are larger.")
@@ -95,31 +95,27 @@ print(paste0(names(opt), ": ", opt))
 cat("\n\tINITIAL ML CHECKS:")
 cat("\nReading SQANTI3 *_classification.txt file...")
 
-d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
+d <- read.table(file = opt$sqanti_classif, sep = "\t", header = TRUE, as.is = TRUE)
 
 # Isoform name column goes to rownames and is deleted from the table
-rownames(d) = d$isoform
-d = d[,-which(colnames(d) == "isoform")]
-
-
+rownames(d) <- d$isoform
+d <- d[, -which(colnames(d) == "isoform")]
 
 # Check data for mono-exons. Only multi-exon transcripts are subject to ML filter
 cat("\nChecking data for mono and multi-exon transcripts...")
 
-monoexons <- nrow(d[which(d$exons == 1),])  # number of monoexon transcripts
+monoexons <- nrow(d[which(d$exons == 1), ])  # number of monoexon transcripts
 multiexons <- nrow(d) - monoexons
 
-  if(multiexons == 0){
-    cat("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
-            skipping ML filter.")
-    
-    run_ML = FALSE
-    
-  } else{
-    cat("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
-    cat(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
-  
-  }
+if (multiexons == 0) {
+  cat("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
+          skipping ML filter.")
+  run_ML <- FALSE
+} else {
+  cat("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
+  cat(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
+
+}
 
 
 
@@ -133,7 +129,7 @@ Negative_set <- NULL
 
 # First check whether TP and TN sets are supplied (first if)
 # If not available, create the set of TP and TN from input data
-if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
+if (!is.null(opt$TP) && !is.null(opt$TN)) {
   
   cat("\n--TP and --TN arguments provided: using supplied set of isoforms as training set.")
   
@@ -148,21 +144,21 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   TN <- TN[tn_keep, , drop = FALSE]
   
   
-  if(nrow(TN) >= 250 & nrow(TP) >= 250){ #minimum size for TP and TN sets
+  if (nrow(TN) >= 250 && nrow(TP) >= 250) { #minimum size for TP and TN sets
     
     run_ML <- TRUE
     
     # define TP
     Positive_set <- unname(unlist(TP))
     cat(paste0("\n\t - Total isoforms in user-defined TP set: ", 
-                   length(Positive_set)))
+                 length(Positive_set)))
     
     # define TN
     Negative_set <- unname(unlist(TN))
     cat(paste0("\n\t - Total isoforms in user-defined TN set: ", 
-                   length(Negative_set)))
+                 length(Negative_set)))
     
-  } else{
+  } else {
     
     run_ML <- FALSE
     
@@ -171,7 +167,7 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   }
   
   
-} else{
+} else {
   cat("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
@@ -179,25 +175,24 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   NNC_set <- rownames(d[d$structural_category == "novel_not_in_catalog",])
   NNC.NC_set <- rownames(d[(d$structural_category == "novel_not_in_catalog" & 
                                d$all_canonical == "non_canonical"),])
-  run_ML = TRUE
-  
+  run_ML <- TRUE
   
   # 1. CHECK NEGATIVE SET REQUIREMENTS
   # Check whether number of NNC non-canonical is sufficient to run ML filter
   # If not, check NNC and see if it meets length requirement
-  if (length (NNC.NC_set) < 250) {
+  if (length(NNC.NC_set) < 250) {
     
     cat("\nWarning message:
             \nNot enough (< 250) Novel Not in Catalog (NNC) + non-canonical transcripts.")
-
-    if(length(NNC_set) >= 250){
+    
+    if (length(NNC_set) >= 250) {
       Negative_set <- NNC_set
       
       cat("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
       cat(paste("\n \t - Total NNC isoforms: ", length(Negative_set)))
       
-    } else{
-      run_ML = FALSE 
+    } else {
+      run_ML <- FALSE 
       
       cat("\nWarning message:
             \nNot enough (< 250) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
@@ -216,42 +211,39 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # 2. IF NEGATIVE_SET HAS BEEN DEFINED, RUN CHECKS TO CREATE POSITIVE_SET
   # Check whether RM set meets length requirement
   # If not, check FSM set for length and assign as TP
-  if(is.null(Negative_set) == FALSE){
+  if (!is.null(Negative_set)) { 
     
-      if(length (RM_set) >= 250){
-        Positive_set <- RM_set
-        
-        cat("\nUsing FSM Reference Match isoforms as True Positives for training")
-        cat(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
-                      length(Positive_set)))
-        
-        # If RM are TP set, exclude diff_to_* columns
-        colRem_RM <- c("diff_to_gene_TSS", "diff_to_gene_TTS",
-                       "diff_to_TSS", "diff_to_TTS")
-        
-        cat("\nExcluding diff_to_* columns before model training to prevent overfitting!")
-        cat(paste("\n \t The following columns will be added to the column removal list:", 
-                      colRem_RM))
-        
-      }
-      else if(length(FSM_set) >= 250){ 
-        Positive_set <- FSM_set
-        
-        cat("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
+    if (length(RM_set) >= 250) {
+      Positive_set <- RM_set
+    
+      cat("\nUsing FSM Reference Match isoforms as True Positives for training")
+      cat(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
+                length(Positive_set)))
+      
+      # If RM are TP set, exclude diff_to_* columns
+      colRem_RM <- c("diff_to_gene_TSS", "diff_to_gene_TTS",
+                     "diff_to_TSS", "diff_to_TTS")
+      
+      cat("\nExcluding diff_to_* columns before model training to prevent overfitting!")
+      cat(paste("\n \t The following columns will be added to the column removal list:", 
+                colRem_RM))
+      
+    } else if (length(FSM_set) >= 250) { 
+      Positive_set <- FSM_set
+      
+      cat("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
                       all FSM transcripts will be used as Positive set.")
-        cat(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
-        
-      }
-      else{ 
-        cat ("Warning message: 
+      cat(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
+      
+    } else { 
+      cat("Warning message: 
                          \nNot enough (< 250) Full-Splice-Match transcripts, skipping ML filter.")
-        cat("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
-        
-        run_ML = FALSE
-      } 
+      cat("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
+      
+      run_ML <- FALSE
+    } 
   }
 }
-
 
 #### Balance isoform number in TP and TN sets
 if(length(Positive_set) != length(Negative_set)){
@@ -282,14 +274,14 @@ if(length(Positive_set) != length(Negative_set)){
 
 
 #### If not provided, output generated list of TP and TN
-if(is.null(opt$TP) == TRUE & is.null(opt$TN) == TRUE){
+if(is.null(opt$TP) == TRUE && is.null(opt$TN) == TRUE ){
   
   # create single-column tables
   Negative_df <- data.frame(transcripts = Negative_set)
   Positive_df <- data.frame(transcripts = Positive_set)
   
   # output tables
-  write.table(Negative_df, 
+  write.table(Negative_df,
               file = paste0(opt$dir, "/", opt$output, "_TN_list.txt"),
               quote = FALSE, col.names = FALSE, sep = "\t", row.names = FALSE)
   
@@ -311,42 +303,43 @@ if(is.null(opt$TP) == TRUE & is.null(opt$TN) == TRUE){
 d1 <- d
 
 
-if (run_ML == TRUE) {
+if (run_ML) {
   cat("\n-------------------------------------------------")
   cat("\n\tML DATA PREPARATION:")
   
-### Preparation of classification table for ML 
+  ### Preparation of classification table for ML
   
   # Sum all the columns that contain FL reads and create only one column
   cat("\nAggregating FL counts across samples (if more than one sample is provided)...")
   
-  if (any(grep('^FL\\.', names(d1)))){d1$FL= rowSums(d1[,grep('^FL\\.', names(d1))])}
+  if (any(grep("^FL\\.", names(d1)))){d1$FL= rowSums(d1[,grep("^FL\\.", names(d1))])}
   
   #  Change NA in columns by an appropriate replacement
   cat("\nReplacing NAs with appropriate values for ML...")
   
-  NA_columns <- c("within_CAGE_peak", 'n_indels', "n_indels_junc", 
-                  "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
-                  "diff_to_gene_TSS", "diff_to_gene_TTS" , "dist_to_polyA_site", 
-                  "dist_to_CAGE_peak", 'within_polyA_site', "polyA_dist",
-                  "ratio_TSS")
+  NA_columns <- c("within_CAGE_peak", "n_indels", "n_indels_junc", "predicted_NMD",
+                  "min_sample_cov", "min_cov", "ratio_exp", "bite", "diff_to_gene_TSS",
+                  "diff_to_gene_TTS", "dist_to_polyA_site", "dist_to_CAGE_peak",
+                  "within_polyA_site", "polyA_dist", "ratio_TSS")
   
-  replacement.na <- c(0, 0, 0, "non_coding",0, 0, 0, FALSE, 
-                      -11000, -11000, -11000, -11000, FALSE, -11000, 1)
+  replacement.na <- c(0, 0, 0, "non_coding",
+                      0, 0, 0, FALSE, -11000,
+                      -11000, -11000, -11000,
+                      FALSE, -11000, 1)
   
-  for (i in 1: length(NA_columns)) {
-    sel.column <- which(colnames (d1) == NA_columns [i])
-    d1[which(is.na(d1[,sel.column])), sel.column] <- replacement.na[i]
+  for (i in seq_along(NA_columns)) {
+    sel.column <- which(colnames (d1) == NA_columns[i])
+    d1[which(is.na(d1[, sel.column])), sel.column] <- replacement.na[i]
   }
   
- 
+
   # Special case for sdCov: If all NAs, replace by 0. If there are NA values, 
   # replace with  median value of sdCov in the dataset
   if (all(is.na(d1$sd_cov))){
-    d1$sd_cov = 2
+    d1$sd_cov <- 2
   } else{
-    medt2 = median(as.numeric(d1[!is.na(d1$sd_cov), "sd_cov"]))
-    d1[is.na(d1$sd_cov),"sd_cov"] <- medt2
+    medt2 <- median(as.numeric(d1[!is.na(d1$sd_cov), "sd_cov"]))
+    d1[is.na(d1$sd_cov), "sd_cov"] <- medt2
   }
   
   # Convert in factors columns with categorical variables
@@ -355,7 +348,7 @@ if (run_ML == TRUE) {
   categorical <- c("FSM_class", "coding", "bite", "within_CAGE_peak", 
                    "polyA_motif_found" , "within_polyA_site", "predicted_NMD")
   for (x in categorical){
-    d1[,x] <- as.factor(d1[,x])
+    d1[, x] <- as.factor(d1[, x])
   }
   
   # Convert in integers columns with numerical variables
@@ -364,11 +357,11 @@ if (run_ML == TRUE) {
   integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov", 
                 "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak")
   for (x in integers){
-    d1[,x] <- as.integer(d1[,x])
+    d1[, x] <- as.integer(d1[, x])
   }
   
-  r = as.vector(which(apply(d1,2,function(x) (anyNA(x)))))
-  if (length(r)>0){  d1 = d1[,-r] }
+  r = as.vector(which(apply(d1, 2, function(x) (anyNA(x)))))
+  if (length(r) > 0){d1 <- d1[, -r]}
   
   # Removing columns with zero variance
   cat("\nRemoving variables with near-zero variance...")
@@ -383,14 +376,14 @@ if (run_ML == TRUE) {
   # Calculating redundant variables
   cat(paste0("\nRemoving highly correlated features... (correlation threshold = 0.9).\n"))
   r = as.vector(which(apply(d1,2,function(x) (anyNA(x)))))
-  if (length(r) > 0){d1 = d1[,-r] }
-  d2 <- d1[,sapply(d1,class)%in%c("numeric", "integer")] # selecting only numeric variables
+  if (length(r) > 0){ d1 = d1[, -r] }
+  d2 <- d1[,sapply(d1,class) %in% c("numeric", "integer")] # selecting only numeric variables
   descrCorr = cor(d2)
   highCorr <- caret::findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
   cat("\n\tList of removed features: ")
   if(length(highCorr)>0){
     cat(paste("\t", highCorr))
-    d1 = d1[,-which(colnames(d1) %in% highCorr)]
+    d1 = d1[, -which(colnames(d1) %in% highCorr)]
   } else {
     cat("\tNo features removed.")
   }
@@ -410,25 +403,26 @@ if (run_ML == TRUE) {
   
   
   # Remove mono-exon transcripts from training set
-  dmult <- d1[which(d1$exons != 1),]
+  dmult <- d1[which(d1$exons != 1), ]
   
   
   # Subset pre-processed data table (dmult) to make training dataset
-  trainingset = rbind(dmult[Positive_set, ], 
-                        dmult[Negative_set,])
-  Class = factor(c(rep("POS", length(Positive_set)),
-                     rep("NEG", length(Negative_set))),
-                   levels = c("POS", "NEG"))
+  trainingset <- rbind(dmult[Positive_set, ],
+                        dmult[Negative_set, ])
+  Class <- factor(c(rep("POS", length(Positive_set)),
+                    rep("NEG", length(Negative_set))),
+                    levels = c("POS", "NEG"))
   
   cat("\nFinished creating training data set.")
   
   
   # Select columns that are not informative for ML
-  colRem_def = c('chrom','strand','associated_gene', 'associated_transcript', 
-             'ref_length','ref_exons', 'ORF_length', 'CDS_length', 'CDS_start', 
-             'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'all_canonical',
-             'seq_A_downstream_TTS', 'ORF_seq', 'subcategory', 'structural_category',
-             'polyA_motif')
+colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
+                "ref_length", "ref_exons", "ORF_length", "CDS_length", "CDS_start",
+                "CDS_end", "CDS_genomic_start", "CDS_genomic_end", "all_canonical",
+                "seq_A_downstream_TTS", "ORF_seq", "subcategory", "structural_category",
+                "polyA_motif")
+
   
   # Add RM TP set columns to remove to defined list (if it has been previously created)
   if(exists("colRem_RM")){
@@ -436,7 +430,7 @@ if (run_ML == TRUE) {
   }
   
   # If arg is present, add columns that were provided by --remove_columns
-  if(is.null(opt$remove_columns) == FALSE){
+  if(!is.null(opt$remove_columns)){
     colRem_file <- read.table(opt$remove_columns)
     colRem_file <- unname(unlist(colRem_file))
     
@@ -448,17 +442,16 @@ if (run_ML == TRUE) {
     
     # Set both defined and file-input columns as the set to be removed
     colRem <- c(colRem_def,
-                colRem_file[which(!(colRem_file %in%  colRem_def))])
+                colRem_file[which(!(colRem_file %in% colRem_def))])
     
-  }else{
+  } else {
     
     # If arg is not present, only pre-set columns will be removed
     colRem <- colRem_def
   }
  
   # Remove columns from trainingset
-  trainingset = trainingset[,-which(colnames(trainingset) %in% colRem)]
-  
+  trainingset <- trainingset[, -which(colnames(trainingset) %in% colRem)]
   
   
   ####  Partition data
@@ -466,17 +459,16 @@ if (run_ML == TRUE) {
   cat(paste("\n \tProportion of the data to be used for training:", opt$percent_training))
   
   set.seed(123)
-  inTraining = caret::createDataPartition(Class, p = opt$percent_training, 
-                                          list = FALSE, times = 1)[,1]
+  inTraining <- caret::createDataPartition(Class, p = opt$percent_training, list = FALSE, times = 1)[, 1]
   
-  training = trainingset[inTraining,]
-  testing = trainingset[-inTraining,]
+  training <- trainingset[inTraining,]
+  testing <- trainingset[-inTraining,]
   
   cat("\nDescription of the training set:")
   cat("\n \tPositive and negative transcript isoforms in training set:")
-  print(table(d[rownames(d) %in% rownames(training),]$structural_category))
+  print(table(d[rownames(d) %in% rownames(training), ]$structural_category))
   cat("\n \tPositive and negative transcript isoforms in test set:")
-  print(table(d[rownames(d) %in% rownames(testing),]$structural_category))
+  print(table(d[rownames(d) %in% rownames(testing), ]$structural_category))
   
   
   # Train Random Forest classifier with 10 times 10 cross validation
@@ -485,12 +477,12 @@ if (run_ML == TRUE) {
   # check working directory for previously classifier object
   RF_outfiles <- dir(opt$dir)
   
-  if("randomforest.RData" %in% RF_outfiles == TRUE){
+  if("randomforest.RData" %in% RF_outfiles) {
     
     # if the object exists, it is loaded to save runtime
     
-    cat(paste0("\nRandom forest classifier already exists in output directory ", 
-                  ": loading randomforest.RData object."))
+    cat("\nRandom forest classifier already exists in output directory: 
+            loading randomforest.RData object.")
     cat("\n\t ***Note: this will skip classifier training.")
     cat("\t If you have modified TP and TN sets and wish to train a new model, 
             delete randomforest.RData or provide a different output directory.")
@@ -507,22 +499,21 @@ if (run_ML == TRUE) {
     cat("\t - Downsampling in training set (sampling = 'down').")
     cat("\t - 10x cross-validation (repeats = 10).\n")
     
-    ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
+    ctrl <- caret::trainControl(method = "repeatedcv", repeats = 10,
                       classProbs = TRUE,
-                      sampling = 'down', returnData = TRUE,
-                      savePredictions = TRUE, returnResamp ='all')
+                      sampling = "down", returnData = TRUE,
+                      savePredictions = TRUE, returnResamp = "all")
     
     set.seed(1)
     
     randomforest <- caret::train(x = training, 
                                  y = as.factor(Class[inTraining]),
-                                 method ='rf',
+                                 method = "rf",
                                  tuneLength = 15,
                                  metric = "Accuracy",
                                  trControl = ctrl)
     
-    saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData",
-                                    sep="/"))
+    saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData", sep = "/"))
     
     cat("\nRandom forest training finished.")
     cat("\nSaved generated classifier to randomforest.RData file.")
@@ -533,13 +524,13 @@ if (run_ML == TRUE) {
 
   cat("\n-------------------------------------------------")
   cat("\nRandom forest evaluation: applying classifier to test set...")
-  test_pred_prob = predict(randomforest,testing,type = 'prob')
-  pred = factor(ifelse(test_pred_prob$POS >= opt$threshold, "POS", "NEG"), 
-                levels = c("POS", "NEG"))
-  test_result = data.frame(POS = test_pred_prob$POS,
-                 NEG = test_pred_prob$NEG,
-                 pred, 
-                 obs = Class[-inTraining])
+  test_pred_prob <- predict(randomforest,testing,type = "prob")
+  pred <- factor(ifelse(test_pred_prob$POS >= opt$threshold, "POS", "NEG"),
+                        levels = c("POS", "NEG"))
+  test_result <- data.frame(POS = test_pred_prob$POS,
+                            NEG = test_pred_prob$NEG,
+                            pred,
+                            obs = Class[-inTraining])
   rownames(test_result) <- rownames(test_pred_prob)
   
   # Calculate AUC, sensitivity, specificity
@@ -549,16 +540,16 @@ if (run_ML == TRUE) {
   print(caret::twoClassSummary(test_result, lev = levels(test_result$obs)))
   
   write.table(data.frame(caret::twoClassSummary(test_result, lev = levels(test_result$obs))),
-          file = paste(opt$dir,'/testSet_summary.txt',sep=''),
-          quote = F, col.names = F)
+              file = paste0(opt$dir, "/testSet_summary.txt"),
+              quote = FALSE, col.names = FALSE)
   
   cat("\nWriting summary to testSet_summary.txt file.")
   
   # Create confusion matrix
-  cm = caret::confusionMatrix(data = pred,
-                       reference = Class[-inTraining],
-                       positive = "POS")
-  
+  cm <- caret::confusionMatrix(data = pred,
+                               reference = Class[-inTraining],
+                               positive = "POS")
+          
   cat("\nConfusion matrix:")
   print(cm$table)
   
@@ -566,8 +557,9 @@ if (run_ML == TRUE) {
   
   cat("\t testSet_confusionMatrix.txt")
   write.table(data.frame(cm$table),
-              file = paste0(opt$dir,"/testSet_confusionMatrix.txt"), 
-              quote = F, col.names = T, row.names = F, sep = "\t")
+              file = paste0(opt$dir,"/testSet_confusionMatrix.txt"),
+              quote = FALSE, col.names = TRUE, 
+              row.names = FALSE, sep = "\t")
   
   # format stats
   overall <- data.frame(cm$overall)
@@ -578,23 +570,22 @@ if (run_ML == TRUE) {
                     data.frame(byClass))
   
   cat("\t testSet_stats.txt")
-  write.table(cm_stats, file = paste0(opt$dir,"/testSet_stats.txt"),
-              quote = F, col.names = F, sep = "\t")
+  write.table(cm_stats, file = paste0(opt$dir, "/testSet_stats.txt"),
+              quote = FALSE, col.names = FALSE, sep = "\t")
   
   
   # Variable importance for the prediction
-  imp = caret::varImp(randomforest,scale = FALSE)
+  imp <- caret::varImp(randomforest, scale = FALSE)
   imp <- imp$importance
-  imp <- data.frame(rownames(imp),imp) 
-  imp <- imp[order(-imp$Overall, decreasing = FALSE),]
-  imp <- imp[,-1, drop = FALSE]
+  imp <- data.frame(rownames(imp), imp)
+  imp <- imp[order(-imp$Overall, decreasing = FALSE), ]
+  imp <- imp[, -1, drop = FALSE]
   
   cat("\nGlobal variable importance in Random Forest classifier:")
   print(imp)
   
-  write.table(imp, file = paste(opt$dir,
-                               "/classifier_variable-importance_table.txt",sep =''), 
-              sep = "\t", quote = F, col.names = F)
+  write.table(imp, file = paste0(opt$dir, "/classifier_variable-importance_table.txt"), 
+              sep = "\t", quote = FALSE, col.names = FALSE)
   
   cat("\nVariable importance table saved as classifier_variable-importance_table.txt")
   
@@ -604,30 +595,30 @@ if (run_ML == TRUE) {
   
   # 1) in function of the probability on the test set: 
   # (not the same proportion of positives and negatives)
-  pdf(file = paste0(opt$dir,"/testSet_ROC_curve.pdf"))
-  r = pROC::roc(as.numeric(Class[-inTraining]),test_pred_prob$POS,percent = TRUE)
+  pdf(file = paste0(opt$dir, "/testSet_ROC_curve.pdf"))
+  r <- pROC::roc(as.numeric(Class[-inTraining]), test_pred_prob$POS, percent = TRUE)
   pROC::auc(r)
   pROC::plot.roc(r, main = "ROC with unbalanced classes")
-  text(20,10,paste('AUC =', signif(pROC::auc(r),4)))
-  text(20,5,paste('CI 95% = [', signif(pROC::ci(r)[1],4), ',', 
-                  signif(pROC::ci(r)[2]),']'))
+  text(20, 10, paste("AUC =", signif(pROC::auc(r), 4)))
+  text(20, 5, paste("CI 95% = [", signif(pROC::ci(r)[1], 4), ",",
+                    signif(pROC::ci(r)[2]), "]"))
   
   # 2) same proportion positives and negatives on the test set:
   #testing
   #list of the testing positives
-  alltestpos = which(Class[-inTraining] == 'POS')
-  alltestneg = which(Class[-inTraining] == 'NEG')
+  alltestpos = which(Class[-inTraining] == "POS")
+  alltestneg = which(Class[-inTraining] == "NEG")
   nbpos = length(alltestpos)
   nbneg = length(alltestneg)
   
   if(nbpos < nbneg){
-    sampleneg = sample(alltestpos,nbpos,replace = FALSE)
-    newtest = testing[c(sampleneg,alltestpos),]
-    Classnewtest = factor(c(rep('NEG',nbpos),rep('POS',nbpos)))
+    sampleneg <- sample(alltestpos, nbpos, replace = FALSE)
+    newtest <- testing[c(sampleneg, alltestpos),]
+    Classnewtest <- factor(c(rep('NEG',nbpos),rep('POS',nbpos)))
   } else {
-    samplepos = sample(alltestpos,nbneg,replace=FALSE)
-    newtest = testing[c(samplepos,alltestneg),]
-    Classnewtest = factor(c(rep('POS',nbneg),rep('NEG',nbneg)))
+    samplepos <- sample(alltestpos,nbneg,replace=FALSE)
+    newtest <- testing[c(samplepos,alltestneg),]
+    Classnewtest <- factor(c(rep('POS',nbneg),rep('NEG',nbneg)))
   }
   
   set.seed(1)
@@ -654,15 +645,15 @@ if (run_ML == TRUE) {
   cat("\n------------------------------------------------")
   cat("\nApplying Random Forest classifier to input dataset...")
   
-  isoform.predict = predict(randomforest,dmult[,colnames(training)],type = 'prob')
-  colnames(isoform.predict) = gsub("NEG","NEG_MLprob", colnames(isoform.predict))
-  colnames(isoform.predict) = gsub("POS","POS_MLprob", colnames(isoform.predict))
+  isoform.predict <- predict(randomforest, dmult[, colnames(training)],type = "prob")
+  colnames(isoform.predict) <- gsub("NEG","NEG_MLprob", colnames(isoform.predict))
+  colnames(isoform.predict) <- gsub("POS","POS_MLprob", colnames(isoform.predict))
   cat("\nRandom forest prediction finished successfully!")
   
   ## Adding predictions to classification table
-  classified.isoforms = cbind(dmult[rownames(isoform.predict),],isoform.predict)
+  classified.isoforms <- cbind(dmult[rownames(isoform.predict),],isoform.predict)
   
-  negatives = classified.isoforms[classified.isoforms$POS_MLprob < opt$threshold,]
+  negatives <- classified.isoforms[classified.isoforms$POS_MLprob < opt$threshold,]
   
   if (opt$force_fsm_in) {
     negatives <- negatives[negatives$structural_category != "full-splice_match",]
@@ -747,14 +738,14 @@ result_cols <- c("POS_MLprob", "NEG_MLprob", "ML_classifier", "intra_priming")
 
 
 # add isoform ids and result columns to d object (initial classification table)
-ids_df <- data.frame(isoform = rownames(d1))    
-d_out <- cbind(ids_df, d, d1[,result_cols])
+ids_df <- data.frame(isoform = rownames(d1))
+d_out <- cbind(ids_df, d, d1[, result_cols])
 
     
 # intersect results of ML and intra-priming to create new column with filter results
 d_out$filter_result <- ifelse(d_out$intra_priming == FALSE &
                                 (d_out$ML_classifier == "Positive" |
-                                   is.na(d_out$ML_classifier)), 
+                                   is.na(d_out$ML_classifier)),
                               yes = "Isoform", no = "Artifact")
 
     # Condition table:
