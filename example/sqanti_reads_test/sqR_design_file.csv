@@ -1,4 +1,4 @@
 sampleID,file_acc,classification_file,junction_file
-SQ_R1,sqR1,./example/sqanti_reads_test//sqR1/SQ_R1_reads_classification.txt,./example/sqanti_reads_test//sqR1/SQ_R1_junctions.txt
-SQ_R2,sqR2,./example/sqanti_reads_test//sqR2/SQ_R2_reads_classification.txt,./example/sqanti_reads_test//sqR2/SQ_R2_junctions.txt
-SQ_R3,sqR3,./example/sqanti_reads_test//sqR3/SQ_R3_reads_classification.txt,./example/sqanti_reads_test//sqR3/SQ_R3_junctions.txt
+SQ_R1,sqR1,./example/sqanti_reads_test/results/sqR1/SQ_R1_reads_classification.txt,./example/sqanti_reads_test/results/sqR1/SQ_R1_junctions.txt
+SQ_R2,sqR2,./example/sqanti_reads_test/results/sqR2/SQ_R2_reads_classification.txt,./example/sqanti_reads_test/results/sqR2/SQ_R2_junctions.txt
+SQ_R3,sqR3,./example/sqanti_reads_test/results/sqR3/SQ_R3_reads_classification.txt,./example/sqanti_reads_test/results/sqR3/SQ_R3_junctions.txt
