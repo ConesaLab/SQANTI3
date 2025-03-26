@@ -34,14 +34,19 @@ def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
     if isoAnnotGFF3 is not None:
         filter_gff3(isoAnnotGFF3, prefix, inclusion_f)
 
+RSCRIPT_RULES = os.path.join(utilitiesPath,"filter","SQANTI3_rules_filter.R")
+
 def run_rules(args):
 
-    report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
+    # cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
+    # logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
+    # # TODO: Create a function to run the command and get the logs in real time?
+    # run_command(cmd,filter_logger,logFile,"Rules filtering",silent=False)
     prefix = os.path.join(args.dir, args.output)
     rules_filter(args.sqanti_class,args.json_filter,args.filter_mono_exonic,
                  prefix,filter_logger)
-
     if not args.skip_report:
+      report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
       logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
       run_command(report_cmd,filter_logger,logFile,"Rules filtering report")
 

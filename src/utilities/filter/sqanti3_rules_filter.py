@@ -59,7 +59,7 @@ def apply_rules(row, force_multiexon, rules_dict):
         str: "Artifact" if transcript fails any filter, "Isoform" otherwise
         
     Note:
-        Uses short-circuit evaluation - returns on first failed rule
+        Uses OR evaluation, so in case 
     """
     if force_multiexon and row['exons'] == 1:
         return "Artifact"
@@ -67,24 +67,31 @@ def apply_rules(row, force_multiexon, rules_dict):
         structural_category = 'rest'
     else:
         structural_category = row['structural_category']
-    
+    is_isoform = False
     for rules in rules_dict[structural_category]:
+        isoform = True
         for _, rule in rules.iterrows():
             column = rule['column']
             rule_type = rule['type']
             rule_value = rule['rule']
-            
-            if rule_type == 'Category':
-                if str(row[column]).lower() != rule_value:
-                    return "Artifact"
-            elif rule_type == 'Min_Threshold':
-                if row[column] < rule_value:
-                    return "Artifact"
-            elif rule_type == 'Max_Threshold':
-                if row[column] > rule_value:
-                    return "Artifact"
-    
-    return "Isoform"
+            # check if it is nan
+            if pd.isna(row[column]):
+                isoform = False
+            else:
+                if rule_type == 'Category':
+                    if str(row[column]).lower() != rule_value:
+                        isoform = False
+                elif rule_type == 'Min_Threshold':
+                    if row[column] < rule_value:
+                        isoform = False
+                elif rule_type == 'Max_Threshold':
+                    if row[column] > rule_value:
+                        isoform = False
+        is_isoform = is_isoform or isoform
+    if is_isoform:
+        return "Isoform"
+    else:
+        return "Artifact"
 
 def get_reasons(row, force_multiexon, rules_dict):
     """Collect detailed reasons for transcript filtering decisions.
@@ -114,7 +121,7 @@ def get_reasons(row, force_multiexon, rules_dict):
             column = rule['column']
             rule_type = rule['type']
             rule_value = rule['rule']
-            
+
             if rule_type == 'Category':
                 if str(row[column]).lower() != rule_value:
                     reasons.add(f"{column}: {row[column]}")
@@ -175,7 +182,6 @@ def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
     reasons_df = artifacts_classif.apply(lambda row: get_reasons(row, force_multi_exon, rules_dict), axis=1)
 
     message("Writing results",logger)
-
     classif.to_csv(os.path.join(f"{prefix}_RulesFilter_result_classification.txt"), sep='\t', index=False)
     inclusion_list.to_csv(os.path.join(f"{prefix}_inclusion-list.txt"), sep='\t', index=False, header=False)
     reasons_df.to_csv(os.path.join(f"{prefix}_filtering_reasons.txt"), sep='\t', index=False)
