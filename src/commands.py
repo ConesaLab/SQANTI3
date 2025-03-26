@@ -34,8 +34,6 @@ RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
 # Rscript filter
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")
 RSCRIPT_ML = os.path.join(utilitiesPath,"filter","SQANTI3_MLfilter.R")
-RSCRIPT_RULES = os.path.join(utilitiesPath,"filter","SQANTI3_rules_filter.R")
-default_json = os.path.join(utilitiesPath,"filter","filter_default.json") 
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 

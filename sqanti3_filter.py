@@ -31,6 +31,7 @@ from src.logging_config import art_logger,filter_art
 from src.filter_steps import filter_files, run_ML, run_rules
 from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
+
 def main():
     art_logger.info(filter_art())
     args = filter_argparse().parse_args()

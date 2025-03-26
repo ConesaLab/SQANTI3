@@ -82,18 +82,18 @@ opt$intrapriming = as.numeric(opt$intrapriming)
 ###### Generate ML inputs #####
 ###############################
 
-message("-------------------------------------------------")
-message("\n \t SQANTI3 Machine Learning filter")
-message("\n--------------------------------------------------")
+cat("-------------------------------------------------")
+cat("\n \t SQANTI3 Machine Learning filter")
+cat("\n--------------------------------------------------")
 
 ### Print specified parameters
-message("\nCURRENT ML FILTER PARAMETERS:\n")
+cat("\nCURRENT ML FILTER PARAMETERS:\n")
 print(paste0(names(opt), ": ", opt))
 
 
 ### Read input data
-message("\n\tINITIAL ML CHECKS:")
-message("\nReading SQANTI3 *_classification.txt file...")
+cat("\n\tINITIAL ML CHECKS:")
+cat("\nReading SQANTI3 *_classification.txt file...")
 
 d <- read.table(file = opt$sqanti_classif, sep ="\t", header= TRUE,as.is =TRUE)
 
@@ -104,20 +104,20 @@ d = d[,-which(colnames(d) == "isoform")]
 
 
 # Check data for mono-exons. Only multi-exon transcripts are subject to ML filter
-message("\nChecking data for mono and multi-exon transcripts...")
+cat("\nChecking data for mono and multi-exon transcripts...")
 
 monoexons <- nrow(d[which(d$exons == 1),])  # number of monoexon transcripts
 multiexons <- nrow(d) - monoexons
 
   if(multiexons == 0){
-    message("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
+    cat("\n\tWarning message: \n \t All isoforms in SQ3 classification file are mono-exon: 
             skipping ML filter.")
     
     run_ML = FALSE
     
   } else{
-    message("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
-    message(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
+    cat("\n \t ***Note: ML filter can only be applied to multi-exon transcripts. ")
+    cat(paste("\n \t", multiexons, "multi-exon transcript isoforms found in SQ3 classification file."))
   
   }
 
@@ -125,7 +125,7 @@ multiexons <- nrow(d) - monoexons
 
 #### Check inputs for TP and TN sets
 
-message("\nChecking input data for True Positive (TP) and True Negative (TN) sets...")
+cat("\nChecking input data for True Positive (TP) and True Negative (TN) sets...")
 
 # Positive and negative sets not defined yet
 Positive_set <- NULL
@@ -135,7 +135,7 @@ Negative_set <- NULL
 # If not available, create the set of TP and TN from input data
 if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   
-  message("\n--TP and --TN arguments provided: using supplied set of isoforms as training set.")
+  cat("\n--TP and --TN arguments provided: using supplied set of isoforms as training set.")
   
   TP <- read.table(opt$TP)
   TN <- read.table(opt$TN)
@@ -148,31 +148,31 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   TN <- TN[tn_keep, , drop = FALSE]
   
   
-  if(nrow(TN) >= 250 & nrow(TP) >= 250){
+  if(nrow(TN) >= 250 & nrow(TP) >= 250){ #minimum size for TP and TN sets
     
     run_ML <- TRUE
     
     # define TP
     Positive_set <- unname(unlist(TP))
-    message(paste0("\n\t - Total isoforms in user-defined TP set: ", 
+    cat(paste0("\n\t - Total isoforms in user-defined TP set: ", 
                    length(Positive_set)))
     
     # define TN
     Negative_set <- unname(unlist(TN))
-    message(paste0("\n\t - Total isoforms in user-defined TN set: ", 
+    cat(paste0("\n\t - Total isoforms in user-defined TN set: ", 
                    length(Negative_set)))
     
   } else{
     
     run_ML <- FALSE
     
-    message("\nWarning message:
+    cat("\nWarning message:
             user-defined TP and TN sets must have >=250 isoforms! Skipping ML filter.")
   }
   
   
 } else{
-  message("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
+  cat("\n\tWarning message: \n \t Training set not provided -will be created from input data.")
   
   FSM_set <- rownames(d[d$structural_category == "full-splice_match" & d$exons > 1,])
   RM_set <- rownames(d[d$subcategory == "reference_match" & d$exons > 1,])
@@ -187,29 +187,29 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
   # If not, check NNC and see if it meets length requirement
   if (length (NNC.NC_set) < 250) {
     
-    message("\nWarning message:
+    cat("\nWarning message:
             \nNot enough (< 250) Novel Not in Catalog (NNC) + non-canonical transcripts.")
 
     if(length(NNC_set) >= 250){
       Negative_set <- NNC_set
       
-      message("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
-      message(paste("\n \t - Total NNC isoforms: ", length(Negative_set)))
+      cat("\nUsing Novel Not in Catalog (NNC) transcripts as True Negatives for training.")
+      cat(paste("\n \t - Total NNC isoforms: ", length(Negative_set)))
       
     } else{
       run_ML = FALSE 
       
-      message("\nWarning message:
+      cat("\nWarning message:
             \nNot enough (< 250) Novel Not in Catalog (NNC) transcripts, skipping ML filter.")
-      message("\n\t***Note: try re-running ML filter with a user-defined TN set >=250 isoforms!")
+      cat("\n\t***Note: try re-running ML filter with a user-defined TN set >=250 isoforms!")
       
     }
     
   } else { 
     Negative_set <- NNC.NC_set
     
-    message("\nUsing Novel Not In Catalog non-canonical isoforms as True Negatives for training.")
-    message(paste("\n \t - Total NNC non-canonical isoforms:", length(Negative_set)))
+    cat("\nUsing Novel Not In Catalog non-canonical isoforms as True Negatives for training.")
+    cat(paste("\n \t - Total NNC non-canonical isoforms:", length(Negative_set)))
     
   }
   
@@ -221,31 +221,31 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
       if(length (RM_set) >= 250){
         Positive_set <- RM_set
         
-        message("\nUsing FSM Reference Match isoforms as True Positives for training")
-        message(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
+        cat("\nUsing FSM Reference Match isoforms as True Positives for training")
+        cat(paste("\n \t - Total reference match isoforms (FSM subcategory):", 
                       length(Positive_set)))
         
         # If RM are TP set, exclude diff_to_* columns
         colRem_RM <- c("diff_to_gene_TSS", "diff_to_gene_TTS",
                        "diff_to_TSS", "diff_to_TTS")
         
-        message("\nExcluding diff_to_* columns before model training to prevent overfitting!")
-        message(paste("\n \t The following columns will be added to the column removal list:", 
+        cat("\nExcluding diff_to_* columns before model training to prevent overfitting!")
+        cat(paste("\n \t The following columns will be added to the column removal list:", 
                       colRem_RM))
         
       }
       else if(length(FSM_set) >= 250){ 
         Positive_set <- FSM_set
         
-        message("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
+        cat("\nNot enough (< 250) Reference Match transcript isoforms among FSM, 
                       all FSM transcripts will be used as Positive set.")
-        message(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
+        cat(paste("\n \t - Total FSM isoforms:", length(Positive_set)))
         
       }
       else{ 
-        message ("Warning message: 
+        cat ("Warning message: 
                          \nNot enough (< 250) Full-Splice-Match transcripts, skipping ML filter.")
-        message("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
+        cat("\n\t***Note: try re-running ML filter with a user-defined TP set >=250 isoforms!")
         
         run_ML = FALSE
       } 
@@ -256,24 +256,24 @@ if(is.null(opt$TP) == FALSE & is.null(opt$TN) == FALSE){
 #### Balance isoform number in TP and TN sets
 if(length(Positive_set) != length(Negative_set)){
   
-  message("\n\nBalancing number of isoforms in TP and TN sets...")
+  cat("\n\nBalancing number of isoforms in TP and TN sets...")
   
   # select minimum size among TP and TN sets
   sub_size <- min(length(Positive_set), length(Negative_set))
   
-  message(paste0("\n\tMinimum set size: ", sub_size, " transcripts."))
+  cat(paste0("\n\tMinimum set size: ", sub_size, " transcripts."))
   
       #### Downsize TP and TN sets if isoform no. is too large
       if(sub_size > opt$max_class_size){
         
-        message(paste0("\nWarning message: min. set size is larger than --max_class_size!"))
-        message(paste0("\n[!] TP and TN sets will be downsized to ", opt$max_class_size, 
+        cat(paste0("\nWarning message: min. set size is larger than --max_class_size!"))
+        cat(paste0("\n[!] TP and TN sets will be downsized to ", opt$max_class_size, 
                        " isoforms."))
         
         sub_size <- opt$max_class_size
       }
   
-  message(paste0("\n\tSampled ", sub_size, " transcripts to define final TP and TN sets."))
+  cat(paste0("\n\tSampled ", sub_size, " transcripts to define final TP and TN sets."))
   
   # sample sub_size number of isoforms as TP and TN
   Positive_set <- sample(Positive_set, sub_size)
@@ -297,9 +297,9 @@ if(is.null(opt$TP) == TRUE & is.null(opt$TN) == TRUE){
               file = paste0(opt$dir, "/", opt$output, "_TP_list.txt"),
               quote = FALSE, col.names = FALSE, sep = "\t", row.names = FALSE)
   
-  message("\nWrote generated TP and TN lists to files:")
-  message(paste0("\n\t", opt$dir, "/", opt$output, "_TP_list.txt"))
-  message(paste0("\n\t", opt$dir, "/", opt$output, "_TN_list.txt"))
+  cat("\nWrote generated TP and TN lists to files:")
+  cat(paste0("\n\t", opt$dir, "/", opt$output, "_TP_list.txt"))
+  cat(paste0("\n\t", opt$dir, "/", opt$output, "_TN_list.txt"))
 }
 
 
@@ -312,18 +312,18 @@ d1 <- d
 
 
 if (run_ML == TRUE) {
-  message("\n-------------------------------------------------")
-  message("\n\tML DATA PREPARATION:")
+  cat("\n-------------------------------------------------")
+  cat("\n\tML DATA PREPARATION:")
   
 ### Preparation of classification table for ML 
   
   # Sum all the columns that contain FL reads and create only one column
-  message("\nAggregating FL counts across samples (if more than one sample is provided)...")
+  cat("\nAggregating FL counts across samples (if more than one sample is provided)...")
   
   if (any(grep('^FL\\.', names(d1)))){d1$FL= rowSums(d1[,grep('^FL\\.', names(d1))])}
   
   #  Change NA in columns by an appropriate replacement
-  message("\nReplacing NAs with appropriate values for ML...")
+  cat("\nReplacing NAs with appropriate values for ML...")
   
   NA_columns <- c("within_CAGE_peak", 'n_indels', "n_indels_junc", 
                   "predicted_NMD", "min_sample_cov", "min_cov", "ratio_exp", "bite", 
@@ -350,7 +350,7 @@ if (run_ML == TRUE) {
   }
   
   # Convert in factors columns with categorical variables
-  message("\nHandling factor columns...")
+  cat("\nHandling factor columns...")
   
   categorical <- c("FSM_class", "coding", "bite", "within_CAGE_peak", 
                    "polyA_motif_found" , "within_polyA_site", "predicted_NMD")
@@ -359,7 +359,7 @@ if (run_ML == TRUE) {
   }
   
   # Convert in integers columns with numerical variables
-  message("\nHandling integer columns...")
+  cat("\nHandling integer columns...")
   
   integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov", 
                 "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak")
@@ -371,28 +371,28 @@ if (run_ML == TRUE) {
   if (length(r)>0){  d1 = d1[,-r] }
   
   # Removing columns with zero variance
-  message("\nRemoving variables with near-zero variance...")
+  cat("\nRemoving variables with near-zero variance...")
   nzv = caret::nearZeroVar(d1)
   if(length(colnames(d1)[nzv]) != 0){
-    message("\tRemoved columns: ")
+    cat("\tRemoved columns: ")
     print(paste(colnames(d1)[nzv]))
     d1 = d1[,-nzv]
   } else {
-    message("\tNo variables with near-zero variance found.")}
+    cat("\tNo variables with near-zero variance found.")}
   
   # Calculating redundant variables
-  message(paste0("\nRemoving highly correlated features... (correlation threshold = 0.9).\n"))
+  cat(paste0("\nRemoving highly correlated features... (correlation threshold = 0.9).\n"))
   r = as.vector(which(apply(d1,2,function(x) (anyNA(x)))))
   if (length(r) > 0){d1 = d1[,-r] }
   d2 <- d1[,sapply(d1,class)%in%c("numeric", "integer")] # selecting only numeric variables
   descrCorr = cor(d2)
   highCorr <- caret::findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
-  message("\n\tList of removed features: ")
+  cat("\n\tList of removed features: ")
   if(length(highCorr)>0){
-    message(paste("\t", highCorr))
+    cat(paste("\t", highCorr))
     d1 = d1[,-which(colnames(d1) %in% highCorr)]
   } else {
-    message("\tNo features removed.")
+    cat("\tNo features removed.")
   }
   
   # END  of ML data preparation 
@@ -404,9 +404,9 @@ if (run_ML == TRUE) {
   ##########################
   
   #### Creating positive and negative set
-  message("\n-------------------------------------------------")
-  message("\n\tRANDOM FOREST ALGORITHM RUN:")
-  message("\nCreating positive and negative sets for classifier training and testing...")
+  cat("\n-------------------------------------------------")
+  cat("\n\tRANDOM FOREST ALGORITHM RUN:")
+  cat("\nCreating positive and negative sets for classifier training and testing...")
   
   
   # Remove mono-exon transcripts from training set
@@ -420,7 +420,7 @@ if (run_ML == TRUE) {
                      rep("NEG", length(Negative_set))),
                    levels = c("POS", "NEG"))
   
-  message("\nFinished creating training data set.")
+  cat("\nFinished creating training data set.")
   
   
   # Select columns that are not informative for ML
@@ -462,8 +462,8 @@ if (run_ML == TRUE) {
   
   
   ####  Partition data
-  message("\nPartitioning data into training and test sets...")
-  message(paste("\n \tProportion of the data to be used for training:", opt$percent_training))
+  cat("\nPartitioning data into training and test sets...")
+  cat(paste("\n \tProportion of the data to be used for training:", opt$percent_training))
   
   set.seed(123)
   inTraining = caret::createDataPartition(Class, p = opt$percent_training, 
@@ -472,15 +472,15 @@ if (run_ML == TRUE) {
   training = trainingset[inTraining,]
   testing = trainingset[-inTraining,]
   
-  message("\nDescription of the training set:")
-  message("\n \tPositive and negative transcript isoforms in training set:")
+  cat("\nDescription of the training set:")
+  cat("\n \tPositive and negative transcript isoforms in training set:")
   print(table(d[rownames(d) %in% rownames(training),]$structural_category))
-  message("\n \tPositive and negative transcript isoforms in test set:")
+  cat("\n \tPositive and negative transcript isoforms in test set:")
   print(table(d[rownames(d) %in% rownames(testing),]$structural_category))
   
   
   # Train Random Forest classifier with 10 times 10 cross validation
-  message("\n-------------------------------------------------")
+  cat("\n-------------------------------------------------")
   
   # check working directory for previously classifier object
   RF_outfiles <- dir(opt$dir)
@@ -489,10 +489,10 @@ if (run_ML == TRUE) {
     
     # if the object exists, it is loaded to save runtime
     
-    message(paste0("\nRandom forest classifier already exists in output directory ", 
+    cat(paste0("\nRandom forest classifier already exists in output directory ", 
                   ": loading randomforest.RData object."))
-    message("\n\t ***Note: this will skip classifier training.")
-    message("\t If you have modified TP and TN sets and wish to train a new model, 
+    cat("\n\t ***Note: this will skip classifier training.")
+    cat("\t If you have modified TP and TN sets and wish to train a new model, 
             delete randomforest.RData or provide a different output directory.")
     
     randomforest <- readRDS(paste0(opt$dir, "/randomforest.RData"))
@@ -501,11 +501,11 @@ if (run_ML == TRUE) {
     
     # if it does not exist, the classifier is trained again
     
-    message("\nTraining Random Forest Classifier...")
-    message("\n\t***Note: this can take up to several hours.")
-    message("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
-    message("\t - Downsampling in training set (sampling = 'down').")
-    message("\t - 10x cross-validation (repeats = 10).\n")
+    cat("\nTraining Random Forest Classifier...")
+    cat("\n\t***Note: this can take up to several hours.")
+    cat("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
+    cat("\t - Downsampling in training set (sampling = 'down').")
+    cat("\t - 10x cross-validation (repeats = 10).\n")
     
     ctrl = caret::trainControl(method = "repeatedcv", repeats = 10,
                       classProbs = TRUE,
@@ -524,15 +524,15 @@ if (run_ML == TRUE) {
     saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData",
                                     sep="/"))
     
-    message("\nRandom forest training finished.")
-    message("\nSaved generated classifier to randomforest.RData file.")
+    cat("\nRandom forest training finished.")
+    cat("\nSaved generated classifier to randomforest.RData file.")
   }
   
   
   #### Apply classifier on test set
 
-  message("\n-------------------------------------------------")
-  message("\nRandom forest evaluation: applying classifier to test set...")
+  cat("\n-------------------------------------------------")
+  cat("\nRandom forest evaluation: applying classifier to test set...")
   test_pred_prob = predict(randomforest,testing,type = 'prob')
   pred = factor(ifelse(test_pred_prob$POS >= opt$threshold, "POS", "NEG"), 
                 levels = c("POS", "NEG"))
@@ -543,28 +543,28 @@ if (run_ML == TRUE) {
   rownames(test_result) <- rownames(test_pred_prob)
   
   # Calculate AUC, sensitivity, specificity
-  message("\nTest set evaluation results:")
-  message("------------------------------")
-  message("\nAUC, Sensitivity and Specificity on test set:")
+  cat("\nTest set evaluation results:")
+  cat("------------------------------")
+  cat("\nAUC, Sensitivity and Specificity on test set:")
   print(caret::twoClassSummary(test_result, lev = levels(test_result$obs)))
   
   write.table(data.frame(caret::twoClassSummary(test_result, lev = levels(test_result$obs))),
           file = paste(opt$dir,'/testSet_summary.txt',sep=''),
           quote = F, col.names = F)
   
-  message("\nWriting summary to testSet_summary.txt file.")
+  cat("\nWriting summary to testSet_summary.txt file.")
   
   # Create confusion matrix
   cm = caret::confusionMatrix(data = pred,
                        reference = Class[-inTraining],
                        positive = "POS")
   
-  message("\nConfusion matrix:")
+  cat("\nConfusion matrix:")
   print(cm$table)
   
-  message("\nWriting confusion matrix and statistics to output files:")
+  cat("\nWriting confusion matrix and statistics to output files:")
   
-  message("\t testSet_confusionMatrix.txt")
+  cat("\t testSet_confusionMatrix.txt")
   write.table(data.frame(cm$table),
               file = paste0(opt$dir,"/testSet_confusionMatrix.txt"), 
               quote = F, col.names = T, row.names = F, sep = "\t")
@@ -577,7 +577,7 @@ if (run_ML == TRUE) {
   cm_stats <- rbind(data.frame(overall),
                     data.frame(byClass))
   
-  message("\t testSet_stats.txt")
+  cat("\t testSet_stats.txt")
   write.table(cm_stats, file = paste0(opt$dir,"/testSet_stats.txt"),
               quote = F, col.names = F, sep = "\t")
   
@@ -589,18 +589,18 @@ if (run_ML == TRUE) {
   imp <- imp[order(-imp$Overall, decreasing = FALSE),]
   imp <- imp[,-1, drop = FALSE]
   
-  message("\nGlobal variable importance in Random Forest classifier:")
+  cat("\nGlobal variable importance in Random Forest classifier:")
   print(imp)
   
   write.table(imp, file = paste(opt$dir,
                                "/classifier_variable-importance_table.txt",sep =''), 
               sep = "\t", quote = F, col.names = F)
   
-  message("\nVariable importance table saved as classifier_variable-importance_table.txt")
+  cat("\nVariable importance table saved as classifier_variable-importance_table.txt")
   
   
   ###### ROC curve
-  message("\nCalculating and printing test set ROC curves...")
+  cat("\nCalculating and printing test set ROC curves...")
   
   # 1) in function of the probability on the test set: 
   # (not the same proportion of positives and negatives)
@@ -643,21 +643,21 @@ if (run_ML == TRUE) {
                    signif(pROC::ci(r)[2]),']'),col = 'red')
   dev.off()
   
-  message("\nROC curves saved to testSet_ROC_curve.pdf file. Includes:")
-  message("\t - ROC curve with unbalanced classes.")
-  message("\t - ROC curve with balanced classes.")
+  cat("\nROC curves saved to testSet_ROC_curve.pdf file. Includes:")
+  cat("\t - ROC curve with unbalanced classes.")
+  cat("\t - ROC curve with balanced classes.")
   
   
   #################################
   ## Applying classifier to data ##
   #################################
-  message("\n------------------------------------------------")
-  message("\nApplying Random Forest classifier to input dataset...")
+  cat("\n------------------------------------------------")
+  cat("\nApplying Random Forest classifier to input dataset...")
   
   isoform.predict = predict(randomforest,dmult[,colnames(training)],type = 'prob')
   colnames(isoform.predict) = gsub("NEG","NEG_MLprob", colnames(isoform.predict))
   colnames(isoform.predict) = gsub("POS","POS_MLprob", colnames(isoform.predict))
-  message("\nRandom forest prediction finished successfully!")
+  cat("\nRandom forest prediction finished successfully!")
   
   ## Adding predictions to classification table
   classified.isoforms = cbind(dmult[rownames(isoform.predict),],isoform.predict)
@@ -671,7 +671,7 @@ if (run_ML == TRUE) {
   classified.isoforms$"ML_classifier" <- "Positive"
   classified.isoforms$"ML_classifier"[rownames(classified.isoforms) %in% 
                                         rownames(negatives)] <- "Negative"
-  message("\nRandom forest classification results:")
+  cat("\nRandom forest classification results:")
   print(table(classified.isoforms$ML_classifier))
   
   
@@ -713,8 +713,8 @@ if (run_ML == TRUE) {
 ###### INTRA-PRIMING FILTERING #####
 ####################################
 
-message("\n-------------------------------------------------")
-message("\nApplying intra-priming filter to our dataset.")
+cat("\n-------------------------------------------------")
+cat("\nApplying intra-priming filter to our dataset.")
 
 # apply to all not FSM transcripts and to all mono-exons from all categories
 d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
@@ -724,7 +724,7 @@ d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) 
      (d1$structural_category == "full-splice_match" & d1$exons == 1))
 
 
-message("\nIntra-priming filtered transcripts:")
+cat("\nIntra-priming filtered transcripts:")
 print(table(d1$intra_priming))
 
 
@@ -737,8 +737,8 @@ d1 <- d1[rownames(d),]
 ##### GENERATE AND OUTPUT RESULT TABLES #####
 #############################################
 
-message("\n -------------------------------------------------")
-message("\nWriting filter results to classification file...")
+cat("\n -------------------------------------------------")
+cat("\nWriting filter results to classification file...")
 
 ### Output ML results
 
@@ -776,7 +776,7 @@ write.table(d_out, file = paste0(opt$dir, "/", opt$output,
                            "_MLresult_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
 
-message(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
+cat(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
               "\t", opt$output, "_MLresult_classification.txt file."))
 
 
@@ -788,7 +788,7 @@ write.table(inclusion_list, file = paste0(opt$dir, "/", opt$output,
                                     "_inclusion-list.txt"),
             quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
 
-message(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
+cat(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
                "\n\t", "filters) to ", opt$output, "_inclusion-list.txt file"))
 
 
@@ -806,14 +806,14 @@ if(opt$intermediate_files == TRUE){
 
 
 # final print summarizing results
-message("\n-------------------------------------------------")
-message("\nSUMMARY OF MACHINE LEARNING + INTRA-PRIMING FILTERS:")
+cat("\n-------------------------------------------------")
+cat("\nSUMMARY OF MACHINE LEARNING + INTRA-PRIMING FILTERS:")
 print(table(d_out$filter_result))
 
     
-message("\n-------------------------------------------------")
-message("\nSQANTI3 ML filter finished successfully!")
-message("\n-------------------------------------------------")
+cat("\n-------------------------------------------------")
+cat("\nSQANTI3 ML filter finished successfully!")
+cat("\n-------------------------------------------------")
 
 
 ################################################

@@ -2,12 +2,13 @@ import os
 
 from src.module_logging import filter_logger
 from src.commands import (
-    run_command, RSCRIPTPATH,RSCRIPT_ML,RSCRIPT_RULES,
+    run_command, RSCRIPTPATH,RSCRIPT_ML,
     RSCRIPT_FILTER_REPORT,utilitiesPath
 )
 from src.filter_output import (
     filter_isoforms, filter_gtf, filter_sam, filter_gff3, filter_faa
 )
+from src.utilities.filter.sqanti3_rules_filter import rules_filter
 
 def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
                  outdir,prefix, ids_to_keep, inclusion_f):
@@ -34,13 +35,12 @@ def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
         filter_gff3(isoAnnotGFF3, prefix, inclusion_f)
 
 def run_rules(args):
-    cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
 
     report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
+    prefix = os.path.join(args.dir, args.output)
+    rules_filter(args.sqanti_class,args.json_filter,args.filter_mono_exonic,
+                 prefix,filter_logger)
 
-    logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
-    # TODO: Create a function to run the command and get the logs in real time?
-    run_command(cmd,filter_logger,logFile,"Rules filtering",silent=False)
     if not args.skip_report:
       logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
       run_command(report_cmd,filter_logger,logFile,"Rules filtering report")

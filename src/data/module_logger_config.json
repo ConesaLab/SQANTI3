@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "filter_tests/logs/filter_module.log",
+            "filename": "filter_Rscript/logs/filter_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"
