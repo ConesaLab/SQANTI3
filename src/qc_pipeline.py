@@ -177,6 +177,7 @@ def run(args):
 ### IsoAnnot Lite implementation
 # ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
+# TODO: Change this so it is part of SQANTI, called as a function and not as a external script
 def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)

@@ -19,7 +19,8 @@ SAVE_PROB_TRANSCRIPTS = False
 
 version = "2.7.3"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
-CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
+CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", 
+                     "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
 
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
 LST_TRANSCRIPTSOURCES_INTRONIC = ["PAR-clip"]
