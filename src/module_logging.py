@@ -19,3 +19,11 @@ logging.config.dictConfig(MODULE_LOGGING_CONFIG)
 qc_logger = logging.getLogger('module_logger')
 filter_logger = logging.getLogger('module_logger')
 rescue_logger = logging.getLogger('module_logger')
+
+def message(text,logger):
+    size = max(len(text)+4, 50)
+    line = "-" * size
+    centered_text = f"{text:^{size}}"
+    logger.info(line)
+    logger.info(centered_text)
+    logger.info(line)

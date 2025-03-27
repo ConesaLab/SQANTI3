@@ -14,10 +14,13 @@ import pandas as pd
 
 from src.rescue_argparse import rescue_argparse
 from src.logging_config import rescue_art, art_logger
-from src.module_logging import rescue_logger
+from src.module_logging import rescue_logger, message
 from src.argparse_utils import rescue_args_validation
 from src.commands import run_command
 from src.config import __version__
+from src.rescue_steps import (
+    run_automatic_rescue, run_automatic_rescue_py
+)
 
 ## Set general path variables
 Rscript_path = shutil.which('Rscript')
@@ -26,7 +29,6 @@ python_path = shutil.which('python')
 utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 ## Set path variables to call R scripts
-automatic_rescue_path = "rescue/automatic_rescue.R"
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
 rescue_by_mapping_ML_path = "rescue/rescue_by_mapping_ML.R"
 rescue_by_mapping_rules_path = "rescue/rescue_by_mapping_rules.R"
@@ -46,39 +48,6 @@ if os.system(gffread_path + " --version") != 0:
 
 
 #### DEFINE FUNCTIONS ####
-
-## Run automatic rescue
-def run_automatic_rescue(args):
-
-  ## prepare to run script
-
-  # define Rscript command with automatic_rescue.R args
-  auto_cmd = Rscript_path + " {u}/{s} -c {c} -o {o} -d {d} -u {u} \
-  -g {g} -e {e} -m {m}".format(u = utilities_path, s = automatic_rescue_path, \
-  c = args.filter_class, o = args.output, d = args.dir, \
-  g = args.refGTF, e = args.rescue_mono_exonic, m = args.mode)
-
-  # print command
-  rescue_logger.info("Automatic rescue run via the following command:")
-  rescue_logger.info(auto_cmd)
-
-  ## run automatic rescue script via terminal
-  if subprocess.check_call(auto_cmd, shell = True) != 0:
-    rescue_logger.error("ERROR running automatic rescue: {auto_cmd}")
-    sys.exit(1)
-
-  ## load output: transcripts rescued as a result of automatic rescue
-
-  # make file name
-  automatic_rescued_list = f"{args.dir}/{args.output}_automatic_rescued_list.tsv"
-
-  # set object containing rescued list from the output file
-  auto_rescue = set(line.strip() for line in open(automatic_rescued_list))
-
-  ## return automatic rescue outputs
-  return(auto_rescue)
-
-
 ## Run mapping of rescue candidates (artifacts) to targets
 def run_candidate_mapping(args):
 
@@ -381,9 +350,11 @@ def main():
 
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
-
-  auto_result = run_automatic_rescue(args)
-
+  message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
+  prefix = f"{args.dir}/{args.output}"
+  #run_automatic_rescue(args)
+  run_automatic_rescue_py(args.filter_class,args.rescue_mono_exonic,
+                              args.mode,prefix)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":

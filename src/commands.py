@@ -27,6 +27,9 @@ RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")
 RSCRIPT_ML = os.path.join(utilitiesPath,"filter","SQANTI3_MLfilter.R")
 
+#Rscript rescue
+RESCUE_AUTO_PATH = os.path.join(utilitiesPath,"rescue","automatic_rescue.R")
+
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 

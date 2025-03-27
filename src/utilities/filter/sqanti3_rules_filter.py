@@ -1,5 +1,6 @@
 import os, json
 import pandas as pd
+from src.module_logging import message
 
 def read_json_rules(json_file):
     """Parse JSON rules file into structured DataFrame format for filtering.
@@ -137,13 +138,6 @@ def get_reasons(row, force_multiexon, rules_dict):
         'structural_category': row['structural_category'], 
         'filter_reason': '; '.join(reasons)
     })
-
-def message(text,logger):
-    line = "-" * 50
-    centered_text = f"{text:^50}"
-    logger.info(line)
-    logger.info(centered_text)
-    logger.info(line)
 
 def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
     """Main function to execute SQANTI3 filtering workflow.
