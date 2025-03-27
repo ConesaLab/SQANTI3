@@ -111,6 +111,9 @@ get_reasons <- function(isoform_info, force_multiexon){
               reasons <- c(reasons, reason_line)
               }
           }
+        } else {
+          reason_line <- paste("NA", rules[i, "column"])
+          reasons <- c(reasons, reason_line)
         }
       }
     }
