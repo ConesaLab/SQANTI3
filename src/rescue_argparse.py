@@ -52,7 +52,7 @@ def rescue_argparse():
     rules = subparsers.add_parser("rules", parents = [common], \
     description = "Rescue for rules-filtered transcriptomes.")
 
-    rules.add_argument("-j", "--json", \
+    rules.add_argument("-j", "--json_filter", \
     help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter.")
 
     ## ML rescue arguments

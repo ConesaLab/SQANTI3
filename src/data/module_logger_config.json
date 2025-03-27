@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "filter_Rscript/logs/filter_module.log",
+            "filename": "rescue_test/logs/rescue_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"
@@ -28,7 +28,7 @@
                 "module_file_handler",
                 "stream_handler"
             ],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": true
         }
     }

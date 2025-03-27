@@ -90,7 +90,7 @@ def run_candidate_mapping(args):
   ref_trans_Fasta = f" {args.dir}/{pre}.fasta"
 
   # build gffread command
-  ref_cmd = f"gffread -w {ref_trans_Fasta} -g {args.refFasta} {args.refGTG}"
+  ref_cmd = f"gffread -w {ref_trans_Fasta} -g {args.refFasta} {args.refGTF}"
 
   # run gffread
   try:
@@ -324,7 +324,7 @@ def run_rules_rescue(args):
   ref_dir = f"{args.dir}/reference_rules_filter"
 
   # define command
-  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json} -o {ref_out} -d {ref_dir}"
+  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir}"
 
 
   # print command
@@ -424,8 +424,8 @@ def main():
 
   ## Check that rules-specific args are valid
   if args.subcommand == "rules":
-      if not os.path.isfile(args.json):
-          rescue_logger.error(f"{args.json} doesn't exist. Abort!")
+      if not os.path.isfile(args.json_filter):
+          rescue_logger.error(f"{args.json_filter} doesn't exist. Abort!")
           sys.exit(1)
 
 
