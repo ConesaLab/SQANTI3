@@ -16,6 +16,7 @@ import pandas as pd
 from src.rescue_argparse import rescue_argparse
 from src.logging_config import rescue_art, art_logger
 from src.module_logging import rescue_logger
+
 ## Set general path variables
 Rscript_path = shutil.which('Rscript')
 gffread_path = shutil.which('gffread')
@@ -375,7 +376,7 @@ def run_rules_rescue(args):
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
-
+  
   ## Check that common arguments are valid
   args.filter_class = os.path.abspath(args.filter_class)
   if not os.path.isfile(args.filter_class):
