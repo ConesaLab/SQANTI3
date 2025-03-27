@@ -9,13 +9,14 @@ import sys
 from pathlib import Path
 
 from src.wrapper_utils import (
-    create_config, run_step, run_step_help,sqanti_path
+    create_config, run_step, run_step_help,sqanti_path,check_conda
 )
 from src.logging_config import sqanti_art, main_logger
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
+    check_conda()
     main_logger.info(sqanti_art()) # Print the ASCII art  
 
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",

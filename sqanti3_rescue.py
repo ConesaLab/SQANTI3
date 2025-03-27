@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 __author__  = "angeles.arzalluz@gmail.com"
 import shutil
-from src.commands import run_command
-from src.config import __version__
+
 ###################################################
 ##########     SQANTI3 RESCUE WRAPPER    ##########
 ###################################################
@@ -16,6 +15,9 @@ import pandas as pd
 from src.rescue_argparse import rescue_argparse
 from src.logging_config import rescue_art, art_logger
 from src.module_logging import rescue_logger
+from src.argparse_utils import rescue_args_validation
+from src.commands import run_command
+from src.config import __version__
 
 ## Set general path variables
 Rscript_path = shutil.which('Rscript')
@@ -318,18 +320,17 @@ def run_rules_rescue(args):
   ## Run rules filter on reference transcriptome
 
   rescue_logger.info("**** Rules rescue selected!")
-  rescue_logger.info("Applying provided rules (--json) to reference transcriptome classification file.")
+  rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
 
   # create reference out prefix and dir
   ref_out = "reference"
   ref_dir = f"{args.dir}/reference_rules_filter"
 
   # define command
-  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json} -o {ref_out} -d {ref_dir}"
+  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir}"
 
 
   # print command
-  rescue_logger.debug(refRules_cmd)
   run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")
     # make file names
   ref_rules = f"{args.dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
@@ -376,60 +377,7 @@ def run_rules_rescue(args):
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
-  
-  ## Check that common arguments are valid
-  args.filter_class = os.path.abspath(args.filter_class)
-  if not os.path.isfile(args.filter_class):
-      rescue_logger.error(f"{args.filter_class} doesn't exist. Abort!")
-      sys.exit(1)
-
-  if not os.path.isfile(args.rescue_isoforms):
-      rescue_logger.error(f"{args.rescue_isoforms} doesn't exist. Abort!")
-      sys.exit(1)
-
-  if not os.path.isfile(args.rescue_gtf):
-      rescue_logger.error(f"{args.rescue_gtf} doesn't exist. Abort!")
-      sys.exit(1)
-
-  if not os.path.isfile(args.refGTF):
-      rescue_logger.error(f"{args.refGTF} doesn't exist. Abort!")
-      sys.exit(1)
-
-  if not os.path.isfile(args.refFasta):
-      rescue_logger.error(f"{args.refFasta} doesn't exist. Abort!")
-      sys.exit(1)
-
-  # TODO: Condition to run SQANTI_QC on the reference transcriptome
-  if not os.path.isfile(args.refClassif):
-      rescue_logger.error(f"{args.refClassif} doesn't exist. Abort!")
-      sys.exit(1)
-
-  ## Define output dir and output name in case it was not defined
-  if args.dir is None:
-      args.dir = os.path.dirname(args.filter_class)
-      rescue_logger.warning(f"Output directory not defined. All the outputs will be stored at {args.dir} directory")
-  else:
-      if not os.path.exists(args.dir):
-          os.makedirs(args.dir)
-          rescue_logger.info(f"Created output directory: {args.dir}")
-
-  ## Check that ML-specific args are valid
-  if args.subcommand == "ml":
-      if not os.path.isfile(args.randomforest):
-          rescue_logger.error(f"{args.randomforest} doesn't exist. Abort!")
-          sys.exit(1)
-
-      if args.threshold < 0 or args.threshold > 1.:
-          rescue_logger.error(f"--threshold must be between 0-1, value of {args.threshold} was supplied. Abort!")
-          sys.exit(1)
-
-  ## Check that rules-specific args are valid
-  if args.subcommand == "rules":
-      if not os.path.isfile(args.json):
-          rescue_logger.error(f"{args.json} doesn't exist. Abort!")
-          sys.exit(1)
-
-
+  rescue_args_validation(args)
 
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed

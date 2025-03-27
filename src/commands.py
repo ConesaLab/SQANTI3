@@ -19,14 +19,6 @@ ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --i
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
-if shutil.which(GTF2GENEPRED_PROG) is None:
-    qc_logger.info(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
-    sys.exit(1)
-if shutil.which(GFFREAD_PROG) is None:
-    qc_logger.error("Cannot find executable {GFFREAD_PROG}. Abort!")
-    sys.exit(1)
-
-
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
