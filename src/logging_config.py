@@ -71,17 +71,17 @@ MAIN_LOGGING_CONFIG = {
         'main_logger': {
             'handlers': ['main_script_handler', 'error_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         },
         'art_logger': {
             'handlers': ['main_script_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         },
         'process_logger': {
             'handlers': ['process_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         }
     }
 }

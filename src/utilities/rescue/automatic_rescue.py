@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from src.module_logging import rescue_logger
 
+
 def read_classification(filename):
     return pd.read_csv(filename, sep="\t")
 
@@ -85,3 +86,4 @@ def save_automatic_rescue(rescue_df,class_df,mode,prefix):
             sep='\t',
             index=False
     )
+

@@ -117,97 +117,97 @@ if(opt$rescue_mono_exonic %in% c("all", "fsm")){
 ## FSM and ISM ##
 # analyze lost reference transcripts and 
 # see whether they are supported by ISM/FSM
-    
-    # filter classification
-    classif_ism_fsm <- classif %>% 
-      dplyr::filter(structural_category %in% c("full-splice_match", 
-                                               "incomplete-splice_match") &
-                      exons > 1)
-    
-    # add ISM mono-exons if indicated
-    if(opt$rescue_mono_exonic == "all" && 
-       opt$mode  == "full"){
-      
-      cat("\n\tIncluding mono-exon ISM as rescue candidates...")
-      
-      classif_ism_mono <- classif %>% 
-        dplyr::filter(structural_category == "incomplete-splice_match" &
-                        exons == 1)
-      classif_ism_fsm <- dplyr::bind_rows(classif_ism_fsm,
-                                          classif_ism_mono)
-    }
-    
-    # find all reference IDs in associated_transcript column
-    all_ref <- classif_ism_fsm %>% 
-      dplyr::select(associated_transcript) %>% unique %>% unlist
-    
-    # check reference IDs not represented by isoforms (lost in filtering)
-    isoform_ref <- classif_ism_fsm %>% 
-      dplyr::filter(filter_result == "Isoform") %>% 
-      dplyr::select(associated_transcript) %>% unique %>% unlist
-    
-    lost_ref <- all_ref[!(all_ref %in% isoform_ref)]
-    
-    
-    # perform rescue for lost reference transcripts
-    cat("\n\tFinding FSM-supported reference transcripts lost after filtering...")
-    
-    source(paste0(opt$utilities_path, "/rescue/rescue_aux_functions.R"))
-    rescue <- purrr::map_df(lost_ref, rescue_lost_reference, classif_ism_fsm)
 
-    # separate result into reference transcripts and ISM
-    rescue_ism <- rescue %>% 
-      dplyr::filter(isoform %in% classif_ism_fsm$isoform)
-    
-    rescue_ref <- rescue %>% 
-      dplyr::filter(isoform %in% classif_ism_fsm$associated_transcript)
-    
-    
-    # write out reference transcripts that are automatically rescued
-    # add mono-exons if indicated
-    if(opt$rescue_mono_exonic %in% c("all", "fsm")){
-      rescue_auto <- dplyr::bind_rows(rescue_mono, rescue_ref)
-    }else{
-      rescue_auto <- rescue_ref
-    }
-    
-    readr::write_tsv(rescue_auto, 
-                     col_names = FALSE,
-                     file = paste0(opt$dir, "/", opt$output, 
-                                   "_automatic_rescued_list.tsv"))
-    
-    # write out rescue table when mode == "automatic"
-    # includes all artifacts (ID/category) considered during automatic rescue
-    # and the IDs of the rescued reference transcripts
-    if(opt$mode == "automatic"){
-      
-      # get ISM/FSM transcripts associated to all automatically rescued references
-      rescue_table <- dplyr::filter(classif_ism_fsm, 
-                                    associated_transcript %in% rescue_auto$isoform) %>% 
-        dplyr::select(isoform, associated_transcript, structural_category) %>% 
-        dplyr::rename(artifact = "isoform", 
-                      rescued_transcript = "associated_transcript")
-      
-      # write table
-      readr::write_tsv(rescue_table,
-                       file = paste0(opt$dir, "/", opt$output,
-                                     "_automatic_rescue_table.tsv"))
-    }
-    
-    
-  cat("\n\tAutomatic rescue finished successfully!")
-  cat("\n\tReference transcripts output by automatic rescue were written to output file:")
-  cat(paste0("\n\t\t", opt$dir, "/", opt$output, 
-                 "_automatic_rescued_list.tsv"))
-  cat(paste0("\n\t\tTotal transcripts rescued from reference : ", 
-                 rescue_auto %>% nrow))
-    if(opt$rescue_mono_exonic %in% c("all", "fsm")){
-      cat(paste0("\n\t\t - From mono-exon FSM: ", rescue_mono %>% nrow))
-    }else{
-      cat("\n\t\t - From mono-exon FSM: 0")
-    }
-  cat(paste0("\n\t\t - From FSM artifacts: ", 
-                 rescue_ref %>% nrow))
+# filter classification
+classif_ism_fsm <- classif %>% 
+  dplyr::filter(structural_category %in% c("full-splice_match", 
+                                            "incomplete-splice_match") &
+                  exons > 1)
+
+# add ISM mono-exons if indicated
+if(opt$rescue_mono_exonic == "all" &&
+    opt$mode  == "full"){
+  
+  cat("\n\tIncluding mono-exon ISM as rescue candidates...")
+  
+  classif_ism_mono <- classif %>% 
+    dplyr::filter(structural_category == "incomplete-splice_match" &
+                    exons == 1)
+  classif_ism_fsm <- dplyr::bind_rows(classif_ism_fsm,
+                                      classif_ism_mono)
+}
+
+# find all reference IDs in associated_transcript column
+all_ref <- classif_ism_fsm %>% 
+  dplyr::select(associated_transcript) %>% unique %>% unlist
+
+# check reference IDs not represented by isoforms (lost in filtering)
+isoform_ref <- classif_ism_fsm %>% 
+  dplyr::filter(filter_result == "Isoform") %>% 
+  dplyr::select(associated_transcript) %>% unique %>% unlist
+
+lost_ref <- all_ref[!(all_ref %in% isoform_ref)]
+
+
+# perform rescue for lost reference transcripts
+cat("\n\tFinding FSM-supported reference transcripts lost after filtering...")
+
+source(paste0(opt$utilities_path, "/rescue/rescue_aux_functions.R"))
+rescue <- purrr::map_df(lost_ref, rescue_lost_reference, classif_ism_fsm)
+
+# separate result into reference transcripts and ISM
+rescue_ism <- rescue %>% 
+  dplyr::filter(isoform %in% classif_ism_fsm$isoform)
+
+rescue_ref <- rescue %>% 
+  dplyr::filter(isoform %in% classif_ism_fsm$associated_transcript)
+
+
+# write out reference transcripts that are automatically rescued
+# add mono-exons if indicated
+if(opt$rescue_mono_exonic %in% c("all", "fsm")){
+  rescue_auto <- dplyr::bind_rows(rescue_mono, rescue_ref)
+}else{
+  rescue_auto <- rescue_ref
+}
+
+readr::write_tsv(rescue_auto, 
+                  col_names = FALSE,
+                  file = paste0(opt$dir, "/", opt$output, 
+                                "_automatic_rescued_list.tsv"))
+
+# write out rescue table when mode == "automatic"
+# includes all artifacts (ID/category) considered during automatic rescue
+# and the IDs of the rescued reference transcripts
+if(opt$mode == "automatic"){
+  
+  # get ISM/FSM transcripts associated to all automatically rescued references
+  rescue_table <- dplyr::filter(classif_ism_fsm, 
+                                associated_transcript %in% rescue_auto$isoform) %>% 
+    dplyr::select(isoform, associated_transcript, structural_category) %>% 
+    dplyr::rename(artifact = "isoform", 
+                  rescued_transcript = "associated_transcript")
+  
+  # write table
+  readr::write_tsv(rescue_table,
+                    file = paste0(opt$dir, "/", opt$output,
+                                  "_automatic_rescue_table.tsv"))
+}
+
+
+cat("\n\tAutomatic rescue finished successfully!")
+cat("\n\tReference transcripts output by automatic rescue were written to output file:")
+cat(paste0("\n\t\t", opt$dir, "/", opt$output, 
+              "_automatic_rescued_list.tsv"))
+cat(paste0("\n\t\tTotal transcripts rescued from reference : ", 
+              rescue_auto %>% nrow))
+if(opt$rescue_mono_exonic %in% c("all", "fsm")){
+  cat(paste0("\n\t\t - From mono-exon FSM: ", rescue_mono %>% nrow))
+}else{
+  cat("\n\t\t - From mono-exon FSM: 0")
+}
+cat(paste0("\n\t\t - From FSM artifacts: ", 
+              rescue_ref %>% nrow))
 
 cat("\n---------------------------------------------------------------")
 

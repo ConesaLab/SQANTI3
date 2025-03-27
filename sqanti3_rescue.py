@@ -19,7 +19,9 @@ from src.argparse_utils import rescue_args_validation
 from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
-    run_automatic_rescue, run_automatic_rescue_py
+  run_automatic_rescue_py,
+  rescue_candidates, rescue_targets,
+  run_candidate_mapping
 )
 
 ## Set general path variables
@@ -48,185 +50,6 @@ if os.system(gffread_path + " --version") != 0:
 
 
 #### DEFINE FUNCTIONS ####
-## Run mapping of rescue candidates (artifacts) to targets
-def run_candidate_mapping(args):
-
-  #### PREPARATION OF FILES FOR MINIMAP2 ####
-  rescue_logger.info("**** Preparation of files for artifact mapping:")
-  ## Convert reference transcriptome GTF to FASTA
-
-  rescue_logger.info("Creating reference transcriptome FASTA from provided GTF (--refGTF).")
-
-  # make FASTA file name
-  pre, _ = os.path.splitext(os.path.basename(args.refGTF))
-  ref_trans_Fasta = f" {args.dir}/{pre}.fasta"
-
-  # build gffread command
-  ref_cmd = f"gffread -w {ref_trans_Fasta} -g {args.refFasta} {args.refGTG}"
-
-  # run gffread
-  try:
-      subprocess.check_call(ref_cmd, shell=True)
-      if os.path.isfile(ref_trans_Fasta):
-          rescue_logger.info(f"Reference transcriptome FASTA was saved to {ref_trans_Fasta}")
-          rescue_logger.info("gffread command used:")
-          rescue_logger.info(ref_cmd)
-      else:
-          rescue_logger.error("Reference transcriptome FASTA was not created - file not found!")
-          sys.exit(1)
-  except subprocess.CalledProcessError:
-      rescue_logger.error(f"Error converting reference transcriptome GTF to FASTA. Command used: {ref_cmd}")
-      sys.exit(1)
-
-
-
-  ## Filter reference transcriptome FASTA to only include target ref transcripts
-
-  rescue_logger.info("Filtering reference transcriptome FASTA to only rescue targets.")
-
-  # make file names
-  target_file = f"{args.dir}/{args.output}_rescue_targets.tsv"
-  ref_target_fasta = f"{args.dir}/{args.output}_rescue_targets.ref.fasta"
-
-  # make command
-  fasta_cmd = f"seqtk subseq {ref_trans_Fasta} {target_file} > {ref_target_fasta}"
-
-  # run
-  try:
-      subprocess.check_call(fasta_cmd, shell=True)
-      if os.path.isfile(ref_target_fasta):
-          rescue_logger.info(f"Target reference transcript sequences were saved to {ref_target_fasta}")
-          rescue_logger.info("seqtk command used:")
-          rescue_logger.info(fasta_cmd)
-      else:
-          rescue_logger.error("Target reference transcript FASTA was not created - file not found!")
-          sys.exit(1)
-  except subprocess.CalledProcessError:
-      rescue_logger.error(f"Error retrieving target reference transcripts from FASTA. Command used: {fasta_cmd}")
-      sys.exit(1)
-
-
-  ## Filter SQ3	transcriptome FASTA to only include target LR transcripts
-
-  rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
-
-  # make file names
-  LR_target_fasta = f"{args.dir}/{args.output}_rescue_targets.LR.fasta"
-
-  # make command
-  fasta_cmd = f"seqtk subseq {args.rescue_isoforms} {target_file} > {LR_target_fasta}"
-
-  # run
-  try:
-      subprocess.check_call(fasta_cmd, shell=True)
-      if os.path.isfile(LR_target_fasta):
-          rescue_logger.info(f"Target long read transcript sequences were saved to {LR_target_fasta}")
-          rescue_logger.info("seqtk command used:")
-          rescue_logger.info(fasta_cmd)
-      else:
-          rescue_logger.error("Target long read transcript FASTA was not created - file not found!")
-          sys.exit(1)
-  except subprocess.CalledProcessError:
-      rescue_logger.error(f"Error retrieving target long-read transcripts from FASTA. Command used: {fasta_cmd}")
-      sys.exit(1)
-
-
-  ## join both FASTA files
-  rescue_logger.info("Joining reference and LR rescue target FASTA files...")
-
-  target_fasta = f"{args.dir}/{args.output}_rescue_targets.fasta"
-  cat_cmd = f"cat {ref_target_fasta} {LR_target_fasta} > {target_fasta}"
-
-  try:
-      subprocess.check_call(cat_cmd, shell=True)
-      if os.path.isfile(target_fasta):
-          rescue_logger.info(f"Rescue target FASTA was saved to {target_fasta}")
-          rescue_logger.info("Command used:")
-          rescue_logger.info(cat_cmd)
-
-          # Remove intermediate target FASTA files (LR and ref)
-          rescue_logger.info("Removing intermediate target FASTA files...")
-          rm_cmd = f"rm {ref_target_fasta} {LR_target_fasta}"
-          try:
-              subprocess.call(rm_cmd, shell=True)
-          except subprocess.CalledProcessError:
-              rescue_logger.warning(f"Failed to remove intermediate files. Command used: {rm_cmd}")
-      else:
-          rescue_logger.error("Target FASTA was not created - file not found!")
-          sys.exit(1)
-  except subprocess.CalledProcessError:
-      rescue_logger.error(f"Error joining target long-read and reference FASTA files. Command used: {cat_cmd}")
-      sys.exit(1)
-
-
-  ## Filter SQ3 FASTA to include rescue candidates
-  rescue_logger.info("Creating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...")
-
-  # make file names
-  candidate_file = f"{args.dir}/{args.output}_rescue_candidates.tsv"
-  candidate_fasta = f"{args.dir}/{args.output}_rescue_candidates.fasta"
-
-  # make command
-  fasta_cmd = f"seqtk subseq {args.rescue_isoforms} {candidate_file} > {candidate_fasta}"
-
-  # run
-  try:
-      subprocess.check_call(fasta_cmd, shell=True)
-      if os.path.isfile(candidate_fasta):
-          rescue_logger.info(f"Rescue candidate FASTA was saved to {candidate_fasta}")
-          rescue_logger.info("seqtk command used:")
-          rescue_logger.info(fasta_cmd)
-      else:
-          rescue_logger.error("Candidate FASTA was not created - file not found!")
-          sys.exit(1)
-  except subprocess.CalledProcessError:
-      rescue_logger.error(f"Error retrieving rescue candidate sequences from FASTA. Command used: {fasta_cmd}")
-      sys.exit(1)
-
-
-  #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
-  # TODO: eliminate file logic in the process
-  rescue_logger.info("**** Artifact mapping (candidates vs targets)")
-  
-  # Mapping
-  rescue_logger.info("Mapping rescue candidates to rescue targets with minimap2...")
-
-  # make file names
-  sam_file = f"{args.dir}/{args.output}_mapped_rescue.sam"
-
-  # make command
-  minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {target_fasta} {candidate_fasta} > {sam_file}"
-
-  # run
-  logFile=f"{args.dir}/logs/rescue/minimap2.log"
-  run_command(minimap_cmd,rescue_logger,logFile,"Maping rescue candidates to targets")
-
-  if os.path.isfile(sam_file):
-    rescue_logger.info(f"Minimap2 results were saved to {sam_file}")
-    rescue_logger.info("minimap2 command used:")
-    rescue_logger.info(minimap_cmd)
-
-    # Filter mapping results (select SAM columns)
-    rescue_logger.info("Building candidate-target table of mapping hits...")
-
-    # remove header from SAM
-    sam_tmp_file = f"{args.dir}/{args.output}_mapped_rescue_noheader.sam"
-    sam_cmd = f"grep -v '@' {sam_file} > {sam_tmp_file}"
-
-    run_command(sam_cmd,rescue_logger,"log/rescue/sam_noheader.log",description="Remove header from SAM file")
-    if os.path.isfile(sam_tmp_file):
-      # get cols with candidate-target pairs + alignment type
-      hits_file = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
-      hits_cmd = f"cut -f1-3 {sam_tmp_file} > {hits_file}"
-
-      run_command(hits_cmd,rescue_logger,"log/rescue/hits.log",description="Extract candidate-target pairs from SAM file")
-
-      if os.path.isfile(hits_file):
-        rescue_logger.info(f"Mapping hit table was saved to {hits_file}")
-
-        # delete altered SAM file
-        os.remove(rm_cmd)
-
 
 ## Run rescue steps specific to the ML filter
 def run_ML_rescue(args):
@@ -353,19 +176,27 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  run_automatic_rescue_py(args.filter_class,args.rescue_mono_exonic,
+  rescue_ism = run_automatic_rescue_py(args.filter_class,args.rescue_mono_exonic,
                               args.mode,prefix)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
 
+    candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
+                                   rescue_ism,prefix)
+    rescue_logger.debug(f"Rescue candidates: {candidates.shape[0]}")
+
+    targets = rescue_targets(args.filter_class,candidates,
+                             args.refGTF,prefix)
+    rescue_logger.debug(f"Rescue targets: {targets.shape[0]}")    
+    
     #### RUN MAPPING
     # when in full mode, rescue maps candidates not included in the
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
     run_candidate_mapping(args)
-
+    
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
