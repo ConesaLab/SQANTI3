@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
-from src.module_logging import rescue_logger
 
+from src.module_logging import rescue_logger
 
 def read_classification(filename):
     return pd.read_csv(filename, sep="\t")

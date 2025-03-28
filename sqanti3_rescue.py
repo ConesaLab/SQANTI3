@@ -195,7 +195,7 @@ def main():
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    run_candidate_mapping(args)
+    run_candidate_mapping(args,targets.tolist(),candidates.tolist())
     
 
     #### RUN ML FILTER RESCUE ####
