@@ -96,7 +96,6 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
     with open(output_gff, 'w') as f:
         reader = collapseGFFReader(input_gff)
         for r in reader:
-            print(isoforms_info[r.seqid].genes)
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
             s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
             e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
