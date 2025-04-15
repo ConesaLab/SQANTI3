@@ -33,7 +33,6 @@ from src.write_parameters import write_filter_parameters
 def main():
     art_logger.info(filter_art())
     args = filter_argparse().parse_args()
-    get_logger_info(filter_logger)
     filter_args_validation(args)
     if args.output is None:
         args.output = args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]

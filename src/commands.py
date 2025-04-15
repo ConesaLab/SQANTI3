@@ -33,11 +33,11 @@ RESCUE_AUTO_PATH = os.path.join(utilitiesPath,"rescue","automatic_rescue.R")
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                        outdir, corrSAM, n_cpu, gmap_index):
+                        outdir, corrSAM, n_cpu, gmap_index,logger=qc_logger):
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
         case "gmap":
-            qc_logger.info("****Aligning reads with GMAP...")
+            logger.info("****Aligning reads with GMAP...")
             cmd = GMAP_CMD.format(
                 cpus=n_cpu,
                 dir=os.path.dirname(gmap_index),
@@ -46,7 +46,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "minimap2":
-            qc_logger.info("****Aligning reads with Minimap2...")
+            logger.info("****Aligning reads with Minimap2...")
             cmd = MINIMAP2_CMD.format(
                 cpus=n_cpu,
                 g=genome,
@@ -54,7 +54,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "deSALT":
-            qc_logger.info("****Aligning reads with deSALT...")
+            logger.info("****Aligning reads with deSALT...")
             cmd = DESALT_CMD.format(
                 cpus=n_cpu,
                 dir=gmap_index,
@@ -62,7 +62,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "uLTRA":
-            qc_logger.info("****Aligning reads with uLTRA...")
+            logger.info("****Aligning reads with uLTRA...")
             cmd = ULTRA_CMD.format(
                 cpus=n_cpu,
                 prefix="../" + os.path.splitext(os.path.basename(corrSAM))[0],
@@ -72,7 +72,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o_dir=outdir + "/uLTRA_out/",
             )
         case _:
-            qc_logger.error(f"Unsupported aligner choice: {aligner_choice}")
+            logger.error(f"Unsupported aligner choice: {aligner_choice}")
             raise ValueError()
     return cmd
 
