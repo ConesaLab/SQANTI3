@@ -8,7 +8,7 @@ from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, RESCUE_AUTO_PATH, utilitiesPath, run_command ,
-    PYTHONPATH, PYTHON_RESCUE_RULES, PYTHON_RESCUE_ML
+    PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
     read_classification, rescue_fsm_monoexons, add_ism_monoexons,
@@ -227,7 +227,7 @@ def run_rules_rescue(args):
         mapping_hits = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
 
         # define Rscript command with rescue_by_mapping_rules.R args
-        rescue_cmd = f"{RSCRIPTPATH} {PYTHON_RESCUE_RULES} -c {args.filter_class} \
+        rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_RULES} -c {args.filter_class} \
         -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
 
 
@@ -254,3 +254,57 @@ def run_rules_rescue(args):
     else:
         rescue_logger.error("ERROR: reference filter classification not found!")
         sys.exit(1)
+
+
+## Run rescue steps specific to the ML filter
+def run_ML_rescue(args):
+
+  ## run pre-trained ML classifier on reference transcriptome
+
+  rescue_logger.info("ML rescue selected!")
+  rescue_logger.info("Running pre-trained random forest on reference transcriptome classification file.")
+
+  # define Rscript command with run_randomforest_on_reference.R args
+  refML_cmd = f"{RSCRIPTPATH} {RESCUE_RANDOM_FOREST} -c {args.refClassif} -o {args.output} -d {args.dir} -r {args.random_forest}"
+  # print command
+  rescue_logger.debug(refML_cmd)
+
+  # run R script via terminal
+  run_command(refML_cmd,rescue_logger,"log/rescue/refML.log",description="Run random forest on reference transcriptome")
+  # make expected output file name
+  ref_isoform_predict = f"{args.dir}/{args.output}_reference_isoform_predict.tsv"
+
+  if os.path.isfile(ref_isoform_predict):
+
+    ## run rescue-by-mapping
+    rescue_logger.info("Running rescue-by-mapping for ML filter.")
+
+    # input file name
+    mapping_hits = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
+
+    # define Rscsript command with rescue_by_mapping_ML.R args
+    rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {args.filter_class} -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {args.threshold}"
+
+
+    # expected output name
+    rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
+
+    # run R script via terminal
+    run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
+
+    if os.path.isfile(rescued_file):
+      # load output list of rescued transcripts
+      rescued_df = pd.read_table(rescued_file, header = None, \
+      names = ["transcript"])
+      rescued_list = list(rescued_df["transcript"])
+
+      # return rescued transcript list
+      return(rescued_list)
+
+    else:
+      rescue_logger.error("Rescue inclusion list not created -file not found!")
+      sys.exit(1)
+
+  else:
+    rescue_logger.error("Reference isoform predictions not found!")
+    sys.exit(1)
