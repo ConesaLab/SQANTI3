@@ -28,7 +28,7 @@
                 "module_file_handler",
                 "stream_handler"
             ],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": true
         }
     }
