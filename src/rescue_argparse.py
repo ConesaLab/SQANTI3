@@ -84,7 +84,7 @@ def rescue_argparse():
                              formatter_class = argparse.RawTextHelpFormatter)
   # ML options
   ml = machine_learning.add_argument_group("Machine Learning specific options")
-  ml.add_argument("-r", "--randomforest",
+  ml.add_argument("-r", "--random_forest",
                   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
   ml.add_argument("-j", "--threshold", 
                   type = float, default = 0.7, 
