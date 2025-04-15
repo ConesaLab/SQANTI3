@@ -211,7 +211,7 @@ def run_rules_rescue(args):
 
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
     # define command
-    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir}"
+    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir} --skip_report"
 
     # print command
     run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")

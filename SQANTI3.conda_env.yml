@@ -1,4 +1,4 @@
-name: sqanti3
+name: rescue
 channels:
   - conda-forge
   - bioconda
@@ -70,4 +70,4 @@ dependencies:
   - pip:
     - ultra-bioinformatics
     - pdf2image
-    - gtfparse=2.5.0
+    - gtfparse==2.5.0
