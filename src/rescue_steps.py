@@ -3,6 +3,7 @@ import sys
 
 import pandas as pd
 
+from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
@@ -232,8 +233,10 @@ def run_rules_rescue(args):
 
         # expected output name
         rescued_file = f"{args.dir}/{args.output}_rescue_inclusion-list.tsv"
-        run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
-    
+        automatic_rescue_file = f"{args.dir}/{args.output}_automatic_rescue_table.tsv"
+        #run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
+        rescue_rules(mapping_hits, ref_rules,args.filter_class,
+                     automatic_rescue_file, f"{args.dir}/{args.output}")
         if os.path.isfile(rescued_file):
             # load output list of rescued transcripts
             rescued_df = pd.read_table(rescued_file, header = None, \

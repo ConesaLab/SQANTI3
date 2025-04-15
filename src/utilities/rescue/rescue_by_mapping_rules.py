@@ -3,7 +3,7 @@ import os
 
 def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path):
     """Load input data files."""
-    mapping_hits = pd.read_csv(mapping_hits_path, sep="\t", names=["rescue_candidate", "sam_flag", "mapping_hit"])
+    mapping_hits = pd.read_csv(mapping_hits_path, sep="\t", names=["rescue_candidate", "mapping_hit", "sam_flag"])
     rules_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=["isoform", "filter_result"])
     classif = pd.read_csv(sqanti_rules_classif_path, sep="\t")
     return mapping_hits, rules_ref, classif
@@ -57,9 +57,9 @@ def filter_mapping_hits(mapping_hits, rules_ref, classif, automatic_rescue_path)
     rescued_final = pd.concat([automatic_ref_rescued, rescued_mapping_final]).drop_duplicates()
     return rescued_final, mapping_hits_iso, rescued_mapping_final
 
-def write_rescue_inclusion_list(rescued_final, output_dir, output_prefix):
+def write_rescue_inclusion_list(rescued_final,output_prefix):
     """Write the rescue inclusion list to a file."""
-    output_path = os.path.join(output_dir, f"{output_prefix}_rescue_inclusion-list.tsv")
+    output_path = f"{output_prefix}_rescue_inclusion-list.tsv"
     rescued_final.to_csv(output_path, sep="\t", index=False, header=False)
 
 def process_automatic_rescue(classif, automatic_ref_rescued, rules_ref):
@@ -94,12 +94,12 @@ def create_rescue_table(mapping_hits, rescued_mapping_final, isoform_assoc_tr, a
     rescue_table = pd.concat([rescue_table, automatic_fsm], ignore_index=True)
     return rescue_table
 
-def write_rescue_table(rescue_table, output_dir, output_prefix):
+def write_rescue_table(rescue_table, output_prefix):
     """Write the rescue table to a file."""
-    output_path = os.path.join(output_dir, f"{output_prefix}_rescue_table.tsv")
+    output_path = f"{output_prefix}_rescue_table.tsv"
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
-def main(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path, output_dir, output_prefix):
+def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path, output_dir, output_prefix):
     # Load data
     mapping_hits, rules_ref, classif = load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path)
 
@@ -125,7 +125,7 @@ def main(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, aut
 
 # Example usage
 if __name__ == "__main__":
-    main(
+    rescue_rules(
         mapping_hits_path="path/to/mapping_hits.tsv",
         reference_rules_path="path/to/reference_rules.tsv",
         sqanti_rules_classif_path="path/to/sqanti_rules_classif.tsv",
