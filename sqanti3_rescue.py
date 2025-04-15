@@ -20,7 +20,7 @@ from src.config import __version__
 from src.rescue_steps import (
   run_automatic_rescue_py,
   rescue_candidates, rescue_targets,
-  run_candidate_mapping
+  run_candidate_mapping, run_rules_rescue
 )
 
 ## Set general path variables
@@ -30,8 +30,6 @@ python_path = shutil.which('python')
 
 ## Set path variables to call R scripts
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
-rescue_by_mapping_ML_path = "rescue/rescue_by_mapping_ML.R"
-rescue_by_mapping_rules_path = "rescue/rescue_by_mapping_rules.R"
 
 ## Set path variables to call SQ3 scripts
 filter_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sqanti3_filter.py")
@@ -102,62 +100,6 @@ def run_ML_rescue(args):
     rescue_logger.error("Reference isoform predictions not found!")
     sys.exit(1)
 
-
-
-## Run rescue steps specific to rules filter
-def run_rules_rescue(args):
-
-  ## Run rules filter on reference transcriptome
-
-  rescue_logger.info("**** Rules rescue selected!")
-  rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
-
-  # create reference out prefix and dir
-  ref_out = "reference"
-  ref_dir = f"{args.dir}/reference_rules_filter"
-
-  # define command
-  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir}"
-
-
-  # print command
-  run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")
-    # make file names
-  ref_rules = f"{args.dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
-
-  if os.path.isfile(ref_rules):
-    ## run rescue-by-mapping
-    rescue_logger.info("Running rescue-by-mapping for rules filter.")
-
-    # input file name
-    mapping_hits = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
-
-    # define Rscsript command with rescue_by_mapping_ML.R args
-    rescue_cmd = f"{Rscript_path} {utilitiesPath}/{rescue_by_mapping_rules_path} -c {args.filter_class} \
-      -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
-
-
-    # expected output name
-    rescued_file = f"{args.dir}/{args.output}_rescue_inclusion-list.tsv"
-    run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
-  
-    if os.path.isfile(rescued_file):
-      # load output list of rescued transcripts
-      rescued_df = pd.read_table(rescued_file, header = None, \
-      names = ["transcript"])
-      rescued_list = list(rescued_df["transcript"])
-
-      # return rescued transcript list
-      return(rescued_list)
-
-    else:
-      rescue_logger.error("ERROR: rescue inclusion list not created -file not found!")
-      sys.exit(1)
-
-  else:
-    rescue_logger.error("ERROR: reference filter classification not found!")
-    sys.exit(1)
-
 #### MAIN ####
 ## Define main()
 def main():
@@ -178,18 +120,18 @@ def main():
 
     candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
                                    rescue_ism,prefix)
-    rescue_logger.debug(f"Rescue candidates: {candidates.shape[0]}")
+    rescue_logger.debug(f"Rescue candidates: {len(candidates)}")
 
     targets = rescue_targets(args.filter_class,candidates,
                              args.refGTF,prefix)
-    rescue_logger.debug(f"Rescue targets: {targets.shape[0]}")    
+    rescue_logger.debug(f"Rescue targets: {len(targets)}")    
     
     #### RUN MAPPING
     # when in full mode, rescue maps candidates not included in the
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    run_candidate_mapping(args,targets.tolist(),candidates.tolist())
+    run_candidate_mapping(args,targets,candidates)
     
 
     #### RUN ML FILTER RESCUE ####
@@ -198,7 +140,7 @@ def main():
 
     if args.subcommand == "ml":
 
-      rescue_logger.info("**** RESCUE-BY-MAPPING FOR ML FILTER")
+      message("Rescue-by-mapping for ML filter",rescue_logger)
 
       # run ML-specific steps of rescue
       rescued = run_ML_rescue(args)

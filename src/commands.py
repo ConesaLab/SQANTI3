@@ -32,6 +32,10 @@ RESCUE_AUTO_PATH = os.path.join(utilitiesPath,"rescue","automatic_rescue.R")
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
+# PYTHONPATH
+PYTHONPATH = shutil.which('python')
+PYTHON_RESCUE_RULES = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_rules.R")
+PYTHON_RESCUE_ML = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_ML.R")
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                         outdir, corrSAM, n_cpu, gmap_index,logger=qc_logger):
     # Even though the speed does not change form the ifelse, this is cleaner

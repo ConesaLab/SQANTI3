@@ -12,7 +12,7 @@ def get_rescue_gene_targets(df, rescue_candidates):
     Returns:
         pd.Series: List of genes with associated rescue candidates
     """
-    target_genes = df[df['isoform'].isin(rescue_candidates['isoform'])]['associated_gene'].unique()
+    target_genes = df[df['isoform'].isin(rescue_candidates)]['associated_gene'].unique()
 
     return target_genes
 
