@@ -1,5 +1,4 @@
 import pandas as pd
-import os
 
 def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path):
     """Load input data files."""
@@ -99,7 +98,7 @@ def write_rescue_table(rescue_table, output_prefix):
     output_path = f"{output_prefix}_rescue_table.tsv"
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
-def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path, output_dir, output_prefix):
+def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path, output_prefix):
     # Load data
     mapping_hits, rules_ref, classif = load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path)
 
@@ -112,7 +111,7 @@ def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_p
     )
 
     # Write rescue inclusion list
-    write_rescue_inclusion_list(rescued_final, output_dir, output_prefix)
+    write_rescue_inclusion_list(rescued_final, output_prefix)
 
     # Process automatic rescue
     automatic_fsm = process_automatic_rescue(classif, rescued_final, rules_ref)
@@ -121,15 +120,5 @@ def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_p
     rescue_table = create_rescue_table(mapping_hits, rescued_mapping_final, classif, automatic_fsm)
 
     # Write rescue table
-    write_rescue_table(rescue_table, output_dir, output_prefix)
+    write_rescue_table(rescue_table, output_prefix)
 
-# Example usage
-if __name__ == "__main__":
-    rescue_rules(
-        mapping_hits_path="path/to/mapping_hits.tsv",
-        reference_rules_path="path/to/reference_rules.tsv",
-        sqanti_rules_classif_path="path/to/sqanti_rules_classif.tsv",
-        automatic_rescue_path="path/to/automatic_rescue_list.tsv",
-        output_dir="output/directory",
-        output_prefix="output_prefix"
-    )
