@@ -87,7 +87,7 @@ def run_candidate_mapping(args):
 
   # make FASTA file name
   pre, _ = os.path.splitext(os.path.basename(args.refGTF))
-  ref_trans_Fasta = f" {args.dir}/{pre}.fasta"
+  ref_trans_Fasta = f"{args.dir}/{pre}.fasta"
 
   # build gffread command
   ref_cmd = f"gffread -w {ref_trans_Fasta} -g {args.refFasta} {args.refGTF}"
@@ -95,6 +95,7 @@ def run_candidate_mapping(args):
   # run gffread
   try:
       subprocess.check_call(ref_cmd, shell=True)
+      rescue_logger.debug(ref_trans_Fasta)
       if os.path.isfile(ref_trans_Fasta):
           rescue_logger.info(f"Reference transcriptome FASTA was saved to {ref_trans_Fasta}")
           rescue_logger.info("gffread command used:")
@@ -251,9 +252,8 @@ def run_candidate_mapping(args):
 
       if os.path.isfile(hits_file):
         rescue_logger.info(f"Mapping hit table was saved to {hits_file}")
-
         # delete altered SAM file
-        os.remove(rm_cmd)
+        os.remove(sam_tmp_file)
 
 
 ## Run rescue steps specific to the ML filter
@@ -324,7 +324,7 @@ def run_rules_rescue(args):
   ref_dir = f"{args.dir}/reference_rules_filter"
 
   # define command
-  refRules_cmd = f"{python_path} {filter_path} rules {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir}"
+  refRules_cmd = f"{python_path} {filter_path} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir} --skip_report"
 
 
   # print command
