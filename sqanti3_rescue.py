@@ -95,13 +95,14 @@ def main():
     inclusion_list = f"{args.dir}/{args.output}_rescue_inclusion-list.tsv"
 
     if os.path.isfile(inclusion_list):
-      rescue_logger.info(f"Final rescued transcript list witten to file: {inclusion_list}")
+      message(f"Rescue {args.subcommand} finished successfully!",rescue_logger)
+      rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list}")
 
   ### End of condition (mode == "full")
 
 
 
-  #### WRITE FINAL OUPTUTS OF RESCUE ####
+  #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
 
   rescue_logger.info("Adding rescued transcripts to provided SQ3 filtered GTF.")
@@ -132,7 +133,7 @@ def main():
   os.remove(tmp_gtf)
 
   ## END ##
-  rescue_logger.info(f"Rescue finished successfully!")
+  message("Rescue finished successfully!",rescue_logger)
 
 
 

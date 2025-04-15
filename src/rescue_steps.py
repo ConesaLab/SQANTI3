@@ -260,12 +260,12 @@ def run_rules_rescue(args):
 def run_ML_rescue(args):
 
   ## run pre-trained ML classifier on reference transcriptome
-
-  rescue_logger.info("ML rescue selected!")
+  message("ML rescue selected!",rescue_logger)
   rescue_logger.info("Running pre-trained random forest on reference transcriptome classification file.")
 
   # define Rscript command with run_randomforest_on_reference.R args
   refML_cmd = f"{RSCRIPTPATH} {RESCUE_RANDOM_FOREST} -c {args.refClassif} -o {args.output} -d {args.dir} -r {args.random_forest}"
+
   # print command
   rescue_logger.debug(refML_cmd)
 
@@ -284,7 +284,6 @@ def run_ML_rescue(args):
 
     # define Rscsript command with rescue_by_mapping_ML.R args
     rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {args.filter_class} -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {args.threshold}"
-
 
     # expected output name
     rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
