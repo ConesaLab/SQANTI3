@@ -28,8 +28,8 @@
                 "module_file_handler",
                 "stream_handler"
             ],
-            "level": "DEBUG",
-            "propagate": false
+            "level": "INFO",
+            "propagate": true
         }
     }
 }

@@ -71,17 +71,17 @@ MAIN_LOGGING_CONFIG = {
         'main_logger': {
             'handlers': ['main_script_handler', 'error_handler'],
             'level': 'INFO',
-            'propagate': False
+            'propagate': True
         },
         'art_logger': {
             'handlers': ['main_script_handler'],
             'level': 'INFO',
-            'propagate': False
+            'propagate': True
         },
         'process_logger': {
             'handlers': ['process_handler'],
             'level': 'INFO',
-            'propagate': False
+            'propagate': True
         }
     }
 }
@@ -151,3 +151,17 @@ def rescue_art():
     =====================================================
     """
     return message
+
+def get_logger_info(logger):
+  print(f"Logger Name: {logger.name}")
+  print(f"Level: {logging.getLevelName(logger.level)}")
+  print("Handlers:")
+  for handler in logger.handlers:
+      print(f"  - {handler}")
+      print(f"    Formatter: {handler.formatter}")
+      print(f"    Level: {logging.getLevelName(handler.level)}")
+  if logger.propagate:
+      print("Propagates to parent logger")
+  else:
+      print("Does not propagate to parent logger")  
+    

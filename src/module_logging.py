@@ -19,6 +19,7 @@ logging.config.dictConfig(MODULE_LOGGING_CONFIG)
 qc_logger = logging.getLogger('module_logger')
 filter_logger = logging.getLogger('module_logger')
 rescue_logger = logging.getLogger('module_logger')
+rescue_logger.propagate = False
 
 def message(text,logger):
     size = max(len(text)+4, 50)

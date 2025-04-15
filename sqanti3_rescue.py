@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 __author__  = "angeles.arzalluz@gmail.com"
-import shutil
 
 ###################################################
 ##########     SQANTI3 RESCUE WRAPPER    ##########
@@ -9,14 +8,14 @@ import shutil
 #### PREPARATION ####
 
 ## Module import
-import os, sys, subprocess
+import os, sys, shutil
 import pandas as pd
 
 from src.rescue_argparse import rescue_argparse
-from src.logging_config import rescue_art, art_logger
 from src.module_logging import rescue_logger, message
+from src.logging_config import rescue_art, art_logger
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command
+from src.commands import run_command, utilitiesPath
 from src.config import __version__
 from src.rescue_steps import (
   run_automatic_rescue_py,
@@ -28,7 +27,6 @@ from src.rescue_steps import (
 Rscript_path = shutil.which('Rscript')
 gffread_path = shutil.which('gffread')
 python_path = shutil.which('python')
-utilities_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 
 ## Set path variables to call R scripts
 run_randomforest_path = "rescue/run_randomforest_on_reference.R"
@@ -38,15 +36,15 @@ rescue_by_mapping_rules_path = "rescue/rescue_by_mapping_rules.R"
 ## Set path variables to call SQ3 scripts
 filter_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sqanti3_filter.py")
 
-## Check that Rscript is working
-if os.system(Rscript_path + " --version") != 0:
-    rescue_logger.error("Rscript executable not found. Abort!")
-    sys.exit(1)
+# ## Check that Rscript is working
+# if os.system(Rscript_path + " --version") != 0:
+#     rescue_logger.error("Rscript executable not found. Abort!")
+#     sys.exit(1)
 
-## Check that gffread is working
-if os.system(gffread_path + " --version") != 0:
-  rescue_logger.error("Cannot find gffread executable. Abort!")
-  sys.exit(1)
+# ## Check that gffread is working
+# if os.system(gffread_path + " --version") != 0:
+#   rescue_logger.error("Cannot find gffread executable. Abort!")
+#   sys.exit(1)
 
 
 #### DEFINE FUNCTIONS ####
@@ -60,7 +58,7 @@ def run_ML_rescue(args):
   rescue_logger.info("Running pre-trained random forest on reference transcriptome classification file.")
 
   # define Rscript command with run_randomforest_on_reference.R args
-  refML_cmd = f"{Rscript_path} {utilities_path}/{run_randomforest_path} -c {args.refClassif} -o {args.output} -d {args.dir} -r {args.randomforest}"
+  refML_cmd = f"{Rscript_path} {utilitiesPath}/{run_randomforest_path} -c {args.refClassif} -o {args.output} -d {args.dir} -r {args.randomforest}"
   # print command
   rescue_logger.debug(refML_cmd)
 
@@ -78,7 +76,7 @@ def run_ML_rescue(args):
     mapping_hits = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
 
     # define Rscsript command with rescue_by_mapping_ML.R args
-    rescue_cmd = f"{Rscript_path} {utilities_path}/{rescue_by_mapping_ML_path} -c {args.filter_class} -o {args.output} -d {args.dir} -u {utilities_path} -m {mapping_hits} -r {ref_isoform_predict} -j {args.threshold}"
+    rescue_cmd = f"{Rscript_path} {utilitiesPath}/{rescue_by_mapping_ML_path} -c {args.filter_class} -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {args.threshold}"
 
 
     # expected output name
@@ -135,8 +133,8 @@ def run_rules_rescue(args):
     mapping_hits = f"{args.dir}/{args.output}_rescue_mapping_hits.tsv"
 
     # define Rscsript command with rescue_by_mapping_ML.R args
-    rescue_cmd = f"{Rscript_path} {utilities_path}/{rescue_by_mapping_rules_path} -c {args.filter_class} \
-      -o {args.output} -d {args.dir} -u {utilities_path} -m {mapping_hits} -r {ref_rules}"
+    rescue_cmd = f"{Rscript_path} {utilitiesPath}/{rescue_by_mapping_rules_path} -c {args.filter_class} \
+      -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
 
 
     # expected output name
@@ -160,17 +158,13 @@ def run_rules_rescue(args):
     rescue_logger.error("ERROR: reference filter classification not found!")
     sys.exit(1)
 
-
-
-
 #### MAIN ####
-
 ## Define main()
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
   rescue_args_validation(args)
-
+  rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)

@@ -11,7 +11,6 @@ def sqanti_path(filename):
     return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename))
 
 def check_conda():
-
     if shutil.which(GTF2GENEPRED_PROG) is None:
         main_logger.error(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
         raise SystemExit(1)
