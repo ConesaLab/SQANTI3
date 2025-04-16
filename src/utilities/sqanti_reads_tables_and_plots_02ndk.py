@@ -7,6 +7,7 @@ Created on Mon Apr 15 16:32:18 2024
 """
 
 
+import sys
 import pandas as pd
 import argparse
 import os
@@ -110,7 +111,6 @@ def cv(x):
         return np.std(x) / np.mean(x)
     
 def calc_jxn_cv(jxnDF, classDF, refDF, dropFlag=True):
-  
     """
     Calculate cv of reference donors and acceptors from sqanti jxn file
     
@@ -663,7 +663,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     ujc_DF = ujc_DF[ujc_DF['flag_annotated_gene'] == 1]
     
     #Drop monoexons
-    ujc_DF['total_jxns'] = ujc_DF[['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']].sum(axis=1)
+    ujc_DF.loc[:,'total_jxns'] = ujc_DF[['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']].sum(axis=1)
     ujc_DF = ujc_DF[ujc_DF['total_jxns'] > 0]
     
     #Get total number of counts across all samples for each UJC
@@ -677,11 +677,10 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     # Get the maximum number of total_jxns for each gene
     max_jxns = ujc_DF.groupby('associated_gene')['total_jxns'].max().reset_index()
     max_jxns.columns = ['associated_gene', 'gene_max_jxns']
-    
+
     #Merge gene coverage, read counts per UJC and max junctions per gene
     merged_df = read_count_sum.merge(gene_coverage_sum, on='associated_gene', how='left')
     merged_df  = merged_df.merge(max_jxns, on='associated_gene', how='left')
-
     #Calculate the perecentage of the maxjxns and the perc of the total gene coverage
     merged_df['perc_max_jxns'] = (merged_df['total_jxns'] / merged_df['gene_max_jxns']) * 100
     merged_df['perc_gene_coverage'] = (merged_df['total_read_count'] / merged_df['total_gene_coverage']) * 100
@@ -691,6 +690,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     merged_df = merged_df[merged_df['structural_category'] != 'incomplete-splice_match'] 
     merged_df = merged_df[merged_df['structural_category'] != 'genic']
     
+
     merged_df['flag_FSM_in_gene'] = merged_df.groupby('associated_gene')['structural_category'].transform(lambda x: flag_gene_annotated_ujc(merged_df.loc[x.index]))
     #merged_df['flag_underannotated_gene'] = merged_df['flag_FSM_in_gene'].apply(lambda x: 1 if x == 0 else 0)
     
@@ -707,9 +707,13 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
-
+    
+    # if merged_df is an empty dataframe, raise an error
+    if merged_df.empty:
+        print("ERROR: The filtering was too scrict and no genes were found that meet the criteria.")
+        sys.exit(1)
     # Apply the categorization function to each group
-    gene_categories = grouped.apply(categorize_gene)
+    gene_categories = grouped.apply(categorize_gene,include_groups=False)
 
     # Convert the result to a DataFrame
     summary_df = pd.DataFrame({
@@ -775,10 +779,10 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         #UJC scatterplots
         for gene_category in merged_df['gene_category'].unique():
             # Filter the DataFrame for the current gene category
-            df = merged_df[merged_df['gene_category'] == gene_category]
+            df = merged_df[merged_df['gene_category'] == gene_category].copy() # copy is used to avoid SettingWithCopyWarning
             
             # Create a new column to indicate the color based on the thresholds
-            df['Putative Unannotated'] = df.apply(
+            df.loc[:,'Putative Unannotated'] = df.apply(
                 lambda row: 'Yes' if row['perc_gene_coverage'] > ujc_perc_cov_thresh and row['perc_max_jxns'] > max_jxn_thresh else 'No',
                 axis=1
             )
@@ -1028,7 +1032,8 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
                     'ref_match': (x['mean_abs_diff'] == 0).sum(),
                     'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
                     'cv_gt_0': (x['cv'] > 0).sum()
-                    })
+                    }),
+                    include_groups=False,
                     ).reset_index()
     cv_don_summary.fillna(0, inplace=True)
     
@@ -1037,7 +1042,8 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
                     'ref_match': (x['mean_abs_diff'] == 0).sum(),
                     'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
                     'cv_gt_0': (x['cv'] > 0).sum()
-                    })
+                    }),
+                    include_groups=False,
                     ).reset_index()
     cv_acc_summary.fillna(0, inplace=True)
    
@@ -2578,12 +2584,12 @@ def main():
         plot_pdf_by_factor(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
         
     if args.report in ("both", "html"):
-        makeHTML(args.OUT, args.PREFIX, '_plots.pdf')
-        makeHTML(args.OUT, args.PREFIX, '_annotation_plots.pdf')
+        makeHTML(f'{args.OUT}/', args.PREFIX,'_plots.pdf')
+        makeHTML(f'{args.OUT}/', args.PREFIX,'_annotation_plots.pdf')
         
     if args.report == "html":
-        os.remove(f"{args.OUT}/{args.PREFIX}_plots.pdf")
-        os.remove(f"{args.OUT}/{args.PREFIX}_annotation_plots.pdf")
+        os.remove(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
+        os.remove(os.path.join(args.OUT, f'{args.PREFIX}_annotation_plots.pdf'))
     
         
 if __name__ == '__main__':

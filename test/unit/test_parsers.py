@@ -22,6 +22,15 @@ def reference_parser_input():
         "isoAnnot": False
     }
     return data
+# Create a fixture for the tester logger
+@pytest.fixture
+def tester_logger():
+    # Define a logger for testing
+    logger = logging.getLogger("tester_logger")
+
+    logger.setLevel(logging.INFO)
+    # Return the logger
+    return logger
 
 # Test if the genePred file is created
 def test_reference_parser_genePred(reference_parser_input):
@@ -34,17 +43,17 @@ def test_reference_parser_genePred(reference_parser_input):
     assert os.path.exists(genePred_annot)
 
 # Test if the genePred file is detected
-def test_reference_parser_genePred_found(reference_parser_input,caplog):
-    genePred_annot = os.path.join(main_path,reference_parser_input["outdir"],
-                                  f"refAnnotation_{reference_parser_input['prefix']}.genePred")
-    reference_parser(*list(reference_parser_input.values()))
+def test_reference_parser_genePred_found(reference_parser_input, caplog,tester_logger):
+    genePred_annot = os.path.join(main_path, reference_parser_input["outdir"],
+                                   f"refAnnotation_{reference_parser_input['prefix']}.genePred")
+    reference_parser(*list(reference_parser_input.values()), logger=tester_logger)
     # Capture the printed output    # Check if the specific print statement is in stdout
     assert f"{genePred_annot} already exists. Using it." in caplog.text
     assert os.path.exists(genePred_annot)
 
-def test_reference_parser_notInGenome(reference_parser_input,caplog):
+def test_reference_parser_notInGenome(reference_parser_input,caplog, tester_logger):
     reference_parser_input["genome_dict"] = {"chr21": "Sequence"}
-    reference_parser(*list(reference_parser_input.values()))
+    reference_parser(*list(reference_parser_input.values()), logger=tester_logger)
     # Check for the warning message in stderr
     expected_warning = "Reference annotation contains chromosomes not in genome:"
     caplog.set_level(logging.WARNING)

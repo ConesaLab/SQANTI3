@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "results/logs/qc_module.log",
+            "filename": "rescue_og_rules/logs/rescue_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"

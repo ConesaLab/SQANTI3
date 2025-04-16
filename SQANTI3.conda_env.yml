@@ -70,3 +70,4 @@ dependencies:
   - pip:
     - ultra-bioinformatics
     - pdf2image
+    - gtfparse==2.5.0

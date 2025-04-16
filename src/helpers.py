@@ -202,7 +202,7 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
 
 
 
-def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
+def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str,logger=qc_logger):
     """
     Processes a single line from a GTF file, validating and categorizing it based on certain criteria.
 
@@ -226,18 +226,18 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
 
     fields = line.strip().split("\t")
     if len(fields) < 7:
-        qc_logger.warning(f"Skipping malformed GTF line: {line.strip()}")
+        logger.warning(f"Skipping malformed GTF line: {line.strip()}")
         return
 
     chrom, feature_type, strand = fields[0], fields[2], fields[6]
 
     if chrom not in genome_dict:
-        qc_logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
+        logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
         raise ValueError()
 
     if feature_type in ('transcript', 'exon'):
         if strand not in ['-', '+']:
-            qc_logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
+            logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
             discard_gtf.write(line)
         else:
             corrGTF_out.write(line)

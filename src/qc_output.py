@@ -4,7 +4,7 @@ import pickle
 
 
 from src.commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, run_command
+    RSCRIPTPATH, RSCRIPT_QC_REPORT, run_command
 )
 from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
@@ -61,7 +61,7 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
 
 def generate_report(saturation,report, outputClassPath, outputJuncPath):
     qc_logger.info("**** Generating SQANTI3 report.")
-    cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
