@@ -9,13 +9,14 @@ import sys
 from pathlib import Path
 
 from src.wrapper_utils import (
-    create_config, run_step, run_step_help,sqanti_path
+    create_config, run_step, run_step_help,sqanti_path,check_conda
 )
 from src.logging_config import sqanti_art, main_logger
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
+    check_conda()
     main_logger.info(sqanti_art()) # Print the ASCII art  
 
     parser = argparse.ArgumentParser(description="Python wrapper for SQANTI3 pipeline.",
@@ -80,7 +81,12 @@ def main():
         if config.get(args.command, {}).get("enabled", False): # I want to check if the module is enabled in the configuration file.
             run_step(args.command, config,args.dry_run, args.arguments)
         else:
-            main_logger.error(f"{args.command.upper()} is disabled in the configuration file.")
+            main_logger.warning(f"{args.command.upper()} is disabled in the configuration file. \n Do you want to run it still? (y/n)")
+            response = input().lower()
+            if response == "y":
+                run_step(args.command, config,args.dry_run, args.arguments)
+            else:
+                main_logger.info(f"Not running {args.command.upper()} as per user request.")
     try:
         os.remove(sqanti_path("none"))
     except FileNotFoundError:

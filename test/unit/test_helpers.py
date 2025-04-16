@@ -1,9 +1,7 @@
 
-from io import StringIO
 import logging
 from typing import Dict
 import pytest
-from unittest.mock import Mock, patch, mock_open
 from Bio import SeqIO
 from pathlib import Path
 import sys, os
@@ -234,32 +232,40 @@ def mock_corrGTF_out():
 @pytest.fixture
 def mock_discard_gtf():
     return main_path + "/test/test_data/discard.gtf"
+# Create a fixture for the tester logger
+@pytest.fixture
+def tester_logger():
+    # Define a logger for testing
+    logger = logging.getLogger("tester_logger")
 
-def test_comment_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
+    logger.setLevel(logging.INFO)
+    # Return the logger
+    return logger
+def test_comment_line(genome_dict, mock_corrGTF_out, mock_discard_gtf, tester_logger):
     try:
         os.remove(mock_corrGTF_out)
         os.remove(mock_discard_gtf)
     except FileNotFoundError:
         pass
     line = "# This is a comment\n"
-    result = process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    result = process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf, logger=tester_logger)
     assert result == None, "The result was not empty"
     assert not os.path.exists(mock_corrGTF_out), "The corrected GTF file was created"
     assert not os.path.exists(mock_discard_gtf), "The discarded GTF file was created"
 
 
-def test_malformed_line(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog):
+def test_malformed_line(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog,tester_logger):
     line = "chr1\tgene\n"
-    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+    process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf, logger=tester_logger)
     assert "Skipping malformed GTF line" in caplog.text
     assert not os.path.exists(mock_corrGTF_out)
     assert not os.path.exists(mock_discard_gtf)
 
-def test_chromosome_not_in_genome(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog):
+def test_chromosome_not_in_genome(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog, tester_logger):
     caplog.set_level(logging.ERROR)
     line = "chr3\tEnsembl\texon\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
     with pytest.raises(ValueError):
-        process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
+        process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf,tester_logger)
     
     assert "GTF chromosome chr3 not found in genome reference file." in caplog.text
 
@@ -284,10 +290,10 @@ def test_valid_exon_line(genome_dict, mock_corrGTF_out, mock_discard_gtf):
     assert not os.path.exists(mock_discard_gtf)
     os.remove(mock_corrGTF_out)
 
-def test_unknown_strand(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog):
+def test_unknown_strand(genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog, tester_logger):
     line = "chr1\tEnsembl\texon\t1\t1000\t.\t.\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
     with open(mock_discard_gtf, "w") as f:
-        process_gtf_line(line, genome_dict, mock_corrGTF_out, f)
+        process_gtf_line(line, genome_dict, mock_corrGTF_out, f, logger=tester_logger)
     f.close()
     assert "Discarding unknown strand transcript" in caplog.text
     assert not os.path.exists(mock_corrGTF_out)

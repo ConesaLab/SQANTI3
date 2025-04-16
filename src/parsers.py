@@ -19,7 +19,7 @@ from src.module_logging import qc_logger
 from src.commands import run_command
 #from src.commands import GTF2GENEPRED_PROG
 
-def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
+def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False,logger=qc_logger):
     """
     Parses the reference GTF file and generates various genomic interval data structures.
 
@@ -42,16 +42,16 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     from src.commands import GTF2GENEPRED_PROG
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
-    qc_logger.info("**** Parsing Reference Transcriptome....")
+    logger.info("**** Parsing Reference Transcriptome....")
     if os.path.exists(referenceFiles):
-        qc_logger.info(f"{referenceFiles} already exists. Using it.")
+        logger.info(f"{referenceFiles} already exists. Using it.")
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
 
         if gene_name or isoAnnot:
             cmd += ' -geneNameAsName2'
-        run_command(cmd,qc_logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
+        run_command(cmd,logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -86,7 +86,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
-        qc_logger.warning(f"Reference annotation contains chromosomes not in genome: {','.join(diff)}\n")
+        logger.warning(f"Reference annotation contains chromosomes not in genome: {','.join(diff)}\n")
 
     # convert the content of junctions_by_chr to sorted list
     # This uses dictionary to iterate over the chromosomes, keeping the keys, but sorting the values

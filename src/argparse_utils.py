@@ -2,7 +2,7 @@ import os, sys
 import subprocess
 
 from src.commands import GFFREAD_PROG
-from src.module_logging import qc_logger, filter_logger
+from src.module_logging import qc_logger, filter_logger, rescue_logger
 
 def valid_file(filename,logger):
     if not os.path.isfile(filename):
@@ -232,4 +232,27 @@ def filter_args_validation(args):
             sys.exit(-1)
         if args.remove_columns is not None:
             valid_file(args.remove_columns, filter_logger)
-    return
+    
+
+def rescue_args_validation(args):
+    valid_file(args.filter_class, rescue_logger)
+    valid_dir(args.dir,rescue_logger)
+    valid_gtf(args.refGTF,rescue_logger)
+    valid_fasta(args.refFasta,rescue_logger)
+    if args.rescue_isoforms is not None:
+        valid_fasta(args.rescue_isoforms,rescue_logger)
+    if args.rescue_gtf is not None:
+        valid_gtf(args.rescue_gtf,rescue_logger)
+    if args.mode == "full":
+        try:
+            valid_file(args.refClassif,rescue_logger)
+        except:
+            rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
+            sys.exit(1)
+    if args.subcommand == 'rules':
+        valid_file(args.json_filter, rescue_logger)
+    if args.subcommand == "ml":
+        if args.threshold < 0 or args.threshold > 1.:
+            rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
+            sys.exit(-1)
+        valid_file(args.random_forest,rescue_logger)

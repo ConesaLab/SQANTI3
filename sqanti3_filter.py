@@ -22,12 +22,10 @@ bad quality transcripts.
 
 """
 
-import os
-
 from src.filter_argparse import filter_argparse
 from src.module_logging import filter_logger
 from src.config import __version__
-from src.logging_config import art_logger,filter_art
+from src.logging_config import art_logger,filter_art, get_logger_info
 from src.filter_steps import filter_files, run_ML, run_rules
 from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
@@ -43,7 +41,6 @@ def main():
     write_filter_parameters(args)
 
 ### Checking presence of files for ML. Check arguments --> If ok run ML
-
     filter_logger.info("Running SQANTI3 filtering...")
     if args.subcommand == 'ml':
         ids, inclusion_file = run_ML(args)

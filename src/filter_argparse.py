@@ -1,8 +1,7 @@
 import argparse, os
-from src.config import __version__,__author__, utilitiesPath
+from src.config import __version__,__author__, default_json
 
 def filter_argparse():
-    default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
     ### Common arguments for both modes
     common = argparse.ArgumentParser(add_help=False)

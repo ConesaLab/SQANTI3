@@ -19,14 +19,6 @@ ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --i
 GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
 GFFREAD_PROG = "gffread"
 
-if shutil.which(GTF2GENEPRED_PROG) is None:
-    qc_logger.info(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
-    sys.exit(1)
-if shutil.which(GFFREAD_PROG) is None:
-    qc_logger.error("Cannot find executable {GFFREAD_PROG}. Abort!")
-    sys.exit(1)
-
-
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
@@ -35,14 +27,23 @@ RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")
 RSCRIPT_ML = os.path.join(utilitiesPath,"filter","SQANTI3_MLfilter.R")
 
+#Rscript rescue
+RESCUE_AUTO_PATH = os.path.join(utilitiesPath,"rescue","automatic_rescue.R")
+RSCRIPT_RESCUE_RULES = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_rules.R")
+RSCRIPT_RESCUE_ML = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_ML.R")
+RESCUE_RANDOM_FOREST = os.path.join(utilitiesPath, "rescue","run_randomforest_on_reference.R")
+
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
+# PYTHONPATH
+PYTHONPATH = shutil.which('python')
+
 def get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                        outdir, corrSAM, n_cpu, gmap_index):
+                        outdir, corrSAM, n_cpu, gmap_index,logger=qc_logger):
     # Even though the speed does not change form the ifelse, this is cleaner
     match aligner_choice:
         case "gmap":
-            qc_logger.info("****Aligning reads with GMAP...")
+            logger.info("****Aligning reads with GMAP...")
             cmd = GMAP_CMD.format(
                 cpus=n_cpu,
                 dir=os.path.dirname(gmap_index),
@@ -51,7 +52,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "minimap2":
-            qc_logger.info("****Aligning reads with Minimap2...")
+            logger.info("****Aligning reads with Minimap2...")
             cmd = MINIMAP2_CMD.format(
                 cpus=n_cpu,
                 g=genome,
@@ -59,7 +60,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "deSALT":
-            qc_logger.info("****Aligning reads with deSALT...")
+            logger.info("****Aligning reads with deSALT...")
             cmd = DESALT_CMD.format(
                 cpus=n_cpu,
                 dir=gmap_index,
@@ -67,7 +68,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o=corrSAM,
             )
         case "uLTRA":
-            qc_logger.info("****Aligning reads with uLTRA...")
+            logger.info("****Aligning reads with uLTRA...")
             cmd = ULTRA_CMD.format(
                 cpus=n_cpu,
                 prefix="../" + os.path.splitext(os.path.basename(corrSAM))[0],
@@ -77,7 +78,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
                 o_dir=outdir + "/uLTRA_out/",
             )
         case _:
-            qc_logger.error(f"Unsupported aligner choice: {aligner_choice}")
+            logger.error(f"Unsupported aligner choice: {aligner_choice}")
             raise ValueError()
     return cmd
 
