@@ -14,6 +14,7 @@ import pandas as pd
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message
 from src.logging_config import rescue_art, art_logger
+
 from src.argparse_utils import rescue_args_validation
 from src.commands import run_command, utilitiesPath
 from src.config import __version__
@@ -28,6 +29,7 @@ def main():
   args = rescue_argparse().parse_args()
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
+
   #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)

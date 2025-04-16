@@ -57,6 +57,7 @@ def rescue_argparse():
   cp.add_argument("-l","--log_level", default="INFO",choices=["ERROR","WARNING","INFO","DEBUG"],
                       help="Set the logging level %(default)s")
 
+
   ## Parser creation
   parser = argparse.ArgumentParser(description = "Rescue artifacts discarded by \
     the SQANTI3 filter, i.e. find closest match for the artifacts in the reference \
@@ -64,7 +65,6 @@ def rescue_argparse():
     \nChoose between the filter applied: using rules or the Machine-Learning approach.")
   # Subparsers
   subparsers = parser.add_subparsers(dest = 'subcommand')
-
   ## Rules rescue arguments
   rules = subparsers.add_parser("rules", 
                                 parents = [common],
