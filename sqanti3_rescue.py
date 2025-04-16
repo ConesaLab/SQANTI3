@@ -23,18 +23,6 @@ from src.rescue_steps import (
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
 
-## Set general path variables
-Rscript_path = shutil.which('Rscript')
-gffread_path = shutil.which('gffread')
-python_path = shutil.which('python')
-
-## Set path variables to call R scripts
-
-## Set path variables to call SQ3 scripts
-filter_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sqanti3_filter.py")
-
-#### MAIN ####
-## Define main()
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
