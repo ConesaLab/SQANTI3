@@ -1,4 +1,4 @@
-name: rescue
+name: sqanti3
 channels:
   - conda-forge
   - bioconda
