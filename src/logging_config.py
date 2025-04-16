@@ -81,7 +81,7 @@ MAIN_LOGGING_CONFIG = {
         'process_logger': {
             'handlers': ['process_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         }
     }
 }
@@ -91,6 +91,14 @@ main_logger = logging.getLogger('main_logger')
 art_logger = logging.getLogger('art_logger')
 
 def save_module_logger_info(logpath, module, level, json_file):
+    """
+    Saves the updated logger configuration to a JSON file.
+    Args:
+        logpath (str): Path to the directory for log files.
+        module (str): Name of the module.
+        level (str): Logging level (e.g., 'DEBUG', 'INFO').
+        json_file (str): Path to the JSON configuration file.
+    """
     with open(json_file, 'r') as f:
         config = json.load(f)
 

@@ -81,7 +81,12 @@ def main():
         if config.get(args.command, {}).get("enabled", False): # I want to check if the module is enabled in the configuration file.
             run_step(args.command, config,args.dry_run, args.arguments)
         else:
-            main_logger.error(f"{args.command.upper()} is disabled in the configuration file.")
+            main_logger.warning(f"{args.command.upper()} is disabled in the configuration file. \n Do you want to run it still? (y/n)")
+            response = input().lower()
+            if response == "y":
+                run_step(args.command, config,args.dry_run, args.arguments)
+            else:
+                main_logger.info(f"Not running {args.command.upper()} as per user request.")
     try:
         os.remove(sqanti_path("none"))
     except FileNotFoundError:

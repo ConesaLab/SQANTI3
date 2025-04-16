@@ -201,7 +201,7 @@ def run_step(step,config,dry_run, user_options):
             else:
                 if subparser_args["enabled"]:
                     if first_subparser:
-                        main_logger.error("Both filter rules and machine learning are enabled. Only one can be used at a time.")
+                        main_logger.error("Both rules and machine learning are enabled. Only one can be used at a time.")
                         sys.exit(1)
                     first_subparser = True
                     options = options | subparser_args.get("options", {})

@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "rescue_og_ml/logs/rescue_module.log",
+            "filename": "rescue_reorganized_ml/logs/rescue_module.log",
             "mode": "a",
             "formatter": "default_formatter",
             "encoding": "utf8"
