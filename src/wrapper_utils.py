@@ -8,9 +8,19 @@ from src.logging_config import main_logger,save_module_logger_info
 from src.commands import GTF2GENEPRED_PROG, GFFREAD_PROG
 
 def sqanti_path(filename):
+    """
+    Get the absolute path to a file relative to the SQANTI3 source directory.
+    Args:
+        filename (str): The relative path to the file.
+    Returns:
+        str: The normalized absolute path to the file.
+    """
     return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename))
 
 def check_conda():
+    """
+    Check if the SQANTI3 conda environment is activated and if the required executables are available.
+    """
     if shutil.which(GTF2GENEPRED_PROG) is None:
         main_logger.error(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
         raise SystemExit(1)
@@ -46,6 +56,9 @@ def create_config(config_path,options,level):
     main_logger.info(f"Config file created at {config_path}")
 
 def get_shared_args(level):
+    """
+    Get the shared arguments for the main configuration.
+    """
     return {
         "refGTF": "",
         "refFasta": "",
@@ -56,7 +69,16 @@ def get_shared_args(level):
     }
 
 def get_user_options(options, sqanti_options):
-    """Parse the -a options into a dictionary and convert numeric values."""
+    """
+    Parse user-specified options into a dictionary. They are taken from the argument -a/--arguments.
+
+    Args:
+        options (list): List of options in the format key=value.
+        sqanti_options (list): List of valid option keys.
+
+    Returns:
+        dict: Parsed options with numeric values converted.
+    """
     options_dict = {}
     for option in options:
         key, value = option.split('=')
@@ -74,7 +96,18 @@ def get_user_options(options, sqanti_options):
         options_dict[key] = value
     return options_dict
 
+
 def replace_value(default_dict, user_config):
+    """
+    Replace default configuration values with user-specified values.
+
+    Args:
+        default_dict (dict): Default configuration dictionary.
+        user_config (dict): User-specified configuration dictionary.
+
+    Returns:
+        dict: Updated configuration dictionary.
+    """
     for key, value in default_dict.items():
         if isinstance(value, dict):
             replace_value(value, user_config)
@@ -87,6 +120,9 @@ def generate_default_path(config, filename):
     return f"{config['main']['dir']}/{config['main']['output']}{filename}"
 
 def set_default_values(config,user_options):
+    """
+    Set default values for the configuration based on the user options and the main configuration.
+    """
     user_options = user_options or {}
     
     default_values = {
@@ -114,6 +150,9 @@ def set_default_values(config,user_options):
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):
+    """
+    Extract simple parser-specific arguments.
+    """
     parser_args = {"enabled": True, "options": {}}
     for action in parser._actions:
 
@@ -125,6 +164,9 @@ def get_parser_specific_args_simple(parser,shared_args):
     return parser_args
 
 def get_parser_specific_args_complex(parser,shared_args):
+    """
+    Extract complex parser-specific arguments, including subparsers.
+    """
     parser_args = {"enabled": True, "options": {}}
     subparsers = parser._subparsers._group_actions[0].choices
     parser_args["options"]["common"] = {}
@@ -171,6 +213,7 @@ def validate_user_options(user_options, valid_keys):
             main_logger.warning(f"Option '{key}' not found in the default configuration.")
 
 def modify_options(options,user_options):
+    """Modify the options dictionary with user-specified values."""
     user_options = get_user_options(user_options, list(options.keys()))
     for key, _ in options.items():
         if key in user_options:
@@ -178,6 +221,14 @@ def modify_options(options,user_options):
     return options
 
 def run_step(step,config,dry_run, user_options):
+    """
+    Run a specific SQANTI3 step (qc, filter, rescue) based on the configuration.
+        Args:
+        step (str): Step to run ('qc', 'filter', or 'rescue').
+        config (dict): Configuration dictionary.
+        dry_run (bool): If True, only print the command without executing.
+        user_options (list): User-specified options.
+    """
     commands = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
@@ -216,6 +267,9 @@ def run_step(step,config,dry_run, user_options):
         run_sqanti_module(cmd)
 
 def run_sqanti_module(cmd):
+    """
+    Execute a SQANTI3 module command
+    """
     main_logger.info(f"{cmd}")
     try:
         subprocess.check_call(cmd, shell=True)
@@ -225,6 +279,9 @@ def run_sqanti_module(cmd):
         sys.exit(1)
 
 def run_step_help(step):
+    """
+    Display help for a specific SQANTI3 step.
+    """
     help = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} -h",
