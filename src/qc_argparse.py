@@ -56,7 +56,7 @@ def qc_argparse():
     # Optional arguments
     apm = ap.add_argument_group("Optional arguments")
     apm.add_argument("--is_fusion", action="store_true", help="Input are fusion isoforms, must supply GTF as input")
-    apm.add_argument('-e','--expression', type=valid_matrix, help='Expression matrix (supported: Kallisto tsv)')
+    apm.add_argument('-e','--expression', help='Expression matrix (supported: Kallisto tsv)')
     apm.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apm.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
     apm.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')

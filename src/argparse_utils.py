@@ -132,15 +132,13 @@ def args_validation(args):
         if args.fasta:
             print("ERROR: if --is_fusion is on, must supply GTF as input", file=sys.stderr)
             sys.exit(1)
-    # Expression checks
+    # Expression checks TODO: Improve this checks
     if args.expression is not None:
         if os.path.isdir(args.expression)==True:
             print("Expression files located in {0} folder".format(args.expression), file=sys.stderr)
         else:
             for f in args.expression.split(','):
-                if not os.path.exists(f):
-                        print("Expression file {0} not found. Abort!".format(f), file=sys.stderr)
-                        sys.exit(1)
+                valid_matrix(f)
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
