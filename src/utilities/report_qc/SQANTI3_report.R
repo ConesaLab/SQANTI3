@@ -1975,22 +1975,34 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t1.NMD <- group_by(x, structural_category, predicted_NMD) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.NMD <- merge(t1.NMD, t2.RTS, by="structural_category")
     t3.NMD$perc <- t3.NMD$count.x / t3.NMD$count.y * 100
+    # Condition in case all the transcripts are false (it would break the code below.)
+    if ('Predicted NMD' %in% x$predicted_NMD){
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
     t3.NMD$Var=t3.NMD$predicted_NMD
-    
-    if(!("FSM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
+
+      if(!("FSM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("ISM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NIC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NNC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+    } else {
+        t3.NMD <- data.frame(
+          structural_category = c("FSM", "ISM", "NIC", "NNC"),
+          predicted_NMD = "Predicted NMD",
+          count.x = 0,
+          count.y = 0,
+          perc = 0,
+          Var = "Predicted NMD",
+          stringsAsFactors = FALSE
+        )
     }
-    if(!("ISM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    if(!("NIC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    if(!("NNC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    
     t3.NMD$perc <- as.numeric(t3.NMD$perc)
     
   }
