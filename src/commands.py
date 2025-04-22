@@ -28,6 +28,7 @@ if shutil.which(GFFREAD_PROG) is None:
 RSCRIPTPATH = shutil.which('Rscript')
 
 RSCRIPT_REPORT = '/report_qc/SQANTI3_report.R'
+RSCRIPT_BUGSI_REPORT = '/report_qc/BUGSI_report.R'
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 

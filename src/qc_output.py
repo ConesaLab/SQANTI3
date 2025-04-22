@@ -8,7 +8,7 @@ from bx.intervals import Interval #type: ignore
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from .commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, run_command,
+    RSCRIPTPATH, RSCRIPT_REPORT, RSCRIPT_BUGSI_REPORT, run_command,
     utilitiesPath
 )
 from src.helpers import get_isoform_hits_name, get_omitted_name
@@ -67,6 +67,18 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     print("**** Generating SQANTI3 report....", file=sys.stderr)
     cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     run_command(cmd,"SQANTI3 report")
+
+def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
+    """
+    Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
+    """
+    print("**** Generating BUGSI report....", file=sys.stderr)
+    bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
+    cmd = (
+        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
+        f"{outputClassPath} {bugsi_gtf} {transcript_gtf_file} {utilitiesPath}"
+    )
+    run_command(cmd, "BUGSI report")
 
 def cleanup(outputClassPath, outputJuncPath):
     print("Removing temporary files....", file=sys.stderr)
