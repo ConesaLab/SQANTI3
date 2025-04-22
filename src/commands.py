@@ -5,7 +5,7 @@ import shutil
 import subprocess
 
 from src.module_logging import qc_logger
-from src.logging_config import MAIN_LOGGING_CONFIG
+from src.logging_config import MAIN_LOGGING_CONFIG, main_logger
 from src.config import utilitiesPath
 
 sys.path.insert(0, utilitiesPath)
