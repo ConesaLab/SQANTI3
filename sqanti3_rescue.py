@@ -473,6 +473,12 @@ def main():
   common.add_argument("-v", "--version", help="Display program version number.", \
   action='version', version='SQANTI3 '+str(__version__))
 
+  common.add_argument("-q", "--requant", action='store_true', help="Run requantification", \
+  required = False)
+
+  common.add_argument("-c", "--counts", help = 'Isoforms abundancy values: "Isoform" \t "Count". Column names may differ', \
+  required = False)
+
   subparsers = parser.add_subparsers(dest = 'subcommand')
 
   ## ML rescue arguments
@@ -647,12 +653,20 @@ def main():
       # remove tmp_gtf
       rm_cmd = "rm " + tmp_gtf
       subprocess.call(rm_cmd, shell = True)
-  
-  
+   
   ## END ##
   print("\nRescue finished successfully!\n")
-  
 
+  if args.requant:
+    if args.requant and not args.counts:
+      parser.error("Counts file is required for the requantification module.")
+    print("\nRunning requantification.\n")
+    from src.utilities.rescue import sq_requant
+
+    rescue_gtf, inclusion_list, counts, rescued = sq_requant.parse_files(args)
+    sq_requant.run_requant(rescue_gtf, inclusion_list, counts, rescued, args.dir, args.output)
+    sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
+    print("\nRequantification finished!\n")
 
 ## Run main()
 if __name__ == "__main__":
