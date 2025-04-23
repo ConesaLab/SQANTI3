@@ -1,3 +1,5 @@
+#!/usr/env/bin Rscript
+
 #####################################
 ##### SQANTI3 report generation ######
 #####################################
@@ -24,7 +26,7 @@ if (!(saturation.curves %in% c('True', 'False'))) {
   stop("Saturation curve argument needs to be 'True' or 'False'. Abort!")
 }
 
-if (!(report.format %in% c('pdf', 'html', 'both'))) {
+if (!(report.format %in% c("pdf", "html", "both"))) {
   stop("Report format needs to be: pdf, html, or both. Abort!")
 }
 
@@ -157,6 +159,7 @@ STM_function <- function(x){
   ref_TSS <- FALSE
   ref_TTS <- FALSE
   
+  # Get the reference TSS and TTS
   if (!is.na(x["diff_to_gene_TSS"])){
     if (abs(as.numeric(x["diff_to_gene_TSS"]))<=50){
       ref_TSS <- TRUE
@@ -169,12 +172,13 @@ STM_function <- function(x){
     }
   }
   
-  w_cage <- !is.na(x["within_CAGE_peak"]) & x["within_CAGE_peak"]=="True"
-  if ( ref_TSS | w_cage  ){
-    five=TRUE
+  # Determine if the isoform is fully supported
+  w_cage <- !is.na(x["within_CAGE_peak"]) & x["within_CAGE_peak"] == "True"
+  if ( ref_TSS || w_cage  ){
+    five = TRUE
   }
-  w_polya <- !is.na(x["within_polyA_site"]) & x["within_polyA_site"]=="True"
-  if (ref_TTS | w_polya | !is.na(x["polyA_motif"])){
+  w_polya <- !is.na(x["within_polyA_site"]) & x["within_polyA_site"] == "True"
+  if (ref_TTS || w_polya || !is.na(x["polyA_motif"])){
     three=TRUE
   }
   if (x["structural_category"]=="FSM" | x["structural_category"]=="ISM"){
@@ -185,7 +189,7 @@ STM_function <- function(x){
     }
   }
   
-  if (five & three & sj){
+  if (five && three && sj){
     return("Fully supported")
   }else{
     return("Not fully supported")
@@ -292,6 +296,7 @@ mytheme <- theme_classic(base_family = "Helvetica") +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm"))
 
+#### New attributes into the main data frame
 
 # Create a new attribute called "novelGene"
 
@@ -362,6 +367,8 @@ if (max_iso_per_gene >= 6) {
     isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1), labels = c("1"));
 }
 
+
+### PABLO
 # see if there are multple FL samples
 FL_multisample_indices <- which(substring(colnames(data.class), 1,3)=="FL.")
 
@@ -1975,22 +1982,34 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t1.NMD <- group_by(x, structural_category, predicted_NMD) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.NMD <- merge(t1.NMD, t2.RTS, by="structural_category")
     t3.NMD$perc <- t3.NMD$count.x / t3.NMD$count.y * 100
+    # Condition in case all the transcripts are false (it would break the code below.)
+    if ('Predicted NMD' %in% x$predicted_NMD){
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
     t3.NMD$Var=t3.NMD$predicted_NMD
-    
-    if(!("FSM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
+
+      if(!("FSM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("ISM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NIC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NNC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+    } else {
+        t3.NMD <- data.frame(
+          structural_category = c("FSM", "ISM", "NIC", "NNC"),
+          predicted_NMD = "Predicted NMD",
+          count.x = 0,
+          count.y = 0,
+          perc = 0,
+          Var = "Predicted NMD",
+          stringsAsFactors = FALSE
+        )
     }
-    if(!("ISM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    if(!("NIC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    if(!("NNC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
-    }
-    
     t3.NMD$perc <- as.numeric(t3.NMD$perc)
     
   }

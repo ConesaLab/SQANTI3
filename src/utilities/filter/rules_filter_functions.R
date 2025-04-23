@@ -13,20 +13,21 @@ apply_rules <- function(isoform_info, force_multiexon){
       rules <- rules_list[[p]]
       # iterate through the rules defined
       for (i in c(1:length(rules$rule))){
-        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
+        parameter <- rules[i, "column"]
+        if ( ! is.na(isoform_info[parameter])){ # if NA in the field, rule doesn't apply
           if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+            if (as.numeric(isoform_info[parameter]) < as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
               break
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+            if (as.numeric(isoform_info[parameter]) > as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
               break
             }
           }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+            cat_rules <- rules[rules$column == parameter, ]
+            if ( ! tolower(isoform_info[parameter]) %in% cat_rules[,"rule"]){
               is_isoform=FALSE
               break
             }
@@ -45,20 +46,21 @@ apply_rules <- function(isoform_info, force_multiexon){
       is_isoform=TRUE
       rules <- rules_list[[p]]
       for (i in c(1:length(rules$rule))){
-        if (! is.na(isoform_info[rules[i, "column"]])){
+        parameter <- rules[i, "column"]
+        if (! is.na(isoform_info[parameter])){
           if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
+            if (as.numeric(isoform_info[parameter]) < as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
               break
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
+            if (as.numeric(isoform_info[parameter]) > as.numeric(rules[i, "rule"])){
               is_isoform=FALSE
               break
             }
           }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
+            cat_rules <- rules[rules$column == parameter, ]
+            if ( ! tolower(isoform_info[parameter]) %in% cat_rules[,"rule"]){
               is_isoform=FALSE
               break
             }
@@ -93,26 +95,27 @@ get_reasons <- function(isoform_info, force_multiexon){
       rules <- rules_list[[p]]
       # iterate through the rules defined
       for (i in c(1:length(rules$rule))){
-        if ( ! is.na(isoform_info[rules[i, "column"]])){ # if NA in the field, rule doesn't apply
+        parameter <- rules[i, "column"]
+        if ( ! is.na(isoform_info[parameter])){ # if NA in the field, rule doesn't apply
           if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              reason_line <- paste("Low", rules[i, "column"])
+            if (as.numeric(isoform_info[parameter]) < as.numeric(rules[i, "rule"])){
+              reason_line <- paste("Low", parameter)
               reasons <- c(reasons, reason_line)
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              reason_line <- paste("High", rules[i, "column"])
+            if (as.numeric(isoform_info[parameter]) > as.numeric(rules[i, "rule"])){
+              reason_line <- paste("High", parameter)
               reasons <- c(reasons, reason_line)
               }
           }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              reason_line <- paste("Out", rules[i, "column"])
+            cat_rules <- rules[rules$column == parameter, ]
+            if ( ! tolower(isoform_info[parameter]) %in% cat_rules[,"rule"]){
+              reason_line <- paste("Out", parameter)
               reasons <- c(reasons, reason_line)
               }
           }
         } else {
-          reason_line <- paste("NA", rules[i, "column"])
+          reason_line <- paste("NA value in", parameter)
           reasons <- c(reasons, reason_line)
         }
       }
@@ -122,24 +125,28 @@ get_reasons <- function(isoform_info, force_multiexon){
     for (p in which(names(rules_list)=="rest")){
       rules <- rules_list[[p]]
       for (i in c(1:length(rules$rule))){
-        if (! is.na(isoform_info[rules[i, "column"]])){
+        parameter <- rules[i, "column"]
+        if (! is.na(isoform_info[parameter])){
           if (rules[i, "type"] == "Min_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) < as.numeric(rules[i, "rule"])){
-              reason_line <- paste("Low", rules[i, "column"])
+            if (as.numeric(isoform_info[parameter]) < as.numeric(rules[i, "rule"])){
+              reason_line <- paste("Low", parameter)
               reasons <- c(reasons, reason_line)
             }
           }else if (rules[i, "type"] == "Max_Threshold"){
-            if (as.numeric(isoform_info[rules[i, "column"]]) > as.numeric(rules[i, "rule"])){
-              reason_line <- paste("High", rules[i, "column"])
+            if (as.numeric(isoform_info[parameter]) > as.numeric(rules[i, "rule"])){
+              reason_line <- paste("High", parameter)
               reasons <- c(reasons, reason_line)
             }
           }else if (rules[i, "type"] == "Category"){
-            cat_rules <- rules[rules$column == rules[i, "column"], ]
-            if ( ! tolower(isoform_info[rules[i, "column"]]) %in% cat_rules[,"rule"]){
-              reason_line <- paste("Out", rules[i, "column"])
+            cat_rules <- rules[rules$column == parameter, ]
+            if ( ! tolower(isoform_info[parameter]) %in% cat_rules[,"rule"]){
+              reason_line <- paste("Out", parameter)
               reasons <- c(reasons, reason_line)
             }
           }
+        } else {
+          reason_line <- paste("NA value in", parameter)
+          reasons <- c(reasons, reason_line)
         }
       }
     }

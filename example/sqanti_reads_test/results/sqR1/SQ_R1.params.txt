@@ -1,5 +1,5 @@
 Version	5.3.6
-Input	/home/pabloati/Programs/sqanti3/bugfix/reads_pca_paula/data/sqR1.gtf
+Input	/home/pabloati/Programs/sqanti3/example/sqanti_reads_test/sqR1.gtf
 Annotation	/home/pabloati/Programs/sqanti3/example/gencode.v38.basic_chr22.gtf
 Genome	/home/pabloati/Programs/sqanti3/example/GRCh38.p13_chr22.fasta
 MinRefLength	0
@@ -19,7 +19,7 @@ FASTAused	False
 Expression	NA
 GMAPindex	NA
 OutputPrefix	SQ_R1
-OutputDirectory	/home/pabloati/Programs/sqanti3/bugfix/reads_pca_paula/results/sqR1
+OutputDirectory	/home/pabloati/Programs/sqanti3/example/sqanti_reads_test/results/sqR1
 Coverage	NA
 CanonicalSites	ATAC,GCAG,GTAG
 PostTTSWindow	20

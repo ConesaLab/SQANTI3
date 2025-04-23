@@ -2,7 +2,8 @@
 import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
-
+from src.module_logging import qc_logger
+from src.utils import calculate_tss
 class genePredReader(object):
     """
     A class to read gene prediction records from a file.
@@ -428,9 +429,25 @@ class CAGEPeak:
             start0 = int(raw[1])
             end1 = int(raw[2])
             strand = raw[5]
-            tss0 = int((start0+end1)/2)
+            tss0 = calculate_tss(strand, start0, end1)
             self.cage_peaks[(chrom,strand)].insert(start0, end1, (tss0, start0, end1))
-
+    
+    def calculate_tss(strand, start0, end1):
+        """
+        Strand aware calculation of the middle of the peak in the bed file
+        If the cage peak length is of 1 nucleotide, the average is not calculcated
+        """
+        if end1 - start0 > 1:
+            tss0 = int((start0 + end1) / 2)
+            if strand == '+':
+                return tss0
+            else:
+                return tss0 + 1
+        else:
+            if strand == '+':
+                return start0
+            else:
+                return end1
     def find(self, chrom, strand, query, search_window=10000):
         """
         :param chrom: Chromosome to query
@@ -446,8 +463,10 @@ class CAGEPeak:
 
         for tss0, start0, end1 in peaks:
             # Checks if the TSS is upstream of a peak
+            qc_logger.debug(f"Query {query} is within peak {start0}-{end1} on {chrom} strand {strand}")
             if (strand == '+' and start0 > query and end1 > query) or \
             (strand == '-' and start0 < query and end1 < query):
+                qc_logger.debug(f"Query {query} is upstream of peak {start0}-{end1} on {chrom} strand {strand}")
                 continue
             # Checks if the query is within the peak and the distance to the TSS
             within_out = start0 <= query < end1 if strand == '+' else start0 < query <= end1

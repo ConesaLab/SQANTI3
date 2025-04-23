@@ -1,13 +1,13 @@
 STAR version=2.7.11b
 STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
 ##### Command Line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir example/SQANTI3_QC_output/STAR_index/ --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir example/SQANTI3_QC_output/STAR_index/ --readFilesIn data/short_reads/UHR_Rep1_chr22.R1.fastq.gz data/short_reads/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --twopassMode Basic --readFilesCommand zcat
 ##### Initial USER parameters from Command Line:
 outFileNamePrefix                 example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22
 ###### All USER parameters from Command Line:
 runThreadN                    4     ~RE-DEFINED
 genomeDir                     example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
-readFilesIn                   example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz        ~RE-DEFINED
+readFilesIn                   data/short_reads/UHR_Rep1_chr22.R1.fastq.gz   data/short_reads/UHR_Rep1_chr22.R2.fastq.gz        ~RE-DEFINED
 outFileNamePrefix             example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22     ~RE-DEFINED
 alignSJoverhangMin            8     ~RE-DEFINED
 alignSJDBoverhangMin          1     ~RE-DEFINED
@@ -22,15 +22,15 @@ alignMatesGapMax              1000000     ~RE-DEFINED
 sjdbScore                     1     ~RE-DEFINED
 genomeLoad                    NoSharedMemory     ~RE-DEFINED
 outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
-readFilesCommand              zcat        ~RE-DEFINED
 twopassMode                   Basic     ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
 ##### Finished reading parameters from all sources
 
 ##### Final user re-defined parameters-----------------:
 runThreadN                        4
 genomeDir                         example/SQANTI3_QC_output/STAR_index/
 genomeLoad                        NoSharedMemory
-readFilesIn                       example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz   
+readFilesIn                       data/short_reads/UHR_Rep1_chr22.R1.fastq.gz   data/short_reads/UHR_Rep1_chr22.R2.fastq.gz   
 readFilesCommand                  zcat   
 outFileNamePrefix                 example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22
 outSAMtype                        BAM   SortedByCoordinate   
@@ -49,37 +49,37 @@ twopassMode                       Basic
 
 -------------------------------
 ##### Final effective command line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeLoad NoSharedMemory   --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz   example/UHR_Rep1_chr22.R2.fastq.gz      --readFilesCommand zcat      --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22   --outSAMtype BAM   SortedByCoordinate      --outSAMunmapped Within      --outFilterType BySJout   --outFilterMultimapNmax 20   --outFilterMismatchNmax 999   --outFilterMismatchNoverLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000   --alignSJoverhangMin 8   --alignSJDBoverhangMin 1   --sjdbScore 1   --twopassMode Basic
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeLoad NoSharedMemory   --readFilesIn data/short_reads/UHR_Rep1_chr22.R1.fastq.gz   data/short_reads/UHR_Rep1_chr22.R2.fastq.gz      --readFilesCommand zcat      --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22   --outSAMtype BAM   SortedByCoordinate      --outSAMunmapped Within      --outFilterType BySJout   --outFilterMultimapNmax 20   --outFilterMismatchNmax 999   --outFilterMismatchNoverLmax 0.04   --alignIntronMin 20   --alignIntronMax 1000000   --alignMatesGapMax 1000000   --alignSJoverhangMin 8   --alignSJDBoverhangMin 1   --sjdbScore 1   --twopassMode Basic
 ----------------------------------------
 
 Number of fastq files for each mate = 1
 
    Input read files for mate 1 :
--rwxrwxr-x 1 pabloati pabloati 13464036 ene 29 13:07 example/UHR_Rep1_chr22.R1.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 13750037 abr 23 08:49 data/short_reads/UHR_Rep1_chr22.R1.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read1"
 echo FILE 0
-zcat      "example/UHR_Rep1_chr22.R1.fastq.gz"
+zcat      "data/short_reads/UHR_Rep1_chr22.R1.fastq.gz"
 
 
    Input read files for mate 2 :
--rwxrwxr-x 1 pabloati pabloati 14475272 ene 29 13:07 example/UHR_Rep1_chr22.R2.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 14774508 abr 23 08:49 data/short_reads/UHR_Rep1_chr22.R2.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
 echo FILE 0
-zcat      "example/UHR_Rep1_chr22.R2.fastq.gz"
+zcat      "data/short_reads/UHR_Rep1_chr22.R2.fastq.gz"
 
 ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
 WARNING: --limitBAMsortRAM=0, will use genome size as RAM limit for BAM sorting
 Finished loading and checking parameters
 Reading genome generation parameters:
-### /home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles example/GRCh38.p13_chr22.fasta      --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
+### /home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles data/reference/GRCh38.p13_chr22.fasta      --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ### GstrandBit=32
 versionGenome                 2.7.4a     ~RE-DEFINED
 genomeType                    Full     ~RE-DEFINED
-genomeFastaFiles              example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+genomeFastaFiles              data/reference/GRCh38.p13_chr22.fasta        ~RE-DEFINED
 genomeSAindexNbases           14     ~RE-DEFINED
 genomeChrBinNbits             18     ~RE-DEFINED
 genomeSAsparseD               1     ~RE-DEFINED
@@ -97,7 +97,7 @@ genomeFileSizes               50855936   323068164        ~RE-DEFINED
 Genome version is compatible with current STAR
 Number of real (reference) chromosomes= 1
 1	chr22	50818468	0
-Started loading the genome: Wed Jan 29 15:07:49 2025
+Started loading the genome: Wed Apr 23 11:55:26 2025
 
 Genome: size given as a parameter = 50855936
 SA: size given as a parameter = 323068164
@@ -111,7 +111,7 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 50855936 bytes
 SA file size: 323068164 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 323068164 bytes
 Loading SAindex ... done: 1565873619 bytes
-Finished loading the genome: Wed Jan 29 15:07:50 2025
+Finished loading the genome: Wed Apr 23 11:55:27 2025
 
 To accommodate alignIntronMax=1000000 redefined winBinNbits=18
 To accommodate alignIntronMax=1000000 and alignMatesGapMax=1000000, redefined winFlankNbins=4 and winAnchorDistNbins=8
@@ -124,38 +124,47 @@ Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate1.thread3 ... ok
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
 Created thread # 1
-Thread #1 end of input stream, nextChar=-1
-Thread #1 end of input stream, nextChar=-1
 Created thread # 2
-Completed: thread #2
-Completed: thread #1
+Starting to map file # 0
+mate 1:   data/short_reads/UHR_Rep1_chr22.R1.fastq.gz
+mate 2:   data/short_reads/UHR_Rep1_chr22.R2.fastq.gz
 Created thread # 3
+Thread #3 end of input stream, nextChar=-1
+Completed: thread #1
+Completed: thread #2
+Completed: thread #3
 Completed: thread #0
 Joined thread # 1
 Joined thread # 2
-Completed: thread #3
 Joined thread # 3
-Jan 29 15:07:51   Loaded database junctions from the 1st pass file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARpass1//SJ.out.tab: 0 total junctions
+Apr 23 11:56:09   Loaded database junctions from the 1st pass file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARpass1//SJ.out.tab: 3579 total junctions
 
-Jan 29 15:07:51   Finished preparing junctions
-Jan 29 15:07:51 ..... finished inserting junctions into genome
+Apr 23 11:56:09   Finished preparing junctions
+Apr 23 11:56:09 ..... inserting junctions into the genome indices
+Apr 23 11:56:13   Finished SA search: number of new junctions=3579, old junctions=0
+Apr 23 11:56:14   Finished sorting SA indicesL nInd=1431600
+Genome size with junctions=51575315  50855936   719379
+GstrandBit1=32   GstrandBit=32
+Apr 23 11:56:15   Finished inserting junction indices
+Apr 23 11:56:22   Finished SAi
+Apr 23 11:56:22 ..... finished inserting junctions into genome
 
    Input read files for mate 1 :
--rwxrwxr-x 1 pabloati pabloati 13464036 ene 29 13:07 example/UHR_Rep1_chr22.R1.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 13750037 abr 23 08:49 data/short_reads/UHR_Rep1_chr22.R1.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read1"
 echo FILE 0
-zcat      "example/UHR_Rep1_chr22.R1.fastq.gz"
+zcat      "data/short_reads/UHR_Rep1_chr22.R1.fastq.gz"
 
 
    Input read files for mate 2 :
--rwxrwxr-x 1 pabloati pabloati 14475272 ene 29 13:07 example/UHR_Rep1_chr22.R2.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 14774508 abr 23 08:49 data/short_reads/UHR_Rep1_chr22.R2.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
 echo FILE 0
-zcat      "example/UHR_Rep1_chr22.R2.fastq.gz"
+zcat      "data/short_reads/UHR_Rep1_chr22.R2.fastq.gz"
 
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate1.thread0 ... ok
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate2.thread0 ... ok
@@ -167,11 +176,85 @@ Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
 Created thread # 1
 Created thread # 2
+Starting to map file # 0
+mate 1:   data/short_reads/UHR_Rep1_chr22.R1.fastq.gz
+mate 2:   data/short_reads/UHR_Rep1_chr22.R2.fastq.gz
 Created thread # 3
-
-ReadAlignChunk_processChunks.cpp:204:processChunks EXITING because of FATAL ERROR in input reads: wrong read ID line format: the read ID lines should start with @ or > 
-Offending line for read # 1
-JGHIIHDGGAHIJE8@GGIHIIIHHHHEFBDEEDEED9;=?BBDDCDCCCD4AC 
-SOLUTION: verify and correct the input read files
-
-Jan 29 15:07:51 ...... FATAL ERROR, exiting
+Thread #3 end of input stream, nextChar=-1
+Completed: thread #1
+Completed: thread #2
+Completed: thread #3
+Completed: thread #0
+Joined thread # 1
+Joined thread # 2
+Joined thread # 3
+Completed stage 1 mapping of outFilterBySJout mapping
+Detected 10 novel junctions that passed filtering, will proceed to filter reads that contained unannotated junctions
+Created thread # 1
+Created thread # 2
+Created thread # 3
+BAM sorting: 0 mapped reads
+BAM sorting bins genomic start loci:
+1	25268	1054670362
+2	25268	1054670362
+3	25268	1054670362
+4	25268	1054670362
+5	25268	1054670362
+6	25268	1054670362
+7	25268	1054670362
+8	25268	1054670362
+9	25268	1054670362
+10	25268	1054670362
+11	25268	1054670362
+12	25268	1054670362
+13	25268	1054670362
+14	25268	1054670362
+15	25268	1054670362
+16	25268	1054670362
+17	25268	1054670362
+18	25268	1054670362
+19	25268	1054670362
+20	25268	1054670362
+21	25268	1054670362
+22	25268	1054670362
+23	25268	1054670362
+24	25268	1054670362
+25	25268	1054670362
+26	25268	1054670362
+27	25268	1054670362
+28	25268	1054670362
+29	25268	1054670362
+30	25268	1054670362
+31	25268	1054670362
+32	25268	1054670362
+33	25268	1054670362
+34	25268	1054670362
+35	25268	1054670362
+36	25268	1054670362
+37	25268	1054670362
+38	25268	1054670362
+39	25268	1054670362
+40	25268	1054670362
+41	25268	1054670362
+42	25268	1054670362
+43	25268	1054670362
+44	25268	1054670362
+45	25268	1054670362
+46	25268	1054670362
+47	25268	1054670362
+48	25268	1054670362
+Completed: thread #0
+Completed: thread #3
+Completed: thread #2
+Completed: thread #1
+Joined thread # 1
+Joined thread # 2
+Joined thread # 3
+Apr 23 11:57:05 ..... finished mapping
+RAM after mapping:
+VmPeak:	 5156528 kB; VmSize:	 5060824 kB; VmHWM:	 3246324 kB; VmRSS:	 3193748 kB; 
+RAM after freeing genome index memory:
+VmPeak:	 5156528 kB; VmSize:	 1350808 kB; VmHWM:	 3246324 kB; VmRSS:	  977448 kB; 
+Apr 23 11:57:05 ..... started sorting BAM
+Max memory needed for sorting = 67039860
+ALL DONE!

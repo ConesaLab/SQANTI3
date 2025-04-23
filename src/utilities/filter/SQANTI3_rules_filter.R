@@ -11,13 +11,13 @@
 # Last updated: Sept/27/2021
 #
 # Rules filter will take as input a JSON file where the user will set the rules for the filtering.
-# It will be a JSON with nested objects so you can define any column you want to use for filtering.
+# It will be a JSON with nested objects so you can define any column you want to use for filtering. 
 # Filtering values will ALWAYS be in "positive", so the values set in the JSON will be the attributes that the filter will keep
 
 library(optparse)
 library(jsonlite)
 library(magrittr)
-library(dplyr)
+suppressMessages(library(dplyr))
 
 ### Define arguments
 option_list = list(
@@ -51,13 +51,13 @@ source(paste0(utilities, "/filter/rules_filter_functions.R"))
 
 
 ### read files
-message("-------------------------------------------------")
-message("\n \t Reading classification file")
-message("\n--------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("           Reading classification file\n")
+cat("-------------------------------------------------\n")
 classif <- read.table(classif_file, sep="\t", header = T, as.is = T)
-message("-------------------------------------------------")
-message("\n \t Reading JSON file with rules to filter")
-message("\n--------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("       Reading JSON file with rules to filter\n")
+cat("-------------------------------------------------\n")
 json_df <- jsonlite::fromJSON(txt = json_file ,simplifyDataFrame = T)
 
 ### json list will be transformed into a list of data frames with the rules. Rules DF have 4 columns:
@@ -131,9 +131,9 @@ for (sc in names(json_df)){
 names(rules_list) <- names_rules_list
 
 
-message("-------------------------------------------------")
-message("\n \t Performing filtering")
-message("\n--------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("             Performing filtering                \n")
+cat("-------------------------------------------------\n")
 
 
 classif$filter_result <- apply(classif, 1, apply_rules, force_multiexon)
@@ -143,9 +143,9 @@ inclusion_list <- classif[classif$filter_result == "Isoform", "isoform"]
 artifacts_classif <- classif[classif$filter_result == "Artifact", ]
 reasons_df <- apply(artifacts_classif,1, get_reasons, force_multiexon) %>% bind_rows()
 
-message("-------------------------------------------------")
-message("\n \t Writting results")
-message("\n--------------------------------------------------")
+cat("-------------------------------------------------\n")
+cat("                Writting results                 \n")
+cat("-------------------------------------------------\n")
 
 write.table(classif, file=paste0(opt$dir, "/", opt$output, "_RulesFilter_result_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)

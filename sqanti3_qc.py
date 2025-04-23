@@ -5,64 +5,30 @@
 # Modified by Fran (francisco.pardo.palacios@gmail.com) currently as SQANTI3 version (05/15/2020)
 # Modified by Pablo (pabloatienzalo@gmail.com)
 
-import os, sys
+import os
 import shutil
-
 # Import SQANTI3 modules
-from src.qc_argparse import qc_argparse, args_validation
+from src.qc_argparse import qc_argparse
 from src.qc_pipeline import run
 from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
-from src.argparse_utils import args_validation
-
+from src.argparse_utils import qc_args_validation
+from src.logging_config import qc_art,art_logger
+from src.module_logging import qc_logger
+from src.write_parameters import write_qc_parameters
 def main():
 
-    args = qc_argparse()
-    args = args_validation(args)
-
-
-    # path and prefix for output files
-
-
-    # Print out parameters so can be put into report PDF later
-    args.doc = os.path.join(os.path.abspath(args.dir), args.output+".params.txt")
-    print("Write arguments to {0}...".format(args.doc, file=sys.stdout))
-    with open(args.doc, 'w') as f:
-        f.write("Version\t" + __version__ + "\n")
-        f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
-        f.write("Annotation\t" + os.path.abspath(args.annotation) + "\n")
-        f.write("Genome\t" + os.path.abspath(args.genome) + "\n")
-        f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
-        f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
-        f.write("Aligner\t" + str(args.aligner_choice) + "\n")
-        f.write("FLCount\t" + (os.path.abspath(args.fl_count) if args.fl_count is not None else "NA") + "\n")
-        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA") + "\n")
-        f.write("Junction\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n")
-        f.write("CAGEPeak\t" + (os.path.abspath(args.CAGE_peak)  if args.CAGE_peak is not None else "NA") + "\n")
-        f.write("PolyAMotif\t" + (os.path.abspath(args.polyA_motif_list) if args.polyA_motif_list is not None else "NA") + "\n")
-        f.write("PolyAPeak\t" + (os.path.abspath(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
-        f.write("IsFusion\t" + str(args.is_fusion) + "\n")
-        f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
-        f.write("SkipORF\t" + str(args.skipORF) + "\n")
-        f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
-        f.write("FASTAused\t" + str(args.fasta) +"\n")
-        f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA" ) + "\n")
-        f.write("GMAPindex\t" + (os.path.abspath(args.gmap_index) if args.gmap_index is not None else "NA" ) + "\n")
-        f.write("OutputPrefix\t" + str(args.output) + "\n")
-        f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
-        f.write("Coverage\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n" )
-        f.write("CanonicalSites\t" + str(args.sites) + "\n")
-        f.write("PostTTSWindow\t" + str(args.window) + "\n")
-        f.write("GeneName\t" + str(args.genename) + "\n")
-        f.write("ReportType\t" + str(args.report) + "\n")
-        f.write("RunIsoAnnotLite\t" + str(args.isoAnnotLite) + "\n")
-        f.write("isoAnnotGFF3\t" + (os.path.abspath(args.gff3) if args.gff3 is not None else "NA") + "\n")
-        f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
-        f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
-        f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
+    art_logger.info(qc_art())
+    args = qc_argparse().parse_args()
+    # Check if the output directory exists, if not create it
+    os.makedirs(f"{args.dir}/logs", exist_ok=True)
+    args = qc_args_validation(args)
+    if not os.path.exists(os.path.join(args.dir,'logs')):
+        os.makedirs(os.path.join(args.dir,'logs'))
+    write_qc_parameters(args)
 
     # Running functionality based on the chunks
-    print("**** Running SQANTI3...", file=sys.stdout)
+    qc_logger.info(f"Initialising QC pipeline.")
     
     if args.chunks == 1:
         run(args)

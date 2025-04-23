@@ -7,66 +7,78 @@ channels:
   - defaults
 dependencies:
   - argcomplete=3.4.0
-  - bcbio-gff
-  - bedtools
+  - bcbio-gff=0.7.1
+  - bedtools=2.31.1
   - biopython<=1.81
-  - bioconductor-noiseq
-  - bioconductor-busparse
-  - bx-python
-  - cython
-  - desalt
-  - gffread
+  - bioconductor-noiseq=2.46.0
+  - bioconductor-busparse=1.16.0
+  - bx-python=0.11.0
+  - cython=3.0.11
+  - desalt=1.5.6
+  - gffread=0.12.7
   - gtftools=0.9.0
-  - gmap
-  - jinja2
+  - gmap=2024.11.20
+  - jinja2=3.1.4
   - kallisto=0.48.0
-  - minimap2
-  - numpy
-  - openssl
-  - pandas
-  - pandoc
-  - perl
-  - pip
-  - psutil
-  - pybedtools
-  - pysam
+  - minimap2=2.28
+  - numpy=1.26.4
+  - openssl=3.4.0
+  - pandas=2.2.3
+  - pandoc=3.5
+  - perl=5.32.1
+  - pip=24.3.1
+  - psutil=6.1.0
+  - pybedtools=0.10.0
+  - pysam=0.22.1
   - python>=3.10,<=3.11
   - r>=4.3.0
-  - r-biocmanager
-  - r-caret
-  - r-dplyr
-  - r-dt
-  - r-devtools
-  - r-e1071
-  - r-forcats
+  - r-biocmanager=1.30.25
+  - r-caret=6.0_94
+  - r-dplyr=1.1.4
+  - r-dt=0.33
+  - r-devtools=2.4.5
+  - r-e1071=1.7_16
+  - r-forcats=1.0.0
   - r-ggplot2>=3.4.0
-  - r-ggplotify
-  - r-gridbase
-  - r-gridextra
-  - r-htmltools
-  - r-jsonlite
-  - r-optparse
-  - r-plotly
-  - r-plyr
-  - r-pROC
-  - r-purrr
-  - r-rmarkdown
-  - r-reshape
-  - r-readr
-  - r-randomForest
-  - r-scales
-  - r-stringi
-  - r-stringr
-  - r-tibble
-  - r-tidyr
-  - samtools
+  - r-ggplotify=0.1.2
+  - r-gridbase=0.4_7
+  - r-gridextra=2.3
+  - r-htmltools=0.5.8.1
+  - r-jsonlite=1.8.9
+  - r-optparse=1.7.5
+  - r-plotly=4.10.4
+  - r-plyr=1.8.9
+  - r-purrr=1.0.2
+  - r-rmarkdown=2.29
+  - r-reshape=0.8.9
+  - r-readr=2.1.5
+  - r-scales=1.3.0
+  - r-stringi=1.8.4
+  - r-stringr=1.5.1
+  - r-tibble=3.2.1
+  - r-tidyr=1.3.1
+  - samtools=1.21
   - scipy<=1.11.4
-  - seqtk
-  - star
-  - slamem
-  - seaborn
-  - scikit-learn
+  - seqtk=1.4
+  - star=2.7.11b
+  - slamem=0.8.5
+  - seaborn=0.13.2
+  - scikit-learn=1.5.2
   - pytest=7.4.4
   - pip:
-    - ultra-bioinformatics
-    - pdf2image
+    - argh==0.31.3
+    - dill==0.3.9
+    - edlib==1.3.9.post1
+    - gffutils==0.13
+    - gtfparse==2.5.0
+    - importlib-metadata==8.5.0
+    - intervaltree==3.1.0
+    - parasail==1.3.4
+    - pdf2image==1.17.0
+    - polars==0.20.31
+    - pyarrow==14.0.2
+    - pyfaidx==0.8.1.3
+    - simplejson==3.19.3
+    - sortedcontainers==2.4.0
+    - ultra-bioinformatics==0.1
+    - zipp==3.21.0

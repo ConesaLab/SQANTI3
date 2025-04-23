@@ -129,7 +129,6 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
 
     Write a record for each junction in query isoform
     """
-
     # go through each trec junction
     for junction_index, (d, a) in enumerate(trec.junctions):
         # NOTE: donor just means the start, not adjusted for strand
@@ -138,6 +137,7 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
         missing_chr=[]
         junction_cat = "novel"
         if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
+
             if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]):
                 junction_cat = "known"
                 min_diff_s = min_diff_e = 0
@@ -191,9 +191,9 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
               "indel_near_junct": indel_near_junction,
               "phyloP_start": phyloP_start,
               "phyloP_end": phyloP_end,
-              "sample_with_cov": sum([cov_uniq>0 for (cov_uniq,cov_multi) in sample_cov.values()]) if covInf is not None else "NA",
-              "total_coverage_unique": sum([cov_uniq for (cov_uniq,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA",
-              "total_coverage_multi": sum([cov_multi for (cov_uniq,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA"}
+              "sample_with_cov": sum([cov_uniq>0 for (cov_uniq,_) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_unique": sum([cov_uniq for (cov_uniq,_ ) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_multi": sum([cov_multi for (_,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA"}
 
         if covInf is not None:
             for sample in covNames:

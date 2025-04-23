@@ -56,8 +56,8 @@ opt$threshold <- as.numeric(opt$threshold)
     # load mapping hits obtained from SAM
     mapping_hits <- readr::read_tsv(opt$mapping_hits, 
                                     col_names = c("rescue_candidate", 
-                                                  "sam_flag", 
-                                                  "mapping_hit"))
+                                                  "mapping_hit",
+                                                  "sam_flag"))
     
     # load ML filter probabilities obtained for reference transcripts
     probs.ref <- readr::read_tsv(opt$reference_MLprob)

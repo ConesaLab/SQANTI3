@@ -1,3 +1,4 @@
+import logging
 import re
 import sys,os,pytest
 from unittest.mock import mock_open, patch
@@ -21,6 +22,15 @@ def reference_parser_input():
         "isoAnnot": False
     }
     return data
+# Create a fixture for the tester logger
+@pytest.fixture
+def tester_logger():
+    # Define a logger for testing
+    logger = logging.getLogger("tester_logger")
+
+    logger.setLevel(logging.INFO)
+    # Return the logger
+    return logger
 
 # Test if the genePred file is created
 def test_reference_parser_genePred(reference_parser_input):
@@ -33,27 +43,21 @@ def test_reference_parser_genePred(reference_parser_input):
     assert os.path.exists(genePred_annot)
 
 # Test if the genePred file is detected
-def test_reference_parser_genePred_found(reference_parser_input,capsys):
-    genePred_annot = os.path.join(main_path,reference_parser_input["outdir"],
-                                  f"refAnnotation_{reference_parser_input['prefix']}.genePred")
-    reference_parser(*list(reference_parser_input.values()))
-    # Capture the printed output
-    captured = capsys.readouterr()
-    # Check if the specific print statement is in stdout
-    assert "{0} already exists. Using it.".format(genePred_annot) in captured.out
+def test_reference_parser_genePred_found(reference_parser_input, caplog,tester_logger):
+    genePred_annot = os.path.join(main_path, reference_parser_input["outdir"],
+                                   f"refAnnotation_{reference_parser_input['prefix']}.genePred")
+    reference_parser(*list(reference_parser_input.values()), logger=tester_logger)
+    # Capture the printed output    # Check if the specific print statement is in stdout
+    assert f"{genePred_annot} already exists. Using it." in caplog.text
     assert os.path.exists(genePred_annot)
 
-def test_reference_parser_notInGenome(reference_parser_input,capsys):
+def test_reference_parser_notInGenome(reference_parser_input,caplog, tester_logger):
     reference_parser_input["genome_dict"] = {"chr21": "Sequence"}
-    reference_parser(*list(reference_parser_input.values()))
-    captured = capsys.readouterr()
+    reference_parser(*list(reference_parser_input.values()), logger=tester_logger)
     # Check for the warning message in stderr
-    expected_warning = "WARNING: ref annotation contains chromosomes not in genome:"
-    assert expected_warning in captured.err
-    # Optionally, check for specific chromosomes mentioned in the warning
-    assert "chr22" in captured.err  # Assuming 'chr22' is the chromosome causing the warning
-    # You can also check that the warning is not in stdout
-    assert expected_warning not in captured.out
+    expected_warning = "Reference annotation contains chromosomes not in genome:"
+    caplog.set_level(logging.WARNING)
+    assert expected_warning in caplog.text
 
 def test_reference_parser_correctOutput_length(reference_parser_input):
     refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(*list(reference_parser_input.values()))

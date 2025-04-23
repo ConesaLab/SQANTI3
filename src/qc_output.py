@@ -1,18 +1,14 @@
 from csv import DictReader, DictWriter
 import os
 import pickle
-import sys
 
-from bx.intervals import Interval #type: ignore
+from src.commands import (
+    RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
 
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
-
-from .commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, RSCRIPT_BUGSI_REPORT, run_command,
-    utilitiesPath
 )
+from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
-
+from src.module_logging import qc_logger
 
 def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, fields_class_cur):
     if min_ref_len > 0 and not is_fusion:
@@ -64,15 +60,16 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
     os.remove(isoform_hits_name+'_tmp')
 
 def generate_report(saturation,report, outputClassPath, outputJuncPath):
-    print("**** Generating SQANTI3 report....", file=sys.stderr)
-    cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
-    run_command(cmd,"SQANTI3 report")
+    qc_logger.info("**** Generating SQANTI3 report.")
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
+    logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
+    run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
 def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
     """
     Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
     """
-    print("**** Generating BUGSI report....", file=sys.stderr)
+    qc_logger.info("Generating BUGSI report....", file=sys.stderr)
     bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
     cmd = (
         f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
@@ -81,7 +78,7 @@ def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
     run_command(cmd, "BUGSI report")
 
 def cleanup(outputClassPath, outputJuncPath):
-    print("Removing temporary files....", file=sys.stderr)
+    qc_logger.info("Removing temporary files.")
     try:
         os.remove(outputClassPath+"_tmp")
     except FileNotFoundError:
@@ -90,9 +87,10 @@ def cleanup(outputClassPath, outputJuncPath):
         os.remove(outputJuncPath+"_tmp")
     except FileNotFoundError:
         pass
+
     
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
-    print("Saving isoforms_info object to file....", file=sys.stderr)
+    qc_logger.info("Saving isoforms_info object to file.")
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
         pickle.dump(isoforms_info, h)
         pickle.dump(junctions_header, h)

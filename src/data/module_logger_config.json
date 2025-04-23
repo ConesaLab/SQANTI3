@@ -1,0 +1,36 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "default_formatter": {
+            "format": "[%(levelname)s:%(asctime)s] %(message)s"
+        },
+        "error_formatter": {
+            "format": "%(levelname)s: %(message)s"
+        }
+    },
+    "handlers": {
+        "stream_handler": {
+            "class": "logging.StreamHandler",
+            "formatter": "default_formatter"
+        },
+        "module_file_handler": {
+            "class": "logging.FileHandler",
+            "filename": "example/rescue_ml/logs/rescue_module.log",
+            "delay": "true",
+            "mode": "a",
+            "formatter": "default_formatter",
+            "encoding": "utf8"
+        }
+    },
+    "loggers": {
+        "module_logger": {
+            "handlers": [
+                "stream_handler",
+                "module_file_handler"
+            ],
+            "level": "INFO",
+            "propagate": true
+        }
+    }
+}

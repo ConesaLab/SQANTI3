@@ -14,8 +14,6 @@ __version__ = '1.0'  # Python 3.7
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sys.path.insert(0, utilitiesPath)
-
-utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
 
@@ -53,7 +51,10 @@ def get_method_runSQANTI3(args, df):
 
         # Check for directory containing classification and junction file
         directory_path = os.path.join(args.dir, file_acc)
+<<<<<<< HEAD
+=======
         print(directory_path)
+>>>>>>> master
         if os.path.isdir(directory_path):
             classification_file_path = os.path.join(classification_file)
             junction_file_path = os.path.join(junction_file)
@@ -79,7 +80,11 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
+<<<<<<< HEAD
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+=======
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+>>>>>>> master
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
@@ -111,6 +116,7 @@ def get_method_runSQANTI3(args, df):
                                 --fasta"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
+
                 print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
@@ -224,8 +230,13 @@ def main():
     if args.ALLTABLES:
         cmd_plotting = cmd_plotting + " --all-tables"
     if args.PCATABLES:
+<<<<<<< HEAD
+        cmd_plotting = cmd_plotting + "--pca-tables"
+    print(cmd_plotting)
+=======
         cmd_plotting = cmd_plotting + " --pca-tables"
     
+>>>>>>> master
     subprocess.call(cmd_plotting, shell = True)
 
 

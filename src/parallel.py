@@ -10,10 +10,11 @@ from Bio import SeqIO
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes
-from src.qc_output import cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS
-from src.config import FIELDS_CLASS
-from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes, write_collapsed_GFF_with_CDS
+from src.qc_output import (
+    cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms)
+from src.module_logging import qc_logger
+# TODO: Create a special logging for the parallelization, to handle the individual logs of the splits into  their own files
 
 def get_split_dir(outdir,prefix):
     split_prefix=os.path.join(os.path.abspath(outdir), prefix)
@@ -26,7 +27,7 @@ def natural_sort_key(s):
 def split_input_run(args, outdir):
     SPLIT_ROOT_DIR = outdir
     if os.path.exists(SPLIT_ROOT_DIR):
-        print("WARNING: {0} directory already exists!".format(SPLIT_ROOT_DIR), file=sys.stderr)
+        qc_logger.warning(f"{SPLIT_ROOT_DIR} directory already exists!")
     else:
         os.makedirs(SPLIT_ROOT_DIR)
 
@@ -53,7 +54,7 @@ def split_input_run(args, outdir):
 
         n = len(gene_groups)
         if n == 0:
-            print("The input file is not in the correct format, please check the file contains gene_id in "
+            qc_logger.error("The input file is not in the correct format, please check the file contains gene_id in "
                   "column 9 and try again")
             sys.exit(1)
 
@@ -127,7 +128,7 @@ def split_input_run(args, outdir):
 
     pools = []
     for i,(d,x) in enumerate(split_outs):
-        print("launching worker on {0}....".format(x))
+        qc_logger.info(f"Launching worker on {x}....")
         args2 = copy.deepcopy(args)
         args2.isoforms = x
         args2.novel_gene_prefix = str(i)
@@ -186,7 +187,7 @@ def combine_split_runs(args, split_dirs):
     fields_class_cur = FIELDS_CLASS
     if args.fl_count:
         isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
-    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.genome)
+    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
