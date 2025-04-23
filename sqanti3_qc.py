@@ -20,6 +20,8 @@ def main():
 
     art_logger.info(qc_art())
     args = qc_argparse().parse_args()
+    # Check if the output directory exists, if not create it
+    os.makedirs(f"{args.dir}/logs", exist_ok=True)
     args = qc_args_validation(args)
     if not os.path.exists(os.path.join(args.dir,'logs')):
         os.makedirs(os.path.join(args.dir,'logs'))

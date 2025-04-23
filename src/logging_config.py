@@ -60,7 +60,8 @@ MAIN_LOGGING_CONFIG = {
         },
         "process_handler": {
             "class": "logging.FileHandler",
-            "filename": "none",
+            "filename": "hey",
+            "delay": True,
             "mode": "w",
             "formatter": "process_formatter",
             "encoding": "utf8"

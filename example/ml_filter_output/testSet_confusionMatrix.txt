@@ -1,0 +1,5 @@
+Prediction	Reference	Freq
+POS	POS	50
+NEG	POS	7
+POS	NEG	0
+NEG	NEG	57

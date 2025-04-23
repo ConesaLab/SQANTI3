@@ -5,15 +5,13 @@ from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
 from src.rescue_argparse import rescue_argparse
 from src.logging_config import main_logger,save_module_logger_info
-from src.commands import GTF2GENEPRED_PROG, GFFREAD_PROG
+
 
 def sqanti_path(filename):
     return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename))
 
 def check_conda():
-    if shutil.which(GTF2GENEPRED_PROG) is None:
-        main_logger.error(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
-        raise SystemExit(1)
+    GFFREAD_PROG = "gffread"
 
     if shutil.which(GFFREAD_PROG) is None:
         main_logger.error(f"Cannot find executable {GFFREAD_PROG}. Abort!")
