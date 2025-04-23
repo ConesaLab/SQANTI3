@@ -18,8 +18,6 @@ def check_conda():
         main_logger.error(f"Did you activate SQANTI3's conda environment?")
         raise SystemExit(1)
 
-
-
 def create_config(config_path,options,level):
     """
     Create a YAML configuration file. 

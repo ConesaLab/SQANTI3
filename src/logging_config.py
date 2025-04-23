@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import json
+import os
 from src.config import __version__
 
 class InfoFilter:
@@ -102,7 +103,10 @@ def save_module_logger_info(logpath, module, level, json_file):
     """
     with open(json_file, 'r') as f:
         config = json.load(f)
-
+    try:
+        os.remove(f"{logpath}/{module}_module.log")
+    except FileNotFoundError:
+        pass
     config['handlers']['module_file_handler']['filename'] = f"{logpath}/{module}_module.log"
     config['loggers']['module_logger']['level'] = level
 

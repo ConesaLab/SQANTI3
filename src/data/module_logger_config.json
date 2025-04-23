@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "example/ml_filter_output2//logs/filter_module.log",
+            "filename": "test/logs/test_module.log",
             "delay": "true",
             "mode": "a",
             "formatter": "default_formatter",
@@ -29,7 +29,7 @@
                 "stream_handler",
                 "module_file_handler"
             ],
-            "level": "INFO",
+            "level": "DEBUG",
             "propagate": true
         }
     }
