@@ -16,7 +16,7 @@
         },
         "module_file_handler": {
             "class": "logging.FileHandler",
-            "filename": "example/rules_filter_output//logs/filter_module.log",
+            "filename": "example/ml_filter_output2//logs/filter_module.log",
             "delay": "true",
             "mode": "a",
             "formatter": "default_formatter",
