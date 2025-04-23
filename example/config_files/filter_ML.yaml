@@ -2,7 +2,7 @@ main:
   refGTF: ''
   refFasta: ''
   cpus: 4
-  dir: example/ml_filter_output
+  dir: example/ml_filter_output3
   output: UHR_chr22
   log_level: INFO
 qc:
