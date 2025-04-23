@@ -95,7 +95,8 @@ def set_default_values(config,user_options):
         'rescue': {
             'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_MLFilter_result_classification.txt',
             'rescue_isoforms': '_corrected.fasta',
-            'rescue_gtf': '.filtered.gtf'
+            'rescue_gtf': '.filtered.gtf',
+            'random_forest': 'randomforest.RData'
         }
     }
 

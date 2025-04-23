@@ -477,18 +477,18 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
   
   # check working directory for previously classifier object
   RF_outfiles <- dir(opt$dir)
-  
-  if("randomforest.RData" %in% RF_outfiles) {
+  rf_file <- paste0(opt$dir, "/",opt$output ,"_randomforest.RData")
+  if(rf_file %in% RF_outfiles) {
     
     # if the object exists, it is loaded to save runtime
     
     cat("\nRandom forest classifier already exists in output directory: 
-            loading randomforest.RData object.")
+            loading ", rf_file, " object.")
     cat("\n\t ***Note: this will skip classifier training.")
     cat("\t If you have modified TP and TN sets and wish to train a new model, 
-            delete randomforest.RData or provide a different output directory.")
+            delete ", rf_file, " or provide a different output directory.")
     
-    randomforest <- readRDS(paste0(opt$dir, "/randomforest.RData"))
+    randomforest <- readRDS(rf_file)
     
   } else {
     
@@ -514,10 +514,10 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
                                  metric = "Accuracy",
                                  trControl = ctrl)
     
-    saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData", sep = "/"))
+    saveRDS(randomforest, file = rf_file)
     
     cat("\nRandom forest training finished.")
-    cat("\nSaved generated classifier to randomforest.RData file.")
+    cat("\nSaved generated classifier to ", rf_file, " file.")
   }
   
   
@@ -767,11 +767,11 @@ if(opt$force_multi_exon == TRUE){
 
 # write new classification table
 write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
-                           "_MLresult_classification.txt"),
+                           "_ML_result_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
 
 cat(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
-              "\t", opt$output, "_MLresult_classification.txt file."))
+              "\t", opt$output, "_ML_result_classification.txt file."))
 
 
 
