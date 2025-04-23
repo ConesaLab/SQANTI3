@@ -1,0 +1,427 @@
+---
+title: "BUGSI Benchmarking Report"
+date: "`r paste0('  ','Date', ': ', format(Sys.time(), '%d %B %Y'))`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    css: bugsi_style.css   # Use the BUGSI-specific CSS
+runtime: shiny
+params:
+  metrics: NULL
+  bugsi_gtf_df: NULL
+  transcript_gtf_df: NULL
+  associated_genes_list: NULL
+---
+
+<!-- "How to use the report?" Modal -->
+<body>
+  <a class="show-modal" href="#">
+    <i class="fas fa-question-circle"></i> How to use the report?
+  </a>
+  
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
+</body>
+
+
+```{r, echo=FALSE, warning=FALSE}
+# Load necessary libraries
+suppressPackageStartupMessages({
+  library(tibble)
+  library(dplyr)
+  library(plotly)
+  library(DT)
+  library(Gviz)
+  library(htmltools)
+})
+metrics <- params$metrics
+bugsi_gtf_df <- params$bugsi_gtf_df
+transcript_gtf_df <- params$transcript_gtf_df
+associated_genes_list <- params$associated_genes_list
+transcript_gtf_df$gene_id <- sub("\\.\\d+$", "", transcript_gtf_df$gene_id)
+
+# Ensure that the images are accessible
+plots_dir <- file.path(output_directory, "igv_plots")
+```
+
+## Summary {.tabset .tabset-fade}
+
+### Data Matrix
+
+```{r echo=FALSE}
+data_matrix <- tibble(
+  Category = c("True Positive (TP)", "Partial True Positive (PTP)", "False Negative (FN)", "False Positive (FP)"),
+  Value = c(nrow(TP), nrow(PTP), nrow(FN), nrow(FP)),
+  Description = c(
+    "BUGSI transcripts accurately detected as Reference Matches (RMs), representing perfect identification of known BUGSI genes.",
+    "BUGSI transcripts identified as Full Splice Match (FSM) or Incomplete Splice Match (ISM) for a BUGSI gene but lacking RM qualification due to minor differences in transcript start or end positions. These may reflect RNA degradation during RNA extraction and library preparation.",
+    "BUGSI genes undetected as FSM or ISM, representing missed BUGSI transcripts. This suggests insufficient sequencing depth or limited coverage of specific gene regions.",
+    "BUGSI transcripts classified as Novel In Catalog (NIC), Novel Not in Catalog (NNC), Genic Intron, or fusion transcripts, potentially arising from sequencing artifacts, transcript model reconstruction artifacts, or biological transcript deviations."
+  )
+)
+
+# Display Data Matrix Table with Improved Aesthetic and Left-Aligned Text
+datatable(
+  data = data_matrix,
+  options = list(
+    pageLength = 5,
+    autoWidth = TRUE,
+    dom = 't',
+    columnDefs = list(list(className = 'dt-left', targets = "_all"))  # Left alignment for better readability
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 1: Summary of BUGSI classification metrics used in the evaluation.'
+  )
+) %>%
+  formatStyle(
+    columns = 'Value',
+    fontWeight = 'bold',
+    color = '#000080'
+  )
+```
+
+::: {style="border-left: 3px solid #ccc; padding-left: 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;"}
+
+**Reference Match (RM):** Isoform is FSM and within 50 bp of annotated transcription start and end sites.
+
+**Full Splice Match (FSM):** Isoform with identical exon count and matching internal junctions; start and end may vary.
+
+**Incomplete Splice Match (ISM):** Isoform missing some 5' exons but with matching internal junctions.
+
+**Novel In Catalog (NIC):** Isoform uses known splice sites but lacks FSM or ISM match.
+
+**Novel Not in Catalog (NNC):** Isoform contains unannotated splice sites.
+
+**Genic Intron:** Isoform entirely within an annotated intron.
+
+:::
+
+### Evaluation Metrics
+
+```{r echo=FALSE}
+datatable(
+  metrics,
+  options = list(
+    pageLength = nrow(metrics),
+    autoWidth = TRUE
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center;',
+    htmltools::em('Table 2: Evaluation metrics of BUGSI classification.')
+  )
+)
+```
+
+::: {style="border-left: 3px solid #ccc; padding: 10px 15px; margin-right: 10px; font-size: 14px; font-family: Arial; color: #333; line-height: 1.6;"}
+
+#### 1. Sensitivity (Sn):
+
+\[ \text{Sn} = \frac{\text{Unique (TP)}}{\text{Total BUGSI Genes}} \]
+
+#### 2. Non-redundant Precision (nrPre):
+
+\[ \text{nrPre} = \frac{\text{TP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 3. Precision (Pre):
+
+\[ \text{Pre} = \frac{\text{TP} + \text{PTP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 4. Positive Detection Rate (PDR):
+
+\[ \text{PDR} = \frac{\text{Unique (TP + PTP)}}{\text{Total BUGSI Genes}} \]
+
+#### 5. False Discovery Rate (FDR):
+
+\[ \text{FDR} = \frac{\text{Total BUGSI Match Transcripts} - \text{TP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 6. False Detection Rate:
+
+\[ \text{False Detection Rate} = \frac{\text{FP}}{\text{Total BUGSI Match Transcripts}} \]
+
+#### 7. Redundancy (1/Red):
+
+\[ \text{Redundancy (1/Red)} = \frac{\text{TP + PTP}}{\text{Unique (TP + PTP)}} \]
+
+:::
+
+## Benchmarking Result {.tabset .tabset-fade}
+
+### Radar Plot
+
+```{r echo=FALSE, message=FALSE}
+# Calculate the metrics values
+metrics_values <- c(
+  non_redundant_sensitivity * 100,
+  non_redundant_precision * 100,
+  1 / redundancy * 100,           # Inverse redundancy as in the plot
+  100 - false_discovery_rate * 100,
+  positive_detection_rate * 100,
+  redundant_precision * 100
+)
+
+# Create labels for the metrics
+metrics_labels <- c("Sn", "nrPre", "1/red", "1-FDR", "PDR", "rPre")
+
+# Close the radar plot by appending the first metric and label to the end
+metrics_values <- c(metrics_values, metrics_values[1])
+metrics_labels <- c(metrics_labels, metrics_labels[1])
+
+# Create interactive radar plot using plotly
+interactive_radar_plot <- plot_ly(
+  type = 'scatterpolar',
+  r = metrics_values,
+  theta = metrics_labels,
+  fill = 'toself',
+  mode = 'lines+markers',
+  marker = list(
+    color = '#1f77b4',
+    size = 8,
+    line = list(color = '#1f77b4', width = 2)
+  ),
+  fillcolor = 'rgba(31, 119, 180, 0.3)',  # Soft, semi-transparent blue fill
+  line = list(width = 3, color = '#1f77b4')  # Explicitly set the line color to blue
+) %>%
+  layout(
+    polar = list(
+      radialaxis = list(
+        visible = TRUE,
+        range = c(0, 100),
+        tickvals = seq(0, 100, 25),
+        tickfont = list(size = 14),  # Larger tick font for readability
+        gridcolor = 'rgba(0, 0, 0, 0.1)',  # Subtle grid lines
+        linecolor = 'rgba(0, 0, 0, 0.2)'    # Light axis line color
+      ),
+      angularaxis = list(
+        tickfont = list(size = 14),  # Larger font for metric labels
+        linewidth = 2,
+        color = '#333333'            # Darker label color for contrast
+      )
+    ),
+    margin = list(l = 20, r = 20, b = 80, t = 20),  # Increased bottom margin if needed
+    paper_bgcolor = 'rgba(255, 255, 255, 0)',       # Transparent background
+    plot_bgcolor = 'rgba(255, 255, 255, 0)',
+    showlegend = FALSE,
+    title = list(
+      font = list(size = 18, color = '#333333'),
+      x = 0.5
+    ),
+    annotations = list(
+      list(
+        x = 0.5,
+        y = -0.1,  # Adjusted position within visible range
+        text = "<span style='font-style:italic; color:grey;'> Figure 1: Radar plot illustrating the evaluation metrics of the BUGSI benchmarking result. </span>",
+        showarrow = FALSE,
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "top",
+        arrowhead = 2,
+        arrowsize = 1,
+        font = list(color = "grey", size = 12)
+      )
+    )
+  ) %>%
+  # Add hover tooltips for precise metric values
+  add_trace(
+    hoverinfo = 'text',
+    text = paste(metrics_labels, ':', round(metrics_values, 2), '%')
+  )
+
+# Display the plot
+interactive_radar_plot
+```
+
+### Structural Category
+
+```{r echo=FALSE, message=FALSE}
+# Convert ggplot to ggplotly
+p_plotly <- ggplotly(p_bugsi_complex) %>%
+  layout(
+    margin = list(
+      l = 50,  # Left margin
+      r = 50,  # Right margin
+      t = 50,  # Top margin
+      b = 160  # Increased bottom margin to fully accommodate annotation and rotated labels
+    ),
+    annotations = list(
+      list(
+        x = 0.5,  # Center of the plot horizontally
+        y = -0.5,  # Move annotation well below the plot area
+        text = "<span style='font-style:italic; color:grey;'> Figure 2: BUGSI transcripts distribution in SQANTI3 Structural Categories. </span>",
+        showarrow = FALSE,
+        xref = "paper",
+        yref = "paper",
+        xanchor = "center",
+        yanchor = "top",
+        font = list(color = "grey", size = 12)
+      )
+    )
+  )
+
+# Display the final plot
+p_plotly
+```
+
+## Decision Matrix {.tabset .tabset-fade}
+
+### TP
+
+```{r echo=FALSE, eval=(nrow(TP) > 0)}
+# Add a column with the modal HTML code
+TP <- TP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+# Display the table with the Plot column
+datatable(
+  data = TP,
+  extensions = 'Buttons',
+  escape = FALSE,  # Allow HTML rendering in the table
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'),
+    autoWidth = TRUE,
+    scrollX = TRUE,
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 3: Classification metrics used in the evaluation of TP.'
+  )
+)
+
+```
+
+### PTP
+
+```{r echo=FALSE, eval=(nrow(PTP) > 0)}
+# Add a column with the modal HTML code
+PTP <- PTP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+
+# Display the table with the Plot column
+datatable(
+  data = PTP,
+  extensions = 'Buttons',
+  escape = FALSE,
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'),
+    autoWidth = TRUE,
+    scrollX = TRUE,
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 4: Classification metrics used in the evaluation of PTP.'
+  )
+)
+```
+
+### FN
+
+```{r echo=FALSE, eval=(nrow(FN) > 0)}
+# Display the table with the Plot column
+datatable(
+  data = FN,
+  extensions = 'Buttons',
+  escape = FALSE,
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'),
+    autoWidth = TRUE,
+    scrollX = TRUE,
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 5: List of false negative BUGSI genes.'
+  )
+)
+```
+
+### FP
+
+```{r echo=FALSE, eval = (nrow(FP) > 0)}
+# Add a column with the modal HTML code
+FP <- FP %>%
+  mutate(
+    Plot = ifelse(
+      file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
+      paste0(
+        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
+        <div id="modal_', associated_gene, '" class="modal plot-modal">
+          <div class="modal-content">
+            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
+            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+          </div>
+        </div>'
+      ),
+      'No Plot Available'
+    )
+  )
+
+# Display the table with the Plot column
+datatable(
+  data = FP,
+  extensions = 'Buttons',
+  escape = FALSE,
+  options = list(
+    dom = 'Bfrtip',
+    buttons = c('copy', 'csv', 'excel'),
+    autoWidth = TRUE,
+    scrollX = TRUE,
+    columnDefs = list(
+      list(className = 'dt-left', targets = "_all"),
+      list(whiteSpace = 'normal', targets = "_all")
+    )
+  ),
+  caption = htmltools::tags$caption(
+    style = 'caption-side: bottom; text-align: center; font-style: italic;',
+    'Table 6: Classification metrics used in the evaluation of FP.'
+  )
+)
+```
+
+<script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
+<script src="bugsi_script.js"></script>
+<script src="script.js"></script>

@@ -22,16 +22,19 @@ GFFREAD_PROG = "gffread"
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
+RSCRIPT_BUGSI_REPORT = os.path.join(utilitiesPath,"report_qc","BUGSI_report.R")
 
 # Rscript filter
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")
 RSCRIPT_ML = os.path.join(utilitiesPath,"filter","SQANTI3_MLfilter.R")
+
 
 #Rscript rescue
 RESCUE_AUTO_PATH = os.path.join(utilitiesPath,"rescue","automatic_rescue.R")
 RSCRIPT_RESCUE_RULES = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_rules.R")
 RSCRIPT_RESCUE_ML = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_ML.R")
 RESCUE_RANDOM_FOREST = os.path.join(utilitiesPath, "rescue","run_randomforest_on_reference.R")
+
 
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 

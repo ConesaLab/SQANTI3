@@ -64,6 +64,7 @@ def qc_argparse():
     apm.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
     apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
     apm.add_argument('--gff3' , help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')
+    apm.add_argument('--bugsi', choices=['human','mouse'], help='Generate a BUGSI benchmarking report for the given species (human or mouse)', required=False)
 
     return ap
 

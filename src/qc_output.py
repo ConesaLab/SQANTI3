@@ -2,9 +2,9 @@ from csv import DictReader, DictWriter
 import os
 import pickle
 
-
 from src.commands import (
-    RSCRIPTPATH, RSCRIPT_QC_REPORT, run_command
+    RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
+
 )
 from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
@@ -64,6 +64,18 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
+
+def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
+    """
+    Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
+    """
+    qc_logger.info("Generating BUGSI report....", file=sys.stderr)
+    bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
+    cmd = (
+        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
+        f"{outputClassPath} {bugsi_gtf} {transcript_gtf_file} {utilitiesPath}"
+    )
+    run_command(cmd, "BUGSI report")
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
