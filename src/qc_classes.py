@@ -16,7 +16,7 @@ class genePredReader(object):
     --------
     __iter__():
         Returns the iterator object itself.
-    
+
     __next__():
         Reads the next line from the file, converts it to a genePredRecord object, and returns it.
         Raises StopIteration when the end of the file is reached.
@@ -34,7 +34,7 @@ class genePredReader(object):
         return genePredRecord.from_line(line)
 
 class genePredRecord(object):
-    """    
+    """
     A class to represent a gene prediction record.
 
     Attributes:
@@ -72,10 +72,10 @@ class genePredRecord(object):
     --------
     segments:
         Returns the list of exon intervals.
-    
+
     from_line(cls, line):
         Creates an instance of genePredRecord from a tab-separated line.
-    
+
     get_splice_site(genome_dict, i):
         Returns the donor-acceptor splice site pattern for the i-th junction.
         """
@@ -83,7 +83,7 @@ class genePredRecord(object):
         # Validate inputs
         self._validate_inputs(txStart, txEnd, cdsStart, cdsEnd, strand, exonCount, exonStarts, exonEnds)
 
-        
+
         self.id = id
         self.chrom = chrom
         self.strand = strand
@@ -107,7 +107,7 @@ class genePredRecord(object):
         self.junctions = [(self.exonEnds[i],self.exonStarts[i+1]) for i in range(self.exonCount-1)]
 
     def _validate_inputs(self, txStart, txEnd, cdsStart, cdsEnd,strand, exonCount, exonStarts, exonEnds):
-        
+
         if txStart < 0 or txEnd < 0 or cdsStart < 0 or cdsEnd < 0:
             raise ValueError("Transcription and coding start/end positions must be non-negative.")
 
@@ -254,13 +254,13 @@ class myQueryTranscripts:
             raise ValueError("ID must be a non-empty string.")
         if (strand == "+" and CDS_start > CDS_end ) or (strand == "-" and CDS_start < CDS_end):
             raise ValueError("CDS start must be less than CDS end in the + strand, and greater in the - strand.")
-        
+
 
     def get_total_diff(self):
         return abs(self.tss_diff)+abs(self.tts_diff)
     def add_gene(self, gene):
         self.genes.append(gene)
-        
+
     def modify(self, ref_transcript, ref_gene, tss_diff, tts_diff, refLen, refExons):
         self.transcripts = [ref_transcript]
         self.genes = [ref_gene]
@@ -287,28 +287,22 @@ class myQueryTranscripts:
             return("NA")
 
     def __str__(self):
-        return "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (self.chrom, self.strand,
-                                                                                                                                                           str(self.length), str(self.num_exons),
-                                                                                                                                                           str(self.str_class), "_".join(set(self.genes)),
-                                                                                                                                                           self.id, str(self.refLen), str(self.refExons),
-                                                                                                                                                           str(self.tss_diff), str(self.tts_diff),
-                                                                                                                                                           self.subtype, self.RT_switching,
-                                                                                                                                                           self.canonical, str(self.min_samp_cov),
-                                                                                                                                                           str(self.min_cov), str(self.min_cov_pos),
-                                                                                                                                                           str(self.sd), str(self.FL), str(self.nIndels),
-                                                                                                                                                           str(self.nIndelsJunc), self.bite, str(self.isoExp),
-                                                                                                                                                           str(self.geneExp), str(self.ratioExp()),
-                                                                                                                                                           self.FSM_class, self.coding, str(self.ORFlen),
-                                                                                                                                                           str(self.CDSlen()), str(self.CDS_start), str(self.CDS_end),
-                                                                                                                                                           str(self.CDS_genomic_start), str(self.CDS_genomic_end), str(self.is_NMD),
-                                                                                                                                                           str(self.percAdownTTS),
-                                                                                                                                                           str(self.seqAdownTTS),
-                                                                                                                                                           str(self.dist_CAGE),
-                                                                                                                                                           str(self.within_CAGE),
-                                                                                                                                                           str(self.dist_polyA_site),
-                                                                                                                                                           str(self.within_polyA_site),
-                                                                                                                                                           str(self.polyA_motif),
-                                                                                                                                                           str(self.polyA_dist),str(self.polyA_motif_found), str(self.ratio_TSS))
+        return '\t'.join([str(v) for v in (
+            self.chrom, self.strand,
+            self.length, self.num_exons, self.str_class,
+            "_".join(set(self.genes)), self.id, self.refLen,
+            self.refExons, self.tss_diff, self.tts_diff,
+            self.subtype, self.RT_switching, self.canonical,
+            self.min_samp_cov, self.min_cov, self.min_cov_pos,
+            self.sd, self.FL, self.nIndels, self.nIndelsJunc,
+            self.bite, self.isoExp, self.geneExp, self.ratioExp(),
+            self.FSM_class, self.coding, self.ORFlen, self.CDSlen(),
+            self.CDS_start, self.CDS_end, self.CDS_genomic_start,
+            self.CDS_genomic_end, self.is_NMD, self.percAdownTTS,
+            self.seqAdownTTS, self.dist_CAGE, self.within_CAGE,
+            self.dist_polyA_site, self.within_polyA_site,
+            self.polyA_motif, self.polyA_dist,
+            self.polyA_motif_found, self.ratio_TSS)])
 
 
     def as_dict(self):
@@ -369,7 +363,7 @@ class myQueryProteins:
 
     def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
         self._validate_input(cds_start, cds_end, orf_length)
-        
+
         self.orf_length  = orf_length
         self.cds_start   = cds_start       # 1-based start on transcript
         self.cds_end     = cds_end         # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
@@ -407,7 +401,7 @@ class CAGEPeak:
         Reads the BED file and populates the cage_peaks attribute with intervals of peaks.
     find(chrom, strand, query, search_window=10000):
         Queries the CAGE peaks to determine if a given position falls within a peak and calculates the distance to the nearest TSS.
-    """    
+    """
     def __init__(self, cage_bed_filename):
         self._validate_input(cage_bed_filename)
         self.cage_bed_filename = cage_bed_filename
@@ -420,7 +414,7 @@ class CAGEPeak:
             raise ValueError("CAGE peak file must be in BED format.")
         if not os.path.exists(cage_bed_filename):
             raise FileNotFoundError("CAGE peak file does not exist.")
-        
+
     def read_bed(self):
         for line in open(self.cage_bed_filename):
             raw = line.strip().split('\t')
@@ -453,16 +447,16 @@ class CAGEPeak:
             within_out = start0 <= query < end1 if strand == '+' else start0 < query <= end1
             d = (tss0 - query) * (-1 if strand == '-' else 1)
             w = 'TRUE' if within_out else 'FALSE'
-            
+
             if not within_peak=='TRUE':
                 within_peak, d = w, (tss0 - query) * (-1 if strand=='-' else +1)
                 if within_peak == 'TRUE' or abs(d) < abs(dist_peak):
                     dist_peak = d
-                
+
             else:
                 d = (tss0 - query) * (-1 if strand=='-' else +1)
                 if abs(d) < abs(dist_peak) and not(w == 'FALSE' and within_peak == 'TRUE'):
-                    within_peak, dist_peak = w, d 
+                    within_peak, dist_peak = w, d
         if dist_peak == float('inf'):
             dist_peak = 'NA'
         return within_peak, dist_peak
