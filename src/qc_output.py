@@ -75,6 +75,7 @@ def cleanup(outputClassPath, outputJuncPath):
         os.remove(outputJuncPath+"_tmp")
     except FileNotFoundError:
         pass
+
     
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
     qc_logger.info("Saving isoforms_info object to file.")

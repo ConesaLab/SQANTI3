@@ -8,6 +8,6 @@
 	"p_unique": 6.8,
 	"kallisto_version": "0.48.0",
 	"index_version": 10,
-	"start_time": "Wed Jan 29 15:09:15 2025",
+	"start_time": "Tue Apr 22 17:27:26 2025",
 	"call": "kallisto quant -i example/SQANTI3_QC_output/kallisto_output/kallisto_corrected_fasta.idx -o example/SQANTI3_QC_output/kallisto_output/UHR_Rep1_chr22 -b 100 -t 4 example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz"
 }

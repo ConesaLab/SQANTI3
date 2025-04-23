@@ -147,3 +147,4 @@ sqanti_qc.out
 src/data/module_logger_config.json
 # BugFixes
 /bugfix
+example/ogs

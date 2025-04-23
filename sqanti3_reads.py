@@ -75,7 +75,7 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)

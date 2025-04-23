@@ -21,6 +21,7 @@ Regardless of the strategy chosen, sqanti_filter.py can return a filtered FASTA,
 bad quality transcripts.
 
 """
+import os
 
 from src.filter_argparse import filter_argparse
 from src.module_logging import filter_logger
@@ -31,8 +32,11 @@ from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
 
 def main():
+    # Create the log directory if it does not exist
     art_logger.info(filter_art())
     args = filter_argparse().parse_args()
+    # Create the log directory if it does not exist
+    os.makedirs(f"{args.dir}/logs", exist_ok=True)
     filter_args_validation(args)
     if args.output is None:
         args.output = args.sqanti_class[args.sqanti_class.rfind("/")+1:args.sqanti_class.rfind("_classification.txt")]

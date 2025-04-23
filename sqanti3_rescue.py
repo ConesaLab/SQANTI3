@@ -27,6 +27,8 @@ from src.rescue_steps import (
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
+  # Check if the logs directory exists, if not create it
+  os.makedirs(f"{args.dir}/logs", exist_ok=True)
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 

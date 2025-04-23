@@ -1,7 +1,7 @@
 STAR version=2.7.11b
 STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
 ##### Command Line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir example/SQANTI3_QC_output/STAR_index/ --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --readFilesCommand zcat --twopassMode Basic
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --genomeDir example/SQANTI3_QC_output/STAR_index/ --readFilesIn example/UHR_Rep1_chr22.R1.fastq.gz example/UHR_Rep1_chr22.R2.fastq.gz --outFileNamePrefix example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterType BySJout --outSAMunmapped Within --outFilterMultimapNmax 20 --outFilterMismatchNoverLmax 0.04 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --sjdbScore 1 --genomeLoad NoSharedMemory --outSAMtype BAM SortedByCoordinate --twopassMode Basic --readFilesCommand zcat
 ##### Initial USER parameters from Command Line:
 outFileNamePrefix                 example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22
 ###### All USER parameters from Command Line:
@@ -22,8 +22,8 @@ alignMatesGapMax              1000000     ~RE-DEFINED
 sjdbScore                     1     ~RE-DEFINED
 genomeLoad                    NoSharedMemory     ~RE-DEFINED
 outSAMtype                    BAM   SortedByCoordinate        ~RE-DEFINED
-readFilesCommand              zcat        ~RE-DEFINED
 twopassMode                   Basic     ~RE-DEFINED
+readFilesCommand              zcat        ~RE-DEFINED
 ##### Finished reading parameters from all sources
 
 ##### Final user re-defined parameters-----------------:
@@ -55,7 +55,7 @@ twopassMode                       Basic
 Number of fastq files for each mate = 1
 
    Input read files for mate 1 :
--rwxrwxr-x 1 pabloati pabloati 13464036 ene 29 13:07 example/UHR_Rep1_chr22.R1.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 13750037 abr 17 14:33 example/UHR_Rep1_chr22.R1.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read1"
@@ -64,7 +64,7 @@ zcat      "example/UHR_Rep1_chr22.R1.fastq.gz"
 
 
    Input read files for mate 2 :
--rwxrwxr-x 1 pabloati pabloati 14475272 ene 29 13:07 example/UHR_Rep1_chr22.R2.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 14774508 abr 17 14:33 example/UHR_Rep1_chr22.R2.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
@@ -97,7 +97,7 @@ genomeFileSizes               50855936   323068164        ~RE-DEFINED
 Genome version is compatible with current STAR
 Number of real (reference) chromosomes= 1
 1	chr22	50818468	0
-Started loading the genome: Wed Jan 29 15:07:49 2025
+Started loading the genome: Tue Apr 22 17:24:25 2025
 
 Genome: size given as a parameter = 50855936
 SA: size given as a parameter = 323068164
@@ -111,7 +111,7 @@ Loading Genome ... done! state: good=1 eof=0 fail=0 bad=0; loaded 50855936 bytes
 SA file size: 323068164 bytes; state: good=1 eof=0 fail=0 bad=0
 Loading SA ... done! state: good=1 eof=0 fail=0 bad=0; loaded 323068164 bytes
 Loading SAindex ... done: 1565873619 bytes
-Finished loading the genome: Wed Jan 29 15:07:50 2025
+Finished loading the genome: Tue Apr 22 17:24:26 2025
 
 To accommodate alignIntronMax=1000000 redefined winBinNbits=18
 To accommodate alignIntronMax=1000000 and alignMatesGapMax=1000000, redefined winFlankNbins=4 and winAnchorDistNbins=8
@@ -124,24 +124,33 @@ Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate1.thread3 ... ok
 Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp//FilterBySJoutFiles.mate2.thread3 ... ok
 Created thread # 1
-Thread #1 end of input stream, nextChar=-1
-Thread #1 end of input stream, nextChar=-1
 Created thread # 2
-Completed: thread #2
-Completed: thread #1
+Starting to map file # 0
+mate 1:   example/UHR_Rep1_chr22.R1.fastq.gz
+mate 2:   example/UHR_Rep1_chr22.R2.fastq.gz
 Created thread # 3
+Thread #0 end of input stream, nextChar=-1
+Completed: thread #1
+Completed: thread #2
 Completed: thread #0
 Joined thread # 1
 Joined thread # 2
 Completed: thread #3
 Joined thread # 3
-Jan 29 15:07:51   Loaded database junctions from the 1st pass file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARpass1//SJ.out.tab: 0 total junctions
+Apr 22 17:25:03   Loaded database junctions from the 1st pass file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARpass1//SJ.out.tab: 3579 total junctions
 
-Jan 29 15:07:51   Finished preparing junctions
-Jan 29 15:07:51 ..... finished inserting junctions into genome
+Apr 22 17:25:03   Finished preparing junctions
+Apr 22 17:25:03 ..... inserting junctions into the genome indices
+Apr 22 17:25:08   Finished SA search: number of new junctions=3579, old junctions=0
+Apr 22 17:25:09   Finished sorting SA indicesL nInd=1431600
+Genome size with junctions=51575315  50855936   719379
+GstrandBit1=32   GstrandBit=32
+Apr 22 17:25:10   Finished inserting junction indices
+Apr 22 17:25:16   Finished SAi
+Apr 22 17:25:16 ..... finished inserting junctions into genome
 
    Input read files for mate 1 :
--rwxrwxr-x 1 pabloati pabloati 13464036 ene 29 13:07 example/UHR_Rep1_chr22.R1.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 13750037 abr 17 14:33 example/UHR_Rep1_chr22.R1.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read1"
@@ -150,7 +159,7 @@ zcat      "example/UHR_Rep1_chr22.R1.fastq.gz"
 
 
    Input read files for mate 2 :
--rwxrwxr-x 1 pabloati pabloati 14475272 ene 29 13:07 example/UHR_Rep1_chr22.R2.fastq.gz
+-rwxrwxr-x 1 pabloati pabloati 14774508 abr 17 14:33 example/UHR_Rep1_chr22.R2.fastq.gz
 
    readsCommandsFile:
 exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
@@ -168,10 +177,84 @@ Opening the file: example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/
 Created thread # 1
 Created thread # 2
 Created thread # 3
-
-ReadAlignChunk_processChunks.cpp:204:processChunks EXITING because of FATAL ERROR in input reads: wrong read ID line format: the read ID lines should start with @ or > 
-Offending line for read # 1
-JGHIIHDGGAHIJE8@GGIHIIIHHHHEFBDEEDEED9;=?BBDDCDCCCD4AC 
-SOLUTION: verify and correct the input read files
-
-Jan 29 15:07:51 ...... FATAL ERROR, exiting
+Starting to map file # 0
+mate 1:   example/UHR_Rep1_chr22.R1.fastq.gz
+mate 2:   example/UHR_Rep1_chr22.R2.fastq.gz
+Thread #3 end of input stream, nextChar=-1
+Completed: thread #1
+Completed: thread #0
+Joined thread # 1
+Completed: thread #3
+Completed: thread #2
+Joined thread # 2
+Joined thread # 3
+Completed stage 1 mapping of outFilterBySJout mapping
+Detected 10 novel junctions that passed filtering, will proceed to filter reads that contained unannotated junctions
+Created thread # 1
+Created thread # 2
+Created thread # 3
+BAM sorting: 0 mapped reads
+BAM sorting bins genomic start loci:
+1	7	1066729472
+2	7	1066729472
+3	7	1066729472
+4	7	1066729472
+5	7	1066729472
+6	7	1066729472
+7	7	1066729472
+8	7	1066729472
+9	7	1066729472
+10	7	1066729472
+11	7	1066729472
+12	7	1066729472
+13	7	1066729472
+14	7	1066729472
+15	7	1066729472
+16	7	1066729472
+17	7	1066729472
+18	7	1066729472
+19	7	1066729472
+20	7	1066729472
+21	7	1066729472
+22	7	1066729472
+23	7	1066729472
+24	7	1066729472
+25	7	1066729472
+26	7	1066729472
+27	7	1066729472
+28	7	1066729472
+29	7	1066729472
+30	7	1066729472
+31	7	1066729472
+32	7	1066729472
+33	7	1066729472
+34	7	1066729472
+35	7	1066729472
+36	7	1066729472
+37	7	1066729472
+38	7	1066729472
+39	7	1066729472
+40	7	1066729472
+41	7	1066729472
+42	7	1066729472
+43	7	1066729472
+44	7	1066729472
+45	7	1066729472
+46	7	1066729472
+47	7	1066729472
+48	7	1066729472
+Completed: thread #2
+Completed: thread #3
+Completed: thread #0
+Completed: thread #1
+Joined thread # 1
+Joined thread # 2
+Joined thread # 3
+Apr 22 17:25:54 ..... finished mapping
+RAM after mapping:
+VmPeak:	 5157072 kB; VmSize:	 5061368 kB; VmHWM:	 3246432 kB; VmRSS:	 3193872 kB; 
+RAM after freeing genome index memory:
+VmPeak:	 5157072 kB; VmSize:	 1351352 kB; VmHWM:	 3246432 kB; VmRSS:	  977564 kB; 
+Apr 22 17:25:55 ..... started sorting BAM
+Max memory needed for sorting = 67039860
+ALL DONE!

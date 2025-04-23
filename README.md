@@ -15,10 +15,10 @@ SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https:/
 ## Installation
 The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.4) (23/01/2025) is **version 5.4**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
-
 For informacion about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
-**WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will herefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
+**⚠️WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will therefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
+**⚠️WARNING:** SQANTI3 v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue] (https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
 ## Documentation
 

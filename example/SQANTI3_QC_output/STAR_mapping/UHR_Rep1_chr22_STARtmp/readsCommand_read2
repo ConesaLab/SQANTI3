@@ -1,3 +1,0 @@
-exec > "example/SQANTI3_QC_output/STAR_mapping/UHR_Rep1_chr22_STARtmp/tmp.fifo.read2"
-echo FILE 0
-zcat      "example/UHR_Rep1_chr22.R2.fastq.gz"
