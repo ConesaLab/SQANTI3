@@ -23,6 +23,8 @@ from src.rescue_steps import (
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
+from src.utilities.rescue import sq_requant
+
 
 def main():
   art_logger.info(rescue_art())
@@ -113,7 +115,6 @@ def main():
   # filter reference GTF to create tmp_gtf
   gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
 
-<
   run_command(gtf_cmd,rescue_logger,"log/rescue/gtf.log",description="Filter reference GTF to create tmp GTF")
   # concatenate with filtered GTF
   cat_cmd = f"cat {args.rescue_gtf} {tmp_gtf} > {output_gtf}"
@@ -129,15 +130,14 @@ def main():
   message("Rescue finished successfully!",rescue_logger)
 
   if args.requant:
-    if args.requant and not args.counts:
-      parser.error("Counts file is required for the requantification module.")
-    print("\nRunning requantification.\n")
-    from src.utilities.rescue import sq_requant
+    if not args.counts:
+      rescue_logger.error("Counts file is required for the requantification module.")
+    rescue_logger.error("\nRunning requantification.\n")
 
     rescue_gtf, inclusion_list, counts, rescued = sq_requant.parse_files(args)
     sq_requant.run_requant(rescue_gtf, inclusion_list, counts, rescued, args.dir, args.output)
     sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
-    print("\nRequantification finished!\n")
+    rescue_logger.info("\nRequantification finished!\n")
 
 ## Run main()
 if __name__ == "__main__":
