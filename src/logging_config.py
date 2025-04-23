@@ -106,6 +106,7 @@ def save_module_logger_info(logpath, module, level, json_file):
     try:
         os.remove(f"{logpath}/{module}_module.log")
     except FileNotFoundError:
+        os.makedirs(logpath, exist_ok=True)
         pass
     config['handlers']['module_file_handler']['filename'] = f"{logpath}/{module}_module.log"
     config['loggers']['module_logger']['level'] = level
