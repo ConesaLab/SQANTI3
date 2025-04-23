@@ -1,14 +1,14 @@
 STAR version=2.7.11b
 STAR compilation time,server,dir=2024-11-25T09:14:51+0000 :/opt/conda/conda-bld/star_1732525954305/work/source
 ##### Command Line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir example/SQANTI3_QC_output/STAR_index/ --genomeFastaFiles example/GRCh38.p13_chr22.fasta --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2 --runThreadN 4 --runMode genomeGenerate --genomeDir example/SQANTI3_QC_output/STAR_index/ --genomeFastaFiles data/reference/GRCh38.p13_chr22.fasta --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ##### Initial USER parameters from Command Line:
 outTmpDir                         example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ###### All USER parameters from Command Line:
 runThreadN                    4     ~RE-DEFINED
 runMode                       genomeGenerate        ~RE-DEFINED
 genomeDir                     example/SQANTI3_QC_output/STAR_index/     ~RE-DEFINED
-genomeFastaFiles              example/GRCh38.p13_chr22.fasta        ~RE-DEFINED
+genomeFastaFiles              data/reference/GRCh38.p13_chr22.fasta        ~RE-DEFINED
 outTmpDir                     example/SQANTI3_QC_output/STAR_index//_STARtmp/     ~RE-DEFINED
 ##### Finished reading parameters from all sources
 
@@ -16,20 +16,20 @@ outTmpDir                     example/SQANTI3_QC_output/STAR_index//_STARtmp/   
 runMode                           genomeGenerate   
 runThreadN                        4
 genomeDir                         example/SQANTI3_QC_output/STAR_index/
-genomeFastaFiles                  example/GRCh38.p13_chr22.fasta   
+genomeFastaFiles                  data/reference/GRCh38.p13_chr22.fasta   
 outTmpDir                         example/SQANTI3_QC_output/STAR_index//_STARtmp/
 
 -------------------------------
 ##### Final effective command line:
-/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles example/GRCh38.p13_chr22.fasta      --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
+/home/pabloati/miniforge3/envs/sqanti3/bin/STAR-avx2   --runMode genomeGenerate      --runThreadN 4   --genomeDir example/SQANTI3_QC_output/STAR_index/   --genomeFastaFiles data/reference/GRCh38.p13_chr22.fasta      --outTmpDir example/SQANTI3_QC_output/STAR_index//_STARtmp/
 ----------------------------------------
 
 Number of fastq files for each mate = 1
 ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
 Finished loading and checking parameters
 --genomeDir directory exists and will be overwritten: example/SQANTI3_QC_output/STAR_index/
-Apr 22 17:23:32 ... starting to generate Genome files
-example/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
+Apr 23 11:54:25 ... starting to generate Genome files
+data/reference/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
 Chromosome sequence lengths: 
 chr22	50818468
 Genome sequence total length = 50818468
@@ -38,25 +38,25 @@ Genome size with padding = 50855936
 Estimated genome size with padding and SJs: total=genome+SJ=251855936 = 50855936 + 201000000
 GstrandBit=32
 Number of SA indices: 78319554
-Apr 22 17:23:33 ... starting to sort Suffix Array. This may take a long time...
+Apr 23 11:54:26 ... starting to sort Suffix Array. This may take a long time...
 Number of chunks: 4;   chunks size limit: 208852144 bytes
-Apr 22 17:23:33 ... sorting Suffix Array chunks and saving them to disk...
-Writing 208178008 bytes into example/SQANTI3_QC_output/STAR_index//SA_0 ; empty space on disk = 4352282624 bytes ... done
-Writing 206604960 bytes into example/SQANTI3_QC_output/STAR_index//SA_1 ; empty space on disk = 4144074752 bytes ... done
-Writing 203895040 bytes into example/SQANTI3_QC_output/STAR_index//SA_2 ; empty space on disk = 3972571136 bytes ... done
-Writing 7878424 bytes into example/SQANTI3_QC_output/STAR_index//SA_3 ; empty space on disk = 3768672256 bytes ... done
-Apr 22 17:24:08 ... loading chunks from disk, packing SA...
-Apr 22 17:24:09 ... finished generating suffix array
-Apr 22 17:24:09 ... generating Suffix Array index
-Apr 22 17:24:24 ... completed Suffix Array index
-Apr 22 17:24:24 ... writing Genome to disk ...
-Writing 50855936 bytes into example/SQANTI3_QC_output/STAR_index//Genome ; empty space on disk = 4387328000 bytes ... done
+Apr 23 11:54:26 ... sorting Suffix Array chunks and saving them to disk...
+Writing 208178008 bytes into example/SQANTI3_QC_output/STAR_index//SA_0 ; empty space on disk = 5360996352 bytes ... done
+Writing 206604960 bytes into example/SQANTI3_QC_output/STAR_index//SA_1 ; empty space on disk = 5152739328 bytes ... done
+Writing 203895040 bytes into example/SQANTI3_QC_output/STAR_index//SA_2 ; empty space on disk = 4945555456 bytes ... done
+Writing 7878424 bytes into example/SQANTI3_QC_output/STAR_index//SA_3 ; empty space on disk = 4741652480 bytes ... done
+Apr 23 11:55:07 ... loading chunks from disk, packing SA...
+Apr 23 11:55:08 ... finished generating suffix array
+Apr 23 11:55:08 ... generating Suffix Array index
+Apr 23 11:55:25 ... completed Suffix Array index
+Apr 23 11:55:25 ... writing Genome to disk ...
+Writing 50855936 bytes into example/SQANTI3_QC_output/STAR_index//Genome ; empty space on disk = 5359656960 bytes ... done
 SA size in bytes: 323068164
-Apr 22 17:24:24 ... writing Suffix Array to disk ...
-Writing 323068164 bytes into example/SQANTI3_QC_output/STAR_index//SA ; empty space on disk = 4336472064 bytes ... done
-Apr 22 17:24:24 ... writing SAindex to disk
-Writing 8 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4013400064 bytes ... done
-Writing 120 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4013400064 bytes ... done
-Writing 1565873491 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4013395968 bytes ... done
-Apr 22 17:24:25 ..... finished successfully
+Apr 23 11:55:25 ... writing Suffix Array to disk ...
+Writing 323068164 bytes into example/SQANTI3_QC_output/STAR_index//SA ; empty space on disk = 5308792832 bytes ... done
+Apr 23 11:55:25 ... writing SAindex to disk
+Writing 8 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985651200 bytes ... done
+Writing 120 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985651200 bytes ... done
+Writing 1565873491 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985647104 bytes ... done
+Apr 23 11:55:26 ..... finished successfully
 DONE: Genome generation, EXITING

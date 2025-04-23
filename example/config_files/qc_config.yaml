@@ -1,6 +1,6 @@
 main:
-  refGTF: 'example/gencode.v38.basic_chr22.gtf'
-  refFasta: 'example/GRCh38.p13_chr22.fasta'
+  refGTF: 'data/reference/gencode.v38.basic_chr22.gtf'
+  refFasta: 'data/reference/GRCh38.p13_chr22.fasta'
   cpus: 4
   dir: example/SQANTI3_QC_output
   output: UHR_chr22
@@ -8,12 +8,12 @@ main:
 qc:
   enabled: true
   options:
-    isoforms: 'example/UHR_chr22.gtf'
+    isoforms: 'data/UHR_chr22.gtf'
     min_ref_len: 0
     force_id_ignore: false
     fasta: false
     genename: false
-    short_reads: 'example/UHR_chr22_short_reads.fofn '
+    short_reads: 'data/UHR_chr22_short_reads.fofn'
     SR_bam: ''
     novel_gene_prefix: ''
     aligner_choice: minimap2
@@ -34,7 +34,7 @@ qc:
     expression: ''
     coverage: ''
     window: 20
-    fl_count: 'example/UHR_abundance.tsv'
+    fl_count: 'data/UHR_abundance.tsv'
     isoAnnotLite: false
     gff3: ''
 filter:

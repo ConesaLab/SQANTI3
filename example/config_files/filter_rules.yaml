@@ -1,6 +1,6 @@
 main:
-  refGTF: ''
-  refFasta: ''
+  refGTF: 'data/reference/gencode.v38.basic_chr22.gtf'
+  refFasta: 'data/reference/GRCh38.p13_chr22.fasta'
   cpus: 4
   dir: example/rules_filter_output/
   output: UHR_chr22

@@ -268,6 +268,7 @@ if(length(Positive_set) != length(Negative_set)){
   cat(paste0("\n\tSampled ", sub_size, " transcripts to define final TP and TN sets."))
   
   # sample sub_size number of isoforms as TP and TN
+  set.seed(123)
   Positive_set <- sample(Positive_set, sub_size)
   Negative_set <- sample(Negative_set, sub_size)
 }
@@ -612,16 +613,18 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
   nbneg = length(alltestneg)
   
   if(nbpos < nbneg){
+    set.seed(123)
     sampleneg <- sample(alltestpos, nbpos, replace = FALSE)
     newtest <- testing[c(sampleneg, alltestpos),]
     Classnewtest <- factor(c(rep('NEG',nbpos),rep('POS',nbpos)))
   } else {
+    set.seed(123)
     samplepos <- sample(alltestpos,nbneg,replace=FALSE)
     newtest <- testing[c(samplepos,alltestneg),]
     Classnewtest <- factor(c(rep('POS',nbneg),rep('NEG',nbneg)))
   }
   
-  set.seed(1)
+  set.seed(123)
   test_pred_prob2 = predict(randomforest, newtest, type = 'prob')
   
   r = pROC::roc(as.numeric(Classnewtest),test_pred_prob2$POS,percent = TRUE)
