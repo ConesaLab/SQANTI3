@@ -51,6 +51,10 @@ def get_method_runSQANTI3(args, df):
 
         # Check for directory containing classification and junction file
         directory_path = os.path.join(args.dir, file_acc)
+<<<<<<< HEAD
+=======
+        print(directory_path)
+>>>>>>> master
         if os.path.isdir(directory_path):
             classification_file_path = os.path.join(classification_file)
             junction_file_path = os.path.join(junction_file)
@@ -61,6 +65,7 @@ def get_method_runSQANTI3(args, df):
         
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
+        print(gtf_pattern)
         try:
             gtf_files = glob.glob(gtf_pattern)[0]
         except IndexError:
@@ -75,7 +80,11 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
+<<<<<<< HEAD
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+=======
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py {gtf_files} {args.annotation} {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+>>>>>>> master
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
@@ -114,7 +123,7 @@ def get_method_runSQANTI3(args, df):
         
         # If none of the conditions are met, raise an error
         print(f"ERROR: The file_acc you included in your design file does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.input_dir} directory", file=sys.stdout)
-
+        sys.exit(-1)
 
 def make_UJC_hash(args, df):
 
@@ -221,8 +230,13 @@ def main():
     if args.ALLTABLES:
         cmd_plotting = cmd_plotting + " --all-tables"
     if args.PCATABLES:
+<<<<<<< HEAD
         cmd_plotting = cmd_plotting + "--pca-tables"
     print(cmd_plotting)
+=======
+        cmd_plotting = cmd_plotting + " --pca-tables"
+    
+>>>>>>> master
     subprocess.call(cmd_plotting, shell = True)
 
 

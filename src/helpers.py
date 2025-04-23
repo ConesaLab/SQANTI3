@@ -8,7 +8,6 @@ from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
 from bx.intervals import Interval #type: ignore
 
-from src.utils import find_closest_in_list
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct

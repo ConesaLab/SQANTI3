@@ -19,7 +19,8 @@ SAVE_PROB_TRANSCRIPTS = False
 
 version = "2.7.3"
 CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
-CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
+CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", 
+                     "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
 
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
 LST_TRANSCRIPTSOURCES_INTRONIC = ["PAR-clip"]
@@ -300,6 +301,7 @@ def readGFF(gff3):
 
             if feature == "gene":
                 g = text[0][3:-1] #delete "ID=" and final ";" == GENE
+        
                 #save description
                 if not dc_gene_description.get(str(g)):
                     dc_gene_description.update({str(g) : fields[8]})
@@ -355,7 +357,7 @@ def readGFF(gff3):
                 if not dc_GFF3.get(transcript):
                     dc_GFF3.update({str(transcript) : [[start, end, line]]})
                 else:
-                    dc_GFF3.update({str(transcript) : dc_GFF3.get(transcript) + [[start, end, line]]})
+                    dc_GFF3.update({str(transcript) : dc_GFF3.get(transcript) + [[start, end, line]]})            
         else:
             print("File GFF3 doesn't have the correct number of columns (9).")
 
@@ -386,11 +388,12 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
     newdc_GFF3 = {}
     bnegative = False
     transcriptsAnnotated = 0
+    total_transcripts = len(dc_GFF3transExons)
 
     for trans in dc_GFF3transExons.keys():
         #Print Length Transformation
         transcriptsAnnotated = transcriptsAnnotated + 1
-        perct = transcriptsAnnotated/len(dc_GFF3transExons)*100
+        perct = transcriptsAnnotated/total_transcripts*100
         print("\t" + "%.2f" % perct + " % of features transformed...", end='\r')
 
         if not dc_GFF3.get(trans):
@@ -404,14 +407,12 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
             fields = line.split("\t")
             text = fields[8].split(" ")
             strand = dc_GFF3strand.get(trans)
-
             start = 0
             end = 0
             startG = 0
             endG = 0
 
             fields = values[2].split("\t")
-
             #Transcript calculate normal - include CDS
             if text[-1].endswith("T\n") and not fields[3] == ".":
                 start = int(fields[3])
@@ -442,7 +443,7 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
                 else:
                     newdc_GFF3.update({str(trans) : newdc_GFF3.get(trans) + [values]})
                     continue
-
+            
             if bProt: #prot
                 totalDiff = end - start + 3 #(total diff can be 0 for features in the same location)
             else:
@@ -453,6 +454,7 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
             else:
                 allExons = dc_GFF3coding.get(trans)
                 if not allExons:
+                    print("WARNING: No CDS sequence was found for transcript ",trans)
                     continue
 
             if strand == "+":
@@ -462,7 +464,6 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
 
             bstart = False
             bend = False
-
             for exon in allExons:
                 if totalDiff < 0:
                     bnegative = True
@@ -1472,7 +1473,9 @@ def addFeatureWithAnnot(feature, key, AnnotFeatureCounts_dc, TotalFeatures = Fal
             AnnotFeatureCounts_dc.update({feature : [hs_check, hs_checkTotal]})
     return AnnotFeatureCounts_dc
 
-def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3, dc_GFF3gene, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints):
+def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, 
+                    dc_GFF3transExons, dc_GFF3, dc_GFF3gene, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName,
+                    dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints):
     #toTest
     transInterest = "ENST00000486627"
     featureOfInterest = "miRNA_Binding"
@@ -1526,7 +1529,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
     geneAnnotTranscriptCounts_dc = {}
 
     annotLines = [] #for novel transcripts
-    
+    found=False
     for transSQ in dc_SQexons.keys():
         transcriptsChecked = transcriptsChecked + 1
         realNewTrans = False
@@ -1550,6 +1553,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         
         perct = transcriptsChecked/len(dc_SQexons)*100
         m0 = "\n\n\t" + "%.2f" % perct + " % of transcripts annotated."
+        
         print("\t" + "%.2f" % perct + " % of GTF transcripts checked...", end="\r")
 
         #######################
@@ -1572,8 +1576,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         elif(dc_GFF3transExons.get(transGFF3)): #if transcript have exons, is not novel, it means the reference have no annotations but can be annotated as a novel
             newTrans = True
         else: #Novel Transcript won't be annoted
-            newTrans = True
-
+            newTrans = True    
         if(dc_GFF3transGene.get(transSQ) or dc_GFF3transGene.get(transGFF3)):
             realNewTrans = False #trans or reference trans exits in GFF3 (is not a novel transcript)
         elif(dc_GFF3geneTrans.get(geneSQ)):
@@ -1595,7 +1598,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             strand = dc_SQstrand.get(transSQ)
             #Check if we had same CDS to add Protein information
             coding, semicoding = checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand)
-
+            print("Got to the cool part")
             for values in dc_GFF3.get(transGFF3):
                 fields = values[2].split("\t")
                 text = fields[8].split(" ")
@@ -1903,6 +1906,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                 #         break
 
             if verbose:
+                print("Second verbose")
                 print(transSQ)
                 print(gene)
                 print(dc_GFF3geneTrans.get(gene))
@@ -1922,7 +1926,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                     
                     line = val[0][2].split("\t")
                     strand = dc_SQstrand.get(transSQ)
-                    
+
                     for values in dc_GFF3.get(transGFF3):
                         fields = values[2].split("\t")
                         text = fields[8].split(" ")
@@ -1933,8 +1937,8 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         #################
                         #GENE ANNOTATION#
                         #################
-                        if (text[-1].endswith("G\n") or text[-1].endswith("N\n")): #gene - always put if the gene is the same
 
+                        if (text[-1].endswith("G\n") or text[-1].endswith("N\n")): #gene - always put if the gene is the same
                             referenceGeneNoAnnot = False #exists at least one feature in one transcript with annot
 
                             #update total prot annotation
@@ -1971,7 +1975,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         #PROTEIN ANNOTATION#
                         ####################
                         elif (text[-1].endswith("P\n")): #protein
-
                             referenceGeneNoAnnot = False #exists at least one feature in one transcript with annot
 
                             #Check if we had same CDS to add Protein information
@@ -3131,12 +3134,15 @@ def run(args):
         print("Transforming feature local positions to genomic position in GFF3...")
         #Transformar características a posiciones genómicas
         dc_GFF3_Genomic = transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand)
-
+        
         print("Generating Transcriptome per each gene...") #dc_GFF3_Genomic
         dc_GFF3Gene_Genomic = getTranscriptomePerGene(dc_SQgeneTrans, dc_GFF3_Genomic) # {gene : [[start,end,line], [start,end,line], ...]}
 
         print("Mapping transcript features between GFFs...")
-        mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3_Genomic, dc_GFF3Gene_Genomic, dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, dc_GFF3transGene, filename, filename_prints) #edit tappAS_annotation_from_Sqanti file
+        mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_SQstrand, 
+                        dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3_Genomic, dc_GFF3Gene_Genomic, 
+                        dc_GFF3coding, dc_GFF3geneTrans, dc_geneID2geneName, dc_geneName2geneID, 
+                        dc_GFF3transGene, filename, filename_prints) #edit tappAS_annotation_from_Sqanti file
         #dc_geneID2geneName, dc_geneName2geneID
 
         print("Adding extra information to GFF3 columns...")

@@ -83,3 +83,35 @@ def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
         pickle.dump(isoforms_info, h)
         pickle.dump(junctions_header, h)
 
+def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
+    """
+    Augment a collapsed GFF with CDS information
+    *NEW* Also, change the "gene_id" field to use the classification result
+    :param isoforms_info: dict of id -> QueryTranscript
+    :param input_gff:  input GFF filename
+    :param output_gff: output GFF filename
+    """
+    with open(output_gff, 'w') as f:
+        reader = collapseGFFReader(input_gff)
+        for r in reader:
+            r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
+            s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
+            e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
+            r.cds_exons = []
+            if s!='NA' and e!='NA': # has ORF prediction for this isoform
+                if r.strand == '+':
+                    assert s < e
+                    s = s - 1 # make it 0-based
+                else:
+                    assert e < s
+                    s, e = e, s
+                    s = s - 1 # make it 0-based
+                # TODO: change the loop to a binary search (reduces complexity) 
+                # TODO: Include more checks into the intervals, with an equal condition
+                for i,exon in enumerate(r.ref_exons):
+                    if exon.end > s: break
+                r.cds_exons = [Interval(s, min(e,exon.end))]
+                for exon in r.ref_exons[i+1:]:
+                    if exon.start > e: break
+                    r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
+            write_collapseGFF_format(f, r)

@@ -703,8 +703,10 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     merged_df['flag_putative_novel_transcript'] = merged_df.apply(
                                                 lambda row: 1 if row[flag_cov_col] == 1 and row[flag_jxn_col] == 1 else 0,axis=1)
     
-    #Categorize genes based on gene categories
-    
+    ## Categorize genes based on gene categories
+    if merged_df.empty:
+        print("ERROR: The filtering was too scrict and no genes were found that meet the criteria.")
+        sys.exit(1)
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
     

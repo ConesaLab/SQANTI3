@@ -172,15 +172,13 @@ def qc_args_validation(args):
         if args.fasta:
             qc_logger.error("If --is_fusion is on, must supply GTF as input")
             sys.exit(1)
-    # Expression checks
+    # Expression checks TODO: Improve this checks
     if args.expression is not None:
         if os.path.isdir(args.expression)==True:
             qc_logger.info(f"Expression files located in {args.expression} folder")
         else:
             for f in args.expression.split(','):
-                if not os.path.exists(f):
-                        qc_logger.error(f"Expression file {f} not found. Abort!")
-                        sys.exit(1)
+                valid_matrix(f)
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]

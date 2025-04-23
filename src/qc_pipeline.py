@@ -8,11 +8,11 @@ from src.utilities.indels_annot import calc_indels_from_sam
 
 from src.qc_output import (
     cleanup, generate_report, save_isoforms_info, write_classification_output,
-    write_isoform_hits, write_junction_output, write_omitted_isoforms
+    write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS
 )
 from src.helpers import (
     get_corr_filenames, get_class_junc_filenames, rename_novel_genes, 
-    sequence_correction, predictORF, write_collapsed_GFF_with_CDS
+    sequence_correction, predictORF
     )
 from src.parsers import (
     get_fusion_component, reference_parser, isoforms_parser
@@ -177,6 +177,7 @@ def run(args):
 ### IsoAnnot Lite implementation
 # ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
+# TODO: Change this so it is part of SQANTI, called as a function and not as a external script
 def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt):
     if gff3_opt:
         iso_out = os.path.join(os.path.dirname(correctedGTF), outName)
