@@ -24,7 +24,7 @@ bad quality transcripts.
 import os
 
 from src.filter_argparse import filter_argparse
-from src.module_logging import filter_logger
+from src.module_logging import filter_logger, update_logger
 from src.config import __version__
 from src.logging_config import art_logger,filter_art, get_logger_info
 from src.filter_steps import filter_files, run_ML, run_rules
@@ -32,9 +32,11 @@ from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
 
 def main():
+    global filter_logger
     # Create the log directory if it does not exist
     art_logger.info(filter_art())
     args = filter_argparse().parse_args()
+    update_logger(filter_logger,args.dir)
     # Create the log directory if it does not exist
     os.makedirs(f"{args.dir}/logs", exist_ok=True)
     filter_args_validation(args)

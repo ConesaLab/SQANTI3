@@ -26,28 +26,7 @@ from src.utilities.rescue.candidate_mapping_helpers import (
     save_fasta
 )
 
-def run_automatic_rescue(args):
-
-    auto_cmd = f"{RSCRIPTPATH} {RESCUE_AUTO_PATH} -c {args.filter_class} -o {args.output} -d {args.dir} \
-    -u {utilitiesPath} -g {args.refGTF} -e {args.rescue_mono_exonic} -m {args.mode}"
-    logFile = os.path.join(args.dir,"logs","automatic_rescue.log")
-    run_command(auto_cmd, rescue_logger,logFile,description="Running automatic rescue",silent=False)
-    # print command
-    rescue_logger.debug("Automatic rescue run via the following command:")
-    rescue_logger.debug(auto_cmd)
-
-    ## load output: transcripts rescued as a result of automatic rescue
-
-    # make file name
-    automatic_rescued_list = os.path.join(args.dir,f"{args.output}_automatic_rescued_list.tsv")
-
-    # set object containing rescued list from the output file
-    auto_rescue = set(line.strip() for line in open(automatic_rescued_list))
-
-    ## return automatic rescue outputs
-    return(auto_rescue)
-
-def run_automatic_rescue_py(classification_file,monoexons,mode,prefix):
+def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     # Load classification
     message("Reading filter classification file",rescue_logger)
     classif_df = read_classification(classification_file)

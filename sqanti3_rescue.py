@@ -8,18 +8,17 @@ __author__  = "angeles.arzalluz@gmail.com"
 #### PREPARATION ####
 
 ## Module import
-import os, sys, shutil
-import pandas as pd
+import os
 
 from src.rescue_argparse import rescue_argparse
-from src.module_logging import rescue_logger, message
+from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command, utilitiesPath
+from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
-  run_automatic_rescue_py,
+  run_automatic_rescue,
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
@@ -29,8 +28,8 @@ from src.utilities.rescue import sq_requant
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
+  update_logger(rescue_logger,args.dir)
   # Check if the logs directory exists, if not create it
-  os.makedirs(f"{args.dir}/logs", exist_ok=True)
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
@@ -39,7 +38,7 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  rescue_ism = run_automatic_rescue_py(args.filter_class,args.rescue_mono_exonic,
+  rescue_ism = run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
                               args.mode,prefix)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###

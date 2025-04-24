@@ -14,12 +14,14 @@ from src.parallel import split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import qc_args_validation
 from src.logging_config import qc_art,art_logger
-from src.module_logging import qc_logger
+from src.module_logging import qc_logger, update_logger
 from src.write_parameters import write_qc_parameters
 def main():
-
+    global qc_logger
     art_logger.info(qc_art())
     args = qc_argparse().parse_args()
+    update_logger(qc_logger,args.dir)
+    
     # Check if the output directory exists, if not create it
     os.makedirs(f"{args.dir}/logs", exist_ok=True)
     args = qc_args_validation(args)

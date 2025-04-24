@@ -22,3 +22,15 @@ def message(text,logger):
     logger.info(line)
     logger.info(centered_text)
     logger.info(line)
+
+def update_logger(logger,dir):
+    """
+    Update the logger configuration to use a new log file.
+    """
+    # Get the current log file handler
+    for handler in logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            # Update the log file path
+            handler.baseFilename = os.path.join(dir, 'logs', 'sqanti3.log')
+            break
+    os.makedirs(f"{dir}/logs", exist_ok=True)

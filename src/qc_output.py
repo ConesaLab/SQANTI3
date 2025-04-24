@@ -1,7 +1,10 @@
 from csv import DictReader, DictWriter
-import os
+import os, sys
 import pickle
 
+from bx.intervals import Interval
+
+from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.commands import (
     RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
 
