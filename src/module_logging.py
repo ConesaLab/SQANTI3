@@ -23,7 +23,7 @@ def message(text,logger):
     logger.info(centered_text)
     logger.info(line)
 
-def update_logger(logger,dir):
+def update_logger(logger,dir,log_lvl):
     """
     Update the logger configuration to use a new log file.
     """
@@ -32,5 +32,7 @@ def update_logger(logger,dir):
         if isinstance(handler, logging.FileHandler):
             # Update the log file path
             handler.baseFilename = os.path.join(dir, 'logs', 'sqanti3.log')
+
+            logger.setLevel(log_lvl)
             break
     os.makedirs(f"{dir}/logs", exist_ok=True)

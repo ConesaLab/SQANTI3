@@ -28,7 +28,7 @@ from src.utilities.rescue import sq_requant
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
-  update_logger(rescue_logger,args.dir)
+  update_logger(rescue_logger,args.dir,args.log_level)
   # Check if the logs directory exists, if not create it
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
@@ -38,14 +38,14 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  rescue_ism = run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
+  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
                               args.mode,prefix)
+  message("Automatic rescue completed",rescue_logger)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
-
     candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
-                                   rescue_ism,prefix)
+                                   prefix)
     rescue_logger.debug(f"Rescue candidates: {len(candidates)}")
 
     targets = rescue_targets(args.filter_class,candidates,

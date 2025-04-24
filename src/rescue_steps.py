@@ -32,54 +32,49 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     classif_df = read_classification(classification_file)
 
     message("Performing automatic rescue",rescue_logger)
-    # Select the FSM and ISM isoforms with more than one exon
-    ism_fsm_classif = classif_df[
-        (classif_df['structural_category'].isin(['full-splice_match','incomplete-splice_match'])) & 
+    # Select the FSM and ISM isoforms with more than one exon 
+    rescue_classif = classif_df[
+        (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
-    # Add the monoexons if indicated
-    if monoexons in ['all','fsm']:
-        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
-        if mode == 'full':
-            ism_fsm_classif = add_ism_monoexons(ism_fsm_classif,classif_df)
-
-
+ 
     # Find the references that are lost and get the ones that are not represented by isoforms
-    lost_ref = get_lost_reference_id(ism_fsm_classif)
+    lost_ref = get_lost_reference_id(rescue_classif)
+    if len(lost_ref) == 0:
+       rescue_logger.info("No lost references found")
+       rescue_logger.info("Automatic rescue is not needed")
+       return
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
     for ref_id in lost_ref:
-        rescue_df = rescue_lost_reference(ref_id, ism_fsm_classif)
+        rescue_df = rescue_lost_reference(ref_id, rescue_classif)
         rescue = pd.concat([rescue,rescue_df])
 
     # Split into reference transcripts and ISM
-    rescue_ism = rescue[rescue['isoform'].isin(ism_fsm_classif['isoform'])]
-    rescue_ref = rescue[rescue['isoform'].isin(ism_fsm_classif['associated_transcript'])]
-
+    rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
+    # Adding monoexons
     if monoexons in ['all','fsm']:
+        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
         rescue_auto = pd.concat([rescue_ref,rescue_fsm_me])
     else:
         rescue_auto = rescue_ref
     rescue_logger.debug(f"Rescued {rescue_auto.shape[0]} transcripts")
 
     # Save the automatic rescue
-    save_automatic_rescue(rescue_auto,ism_fsm_classif,mode,prefix)
-    message("Automatic rescue completed",rescue_logger)
-    return rescue_ism
+    save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
 
-def rescue_candidates(classification_file,monoexons,rescue_ism,prefix):
+def rescue_candidates(classification_file,monoexons,prefix):
     # Load classification
     classif_df = read_classification(classification_file)
     
     # Get NIC and NNC artifacts
-    rescue_novel = classif_df[
-        (classif_df['structural_category'].isin(['novel_in_catalog','novel_not_in_catalog'])) &
+    rescue_candidates = classif_df[
+        (classif_df['structural_category'].isin(['incomplete-splice_match','novel_in_catalog','novel_not_in_catalog'])) &
         (classif_df['filter_result'] == 'Artifact')
     ]
     if monoexons != 'all':
         rescue_novel = rescue_novel[rescue_novel['exons'] > 1]
     
-    rescue_candidates = pd.concat([rescue_ism,rescue_novel['isoform']])
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
                             sep="\t",

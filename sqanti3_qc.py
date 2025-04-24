@@ -20,8 +20,8 @@ def main():
     global qc_logger
     art_logger.info(qc_art())
     args = qc_argparse().parse_args()
-    update_logger(qc_logger,args.dir)
-    
+    update_logger(qc_logger,args.dir,args.log_level)
+
     # Check if the output directory exists, if not create it
     os.makedirs(f"{args.dir}/logs", exist_ok=True)
     args = qc_args_validation(args)
