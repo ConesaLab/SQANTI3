@@ -18,7 +18,8 @@ The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v
 For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
 **⚠️WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will therefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
-**⚠️WARNING:** SQANTI3 v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
+
+**⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
 ## Documentation
 
@@ -32,6 +33,8 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 * [Version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history)
 
 * [Isoform classification: categories and subcategories](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories)
+
+* [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
 
 * [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
 
