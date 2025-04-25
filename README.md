@@ -60,4 +60,4 @@ If you are using SQANTI3 in your research, please cite the following paper in ad
 
 - Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
 
-- Keil, N., Monzó, C., McIntyre, L., Conesa, A. **SQANTI-reads: a tool for the quality assessment of long read data in multi-sample lrRNA-seq experiments**. BioRxiv (2024) https://www.biorxiv.org/content/10.1101/2024.08.23.609463v2
+- Keil, N., Monzó, C., McIntyre, L., Conesa, A. **Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads**. *Genome Res* (2025). https://doi.org/10.1101/gr.280021.124
