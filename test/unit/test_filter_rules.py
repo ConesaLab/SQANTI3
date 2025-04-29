@@ -39,7 +39,7 @@ def test_read_json_rules_structure(sample_json_data):
         result = read_json_rules("dummy_path.json")
     
     assert isinstance(result, dict)
-    assert set(result.keys()) == {"category1", "category2"}
+    assert set(result.keys()) == {"category1", "category2","rest"}
     assert all(isinstance(v, list) for v in result.values())
     assert all(isinstance(df, pd.DataFrame) for category in result.values() for df in category)
 
