@@ -1,26 +1,23 @@
-
-
 #!/usr/bin/env python3
 __author__  = "francisco.pardo.palacios@gmail.com"
 
-"""
-New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
+# New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
 
-RULES FILTER --> Now it can work with a JSON filter
-By default, it will only keep Iso-Seq isoforms if:
-The isoform is FSM and does not have intrapriming.
-The isoform is ISM, NIC or NNC, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
-The isoform is antisense, intergenic, genic, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
+# RULES FILTER --> Now it can work with a JSON filter
+# By default, it will only keep Iso-Seq isoforms if:
+# The isoform is FSM and does not have intrapriming.
+# The isoform is ISM, NIC or NNC, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
+# The isoform is antisense, intergenic, genic, does not have intrapriming nor RT-switching, and all junctions are either all canonical or short-read-supported
 
-If the user wants to define new rules, it can define them in a JSON file following the same format used in the filter_default.json
+# If the user wants to define new rules, it can define them in a JSON file following the same format used in the filter_default.json
 
-ML FILTER
-It will take as input the classification file obtained from SQANTI3 QC and apply a Random Forest algorithm to distinguish between "true" isoforms and artifacts.
+# ML FILTER
+# It will take as input the classification file obtained from SQANTI3 QC and apply a Random Forest algorithm to distinguish between "true" isoforms and artifacts.
 
-Regardless of the strategy chosen, sqanti_filter.py can return a filtered FASTA, filtered GTF and an updated classification file that can be used to compare the effects of filtering out
-bad quality transcripts.
+# Regardless of the strategy chosen, sqanti_filter.py can return a filtered FASTA, filtered GTF and an updated classification file that can be used to compare the effects of filtering out
+# bad quality transcripts.
 
-"""
+
 import os
 
 from src.filter_argparse import filter_argparse
