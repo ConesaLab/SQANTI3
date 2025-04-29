@@ -70,7 +70,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             qc_logger.info("**** Running calculation of TSS ratio")
             chr_order = star_index + "/chrNameLength.txt"
             inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
-            bams = get_files_from_dir(star_out,"SJ.out.tab")
+            bams = get_files_from_dir(star_out,".bam")
             ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, ratio_TSS_metric)
         else:
             qc_logger.info('TSS ratio will not be calculated since SR information was not provided')

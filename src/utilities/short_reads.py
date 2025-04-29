@@ -211,6 +211,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)
     ratio_rep_df = None
+    print(inside_bed,replicates)
     for b,bam_file in enumerate(replicates):
         in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order)
         out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
