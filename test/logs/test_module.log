@@ -1,68 +1,74 @@
-[DEBUG:2025-04-24 15:25:10,967] /home/pabloati/Programs/sqanti3/test/test_data/logs/GTF_to_genePred.log
-[DEBUG:2025-04-24 15:25:10,993] Process /home/pabloati/Programs/sqanti3/src/utilities/gtfToGenePred /home/pabloati/Programs/sqanti3/test/test_data/test_isoforms.gtf /home/pabloati/Programs/sqanti3/test/test_data/test_isoforms.genePred -genePredExt -allErrors -ignoreGroupsWithoutExons had 0
-[DEBUG:2025-04-24 15:25:10,993] Returncode 0 class is <class 'int'>
-[INFO:2025-04-24 15:25:11,311] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:11,311] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:11,415] **** Parsing Isoforms.
-[INFO:2025-04-24 15:25:11,730] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:11,730] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:11,841] **** Parsing Isoforms.
-[INFO:2025-04-24 15:25:12,560] **** Parsing Isoforms.
-[INFO:2025-04-24 15:25:12,561] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:12,561] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[ERROR:2025-04-24 15:25:12,908] Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw Invalid_ID instead. Abort!
-[INFO:2025-04-24 15:25:12,944] **** Parsing Reference Transcriptome....
-[DEBUG:2025-04-24 15:25:12,944] /home/pabloati/Programs/sqanti3/test/test_data/logs/GTF_to_genePred.log
-[DEBUG:2025-04-24 15:25:13,318] Process /home/pabloati/Programs/sqanti3/src/utilities/gtfToGenePred /home/pabloati/Programs/sqanti3/test/test_data/test_reference.gtf /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred -genePredExt -allErrors -ignoreGroupsWithoutExons had 0
-[DEBUG:2025-04-24 15:25:13,318] Returncode 0 class is <class 'int'>
-[INFO:2025-04-24 15:25:13,712] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:13,712] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:13,879] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:13,879] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:14,031] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:14,031] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:14,185] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:14,185] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:14,275] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:14,276] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:14,432] **** Parsing Reference Transcriptome....
-[INFO:2025-04-24 15:25:14,432] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
-[INFO:2025-04-24 15:25:14,556] **** Parsing Isoforms.
-[INFO:2025-04-24 15:25:14,558] **** Parsing Isoforms.
-[ERROR:2025-04-24 15:25:14,567] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: Invalid_format! Abort!
-[ERROR:2025-04-24 15:25:14,571] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: PB.83093.1	gene_1|GeneMark.hmm|138_aa|+|575! Abort!
-[ERROR:2025-04-24 15:25:14,576] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: PB.83093.1	gene_1|GeneMark.hmm|138_aa|+|575|not_an_integer! Abort!
-[DEBUG:2025-04-24 15:25:14,635] Query 17 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 17 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 17 is upstream of peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 20 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 20 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 20 is upstream of peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 14 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 14 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 14 is upstream of peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 8 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 8 is upstream of peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 8 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 8 is upstream of peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 25 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 25 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 25 is upstream of peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,636] Query 17 is within peak 21-42 on chr1 strand -
-[DEBUG:2025-04-24 15:25:14,636] Query 17 is within peak 46-66 on chr1 strand -
-[DEBUG:2025-04-24 15:25:14,637] Query 105 is within peak 13-21 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,637] Query 105 is within peak 41-51 on chr1 strand +
-[DEBUG:2025-04-24 15:25:14,637] Query 201 is within peak 100-110 on chr2 strand +
-[DEBUG:2025-04-24 15:25:14,637] Query 201 is within peak 200-201 on chr2 strand +
-[DEBUG:2025-04-24 15:25:14,637] Query 200 is within peak 100-110 on chr2 strand +
-[DEBUG:2025-04-24 15:25:14,638] Query 200 is within peak 200-201 on chr2 strand +
-[DEBUG:2025-04-24 15:25:14,638] Query 200 is within peak 200-201 on chr2 strand -
-[WARNING:2025-04-24 15:25:15,817] ENST00000000001 will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome
-[DEBUG:2025-04-24 15:25:15,845] /tmp/pytest-of-pabloati/pytest-11/logs/samtools_header.log
-[DEBUG:2025-04-24 15:25:15,848] Process samtools view -H /tmp/pytest-of-pabloati/pytest-11/test_get_bam_header_file_not_e0/test.bam | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > /tmp/pytest-of-pabloati/pytest-11/test_get_bam_header_file_not_e0/chr_order.txt had <MagicMock name='run().returncode' id='127069214695504'>
-[DEBUG:2025-04-24 15:25:15,849] Returncode <MagicMock name='run().returncode' id='127069214695504'> class is <class 'unittest.mock.MagicMock'>
-[DEBUG:2025-04-24 15:25:15,849] EROOOOOOR
-[DEBUG:2025-04-24 15:25:15,853] /tmp/pytest-of-pabloati/pytest-11/logs/samtools_header.log
-[ERROR:2025-04-24 15:25:15,854] Something went wrong during samtools header
-[ERROR:2025-04-24 15:25:15,854] For more inflo, check /tmp/pytest-of-pabloati/pytest-11/logs/samtools_header.log
-[INFO:2025-04-24 15:25:15,873] BAM files identified: ['/home/pabloati/Programs/sqanti3/test/test_data/Rep1_test.bam', '/home/pabloati/Programs/sqanti3/test/test_data/Rep2_test.bam']
+[DEBUG:2025-04-29 18:05:52,178] /home/pabloati/Programs/sqanti3/test/test_data/logs/GTF_to_genePred.log
+[DEBUG:2025-04-29 18:05:52,197] Process /home/pabloati/Programs/sqanti3/src/utilities/gtfToGenePred /home/pabloati/Programs/sqanti3/test/test_data/test_isoforms.gtf /home/pabloati/Programs/sqanti3/test/test_data/test_isoforms.genePred -genePredExt -allErrors -ignoreGroupsWithoutExons had 0
+[DEBUG:2025-04-29 18:05:52,197] Returncode 0 class is <class 'int'>
+[INFO:2025-04-29 18:05:52,380] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:52,380] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:52,429] **** Parsing Isoforms.
+[INFO:2025-04-29 18:05:52,652] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:52,652] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:52,737] **** Parsing Isoforms.
+[INFO:2025-04-29 18:05:53,292] **** Parsing Isoforms.
+[INFO:2025-04-29 18:05:53,292] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:53,293] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[WARNING:2025-04-29 18:05:53,480] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[WARNING:2025-04-29 18:05:53,483] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[WARNING:2025-04-29 18:05:53,486] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[WARNING:2025-04-29 18:05:53,489] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[WARNING:2025-04-29 18:05:53,493] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[WARNING:2025-04-29 18:05:53,496] No rules defined for 'rest' structural category. Defaulting to no filtering.
+[ERROR:2025-04-29 18:05:53,528] Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw Invalid_ID instead. Abort!
+[INFO:2025-04-29 18:05:53,545] **** Parsing Reference Transcriptome....
+[DEBUG:2025-04-29 18:05:53,545] /home/pabloati/Programs/sqanti3/test/test_data/logs/GTF_to_genePred.log
+[DEBUG:2025-04-29 18:05:53,794] Process /home/pabloati/Programs/sqanti3/src/utilities/gtfToGenePred /home/pabloati/Programs/sqanti3/test/test_data/test_reference.gtf /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred -genePredExt -allErrors -ignoreGroupsWithoutExons had 0
+[DEBUG:2025-04-29 18:05:53,794] Returncode 0 class is <class 'int'>
+[INFO:2025-04-29 18:05:54,039] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,040] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,144] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,144] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,234] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,234] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,328] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,328] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,424] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,424] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,474] **** Parsing Reference Transcriptome....
+[INFO:2025-04-29 18:05:54,474] /home/pabloati/Programs/sqanti3/test/test_data/refAnnotation_test.genePred already exists. Using it.
+[INFO:2025-04-29 18:05:54,583] **** Parsing Isoforms.
+[INFO:2025-04-29 18:05:54,584] **** Parsing Isoforms.
+[ERROR:2025-04-29 18:05:54,591] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: Invalid_format! Abort!
+[ERROR:2025-04-29 18:05:54,594] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: PB.83093.1	gene_1|GeneMark.hmm|138_aa|+|575! Abort!
+[ERROR:2025-04-29 18:05:54,596] Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: PB.83093.1	gene_1|GeneMark.hmm|138_aa|+|575|not_an_integer! Abort!
+[DEBUG:2025-04-29 18:05:54,630] Query 17 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 17 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 17 is upstream of peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 20 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 20 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 20 is upstream of peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,630] Query 14 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 14 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 14 is upstream of peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 8 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 8 is upstream of peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 8 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 8 is upstream of peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 25 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 25 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 25 is upstream of peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 17 is within peak 21-42 on chr1 strand -
+[DEBUG:2025-04-29 18:05:54,631] Query 17 is within peak 46-66 on chr1 strand -
+[DEBUG:2025-04-29 18:05:54,631] Query 105 is within peak 13-21 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 105 is within peak 41-51 on chr1 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 201 is within peak 100-110 on chr2 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 201 is within peak 200-201 on chr2 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 200 is within peak 100-110 on chr2 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 200 is within peak 200-201 on chr2 strand +
+[DEBUG:2025-04-29 18:05:54,631] Query 200 is within peak 200-201 on chr2 strand -
+[WARNING:2025-04-29 18:05:55,444] ENST00000000001 will not be included in TSS ratio calculation since its TSS is located at the very beginning of the chromosome
+[DEBUG:2025-04-29 18:05:55,457] /tmp/pytest-of-pabloati/pytest-2/logs/samtools_header.log
+[DEBUG:2025-04-29 18:05:55,458] Process samtools view -H /tmp/pytest-of-pabloati/pytest-2/test_get_bam_header_file_not_e0/test.bam | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > /tmp/pytest-of-pabloati/pytest-2/test_get_bam_header_file_not_e0/chr_order.txt had <MagicMock name='run().returncode' id='139040869499408'>
+[DEBUG:2025-04-29 18:05:55,458] Returncode <MagicMock name='run().returncode' id='139040869499408'> class is <class 'unittest.mock.MagicMock'>
+[DEBUG:2025-04-29 18:05:55,458] EROOOOOOR
+[DEBUG:2025-04-29 18:05:55,460] /tmp/pytest-of-pabloati/pytest-2/logs/samtools_header.log
+[ERROR:2025-04-29 18:05:55,460] Something went wrong during samtools header
+[ERROR:2025-04-29 18:05:55,460] For more inflo, check /tmp/pytest-of-pabloati/pytest-2/logs/samtools_header.log
+[INFO:2025-04-29 18:05:55,470] BAM files identified: ['/home/pabloati/Programs/sqanti3/test/test_data/Rep1_test.bam', '/home/pabloati/Programs/sqanti3/test/test_data/Rep2_test.bam']
