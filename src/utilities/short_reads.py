@@ -199,9 +199,13 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     def process_coverage(cov, column_name):
         data = [(entry.name, float(entry[6])) for entry in cov]
         df = pd.DataFrame(data, columns=['id', column_name])
+        print(column_name)
+        print(df[df['id'] == "PB.30357.1"])
+        input()
         if column_name == 'inside':
             df.loc[df[column_name] < 3, column_name] = 0
         return df
+
     qc_logger.info('BAM files identified: '+str(replicates))
     out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
@@ -212,6 +216,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
         inside_df = process_coverage(in_cov, 'inside')
         outside_df = process_coverage(out_cov, 'outside')
+        input()
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
         if ratio_rep_df is None:
@@ -222,6 +227,8 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         ratio_rep_df = ratio_rep_df.rename(columns={'ratio_TSS': f'ratio_TSS_{b}'})
     ratio_rep_df.iloc[:, 1:] = ratio_rep_df.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')
     ratio_rep_df.to_csv(out_TSS_file, index=False)
+    print(ratio_rep_df)
+    input()
     # Convert all columns but id to numeric, coercing any non-numeric values to NaN
     if metric == "mean":
         ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
