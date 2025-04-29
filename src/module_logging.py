@@ -3,17 +3,36 @@ import logging.config
 import json
 import os
 
-with open('src/data/module_logger_config.json','r') as f:
+data_path = os.path.join(os.path.dirname(__file__), 'data','module_logger_config.json')
+
+with open(data_path,'r') as f:
     MODULE_LOGGING_CONFIG = json.load(f)
 
-# Create log directory and reinitialize the log file
-os.makedirs(os.path.dirname(MODULE_LOGGING_CONFIG['handlers']['module_file_handler']['filename']), exist_ok=True)
-try:
-    os.remove(MODULE_LOGGING_CONFIG['handlers']['module_file_handler']['filename'])
-except FileNotFoundError:
-    pass
 # Create the loggers
 logging.config.dictConfig(MODULE_LOGGING_CONFIG)
 qc_logger = logging.getLogger('module_logger')
 filter_logger = logging.getLogger('module_logger')
 rescue_logger = logging.getLogger('module_logger')
+rescue_logger.propagate = False
+
+def message(text,logger):
+    size = max(len(text)+4, 50)
+    line = "-" * size
+    centered_text = f"{text:^{size}}"
+    logger.info(line)
+    logger.info(centered_text)
+    logger.info(line)
+
+def update_logger(logger,dir,log_lvl):
+    """
+    Update the logger configuration to use a new log file.
+    """
+    # Get the current log file handler
+    for handler in logger.handlers:
+        if isinstance(handler, logging.FileHandler):
+            # Update the log file path
+            handler.baseFilename = os.path.join(dir, 'logs', 'sqanti3.log')
+
+            logger.setLevel(log_lvl)
+            break
+    os.makedirs(f"{dir}/logs", exist_ok=True)

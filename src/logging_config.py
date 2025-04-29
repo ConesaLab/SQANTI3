@@ -1,6 +1,7 @@
 import logging
 import logging.config
 import json
+import os
 from src.config import __version__
 
 class InfoFilter:
@@ -60,7 +61,8 @@ MAIN_LOGGING_CONFIG = {
         },
         "process_handler": {
             "class": "logging.FileHandler",
-            "filename": "none",
+            "filename": "hey",
+            "delay": True,
             "mode": "w",
             "formatter": "process_formatter",
             "encoding": "utf8"
@@ -81,7 +83,7 @@ MAIN_LOGGING_CONFIG = {
         'process_logger': {
             'handlers': ['process_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         }
     }
 }
@@ -91,9 +93,21 @@ main_logger = logging.getLogger('main_logger')
 art_logger = logging.getLogger('art_logger')
 
 def save_module_logger_info(logpath, module, level, json_file):
+    """
+    Saves the updated logger configuration to a JSON file.
+    Args:
+        logpath (str): Path to the directory for log files.
+        module (str): Name of the module.
+        level (str): Logging level (e.g., 'DEBUG', 'INFO').
+        json_file (str): Path to the JSON configuration file.
+    """
     with open(json_file, 'r') as f:
         config = json.load(f)
-
+    try:
+        os.remove(f"{logpath}/{module}_module.log")
+    except FileNotFoundError:
+        os.makedirs(logpath, exist_ok=True)
+        pass
     config['handlers']['module_file_handler']['filename'] = f"{logpath}/{module}_module.log"
     config['loggers']['module_logger']['level'] = level
 
@@ -151,3 +165,17 @@ def rescue_art():
     =====================================================
     """
     return message
+
+def get_logger_info(logger):
+  print(f"Logger Name: {logger.name}")
+  print(f"Level: {logging.getLevelName(logger.level)}")
+  print("Handlers:")
+  for handler in logger.handlers:
+      print(f"  - {handler}")
+      print(f"    Formatter: {handler.formatter}")
+      print(f"    Level: {logging.getLevelName(handler.level)}")
+  if logger.propagate:
+      print("Propagates to parent logger")
+  else:
+      print("Does not propagate to parent logger")  
+    

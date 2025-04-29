@@ -1,0 +1,13 @@
+Version	5.4
+Mode	rules
+ClassificationFile	data/reference/gencode.v38.basic_chr22_classification.txt
+Isoforms	NA
+GTF	NA
+SAM	NA
+FAA	NA
+isoAnnotGFF3	NA
+OutputPrefix	reference
+OutputDirectory	/home/pabloati/Programs/sqanti3/example/rescue_rules/reference_rules_filter
+FilterMonoexonic	False
+SkipReport	True
+JSON	/home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json

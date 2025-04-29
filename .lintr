@@ -1,0 +1,10 @@
+linters: linters_with_defaults(
+    line_length_linter(120),
+    commented_code_linter = NULL,
+    trailing_whitespace_linter = trailing_whitespace_linter(allow_empty_lines=TRUE)
+  )
+exclusions: list(
+    "src/utilities/report_qc/SQANTI3_report.R",
+    "inst/example/bad.R",
+    "tests/testthat/exclusions-test"
+  )

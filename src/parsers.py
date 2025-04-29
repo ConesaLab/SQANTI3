@@ -1,7 +1,7 @@
 import os
 import sys
-import subprocess
 import glob
+
 from collections import defaultdict
 from csv import DictReader
 from bx.intervals.intersection import IntervalTree
@@ -16,9 +16,10 @@ from src.config import EXP_KALLISTO_HEADERS, EXP_RSEM_HEADERS, seqid_fusion
 from src.qc_classes import genePredReader, myQueryProteins
 from src.utils import mergeDict, flatten
 from src.module_logging import qc_logger
+from src.commands import run_command
 #from src.commands import GTF2GENEPRED_PROG
 
-def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False):
+def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnnot=False,logger=qc_logger):
     """
     Parses the reference GTF file and generates various genomic interval data structures.
 
@@ -41,17 +42,16 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     from src.commands import GTF2GENEPRED_PROG
 
     referenceFiles = os.path.join(out_dir, "refAnnotation_"+out_pref+".genePred")
-    qc_logger.info("**** Parsing Reference Transcriptome....")
+    logger.info("**** Parsing Reference Transcriptome....")
     if os.path.exists(referenceFiles):
-        qc_logger.info(f"{referenceFiles} already exists. Using it.")
+        logger.info(f"{referenceFiles} already exists. Using it.")
     else:
         # gtf to genePred
-        gtf2genepred_args = [GTF2GENEPRED_PROG, annot, referenceFiles, '-genePredExt', '-allErrors', '-ignoreGroupsWithoutExons']
+        cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
 
-        if gene_name or isoAnnot:
-            gtf2genepred_args.append('-geneNameAsName2')
-
-        subprocess.call(gtf2genepred_args)
+        if gene_name or isoAnnot: #TODO: Discover why this flag was here or isoAnnot:
+            cmd += ' -geneNameAsName2'
+        run_command(cmd,logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
 
     ## parse reference annotation
     # 1. ignore all miRNAs (< 200 bp)
@@ -86,7 +86,7 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     ref_chroms = set(refs_1exon_by_chr.keys()).union(list(refs_exons_by_chr.keys()))
     diff = ref_chroms.difference(genome_chroms)
     if len(diff) > 0:
-        qc_logger.warning(f"Reference annotation contains chromosomes not in genome: {','.join(diff)}\n")
+        logger.warning(f"Reference annotation contains chromosomes not in genome: {','.join(diff)}\n")
 
     # convert the content of junctions_by_chr to sorted list
     # This uses dictionary to iterate over the chromosomes, keeping the keys, but sorting the values
@@ -106,7 +106,6 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
         for strand in junctions_by_chr[chr]['da_pairs'].keys():
             for junction in junctions_by_chr[chr]['da_pairs'][strand]:
                 junctions_by_chr[chr]['da_tree'].insert(junction[0], junction[1], (*junction,strand))
-
     return dict(refs_1exon_by_chr), dict(refs_exons_by_chr), dict(junctions_by_chr), dict(junctions_by_gene), dict(known_5_3_by_gene)
 
 
@@ -312,7 +311,10 @@ def FLcount_parser(fl_count_filename):
 
     if flag_single_sample: # single sample
         for k,v in d.items():
-            fl_count_dict[k] = int(v['count_fl'])
+            try:
+                fl_count_dict[k] = int(v['count_fl'])
+            except ValueError:
+                fl_count_dict[k] = float(v['count_fl'])
     else: # multi-sample
         for k,v in d.items():
             fl_count_dict[k] = {}

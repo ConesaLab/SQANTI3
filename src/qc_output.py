@@ -1,10 +1,13 @@
 from csv import DictReader, DictWriter
-import os
+import os, sys
 import pickle
 
+from bx.intervals import Interval
 
+from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.commands import (
-    RSCRIPTPATH, RSCRIPT_REPORT, run_command
+    RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
+
 )
 from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
@@ -61,18 +64,69 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
 
 def generate_report(saturation,report, outputClassPath, outputJuncPath):
     qc_logger.info("**** Generating SQANTI3 report.")
-    cmd = f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
+def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
+    """
+    Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
+    """
+    qc_logger.info("Generating BUGSI report....", file=sys.stderr)
+    bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
+    cmd = (
+        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
+        f"{outputClassPath} {bugsi_gtf} {transcript_gtf_file} {utilitiesPath}"
+    )
+    run_command(cmd, "BUGSI report")
+
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
-    os.remove(outputClassPath+"_tmp")
-    os.remove(outputJuncPath+"_tmp")
+    try:
+        os.remove(outputClassPath+"_tmp")
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(outputJuncPath+"_tmp")
+    except FileNotFoundError:
+        pass
 
+    
 def save_isoforms_info(isoforms_info,junctions_header, outdir, prefix):
     qc_logger.info("Saving isoforms_info object to file.")
     with open(os.path.join(outdir, f"{prefix}.isoforms_info.pkl"), 'wb') as h:
         pickle.dump(isoforms_info, h)
         pickle.dump(junctions_header, h)
 
+def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
+    """
+    Augment a collapsed GFF with CDS information
+    *NEW* Also, change the "gene_id" field to use the classification result
+    :param isoforms_info: dict of id -> QueryTranscript
+    :param input_gff:  input GFF filename
+    :param output_gff: output GFF filename
+    """
+    with open(output_gff, 'w') as f:
+        reader = collapseGFFReader(input_gff)
+        for r in reader:
+            r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
+            s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
+            e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
+            r.cds_exons = []
+            if s!='NA' and e!='NA': # has ORF prediction for this isoform
+                if r.strand == '+':
+                    assert s < e
+                    s = s - 1 # make it 0-based
+                else:
+                    assert e < s
+                    s, e = e, s
+                    s = s - 1 # make it 0-based
+                # TODO: change the loop to a binary search (reduces complexity) 
+                # TODO: Include more checks into the intervals, with an equal condition
+                for i,exon in enumerate(r.ref_exons):
+                    if exon.end > s: break
+                r.cds_exons = [Interval(s, min(e,exon.end))]
+                for exon in r.ref_exons[i+1:]:
+                    if exon.start > e: break
+                    r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
+            write_collapseGFF_format(f, r)

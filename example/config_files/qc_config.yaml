@@ -1,0 +1,86 @@
+main:
+  refGTF: 'data/reference/gencode.v38.basic_chr22.gtf'
+  refFasta: 'data/reference/GRCh38.p13_chr22.fasta'
+  cpus: 4
+  dir: example/SQANTI3_QC_output
+  output: UHR_chr22
+  log_level: INFO
+qc:
+  enabled: true
+  options:
+    isoforms: 'data/UHR_chr22.gtf'
+    min_ref_len: 0
+    force_id_ignore: false
+    fasta: false
+    genename: false
+    short_reads: 'data/UHR_chr22_short_reads.fofn'
+    SR_bam: ''
+    novel_gene_prefix: ''
+    aligner_choice: minimap2
+    gmap_index: ''
+    sites: ATAC,GCAG,GTAG
+    skipORF: false
+    orf_input: ''
+    CAGE_peak: 'data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed'
+    polyA_motif_list: 'data/polyA_motifs/mouse_and_human.polyA_motif.txt'
+    polyA_peak: ''
+    phyloP_bed: ''
+    saturation: false
+    report: both
+    isoform_hits: false
+    ratio_TSS_metric: max
+    chunks: 1
+    is_fusion: false
+    expression: ''
+    coverage: ''
+    window: 20
+    fl_count: 'data/UHR_abundance.tsv'
+    isoAnnotLite: false
+    gff3: ''
+filter:
+  enabled: false
+  options:
+    common:
+      sqanti_class: sqanti3_results/isoforms_classification.txt
+      isoAnnotGFF3: ''
+      filter_isoforms: sqanti3_results/isoforms_corrected.fasta
+      filter_gtf: sqanti3_results/isoforms_corrected.gtf
+      filter_sam: ''
+      filter_faa: sqanti3_results/isoforms_corrected.faa
+      skip_report: false
+      filter_mono_exonic: false
+    rules:
+      enabled: true
+      options:
+        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+    ml:
+      enabled: false
+      options:
+        percent_training: 0.8
+        TP: ''
+        TN: ''
+        threshold: 0.7
+        force_fsm_in: false
+        intermediate_files: false
+        remove_columns: ''
+        max_class_size: 3000
+        intrapriming: 60
+rescue:
+  enabled: false
+  options:
+    common:
+      filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
+      rescue_isoforms: sqanti3_results/isoforms_corrected.fasta
+      rescue_gtf: sqanti3_results/isoforms.filtered.gtf
+      refClassif: ''
+      rescue_mono_exonic: all
+      mode: automatic
+    rules:
+      enabled: true
+      options:
+        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+    ml:
+      enabled: false
+      options:
+        random_forest: ''
+        threshold: 0.7

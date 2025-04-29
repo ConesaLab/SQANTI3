@@ -8,7 +8,6 @@ from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
 from bx.intervals import Interval #type: ignore
 
-from src.utils import find_closest_in_list
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
@@ -37,10 +36,16 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     # open uses "rt" (read in text format)
     # This can be solved by making explicit the read text mode (which is required
     # by SeqIO.parse)
-    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    if input_fasta.endswith('.gz'):
+        open_function = gzip.open
+        in_file = os.path.splitext(input_fasta)[0]
+        out_file = os.path.splitext(in_file)[0] + '.renamed.fasta'
+    else:
+        open_function = open
+        out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(input_fasta[:input_fasta.rfind('.fast')]+'.renamed.fasta', mode='wt')
+    f = open(out_file, mode='wt')
     for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
         m1 = seqid_rex1.match(r.id)
         m2 = seqid_rex2.match(r.id)
@@ -58,7 +63,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
                 newid = r.id.split()[0]  # Ensembl fasta header
         f.write(">{0}\n{1}\n".format(newid, r.seq))
     f.close()
-    return f.name
+    return out_file
 
 
 ### Input/Output functions ###
@@ -138,7 +143,6 @@ def sequence_correction(
     isoforms: str,
     aligner_choice: str,
     gmap_index: Optional[str] = None,
-    sense: Optional[bool] = False,
     annotation: Optional[str] = None
     ) -> None:
     """
@@ -160,7 +164,7 @@ def sequence_correction(
             else:
                 logFile = f"{os.path.dirname(corrSAM)}/logs/{aligner_choice}_alignment.log"
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                                          outdir,corrSAM, n_cpu, gmap_index, sense)
+                                          outdir,corrSAM, n_cpu, gmap_index)
                 run_command(cmd,qc_logger, logFile,description="aligning reads")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
@@ -181,6 +185,11 @@ def sequence_correction(
         cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -T -o {corrGTF}"
         logFile= f"{outdir}/logs/normalize_gtf.log"
         run_command(cmd,qc_logger,logFile, description="converting SAM to GTF")
+        try:
+            os.remove(f'{corrGTF}.tmp')
+        except OSError as e:
+            qc_logger.error(f"Error removing temporary file: {e}")
+            raise
 
 def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
     try:
@@ -197,7 +206,7 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
 
 
 
-def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str):
+def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str,logger=qc_logger):
     """
     Processes a single line from a GTF file, validating and categorizing it based on certain criteria.
 
@@ -221,18 +230,18 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
 
     fields = line.strip().split("\t")
     if len(fields) < 7:
-        qc_logger.warning(f"Skipping malformed GTF line: {line.strip()}")
+        logger.warning(f"Skipping malformed GTF line: {line.strip()}")
         return
 
     chrom, feature_type, strand = fields[0], fields[2], fields[6]
 
     if chrom not in genome_dict:
-        qc_logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
+        logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
         raise ValueError()
 
     if feature_type in ('transcript', 'exon'):
         if strand not in ['-', '+']:
-            qc_logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
+            logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
             discard_gtf.write(line)
         else:
             corrGTF_out.write(line)

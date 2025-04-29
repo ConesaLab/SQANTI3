@@ -1,17 +1,20 @@
 import pickle
+import shutil
 import os,sys,copy,csv
 import pandas as pd #type: ignore
 import re
+
 from multiprocessing import Process
 from Bio import SeqIO
-from src.config import FIELDS_CLASS
-from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
+from src.config import FIELDS_CLASS
+from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
 from src.qc_pipeline import run
 from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes, write_collapsed_GFF_with_CDS
-from src.qc_output import cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms
+from src.qc_output import (
+    cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms)
 from src.module_logging import qc_logger
 # TODO: Create a special logging for the parallelization, to handle the individual logs of the splits into  their own files
 
@@ -156,7 +159,6 @@ def combine_split_runs(args, split_dirs):
     f_junc_temp = open(outputJuncPath+"_tmp", "w")
     isoforms_info = {}
     headers = []
-    
     for i,split_d in enumerate(split_dirs):
         _gtf, _, _fasta, _orf , _ = get_corr_filenames(split_d,args.output)
         _, _junc = get_class_junc_filenames(split_d,args.output)
@@ -175,10 +177,11 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-
+        shutil.move(os.path.join(split_d,"GMST"),os.path.join(args.dir,"GMST",f"GMST_{i}"))
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
+    
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)

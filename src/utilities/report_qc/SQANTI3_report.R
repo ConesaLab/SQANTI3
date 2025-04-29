@@ -1,3 +1,5 @@
+#!/usr/env/bin Rscript
+
 #####################################
 ##### SQANTI3 report generation ######
 #####################################
@@ -24,7 +26,7 @@ if (!(saturation.curves %in% c('True', 'False'))) {
   stop("Saturation curve argument needs to be 'True' or 'False'. Abort!")
 }
 
-if (!(report.format %in% c('pdf', 'html', 'both'))) {
+if (!(report.format %in% c("pdf", "html", "both"))) {
   stop("Report format needs to be: pdf, html, or both. Abort!")
 }
 
@@ -157,6 +159,7 @@ STM_function <- function(x){
   ref_TSS <- FALSE
   ref_TTS <- FALSE
   
+  # Get the reference TSS and TTS
   if (!is.na(x["diff_to_gene_TSS"])){
     if (abs(as.numeric(x["diff_to_gene_TSS"]))<=50){
       ref_TSS <- TRUE
@@ -169,12 +172,13 @@ STM_function <- function(x){
     }
   }
   
-  w_cage <- !is.na(x["within_CAGE_peak"]) & x["within_CAGE_peak"]=="True"
-  if ( ref_TSS | w_cage  ){
-    five=TRUE
+  # Determine if the isoform is fully supported
+  w_cage <- !is.na(x["within_CAGE_peak"]) & x["within_CAGE_peak"] == "True"
+  if ( ref_TSS || w_cage  ){
+    five = TRUE
   }
-  w_polya <- !is.na(x["within_polyA_site"]) & x["within_polyA_site"]=="True"
-  if (ref_TTS | w_polya | !is.na(x["polyA_motif"])){
+  w_polya <- !is.na(x["within_polyA_site"]) & x["within_polyA_site"] == "True"
+  if (ref_TTS || w_polya || !is.na(x["polyA_motif"])){
     three=TRUE
   }
   if (x["structural_category"]=="FSM" | x["structural_category"]=="ISM"){
@@ -185,7 +189,7 @@ STM_function <- function(x){
     }
   }
   
-  if (five & three & sj){
+  if (five && three && sj){
     return("Fully supported")
   }else{
     return("Not fully supported")
@@ -256,7 +260,8 @@ uniqJuncRTS <- unique(data.junction[,c("junctionLabel","SJ_type", "RTS_junction"
 
 #*** Global plot parameters
 
-myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696","#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
+myPalette = c("#6BAED6","#FC8D59","#78C679","#EE6A50","#969696",
+              "#66C2A4", "goldenrod1", "darksalmon", "#41B6C4","tomato3", "#FE9929")
 subcat.palette = c("Alternative 3'end"='#02314d',
                    "Alternative 3'5'end"='#0e5a87',
                    "Alternative 5'end"='#7ccdfc',
@@ -291,6 +296,7 @@ mytheme <- theme_classic(base_family = "Helvetica") +
   theme(plot.title = element_text(lineheight=.4, size=15, hjust = 0.5)) +
   theme(plot.margin = unit(c(2.5,1,1,1), "cm"))
 
+#### New attributes into the main data frame
 
 # Create a new attribute called "novelGene"
 
@@ -361,6 +367,8 @@ if (max_iso_per_gene >= 6) {
     isoPerGene$nIsoCat <- cut(isoPerGene$nIso, breaks = c(0,1), labels = c("1"));
 }
 
+
+### PABLO
 # see if there are multple FL samples
 FL_multisample_indices <- which(substring(colnames(data.class), 1,3)=="FL.")
 
@@ -1403,7 +1411,7 @@ if (nrow(data.junction) > 0){
   data.junction$junctionLabel = with(data.junction, paste(chrom, strand,genomic_start_coord, genomic_end_coord, sep="_"))
   
   data.junction$canonical_known = with(data.junction, paste(junction_category,canonical,"SJ", sep="_"))
-  data.junction$canonical_known=as.factor(data.junction$canonical_known)
+  data.junction$canonical_known = as.factor(data.junction$canonical_known)
   data.junction$canonical_known = factor(data.junction$canonical_known, levels=c("known_canonical_SJ", "known_non_canonical_SJ", "novel_canonical_SJ", "novel_non_canonical_SJ"),
                                          labels=c("Known\ncanonical ", "Known\nNon-canonical ", "Novel\ncanonical ", "Novel\nNon-canonical "), order=T) 
   data.junction$structural_category = data.class[data.junction$isoform,"structural_category"]
@@ -1928,7 +1936,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.RTS <- rbind(t3.RTS, c("NIC", TRUE, 0,0,0,"RT switching"))
   }
   if(!("NNC" %in% t3.RTS$structural_category)){
-    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE,0,0,"RT switching"))
+    t3.RTS <- rbind(t3.RTS, c("NNC", TRUE, 0,0,0,"RT switching"))
   }
   colnames(t3.RTS) <- column_names
   t3.RTS$perc <- as.numeric(t3.RTS$perc)
@@ -1944,9 +1952,15 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if (n_t3.SJ > 0) {
     t3.SJ$Var <- "Non-canonical"
     t3.a.SJ$Var <- 'Canonical'
+  } else {
+    t3.SJ[1,] <- NA
+    t3.a.SJ$Var <- 'Canonical'
+    t3.SJ$Var <- NA
+    t3.SJ <- na.omit(t3.SJ)
   }
   column_names <- colnames(t3.SJ)
   levels(t3.SJ) <- structural_categories
+  
   #t3.SJ$structural_category <- relevel(t3.SJ$structural_category, )
   if(!("FSM" %in% t3.SJ$structural_category)){
     t3.SJ <- rbind(t3.SJ, c("FSM", "Non-canonical",0,0,0,"Non-canonical"))
@@ -1960,7 +1974,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   if(!("NNC" %in% t3.SJ$structural_category)){
     t3.SJ <- rbind(t3.SJ, c("NNC", "Non-canonical",0,0,0,"Non-canonical"))
   }
-  
+    
 
   if (!all(is.na(x$predicted_NMD))){
     x[which(x$predicted_NMD=="TRUE"),"predicted_NMD"]="Predicted NMD"
@@ -1968,22 +1982,34 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t1.NMD <- group_by(x, structural_category, predicted_NMD) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.NMD <- merge(t1.NMD, t2.RTS, by="structural_category")
     t3.NMD$perc <- t3.NMD$count.x / t3.NMD$count.y * 100
+    # Condition in case all the transcripts are false (it would break the code below.)
+    if ('Predicted NMD' %in% x$predicted_NMD){
     t3.NMD <- subset(t3.NMD, predicted_NMD=='Predicted NMD');
     t3.NMD$Var=t3.NMD$predicted_NMD
-    
-    if(!("FSM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"NMD"))
+
+      if(!("FSM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("FSM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("ISM" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NIC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+      if(!("NNC" %in% t3.NMD$structural_category)){
+        t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"Predicted NMD"))
+      }
+    } else {
+        t3.NMD <- data.frame(
+          structural_category = c("FSM", "ISM", "NIC", "NNC"),
+          predicted_NMD = "Predicted NMD",
+          count.x = 0,
+          count.y = 0,
+          perc = 0,
+          Var = "Predicted NMD",
+          stringsAsFactors = FALSE
+        )
     }
-    if(!("ISM" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("ISM", "Predicted NMD",0,0,0,"NMD"))
-    }
-    if(!("NIC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NIC", "Predicted NMD",0,0,0,"NMD"))
-    }
-    if(!("NNC" %in% t3.NMD$structural_category)){
-      t3.NMD <- rbind(t3.NMD, c("NNC", "Predicted NMD",0,0,0,"NMD"))
-    }
-    
     t3.NMD$perc <- as.numeric(t3.NMD$perc)
     
   }
@@ -2149,9 +2175,10 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
       theme(legend.position="bottom", axis.title.x = element_blank()) +
       ggtitle("Splice Junctions With Short Reads Coverage\n\n") 
 
+    
 
     t3 <- rbind(t3.RTS[,c(1,5,6)],t3.SJ[,c(1,5,6)], t3.Cov[,c(1,5,6)])
-
+    
     p28 <- ggplot(data=t3, aes(x=structural_category, y=perc, fill= Var)) +
       geom_bar(position = position_dodge(), stat="identity", width = 0.7,  size=0.3, color="black") +
       scale_fill_manual(values = myPalette[9:11]) +
