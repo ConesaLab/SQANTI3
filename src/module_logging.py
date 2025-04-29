@@ -27,12 +27,16 @@ def update_logger(logger,dir,log_lvl):
     """
     Update the logger configuration to use a new log file.
     """
+    logPath= os.path.join(dir, 'logs', 'sqanti3.log')
     # Get the current log file handler
     for handler in logger.handlers:
         if isinstance(handler, logging.FileHandler):
             # Update the log file path
-            handler.baseFilename = os.path.join(dir, 'logs', 'sqanti3.log')
+            handler.baseFilename = os.path.join(logPath)
 
             logger.setLevel(log_lvl)
             break
-    os.makedirs(f"{dir}/logs", exist_ok=True)
+    if not os.path.exists(logPath):
+        os.makedirs(f"{dir}/logs", exist_ok=True)
+    else:
+        os.remove(logPath)

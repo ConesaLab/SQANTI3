@@ -7,7 +7,7 @@ SAM	NA
 FAA	example/SQANTI3_QC_output/UHR_chr22_corrected.faa
 isoAnnotGFF3	NA
 OutputPrefix	UHR_chr22
-OutputDirectory	/home/pabloati/Programs/sqanti3/example/ml_filter_output2
+OutputDirectory	/home/pabloati/Programs/sqanti3/example/ml_filter_output
 FilterMonoexonic	False
 SkipReport	False
 PercentTraining	0.8

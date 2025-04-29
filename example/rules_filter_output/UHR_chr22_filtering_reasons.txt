@@ -1,151 +1,151 @@
 isoform	structural_category	filter_reason
-PB.3796.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.3796.2	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
+PB.3796.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.3796.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; RTS_stage: True
 PB.3797.1	fusion	min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
-PB.3799.1	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.3799.2	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 100.0 > 59
+PB.3799.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
+PB.3799.2	novel_not_in_catalog	perc_A_downstream_TTS: 100.0 > 59; RTS_stage: True
 PB.3813.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.3814.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.3814.4	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.3820.5	novel_not_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
-PB.3821.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.3821.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.3821.6	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.3826.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
 PB.3828.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3828.2	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.3830.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.3835.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.3836.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.3841.11	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.3841.12	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.3841.14	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3841.15	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3841.16	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3841.21	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3841.24	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.3828.2	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
+PB.3830.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.3835.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.3836.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.3841.11	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.3841.12	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.3841.14	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.3841.15	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.3841.16	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.3841.21	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.3841.24	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.3846.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
 PB.3848.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59
 PB.3853.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.3853.2	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.3854.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3855.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.3856.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.3863.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.3865.3	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.3870.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.3855.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.3856.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 80.0 > 59
+PB.3863.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.3865.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.3870.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.3871.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.3872.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.3872.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.3872.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 1.0 < 3
+PB.3872.2	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.3872.3	novel_not_in_catalog	RTS_stage: True
 PB.3878.1	incomplete-splice_match	RTS_stage: True
-PB.8633.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.8633.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.8637.1	full-splice_match	perc_A_downstream_TTS: 65.0 > 59
-PB.8639.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.8639.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.8639.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8639.8	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.8640.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.8641.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8645.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.8639.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.8639.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.8639.7	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8639.8	novel_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.8640.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.8641.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8645.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.8646.2	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.8649.3	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.8649.5	novel_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3
 PB.8649.6	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 2.0 < 3
 PB.8655.3	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.8656.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.8656.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.8656.2	novel_not_in_catalog	RTS_stage: True
-PB.8657.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.8657.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.8661.4	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.8665.2	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.8665.2	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.8666.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.8666.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.8668.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
-PB.8672.1	fusion	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.8672.1	fusion	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.8687.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.8688.6	incomplete-splice_match	RTS_stage: True
-PB.8689.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.8689.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.8689.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.8689.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.8689.3	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.8691.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.8698.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.8691.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.8698.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.8699.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.8705.1	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
-PB.8706.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.8706.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 95.0 > 59
 PB.8707.3	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.8707.4	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.8715.3	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.8721.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.8723.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
-PB.8724.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.8724.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8724.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8724.4	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.8724.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8726.1	novel_not_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.8726.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8726.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.8728.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.8724.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
+PB.8724.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8724.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8724.4	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.8724.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8726.1	novel_not_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.8726.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8726.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.8728.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.8734.1	incomplete-splice_match	RTS_stage: True
 PB.8736.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.8736.2	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.8736.2	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.15672.2	novel_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.15679.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15684.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15684.6	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.15684.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15684.6	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.15686.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.15694.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.15694.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.15697.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.15702.1	incomplete-splice_match	RTS_stage: True
 PB.15706.1	full-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.15715.1	incomplete-splice_match	RTS_stage: True
-PB.15718.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.15718.2	genic_intron	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
+PB.15718.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59; all_canonical: non_canonical
+PB.15718.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
 PB.15722.1	incomplete-splice_match	all_canonical: nan
 PB.15725.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15728.1	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.15728.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.15728.1	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.15728.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.15740.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15743.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.15743.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.15747.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.15747.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 70.0 > 59
+PB.15747.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True; perc_A_downstream_TTS: 70.0 > 59
 PB.15747.4	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.15747.5	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.15750.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15751.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15751.3	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.15751.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15754.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.15755.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.15750.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.15751.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15751.3	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.15751.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15754.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.15755.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.15760.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.15763.1	novel_in_catalog	RTS_stage: True
 PB.15767.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.15768.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.15770.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; all_canonical: non_canonical; min_cov: 0.0 < 3
+PB.15768.3	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
+PB.15770.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.15774.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.15775.1	novel_not_in_catalog	perc_A_downstream_TTS: 85.0 > 59
 PB.15780.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.15784.1	novel_in_catalog	RTS_stage: True
-PB.15787.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
-PB.15791.1	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 80.0 > 59
+PB.15787.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.15791.1	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
 PB.15793.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.15796.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.15796.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.15798.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15802.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.15802.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.15808.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.15808.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.15814.2	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.15814.3	novel_not_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.15815.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.15817.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.15814.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.15815.1	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.15817.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.15822.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.15826.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.15829.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15832.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15832.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15832.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.15832.6	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.15829.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.15832.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15832.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15832.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.15832.6	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.15836.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.15837.1	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.15837.1	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.15839.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.22971.2	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59
 PB.22972.1	incomplete-splice_match	all_canonical: nan
@@ -153,22 +153,22 @@ PB.22974.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.22978.1	novel_in_catalog	RTS_stage: True
 PB.22978.3	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.22986.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.22989.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.22990.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.22989.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.22990.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.22996.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.23001.2	novel_in_catalog	perc_A_downstream_TTS: 60.0 > 59
-PB.23004.2	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.23008.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.23004.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.23008.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.23010.1	incomplete-splice_match	RTS_stage: True
 PB.23012.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.23013.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.23015.1	novel_in_catalog	all_canonical: nan
-PB.23016.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.23016.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.23023.1	incomplete-splice_match	RTS_stage: True
-PB.23024.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.23026.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.23041.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.23045.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.23024.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.23026.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.23041.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.23045.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.23047.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.23047.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.23049.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
@@ -176,13 +176,13 @@ PB.23052.1	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59
 PB.23052.2	incomplete-splice_match	RTS_stage: True
 PB.23058.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.23058.4	incomplete-splice_match	RTS_stage: True
-PB.23058.5	genic	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.23058.6	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.23061.1	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3
-PB.23067.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.23058.5	genic	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.23058.6	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.23061.1	incomplete-splice_match	min_cov: 0.0 < 3; RTS_stage: True
+PB.23067.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.23068.2	genic	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.23072.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.23074.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.23074.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.23078.2	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
 PB.23082.1	incomplete-splice_match	RTS_stage: True
 PB.23089.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
@@ -191,29 +191,29 @@ PB.23098.1	incomplete-splice_match	all_canonical: nan
 PB.23103.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.23109.1	full-splice_match	perc_A_downstream_TTS: 65.0 > 59
 PB.23111.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.23113.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.23117.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; RTS_stage: True; min_cov: 0.0 < 3
+PB.23113.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.23117.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 95.0 > 59
 PB.23122.2	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.23125.1	incomplete-splice_match	RTS_stage: True
-PB.23128.2	incomplete-splice_match	RTS_stage: True; min_cov: 2.0 < 3
-PB.23130.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.23130.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.23128.2	incomplete-splice_match	min_cov: 2.0 < 3; RTS_stage: True
+PB.23130.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.23130.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.23138.1	novel_in_catalog	RTS_stage: True
-PB.23138.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.23139.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.23138.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.23139.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.23141.1	genic	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
-PB.23142.1	genic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.30357.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.23142.1	genic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.30357.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.30357.2	novel_in_catalog	RTS_stage: True
 PB.30360.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.30368.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.30371.1	incomplete-splice_match	RTS_stage: True
-PB.30372.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
-PB.30372.2	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.30372.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.30372.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.30373.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.30375.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.30378.7	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.30397.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.30397.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.30401.1	incomplete-splice_match	all_canonical: nan
 PB.30402.1	incomplete-splice_match	RTS_stage: True
 PB.30418.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
@@ -225,75 +225,75 @@ PB.30432.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 <
 PB.30433.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.30434.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.30437.1	intergenic	all_canonical: nan
-PB.30439.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.30440.1	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3
+PB.30439.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 70.0 > 59
+PB.30440.1	incomplete-splice_match	min_cov: 0.0 < 3; RTS_stage: True
 PB.30442.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.30446.1	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.30447.1	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3
+PB.30446.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.30447.1	incomplete-splice_match	min_cov: 0.0 < 3; RTS_stage: True
 PB.30450.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.30450.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.30450.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.30450.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.30452.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.30454.1	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.30454.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.30454.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.30454.1	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.30454.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.30454.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.30456.2	novel_in_catalog	all_canonical: nan
 PB.30458.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.30459.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.30464.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.30467.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.30468.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.30459.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.30464.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.30467.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.30468.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.30471.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.30475.1	incomplete-splice_match	RTS_stage: True
-PB.30485.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.30485.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.30498.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.30503.1	genic	all_canonical: nan
-PB.30504.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.30504.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.30504.2	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.30505.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.30509.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.30505.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.30509.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.30511.1	incomplete-splice_match	all_canonical: nan
-PB.30516.4	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.30517.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.30516.4	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.30517.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.30520.3	novel_in_catalog	all_canonical: nan
-PB.30523.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.30523.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.30523.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.30523.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.30523.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.30523.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.30523.5	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.30526.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59
 PB.30530.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.30532.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.30532.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.30537.1	incomplete-splice_match	all_canonical: nan
 PB.30539.2	incomplete-splice_match	RTS_stage: True
 PB.30541.2	novel_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.37823.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.37827.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.37828.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.37834.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.37823.3	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.37827.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.37828.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.37834.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.37842.1	incomplete-splice_match	RTS_stage: True
 PB.37845.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.37847.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.37849.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.37849.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.37851.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.37852.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.37852.2	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.37853.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.37852.2	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 1.0 < 3
+PB.37853.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.37856.1	novel_in_catalog	all_canonical: nan
-PB.37858.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.37859.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.37858.1	intergenic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.37859.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.37860.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.37860.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.37865.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.37867.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
-PB.37867.2	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
+PB.37867.2	incomplete-splice_match	min_cov: 2.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.37868.1	incomplete-splice_match	RTS_stage: True
-PB.37869.3	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.37871.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.37871.3	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.37871.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.37869.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.37871.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.37871.3	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.37871.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.37872.1	incomplete-splice_match	all_canonical: nan
 PB.37875.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.37878.3	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.37878.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.37883.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.37889.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
 PB.37890.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
@@ -302,112 +302,112 @@ PB.37897.1	incomplete-splice_match	RTS_stage: True
 PB.37898.1	incomplete-splice_match	all_canonical: nan
 PB.37902.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.37905.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.37906.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.37907.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.37907.3	novel_not_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.37906.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.37907.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.37907.3	novel_not_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.37912.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.37912.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.37916.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.37917.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 90.0 > 59
+PB.37916.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.37917.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; RTS_stage: True
 PB.37918.1	genic	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.37919.1	genic	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.37919.1	genic	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.37927.1	genic	all_canonical: nan
-PB.37928.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.37929.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.37928.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.37929.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.37932.1	novel_not_in_catalog	perc_A_downstream_TTS: 80.0 > 59
 PB.37940.1	incomplete-splice_match	all_canonical: nan
 PB.37943.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.37946.1	incomplete-splice_match	all_canonical: nan
 PB.37947.1	incomplete-splice_match	RTS_stage: True
-PB.37948.1	intergenic	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 70.0 > 59
-PB.37949.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.37948.1	intergenic	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True; perc_A_downstream_TTS: 70.0 > 59
+PB.37949.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.37951.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.37955.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.37957.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.37962.3	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.37963.6	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.37963.7	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.37957.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.37962.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; all_canonical: non_canonical
+PB.37963.6	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.37963.7	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.37965.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.37965.2	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.37965.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59; all_canonical: non_canonical
 PB.37966.1	novel_in_catalog	RTS_stage: True
 PB.37967.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.37968.1	genic	all_canonical: nan
-PB.37970.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.37974.1	novel_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.37974.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.37970.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.37974.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.37974.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.37980.1	incomplete-splice_match	RTS_stage: True
 PB.37982.1	incomplete-splice_match	all_canonical: nan
-PB.37984.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.37989.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.37993.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.37994.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.37996.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.45356.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 2.0 < 3
+PB.37984.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.37989.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.37993.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.37994.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.37996.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.45356.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.45357.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45360.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45361.1	incomplete-splice_match	all_canonical: nan
-PB.45362.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.45362.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.45363.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45364.1	incomplete-splice_match	all_canonical: nan
 PB.45366.1	incomplete-splice_match	all_canonical: nan
-PB.45370.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.45371.1	intergenic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
+PB.45370.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.45371.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
 PB.45374.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.45375.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45380.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.45383.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.45387.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.45380.1	antisense	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.45383.1	antisense	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.45387.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.45389.2	novel_in_catalog	RTS_stage: True
 PB.45390.2	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.45391.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.45391.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.45394.1	full-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.45395.1	incomplete-splice_match	RTS_stage: True
 PB.45396.1	incomplete-splice_match	all_canonical: nan
-PB.45398.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.45398.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.45400.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.45403.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.45404.1	incomplete-splice_match	all_canonical: nan
 PB.45406.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45408.1	novel_in_catalog	perc_A_downstream_TTS: 65.0 > 59; min_cov: 0.0 < 3
+PB.45408.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 65.0 > 59
 PB.45409.1	genic	all_canonical: nan
-PB.45410.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.45411.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.45410.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.45411.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.45412.1	incomplete-splice_match	all_canonical: nan
 PB.45413.1	incomplete-splice_match	all_canonical: nan
-PB.45414.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.45415.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.45417.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.45414.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.45415.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.45417.2	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.45419.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45419.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45424.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.45424.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.45425.1	incomplete-splice_match	all_canonical: nan
 PB.45432.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45433.2	genic	all_canonical: nan
 PB.45434.1	incomplete-splice_match	all_canonical: nan
-PB.45435.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.45436.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.45435.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.45436.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 1.0 < 3
 PB.45438.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.45442.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.45442.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.45447.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
-PB.45447.2	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.45447.2	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
 PB.45447.3	incomplete-splice_match	RTS_stage: True
 PB.45449.1	genic	all_canonical: nan
 PB.45452.1	incomplete-splice_match	RTS_stage: True
-PB.45453.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.45456.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.45456.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.45453.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.45456.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.45456.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.45459.1	incomplete-splice_match	all_canonical: nan
-PB.45464.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45470.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.45464.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.45470.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.45470.2	incomplete-splice_match	all_canonical: nan
 PB.45470.3	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
-PB.45471.3	novel_in_catalog	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.45471.3	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.45475.1	incomplete-splice_match	all_canonical: nan
-PB.45477.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.45477.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.45478.1	incomplete-splice_match	all_canonical: nan
-PB.45479.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.45483.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
-PB.45485.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.45479.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.45483.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.45485.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.45486.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 1.0 < 3
 PB.45486.2	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59
 PB.45487.1	full-splice_match	perc_A_downstream_TTS: 60.0 > 59
@@ -416,24 +416,24 @@ PB.45488.1	incomplete-splice_match	all_canonical: nan
 PB.45491.1	incomplete-splice_match	all_canonical: nan
 PB.45492.1	incomplete-splice_match	all_canonical: nan
 PB.45495.1	incomplete-splice_match	all_canonical: nan
-PB.45497.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.45498.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.45501.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.45502.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: non_canonical; min_cov: 0.0 < 3
+PB.45497.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.45498.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.45501.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.45502.1	genic	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 85.0 > 59
 PB.45503.1	incomplete-splice_match	all_canonical: nan
 PB.45504.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45504.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.45504.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45504.6	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45504.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.45504.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.45504.7	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.45504.8	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45504.9	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.45504.10	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.45504.9	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.45504.10	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; all_canonical: non_canonical
 PB.45507.1	intergenic	all_canonical: nan
 PB.45508.2	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.45509.1	incomplete-splice_match	all_canonical: nan
-PB.45510.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.45514.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.45510.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.45514.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.45517.1	incomplete-splice_match	all_canonical: nan
 PB.45518.1	intergenic	all_canonical: nan
 PB.45519.1	incomplete-splice_match	all_canonical: nan
@@ -441,114 +441,114 @@ PB.45523.1	incomplete-splice_match	all_canonical: nan
 PB.45524.1	novel_in_catalog	all_canonical: nan
 PB.45531.2	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.45532.1	intergenic	all_canonical: nan
-PB.45533.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.52878.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.52879.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.52884.2	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.52890.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.45533.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.52878.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.52879.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.52884.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.52890.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.52892.1	incomplete-splice_match	RTS_stage: True
-PB.52897.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.52897.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.52899.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.52905.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.52911.1	novel_in_catalog	RTS_stage: True
-PB.52912.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.52913.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.52912.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.52913.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.52915.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.52917.1	novel_not_in_catalog	RTS_stage: True
 PB.52917.3	novel_in_catalog	RTS_stage: True
 PB.52917.5	novel_not_in_catalog	RTS_stage: True
 PB.52924.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.52928.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.52928.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.52928.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.52928.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.52929.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
 PB.52937.1	incomplete-splice_match	RTS_stage: True
-PB.52945.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.52950.1	genic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
+PB.52945.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
+PB.52950.1	genic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
 PB.52952.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.52954.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.52955.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.52956.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.52955.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.52956.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.52962.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.52968.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.52968.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.52969.1	incomplete-splice_match	RTS_stage: True
 PB.52972.1	novel_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.52972.2	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.52972.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59
-PB.52975.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.52976.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.52976.3	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.52975.3	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.52976.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.52976.3	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.52976.4	incomplete-splice_match	RTS_stage: True
 PB.52977.1	genic	all_canonical: nan
 PB.52982.1	incomplete-splice_match	all_canonical: nan
-PB.52983.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.52983.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.52983.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.52984.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.52984.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.52989.1	novel_in_catalog	RTS_stage: True
-PB.52989.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.52989.3	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.52989.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.52989.3	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.52996.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.53011.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.53013.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.53011.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.53013.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.53014.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.53015.1	novel_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3
 PB.53015.2	novel_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 2.0 < 3
 PB.53015.3	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3
-PB.53024.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.53024.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.53025.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.53028.1	genic_intron	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.53031.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.53028.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.53031.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.53035.2	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.53037.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.53037.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.53037.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.53042.1	intergenic	all_canonical: nan
-PB.53046.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.53046.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.53052.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.53054.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
-PB.53057.1	antisense	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.53057.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.53060.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.53061.1	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.53061.1	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.53062.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.53063.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.53067.1	incomplete-splice_match	RTS_stage: True
-PB.53068.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.53070.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.60584.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.53068.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.53070.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.60584.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.60587.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.60588.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60591.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.60592.2	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.60591.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.60592.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.60607.2	novel_in_catalog	RTS_stage: True
 PB.60609.1	novel_not_in_catalog	RTS_stage: True
 PB.60609.2	novel_in_catalog	RTS_stage: True
 PB.60609.4	novel_in_catalog	RTS_stage: True
-PB.60611.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.60616.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.60617.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.60623.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60627.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.60631.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.60632.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.60611.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.60616.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.60617.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.60623.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.60627.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 1.0 < 3
+PB.60631.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.60632.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.60632.3	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.60643.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60644.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.60645.1	incomplete-splice_match	all_canonical: nan
 PB.60649.3	incomplete-splice_match	perc_A_downstream_TTS: 65.0 > 59
-PB.60654.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.60654.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.60656.1	incomplete-splice_match	RTS_stage: True
 PB.60658.1	incomplete-splice_match	all_canonical: nan
 PB.60659.1	incomplete-splice_match	RTS_stage: True
 PB.60662.3	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
 PB.60665.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60665.2	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
+PB.60665.2	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.60670.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60674.1	genic	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60674.2	genic	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60674.3	genic	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60675.1	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.60675.1	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.60677.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.60681.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60681.3	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; RTS_stage: True
-PB.60681.4	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; RTS_stage: True; min_cov: 0.0 < 3
+PB.60681.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.60681.3	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 95.0 > 59
+PB.60681.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 95.0 > 59
 PB.60686.1	novel_not_in_catalog	perc_A_downstream_TTS: 85.0 > 59
 PB.60702.1	full-splice_match	perc_A_downstream_TTS: 60.0 > 59
 PB.60706.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
@@ -558,65 +558,65 @@ PB.60721.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60721.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60721.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.60721.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60721.6	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.60721.7	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.60721.6	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; all_canonical: non_canonical
+PB.60721.7	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; all_canonical: non_canonical
 PB.60739.1	incomplete-splice_match	RTS_stage: True
-PB.60742.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.60742.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.60742.2	incomplete-splice_match	RTS_stage: True
-PB.60742.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.60743.1	intergenic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.60748.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.60742.3	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.60743.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.60748.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.60748.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.68181.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.68182.1	fusion	RTS_stage: True; min_cov: 0.0 < 3
+PB.68181.1	antisense	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.68182.1	fusion	min_cov: 0.0 < 3; RTS_stage: True
 PB.68182.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.68184.2	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 2.0 < 3
+PB.68184.2	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.68185.3	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.68187.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.68191.2	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.68187.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.68191.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.68191.3	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.68203.2	incomplete-splice_match	RTS_stage: True
 PB.68205.1	genic	all_canonical: nan
 PB.68206.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.68207.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.68207.1	intergenic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.68218.1	incomplete-splice_match	RTS_stage: True
 PB.68221.1	incomplete-splice_match	all_canonical: nan
 PB.68224.1	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.68231.1	incomplete-splice_match	RTS_stage: True
-PB.68236.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.68236.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.68236.2	incomplete-splice_match	RTS_stage: True
-PB.68236.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.68236.4	novel_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.68236.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.68236.4	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
 PB.68240.1	genic	all_canonical: nan
 PB.68241.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.68254.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.68256.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.68254.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.68256.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.68258.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.68259.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
 PB.68261.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.68264.1	incomplete-splice_match	RTS_stage: True
-PB.68266.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.68266.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.68267.1	novel_not_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.68270.1	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
-PB.68270.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.68270.3	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
+PB.68270.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.68270.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 80.0 > 59
 PB.68270.4	full-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.68270.5	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.68270.5	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
 PB.68270.6	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
 PB.68276.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.68280.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.68283.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 90.0 > 59
-PB.68285.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.68280.2	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.68283.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; RTS_stage: True
+PB.68285.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.68286.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.68287.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.68288.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.68288.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.68293.3	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.68293.4	fusion	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.68296.1	novel_not_in_catalog	perc_A_downstream_TTS: 85.0 > 59
 PB.68304.1	incomplete-splice_match	all_canonical: nan
-PB.68307.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.68307.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.68309.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.68310.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.68310.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.68320.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.68328.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.68328.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
@@ -625,48 +625,48 @@ PB.68331.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.68331.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.68331.5	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.68336.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.68338.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.68338.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.68340.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.68345.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.68352.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.68345.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.68352.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.68353.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 70.0 > 59
-PB.68359.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.68359.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.68360.2	incomplete-splice_match	RTS_stage: True
-PB.75664.1	fusion	RTS_stage: True; min_cov: 0.0 < 3
+PB.75664.1	fusion	min_cov: 0.0 < 3; RTS_stage: True
 PB.75666.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.75667.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.75668.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.75670.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.75674.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.75674.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.75675.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.75676.2	genic	all_canonical: nan
-PB.75680.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.75680.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.75692.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.75693.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.75693.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.75694.1	antisense	all_canonical: nan
 PB.75695.1	novel_in_catalog	RTS_stage: True
 PB.75695.2	novel_not_in_catalog	RTS_stage: True
-PB.75697.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.75700.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.75697.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.75700.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.75701.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.75708.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 2.0 < 3
+PB.75708.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.75709.1	incomplete-splice_match	all_canonical: nan
 PB.75710.1	incomplete-splice_match	min_cov: 2.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
-PB.75710.2	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.75712.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.75714.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.75710.2	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
+PB.75712.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.75714.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.75714.2	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
-PB.75718.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.75718.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.75720.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.75729.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.75729.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.75732.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
-PB.75737.3	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.75738.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.75739.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.75743.1	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
-PB.75743.2	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.75752.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.75757.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.75737.3	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
+PB.75738.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.75739.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.75743.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59; min_cov: 1.0 < 3
+PB.75743.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 80.0 > 59
+PB.75752.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.75757.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.75757.2	incomplete-splice_match	RTS_stage: True
 PB.75763.4	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.75765.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
@@ -674,58 +674,58 @@ PB.75768.1	incomplete-splice_match	all_canonical: nan
 PB.75772.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.75772.2	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.75774.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.75774.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.75774.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.75774.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.75775.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.75778.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.75775.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.75778.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.75781.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.75781.3	antisense	all_canonical: nan
 PB.75784.1	incomplete-splice_match	all_canonical: nan
 PB.75789.1	incomplete-splice_match	all_canonical: nan
 PB.75790.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.75793.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.75795.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.75795.2	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.75799.2	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.75803.1	incomplete-splice_match	all_canonical: nan
-PB.75804.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.75804.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.75805.1	incomplete-splice_match	RTS_stage: True
-PB.75810.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.75811.1	genic	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.75815.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.75810.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
+PB.75811.1	genic	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.75815.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.75821.1	incomplete-splice_match	all_canonical: nan
 PB.75827.1	incomplete-splice_match	RTS_stage: True
-PB.75828.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.83094.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.83094.3	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.83094.6	intergenic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.83096.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.75828.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.83094.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.83094.3	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.83094.6	intergenic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.83096.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.83110.1	incomplete-splice_match	all_canonical: nan
 PB.83113.1	full-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.83121.3	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.83124.2	genic	all_canonical: nan
-PB.83126.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.83126.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.83130.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.83131.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.83131.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.83135.1	genic_intron	all_canonical: nan
 PB.83137.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3
 PB.83148.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
-PB.83149.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.83155.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.83149.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.83155.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.83159.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.83168.1	incomplete-splice_match	perc_A_downstream_TTS: 65.0 > 59; min_cov: 2.0 < 3; RTS_stage: True
+PB.83168.1	incomplete-splice_match	min_cov: 2.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 65.0 > 59
 PB.83172.1	novel_not_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.83172.2	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.83177.1	incomplete-splice_match	all_canonical: nan
 PB.83180.4	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.83181.3	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.83181.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.83182.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
 PB.83184.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.83186.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59
-PB.83187.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.83187.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.83191.1	incomplete-splice_match	RTS_stage: True
 PB.83194.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.83195.1	antisense	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.83198.1	incomplete-splice_match	perc_A_downstream_TTS: 65.0 > 59; min_cov: 0.0 < 3
+PB.83198.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 65.0 > 59
 PB.83203.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.83211.1	incomplete-splice_match	all_canonical: nan
 PB.83213.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
@@ -738,83 +738,83 @@ PB.83219.1	genic	all_canonical: nan
 PB.83232.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.83235.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.83235.2	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.83241.2	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.83241.2	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.83244.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.83247.1	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.83250.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.83252.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.83247.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.83250.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.83252.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.83254.1	genic	all_canonical: nan
-PB.83260.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.83263.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.83260.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.83263.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.83269.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.83274.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
+PB.83274.1	novel_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.83275.1	incomplete-splice_match	all_canonical: nan
-PB.88761.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88761.4	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88762.1	fusion	RTS_stage: True; min_cov: 0.0 < 3
-PB.88762.2	fusion	min_cov: 1.0 < 3; RTS_stage: True
+PB.88761.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.88761.4	incomplete-splice_match	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.88762.1	fusion	min_cov: 0.0 < 3; RTS_stage: True
+PB.88762.2	fusion	RTS_stage: True; min_cov: 1.0 < 3
 PB.88763.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.88771.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88773.1	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 100.0 > 59
+PB.88773.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; RTS_stage: True
 PB.88774.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59
-PB.88777.1	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.88777.1	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.88777.2	novel_in_catalog	RTS_stage: True
 PB.88777.3	novel_not_in_catalog	RTS_stage: True
 PB.88777.4	novel_not_in_catalog	RTS_stage: True
-PB.88777.5	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.88777.6	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.88779.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.88777.5	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.88777.6	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.88779.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.88784.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.88785.2	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.88788.1	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
-PB.88788.2	novel_not_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.88785.2	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.88788.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59; RTS_stage: True
+PB.88788.2	novel_not_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.88788.3	novel_not_in_catalog	RTS_stage: True
-PB.88788.4	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.88788.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88788.8	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88788.9	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88788.10	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.88788.11	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88788.12	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88790.1	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.88788.4	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.88788.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88788.8	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88788.9	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88788.10	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.88788.11	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88788.12	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88790.1	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.88791.2	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.88792.1	novel_in_catalog	RTS_stage: True
 PB.88792.2	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.88793.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.88796.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.88796.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.88800.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88800.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.88800.7	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.88803.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.88804.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88804.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.88804.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88804.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.88804.3	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.88804.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88810.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88812.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.88804.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88810.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88812.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.88814.4	incomplete-splice_match	RTS_stage: True
 PB.88814.5	incomplete-splice_match	RTS_stage: True
-PB.88815.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88815.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88815.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.88816.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.88821.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.88815.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.88815.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88815.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.88816.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.88821.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.88825.1	novel_in_catalog	RTS_stage: True
-PB.88825.2	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.88828.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.88825.2	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.88828.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.88831.2	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.88837.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.88841.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88844.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.88851.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.88853.1	genic_intron	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.88844.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.88851.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.88853.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.88856.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.88857.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.88857.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.88857.2	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59
 PB.88859.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.88860.1	novel_not_in_catalog	RTS_stage: True
-PB.88862.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.88862.3	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.88866.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.88862.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59; RTS_stage: True
+PB.88862.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.88866.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.88871.1	novel_in_catalog	RTS_stage: True
 PB.96068.1	antisense	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.96069.2	incomplete-splice_match	RTS_stage: True
@@ -823,12 +823,12 @@ PB.96075.1	genic	all_canonical: nan
 PB.96081.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96085.1	incomplete-splice_match	all_canonical: nan
 PB.96086.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.96086.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.96086.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.96086.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96086.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96086.7	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.96089.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.96092.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.96089.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.96092.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.96093.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96096.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; all_canonical: nan
 PB.96098.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
@@ -838,8 +838,8 @@ PB.96105.1	genic	all_canonical: nan
 PB.96108.1	incomplete-splice_match	all_canonical: nan
 PB.96112.1	incomplete-splice_match	all_canonical: nan
 PB.96113.1	incomplete-splice_match	all_canonical: nan
-PB.96117.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.96119.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.96117.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.96119.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.96123.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.96123.2	full-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.96123.4	novel_not_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 80.0 > 59
@@ -848,40 +848,40 @@ PB.96132.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.96133.1	incomplete-splice_match	all_canonical: nan
 PB.96135.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96136.1	incomplete-splice_match	all_canonical: nan
-PB.96137.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.96137.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.96144.1	incomplete-splice_match	all_canonical: nan
 PB.96147.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.96154.1	incomplete-splice_match	all_canonical: nan
-PB.96155.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.96155.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.96156.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96156.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.96156.5	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
-PB.96168.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.96156.5	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.96168.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.96173.1	genic	all_canonical: nan
-PB.96174.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.96181.1	novel_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.96174.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.96181.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.96183.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.96183.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.96184.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.96187.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.96184.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.96187.1	intergenic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.96189.1	genic	all_canonical: nan
-PB.96191.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.96194.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.96191.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.96194.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.96197.1	incomplete-splice_match	all_canonical: nan
-PB.96198.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.96202.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.96203.1	intergenic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.96198.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.96202.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.96203.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.96204.1	incomplete-splice_match	all_canonical: nan
 PB.96212.1	incomplete-splice_match	all_canonical: nan
 PB.96213.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.96222.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.96223.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.103686.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.103696.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.96222.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.96223.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.103686.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.103696.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.103698.1	incomplete-splice_match	all_canonical: nan
-PB.103701.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.103701.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.103703.1	incomplete-splice_match	all_canonical: nan
-PB.103705.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.103705.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.103709.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.103710.1	incomplete-splice_match	all_canonical: nan
 PB.103711.1	incomplete-splice_match	all_canonical: nan
@@ -891,26 +891,26 @@ PB.103721.1	incomplete-splice_match	all_canonical: nan
 PB.103723.1	incomplete-splice_match	all_canonical: nan
 PB.103731.1	incomplete-splice_match	all_canonical: nan
 PB.103732.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.103733.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.103733.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.103743.1	incomplete-splice_match	all_canonical: nan
 PB.103745.1	incomplete-splice_match	all_canonical: nan
-PB.103747.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.103748.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.103753.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.103747.1	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.103748.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.103753.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.103754.1	incomplete-splice_match	all_canonical: nan
 PB.103756.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
 PB.103759.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.103763.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.103764.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.103764.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.103766.1	incomplete-splice_match	all_canonical: nan
 PB.103770.1	incomplete-splice_match	RTS_stage: True
-PB.103773.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.103773.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.103774.1	incomplete-splice_match	all_canonical: nan
 PB.103775.1	incomplete-splice_match	all_canonical: nan
 PB.103778.1	incomplete-splice_match	all_canonical: nan
-PB.103781.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.103781.1	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.103782.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.103783.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.103783.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.103784.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.103785.1	genic	all_canonical: nan
 PB.103786.1	incomplete-splice_match	all_canonical: nan
@@ -918,63 +918,63 @@ PB.103790.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; all_canoni
 PB.103794.1	incomplete-splice_match	all_canonical: nan
 PB.103795.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.103795.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.103800.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.103802.1	novel_not_in_catalog	perc_A_downstream_TTS: 65.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.103800.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.103802.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 65.0 > 59; RTS_stage: True
 PB.103802.2	incomplete-splice_match	perc_A_downstream_TTS: 65.0 > 59
-PB.103803.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.103804.2	novel_not_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.103803.1	intergenic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.103804.2	novel_not_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.103805.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.103808.1	incomplete-splice_match	all_canonical: nan
 PB.103811.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.103813.1	incomplete-splice_match	RTS_stage: True
 PB.103815.1	incomplete-splice_match	all_canonical: nan
 PB.103816.1	incomplete-splice_match	all_canonical: nan
-PB.103825.1	genic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.103826.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.103825.1	genic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.103826.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.103828.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; all_canonical: nan
 PB.103829.1	incomplete-splice_match	all_canonical: nan
 PB.103830.1	incomplete-splice_match	all_canonical: nan
-PB.103835.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.103835.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.103837.1	incomplete-splice_match	all_canonical: nan
 PB.103838.1	incomplete-splice_match	RTS_stage: True
 PB.103838.2	novel_in_catalog	RTS_stage: True
 PB.103839.1	incomplete-splice_match	all_canonical: nan
-PB.111548.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.111550.1	antisense	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.111548.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.111550.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.111551.1	incomplete-splice_match	all_canonical: nan
 PB.111554.1	genic_intron	all_canonical: nan
 PB.111558.1	incomplete-splice_match	all_canonical: nan
 PB.111562.1	incomplete-splice_match	all_canonical: nan
 PB.111564.1	genic	all_canonical: nan
-PB.111565.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.111565.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.111567.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.111571.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.111572.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.111571.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.111572.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.111573.1	incomplete-splice_match	all_canonical: nan
 PB.111574.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.111575.1	incomplete-splice_match	all_canonical: nan
-PB.111576.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.111576.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.111580.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.111581.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.111581.1	antisense	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.111582.1	incomplete-splice_match	all_canonical: nan
-PB.111586.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.111587.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.111589.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.111586.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.111587.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.111589.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.111592.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.111594.2	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.111595.1	intergenic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.111594.2	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.111595.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.111597.1	incomplete-splice_match	all_canonical: nan
-PB.111598.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.111598.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.111601.1	incomplete-splice_match	all_canonical: nan
 PB.111603.1	incomplete-splice_match	all_canonical: nan
 PB.111604.1	incomplete-splice_match	all_canonical: nan
 PB.111605.1	incomplete-splice_match	all_canonical: nan
 PB.111606.1	incomplete-splice_match	all_canonical: nan
-PB.111607.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.111607.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.111608.1	incomplete-splice_match	all_canonical: nan
 PB.111613.1	incomplete-splice_match	all_canonical: nan
 PB.111617.1	incomplete-splice_match	all_canonical: nan
-PB.111619.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.111619.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.111620.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.111621.1	incomplete-splice_match	all_canonical: nan
 PB.111622.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
@@ -985,7 +985,7 @@ PB.111632.1	incomplete-splice_match	all_canonical: nan
 PB.111634.1	incomplete-splice_match	all_canonical: nan
 PB.111639.1	incomplete-splice_match	all_canonical: nan
 PB.111642.1	incomplete-splice_match	all_canonical: nan
-PB.111644.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.111644.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.111645.1	incomplete-splice_match	all_canonical: nan
 PB.111648.1	incomplete-splice_match	all_canonical: nan
 PB.111652.1	incomplete-splice_match	all_canonical: nan
@@ -993,11 +993,11 @@ PB.111653.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.111653.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.111654.1	incomplete-splice_match	RTS_stage: True
 PB.111657.1	incomplete-splice_match	all_canonical: nan
-PB.111658.1	incomplete-splice_match	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.111659.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.111666.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.111658.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.111659.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.111666.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.111672.1	genic	all_canonical: nan
-PB.111673.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.111673.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.111675.1	incomplete-splice_match	all_canonical: nan
 PB.111680.1	incomplete-splice_match	all_canonical: nan
 PB.111692.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
@@ -1006,19 +1006,19 @@ PB.111693.1	incomplete-splice_match	all_canonical: nan
 PB.111700.1	incomplete-splice_match	all_canonical: nan
 PB.111701.1	incomplete-splice_match	all_canonical: nan
 PB.111702.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
-PB.111705.1	incomplete-splice_match	RTS_stage: True; min_cov: 0.0 < 3
-PB.118859.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.118861.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.111705.1	incomplete-splice_match	min_cov: 0.0 < 3; RTS_stage: True
+PB.118859.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.118861.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118863.1	genic	all_canonical: nan
 PB.118864.1	incomplete-splice_match	all_canonical: nan
 PB.118865.1	incomplete-splice_match	all_canonical: nan
 PB.118866.1	incomplete-splice_match	all_canonical: nan
-PB.118868.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.118868.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118869.1	incomplete-splice_match	all_canonical: nan
 PB.118870.1	incomplete-splice_match	all_canonical: nan
-PB.118871.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.118871.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.118872.1	incomplete-splice_match	all_canonical: nan
-PB.118873.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.118873.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.118876.1	incomplete-splice_match	all_canonical: nan
 PB.118877.1	genic	all_canonical: nan
 PB.118878.1	incomplete-splice_match	all_canonical: nan
@@ -1026,26 +1026,26 @@ PB.118879.1	genic	all_canonical: nan
 PB.118882.3	incomplete-splice_match	all_canonical: nan
 PB.118884.1	incomplete-splice_match	all_canonical: nan
 PB.118886.1	incomplete-splice_match	all_canonical: nan
-PB.118887.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.118887.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118889.1	incomplete-splice_match	all_canonical: nan
 PB.118901.1	incomplete-splice_match	all_canonical: nan
 PB.118906.1	incomplete-splice_match	all_canonical: nan
 PB.118908.1	incomplete-splice_match	all_canonical: nan
-PB.118913.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.118913.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118916.1	incomplete-splice_match	all_canonical: nan
 PB.118917.1	genic_intron	all_canonical: nan
 PB.118921.2	incomplete-splice_match	all_canonical: nan
 PB.118923.1	incomplete-splice_match	all_canonical: nan
 PB.118931.1	incomplete-splice_match	all_canonical: nan
 PB.118933.1	incomplete-splice_match	all_canonical: nan
-PB.118934.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.118934.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118935.1	genic	all_canonical: nan
 PB.118936.1	incomplete-splice_match	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
 PB.118938.1	genic	all_canonical: nan
 PB.118939.1	incomplete-splice_match	all_canonical: nan
 PB.118942.1	incomplete-splice_match	all_canonical: nan
 PB.118943.1	incomplete-splice_match	all_canonical: nan
-PB.118945.1	genic_intron	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.118945.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.118948.1	genic	all_canonical: nan
 PB.118949.1	incomplete-splice_match	all_canonical: nan
 PB.118950.2	incomplete-splice_match	all_canonical: nan
@@ -1054,10 +1054,10 @@ PB.118954.1	incomplete-splice_match	all_canonical: nan
 PB.118958.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.118958.3	incomplete-splice_match	all_canonical: nan
 PB.118961.1	incomplete-splice_match	all_canonical: nan
-PB.118963.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.118963.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.118964.1	incomplete-splice_match	all_canonical: nan
 PB.118965.3	incomplete-splice_match	all_canonical: nan
-PB.118973.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.118973.1	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.118975.1	incomplete-splice_match	all_canonical: nan
 PB.118980.1	incomplete-splice_match	all_canonical: nan
 PB.118985.1	genic_intron	all_canonical: nan
@@ -1069,161 +1069,161 @@ PB.118996.1	incomplete-splice_match	all_canonical: nan
 PB.118998.1	incomplete-splice_match	all_canonical: nan
 PB.118999.1	incomplete-splice_match	all_canonical: nan
 PB.119000.1	incomplete-splice_match	all_canonical: nan
-PB.119003.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.119003.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.119005.1	incomplete-splice_match	all_canonical: nan
 PB.119009.1	incomplete-splice_match	all_canonical: nan
 PB.119011.1	incomplete-splice_match	all_canonical: nan
-PB.119013.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.119013.1	intergenic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.119015.1	incomplete-splice_match	all_canonical: nan
 PB.119018.1	incomplete-splice_match	all_canonical: nan
 PB.119019.1	incomplete-splice_match	all_canonical: nan
 PB.119020.1	incomplete-splice_match	all_canonical: nan
 PB.119022.1	incomplete-splice_match	all_canonical: nan
-PB.119024.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.119027.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.119024.1	intergenic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.119027.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.119029.1	incomplete-splice_match	all_canonical: nan
 PB.119034.1	incomplete-splice_match	all_canonical: nan
 PB.119036.1	incomplete-splice_match	all_canonical: nan
 PB.119037.1	incomplete-splice_match	all_canonical: nan
 PB.119038.1	incomplete-splice_match	all_canonical: nan
-PB.124735.1	intergenic	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
+PB.124735.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
 PB.124736.1	novel_not_in_catalog	RTS_stage: True
-PB.124736.2	fusion	RTS_stage: True; min_cov: 0.0 < 3
-PB.124736.3	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.124736.4	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.124736.2	fusion	min_cov: 0.0 < 3; RTS_stage: True
+PB.124736.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
+PB.124736.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.124744.2	incomplete-splice_match	RTS_stage: True
 PB.124744.3	incomplete-splice_match	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.124746.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.124747.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.124752.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.124746.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.124747.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.124752.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.124752.2	full-splice_match	perc_A_downstream_TTS: 95.0 > 59
-PB.124754.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.124754.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.124758.1	incomplete-splice_match	all_canonical: nan
 PB.124761.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.124764.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.124764.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.124768.1	novel_in_catalog	RTS_stage: True
-PB.124768.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.124770.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124770.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124778.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124778.3	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.124778.4	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
+PB.124768.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.124770.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124770.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124778.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124778.3	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.124778.4	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
 PB.124778.5	incomplete-splice_match	RTS_stage: True
-PB.124782.2	fusion	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.124782.2	fusion	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.124783.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.124784.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.124784.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.124787.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.124788.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.124788.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.124792.2	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59
-PB.124800.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124803.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.124800.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124803.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.124804.1	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.124804.2	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.124806.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
-PB.124809.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.124809.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.124809.2	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.124812.3	incomplete-splice_match	RTS_stage: True
-PB.124813.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.124813.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.124813.4	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.124813.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.124813.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.124813.4	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.124814.1	novel_in_catalog	RTS_stage: True
 PB.124820.1	incomplete-splice_match	RTS_stage: True
-PB.124822.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.6	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.124822.8	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.124822.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.6	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.7	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.124822.8	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.124823.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.124824.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.124826.2	incomplete-splice_match	RTS_stage: True
 PB.124830.2	full-splice_match	perc_A_downstream_TTS: 95.0 > 59
-PB.124831.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.124831.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.124838.1	incomplete-splice_match	RTS_stage: True
-PB.124838.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.124838.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.124838.3	novel_in_catalog	RTS_stage: True
 PB.124841.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.124842.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.124845.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.124849.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.124850.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.124851.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.124852.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.124849.2	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.124850.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.124851.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.124852.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.124853.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.124858.1	incomplete-splice_match	RTS_stage: True
-PB.124860.2	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.124861.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.124862.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.124860.2	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.124861.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.124862.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.124865.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.124866.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.124866.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.124872.1	novel_in_catalog	RTS_stage: True
-PB.124872.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.130815.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.130815.5	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.130815.6	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.130817.2	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.124872.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.130815.3	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.130815.5	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.130815.6	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.130817.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 95.0 > 59
 PB.130820.1	antisense	all_canonical: nan
 PB.130822.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.130824.1	incomplete-splice_match	RTS_stage: True
 PB.130824.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130825.1	incomplete-splice_match	RTS_stage: True
-PB.130830.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.130832.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.130830.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.130832.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.130833.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.130836.3	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.130836.3	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.130844.1	novel_in_catalog	RTS_stage: True
 PB.130850.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.130857.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130857.9	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130860.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.130866.1	novel_in_catalog	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.130860.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.130866.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.130867.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130867.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130869.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.130867.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.130869.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.130872.1	novel_in_catalog	all_canonical: nan
-PB.130873.3	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.130876.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.130873.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.130876.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.130877.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130877.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130877.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130877.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130877.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130877.7	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130879.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.130879.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.130881.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.130882.1	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
-PB.130882.2	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.130883.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.130882.2	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.130883.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.130885.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.130887.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.130887.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.130888.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.130890.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.130890.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.130890.6	incomplete-splice_match	RTS_stage: True
-PB.130890.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130891.1	fusion	RTS_stage: True; min_cov: 0.0 < 3
-PB.130891.2	fusion	RTS_stage: True; min_cov: 0.0 < 3
+PB.130890.7	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.130891.1	fusion	min_cov: 0.0 < 3; RTS_stage: True
+PB.130891.2	fusion	min_cov: 0.0 < 3; RTS_stage: True
 PB.130891.4	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
 PB.130892.1	novel_in_catalog	RTS_stage: True
-PB.130898.2	genic	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.130901.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.130902.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.130898.2	genic	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.130901.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.130902.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.130903.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130904.1	incomplete-splice_match	RTS_stage: True
-PB.130904.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.130904.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.130905.1	full-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.130909.1	incomplete-splice_match	RTS_stage: True
 PB.130911.2	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.130916.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.130917.1	novel_in_catalog	RTS_stage: True
 PB.130918.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.130921.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.130921.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.130927.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.130921.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.130921.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.130927.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.130928.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.130929.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130929.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130929.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.130929.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.130929.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130931.1	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59
 PB.130931.2	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59
@@ -1235,97 +1235,97 @@ PB.130934.12	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130935.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130935.8	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130935.9	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
-PB.130937.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.130945.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.130937.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.130945.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.130946.3	novel_not_in_catalog	RTS_stage: True
-PB.130949.1	intergenic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.130952.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; RTS_stage: True
-PB.130953.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.130959.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.130949.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.130952.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 95.0 > 59
+PB.130953.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.130959.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.130963.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.130964.2	novel_in_catalog	RTS_stage: True
-PB.130964.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.130965.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.137290.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.130964.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.130965.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.137290.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137290.2	novel_in_catalog	RTS_stage: True
-PB.137290.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.137290.3	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.137291.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137294.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137296.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137296.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.137296.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.137296.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.137298.1	incomplete-splice_match	RTS_stage: True
-PB.137301.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.137301.2	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.137302.1	full-splice_match	perc_A_downstream_TTS: 95.0 > 59
 PB.137307.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137310.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; min_cov: 2.0 < 3
-PB.137316.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137316.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137316.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.137316.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137316.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137316.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137316.5	novel_in_catalog	RTS_stage: True
-PB.137318.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.137318.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.137322.2	novel_in_catalog	all_canonical: nan
-PB.137323.1	novel_not_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.137323.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.137323.2	novel_in_catalog	all_canonical: nan
-PB.137330.1	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.137330.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.137331.1	novel_in_catalog	RTS_stage: True
-PB.137331.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.137331.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137332.1	genic	all_canonical: nan
-PB.137333.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.137334.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137335.2	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.137333.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
+PB.137334.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.137335.2	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
 PB.137336.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.137343.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137343.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.137344.4	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.137346.2	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.137343.3	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.137344.4	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.137346.2	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.137351.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137351.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137351.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137351.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137353.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137354.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.137353.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.137354.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.137355.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.137355.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.137356.1	genic	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.137356.1	genic	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; RTS_stage: True
 PB.137357.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.137364.2	incomplete-splice_match	RTS_stage: True
-PB.137366.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.137366.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137375.1	incomplete-splice_match	RTS_stage: True
 PB.137376.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59
-PB.137379.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.137381.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.137379.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.137381.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.137382.1	incomplete-splice_match	all_canonical: nan
 PB.137385.2	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.137387.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.137387.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137387.2	novel_in_catalog	RTS_stage: True
 PB.137387.3	novel_in_catalog	RTS_stage: True
-PB.137387.4	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.137387.4	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.137387.6	novel_in_catalog	RTS_stage: True
 PB.137387.7	novel_in_catalog	RTS_stage: True
-PB.137387.8	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137392.1	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.137392.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137392.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137392.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137395.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.137387.8	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137392.1	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.137392.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137392.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.137392.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137395.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.137404.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.137407.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.137409.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.137410.2	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
+PB.137407.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.137409.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.137410.2	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.137410.3	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59; RTS_stage: True
-PB.137410.4	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.137410.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.137411.4	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59
 PB.137411.5	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.137415.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.137416.1	incomplete-splice_match	RTS_stage: True
 PB.137418.1	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 0.0 < 3
-PB.137421.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.137421.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.137423.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.137426.1	novel_in_catalog	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
-PB.143795.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
-PB.143795.4	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.137426.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
+PB.143795.3	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
+PB.143795.4	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.143797.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143801.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.143801.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.143802.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.143804.4	incomplete-splice_match	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143805.1	incomplete-splice_match	RTS_stage: True
@@ -1333,323 +1333,323 @@ PB.143810.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.143812.3	novel_in_catalog	RTS_stage: True
 PB.143813.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.143814.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143814.5	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.143822.2	novel_not_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.143814.5	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.143822.2	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 1.0 < 3
 PB.143826.1	novel_not_in_catalog	RTS_stage: True
-PB.143826.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.143826.3	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.143826.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.143833.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.143826.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.143826.3	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.143826.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.143833.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.143837.1	incomplete-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.143838.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.143839.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.143841.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143841.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143841.5	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.143838.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 80.0 > 59
+PB.143839.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.143841.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.143841.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.143841.5	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.143845.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
 PB.143849.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143851.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.143856.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.143859.1	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.143856.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.143859.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.143862.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143863.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143863.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143863.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143863.5	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.143863.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143864.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.143864.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 1.0 < 3
 PB.143865.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.143865.2	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.143865.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.143866.1	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.143866.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.143866.3	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.143866.4	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.143866.5	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.143866.6	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
-PB.143868.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.143875.1	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.143868.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.143875.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.143877.3	incomplete-splice_match	RTS_stage: True
 PB.143878.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.143879.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 90.0 > 59
-PB.143879.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.143879.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; RTS_stage: True
+PB.143879.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.143885.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.143885.2	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.143889.2	incomplete-splice_match	RTS_stage: True
 PB.143892.2	incomplete-splice_match	RTS_stage: True
-PB.143894.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.143894.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.143895.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; all_canonical: nan
-PB.143899.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
+PB.143899.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.143900.1	genic	all_canonical: nan
-PB.143901.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.143901.2	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
-PB.143901.3	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.143901.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.143901.2	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
+PB.143901.3	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.143901.4	novel_in_catalog	RTS_stage: True
-PB.143901.7	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.143901.8	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.143901.9	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.143901.7	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.143901.8	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.143901.9	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.143902.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.143905.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.143905.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.143911.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.143921.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.143924.1	incomplete-splice_match	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.143925.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.143921.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 80.0 > 59
+PB.143924.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.143925.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.143930.2	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.143932.3	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.143935.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.143937.1	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.143938.1	novel_in_catalog	RTS_stage: True; min_cov: 2.0 < 3
-PB.143938.2	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.143938.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.143938.4	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.143932.3	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.143935.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.143937.1	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.143938.1	novel_in_catalog	min_cov: 2.0 < 3; RTS_stage: True
+PB.143938.2	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.143938.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.143938.4	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.150483.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150485.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.150485.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.150488.1	incomplete-splice_match	all_canonical: nan
-PB.150492.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150492.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.150492.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150492.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.150493.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.150496.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150499.1	genic	all_canonical: nan
-PB.150503.3	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
-PB.150503.4	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.150504.2	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.150503.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59; all_canonical: non_canonical
+PB.150503.4	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.150504.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.150505.4	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.150505.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150507.1	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.150507.2	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.150505.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150507.1	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.150507.2	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
 PB.150514.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.150517.1	incomplete-splice_match	all_canonical: nan
-PB.150519.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.150519.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.150519.3	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
-PB.150520.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 100.0 > 59
-PB.150523.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.150520.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; RTS_stage: True; min_cov: 1.0 < 3
+PB.150523.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.150527.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150528.2	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.150530.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150534.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150536.1	antisense	perc_A_downstream_TTS: 65.0 > 59; all_canonical: nan
+PB.150534.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.150536.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 65.0 > 59
 PB.150537.5	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59
-PB.150538.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.150538.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.150541.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59
 PB.150543.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150543.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150543.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150546.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150546.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.150546.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.150546.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.150548.1	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.150548.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.150548.3	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.150548.4	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.150548.5	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.150548.6	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.150549.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.150551.1	intergenic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.150549.2	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.150551.1	intergenic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.150559.1	incomplete-splice_match	all_canonical: nan
 PB.150560.1	novel_in_catalog	RTS_stage: True
-PB.150565.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.150566.1	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.150565.2	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.150566.1	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.150567.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150567.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150569.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.150569.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.150569.3	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.150570.2	novel_not_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.150570.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.150572.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.150578.1	novel_not_in_catalog	all_canonical: non_canonical; RTS_stage: True; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.150578.3	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.150581.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.150578.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.150578.3	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.150581.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.150582.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.150586.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150586.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150586.3	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.150586.4	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.150586.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150587.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.150588.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.150586.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150586.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150586.3	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.150586.4	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.150586.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150587.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.150588.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.150592.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150592.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150593.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.150593.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.150597.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
 PB.150599.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150604.2	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.150604.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.150609.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150609.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.150609.4	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.150610.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.150610.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.150618.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.150621.1	full-splice_match	perc_A_downstream_TTS: 75.0 > 59
-PB.150623.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.150626.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.150629.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.150623.1	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.150626.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.150629.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.150631.2	novel_in_catalog	RTS_stage: True
-PB.150632.2	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
-PB.150632.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150632.4	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.150632.5	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.150632.6	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.150632.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.150632.2	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
+PB.150632.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150632.4	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.150632.5	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.150632.6	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.150632.7	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.150634.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.157382.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
-PB.157383.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.157388.1	antisense	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.157383.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.157388.1	antisense	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.157389.1	incomplete-splice_match	RTS_stage: True
 PB.157392.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59
-PB.157394.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.157396.2	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
+PB.157394.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.157396.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
 PB.157398.2	novel_in_catalog	RTS_stage: True
-PB.157398.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157398.4	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.157398.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157398.4	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.157400.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.157403.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.157403.4	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 70.0 > 59
 PB.157407.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59; min_cov: 2.0 < 3
-PB.157411.1	novel_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.157411.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.157415.1	incomplete-splice_match	all_canonical: nan
 PB.157420.1	genic	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
-PB.157428.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.157430.1	incomplete-splice_match	RTS_stage: True; perc_A_downstream_TTS: 100.0 > 59
-PB.157432.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.157433.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.157433.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.157428.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.157430.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; RTS_stage: True
+PB.157432.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.157433.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.157433.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.157434.1	genic_intron	perc_A_downstream_TTS: 60.0 > 59; all_canonical: nan
 PB.157435.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.157439.1	incomplete-splice_match	all_canonical: nan
-PB.157441.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.157441.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.157441.2	novel_in_catalog	perc_A_downstream_TTS: 80.0 > 59
-PB.157445.1	novel_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.157447.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157447.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.157445.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
+PB.157447.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157447.3	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.157449.1	novel_in_catalog	all_canonical: nan
-PB.157451.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.157451.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.157451.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.157453.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.157453.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.157454.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 100.0 > 59
 PB.157457.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.157457.2	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.157457.3	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.157457.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.157457.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.157461.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.157462.1	genic	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
+PB.157462.1	genic	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
 PB.157465.1	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.157465.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.157465.3	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.157465.4	novel_in_catalog	perc_A_downstream_TTS: 70.0 > 59
 PB.157465.5	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
-PB.157467.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.157467.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.157468.1	novel_in_catalog	perc_A_downstream_TTS: 95.0 > 59
-PB.157470.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
-PB.157471.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.157470.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
+PB.157471.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.157472.1	incomplete-splice_match	perc_A_downstream_TTS: 60.0 > 59
 PB.157473.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.157474.2	incomplete-splice_match	RTS_stage: True
-PB.157476.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.157480.1	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.157476.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.157480.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.157480.2	novel_not_in_catalog	RTS_stage: True
 PB.157480.4	incomplete-splice_match	all_canonical: nan
 PB.157481.1	incomplete-splice_match	RTS_stage: True
 PB.157483.1	novel_in_catalog	perc_A_downstream_TTS: 100.0 > 59
 PB.157484.1	full-splice_match	perc_A_downstream_TTS: 85.0 > 59
 PB.157487.1	incomplete-splice_match	RTS_stage: True
-PB.157489.1	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.157492.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
-PB.157493.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.157494.1	genic_intron	perc_A_downstream_TTS: 95.0 > 59; all_canonical: nan
-PB.157495.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157495.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157495.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157495.4	incomplete-splice_match	min_cov: 1.0 < 3; RTS_stage: True
+PB.157489.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.157492.1	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
+PB.157493.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.157494.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 95.0 > 59
+PB.157495.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157495.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157495.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157495.4	incomplete-splice_match	RTS_stage: True; min_cov: 1.0 < 3
 PB.157495.5	novel_in_catalog	RTS_stage: True
-PB.157497.1	genic	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.157498.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.157503.1	novel_not_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.157497.1	genic	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.157498.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.157503.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 2.0 < 3
 PB.157504.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.157508.1	novel_in_catalog	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.157510.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.157511.1	genic	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.157512.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.157508.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.157510.1	genic_intron	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.157511.1	genic	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.157512.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.157513.2	incomplete-splice_match	all_canonical: nan
-PB.157515.1	incomplete-splice_match	min_cov: 1.0 < 3; perc_A_downstream_TTS: 100.0 > 59
+PB.157515.1	incomplete-splice_match	perc_A_downstream_TTS: 100.0 > 59; min_cov: 1.0 < 3
 PB.157516.1	full-splice_match	perc_A_downstream_TTS: 80.0 > 59
-PB.157517.1	novel_not_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.157517.1	novel_not_in_catalog	perc_A_downstream_TTS: 90.0 > 59; min_cov: 1.0 < 3
 PB.157520.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.157522.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.157523.2	novel_not_in_catalog	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.157523.2	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.157524.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.157527.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.157530.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.157531.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.157532.1	novel_in_catalog	RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59; min_cov: 0.0 < 3
+PB.157532.1	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True; perc_A_downstream_TTS: 85.0 > 59
 PB.157532.2	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.157535.1	full-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.157536.1	genic_intron	perc_A_downstream_TTS: 85.0 > 59; all_canonical: nan
-PB.157540.1	novel_in_catalog	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
+PB.157536.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 85.0 > 59
+PB.157540.1	novel_in_catalog	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.157541.1	incomplete-splice_match	RTS_stage: True
-PB.157542.2	novel_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.157542.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.157542.6	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
-PB.157544.1	novel_not_in_catalog	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
+PB.157542.2	novel_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.157542.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.157542.6	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
+PB.157544.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
 PB.157546.6	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164508.2	novel_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.164510.1	antisense	all_canonical: nan
 PB.164516.1	incomplete-splice_match	RTS_stage: True
-PB.164517.1	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.164518.1	genic	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.164517.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.164518.1	genic	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.164521.2	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 80.0 > 59
 PB.164521.3	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.164521.5	antisense	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
-PB.164523.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.164523.3	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.164521.5	antisense	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
+PB.164523.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
+PB.164523.3	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.164523.4	novel_in_catalog	RTS_stage: True
 PB.164524.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59
 PB.164525.2	incomplete-splice_match	all_canonical: nan
 PB.164527.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.164527.2	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
-PB.164534.1	incomplete-splice_match	perc_A_downstream_TTS: 75.0 > 59; min_cov: 0.0 < 3
+PB.164527.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
+PB.164534.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 75.0 > 59
 PB.164539.1	incomplete-splice_match	all_canonical: nan
 PB.164541.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.164546.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164551.1	incomplete-splice_match	RTS_stage: True
 PB.164553.1	incomplete-splice_match	RTS_stage: True
-PB.164553.2	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.164553.2	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.164554.1	novel_in_catalog	all_canonical: nan
-PB.164558.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.164558.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.164562.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
-PB.164562.2	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
-PB.164563.1	intergenic	perc_A_downstream_TTS: 95.0 > 59; min_cov: 0.0 < 3
-PB.164564.2	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 100.0 > 59
+PB.164562.2	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
+PB.164563.1	intergenic	min_cov: 0.0 < 3; perc_A_downstream_TTS: 95.0 > 59
+PB.164564.2	genic_intron	perc_A_downstream_TTS: 100.0 > 59; all_canonical: nan
 PB.164569.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164570.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.164574.1	incomplete-splice_match	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.164574.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.164576.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 70.0 > 59
 PB.164576.2	full-splice_match	perc_A_downstream_TTS: 70.0 > 59
-PB.164580.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.164580.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.164581.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164581.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164585.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164586.2	incomplete-splice_match	RTS_stage: True
-PB.164587.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3; all_canonical: non_canonical
+PB.164587.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; RTS_stage: True
 PB.164588.1	novel_in_catalog	RTS_stage: True
-PB.164597.1	fusion	min_cov: 0.0 < 3; perc_A_downstream_TTS: 90.0 > 59
+PB.164597.1	fusion	perc_A_downstream_TTS: 90.0 > 59; min_cov: 0.0 < 3
 PB.164601.1	incomplete-splice_match	RTS_stage: True
 PB.164606.1	novel_not_in_catalog	min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.164606.2	novel_not_in_catalog	all_canonical: non_canonical; min_cov: 0.0 < 3; perc_A_downstream_TTS: 80.0 > 59
-PB.164609.1	incomplete-splice_match	perc_A_downstream_TTS: 85.0 > 59; min_cov: 2.0 < 3
+PB.164606.2	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical; perc_A_downstream_TTS: 80.0 > 59
+PB.164609.1	incomplete-splice_match	min_cov: 2.0 < 3; perc_A_downstream_TTS: 85.0 > 59
 PB.164613.1	incomplete-splice_match	RTS_stage: True
-PB.164614.3	genic_intron	perc_A_downstream_TTS: 75.0 > 59; all_canonical: nan
+PB.164614.3	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 75.0 > 59
 PB.164620.1	incomplete-splice_match	perc_A_downstream_TTS: 80.0 > 59
 PB.164630.1	genic_intron	all_canonical: nan; perc_A_downstream_TTS: 80.0 > 59
 PB.164632.1	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
 PB.164632.3	novel_not_in_catalog	min_cov: 0.0 < 3; all_canonical: non_canonical
-PB.164635.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
+PB.164635.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
 PB.164637.1	incomplete-splice_match	perc_A_downstream_TTS: 90.0 > 59
 PB.164638.1	full-splice_match	perc_A_downstream_TTS: 100.0 > 59
-PB.164639.1	novel_in_catalog	all_canonical: nan; perc_A_downstream_TTS: 90.0 > 59
+PB.164639.1	novel_in_catalog	perc_A_downstream_TTS: 90.0 > 59; all_canonical: nan
 PB.164650.3	novel_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 2.0 < 3
-PB.164650.4	novel_not_in_catalog	min_cov: 1.0 < 3; perc_A_downstream_TTS: 60.0 > 59
+PB.164650.4	novel_not_in_catalog	perc_A_downstream_TTS: 60.0 > 59; min_cov: 1.0 < 3
 PB.164653.1	novel_in_catalog	RTS_stage: True
-PB.164655.1	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.2	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.3	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.4	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.5	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.7	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.8	novel_not_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164655.9	novel_in_catalog	RTS_stage: True; min_cov: 0.0 < 3
-PB.164659.1	novel_not_in_catalog	min_cov: 1.0 < 3; RTS_stage: True
+PB.164655.1	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.2	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.3	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.4	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.5	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.7	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.8	novel_not_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164655.9	novel_in_catalog	min_cov: 0.0 < 3; RTS_stage: True
+PB.164659.1	novel_not_in_catalog	RTS_stage: True; min_cov: 1.0 < 3
