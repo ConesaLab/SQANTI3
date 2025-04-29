@@ -64,25 +64,45 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
 
 def rescue_candidates(classification_file,monoexons,prefix):
+    """
+    Selection of rescue candidates from non-FSM artifacts.
+    The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
+    """
     # Load classification
     classif_df = read_classification(classification_file)
     
-    # Get NIC and NNC artifacts
+    # Identify transcripts that have a full-splice_match Artifact
+    transcripts_with_fsm_artifact = set(
+        classif_df[
+            (classif_df['structural_category'] == 'full-splice_match') &
+            (classif_df['filter_result'] == 'Artifact')
+        ]['associated_transcript']
+    )
+
+    # Get initial set of candidates
     rescue_candidates = classif_df[
-        (classif_df['structural_category'].isin(['incomplete-splice_match','novel_in_catalog','novel_not_in_catalog'])) &
+        (classif_df['structural_category'].isin(['incomplete-splice_match', 'novel_in_catalog', 'novel_not_in_catalog'])) &
         (classif_df['filter_result'] == 'Artifact')
     ]
+
+    # Exclude incomplete-splice_match with a conflicting full-splice_match Artifact
+    rescue_candidates = rescue_candidates[
+        ~(
+            (rescue_candidates['structural_category'] == 'incomplete-splice_match') &
+            (rescue_candidates['associated_transcript'].isin(transcripts_with_fsm_artifact))
+        )
+    ]
+
     if monoexons != 'all':
         rescue_novel = rescue_novel[rescue_novel['exons'] > 1]
     
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
                             sep="\t",
-                            index=False,
-                            header=False)
+                            index=False)
 
     return rescue_candidates["isoform"].tolist()
-
+    
 def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     # Load classification
     classif_df = read_classification(classification_file)
@@ -104,8 +124,7 @@ def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     
     rescue_targets.to_csv(f"{prefix}_rescue_targets.tsv",
                         sep="\t",
-                        index=False,
-                        header=False)
+                        index=False)
     return rescue_targets.tolist()
 
 ## Run mapping of rescue candidates (artifacts) to targets
