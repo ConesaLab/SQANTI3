@@ -7,11 +7,11 @@ from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
-    RSCRIPTPATH, RESCUE_AUTO_PATH, utilitiesPath, run_command ,
+    RSCRIPTPATH, utilitiesPath, run_command ,
     PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    read_classification, rescue_fsm_monoexons, add_ism_monoexons,
+    read_classification, rescue_fsm_monoexons,
     get_lost_reference_id, 
     rescue_lost_reference, save_automatic_rescue
 )
@@ -43,6 +43,7 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
+       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),rescue_classif,mode,prefix)
        return
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
@@ -208,7 +209,8 @@ def run_rules_rescue(args):
     refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir} --skip_report"
 
     # print command
-    run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")
+    logFile=f"{args.dir}/logs/refRules.log"
+    run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
         # make file names
     ref_rules = f"{args.dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
 
@@ -263,7 +265,8 @@ def run_ML_rescue(args):
   rescue_logger.debug(refML_cmd)
 
   # run R script via terminal
-  run_command(refML_cmd,rescue_logger,"log/rescue/refML.log",description="Run random forest on reference transcriptome")
+  logFile=f"{args.dir}/logs/refML.log"
+  run_command(refML_cmd,rescue_logger,logFile,description="Run random forest on reference transcriptome")
   # make expected output file name
   ref_isoform_predict = f"{args.dir}/{args.output}_reference_isoform_predict.tsv"
 
@@ -280,9 +283,9 @@ def run_ML_rescue(args):
 
     # expected output name
     rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
-
+    logFile=f"{args.dir}/logs/rescue_by_mapping.log"
     # run R script via terminal
-    run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
+    run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
 
     if os.path.isfile(rescued_file):
       # load output list of rescued transcripts

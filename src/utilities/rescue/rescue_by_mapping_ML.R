@@ -121,8 +121,11 @@ opt$threshold <- as.numeric(opt$threshold)
       # include those that were retrieved in automatic rescue
       automatic_ref_rescued <- readr::read_tsv(paste0(opt$dir, "/", opt$output, 
                                                       "_automatic_rescued_list.tsv"),
-                                               col_names = "associated_transcript")
-      
+                                               col_names = "associated_transcript") 
+      # Add empty row to avoid error when no automatic rescue is performed
+      if (nrow(automatic_ref_rescued) == 0) {
+        automatic_ref_rescued[1,"associated_transcript"] <- "none"
+      }
       isoform_assoc.tr <- dplyr::bind_rows(isoform_assoc.tr, 
                                            automatic_ref_rescued) %>% unique
       

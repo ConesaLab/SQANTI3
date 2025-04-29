@@ -82,5 +82,5 @@ rescue:
     ml:
       enabled: true
       options:
-        random_forest: 'example/ml_filter_output/randomforest.RData'
+        random_forest: 'example/ml_filter_output/UHR_chr22_randomforest.RData'
         threshold: 0.7
