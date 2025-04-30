@@ -18,7 +18,7 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     ref_cmd = f"gffread -w {ref_trans_Fasta} -g {ref_fasta} {ref_gtf}"
 
   # run gffread
-    logFile=os.path.join(outdir,"logs","rescue","create_reference_transcriptome.log")
+    logFile=os.path.join(outdir,"logs","create_reference_transcriptome.log")
     run_command(ref_cmd,rescue_logger,logFile,description="Converting reference transcriptome GTF to FASTA")
     rescue_logger.debug(f"File created in {ref_trans_Fasta}.")
     if os.path.isfile(ref_trans_Fasta):

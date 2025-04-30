@@ -7,11 +7,11 @@ from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
-    RSCRIPTPATH, RESCUE_AUTO_PATH, utilitiesPath, run_command ,
+    RSCRIPTPATH, utilitiesPath, run_command ,
     PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    read_classification, rescue_fsm_monoexons, add_ism_monoexons,
+    read_classification, rescue_fsm_monoexons,
     get_lost_reference_id, 
     rescue_lost_reference, save_automatic_rescue
 )
@@ -43,6 +43,7 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
+       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),rescue_classif,mode,prefix)
        return
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
@@ -64,25 +65,45 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
 
 def rescue_candidates(classification_file,monoexons,prefix):
+    """
+    Selection of rescue candidates from non-FSM artifacts.
+    The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
+    """
     # Load classification
     classif_df = read_classification(classification_file)
     
-    # Get NIC and NNC artifacts
+    # Identify transcripts that have a full-splice_match Artifact
+    transcripts_with_fsm_artifact = set(
+        classif_df[
+            (classif_df['structural_category'] == 'full-splice_match') &
+            (classif_df['filter_result'] == 'Artifact')
+        ]['associated_transcript']
+    )
+
+    # Get initial set of candidates
     rescue_candidates = classif_df[
-        (classif_df['structural_category'].isin(['incomplete-splice_match','novel_in_catalog','novel_not_in_catalog'])) &
+        (classif_df['structural_category'].isin(['incomplete-splice_match', 'novel_in_catalog', 'novel_not_in_catalog'])) &
         (classif_df['filter_result'] == 'Artifact')
     ]
+
+    # Exclude incomplete-splice_match with a conflicting full-splice_match Artifact
+    rescue_candidates = rescue_candidates[
+        ~(
+            (rescue_candidates['structural_category'] == 'incomplete-splice_match') &
+            (rescue_candidates['associated_transcript'].isin(transcripts_with_fsm_artifact))
+        )
+    ]
+
     if monoexons != 'all':
         rescue_novel = rescue_novel[rescue_novel['exons'] > 1]
     
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
                             sep="\t",
-                            index=False,
-                            header=False)
+                            index=False)
 
     return rescue_candidates["isoform"].tolist()
-
+    
 def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     # Load classification
     classif_df = read_classification(classification_file)
@@ -104,8 +125,7 @@ def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     
     rescue_targets.to_csv(f"{prefix}_rescue_targets.tsv",
                         sep="\t",
-                        index=False,
-                        header=False)
+                        index=False)
     return rescue_targets.tolist()
 
 ## Run mapping of rescue candidates (artifacts) to targets
@@ -189,7 +209,8 @@ def run_rules_rescue(args):
     refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir} --skip_report"
 
     # print command
-    run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")
+    logFile=f"{args.dir}/logs/refRules.log"
+    run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
         # make file names
     ref_rules = f"{args.dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
 
@@ -244,7 +265,8 @@ def run_ML_rescue(args):
   rescue_logger.debug(refML_cmd)
 
   # run R script via terminal
-  run_command(refML_cmd,rescue_logger,"log/rescue/refML.log",description="Run random forest on reference transcriptome")
+  logFile=f"{args.dir}/logs/refML.log"
+  run_command(refML_cmd,rescue_logger,logFile,description="Run random forest on reference transcriptome")
   # make expected output file name
   ref_isoform_predict = f"{args.dir}/{args.output}_reference_isoform_predict.tsv"
 
@@ -261,9 +283,9 @@ def run_ML_rescue(args):
 
     # expected output name
     rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
-
+    logFile=f"{args.dir}/logs/rescue_by_mapping.log"
     # run R script via terminal
-    run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
+    run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
 
     if os.path.isfile(rescued_file):
       # load output list of rescued transcripts

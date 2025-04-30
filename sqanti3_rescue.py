@@ -113,11 +113,12 @@ def main():
 
   # filter reference GTF to create tmp_gtf
   gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
-
-  run_command(gtf_cmd,rescue_logger,"log/rescue/gtf.log",description="Filter reference GTF to create tmp GTF")
+  logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
+  run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
   # concatenate with filtered GTF
   cat_cmd = f"cat {args.rescue_gtf} {tmp_gtf} > {output_gtf}"
-  run_command(cat_cmd,rescue_logger,"log/rescue/cat.log",description="Concatenate filtered GTF with tmp GTF")
+  logFile = os.path.join(args.dir,"logs","cat_rescue_gtf.log")
+  run_command(cat_cmd,rescue_logger,logFile,description="Concatenate filtered GTF with tmp GTF")
   
   rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.rescue_gtf} )")
   rescue_logger.info(f"Final output GTF written to file:  {output_gtf} ")

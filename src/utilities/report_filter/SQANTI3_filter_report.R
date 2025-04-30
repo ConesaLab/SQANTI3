@@ -72,7 +72,7 @@ if(opt$filter_type == "ml"){
   # Detect path and load ML output classification
   message("\nReading ML result classification table...")
   
-  which_classif <- stringr::str_detect(paths, "MLresult_classification")
+  which_classif <- stringr::str_detect(paths, "ML_result_classification")
   path_classif <- paths[which_classif]
   classif <- readr::read_tsv(path_classif, 
                              col_types = readr::cols(exons = readr::col_integer(),
