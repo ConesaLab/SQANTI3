@@ -4,8 +4,6 @@
 ##### SQANTI3 report generation ######
 #####################################
 
-
-
 ### Author: Lorena de la Fuente, Elizabeth Tseng & Francisco J Pardo-Palacios
 ### Last Modified: 09/23/2020 by etseng@pacb.com
 
@@ -47,7 +45,6 @@ class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep='');
 
 
 #********************** Packages 
-
 library(ggplot2)
 library(ggplotify)
 library(scales)
