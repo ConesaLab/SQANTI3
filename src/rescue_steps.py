@@ -7,11 +7,11 @@ from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
-    RSCRIPTPATH, RESCUE_AUTO_PATH, utilitiesPath, run_command ,
+    RSCRIPTPATH, utilitiesPath, run_command ,
     PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    read_classification, rescue_fsm_monoexons, add_ism_monoexons,
+    read_classification, rescue_fsm_monoexons,
     get_lost_reference_id, 
     rescue_lost_reference, save_automatic_rescue
 )
@@ -26,89 +26,84 @@ from src.utilities.rescue.candidate_mapping_helpers import (
     save_fasta
 )
 
-def run_automatic_rescue(args):
-
-    auto_cmd = f"{RSCRIPTPATH} {RESCUE_AUTO_PATH} -c {args.filter_class} -o {args.output} -d {args.dir} \
-    -u {utilitiesPath} -g {args.refGTF} -e {args.rescue_mono_exonic} -m {args.mode}"
-    logFile = os.path.join(args.dir,"logs","automatic_rescue.log")
-    run_command(auto_cmd, rescue_logger,logFile,description="Running automatic rescue",silent=False)
-    # print command
-    rescue_logger.debug("Automatic rescue run via the following command:")
-    rescue_logger.debug(auto_cmd)
-
-    ## load output: transcripts rescued as a result of automatic rescue
-
-    # make file name
-    automatic_rescued_list = os.path.join(args.dir,f"{args.output}_automatic_rescued_list.tsv")
-
-    # set object containing rescued list from the output file
-    auto_rescue = set(line.strip() for line in open(automatic_rescued_list))
-
-    ## return automatic rescue outputs
-    return(auto_rescue)
-
-def run_automatic_rescue_py(classification_file,monoexons,mode,prefix):
+def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     # Load classification
     message("Reading filter classification file",rescue_logger)
     classif_df = read_classification(classification_file)
 
     message("Performing automatic rescue",rescue_logger)
-    # Select the FSM and ISM isoforms with more than one exon
-    ism_fsm_classif = classif_df[
-        (classif_df['structural_category'].isin(['full-splice_match','incomplete-splice_match'])) & 
+    # Select the FSM and ISM isoforms with more than one exon 
+    rescue_classif = classif_df[
+        (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
-    # Add the monoexons if indicated
-    if monoexons in ['all','fsm']:
-        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
-        if mode == 'full':
-            ism_fsm_classif = add_ism_monoexons(ism_fsm_classif,classif_df)
-
-
+ 
     # Find the references that are lost and get the ones that are not represented by isoforms
-    lost_ref = get_lost_reference_id(ism_fsm_classif)
+    lost_ref = get_lost_reference_id(rescue_classif)
+    if len(lost_ref) == 0:
+       rescue_logger.info("No lost references found")
+       rescue_logger.info("Automatic rescue is not needed")
+       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),rescue_classif,mode,prefix)
+       return
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
     for ref_id in lost_ref:
-        rescue_df = rescue_lost_reference(ref_id, ism_fsm_classif)
+        rescue_df = rescue_lost_reference(ref_id, rescue_classif)
         rescue = pd.concat([rescue,rescue_df])
 
     # Split into reference transcripts and ISM
-    rescue_ism = rescue[rescue['isoform'].isin(ism_fsm_classif['isoform'])]
-    rescue_ref = rescue[rescue['isoform'].isin(ism_fsm_classif['associated_transcript'])]
-
+    rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
+    # Adding monoexons
     if monoexons in ['all','fsm']:
+        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
         rescue_auto = pd.concat([rescue_ref,rescue_fsm_me])
     else:
         rescue_auto = rescue_ref
     rescue_logger.debug(f"Rescued {rescue_auto.shape[0]} transcripts")
 
     # Save the automatic rescue
-    save_automatic_rescue(rescue_auto,ism_fsm_classif,mode,prefix)
-    message("Automatic rescue completed",rescue_logger)
-    return rescue_ism
+    save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
 
-def rescue_candidates(classification_file,monoexons,rescue_ism,prefix):
+def rescue_candidates(classification_file,monoexons,prefix):
+    """
+    Selection of rescue candidates from non-FSM artifacts.
+    The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
+    """
     # Load classification
     classif_df = read_classification(classification_file)
     
-    # Get NIC and NNC artifacts
-    rescue_novel = classif_df[
-        (classif_df['structural_category'].isin(['novel_in_catalog','novel_not_in_catalog'])) &
+    # Identify transcripts that have a full-splice_match Artifact
+    transcripts_with_fsm_artifact = set(
+        classif_df[
+            (classif_df['structural_category'] == 'full-splice_match') &
+            (classif_df['filter_result'] == 'Artifact')
+        ]['associated_transcript']
+    )
+
+    # Get initial set of candidates
+    rescue_candidates = classif_df[
+        (classif_df['structural_category'].isin(['incomplete-splice_match', 'novel_in_catalog', 'novel_not_in_catalog'])) &
         (classif_df['filter_result'] == 'Artifact')
     ]
+
+    # Exclude incomplete-splice_match with a conflicting full-splice_match Artifact
+    rescue_candidates = rescue_candidates[
+        ~(
+            (rescue_candidates['structural_category'] == 'incomplete-splice_match') &
+            (rescue_candidates['associated_transcript'].isin(transcripts_with_fsm_artifact))
+        )
+    ]
+
     if monoexons != 'all':
         rescue_novel = rescue_novel[rescue_novel['exons'] > 1]
     
-    rescue_candidates = pd.concat([rescue_ism,rescue_novel['isoform']])
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
                             sep="\t",
-                            index=False,
-                            header=False)
+                            index=False)
 
     return rescue_candidates["isoform"].tolist()
-
+    
 def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     # Load classification
     classif_df = read_classification(classification_file)
@@ -130,8 +125,7 @@ def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     
     rescue_targets.to_csv(f"{prefix}_rescue_targets.tsv",
                         sep="\t",
-                        index=False,
-                        header=False)
+                        index=False)
     return rescue_targets.tolist()
 
 ## Run mapping of rescue candidates (artifacts) to targets
@@ -215,7 +209,8 @@ def run_rules_rescue(args):
     refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {args.refClassif} -j {args.json_filter} -o {ref_out} -d {ref_dir} --skip_report"
 
     # print command
-    run_command(refRules_cmd,rescue_logger,"log/rescue/refRules.log",description="Run rules filter on reference transcriptome")
+    logFile=f"{args.dir}/logs/refRules.log"
+    run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
         # make file names
     ref_rules = f"{args.dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
 
@@ -270,7 +265,8 @@ def run_ML_rescue(args):
   rescue_logger.debug(refML_cmd)
 
   # run R script via terminal
-  run_command(refML_cmd,rescue_logger,"log/rescue/refML.log",description="Run random forest on reference transcriptome")
+  logFile=f"{args.dir}/logs/refML.log"
+  run_command(refML_cmd,rescue_logger,logFile,description="Run random forest on reference transcriptome")
   # make expected output file name
   ref_isoform_predict = f"{args.dir}/{args.output}_reference_isoform_predict.tsv"
 
@@ -287,9 +283,9 @@ def run_ML_rescue(args):
 
     # expected output name
     rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
-
+    logFile=f"{args.dir}/logs/rescue_by_mapping.log"
     # run R script via terminal
-    run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
+    run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
 
     if os.path.isfile(rescued_file):
       # load output list of rescued transcripts

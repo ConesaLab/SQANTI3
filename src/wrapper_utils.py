@@ -5,7 +5,7 @@ from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
 from src.rescue_argparse import rescue_argparse
 from src.logging_config import main_logger,save_module_logger_info
-from src.commands import GTF2GENEPRED_PROG, GFFREAD_PROG
+
 
 def sqanti_path(filename):
     """
@@ -18,19 +18,12 @@ def sqanti_path(filename):
     return os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..",filename))
 
 def check_conda():
-    """
-    Check if the SQANTI3 conda environment is activated and if the required executables are available.
-    """
-    if shutil.which(GTF2GENEPRED_PROG) is None:
-        main_logger.error(f"Cannot find executable {GTF2GENEPRED_PROG}. Abort!")
-        raise SystemExit(1)
+    GFFREAD_PROG = "gffread"
 
     if shutil.which(GFFREAD_PROG) is None:
         main_logger.error(f"Cannot find executable {GFFREAD_PROG}. Abort!")
         main_logger.error(f"Did you activate SQANTI3's conda environment?")
         raise SystemExit(1)
-
-
 
 def create_config(config_path,options,level):
     """
@@ -135,7 +128,8 @@ def set_default_values(config,user_options):
         'rescue': {
             'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_MLFilter_result_classification.txt',
             'rescue_isoforms': '_corrected.fasta',
-            'rescue_gtf': '.filtered.gtf'
+            'rescue_gtf': '.filtered.gtf',
+            'random_forest': 'randomforest.RData'
         }
     }
 
@@ -263,7 +257,7 @@ def run_step(step,config,dry_run, user_options):
     if dry_run:
         main_logger.info(f"{cmd}")
     else:
-        save_module_logger_info(f"{main_opt['dir']}/logs",step,main_opt['log_level'],sqanti_path('src/data/module_logger_config.json'))
+        #save_module_logger_info(f"{main_opt['dir']}/logs",step,main_opt['log_level'],sqanti_path('src/data/module_logger_config.json'))
         run_sqanti_module(cmd)
 
 def run_sqanti_module(cmd):

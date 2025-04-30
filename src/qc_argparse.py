@@ -16,28 +16,38 @@ def qc_argparse():
     apc.add_argument("--force_id_ignore", action="store_true", help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     apc.add_argument('--fasta', action='store_true', help='Use when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms')
     apc.add_argument('--genename', action='store_true' ,help='Use gene_name tag from GTF to define genes. Default: gene_id used to define genes',)
-    apc.add_argument('--short_reads',  help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')
-    apc.add_argument('--SR_bam',  help=' Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome')
     apc.add_argument('--novel_gene_prefix', default=None, help='Prefix for novel isoforms (default: None)')
+    apc.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='Set of splice sites to be considered as canonical, in a comma separated list. (default: %(default)s)')
+    apc.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
+
     # Aligner and mapping options
     apa = ap.add_argument_group("Aligner and mapping options")
     #TODO: set a default aligner
     apa.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2', help="Select your aligner of choice: minimap2, deSALT, gmap, uLTRA (default: %(default)s)")
-    apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP unless -g option is specified.')
-    apa.add_argument('-s','--sites', default="ATAC,GCAG,GTAG", help='Set of splice sites to be considered as canonical, in a comma separated list. (default: %(default)s)')
+    apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP .')
 
     # ORF prediction
     apo = ap.add_argument_group("ORF prediction")
     apo.add_argument("--skipORF", action="store_true", help="Skip ORF prediction (to save time)")
     apo.add_argument("--orf_input",  help="Input fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
 
+    # Orthogonal data inputs
+    apod = ap.add_argument_group("Orthogonal data inputs")
+    apod.add_argument('--short_reads',  help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')
+    apod.add_argument('--SR_bam',  help=' Directory or fofn file with the sorted bam files of Short Reads RNA-Seq mapped against the genome')
+    apod.add_argument('--CAGE_peak',  help='FANTOM5 Cage Peak (BED format, optional)')
+    apod.add_argument("--polyA_motif_list",  help="Ranked list of polyA motifs (text, optional)")
+    apod.add_argument("--polyA_peak",  help='PolyA Peak (BED format, optional)')
+    apod.add_argument("--phyloP_bed",  help="PhyloP BED for conservation score (BED, optional)")
+    apod.add_argument('-e','--expression',  help='Expression matrix (supported: Kallisto tsv)')
+    apod.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
+    apod.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')
+
     # Functional annotation
     apf = ap.add_argument_group("Functional annotation")
-    apf.add_argument('--CAGE_peak',  help='FANTOM5 Cage Peak (BED format, optional)')
-    apf.add_argument("--polyA_motif_list",  help="Ranked list of polyA motifs (text, optional)")
-    apf.add_argument("--polyA_peak",  help='PolyA Peak (BED format, optional)')
-    apf.add_argument("--phyloP_bed",  help="PhyloP BED for conservation score (BED, optional)")
-
+    apf.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
+    apf.add_argument('--gff3' , help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')
+    
     # Output options
     apout = ap.add_argument_group("Output options")
     apout.add_argument('-o','--output',default= "isoforms", help='Prefix for output files')
@@ -55,15 +65,10 @@ def qc_argparse():
                         help="Set the logging level %(default)s")
 
     # Optional arguments
-    apm = ap.add_argument_group("Optional arguments")
-    apm.add_argument("--is_fusion", action="store_true", help="Input are fusion isoforms, must supply GTF as input")
-    apm.add_argument('-e','--expression',  help='Expression matrix (supported: Kallisto tsv)')
-    apm.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
-    apm.add_argument('-w','--window', default=20, type=int, help='Size of the window in the genomic DNA screened for Adenine content downstream of TTS (default: %(default)s)')
-    apm.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')
-    apm.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    apm.add_argument('--isoAnnotLite', action='store_true', help='Run isoAnnot Lite to output a tappAS-compatible gff3 file')
-    apm.add_argument('--gff3' , help='Precomputed tappAS species specific GFF3 file. It will serve as reference to transfer functional attributes')
+    apoa = ap.add_argument_group("Optional arguments")
+    apoa.add_argument("--is_fusion", action="store_true", help="Input are fusion isoforms, must supply GTF as input")
+    apoa.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
+    apoa.add_argument('--bugsi', choices=['human','mouse'], help='Generate a BUGSI benchmarking report for the given species (human or mouse)', required=False)
 
     return ap
 

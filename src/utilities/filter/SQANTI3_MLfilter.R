@@ -268,6 +268,7 @@ if(length(Positive_set) != length(Negative_set)){
   cat(paste0("\n\tSampled ", sub_size, " transcripts to define final TP and TN sets."))
   
   # sample sub_size number of isoforms as TP and TN
+  set.seed(123)
   Positive_set <- sample(Positive_set, sub_size)
   Negative_set <- sample(Negative_set, sub_size)
 }
@@ -476,18 +477,18 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
   
   # check working directory for previously classifier object
   RF_outfiles <- dir(opt$dir)
-  
-  if("randomforest.RData" %in% RF_outfiles) {
+  rf_file <- paste0(opt$dir, "/",opt$output ,"_randomforest.RData")
+  if(rf_file %in% RF_outfiles) {
     
     # if the object exists, it is loaded to save runtime
     
     cat("\nRandom forest classifier already exists in output directory: 
-            loading randomforest.RData object.")
+            loading ", rf_file, " object.")
     cat("\n\t ***Note: this will skip classifier training.")
     cat("\t If you have modified TP and TN sets and wish to train a new model, 
-            delete randomforest.RData or provide a different output directory.")
+            delete ", rf_file, " or provide a different output directory.")
     
-    randomforest <- readRDS(paste0(opt$dir, "/randomforest.RData"))
+    randomforest <- readRDS(rf_file)
     
   } else {
     
@@ -513,10 +514,10 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
                                  metric = "Accuracy",
                                  trControl = ctrl)
     
-    saveRDS(randomforest, file = paste(opt$dir, "randomforest.RData", sep = "/"))
+    saveRDS(randomforest, file = rf_file)
     
     cat("\nRandom forest training finished.")
-    cat("\nSaved generated classifier to randomforest.RData file.")
+    cat("\nSaved generated classifier to ", rf_file, " file.")
   }
   
   
@@ -612,16 +613,18 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
   nbneg = length(alltestneg)
   
   if(nbpos < nbneg){
+    set.seed(123)
     sampleneg <- sample(alltestpos, nbpos, replace = FALSE)
     newtest <- testing[c(sampleneg, alltestpos),]
     Classnewtest <- factor(c(rep('NEG',nbpos),rep('POS',nbpos)))
   } else {
+    set.seed(123)
     samplepos <- sample(alltestpos,nbneg,replace=FALSE)
     newtest <- testing[c(samplepos,alltestneg),]
     Classnewtest <- factor(c(rep('POS',nbneg),rep('NEG',nbneg)))
   }
   
-  set.seed(1)
+  set.seed(123)
   test_pred_prob2 = predict(randomforest, newtest, type = 'prob')
   
   r = pROC::roc(as.numeric(Classnewtest),test_pred_prob2$POS,percent = TRUE)
@@ -764,11 +767,11 @@ if(opt$force_multi_exon == TRUE){
 
 # write new classification table
 write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
-                           "_MLresult_classification.txt"),
+                           "_ML_result_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
 
 cat(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
-              "\t", opt$output, "_MLresult_classification.txt file."))
+              "\t", opt$output, "_ML_result_classification.txt file."))
 
 
 

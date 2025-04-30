@@ -1,6 +1,7 @@
-import os, json
+import os, sys, json
 import pandas as pd
-from src.module_logging import message
+from src.module_logging import message,filter_logger
+
 
 def read_json_rules(json_file):
     """Parse JSON rules file into structured DataFrame format for filtering.
@@ -23,6 +24,7 @@ def read_json_rules(json_file):
     """
     with open(json_file, 'r') as f:
         json_data = json.load(f)
+
     rules_dict = {} 
     for sc, rules in json_data.items():
         rules_dict[sc] = []
@@ -41,6 +43,9 @@ def read_json_rules(json_file):
                 else:
                     rules_table.append([col_name,'Category',str(r).lower()])
             rules_dict[sc].append(pd.DataFrame(rules_table, columns=['column', 'type', 'rule']))
+    if 'rest' not in rules_dict:
+        rules_dict['rest'] = []
+        filter_logger.warning("No rules defined for 'rest' structural category. Defaulting to no filtering.")
     return rules_dict
 
 
@@ -76,18 +81,23 @@ def apply_rules(row, force_multiexon, rules_dict):
             rule_type = rule['type']
             rule_value = rule['rule']
             # check if it is nan
-            if pd.isna(row[column]):
-                isoform = False
-            else:
-                if rule_type == 'Category':
-                    if str(row[column]).lower() != rule_value:
-                        isoform = False
-                elif rule_type == 'Min_Threshold':
-                    if row[column] < rule_value:
-                        isoform = False
-                elif rule_type == 'Max_Threshold':
-                    if row[column] > rule_value:
-                        isoform = False
+            try:
+                if pd.isna(row[column]):
+                    isoform = False
+                else:
+                    if rule_type == 'Category':
+                        if str(row[column]).lower() != rule_value:
+                            isoform = False
+                    elif rule_type == 'Min_Threshold':
+                        if row[column] < rule_value:
+                            isoform = False
+                    elif rule_type == 'Max_Threshold':
+                        if row[column] > rule_value:
+                            isoform = False
+            except KeyError:
+                filter_logger.error(f"Column {column} not found in SQANTI3 classification data.")
+                filter_logger.error(f"Perhaps you misspelled the column name in the rules file?")
+                sys.exit(1)
         is_isoform = is_isoform or isoform
     if is_isoform:
         return "Isoform"

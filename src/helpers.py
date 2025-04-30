@@ -8,7 +8,6 @@ from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
 from bx.intervals import Interval #type: ignore
 
-from src.utils import find_closest_in_list
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
@@ -186,6 +185,11 @@ def sequence_correction(
         cmd = f"{GFFREAD_PROG} {corrGTF}.tmp -T -o {corrGTF}"
         logFile= f"{outdir}/logs/normalize_gtf.log"
         run_command(cmd,qc_logger,logFile, description="converting SAM to GTF")
+        try:
+            os.remove(f'{corrGTF}.tmp')
+        except OSError as e:
+            qc_logger.error(f"Error removing temporary file: {e}")
+            raise
 
 def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]) -> None:
     try:

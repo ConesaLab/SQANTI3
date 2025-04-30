@@ -2,17 +2,12 @@ from csv import DictWriter
 import pandas as pd
 import pytest,sys,os
 from Bio import SeqIO
-from pandas.testing import assert_frame_equal
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 
 from src.classification_steps import classify_isoform
 from src.parsers import isoforms_parser, reference_parser
-from src.qc_computations import (
-    process_rts_swiching
-)
-from src.utilities.rt_switching import rts
 from src.classification_steps import write_junction_info
 from src.config import  FIELDS_JUNC
 

@@ -210,9 +210,6 @@ def seq_match(exseq, inseq, allowMismatch):
     
     return False, None
 
-def complete_RTSinfo(RTSinfo,sjdict):
-    return RTSinfo
-
 def rts(args, genome_dict):
     #
     # Visualization of where the pattern repeat is searched for using a wiggle (w) of 1

@@ -8,25 +8,28 @@ __author__  = "angeles.arzalluz@gmail.com"
 #### PREPARATION ####
 
 ## Module import
-import os, sys, shutil
-import pandas as pd
+import os
 
 from src.rescue_argparse import rescue_argparse
-from src.module_logging import rescue_logger, message
+from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command, utilitiesPath
+from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
-  run_automatic_rescue_py,
+  run_automatic_rescue,
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
+from src.utilities.rescue import sq_requant
+
 
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
+  update_logger(rescue_logger,args.dir,args.log_level)
+  # Check if the logs directory exists, if not create it
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
@@ -35,14 +38,14 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  rescue_ism = run_automatic_rescue_py(args.filter_class,args.rescue_mono_exonic,
+  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
                               args.mode,prefix)
+  message("Automatic rescue completed",rescue_logger)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
-
     candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
-                                   rescue_ism,prefix)
+                                   prefix)
     rescue_logger.debug(f"Rescue candidates: {len(candidates)}")
 
     targets = rescue_targets(args.filter_class,candidates,
@@ -110,11 +113,12 @@ def main():
 
   # filter reference GTF to create tmp_gtf
   gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
-
-  run_command(gtf_cmd,rescue_logger,"log/rescue/gtf.log",description="Filter reference GTF to create tmp GTF")
+  logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
+  run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
   # concatenate with filtered GTF
   cat_cmd = f"cat {args.rescue_gtf} {tmp_gtf} > {output_gtf}"
-  run_command(cat_cmd,rescue_logger,"log/rescue/cat.log",description="Concatenate filtered GTF with tmp GTF")
+  logFile = os.path.join(args.dir,"logs","cat_rescue_gtf.log")
+  run_command(cat_cmd,rescue_logger,logFile,description="Concatenate filtered GTF with tmp GTF")
   
   rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.rescue_gtf} )")
   rescue_logger.info(f"Final output GTF written to file:  {output_gtf} ")
@@ -125,7 +129,15 @@ def main():
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
 
+  if args.requant:
+    if not args.counts:
+      rescue_logger.error("Counts file is required for the requantification module.")
+    rescue_logger.error("\nRunning requantification.\n")
 
+    rescue_gtf, inclusion_list, counts, rescued = sq_requant.parse_files(args)
+    sq_requant.run_requant(rescue_gtf, inclusion_list, counts, rescued, args.dir, args.output)
+    sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
+    rescue_logger.info("\nRequantification finished!\n")
 
 ## Run main()
 if __name__ == "__main__":
