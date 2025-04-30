@@ -4,7 +4,7 @@ import yaml, os
 from src.qc_argparse import qc_argparse
 from src.filter_argparse import filter_argparse
 from src.rescue_argparse import rescue_argparse
-from src.logging_config import main_logger,save_module_logger_info
+from src.logging_config import main_logger
 
 
 def sqanti_path(filename):
