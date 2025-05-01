@@ -21,9 +21,9 @@ __author__  = "francisco.pardo.palacios@gmail.com"
 import os
 
 from src.filter_argparse import filter_argparse
-from src.module_logging import filter_logger, update_logger
+from src.module_logging import filter_logger, update_logger, message
 from src.config import __version__
-from src.logging_config import art_logger,filter_art, get_logger_info
+from src.logging_config import art_logger,filter_art
 from src.filter_steps import filter_files, run_ML, run_rules
 from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
@@ -53,6 +53,7 @@ def main():
     
     filter_files(args.filter_isoforms, args.filter_gtf, args.filter_sam, args.filter_faa,
                  args.isoAnnotGFF3, args.dir,args.output, ids, inclusion_file)
+    message("SQANTI3 filter fished running",filter_logger)
 
 if __name__ == "__main__":
     main()

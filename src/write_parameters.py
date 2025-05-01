@@ -4,6 +4,9 @@ from src.config import __version__
 from src.module_logging import qc_logger,filter_logger
 
 def write_qc_parameters(args):
+    """
+    Save the parameters used in a specific SQANTI qc run to the parametes file
+    """
     params_file = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
     qc_logger.info(f"Write arguments to {params_file}...")
     with open(params_file, 'w') as f:
@@ -42,7 +45,10 @@ def write_qc_parameters(args):
 
 
 def write_filter_parameters(args):
-    params_file = os.path.join(os.path.abspath(args.dir), f"{args.output}_params.txt")
+    """
+    Save SQANTI filter parameters to a file
+    """
+    params_file = os.path.join(os.path.abspath(args.dir), f"{args.output}.filter_params.txt")
     filter_logger.info(f"Write arguments to {params_file}...")
     with open(params_file, 'w') as f:
       f.write("Version\t" + __version__ + "\n")

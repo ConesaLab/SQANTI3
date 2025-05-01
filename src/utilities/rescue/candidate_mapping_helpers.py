@@ -1,4 +1,6 @@
 import os, sys
+import pysam
+import pandas as pd
 
 from Bio import SeqIO
 
@@ -8,6 +10,13 @@ from src.commands import run_command
 
 
 def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
+    """Creates a reference transcriptome from a genome and a gtf file
+
+    Args:
+        ref_gtf (str): Path to the GTF transcriptome
+        ref_fasta (str): Path to the reference genome 
+        outdir (str): Path to the output directory
+    """
     rescue_logger.info("Creating reference transcriptome FASTA from provided GTF (--refGTF).")
 
     # make FASTA file name
@@ -31,6 +40,15 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     return ref_trans_Fasta
 
 def filter_transcriptome(input_fasta, target_ids):
+    """Reads a fasta file and select specific sequences
+
+    Args:
+        input_fasta (str): Path to the input FASTA file 
+        target_ids (list): List of sequence IDs to be selected
+
+    Returns:
+        list: Selected sequences in SeqIO format
+    """
     target_records = []
     # Filter and write sequences
     for record in SeqIO.parse(input_fasta, 'fasta'):
@@ -39,11 +57,14 @@ def filter_transcriptome(input_fasta, target_ids):
     return target_records
 
 def save_fasta(records, output_fasta):
+    """Writes a SeqIO fasta object into a given file
+
+    Args:
+        records (SeqIO): SeqIO object containing the sequences to be written
+        output_fasta (str): Path to the output FASTA file
+    """
     with open(output_fasta, 'w') as output_handle:
         SeqIO.write(records, output_handle, 'fasta')
-
-import pysam
-import pandas as pd
 
 def process_sam_file(sam_file, output_dir, output_prefix):
     # Define file paths

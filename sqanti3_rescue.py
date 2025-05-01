@@ -18,7 +18,7 @@ from src.argparse_utils import rescue_args_validation
 from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
-  run_automatic_rescue,
+  run_automatic_rescue, read_classification,
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
@@ -33,22 +33,27 @@ def main():
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
-  #### RUN AUTOMATIC RESCUE ####
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
-  #run_automatic_rescue(args)
-  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
+  
+ # Load classification
+  message("Reading filter classification file",rescue_logger)
+  classif_df = read_classification(args.filter_class)
+
+  #### RUN AUTOMATIC RESCUE ####
+
+  run_automatic_rescue(classif_df,args.rescue_mono_exonic,
                               args.mode,prefix)
   message("Automatic rescue completed",rescue_logger)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
-    candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
+    candidates = rescue_candidates(classif_df,args.rescue_mono_exonic,
                                    prefix)
     rescue_logger.debug(f"Rescue candidates: {len(candidates)}")
 
-    targets = rescue_targets(args.filter_class,candidates,
+    targets = rescue_targets(classif_df,candidates,
                              args.refGTF,prefix)
     rescue_logger.debug(f"Rescue targets: {len(targets)}")    
     
@@ -57,7 +62,8 @@ def main():
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    run_candidate_mapping(args,targets,candidates)
+    run_candidate_mapping(args.rescue_isoforms,args.refGTF,args.refFasta,
+                          args.dir,args.output,targets,candidates)
     
 
     #### RUN ML FILTER RESCUE ####

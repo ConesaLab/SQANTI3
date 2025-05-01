@@ -11,8 +11,7 @@ from src.commands import (
     PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    read_classification, rescue_fsm_monoexons,
-    get_lost_reference_id, 
+    rescue_fsm_monoexons, get_lost_reference_id, 
     rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
@@ -20,17 +19,24 @@ from src.utilities.rescue.rescue_helpers import (
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
-    filter_transcriptome,
-    prepare_fasta_transcriptome,
-    process_sam_file,
-    save_fasta
+    filter_transcriptome, prepare_fasta_transcriptome,
+    process_sam_file, save_fasta
 )
 
-def run_automatic_rescue(classification_file,monoexons,mode,prefix):
-    # Load classification
-    message("Reading filter classification file",rescue_logger)
-    classif_df = read_classification(classification_file)
+def read_classification(filename):
+    """ Reads a tsv file as a Pandas DataFrame"""
+    return pd.read_csv(filename, sep="\t")
 
+def run_automatic_rescue(classif_df,monoexons,mode,prefix):
+    """
+    Running the automatic rescue pipeline. The output saved will depend on the selected mode
+
+    Args:
+        classification_file (DataFrame): SQANTI filter classification (either ML or rescue)
+        monoexons (str): Flag to include monoexons in the rescue
+        mode (str): Indicates if it is being run in automatic ro full mode
+        prefix (str): Combination of the SQANTI output directory and prefix of the files
+    """
     message("Performing automatic rescue",rescue_logger)
     # Select the FSM and ISM isoforms with more than one exon 
     rescue_classif = classif_df[
@@ -40,11 +46,14 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
  
     # Find the references that are lost and get the ones that are not represented by isoforms
     lost_ref = get_lost_reference_id(rescue_classif)
+    # Special treatment in case the result from the automatic rescue is that no trancsrips have to be rescued
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
+       # The saved dataframe does not have to be empty, or the full rescue will fail.
        save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),rescue_classif,mode,prefix)
        return
+    
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
     for ref_id in lost_ref:
@@ -64,14 +73,15 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     # Save the automatic rescue
     save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
 
-def rescue_candidates(classification_file,monoexons,prefix):
+def rescue_candidates(classif_df,monoexons,prefix):
     """
     Selection of rescue candidates from non-FSM artifacts.
     The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
-    """
-    # Load classification
-    classif_df = read_classification(classification_file)
-    
+    Args:
+        classification_file (str): Path to the SQANTI filter classification file
+        monoexons (str): Flag to include monoexons in the rescue
+        prefix (str): Combination of the SQANTI output directory and prefix of the files
+    """   
     # Identify transcripts that have a full-splice_match Artifact
     transcripts_with_fsm_artifact = set(
         classif_df[
@@ -104,9 +114,10 @@ def rescue_candidates(classification_file,monoexons,prefix):
 
     return rescue_candidates["isoform"].tolist()
     
-def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
-    # Load classification
-    classif_df = read_classification(classification_file)
+def rescue_targets(classif_df,rescue_candidates,ref_gtf,prefix):
+    """
+    Selection of the rescue targets based on the candidates
+    """
     
     # Get the genes with associated rescue candidates
     target_genes = get_rescue_gene_targets(classif_df,rescue_candidates)
@@ -129,15 +140,23 @@ def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     return rescue_targets.tolist()
 
 ## Run mapping of rescue candidates (artifacts) to targets
-def run_candidate_mapping(args,targets_list,candidates_list):
-    
+def run_candidate_mapping(rescue_isoforms,refGTF,refFasta,dir,output,targets_list,candidates_list):
+    """
+    Maps the candidate isoforms against the target transcripts
+
+    Args:
+        args (_type_): _description_
+        targets_list (_type_): _description_
+        candidates_list (_type_): _description_
+    """
+    prefix = f"{dir}/{output}"
     #### PREPARATION OF FILES FOR MINIMAP2 ####
     message("Preparation of files for artifact mapping:", rescue_logger)
-    targets_fasta = f"{args.dir}/{args.output}_rescue_targets.fasta"
-    candidates_fasta = f"{args.dir}/{args.output}_rescue_candidates.fasta"
+    targets_fasta = f"{prefix}_rescue_targets.fasta"
+    candidates_fasta = f"{prefix}_rescue_candidates.fasta"
 
     ## Convert reference transcriptome GTF to FASTA
-    ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
+    ref_trans_fasta = prepare_fasta_transcriptome(refGTF,refFasta,dir)
 
     ## Filter reference transcriptome FASTA to only include target ref transcripts
     rescue_logger.info("Filtering reference transcriptome FASTA to only rescue targets.")
@@ -147,19 +166,14 @@ def run_candidate_mapping(args,targets_list,candidates_list):
 
     ## Filter SQ3 transcriptome FASTA to only include target LR transcripts
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
-
-    # make file names
-    LR_targets = filter_transcriptome(args.rescue_isoforms,targets_list)
-
+    LR_targets = filter_transcriptome(rescue_isoforms,targets_list)
     ## join both FASTA files
     all_targets = ref_targets + LR_targets
     save_fasta(all_targets,targets_fasta)
 
     ## Filter SQ3 FASTA to include rescue candidates
     rescue_logger.info("Creating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...")
-
-    # make file names
-    candidate_filt = filter_transcriptome(args.rescue_isoforms,candidates_list)
+    candidate_filt = filter_transcriptome(rescue_isoforms,candidates_list)
     save_fasta(candidate_filt,candidates_fasta)
     
     #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
@@ -169,14 +183,9 @@ def run_candidate_mapping(args,targets_list,candidates_list):
     # Mapping
     rescue_logger.info("Mapping rescue candidates to rescue targets with minimap2...")
 
-    # make file names
-    sam_file = f"{args.dir}/{args.output}_mapped_rescue.sam"
-
-    # make command
+    sam_file = f"{prefix}_mapped_rescue.sam"
     minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {targets_fasta} {candidates_fasta} > {sam_file}"
-
-    # run
-    logFile=f"{args.dir}/logs/rescue/minimap2.log"
+    logFile=f"{dir}/logs/rescue/minimap2.log"
     run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
 
     if os.path.isfile(sam_file):
@@ -187,7 +196,7 @@ def run_candidate_mapping(args,targets_list,candidates_list):
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
 
-    process_sam_file(sam_file,args.dir,args.output)
+    process_sam_file(sam_file,dir,output)
 
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
 
@@ -282,7 +291,7 @@ def run_ML_rescue(args):
     rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {args.filter_class} -o {args.output} -d {args.dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {args.threshold}"
 
     # expected output name
-    rescued_file = f"{args.dir}/{args.output }_rescue_inclusion-list.tsv"
+    rescued_file = f"{args.dir}/{args.output}_rescue_inclusion-list.tsv"
     logFile=f"{args.dir}/logs/rescue_by_mapping.log"
     # run R script via terminal
     run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
