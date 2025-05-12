@@ -76,7 +76,6 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
     :param output_gff: output GFF filename
     """
     with open(output_gff, 'w') as f:
-        qc_logger.debug(input_gff)
         reader = collapseGFFReader(input_gff)
         for r in reader:
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
@@ -197,7 +196,6 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
             open(isoforms, 'r') as isoforms_gtf, \
             open(badstrandGTF, 'w') as discard_gtf:
             for line in isoforms_gtf:
-                qc_logger.debug(line)
                 process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
     except IOError as e:
         qc_logger.error(f"Something went wrong processing GTF files: {e}")
