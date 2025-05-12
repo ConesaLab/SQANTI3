@@ -49,6 +49,7 @@ dependencies:
   - r-plotly=4.10.4
   - r-plyr=1.8.9
   - r-purrr=1.0.2
+  - r-randomForest=4.7
   - r-rmarkdown=2.29
   - r-reshape=0.8.9
   - r-readr=2.1.5

@@ -198,7 +198,7 @@ def flatten_dict(d):
 
 def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
-    return ' '.join(f'--{key}' if value is True else f'--{key} {value}' for key, value in options.items() if value not in ['',False])
+    return ' '.join(f'--{key}' if value is True or value == "True" or value == "true" else f'--{key} {value}' for key, value in options.items() if value not in ['',False])
 
 def validate_user_options(user_options, valid_keys):
     """Check if any user option is not in the list of valid keys."""
