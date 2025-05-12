@@ -55,7 +55,7 @@ def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
 def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_TSS_metric):
     bams = None
     ratio_TSS_dict = None
-    ## TSS ratio calculation
+      ## TSS ratio calculation
     if  SR_bam is not None:
         qc_logger.info("Using provided BAM files for calculating TSS ratio")
         if SR_bam.endswith('.bam'):
@@ -68,6 +68,10 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
     else:
         if short_reads is not None: # If short reads are provided, it looks for the STAR output
             qc_logger.info("**** Running calculation of TSS ratio")
+            if star_index == None:
+                qc_logger.error("SQANTI3 could not find the STAR index of the reference fasta.")
+                qc_logger.error("If you skipped the mapping step, please store the file chrNameLength.txt in a directory called STAR_index within your SQANTI3 output directory")
+                sys.exit(1)
             chr_order = star_index + "/chrNameLength.txt"
             inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
             bams = get_files_from_dir(star_out,".bam")
