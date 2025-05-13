@@ -1,47 +1,30 @@
 import pandas as pd
-import argparse
 import os
 from collections import defaultdict
 import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def parse_files(args):
-    #Check if the rescued GTF file was generated
-    gtf_path="{0}/{1}_rescued.gtf".format(args.dir, args.output)
-    if not os.path.isfile(gtf_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(gtf_path), file=sys.stderr)
-    else:
-        col_names = [
-            "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
-        ]
-        rescue_gtf = pd.read_csv(
-            gtf_path,
-            sep="\t",
-            comment="#",
-            names=col_names,
-            dtype={"Chromosome": str, "Start": int, "End": int},
-            low_memory=False
-        )
-        rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
+def parse_files(gtf_path,rescued_file,count_file):
 
-    #check if inclusion list was generated
-    inclusion_list_path = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-    if not os.path.isfile(inclusion_list_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(inclusion_list_path), file=sys.stderr)
-        sys.exit(-1)
-    else:
-        inclusion_list = pd.read_csv(inclusion_list_path, sep = '\t')
+    col_names = [
+        "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
+    ]
+    rescue_gtf = pd.read_csv(
+        gtf_path,
+        sep="\t",
+        comment="#",
+        names=col_names,
+        dtype={"Chromosome": str, "Start": int, "End": int},
+        low_memory=False
+    )
+    rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
 
-    #cheeck if counts file exists
-    if not os.path.isfile(args.counts):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.counts), file=sys.stderr)
-    else:
-        counts = pd.read_csv(args.counts, sep = '\t', comment = '#')
-        counts.columns = ['transcript_id', 'count']
+    counts = pd.read_csv(count_file, sep = '\t', comment = '#')
+    counts.columns = ['transcript_id', 'count']
 
     #check if rescued table exists
-    rescued_path="{0}/{1}_rescue_table.tsv".format(args.dir, args.output)
+    rescued_path=f"{prefix}_rescue_table.tsv"
     if not os.path.isfile(rescued_path):
         print("ERROR: {0} doesn't exist. Abort!".format(rescued_path), file=sys.stderr)
     else:

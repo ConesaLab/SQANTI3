@@ -255,3 +255,5 @@ def rescue_args_validation(args):
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
+    if args.requant:
+        valid_file(args.counts,rescue_logger)

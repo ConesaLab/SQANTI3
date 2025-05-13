@@ -135,15 +135,13 @@ def main():
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
 
-  if args.requant:
-    if not args.counts:
-      rescue_logger.error("Counts file is required for the requantification module.")
-    message("\nRunning requantification.",rescue_logger)
+  if args.requant:  
+    message("Running requantification.",rescue_logger)
 
     rescue_gtf, inclusion_list, counts, rescued = sq_requant.parse_files(args)
     sq_requant.run_requant(rescue_gtf, inclusion_list, counts, rescued, args.dir, args.output)
     sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
-    rescue_logger.info("\nRequantification finished!\n")
+    rescue_logger.info("Requantification finished!")
 
 ## Run main()
 if __name__ == "__main__":
