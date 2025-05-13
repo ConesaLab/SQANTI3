@@ -235,8 +235,6 @@ def rescue_args_validation(args):
     valid_dir(args.dir,rescue_logger)
     valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
-    if args.corrected_isoforms_fasta is not None:
-        valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
     if args.filtered_isoforms_gtf is not None:
         valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
@@ -245,7 +243,11 @@ def rescue_args_validation(args):
         except:
             rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
             sys.exit(1)
-
+        try:
+            valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
+        except:
+            rescue_logger.error("When running the rescue in full mode, the corrected isoforms FASTA file is mandatory.")
+            sys.exit(1)
         if args.strategy == 'rules':
             valid_file(args.json_filter, rescue_logger)
         if args.strategy == "ml":

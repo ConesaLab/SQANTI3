@@ -63,7 +63,7 @@ def rescue_lost_reference(ref_id, classif):
 def save_automatic_rescue(rescue_df,class_df,mode,prefix):
     # First write operation: rescue_auto without headers
     rescue_df.to_csv(
-        f"{prefix}_automatic_rescued_list.tsv",
+        f"{prefix}_automatic_inclusion_list.tsv",
         sep='\t',
         header=False,
         index=False

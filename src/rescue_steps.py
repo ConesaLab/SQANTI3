@@ -216,40 +216,24 @@ def run_rules_rescue(filter_classification, reference_classification,
         # make file names
     ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
 
-    if os.path.isfile(ref_rules):
-        ## run rescue-by-mapping
-        rescue_logger.info("Running rescue-by-mapping for rules filter.")
+    ## run rescue-by-mapping
+    rescue_logger.info("Running rescue-by-mapping for rules filter.")
 
-        # input file name
-        mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
+    # input file name
+    mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
 
-        # define Rscript command with rescue_by_mapping_rules.R args
-        rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_RULES} -c {filter_classification} \
-        -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
+    # define Rscript command with rescue_by_mapping_rules.R args
+    rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_RULES} -c {filter_classification} \
+    -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
+    logFile=f"{out_dir}/logs/rescue_rules.log"
+    run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
 
-        # expected output name
-        rescued_file = f"{prefix}_rescue_inclusion-list.tsv"
-        automatic_rescue_file = f"{prefix}_automatic_rescue_table.tsv"
-        run_command(rescue_cmd,rescue_logger,"log/rescue/rescue.log",description="Run rescue by mapping")
-        # TODO: Find a way to run this part in python 
-        # print(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
-        # rescue_rules(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
-        if os.path.isfile(rescued_file):
-            # load output list of rescued transcripts
-            rescued_df = pd.read_table(rescued_file, header = None, \
-            names = ["transcript"])
-            rescued_list = list(rescued_df["transcript"])
-
-            # return rescued transcript list
-            return(rescued_list)
-
-        else:
-            rescue_logger.error("ERROR: rescue inclusion list not created -file not found!")
-            sys.exit(1)
-
-    else:
-        rescue_logger.error("ERROR: reference filter classification not found!")
-        sys.exit(1)
+    # expected output name
+    rescued_file = f"{prefix}_full_inclusion_list.tsv"
+    automatic_rescue_file = f"{prefix}_automatic_rescue_table.tsv"
+    # TODO: Find a way to run this part in python 
+    # print(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
+    # rescue_rules(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
 
 
 ## Run rescue steps specific to the ML filter
@@ -261,7 +245,7 @@ def run_ML_rescue(filter_classification, reference_classification,
     rescue_logger.info("Running pre-trained random forest on reference transcriptome classification file.")
     
     # define Rscript command with run_randomforest_on_reference.R args
-    refML_cmd = f"{RSCRIPTPATH} {RESCUE_RANDOM_FOREST} -c {reference_classification} -o {out_prefix} -d {out_dir} -r {random_forest} -j {thr}"
+    refML_cmd = f"{RSCRIPTPATH} {RESCUE_RANDOM_FOREST} -c {reference_classification} -o {out_prefix} -d {out_dir} -r {random_forest}"
 
     # print command
     rescue_logger.debug(refML_cmd)
@@ -282,24 +266,9 @@ def run_ML_rescue(filter_classification, reference_classification,
         # define Rscript command with rescue_by_mapping_ML.R args
         rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {filter_classification} -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {thr}"
 
-        # expected output name
-        rescued_file = f"{prefix}_rescue_inclusion-list.tsv"
         logFile=f"{out_dir}/logs/rescue_by_mapping.log"
         # run R script via terminal
         run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
-
-        if os.path.isfile(rescued_file):
-            # load output list of rescued transcripts
-            rescued_df = pd.read_table(rescued_file, header = None, \
-            names = ["transcript"])
-            rescued_list = list(rescued_df["transcript"])
-
-            # return rescued transcript list
-            return(rescued_list)
-
-        else:
-            rescue_logger.error("Rescue inclusion list not created -file not found!")
-            sys.exit(1)
 
     else:
         rescue_logger.error("Reference isoform predictions not found!")

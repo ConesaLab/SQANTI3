@@ -72,31 +72,28 @@ def main():
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
       rescued = run_ML_rescue(args.filter_class, args.refClassif,
-                              args.output, args.dir, args.random_forest, args.threshold)
+                              args.dir, args.output, args.random_forest, args.threshold)
 
 
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome
     # and combines the results with the mapping hits obtained in the previous step
-
     if args.strategy == "rules":
-
-      rescue_logger.info("**** RESCUE-BY-MAPPING FOR RULES FILTER")
+      message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
       rescued = run_rules_rescue(args.filter_class, args.refClassif,
-                                 args.out_dir, args.out_prefix, args.json_filter)
+                                  args.dir, args.output, args.json_filter)
 
 
     # Finish print if output exists (same for rules and ML) ####
-    inclusion_list = f"{prefix}_rescue_inclusion-list.tsv"
-
+    inclusion_list = f"{prefix}_full_inclusion_list.tsv"
     if os.path.isfile(inclusion_list):
       message(f"Rescue {args.strategy} finished successfully!",rescue_logger)
       rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list}")
-
+    else:
+      rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list}")
+      sys.exit(1)
   ### End of condition (mode == "full")
-
-
 
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
@@ -110,12 +107,11 @@ def main():
     tmp_gtf = f"{args.dir}/rescued_only_tmp.gtf"
     output_gtf = f"{prefix}_rescued.gtf"
 
-    # condition: inclusion list file only produced for mode = full
-    # in mode = automatic, it is replaced by automatic rescue list
+    # Select the propper inclusion list
     if args.mode == "full":
-        rescued_list = f"{prefix}_rescue_inclusion-list.tsv"
+        rescued_list = f"{prefix}_full_inclusion_list.tsv"
     else:
-        rescued_list = f"{prefix}_automatic_rescued_list.tsv"
+        rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
 
     # filter reference GTF to create tmp_gtf
     gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"

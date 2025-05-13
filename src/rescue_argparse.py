@@ -51,7 +51,7 @@ def rescue_argparse():
                   help = "Run requantification of the rescued isoforms.")
   cc.add_argument("-s","--strategy", 
                   choices = ["rules", "ml"],
-                  default = "all", 
+                  default = "rules", 
                   help = "Filter strategy used.\
                     \nDefault: %(default)s")
   
