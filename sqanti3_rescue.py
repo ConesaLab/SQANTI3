@@ -22,7 +22,8 @@ from src.rescue_steps import (
   concatenate_gtf_files,
   run_automatic_rescue,
   rescue_candidates, rescue_targets,
-  run_candidate_mapping, run_rules_rescue, run_ML_rescue
+  run_candidate_mapping, run_rules_rescue, run_ML_rescue,
+  save_rescue_results
 )
 from src.utilities.rescue import sq_requant
 
@@ -102,44 +103,19 @@ def main():
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
     message("Generating rescued GTF.",rescue_logger)
-
-    # create file names
-    tmp_gtf = f"{args.dir}/rescued_only_tmp.gtf"
-    output_gtf = f"{prefix}_rescued.gtf"
-
-    # Select the propper inclusion list
-    if args.mode == "full":
-        rescued_list = f"{prefix}_full_inclusion_list.tsv"
-    else:
-        rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
-
-    # filter reference GTF to create tmp_gtf
-    gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
-    logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
-    run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
-    
-    # concatenate with filtered GTF
-    try:
-        input_files = [args.filtered_isoforms_gtf, tmp_gtf]
-        concatenate_gtf_files(input_files, output_gtf)
-        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.filtered_isoforms_gtf})")
-    except Exception as e:
-        rescue_logger.error(f"Failed to concatenate GTF files: {e}")
-        sys.exit(1) 
-
-    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
-
-    # remove tmp_gtf
-    os.remove(tmp_gtf)
+    rescued_list,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
+                                       args.refGTF, args.filtered_isoforms_gtf)
 
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
+    
+    rescue_gtf, counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,args.counts, prefix)
 
-    rescue_gtf, inclusion_list, counts, rescued = sq_requant.parse_files(args)
-    sq_requant.run_requant(rescue_gtf, inclusion_list, counts, rescued, args.dir, args.output)
+    sq_requant.run_requant(rescue_gtf, rescued_list, counts, 
+                           rescued_table, prefix)
     sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
     rescue_logger.info("Requantification finished!")
 

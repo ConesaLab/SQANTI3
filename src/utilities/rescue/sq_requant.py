@@ -5,7 +5,7 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def parse_files(gtf_path,rescued_file,count_file):
+def parse_files(gtf_path,count_file,prefix):
 
     col_names = [
         "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
@@ -19,42 +19,46 @@ def parse_files(gtf_path,rescued_file,count_file):
         low_memory=False
     )
     rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
-
+    # Load counts file
     counts = pd.read_csv(count_file, sep = '\t', comment = '#')
     counts.columns = ['transcript_id', 'count']
 
-    #check if rescued table exists
+    #Rescued table
     rescued_path=f"{prefix}_rescue_table.tsv"
     if not os.path.isfile(rescued_path):
         print("ERROR: {0} doesn't exist. Abort!".format(rescued_path), file=sys.stderr)
     else:
-        rescued = pd.read_csv(rescued_path, sep = '\t')
-    return(rescue_gtf, inclusion_list, counts, rescued)
+        rescued_table = pd.read_csv(rescued_path, sep = '\t')
+    return(rescue_gtf, counts, rescued_table)
 
-def run_requant(rescue_gtf, inclusion_list, counts, rescued, out, output):
-    def select_hit(isoform, rescued, new_counts, old_counts):
-        group = rescued[rescued["mapping_hit"] == isoform]
-        group['counts'] = group.apply(lambda x: old_counts.get(x['rescue_candidate'], 0), axis = 1)
-        new_counts[isoform] = group['counts'].sum()
-        return new_counts
+def select_hit(isoform, rescued, new_counts, old_counts):
+    group = rescued[rescued["mapping_hit"] == isoform]
+    group['counts'] = group.apply(lambda x: old_counts.get(x['rescue_candidate'], 0), axis = 1)
+    new_counts[isoform] = group['counts'].sum()
+    return new_counts
 
-    def reassign_counts(isoform, old_counts, new_counts, list_of_changed):
-        if isoform in new_counts.keys():
-            count = new_counts[isoform]
-            list_of_changed.append(isoform)
-        else:
-            try:
-                count = old_counts[isoform]
-            except KeyError:
-                count = 0
-        return(count)
-
-    def fill_old_counts(isoform, old_counts):
+def reassign_counts(isoform, old_counts, new_counts, list_of_changed):
+    if isoform in new_counts.keys():
+        count = new_counts[isoform]
+        list_of_changed.append(isoform)
+    else:
         try:
             count = old_counts[isoform]
         except KeyError:
             count = 0
-        return(count)
+    return(count)
+
+def fill_old_counts(isoform, old_counts):
+    try:
+        count = old_counts[isoform]
+    except KeyError:
+        count = 0
+    return(count)
+    
+def run_requant(rescue_gtf, inclusion_list, counts, rescued, prefix):
+
+    inclusion_list = pd.DataFrame(inclusion_list, columns=["transcript_id"])
+
     #select list of isoforms that were rescued by SQANTI3 rescue
     rescued_iso = rescued[rescued['rescue_result'] != 'not_rescued']
     additional_isoforms = rescued[rescued['exclusion_reason'] == 'reference_already_present']
@@ -75,11 +79,11 @@ def run_requant(rescue_gtf, inclusion_list, counts, rescued, out, output):
     changed = pd.DataFrame()
     changed['changed_count'] = list_of_changed
 
-    counts_df.to_csv("{}/{}_reassigned_counts_extended.tsv".format(out, output), header = True, index = False, sep = '\t')
-    changed.to_csv("{}/{}_changed_counts.tsv".format(out, output), header = True, index = False, sep = '\t')
+    counts_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", header = True, index = False, sep = '\t')
+    changed.to_csv(f"{prefix}_changed_counts.tsv", header = True, index = False, sep = '\t')
 
     counts_df_short = counts_df[['transcript_id', 'new_count']]
-    counts_df_short.to_csv("{}/{}_reassigned_counts.tsv".format(out, output), header = True, index = False, sep = '\t')
+    counts_df_short.to_csv(f"{prefix}_reassigned_counts.tsv", header = True, index = False, sep = '\t')
 
 def to_tpm(rescue_gtf, out, output):
     def calculate_tpm(counts, lengths):
@@ -93,9 +97,9 @@ def to_tpm(rescue_gtf, out, output):
         tpm = (rpk / total_rpk) * 1e6
         return tpm
     #check if requantification file was generated
-    counts_df_path="{}/{}_reassigned_counts.tsv".format(out, output)
+    counts_df_path=f"{prefix}_reassigned_counts.tsv"
     if not os.path.isfile(counts_df_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(counts_df_path), file=sys.stderr)
+        print(f"ERROR: {counts_df_path} doesn't exist. Abort!", file=sys.stderr)
     else:
         counts_df = pd.read_csv(counts_df_path, sep = '\t')
 

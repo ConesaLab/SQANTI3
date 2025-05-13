@@ -285,3 +285,36 @@ def concatenate_gtf_files(input_files, output_file):
         for fname in input_files:
             with open(fname) as infile:
                 shutil.copyfileobj(infile, outfile)
+
+def save_rescue_results(out_dir,out_prefix, mode, refGTF,
+                        filtered_isoforms_gtf):
+    prefix = f"{out_dir}/{out_prefix}"
+    # create file names
+    tmp_gtf = f"{out_dir}/rescued_only_tmp.gtf"
+    output_gtf = f"{prefix}_rescued.gtf"
+
+    # Select the propper inclusion list
+    if mode == "full":
+        rescued_list = f"{prefix}_full_inclusion_list.tsv"
+    else:
+        rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
+
+    # filter reference GTF to create tmp_gtf
+    gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {refGTF}"
+    logFile = os.path.join(out_dir,"logs","create_tmp_gtf.log")
+    run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
+    
+    # concatenate with filtered GTF
+    try:
+        input_files = [filtered_isoforms_gtf, tmp_gtf]
+        concatenate_gtf_files(input_files, output_gtf)
+        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.filtered_isoforms_gtf})")
+    except Exception as e:
+        rescue_logger.error(f"Failed to concatenate GTF files: {e}")
+        sys.exit(1) 
+
+    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
+
+    # remove tmp_gtf
+    os.remove(tmp_gtf)
+    return(rescued_list)
