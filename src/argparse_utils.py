@@ -235,20 +235,23 @@ def rescue_args_validation(args):
     valid_dir(args.dir,rescue_logger)
     valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
-    if args.rescue_isoforms is not None:
-        valid_fasta(args.rescue_isoforms,rescue_logger)
-    if args.rescue_gtf is not None:
-        valid_gtf(args.rescue_gtf,rescue_logger)
+    if args.filtered_isoforms_gtf is not None:
+        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)
         except:
             rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
             sys.exit(1)
-    if args.subcommand == 'rules':
-        valid_file(args.json_filter, rescue_logger)
-    if args.subcommand == "ml":
-        if args.threshold < 0 or args.threshold > 1.:
-            rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
-            sys.exit(-1)
-        valid_file(args.random_forest,rescue_logger)
+        try:
+            valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
+        except:
+            rescue_logger.error("When running the rescue in full mode, the corrected isoforms FASTA file is mandatory.")
+            sys.exit(1)
+        if args.strategy == 'rules':
+            valid_file(args.json_filter, rescue_logger)
+        if args.strategy == "ml":
+            if args.threshold < 0 or args.threshold > 1.:
+                rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
+                sys.exit(-1)
+            valid_file(args.random_forest,rescue_logger)
