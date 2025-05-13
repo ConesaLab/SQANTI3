@@ -66,16 +66,18 @@ def rescue_argparse():
   ml = parser.add_argument_group("Machine Learning specific options")
   ml.add_argument("-r", "--random_forest",
                   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
-  ml.add_argument("-j", "--threshold", 
+  ml.add_argument("-t", "--threshold", 
                   type = float, default = 0.7, 
                   help = "Machine learning probability threshold to filter elegible rescue targets (mapping hits). \
                     \nDefault: %(default)s")
   # Output options
   co = parser.add_argument_group("Output options")
   co.add_argument("-o","--output", 
+                      default = "isoform",
                       help = "Prefix for output files.", 
                       required = False)
   co.add_argument("-d","--dir", 
+                      default = "sqanti3_output",
                       help = "Directory for output files. Default: Directory where the script was run.", 
                       required = False)
   # Performance options

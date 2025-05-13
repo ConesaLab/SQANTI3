@@ -9,6 +9,7 @@ __author__  = "angeles.arzalluz@gmail.com"
 
 ## Module import
 import os
+import sys
 
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message, update_logger
@@ -99,37 +100,41 @@ def main():
 
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
-
-  rescue_logger.info("Adding rescued transcripts to provided SQ3 filtered GTF.")
-
-  # create file names
-  tmp_gtf = f"{args.dir}/rescued_only_tmp.gtf"
-  output_gtf = f"{prefix}_rescued.gtf"
-
-  # condition: inclusion list file only produced for mode = full
-  # in mode = automatic, it is replaced by automatic rescue list
-  if args.mode == "full":
-      rescued_list = f"{prefix}_rescue_inclusion-list.tsv"
+  if args.filtered_isoforms_gtf is None:
+    rescue_logger.warning("No filtered GTF provided.")
+    rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
-      rescued_list = f"{prefix}_automatic_rescued_list.tsv"
+    message("Generating rescued GTF.",rescue_logger)
 
-  # filter reference GTF to create tmp_gtf
-  gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
-  logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
-  run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
-  
-  # concatenate with filtered GTF
-  try:
-      input_files = [args.filtered_isoforms_gtf, tmp_gtf]
-      concatenate_gtf_files(input_files, output_gtf)
-      rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.rescue_gtf})")
-  except Exception as e:
-      rescue_logger.error(f"Failed to concatenate GTF files: {e}")
+    # create file names
+    tmp_gtf = f"{args.dir}/rescued_only_tmp.gtf"
+    output_gtf = f"{prefix}_rescued.gtf"
 
-  rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
+    # condition: inclusion list file only produced for mode = full
+    # in mode = automatic, it is replaced by automatic rescue list
+    if args.mode == "full":
+        rescued_list = f"{prefix}_rescue_inclusion-list.tsv"
+    else:
+        rescued_list = f"{prefix}_automatic_rescued_list.tsv"
 
-  # remove tmp_gtf
-  os.remove(tmp_gtf)
+    # filter reference GTF to create tmp_gtf
+    gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
+    logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
+    run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
+    
+    # concatenate with filtered GTF
+    try:
+        input_files = [args.filtered_isoforms_gtf, tmp_gtf]
+        concatenate_gtf_files(input_files, output_gtf)
+        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.filtered_isoforms_gtf})")
+    except Exception as e:
+        rescue_logger.error(f"Failed to concatenate GTF files: {e}")
+        sys.exit(1) 
+
+    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
+
+    # remove tmp_gtf
+    os.remove(tmp_gtf)
 
   ## END ##
   message("Rescue finished successfully!",rescue_logger)

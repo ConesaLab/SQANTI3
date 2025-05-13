@@ -237,7 +237,7 @@ def rescue_args_validation(args):
     valid_fasta(args.refFasta,rescue_logger)
     if args.corrected_isoforms_fasta is not None:
         valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
-    if args.rescue_gtf is not None:
+    if args.filtered_isoforms_gtf is not None:
         valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
         try:
