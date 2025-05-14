@@ -19,16 +19,15 @@ def parse_files(gtf_path,count_file,prefix):
         low_memory=False
     )
     rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
+    
     # Load counts file
     counts = pd.read_csv(count_file, sep = '\t', comment = '#')
     counts.columns = ['transcript_id', 'count']
 
     #Rescued table
     rescued_path=f"{prefix}_rescue_table.tsv"
-    if not os.path.isfile(rescued_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(rescued_path), file=sys.stderr)
-    else:
-        rescued_table = pd.read_csv(rescued_path, sep = '\t')
+    rescued_table = pd.read_csv(rescued_path, sep = '\t')
+
     return(rescue_gtf, counts, rescued_table)
 
 def select_hit(isoform, rescued, new_counts, old_counts):
@@ -55,22 +54,25 @@ def fill_old_counts(isoform, old_counts):
         count = 0
     return(count)
     
-def run_requant(rescue_gtf, inclusion_list, counts, rescued, prefix):
+def run_requant(rescue_gtf, inclusion_list, counts, 
+                rescue_df, prefix):
 
     inclusion_list = pd.DataFrame(inclusion_list, columns=["transcript_id"])
 
     #select list of isoforms that were rescued by SQANTI3 rescue
-    rescued_iso = rescued[rescued['rescue_result'] != 'not_rescued']
-    additional_isoforms = rescued[rescued['exclusion_reason'] == 'reference_already_present']
+    rescued_iso = rescue_df[rescue_df['rescue_result'] != 'not_rescued']
+    additional_isoforms = rescue_df[rescue_df['exclusion_reason'] == 'reference_already_present']
     rescued = pd.concat([rescued_iso, additional_isoforms])
-    #rescued = rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])
     rescued = rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])      
+
     #create dictionaries of old and new counts
     old_counts = counts.set_index('transcript_id')['count'].to_dict()
     new_counts = defaultdict(int)
+    
     #reassign counts to surviving isoforms
     rescued = rescued[rescued['rescue_candidate'].isin(old_counts.keys())]
     inclusion_list.apply(lambda x: select_hit(x.iloc[0], rescued, new_counts, old_counts), axis = 1)
+    
     #combine old and new counts
     counts_df = pd.DataFrame(rescue_gtf['transcript_id'].unique(), columns = ['transcript_id'])
     counts_df['old_count'] = counts_df['transcript_id'].apply(lambda x: fill_old_counts(x, old_counts))
@@ -85,7 +87,7 @@ def run_requant(rescue_gtf, inclusion_list, counts, rescued, prefix):
     counts_df_short = counts_df[['transcript_id', 'new_count']]
     counts_df_short.to_csv(f"{prefix}_reassigned_counts.tsv", header = True, index = False, sep = '\t')
 
-def to_tpm(rescue_gtf, out, output):
+def to_tpm(rescue_gtf, prefix):
     def calculate_tpm(counts, lengths):
         # Convert lengths to kilobases
         lengths_kb = lengths / 1000
@@ -123,4 +125,4 @@ def to_tpm(rescue_gtf, out, output):
     # Calculate TPM
     rescue_gtf['TPM'] = calculate_tpm(rescue_gtf['counts'], rescue_gtf['t_length'])
     final = rescue_gtf[['transcript_id', 'TPM']]
-    final.to_csv("{}/{}_reassigned_counts_TPM.tsv".format(out, output), header = True, sep='\t', index=False)
+    final.to_csv(f"{prefix}_reassigned_counts_TPM.tsv", header = True, sep='\t', index=False)

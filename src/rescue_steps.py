@@ -308,7 +308,7 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
     try:
         input_files = [filtered_isoforms_gtf, tmp_gtf]
         concatenate_gtf_files(input_files, output_gtf)
-        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.filtered_isoforms_gtf})")
+        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({filtered_isoforms_gtf})")
     except Exception as e:
         rescue_logger.error(f"Failed to concatenate GTF files: {e}")
         sys.exit(1) 
@@ -317,4 +317,4 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
 
     # remove tmp_gtf
     os.remove(tmp_gtf)
-    return(rescued_list)
+    return(rescued_list,output_gtf)
