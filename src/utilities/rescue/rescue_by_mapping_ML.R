@@ -299,7 +299,9 @@ opt$threshold <- as.numeric(opt$threshold)
             dplyr::mutate(best_match_id = dplyr::if_else(rescue_result == "rescued_automatic", 
                                                          true = mapping_hit,
                                                          false = best_match_id))
-      
+        rescue_table <- rescue_table %>% 
+          dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene),
+                           by = c("rescue_candidate" = "isoform")) 
       # output rescue table
       readr::write_tsv(rescue_table,
                        file = paste0(opt$dir, "/", opt$output, 

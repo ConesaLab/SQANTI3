@@ -65,8 +65,11 @@ def main():
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                          args.rescue_isoforms,args.dir,args.output)
+    if os.path.isfile(f"{prefix}_rescue_mapping_hits.tsv"):
+      rescue_logger.info("Mapping hits already exist, skipping mapping step.")
+    else:
+      run_candidate_mapping(args.refGTF,args.refFasta,targets,candidates,
+                            args.corrected_isoforms_fasta,args.dir,args.output)
 
 
     #### RUN ML FILTER RESCUE ####
@@ -108,7 +111,7 @@ def main():
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
     message("Generating rescued GTF.",rescue_logger)
-    rescued_list,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
+    inclusion_file,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
                                        args.refGTF, args.filtered_isoforms_gtf)
 
   ## END ##
@@ -117,9 +120,11 @@ def main():
   if args.requant:  
     message("Running requantification.",rescue_logger)
     
-    rescue_gtf, counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,args.counts, prefix)
+    rescue_gtf, inclusion_df, \
+      counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,inclusion_file,
+                                                     args.counts, prefix)
 
-    sq_requant.run_requant(rescue_gtf, rescued_list, counts, 
+    sq_requant.run_requant(rescue_gtf, inclusion_df, counts, 
                            rescued_table, prefix)
     sq_requant.to_tpm(rescue_gtf, prefix)
     rescue_logger.info("Requantification finished!")
