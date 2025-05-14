@@ -121,7 +121,7 @@ def main():
 
     sq_requant.run_requant(rescue_gtf, rescued_list, counts, 
                            rescued_table, prefix)
-    sq_requant.to_tpm(rescue_gtf, args.dir, args.output)
+    sq_requant.to_tpm(rescue_gtf, prefix)
     rescue_logger.info("Requantification finished!")
 
 ## Run main()
