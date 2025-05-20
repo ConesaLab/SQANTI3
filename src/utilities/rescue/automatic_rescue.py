@@ -68,6 +68,9 @@ def save_automatic_rescue(rescue_df,class_df,prefix):
         header=False,
         index=False
     )
+    if rescue_df.iloc[0,0] == "none":
+        rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
+        rescue_df["isoform"] = "none"
     # Second write operation: rescue_table with headers 
     rescue_table = class_df[
         class_df['associated_transcript'].isin(rescue_df['isoform'])

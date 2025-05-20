@@ -4,6 +4,7 @@ import sys
 
 import pandas as pd
 
+from src.utilities.rescue.rescue_by_mapping_ML import rescue_by_mapping
 from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
@@ -261,13 +262,15 @@ def run_ML_rescue(filter_classification, reference_classification,
 
         # input file name
         mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
-
+        rescue_by_mapping(mapping_hits,ref_isoform_predict,filter_classification,
+                          f"{prefix}_automatic_rescue_table.tsv",prefix,"ml",thr)
+        
         # define Rscript command with rescue_by_mapping_ML.R args
-        rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {filter_classification} -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {thr}"
+        # rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {filter_classification} -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {thr}"
 
-        logFile=f"{out_dir}/logs/rescue_by_mapping.log"
-        # run R script via terminal
-        run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
+        # logFile=f"{out_dir}/logs/rescue_by_mapping.log"
+        # # run R script via terminal
+        # run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
 
     else:
         rescue_logger.error("Reference isoform predictions not found!")

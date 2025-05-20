@@ -205,7 +205,10 @@ opt$threshold <- as.numeric(opt$threshold)
         ))
       
       # join FSM/automatic rescue results
-      rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
+      if (nrow(automatic_fsm) !=0) {
+        print("There are rows")
+        rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
+      }
       
       # create best match column
       rescue_table <- rescue_table %>% 
@@ -236,17 +239,17 @@ opt$threshold <- as.numeric(opt$threshold)
             dplyr::filter(hit_POS_MLprob == max(hit_POS_MLprob))
           
           # get rescue candidates with the best hit
-          match_unique.ids <- rescue_table.iso %>%
+          match_unique.ids <- rescue_table.max %>%
             dplyr::group_by(rescue_candidate) %>%
-            dplyr::filter(n() == 1) %>%
+            dplyr::filter(dplyr::n() == 1) %>%
             dplyr::select(rescue_candidate, mapping_hit) %>%
             dplyr::rename(best_match_id = "mapping_hit") %>%
             dplyr::ungroup()
 
           # find out which rescue candidates have ambiguity/ties
-          rescue_table.ties <- rescue_table.iso %>%
+          rescue_table.ties <- rescue_table.max %>%
             dplyr::group_by(rescue_candidate) %>%
-            dplyr::filter(n() > 1) %>%
+            dplyr::filter(dplyr::n() > 1) %>%
             dplyr::ungroup()
 
 
@@ -273,7 +276,7 @@ opt$threshold <- as.numeric(opt$threshold)
           match_tie.ids <- rbind(match_tie.ids.prim, match_tie.ids.nonprim)
 
           # join match tables
-          match_ids <- bind_rows(match_tie.ids,
+          match_ids <- dplyr::bind_rows(match_tie.ids,
                                         match_unique.ids)
       
           
