@@ -305,4 +305,4 @@ opt$threshold <- as.numeric(opt$threshold)
       # output rescue table
       readr::write_tsv(rescue_table,
                        file = paste0(opt$dir, "/", opt$output, 
-                                     "_rescue_table.tsv"))
+                                     "_full_rescue_table.tsv"))

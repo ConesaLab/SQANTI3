@@ -122,7 +122,7 @@ def main():
     
     rescue_gtf, inclusion_df, \
       counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,inclusion_file,
-                                                     args.counts, prefix)
+                                                     args.counts, prefix,args.mode)
 
     sq_requant.run_requant(rescue_gtf, inclusion_df, counts, 
                            rescued_table, prefix)

@@ -69,23 +69,22 @@ def save_automatic_rescue(rescue_df,class_df,mode,prefix):
         index=False
     )
 
-    if mode == 'automatic':
-        if rescue_df.iloc[0,0] == "none":
-            rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
-        else:
-            # Second write operation: rescue_table with headers 
-            rescue_table = class_df[
-                class_df['associated_transcript'].isin(rescue_df['isoform'])
-            ][['isoform', 'associated_transcript', 'structural_category']].rename(
-                columns={
-                    'isoform': 'artifact',
-                    'associated_transcript': 'rescued_transcript'
-                }
-            )
+    if rescue_df.iloc[0,0] == "none":
+        rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
+    else:
+        # Second write operation: rescue_table with headers 
+        rescue_table = class_df[
+            class_df['associated_transcript'].isin(rescue_df['isoform'])
+        ][['isoform', 'associated_transcript', 'structural_category']].rename(
+            columns={
+                'isoform': 'artifact',
+                'associated_transcript': 'rescued_transcript'
+            }
+        )
 
-            rescue_table.to_csv(
-                f"{prefix}_automatic_rescue_table.tsv",
-                sep='\t',
-                index=False
-            )
+        rescue_table.to_csv(
+            f"{prefix}_automatic_rescue_table.tsv",
+            sep='\t',
+            index=False
+        )
 
