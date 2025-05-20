@@ -16,7 +16,6 @@ from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
   concatenate_gtf_files,
@@ -41,8 +40,7 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
-                              args.mode,prefix)
+  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
