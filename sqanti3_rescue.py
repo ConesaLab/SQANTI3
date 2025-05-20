@@ -42,9 +42,8 @@ def main():
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
-  # TODO: Pre-read the filter_class into a pd dataframe and pass it to the functions (once we have pythonzed everything)
-  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
-                              args.mode,prefix)
+  #run_automatic_rescue(args)
+  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
 
   ## Convert reference transcriptome GTF to FASTA
