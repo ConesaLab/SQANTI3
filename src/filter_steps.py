@@ -62,11 +62,11 @@ def prepare_ml_cmd(sq_class,prefix,outdir,percent_training,threshold,intraprimin
         -z {max_class_size}"
 
     if TP is not None:
-        cmd + f" -p {TP}"
+        cmd += f" -p {TP}"
     if TN is not None:
-        cmd + f" -n {TN}"
+        cmd += f" -n {TN}"
     if remove_columns is not None:
-        cmd + f" -r {remove_columns}"
+        cmd += f" -r {remove_columns}"
     return cmd
 
 # TODO: These two functions are almost the same. There should be some way around to merge them ;)
