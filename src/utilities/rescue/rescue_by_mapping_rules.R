@@ -144,25 +144,26 @@ write_tsv(rescued_final,
 
 # find FSM rescued during automatic rescue to add to rescue table
 automatic_fsm <- classif %>%
+  dplyr::filter(associated_transcript %in% automatic_ref_rescued$ref_transcript &
+                  filter_result == "Artifact") %>%
   select(isoform, associated_transcript,
                 structural_category) %>%
-  right_join(automatic_ref_rescued %>% rename(associated_transcript = "ref_transcript"),
-                    by = "associated_transcript") %>%
 # add rules result for automatic rescued references
-  left_join(rules.ref %>% rename(associated_transcript = "isoform"),
-                    by = "associated_transcript") %>%
+  left_join(rules.ref,
+                    by = c("associated_transcript" = "isoform")) %>%
   # and add SAM flag, rescue_result and exclusion_reason columns
   mutate(sam_flag = NA,
                 rescue_result = "rescued_automatic",
                 exclusion_reason = NA) %>%
 # reorder and rename
   rename(rescue_candidate = "isoform",
-                mapping_hit = "associated_transcript",
-                hit_filter_result = "filter_result",
-                candidate_structural_category = "structural_category") %>%
+          mapping_hit = "associated_transcript",
+          hit_filter_result = "filter_result",
+          candidate_structural_category = "structural_category") %>%
   relocate(sam_flag, .after = rescue_candidate) %>%
   relocate(hit_filter_result, .after = mapping_hit)
 
+print(paste0("Automatic rescue: ", nrow(automatic_fsm), " transcripts rescued."))
 
 # include final rescue result in mapping hits table
 rescue_table <- mapping_hits %>%
@@ -281,9 +282,11 @@ rescue_table <- rescue_table %>%
       mutate(best_match_id = if_else(rescue_result == "rescued_automatic",
                                                     true = mapping_hit,
                                                     false = best_match_id))
-
-# output rescue table
+rescue_table <- rescue_table %>% 
+          dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene),
+                           by = c("rescue_candidate" = "isoform")) 
+      # output rescue table
 write_tsv(rescue_table,
                   file = paste0(opt$dir, "/", opt$output,
-                                "_rescue_table.tsv"))
+                                "_full_rescue_table.tsv"))
 

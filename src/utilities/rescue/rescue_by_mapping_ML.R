@@ -75,18 +75,15 @@ opt$threshold <- as.numeric(opt$threshold)
     
     # add ML probabilities of mapping hits to mapping hits table
     mapping_hits <- mapping_hits %>% 
-      dplyr::left_join(probs %>% 
-                         dplyr::rename(mapping_hit = "isoform"), 
-                by = "mapping_hit") %>% 
+      dplyr::left_join(probs, 
+                by = c("mapping_hit" = "isoform")) %>% 
       dplyr::rename(hit_POS_MLprob = "POS_MLprob")
 
     # add structural categories of candidates to mapping hits table
     mapping_hits <- mapping_hits %>% 
-      dplyr::rename(isoform = "rescue_candidate") %>% 
       dplyr::left_join(classif %>% 
                          dplyr::select(isoform, structural_category), 
-                       by = "isoform") %>% 
-      dplyr::rename(rescue_candidate = "isoform") %>% 
+                       by = c("rescue_candidate" = "isoform")) %>% 
       dplyr::rename(candidate_structural_category = "structural_category")
     
   
@@ -121,13 +118,13 @@ opt$threshold <- as.numeric(opt$threshold)
       # include those that were retrieved in automatic rescue
       automatic_ref_rescued <- readr::read_tsv(paste0(opt$dir, "/", opt$output, 
                                                       "_automatic_inclusion_list.tsv"),
-                                               col_names = "associated_transcript") 
+                                               col_names = "associated_transcript")
       # Add empty row to avoid error when no automatic rescue is performed
       if (nrow(automatic_ref_rescued) == 0) {
         automatic_ref_rescued[1,"associated_transcript"] <- "none"
       }
       isoform_assoc.tr <- dplyr::bind_rows(isoform_assoc.tr, 
-                                           automatic_ref_rescued) %>% unique
+                                           automatic_ref_rescued) %>% unique()
       
       # find truly rescued references (not represented by any isoform)
       rescued_mapping_final <- rescued_ref %>% 
@@ -158,16 +155,17 @@ opt$threshold <- as.numeric(opt$threshold)
       
           # find FSM rescued during automatic rescue to add to rescue table
           automatic_fsm <- classif %>% 
-            dplyr::select(isoform, associated_transcript, 
-                          structural_category) %>% 
-            dplyr::right_join(automatic_ref_rescued %>% dplyr::rename(associated_transcript = "ref_transcript"), 
-                              by = "associated_transcript")
-          
+          dplyr::filter(associated_transcript %in% automatic_ref_rescued$ref_transcript &
+                          filter_result == "Artifact") %>%
+            dplyr::select(isoform, associated_transcript,
+                          structural_category) 
+            
+
           # add ML probabilities for automatic rescued references
           # and add SAM flag, rescue_result and exclusion_reason columns
           automatic_fsm <- automatic_fsm %>% 
-            dplyr::left_join(probs.ref %>% dplyr::rename(associated_transcript = "isoform"), 
-                                                          by = "associated_transcript") %>% 
+            dplyr::left_join(probs.ref, 
+                             by = c("associated_transcript" = "isoform")) %>% 
             dplyr::mutate(sam_flag = NA, 
                           rescue_result = "rescued_automatic", 
                           exclusion_reason = NA)
@@ -305,4 +303,4 @@ opt$threshold <- as.numeric(opt$threshold)
       # output rescue table
       readr::write_tsv(rescue_table,
                        file = paste0(opt$dir, "/", opt$output, 
-                                     "_rescue_table.tsv"))
+                                     "_full_rescue_table.tsv"))
