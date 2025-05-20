@@ -5,7 +5,7 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def parse_files(gtf_path,inclusion_file,count_file,prefix):
+def parse_files(gtf_path,inclusion_file,count_file,prefix,mode):
 
     col_names = [
         "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
@@ -28,7 +28,7 @@ def parse_files(gtf_path,inclusion_file,count_file,prefix):
     counts.columns = ['transcript_id', 'count']
 
     #Rescued table
-    rescued_path=f"{prefix}_rescue_table.tsv"
+    rescued_path=f"{prefix}_{mode}_rescue_table.tsv"
     rescued_table = pd.read_csv(rescued_path, sep = '\t')
 
 

@@ -281,9 +281,11 @@ rescue_table <- rescue_table %>%
       mutate(best_match_id = if_else(rescue_result == "rescued_automatic",
                                                     true = mapping_hit,
                                                     false = best_match_id))
-
-# output rescue table
+rescue_table <- rescue_table %>% 
+          dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene),
+                           by = c("rescue_candidate" = "isoform")) 
+      # output rescue table
 write_tsv(rescue_table,
                   file = paste0(opt$dir, "/", opt$output,
-                                "_rescue_table.tsv"))
+                                "_full_rescue_table.tsv"))
 
