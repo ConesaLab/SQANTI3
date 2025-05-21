@@ -205,7 +205,10 @@ opt$threshold <- as.numeric(opt$threshold)
         ))
       
       # join FSM/automatic rescue results
-      rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
+      if (nrow(automatic_fsm) !=0) {
+        print("There are rows")
+        rescue_table <- dplyr::bind_rows(rescue_table, automatic_fsm)
+      }
       
       # create best match column
       rescue_table <- rescue_table %>% 
@@ -235,50 +238,46 @@ opt$threshold <- as.numeric(opt$threshold)
             dplyr::filter(hit_POS_MLprob >= opt$threshold) %>% 
             dplyr::filter(hit_POS_MLprob == max(hit_POS_MLprob))
           
-          # get rescue candidates with clear best match by probability
-          match_unique.ids <- rescue_table.max %>% 
-            dplyr::filter(dplyr::n() == 1) %>% 
-            dplyr::select(rescue_candidate, mapping_hit) %>% 
-            dplyr::rename(best_match_id = "mapping_hit")
-            
+          # get rescue candidates with the best hit
+          match_unique.ids <- rescue_table.max %>%
+            dplyr::group_by(rescue_candidate) %>%
+            dplyr::filter(dplyr::n() == 1) %>%
+            dplyr::select(rescue_candidate, mapping_hit) %>%
+            dplyr::rename(best_match_id = "mapping_hit") %>%
+            dplyr::ungroup()
+
           # find out which rescue candidates have ambiguity/ties
-          rescue_ties <- rescue_table.max %>% 
-            dplyr::summarize(matches = dplyr::n()) %>% 
-            dplyr::filter(matches > 1) %>% 
-            dplyr::select(rescue_candidate) %>% unlist
-          
-          # run
-          rescue_table.ties <- rescue_table.max[
-            rescue_table.max$rescue_candidate %in% rescue_ties,]
-          
+          rescue_table.ties <- rescue_table.max %>%
+            dplyr::group_by(rescue_candidate) %>%
+            dplyr::filter(dplyr::n() > 1) %>%
+            dplyr::ungroup()
+
+
           # split table for candidates with primary alignments
           # and candidates with no primary alignments
           rescue_table.ties.prim <- rescue_table.ties %>%
-            dplyr::filter(sam_flag == 0)
-          
+            dplyr::filter(sam_flag == 0)  
+
           # ids of candidate with no primary alignments
-          nonprim <- setdiff(rescue_table.ties$rescue_candidate,
-                             rescue_table.ties.prim$rescue_candidate)
-          
-          rescue_table.ties.nonprim <- rescue_table.ties[
-            rescue_table.ties$rescue_candidate %in% nonprim,]
-          
+          rescue_table.ties.nonprim <- rescue_table.ties %>%
+            dplyr::filter(!rescue_candidate %in% rescue_table.ties.prim$rescue_candidate)
+
           # get best matches using primary alignments only
           match_tie.ids.prim <- rescue_table.ties.prim %>%
             dplyr::group_by(rescue_candidate) %>%
             dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
-          
+
           # get best matches using secondary alignments only
           match_tie.ids.nonprim <- rescue_table.ties.nonprim %>%
             dplyr::group_by(rescue_candidate) %>%
             dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
-          
+
           # merge matches
           match_tie.ids <- rbind(match_tie.ids.prim, match_tie.ids.nonprim)
-          
+
           # join match tables
-          match_ids <- dplyr::bind_rows(match_tie.ids, 
-                                        match_unique.ids %>% dplyr::ungroup())
+          match_ids <- dplyr::bind_rows(match_tie.ids,
+                                        match_unique.ids)
       
           
       # add match ID column to rescue table

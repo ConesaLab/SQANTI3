@@ -16,7 +16,6 @@ from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command
 from src.config import __version__
 from src.rescue_steps import (
   concatenate_gtf_files,
@@ -41,8 +40,7 @@ def main():
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
   #run_automatic_rescue(args)
-  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
-                              args.mode,prefix)
+  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
@@ -75,7 +73,7 @@ def main():
 
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
-      rescued = run_ML_rescue(args.filter_class, args.refClassif,
+      run_ML_rescue(args.filter_class, args.refClassif,
                               args.dir, args.output, args.random_forest, args.threshold)
 
 
@@ -85,7 +83,7 @@ def main():
     if args.strategy == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
-      rescued = run_rules_rescue(args.filter_class, args.refClassif,
+      run_rules_rescue(args.filter_class, args.refClassif,
                                   args.dir, args.output, args.json_filter)
 
 

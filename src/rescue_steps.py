@@ -4,12 +4,10 @@ import sys
 
 import pandas as pd
 
-from src.utilities.rescue.rescue_by_mapping_rules import rescue_rules
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
-    RSCRIPTPATH, utilitiesPath, run_command ,
-    PYTHONPATH, RSCRIPT_RESCUE_RULES, RSCRIPT_RESCUE_ML, RESCUE_RANDOM_FOREST
+    RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
     read_classification, rescue_fsm_monoexons,
@@ -27,7 +25,10 @@ from src.utilities.rescue.candidate_mapping_helpers import (
     save_fasta
 )
 
-def run_automatic_rescue(classification_file,monoexons,mode,prefix):
+from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
+
+
+def run_automatic_rescue(classification_file,monoexons,prefix):
     # Load classification
     message("Reading filter classification file",rescue_logger)
     classif_df = read_classification(classification_file)
@@ -44,7 +45,7 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
-       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),rescue_classif,mode,prefix)
+       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),classif_df,prefix)
        return
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
@@ -63,7 +64,7 @@ def run_automatic_rescue(classification_file,monoexons,mode,prefix):
     rescue_logger.debug(f"Rescued {rescue_auto.shape[0]} transcripts")
 
     # Save the automatic rescue
-    save_automatic_rescue(rescue_auto,rescue_classif,mode,prefix)
+    save_automatic_rescue(rescue_auto,classif_df,prefix)
 
 def rescue_candidates(classification_file,monoexons,prefix):
     """
@@ -199,7 +200,7 @@ def run_rules_rescue(filter_classification, reference_classification,
                      out_dir, out_prefix, json_filter):
     prefix = f"{out_dir}/{out_prefix}"
     ## Run rules filter on reference transcriptome
-    message("Rules rescue selected",rescue_logger)
+    message("Rules rescue selected!",rescue_logger)
     rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
 
     # create reference out prefix and dir
@@ -213,27 +214,15 @@ def run_rules_rescue(filter_classification, reference_classification,
     # print command
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
-        # make file names
-    ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
 
     ## run rescue-by-mapping
     rescue_logger.info("Running rescue-by-mapping for rules filter.")
 
-    # input file name
+    # Filenames
     mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
-
-    # define Rscript command with rescue_by_mapping_rules.R args
-    rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_RULES} -c {filter_classification} \
-    -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
-    logFile=f"{out_dir}/logs/rescue_rules.log"
-    run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
-
-    # expected output name
-    rescued_file = f"{prefix}_full_inclusion_list.tsv"
-    automatic_rescue_file = f"{prefix}_automatic_rescue_table.tsv"
-    # TODO: Find a way to run this part in python 
-    # print(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
-    # rescue_rules(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
+    ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
+    rescue_by_mapping(mapping_hits,ref_rules,filter_classification,
+                      f"{prefix}_automatic_rescue_table.tsv",prefix,"rules")
 
 
 ## Run rescue steps specific to the ML filter
@@ -246,33 +235,18 @@ def run_ML_rescue(filter_classification, reference_classification,
     
     # define Rscript command with run_randomforest_on_reference.R args
     refML_cmd = f"{RSCRIPTPATH} {RESCUE_RANDOM_FOREST} -c {reference_classification} -o {out_prefix} -d {out_dir} -r {random_forest}"
-
-    # print command
-    rescue_logger.debug(refML_cmd)
-    # run R script via terminal
     logFile=f"{out_dir}/logs/refML.log"
     run_command(refML_cmd,rescue_logger,logFile,description="Run random forest on reference transcriptome")
-    # make expected output file name
+    
+    ## run rescue-by-mapping
+    rescue_logger.info("Running rescue-by-mapping for ML filter.")
+
+    # input file name
+    mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
     ref_isoform_predict = f"{prefix}_reference_isoform_predict.tsv"
 
-    if os.path.isfile(ref_isoform_predict):
-
-        ## run rescue-by-mapping
-        rescue_logger.info("Running rescue-by-mapping for ML filter.")
-
-        # input file name
-        mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
-
-        # define Rscript command with rescue_by_mapping_ML.R args
-        rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_ML} -c {filter_classification} -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_isoform_predict} -j {thr}"
-
-        logFile=f"{out_dir}/logs/rescue_by_mapping.log"
-        # run R script via terminal
-        run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
-
-    else:
-        rescue_logger.error("Reference isoform predictions not found!")
-        sys.exit(1)
+    rescue_by_mapping(mapping_hits,ref_isoform_predict,filter_classification,
+                        f"{prefix}_automatic_rescue_table.tsv",prefix,"ml",thr)
 
 def concatenate_gtf_files(input_files, output_file):
     """

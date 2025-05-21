@@ -60,7 +60,7 @@ def rescue_lost_reference(ref_id, classif):
         ism_df = classif_ref[['isoform']]
         return ism_df
     
-def save_automatic_rescue(rescue_df,class_df,mode,prefix):
+def save_automatic_rescue(rescue_df,class_df,prefix):
     # First write operation: rescue_auto without headers
     rescue_df.to_csv(
         f"{prefix}_automatic_inclusion_list.tsv",
@@ -68,23 +68,24 @@ def save_automatic_rescue(rescue_df,class_df,mode,prefix):
         header=False,
         index=False
     )
-
     if rescue_df.iloc[0,0] == "none":
         rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
-    else:
-        # Second write operation: rescue_table with headers 
-        rescue_table = class_df[
-            class_df['associated_transcript'].isin(rescue_df['isoform'])
-        ][['isoform', 'associated_transcript', 'structural_category']].rename(
-            columns={
-                'isoform': 'artifact',
-                'associated_transcript': 'rescued_transcript'
-            }
-        )
+        rescue_df["isoform"] = "none"
+    # Second write operation: rescue_table with headers 
+    rescue_table = class_df[
+        class_df['associated_transcript'].isin(rescue_df['isoform'])
+    ][['isoform', 'associated_transcript', 'structural_category']].rename(
+        columns={
+            'isoform': 'artifact',
+            'associated_transcript': 'rescued_transcript'
+        }
+    )
 
-        rescue_table.to_csv(
-            f"{prefix}_automatic_rescue_table.tsv",
-            sep='\t',
-            index=False
-        )
+    rescue_table.to_csv(
+        f"{prefix}_automatic_rescue_table.tsv",
+        sep='\t',
+        index=False
+    )
+    if rescue_df.iloc[0,0] == "none":
+        rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
 

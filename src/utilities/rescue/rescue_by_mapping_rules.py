@@ -1,11 +1,12 @@
 import pandas as pd
 
-def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path):
+def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path):
     """Load input data files."""
     mapping_hits = pd.read_csv(mapping_hits_path, sep="\t", names=["rescue_candidate", "mapping_hit", "sam_flag"])
     rules_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=["isoform", "filter_result"])
     classif = pd.read_csv(sqanti_rules_classif_path, sep="\t")
-    return mapping_hits, rules_ref, classif
+    automatic_ref_rescued = pd.read_csv(automatic_rescue_path, sep="\t", header=0, names=["isoform", "associated_transcript","structural_category"])
+    return mapping_hits, rules_ref, classif, automatic_ref_rescued
 
 def join_rules(mapping_hits, rules_ref, classif):
     """Join reference and long-read rules results."""
@@ -28,7 +29,7 @@ def join_rules(mapping_hits, rules_ref, classif):
     ).rename(columns={"structural_category": "candidate_structural_category"})
     return mapping_hits
 
-def filter_mapping_hits(mapping_hits, rules_ref, classif, automatic_rescue_path):
+def filter_mapping_hits(mapping_hits, rules_ref, classif, automatic_rescue_df):
     """Filter mapping hits and remove redundant references."""
     # Filter mapping hits that passed rules
     mapping_hits_iso = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
@@ -41,24 +42,21 @@ def filter_mapping_hits(mapping_hits, rules_ref, classif, automatic_rescue_path)
         (classif["filter_result"] == "Isoform") & 
         (classif["associated_transcript"] != "novel")
     ][["associated_transcript"]]
-
     # Include those retrieved in automatic rescue
-    automatic_ref_rescued = pd.read_csv(automatic_rescue_path, sep="\t", names=["associated_transcript"])
-    isoform_assoc_tr = pd.concat([isoform_assoc_tr, automatic_ref_rescued]).drop_duplicates()
-
+    isoform_assoc_tr = pd.concat([isoform_assoc_tr, automatic_rescue_df["associated_transcript"]]).drop_duplicates()
     # Find truly rescued references
     rescued_mapping_final = rescued_ref[
         ~rescued_ref["mapping_hit"].isin(isoform_assoc_tr["associated_transcript"])
     ][["mapping_hit"]].rename(columns={"mapping_hit": "ref_transcript"}).drop_duplicates()
 
     # Generate final list of rescued transcripts
-    automatic_ref_rescued = automatic_ref_rescued.rename(columns={"associated_transcript": "ref_transcript"})
+    automatic_ref_rescued = automatic_rescue_df.rename(columns={"associated_transcript": "ref_transcript"})["ref_transcript"]
     rescued_final = pd.concat([automatic_ref_rescued, rescued_mapping_final]).drop_duplicates()
     return rescued_final, mapping_hits_iso, rescued_mapping_final
 
 def write_rescue_inclusion_list(rescued_final,output_prefix):
     """Write the rescue inclusion list to a file."""
-    output_path = f"{output_prefix}_rescue_inclusion-list.tsv"
+    output_path = f"{output_prefix}_full_inclusion_list.tsv"
     rescued_final.to_csv(output_path, sep="\t", index=False, header=False)
 
 def process_automatic_rescue(classif, automatic_ref_rescued, rules_ref):
@@ -95,19 +93,19 @@ def create_rescue_table(mapping_hits, rescued_mapping_final, isoform_assoc_tr, a
 
 def write_rescue_table(rescue_table, output_prefix):
     """Write the rescue table to a file."""
-    output_path = f"{output_prefix}_rescue_table.tsv"
+    output_path = f"{output_prefix}_full_rescue_table.tsv"
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
 def rescue_rules(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path, output_prefix):
     # Load data
-    mapping_hits, rules_ref, classif = load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path)
+    mapping_hits, rules_ref, classif, automatic_rescued = load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, automatic_rescue_path)
 
     # Join rules
     mapping_hits = join_rules(mapping_hits, rules_ref, classif)
 
     # Filter mapping hits
-    rescued_final, mapping_hits_iso, rescued_mapping_final = filter_mapping_hits(
-        mapping_hits, rules_ref, classif, automatic_rescue_path
+    rescued_final, _, rescued_mapping_final = filter_mapping_hits(
+        mapping_hits, rules_ref, classif, automatic_rescued
     )
 
     # Write rescue inclusion list
