@@ -88,11 +88,11 @@ def write_rescue_inclusion_list(rescued_final,output_prefix):
 def process_automatic_rescue(classif, automatic_ref_rescued, class_ref):
     """Process automatic rescue results."""
     if automatic_ref_rescued.empty:
-        automatic_fsm = pd.DataFrame(columns=["isoform","associated_transcript","structural_category"])
+        automatic_fsm = pd.DataFrame(columns=["isoform","associated_transcript","structural_category","associated_gene"])
     else:
-        automatic_fsm = classif[classif["filter_result"] == "Artifact" &
-                                    classif["associated_transcript"].isin(automatic_ref_rescued["associated_transcript"]),
-                                ["isoform","associated_transcript","structural_category"]]
+        automatic_fsm = classif[(classif["filter_result"] == "Artifact") &
+                                    (classif["associated_transcript"].isin(automatic_ref_rescued["associated_transcript"]))
+                                ][["isoform","associated_transcript","structural_category","associated_gene"]]
 
     automatic_fsm = automatic_fsm.merge(
             class_ref,
@@ -100,6 +100,7 @@ def process_automatic_rescue(classif, automatic_ref_rescued, class_ref):
             right_on="isoform",
             how="left"
         )
+    
     automatic_fsm.drop(columns=["isoform_y"], inplace=True)
     automatic_fsm = automatic_fsm.rename(columns={"isoform_x":"rescue_candidate",
                                   "associated_transcript":"mapping_hit",
@@ -111,9 +112,13 @@ def process_automatic_rescue(classif, automatic_ref_rescued, class_ref):
     automatic_fsm["exclusion_reason"] = None
     return automatic_fsm
 
-def get_exclusion_reason(row,mapping_hits_max,probs_ref,rescued_ref,isoform_assoc_tr):
+def get_exclusion_reason(row,mapping_hits_max,probs_ref,rescued_ref,isoform_assoc_tr,strategy):
+    """Get the reason for exclusion of a mapping hit."""
     if row['mapping_hit'] not in mapping_hits_max['mapping_hit'].values:
-        return 'ML_probability'
+        if strategy == "rules":
+            return 'artifact_by_rules'
+        elif strategy == "ml":
+            return 'ML_probability'
     elif (row['mapping_hit'] in mapping_hits_max['mapping_hit'].values and 
             row['mapping_hit'] not in probs_ref['isoform'].values):
         return 'long_read_transcript'
@@ -135,18 +140,28 @@ def assign_best_match(group):
         
     elif (group['exclusion_reason'] == "ML_probability").all():
         group['best_match_for_candidate'] = "unknown"
+
+    elif (group['exclusion_reason'] == "artifact_by_rules").all():
+        group['best_match_for_candidate'] = "unknown"
         
     else:
         group['best_match_for_candidate'] = np.nan  # fallback if none match
     
     return group
 
-def assign_best_match_id(rescue_table,threshold):
+def assign_best_match_id(rescue_table,strategy,threshold):
     # 1. Filter by ML probability threshold and keep only max ML prob within each group
-    rescue_table_max = (
-        rescue_table[rescue_table["hit_POS_MLprob"] >= threshold]
-        .loc[lambda df: df.groupby("rescue_candidate")["hit_POS_MLprob"].transform("max") == df["hit_POS_MLprob"]]
-    )
+    if strategy == "rules":
+        rescue_table_max = (
+            rescue_table[rescue_table["hit_filter_result"] == "Isoform"]
+            .loc[lambda df: df.groupby("rescue_candidate")["hit_filter_result"].transform("max") == df["hit_filter_result"]]
+        )
+    elif strategy == "ml":
+
+        rescue_table_max = (
+            rescue_table[rescue_table["hit_POS_MLprob"] >= threshold]
+            .loc[lambda df: df.groupby("rescue_candidate")["hit_POS_MLprob"].transform("max") == df["hit_POS_MLprob"]]
+        )
 
 # 2. Unique best match per candidate (only 1 row in group)
     match_unique_ids = (
@@ -203,7 +218,7 @@ def assign_best_match_id(rescue_table,threshold):
     return(rescue_table)
 
 def create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final, class_ref,
-                        rescued_ref, isoform_assoc_tr, automatic_fsm,threshold):
+                        rescued_ref, isoform_assoc_tr, automatic_fsm, strategy, threshold):
     """Create the rescue table.
     
     Input:
@@ -220,7 +235,8 @@ def create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final, 
         lambda x: "rescued_mapping" if x in rescued_mapping_final["ref_transcript"].values else "not_rescued"
     )
     # Add the reason of why a transcript was excluded
-    rescue_table['exclusion_reason'] = rescue_table.apply(get_exclusion_reason, axis=1, args=(best_mapping_hits, class_ref, rescued_ref, isoform_assoc_tr))
+    rescue_table['exclusion_reason'] = rescue_table.apply(get_exclusion_reason, axis=1, args=(best_mapping_hits, class_ref,
+                                                                                              rescued_ref, isoform_assoc_tr, strategy))
 
     rescue_table = pd.concat([rescue_table, automatic_fsm], ignore_index=True)
 
@@ -229,17 +245,20 @@ def create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final, 
         assign_best_match
     )
 
-    rescue_table = assign_best_match_id(rescue_table,threshold)
+    rescue_table = assign_best_match_id(rescue_table,strategy,threshold)
 
     return rescue_table
 
 def write_rescue_table(rescue_table, output_prefix):
     """Write the rescue table to a file."""
+    # Reorder columns
+    cols = [col for col in rescue_table.columns if col != "associated_gene"] + ["associated_gene"]
+    rescue_table = rescue_table[cols]
     output_path = f"{output_prefix}_full_rescue_table.tsv"
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
 def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path,
-                      automatic_rescue_path, output_prefix,strategy, threshold):
+                      automatic_rescue_path, output_prefix,strategy, threshold=0.7):
     # Load data
     mapping_hits, class_ref, classif, \
         filter_combined, automatic_rescued = load_data(mapping_hits_path, reference_rules_path,
@@ -261,7 +280,8 @@ def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_clas
 
     # Create rescue table
     rescue_table = create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final,
-                                       class_ref, rescued_ref, isoform_assoc_tr, automatic_fsm,threshold)
+                                       class_ref, rescued_ref, isoform_assoc_tr, automatic_fsm,
+                                       strategy, threshold)
 
     # Write rescue table
     write_rescue_table(rescue_table, output_prefix)

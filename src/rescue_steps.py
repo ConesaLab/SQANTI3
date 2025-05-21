@@ -222,18 +222,8 @@ def run_rules_rescue(filter_classification, reference_classification,
     # input file name
     mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
 
-    # define Rscript command with rescue_by_mapping_rules.R args
-    rescue_cmd = f"{RSCRIPTPATH} {RSCRIPT_RESCUE_RULES} -c {filter_classification} \
-    -o {out_prefix} -d {out_dir} -u {utilitiesPath} -m {mapping_hits} -r {ref_rules}"
-    logFile=f"{out_dir}/logs/rescue_rules.log"
-    #run_command(rescue_cmd,rescue_logger,logFile,description="Run rescue by mapping")
-
-    # expected output name
-    rescued_file = f"{prefix}_full_inclusion_list.tsv"
-    automatic_rescue_file = f"{prefix}_automatic_rescue_table.tsv"
-    # TODO: Find a way to run this part in python 
-    # print(mapping_hits, ref_rules, args.filter_class, automatic_rescue_file, f"{args.dir}/{args.output}")
-    rescue_rules(mapping_hits, ref_rules, filter_classification, automatic_rescue_file, prefix)
+    rescue_by_mapping(mapping_hits,ref_rules,filter_classification,
+                      f"{prefix}_automatic_rescue_table.tsv",prefix,"rules")
 
 
 ## Run rescue steps specific to the ML filter

@@ -79,7 +79,7 @@ def main():
 
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
-      rescued = run_ML_rescue(args.filter_class, args.refClassif,
+      run_ML_rescue(args.filter_class, args.refClassif,
                               args.dir, args.output, args.random_forest, args.threshold)
 
 
@@ -89,7 +89,7 @@ def main():
     if args.subcommand == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
-      rescued = run_rules_rescue(args.filter_class, args.refClassif,
+      run_rules_rescue(args.filter_class, args.refClassif,
                                   args.dir, args.output, args.json_filter)
 
 
