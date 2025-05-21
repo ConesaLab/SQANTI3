@@ -109,7 +109,7 @@ def process_automatic_rescue(classif, automatic_ref_rescued, class_ref):
                                   "structural_category":"candidate_structural_category"})
     automatic_fsm["sam_flag"] = None
     automatic_fsm["rescue_result"] = "rescued_automatic"
-    automatic_fsm["exclusion_reason"] = None
+    automatic_fsm["exclusion_reason"] = "none"
     return automatic_fsm
 
 def get_exclusion_reason(row,mapping_hits_max,probs_ref,rescued_ref,isoform_assoc_tr,strategy):
@@ -125,6 +125,8 @@ def get_exclusion_reason(row,mapping_hits_max,probs_ref,rescued_ref,isoform_asso
     elif (row['mapping_hit'] in rescued_ref['mapping_hit'].values and
             row['mapping_hit'] in isoform_assoc_tr['associated_transcript'].values):
         return 'reference_already_present'
+    else:
+        return 'none'
     return None
 
 def assign_best_match(group):

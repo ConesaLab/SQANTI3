@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import os
 from collections import defaultdict
@@ -57,7 +58,55 @@ def fill_old_counts(isoform, old_counts):
     except KeyError:
         count = 0
     return(count)
+
+
+def run_requant_best_hit(rescue_df, counts, class_df, prefix):
+    # Select unique combination of isoforms and their best hit
+    rescue_df = rescue_df[['rescue_candidate', 'best_match_id','associated_gene']].drop_duplicates().rename(columns={'rescue_candidate': 'isoform', 'best_match_id': 'transcript_id'})
+    # Change unknown values in best_match_id to associated_gene + TD
+    rescue_df['transcript_id'] = np.where(
+        rescue_df['transcript_id'] == 'unknown',
+        rescue_df['associated_gene'] + '_TD',
+        rescue_df['transcript_id']
+    )
+    rescue_df.drop(columns=['associated_gene'], inplace=True)
+
+
+    good_isoforms = class_df[class_df['filter_result'] == "Isoform"]
+    # Divide missing isoforms into the ones associated with a gene and intergenic
+    missing_isoforms = class_df[
+        (class_df['filter_result'] == "Artifact") & 
+        (~class_df['isoform'].isin(rescue_df['isoform']))
+    ]
     
+    intergenic_isoforms = missing_isoforms[missing_isoforms['structural_category'] == "intergenic"]
+    intergenic_isoforms['transcript_id'] = "intergenic"
+    intergenic_isoforms = intergenic_isoforms[['isoform', 'transcript_id']]
+
+    genic_isoforms = missing_isoforms[missing_isoforms['structural_category'] != "intergenic"]
+    genic_isoforms['transcript_id'] = genic_isoforms['associated_gene'] + '_TD'
+    genic_isoforms = genic_isoforms[['isoform', 'transcript_id']]
+
+    bad_isoforms =pd.concat([rescue_df,genic_isoforms, intergenic_isoforms])
+
+
+    # Create old counts dictionary
+    old_counts = counts.set_index('transcript_id')['count'].to_dict()
+    new_counts = defaultdict(int)
+    # Set up initial counts of surviving isoforms
+    for isoform in good_isoforms['isoform']:
+        new_counts[isoform] = old_counts.get(isoform, 0)
+    # Reassign counts to surviving isoforms
+    for isoform in bad_isoforms['isoform']:
+        tid = bad_isoforms.loc[bad_isoforms['isoform'] == isoform, 'transcript_id'].values[0]
+        new_counts[tid] += old_counts[isoform]
+        
+    # Convert to DataFrame
+    counts_df = pd.DataFrame(list(new_counts.items()), columns=['transcript_id', 'new_count'])
+    # Save counts
+    counts_df.to_csv(f"{prefix}_reassigned_counts_v2.tsv", header=True, index=False, sep='\t')
+
+
 def run_requant(rescue_gtf, inclusion_df, counts, 
                 rescue_df, prefix):
 

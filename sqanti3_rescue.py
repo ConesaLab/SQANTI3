@@ -117,8 +117,10 @@ def main():
       counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,inclusion_file,
                                                      args.counts, prefix,args.mode)
 
-    sq_requant.run_requant(rescue_gtf, inclusion_df, counts, 
-                           rescued_table, prefix)
+    #sq_requant.run_requant(rescue_gtf, inclusion_df, counts, rescued_table, prefix
+    import pandas as pd
+    class_df = pd.read_csv(args.filter_class, sep = '\t')
+    sq_requant.run_requant_best_hit(rescued_table, counts, class_df, prefix)
     sq_requant.to_tpm(rescue_gtf, prefix)
     rescue_logger.info("Requantification finished!")
 
