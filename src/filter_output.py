@@ -32,7 +32,7 @@ def filter_gtf(filename,prefix,ids_to_keep):
 def filter_sam(filename,prefix,ids_to_keep):
     outputSAM = prefix + '.filtered.sam'
     with open(outputSAM, 'w') as f:
-        for r in GMAPSAMReader(filename):
+        for r in GMAPSAMReader(filename,has_header=True):
             if r.qID in ids_to_keep:
                 f.write(r)
         filter_logger.info(f"Output written to: {f.name}")
