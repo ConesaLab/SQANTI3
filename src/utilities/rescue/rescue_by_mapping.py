@@ -59,7 +59,7 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
 
     # 2. Select only reference rescued transcripts
     rescued_ref = mapping_hits_filt[mapping_hits_filt["mapping_hit"].isin(class_ref["isoform"])]
-
+ 
     # 3. Remove reference transcripts already in the transcriptome
 
     # Retrieve all reference transcripts already represented by isoforms
@@ -67,14 +67,14 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
         (classif["filter_result"] == "Isoform") & 
         (classif["associated_transcript"] != "novel")
     ][["associated_transcript"]]
-
+    
     # Include those retrieved in automatic rescue
     isoform_assoc_tr = pd.concat([isoform_assoc_tr, automatic_rescue_df["associated_transcript"]]).drop_duplicates()
     # Find truly rescued references
     rescued_mapping_final = rescued_ref[
         ~rescued_ref["mapping_hit"].isin(isoform_assoc_tr["associated_transcript"])
     ][["mapping_hit"]].rename(columns={"mapping_hit": "ref_transcript"}).drop_duplicates()
-
+    
     # Generate final list of rescued transcripts
     automatic_ref_rescued = automatic_rescue_df.rename(columns={"associated_transcript": "ref_transcript"})["ref_transcript"]
     rescued_final = pd.concat([automatic_ref_rescued, rescued_mapping_final]).drop_duplicates()
