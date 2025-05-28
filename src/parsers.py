@@ -48,8 +48,10 @@ def reference_parser(annot,out_dir,out_pref,genome_chroms,gene_name=False,isoAnn
     else:
         # gtf to genePred
         cmd = f"{GTF2GENEPRED_PROG} {annot} {referenceFiles} -genePredExt -allErrors -ignoreGroupsWithoutExons"
-
         if gene_name or isoAnnot: #TODO: Discover why this flag was here or isoAnnot:
+            if isoAnnot:
+                qc_logger.warning("IsoAnnotLite needs the reference annotation to have the value 'gene_name' in the attributes column")
+                qc_logger.warning("If the QC report has no genes, double check your reference GTF.")
             cmd += ' -geneNameAsName2'
         run_command(cmd,logger, f"{out_dir}/logs/GTF_to_genePred.log", "GTF to genePred conversion")
 
@@ -368,7 +370,7 @@ def parse_GMST(corrORF,gmst_rex,gmst_pre):
             cds_start = int(m.group(4))
             cds_end = int(m.group(5))
             pos = r.seq.find('M')
-            # TODO: Revisit when the predictor has been
+            # TODO: Revisit when the predictor has been updated
             if pos!= -1: # 
                 # must modify both the sequence ID and the sequence
                 orf_length -= pos
