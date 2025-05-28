@@ -117,9 +117,6 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
             s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
             e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
-            if r.seqid == "PB.15734.1":
-                print("start:", s, "end:", e)
-                input()
             r.cds_exons = []
             if s!='NA' and e!='NA': # has ORF prediction for this isoform
                 if r.strand == '+':
