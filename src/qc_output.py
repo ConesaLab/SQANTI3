@@ -109,6 +109,11 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
     with open(output_gff, 'w') as f:
         reader = collapseGFFReader(input_gff)
         for r in reader:
+            # Fix negative strand coordinates
+            if r.strand == '-': 
+                r.start, r.end =  r.ref_exons[-1].start, r.ref_exons[0].end # Positions get shifted by 1
+                r.ref_exons.reverse()
+                # Fix the reference exons 
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
             s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
             e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
