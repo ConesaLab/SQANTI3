@@ -169,9 +169,6 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
         qc_logger.error(f"Something went wrong processing GTF files: {e}")
         raise
 
-
-
-
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str,logger=qc_logger):
     """
     Processes a single line from a GTF file, validating and categorizing it based on certain criteria.

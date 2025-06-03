@@ -16,8 +16,8 @@ from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
-from src.commands import run_command
 from src.config import __version__
+from src.rescue_output import write_rescue_fasta, write_rescue_gtf
 from src.rescue_steps import (
   concatenate_gtf_files,
   run_automatic_rescue,
@@ -25,6 +25,7 @@ from src.rescue_steps import (
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
 )
 from src.utilities.rescue import sq_requant
+from src.utilities.rescue.rescue_helpers import get_good_transcripts
 
 
 def main():
@@ -39,7 +40,7 @@ def main():
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
-  #run_automatic_rescue(args)
+  # TODO: Pre-read the filter_class into a pd dataframe and pass it to the functions (once we have pythonzed everything)
   run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,
                               args.mode,prefix)
   message("Automatic rescue completed",rescue_logger)
@@ -103,35 +104,22 @@ def main():
   else:
     message("Generating rescued GTF.",rescue_logger)
 
-    # create file names
-    tmp_gtf = f"{args.dir}/rescued_only_tmp.gtf"
-    output_gtf = f"{prefix}_rescued.gtf"
-
     # Select the propper inclusion list
     if args.mode == "full":
         rescued_list = f"{prefix}_full_inclusion_list.tsv"
     else:
         rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
-
-    # filter reference GTF to create tmp_gtf
-    gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {args.refGTF}"
-    logFile = os.path.join(args.dir,"logs","create_tmp_gtf.log")
-    run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
+    # Read the rescued transcripts from the inclusion list
+    rescued_transcripts = set(line.strip() for line in open(rescued_list))
+    write_rescue_gtf(args.filtered_isoforms_gtf, args.refGTF, rescued_transcripts, prefix)
+    rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
-    # concatenate with filtered GTF
-    try:
-        input_files = [args.filtered_isoforms_gtf, tmp_gtf]
-        concatenate_gtf_files(input_files, output_gtf)
-        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({args.filtered_isoforms_gtf})")
-    except Exception as e:
-        rescue_logger.error(f"Failed to concatenate GTF files: {e}")
-        sys.exit(1) 
-
-    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
-
-    # remove tmp_gtf
-    os.remove(tmp_gtf)
-
+    ## Create new FASTA including rescued transcripts #
+    good_transcripts = get_good_transcripts(args.filter_class)
+    ref_fasta_file = os.path.join(args.dir, 
+                                  os.path.basename(args.refGTF).replace('.gtf', '.fasta'))
+    write_rescue_fasta(args.corrected_isoforms_fasta,ref_fasta_file, good_transcripts, rescued_transcripts, prefix)
+    rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
 
