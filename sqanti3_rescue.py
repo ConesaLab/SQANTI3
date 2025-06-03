@@ -110,7 +110,11 @@ def main():
     else:
         rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
     # Read the rescued transcripts from the inclusion list
-    rescued_transcripts = set(line.strip() for line in open(rescued_list))
+    rescued_transcripts = set()
+    with open(rescued_list, 'r') as f:
+      for line in f:
+        rescued_transcripts.add(line.strip())
+    f.close()    
     write_rescue_gtf(args.filtered_isoforms_gtf, args.refGTF, rescued_transcripts, prefix)
     rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
