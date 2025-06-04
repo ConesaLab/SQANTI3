@@ -6,10 +6,7 @@ import re
 
 from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
-from bx.intervals import Interval #type: ignore
 
-
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
@@ -65,9 +62,7 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     f.close()
     return out_file
 
-
 ### Input/Output functions ###
-   
 def get_corr_filenames(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     corrGTF = corrPathPrefix + "_corrected.gtf"
