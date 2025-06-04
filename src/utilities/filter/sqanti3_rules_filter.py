@@ -85,15 +85,20 @@ def apply_rules(row, force_multiexon, rules_dict):
                 if pd.isna(row[column]):
                     isoform = False
                 else:
-                    if rule_type == 'Category':
-                        if str(row[column]).lower() != rule_value:
-                            isoform = False
-                    elif rule_type == 'Min_Threshold':
-                        if row[column] < rule_value:
-                            isoform = False
-                    elif rule_type == 'Max_Threshold':
-                        if row[column] > rule_value:
-                            isoform = False
+                    try:
+                        if rule_type == 'Category':
+                            if str(row[column]).lower() != rule_value:
+                                isoform = False
+                        elif rule_type == 'Min_Threshold':
+                            if row[column] < rule_value:
+                                isoform = False
+                        elif rule_type == 'Max_Threshold':
+                            if row[column] > rule_value:
+                                isoform = False
+                    except TypeError:
+                        filter_logger.error(f"Type error for column {column} with value {row[column]}.")
+                        filter_logger.error(f"Check if the column you indicated in the rules file is correct.")
+                        sys.exit(1)
             except KeyError:
                 filter_logger.error(f"Column {column} not found in SQANTI3 classification data.")
                 filter_logger.error(f"Perhaps you misspelled the column name in the rules file?")

@@ -17,6 +17,7 @@ from src.logging_config import rescue_art, art_logger
 
 from src.argparse_utils import rescue_args_validation
 from src.config import __version__
+from src.rescue_output import write_rescue_fasta, write_rescue_gtf
 from src.rescue_steps import (
   concatenate_gtf_files,
   run_automatic_rescue,
@@ -25,6 +26,7 @@ from src.rescue_steps import (
   save_rescue_results
 )
 from src.utilities.rescue import sq_requant
+from src.utilities.rescue.rescue_helpers import get_good_transcripts
 
 
 def main():
@@ -105,7 +107,8 @@ def main():
   else:
     message("Generating rescued GTF.",rescue_logger)
     inclusion_file,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
-                                       args.refGTF, args.filtered_isoforms_gtf)
+                                       args.refGTF, args.filtered_isoforms_gtf,args.corrected_isoforms_fasta,
+                                       args.filter_class)
 
   ## END ##
   message("Rescue finished successfully!",rescue_logger)

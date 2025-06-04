@@ -4,6 +4,7 @@ import sys
 
 import pandas as pd
 
+from src.rescue_output import write_rescue_fasta, write_rescue_gtf
 from src.wrapper_utils import (sqanti_path)
 from src.module_logging import rescue_logger, message
 from src.commands import (
@@ -15,7 +16,7 @@ from src.utilities.rescue.automatic_rescue import (
     rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
-    get_rescue_gene_targets,get_rescue_reference_targets
+    get_good_transcripts, get_rescue_gene_targets,get_rescue_reference_targets
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
@@ -261,34 +262,27 @@ def concatenate_gtf_files(input_files, output_file):
                 shutil.copyfileobj(infile, outfile)
 
 def save_rescue_results(out_dir,out_prefix, mode, refGTF,
-                        filtered_isoforms_gtf):
+                        filtered_isoforms_gtf,corrected_isoforms_fasta,
+                        filter_class):
     prefix = f"{out_dir}/{out_prefix}"
-    # create file names
-    tmp_gtf = f"{out_dir}/rescued_only_tmp.gtf"
-    output_gtf = f"{prefix}_rescued.gtf"
-
     # Select the propper inclusion list
     if mode == "full":
         rescued_list = f"{prefix}_full_inclusion_list.tsv"
     else:
         rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
-
-    # filter reference GTF to create tmp_gtf
-    gtf_cmd = f"gffread --ids {rescued_list} -T -o {tmp_gtf} {refGTF}"
-    logFile = os.path.join(out_dir,"logs","create_tmp_gtf.log")
-    run_command(gtf_cmd,rescue_logger,logFile,description="Filter reference GTF to create tmp GTF")
+    # Read the rescued transcripts from the inclusion list
+    rescued_transcripts = set()
+    with open(rescued_list, 'r') as f:
+      for line in f:
+        rescued_transcripts.add(line.strip())
+    f.close()    
+    output_gtf = write_rescue_gtf(filtered_isoforms_gtf, refGTF, rescued_transcripts, prefix)
+    rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
-    # concatenate with filtered GTF
-    try:
-        input_files = [filtered_isoforms_gtf, tmp_gtf]
-        concatenate_gtf_files(input_files, output_gtf)
-        rescue_logger.info(f"Added rescued reference transcripts to provided GTF ({filtered_isoforms_gtf})")
-    except Exception as e:
-        rescue_logger.error(f"Failed to concatenate GTF files: {e}")
-        sys.exit(1) 
-
-    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
-
-    # remove tmp_gtf
-    os.remove(tmp_gtf)
+    ## Create new FASTA including rescued transcripts #
+    good_transcripts = get_good_transcripts(filter_class)
+    ref_fasta_file = os.path.join(dir, 
+                                  os.path.basename(refGTF).replace('.gtf', '.fasta'))
+    write_rescue_fasta(corrected_isoforms_fasta,ref_fasta_file, good_transcripts, rescued_transcripts, prefix)
+    rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
     return(rescued_list,output_gtf)

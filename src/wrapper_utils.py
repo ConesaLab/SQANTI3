@@ -58,6 +58,13 @@ def get_user_options(options, sqanti_options):
         key, value = option.split('=')
         if key not in sqanti_options:
             main_logger.warning(f"Option '{key}' not found in the default configuration.")
+            main_logger.warning("Would you like to continue? (y/n)")
+            answer = input().strip().lower()
+            if answer != 'y':
+                main_logger.error("Aborting...")
+                sys.exit(1)
+            else:
+                continue
             continue
         # Try to convert the value to an integer or float
         if value.isdigit():

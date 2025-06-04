@@ -102,6 +102,13 @@ def valid_sr(filename,logger):
                 sys.exit(1)
     return filename
 
+def contains_gene_name(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            if 'gene_name' in line:
+                return True
+    return False
+
 ### Validation for the arguments
 
 def qc_args_validation(args):
@@ -160,6 +167,14 @@ def qc_args_validation(args):
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
+
+    # Check for gene_name attribute in GTF
+    if args.isoAnnotLite or args.genename:
+        if not contains_gene_name(args.isoforms):
+            option = "--isoAnnotLite" if args.isoAnnotLite else "--genename"
+            qc_logger.error("The 'gene_name' tag was not found in the input GTF file. SQANTI3 requires this tag to function properly.")
+            qc_logger.error(f"Please include the 'gene_name' tag in the GTF, or omit the {option} option.")
+            sys.exit(1)
 
 
     # Fusion isoforms checks
