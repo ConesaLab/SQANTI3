@@ -113,7 +113,7 @@ def test_reference_parser_correctJunctionsChr(reference_parser_input):
     assert junctions_by_chr["chr22"]["da_pairs"]['+'][0] == (11066515, 11067984)
     assert junctions_by_chr["chr22"]["da_pairs"]['-'][0] == (10939423, 10940596)
 
-def test_reference_parserc_correctJunctionsGene(reference_parser_input):
+def test_reference_parser_correctJunctionsGene(reference_parser_input):
     _, _, _, junctions_by_gene, _ = reference_parser(*list(reference_parser_input.values()))
     assert len(junctions_by_gene.keys()) == 913
     assert len(junctions_by_gene["ENSG00000206195.11"]) == 11

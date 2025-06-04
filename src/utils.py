@@ -91,7 +91,7 @@ def alphanum_key(s):
 def calculate_tss(strand, start0, end1):
     """
     Strand aware calculation of the middle of the peak in the bed file
-    If the cage peak length is of 1 nucleotide, the average is not calculcated
+    If the cage peak length is of 1 nucleotide, the average is not calculated
     """
     if end1 - start0 > 1:
         tss0 = int((start0 + end1) / 2)

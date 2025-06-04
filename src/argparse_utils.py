@@ -22,7 +22,7 @@ def valid_fasta(filename,logger):
 def valid_gtf(filename,logger):
     valid_file(filename,logger)
     if not filename.endswith('.gtf'):
-        if not filename.endswith('.gff') or not filename.endswith('.gff3'):
+        if not (filename.endswith('.gff') or filename.endswith('.gff3')):
             qc_logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:
@@ -115,7 +115,7 @@ def qc_args_validation(args):
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
     
-    valid_gtf(args.refGTF,qc_logger)
+    args.refGTF = valid_gtf(args.refGTF,qc_logger)
     valid_fasta(args.refFasta,qc_logger)
 
     # Customization validation
@@ -201,7 +201,7 @@ def filter_args_validation(args):
     if args.filter_isoforms is not None:
         valid_fasta(args.filter_isoforms, filter_logger)
     if args.filter_gtf is not None:
-        valid_gtf(args.filter_gtf, filter_logger)
+        args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger)
     if args.filter_sam is not None:
         valid_file(args.filter_sam, filter_logger)
     if args.filter_faa is not None:
@@ -233,12 +233,12 @@ def filter_args_validation(args):
 def rescue_args_validation(args):
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
-    valid_gtf(args.refGTF,rescue_logger)
+    args.refGTF = valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
     if args.rescue_isoforms is not None:
         valid_fasta(args.rescue_isoforms,rescue_logger)
     if args.rescue_gtf is not None:
-        valid_gtf(args.rescue_gtf,rescue_logger)
+        args.rescue_gtf = valid_gtf(args.rescue_gtf,rescue_logger)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)

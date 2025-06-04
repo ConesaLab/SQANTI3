@@ -261,5 +261,5 @@ def test_get_ratio_TSS_mean(test_files):
 
     assert isinstance(result, dict)
     assert len(result) > 0  
-    assert abs(result["PB.103709.3"]["return_ratio"] - 1425.2574257425742 <= 0.01) # Ensure we got some results
+    assert abs(result["PB.103709.3"]["return_ratio"] - 1425.2574257425742) <= 0.01  # Ensure we got some results
     assert np.isnan(result["PB.103820.1"]["return_ratio"])
