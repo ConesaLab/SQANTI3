@@ -370,7 +370,7 @@ def parse_GMST(corrORF,gmst_rex,gmst_pre):
             cds_start = int(m.group(4))
             cds_end = int(m.group(5))
             pos = r.seq.find('M')
-            # TODO: Revisit when the predictor has been
+            # TODO: Revisit when the predictor has been updated
             if pos!= -1: # 
                 # must modify both the sequence ID and the sequence
                 orf_length -= pos
