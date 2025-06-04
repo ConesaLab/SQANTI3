@@ -62,7 +62,6 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     f.close()
     return out_file
 
-
 ### Input/Output functions ###
 def get_corr_filenames(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
@@ -164,9 +163,6 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
     except IOError as e:
         qc_logger.error(f"Something went wrong processing GTF files: {e}")
         raise
-
-
-
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str,logger=qc_logger):
     """

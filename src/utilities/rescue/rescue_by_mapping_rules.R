@@ -109,7 +109,7 @@ isoform_assoc.tr <- classif %>%
 
 # include those that were retrieved in automatic rescue
 automatic_ref_rescued <- read_tsv(paste0(opt$dir, "/", opt$output,
-                                                "_automatic_rescued_list.tsv"),
+                                                "_automatic_inclusion_list.tsv"),
                                           col_names = "associated_transcript")
 
 isoform_assoc.tr <- bind_rows(isoform_assoc.tr,
@@ -138,7 +138,7 @@ rescued_final <- bind_rows(automatic_ref_rescued,
 write_tsv(rescued_final,
                   col_names = FALSE,
                   file = paste0(opt$dir, "/", opt$output,
-                                "_rescue_inclusion-list.tsv"))
+                                "_full_inclusion_list.tsv"))
 
 # process automatic rescue result
 
