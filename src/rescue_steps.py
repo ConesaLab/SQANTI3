@@ -263,7 +263,7 @@ def concatenate_gtf_files(input_files, output_file):
 
 def save_rescue_results(out_dir,out_prefix, mode, refGTF,
                         filtered_isoforms_gtf,corrected_isoforms_fasta,
-                        filter_class):
+                        filter_class,ref_class):
     prefix = f"{out_dir}/{out_prefix}"
     # Select the propper inclusion list
     if mode == "full":
@@ -281,8 +281,16 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
     
     ## Create new FASTA including rescued transcripts #
     good_transcripts = get_good_transcripts(filter_class)
-    ref_fasta_file = os.path.join(dir, 
+    ref_fasta_file = os.path.join(out_dir, 
                                   os.path.basename(refGTF).replace('.gtf', '.fasta'))
     write_rescue_fasta(corrected_isoforms_fasta,ref_fasta_file, good_transcripts, rescued_transcripts, prefix)
     rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
+
+    # Save new classification
+    rClass = read_classification(ref_class)
+    tClass = read_classification(filter_class)
+    rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
+                                rClass[rClass['isoform'].isin(rescued_transcripts)]])
+    rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
+    rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.tsv")
     return(rescued_list,output_gtf)
