@@ -108,7 +108,7 @@ def main():
     message("Generating rescued GTF.",rescue_logger)
     inclusion_file,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
                                        args.refGTF, args.filtered_isoforms_gtf,args.corrected_isoforms_fasta,
-                                       args.filter_class)
+                                       args.filter_class,args.refClassif)
 
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
