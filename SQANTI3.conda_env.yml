@@ -9,7 +9,7 @@ dependencies:
   - argcomplete=3.4.0
   - bcbio-gff=0.7.1
   - bedtools=2.31.1
-  - biopython<=1.81
+  - biopython=1.81
   - bioconductor-noiseq=2.46.0
   - bioconductor-busparse=1.16.0
   - bx-python=0.11.0
@@ -17,9 +17,9 @@ dependencies:
   - desalt=1.5.6
   - gffread=0.12.7
   - gtftools=0.9.0
-  - gmap
+  - gmap=2025.04.19
   - jinja2=3.1.4
-  - kallisto
+  - kallisto=0.51.1
   - minimap2=2.28
   - numpy=1.26.4
   - openssl=3.4.0
@@ -30,8 +30,8 @@ dependencies:
   - psutil=6.1.0
   - pybedtools=0.10.0
   - pysam=0.22.1
-  - python>=3.10,<=3.11
-  - r>=4.3.0
+  - python=3.11.0
+  - r=4.3
   - r-biocmanager=1.30.25
   - r-caret=6.0_94
   - r-dplyr=1.1.4
@@ -39,7 +39,7 @@ dependencies:
   - r-devtools=2.4.5
   - r-e1071=1.7_16
   - r-forcats=1.0.0
-  - r-ggplot2>=3.4.0
+  - r-ggplot2=3.5.2
   - r-ggplotify=0.1.2
   - r-gridbase=0.4_7
   - r-gridextra=2.3
@@ -49,7 +49,7 @@ dependencies:
   - r-plotly=4.10.4
   - r-plyr=1.8.9
   - r-purrr=1.0.2
-  - r-randomForest=4.7
+  - r-randomforest=4.7_1.2
   - r-rmarkdown=2.29
   - r-reshape=0.8.9
   - r-readr=2.1.5
@@ -59,8 +59,8 @@ dependencies:
   - r-tibble=3.2.1
   - r-tidyr=1.3.1
   - samtools=1.21
-  - scipy<=1.11.4
-  - seqtk
+  - scipy=1.11.4
+  - seqtk=1.5
   - star=2.7.11b
   - slamem=0.8.5
   - seaborn=0.13.2
