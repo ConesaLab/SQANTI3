@@ -102,7 +102,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
 
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
-                                {fastq_files} {args.annotation} {args.genome} \
+                                --isoforms {fastq_files} --refGTF {args.annotation} --refFasta {args.genome} \
                                 --skipORF --min_ref_len {args.min_ref_len} \
                                 --aligner_choice {args.aligner_choice} \
                                 -t {args.cpus} -d {args.dir}/{file_acc} \
@@ -130,7 +130,7 @@ def make_UJC_hash(args, df):
         print("**** Calculating UJCs...", file = sys.stdout)
                 
         ## Take the corrected GTF
-        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf.cds.gff | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf.cds.gff"""
+        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf.cds.gff | sort | uniq | paste -sd ',' - | sed 's/chr//g; s/:.*//g')" {outputPathPrefix}_corrected.gtf.cds.gff"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
