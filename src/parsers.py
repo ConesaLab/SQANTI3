@@ -1,6 +1,7 @@
 import os
 import sys
 import glob
+import re
 
 from collections import defaultdict
 from csv import DictReader
@@ -341,45 +342,49 @@ def FLcount_parser(fl_count_filename):
     return samples, fl_count_dict
 
 
-def parse_corrORF(corrORF,gmst_rex):
+def parse_corrORF(corrORF):
     orfDict = {}
     for r in SeqIO.parse(open(corrORF), 'fasta'):
         # now process ORFs into myQueryProtein objects
-        m = gmst_rex.match(r.description)
+        pattern = r'^[^|]+\|(\d+)_aa\|([+-])\|(\d+)\|(\d+)$'
+        m = pattern.match(r.description)
         if m is None:
-            qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
+            qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> cds_name|<size>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
             sys.exit(1)
-        orf_length = int(m.group(2))
-        cds_start = int(m.group(4))
-        cds_end = int(m.group(5))
+        orf_length = int(m.group(1))
+        cds_start = int(m.group(3))
+        cds_end = int(m.group(4))
         orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
     return orfDict
 
-def parse_GMST(corrORF,gmst_rex,gmst_pre):
-    orfDict = {}
-    # Modifying ORF sequences by removing sequence before ATG
+def parse_TD2(corrORF,td2_faa):
+    """
+    Parses the TD2 output files to extract ORF information.
+    
+    Returns:
+        orfDict (dict): A dictionary where keys are ORF IDs and values are myQueryProteins objects.
+    """
+    
     with open(corrORF, "w") as f:
-        for r in SeqIO.parse(open(gmst_pre+'.faa'), 'fasta'):
-            m = gmst_rex.match(r.description)
-            if m is None:
-                qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> gene_4|GeneMark.hmm|<orf>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
-                sys.exit(1)
-            id_pre = m.group(1)
-            orf_length = int(m.group(2))
-            orf_strand = m.group(3)
-            cds_start = int(m.group(4))
-            cds_end = int(m.group(5))
-            pos = r.seq.find('M')
-            # TODO: Revisit when the predictor has been updated
-            if pos!= -1: # 
-                # must modify both the sequence ID and the sequence
-                orf_length -= pos
-                cds_start += pos*3
-                newid = f"{id_pre}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
-                newseq = str(r.seq)[pos:]
-                orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, newseq, proteinID=r.id)
-                f.write(f">{newid}\n{newseq}\n")
-            else:
-                orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
-                f.write(f">{r.description}\n{r.seq}\n")
+        orfDict = {}
+        for r in SeqIO.parse(open(td2_faa), 'fasta'):
+            
+            id_pre, cds_start, cds_end, orf_strand, orf_length = extract_variables(r.description)
+            newid = f"{id_pre}\t{r.id}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}" # TODO: Fix strand information
+            orfDict[id_pre] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=id_pre)
+            f.write(f">{newid}\n{str(r.seq)}\n")
     return orfDict
+    
+def extract_variables(s):
+    # Extract the ID prefix and CDS coordinates with strand
+    match = re.search(r'(PB\.\d+\.\d+):(\d+)-(\d+)\(([\+\-])\)', s)
+    if not match:
+        print(s)
+        raise ValueError("Could not parse coordinates and strand.")
+    
+    id_pre = match.group(1)
+    cds_start = int(match.group(2))
+    cds_end = int(match.group(3))  # Add 1 as requested
+    orf_strand = match.group(4)
+    orf_length = abs(cds_end - cds_start +1) // 3  # Calculate ORF length in amino acids
+    return id_pre, cds_start, cds_end, orf_strand, orf_length

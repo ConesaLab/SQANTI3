@@ -102,6 +102,31 @@ def run_gmst(corrFASTA,orf_input,gmst_pre):
     logFile = f"{os.path.dirname(gmst_pre)}/GMST_python.log"
     run_command(cmd,qc_logger,logFile,description="GMST ORF prediction")
 
+def run_td2(corrFASTA, orf_input,threads):
+    """
+    Runs the TD2 ORF prediction tool on the corrected FASTA file.
+    """
+    # Initial setup
+    sqanti_path = os.path.dirname(corrFASTA)
+    if orf_input is None:
+        orf_input = corrFASTA
+    qc_logger.info(f"Running TD2 ORF search on {orf_input}...")
+    td2_path = os.path.join(sqanti_path, "TD2")
+
+    # First we run the ORF search
+    search_cmd = f"TD2.LongOrfs -t {corrFASTA} -O {td2_path} -S --threads {threads}"
+    logFile = f"{sqanti_path}/TD2_LongOrfs.log"
+    run_command(search_cmd, qc_logger, logFile, description="TD2 ORF search")
+
+    # Now the actual prediction
+    predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ "
+    logFile = f"{sqanti_path}/TD2_Predict.log"
+    run_command(predict_cmd, qc_logger, logFile, description="TD2 ORF prediction")
+    
+    # get the name of the output file
+    orf_output = os.path.join(td2_path, f"{os.path.basename(orf_input)}.TD2.pep")
+    return orf_output
+
 def GTF_to_genePred(corrGTF):
     """
     Converts a GTF file to a genePred file.
