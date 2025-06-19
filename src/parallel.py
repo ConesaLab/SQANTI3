@@ -177,7 +177,7 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-        shutil.move(os.path.join(split_d,"GMST"),os.path.join(args.dir,"GMST",f"GMST_{i}"))
+        shutil.move(os.path.join(split_d,"TD2"),os.path.join(args.dir,"TD2",f"TD2_{i}"))
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()

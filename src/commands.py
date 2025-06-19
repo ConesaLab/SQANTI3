@@ -35,7 +35,7 @@ RSCRIPT_RESCUE_RULES = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_r
 RSCRIPT_RESCUE_ML = os.path.join(utilitiesPath, "rescue","rescue_by_mapping_ML.R")
 RESCUE_RANDOM_FOREST = os.path.join(utilitiesPath, "rescue","run_randomforest_on_reference.R")
 
-
+# IsoAnnot
 ISOANNOT_PROG =  os.path.join(utilitiesPath, "IsoAnnotLite_SQ3.py")
 
 # PYTHONPATH
@@ -85,23 +85,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
             raise ValueError()
     return cmd
 
-# To dynamically get the utilities path
-def get_gmst_prog(utilities_path):
-    return os.path.join(utilities_path, "gmst", "gmst.pl")
-
-GMST_CMD = f"perl {get_gmst_prog(utilitiesPath)} -faa --strand direct --fnn --output {{o}} {{i}}"
-
-def run_gmst(corrFASTA,orf_input,gmst_pre):
-    if orf_input is not None:
-        qc_logger.info(f"Running ORF prediction of input on {orf_input}...")
-        cmd = GMST_CMD.format(i=os.path.realpath(orf_input), o=gmst_pre)
-    else:
-        cmd = GMST_CMD.format(i=corrFASTA, o=gmst_pre)
-    cmd = f"cd {os.path.dirname(gmst_pre)}; {cmd}"
-    qc_logger.debug(f"GMST: {gmst_pre}")
-    logFile = f"{os.path.dirname(gmst_pre)}/GMST_python.log"
-    run_command(cmd,qc_logger,logFile,description="GMST ORF prediction")
-
+# TransDecoder2
 def run_td2(corrFASTA, orf_input,threads):
     """
     Runs the TD2 ORF prediction tool on the corrected FASTA file.
@@ -115,12 +99,12 @@ def run_td2(corrFASTA, orf_input,threads):
 
     # First we run the ORF search
     search_cmd = f"TD2.LongOrfs -t {corrFASTA} -O {td2_path} -S --threads {threads}"
-    logFile = f"{sqanti_path}/TD2_LongOrfs.log"
+    logFile = f"{sqanti_path}/logs/TD2_LongOrfs.log"
     run_command(search_cmd, qc_logger, logFile, description="TD2 ORF search")
 
     # Now the actual prediction
     predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ "
-    logFile = f"{sqanti_path}/TD2_Predict.log"
+    logFile = f"{sqanti_path}/logs/TD2_Predict.log"
     run_command(predict_cmd, qc_logger, logFile, description="TD2 ORF prediction")
     
     # get the name of the output file
@@ -140,7 +124,6 @@ def GTF_to_genePred(corrGTF):
         cmd = f"{GTF2GENEPRED_PROG} {corrGTF} {queryFile} -genePredExt -allErrors -ignoreGroupsWithoutExons"
         run_command(cmd,qc_logger,logFile, "GTF to genePred conversion")
     return queryFile
-   
 
 def run_command(cmd,logger,out_file='log/program.log',description="command execution",silent=True):
     """
@@ -177,8 +160,3 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
     except BrokenPipeError as e:
         sys.exit(1)
     
-    def run_command_verbose(cmd,logger,out_file='log/program.log',description='command execution'):
-        """
-        Executes a shell command and handles errors gracefully. The output is printed to the console.
-        """
-
