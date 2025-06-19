@@ -357,33 +357,45 @@ def parse_corrORF(corrORF):
         orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
     return orfDict
 
-
 def parse_td2_to_dict(td2_faa):
     """
     Parses the TD2 FASTA file to extract ORF information.
 
     Returns:
         orfDict (dict): Keys are ORF IDs, values are myQueryProteins objects.
-        records (list): List of (id_pre, record, orf_length, orf_strand, cds_start, cds_end)
+        records (list): List of dicts with keys: record, id_pre, orf_length, orf_strand, cds_start, cds_end
     """
     orfDict = {}
     records = []
 
     for r in SeqIO.parse(open(td2_faa), 'fasta'):
-        id_pre, cds_start, cds_end, orf_strand, orf_length = extract_variables(r.description)
-        orfDict[id_pre] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=id_pre)
-        records.append((id_pre, r, orf_length, orf_strand, cds_start, cds_end))
-    
-    return orfDict, records
+        info = extract_variables(r.description)
+        id_pre = info['id_pre']
 
+        orfDict[id_pre] = myQueryProteins(
+            info['cds_start'],
+            info['cds_end'],
+            info['orf_length'],
+            str(r.seq),
+            proteinID=id_pre
+        )
+
+        # Include the record object along with extracted info
+        records.append({
+            'record': r,
+            **info
+        })
+
+    return orfDict, records
 
 def write_corr_orf(corrORF, records):
     """
     Writes reformatted ORF information to a file.
     """
     with open(corrORF, "w") as f:
-        for id_pre, r, orf_length, orf_strand, cds_start, cds_end in records:
-            newid = f"{id_pre}\t{r.id}|{orf_length}_aa|{orf_strand}|{cds_start}|{cds_end}"
+        for entry in records:
+            r = entry['record']
+            newid = f"{entry['id_pre']}\t{r.id}|{entry['orf_length']}_aa|{entry['orf_strand']}|{entry['cds_start']}|{entry['cds_end']}"
             f.write(f">{newid}\n{str(r.seq)}\n")
 
 
@@ -400,14 +412,22 @@ def parse_TD2(corrORF, td2_faa):
     
 def extract_variables(s):
     # Extract the ID prefix and CDS coordinates with strand
-    match = re.search(r'(PB\.\d+\.\d+):(\d+)-(\d+)\(([\+\-])\)', s)
+    match = re.search(r'([^\s:]+):(\d+)-(\d+)\(([\+\-])\)', s)
     if not match:
         qc_logger.error(f"Failed to parse coordinates and strand from: {s}")
         sys.exit(1)
-    
+
     id_pre = match.group(1)
     cds_start = int(match.group(2))
     cds_end = int(match.group(3))  # Add 1 as requested
     orf_strand = match.group(4)
     orf_length = abs(cds_end - cds_start +1) // 3  # Calculate ORF length in amino acids
-    return id_pre, cds_start, cds_end, orf_strand, orf_length
+
+    return {
+        'id_pre': id_pre,
+        'cds_start': cds_start,
+        'cds_end': cds_end,
+        'orf_strand': orf_strand,
+        'orf_length': orf_length
+        }   
+    
