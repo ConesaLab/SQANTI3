@@ -153,7 +153,7 @@ def test_get_corr_filenames(sample_paths):
     assert corrSAM == expected_prefix + "_corrected.sam"
     assert corrFASTA == expected_prefix + "_corrected.fasta"
     assert corrORF == expected_prefix + "_corrected.faa"
-    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.gtf.cds.gff"
+    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.cds.gff3"
 
 def test_get_isoform_hits_name(sample_paths):
     expected_prefix = os.path.join(sample_paths['outdir'], sample_paths['prefix'])
@@ -189,7 +189,7 @@ def test_all_functions_parametrized(outdir, prefix):
     assert corrSAM == expected_prefix + "_corrected.sam"
     assert corrFASTA == expected_prefix + "_corrected.fasta"
     assert corrORF == expected_prefix + "_corrected.faa"
-    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.gtf.cds.gff"
+    assert corrCDS_GTF_GFF == expected_prefix + "_corrected.cds.gff3"
     
     # Test get_isoform_hits_name
     isoform_hits_name = get_isoform_hits_name(outdir, prefix)
