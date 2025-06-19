@@ -349,7 +349,7 @@ def parse_corrORF(corrORF):
         pattern = re.compile(r'^\S+\s+(\S+)\|(\d+)_aa\|([+-])\|(\d+)\|(\d+)$')
         m = pattern.match(r.description)
         if m is None:
-            qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> cds_name|<size>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
+            qc_logger.error(f"Expected the CDS IDs to be of format '<pbid> cds_name|<size>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
             sys.exit(1)
         orf_length = int(m.group(2))
         cds_start = int(m.group(4))
