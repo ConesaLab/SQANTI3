@@ -346,14 +346,14 @@ def parse_corrORF(corrORF):
     orfDict = {}
     for r in SeqIO.parse(open(corrORF), 'fasta'):
         # now process ORFs into myQueryProtein objects
-        pattern = r'^[^|]+\|(\d+)_aa\|([+-])\|(\d+)\|(\d+)$'
+        pattern = re.compile(r'^\S+\s+(\S+)\|(\d+)_aa\|([+-])\|(\d+)\|(\d+)$')
         m = pattern.match(r.description)
         if m is None:
             qc_logger.error(f"Expected GMST output IDs to be of format '<pbid> cds_name|<size>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
             sys.exit(1)
-        orf_length = int(m.group(1))
-        cds_start = int(m.group(3))
-        cds_end = int(m.group(4))
+        orf_length = int(m.group(2))
+        cds_start = int(m.group(4))
+        cds_end = int(m.group(5))
         orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
     return orfDict
 
