@@ -10,7 +10,7 @@ from Bio import SeqIO
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.config import FIELDS_CLASS
-from src.qc_computations import classify_fsm, full_length_quantification, process_rts_swiching #type: ignore
+from src.qc_computations import classify_fsm, full_length_quantification, process_rts #type: ignore
 from src.qc_pipeline import run
 from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes 
 from src.qc_output import (
@@ -189,7 +189,7 @@ def combine_split_runs(args, split_dirs):
     fields_class_cur = FIELDS_CLASS
     if args.fl_count:
         isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
-    isoforms_info,RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,args.refFasta)
+    isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
     write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)

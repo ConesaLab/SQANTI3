@@ -6,7 +6,7 @@ main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.append(main_path)
 data_path = os.path.join(main_path, 'test','test_data')
 from src.qc_computations import (
-    process_rts_swtiching
+    process_rts
 )
 
 @pytest.fixture
