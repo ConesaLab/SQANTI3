@@ -8,7 +8,7 @@ sys.path.insert(0, main_path)
 from src.classification_steps import classify_isoform
 from src.parsers import isoforms_parser, reference_parser
 from src.qc_computations import (
-    process_rts_swiching
+    process_rts
 )
 from src.utilities.rt_switching import rts
 
@@ -63,7 +63,7 @@ def result_dataframe():
     
 
 def test_isoforms_output(isoforms_info,junction_file,genome,genome_dict,result_dataframe):
-    isoforms_res, _ = process_rts_swiching(isoforms_info, junction_file,
+    isoforms_res, _ = process_rts(isoforms_info, junction_file,
                                                    genome,genome_dict,"")
     for _, result in isoforms_res.items():
         expected_row = result_dataframe.loc[result_dataframe["isoform"] == result.id]
