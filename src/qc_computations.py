@@ -9,7 +9,7 @@ from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 from src.module_logging import qc_logger
 
-def process_rts_swiching(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
+def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
     RTS_info: dict of (pbid) -> list of RT junction. if RTS_info[pbid] == [], means all junctions are non-RT.
     """
