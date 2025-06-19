@@ -24,7 +24,7 @@ from src.commands import (
 )
 from src.qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
-    process_rts_swiching, ratio_TSS_dict_reading,
+    process_rts, ratio_TSS_dict_reading,
     full_length_quantification
 )
 from src.classification_preprocessing import (
@@ -117,7 +117,7 @@ def run(args):
 
         ## RT-switching computation
         qc_logger.info("RT-switching computation")
-        isoforms_info, RTS_info = process_rts_swiching(isoforms_info,outputJuncPath,
+        isoforms_info, RTS_info = process_rts(isoforms_info,outputJuncPath,
                                                         args.refFasta,genome_dict)
         qc_logger.info(f"After RTS classificaion: {len(isoforms_info)}")
 
