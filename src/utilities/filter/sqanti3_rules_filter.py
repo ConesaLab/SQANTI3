@@ -20,8 +20,8 @@ def read_json_rules(json_file):
             - column (str): Column name from classification data
             - type (str): Rule type (Category/Min_Threshold/Max_Threshold)
             - rule (str/float): Threshold value or category requirement
-
     """
+    
     with open(json_file, 'r') as f:
         json_data = json.load(f)
 

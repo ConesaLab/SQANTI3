@@ -38,10 +38,6 @@ RSCRIPT_RULES = os.path.join(utilitiesPath,"filter","SQANTI3_rules_filter.R")
 
 def run_rules(args):
 
-    # cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
-    # logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
-    # # TODO: Create a function to run the command and get the logs in real time?
-    # run_command(cmd,filter_logger,logFile,"Rules filtering",silent=False)
     prefix = os.path.join(args.dir, args.output)
     rules_filter(args.sqanti_class,args.json_filter,args.filter_mono_exonic,
                  prefix,filter_logger)
