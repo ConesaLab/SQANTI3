@@ -102,7 +102,7 @@ def get_method_runSQANTI3(args, df):
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
 
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
-                                {fastq_files} {args.annotation} {args.genome} \
+                                --isoforms {fastq_files} --refGTF {args.annotation} --refFasta {args.genome} \
                                 --skipORF --min_ref_len {args.min_ref_len} \
                                 --aligner_choice {args.aligner_choice} \
                                 -t {args.cpus} -d {args.dir}/{file_acc} \
