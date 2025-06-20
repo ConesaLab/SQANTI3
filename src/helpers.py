@@ -10,7 +10,7 @@ from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from src.config import seqid_rex1, seqid_rex2, seqid_fusion
-from src.commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst, run_td2
+from src.commands import get_aligner_command, GFFREAD_PROG, run_command, run_td2
 from src.parsers import parse_TD2, parse_corrORF
 from src.module_logging import qc_logger
 

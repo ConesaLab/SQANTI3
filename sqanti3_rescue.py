@@ -26,6 +26,7 @@ from src.rescue_steps import (
   save_rescue_results
 )
 from src.utilities.rescue import sq_requant
+from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import get_good_transcripts
 
 
@@ -45,6 +46,9 @@ def main():
   run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
 
+  ## Convert reference transcriptome GTF to FASTA
+  ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
+
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
     candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
@@ -63,8 +67,8 @@ def main():
     if os.path.isfile(f"{prefix}_rescue_mapping_hits.tsv"):
       rescue_logger.info("Mapping hits already exist, skipping mapping step.")
     else:
-      run_candidate_mapping(args.refGTF,args.refFasta,targets,candidates,
-                            args.corrected_isoforms_fasta,args.dir,args.output)
+      run_candidate_mapping(ref_trans_fasta,targets,candidates,
+                           args.corrected_isoforms_fasta,args.dir,args.output)
 
 
     #### RUN ML FILTER RESCUE ####
