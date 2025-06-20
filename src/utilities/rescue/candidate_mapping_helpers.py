@@ -23,8 +23,6 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     rescue_logger.debug(f"File created in {ref_trans_Fasta}.")
     if os.path.isfile(ref_trans_Fasta):
         rescue_logger.info(f"Reference transcriptome FASTA was saved to {ref_trans_Fasta}")
-        rescue_logger.info("gffread command used:")
-        rescue_logger.info(ref_cmd)
     else:
         rescue_logger.error("Reference transcriptome FASTA was not created - file not found!")
         sys.exit(1)

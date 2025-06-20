@@ -1,0 +1,13 @@
+{
+	"n_targets": 2428,
+	"n_bootstraps": 100,
+	"n_processed": 162373,
+	"n_pseudoaligned": 48394,
+	"n_unique": 20054,
+	"p_pseudoaligned": 29.8,
+	"p_unique": 12.4,
+	"kallisto_version": "0.48.0",
+	"index_version": 10,
+	"start_time": "Fri Jun 20 10:12:15 2025",
+	"call": "kallisto quant -i example/SQANTI3_QC_reference/kallisto_output/kallisto_corrected_fasta.idx -o example/SQANTI3_QC_reference/kallisto_output/UHR_Rep2_chr22 -b 100 -t 7 data/short_reads/UHR_Rep2_chr22.R1.fastq.gz data/short_reads/UHR_Rep2_chr22.R2.fastq.gz"
+}

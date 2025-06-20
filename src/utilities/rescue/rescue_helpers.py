@@ -49,3 +49,9 @@ def get_rescue_reference_targets(ref_gtf, target_genes):
     return pd.Series(target_transcripts, name='isoform')
         
     # Get the genes with associated rescue candidates
+def get_good_transcripts(class_file):
+    """
+    Get the transcripts that pass the SQANTI3 filter.
+    """
+    df = pd.read_csv(class_file, sep='\t', comment='#')
+    return list(df[df['filter_result'] == 'Isoform']['isoform'])

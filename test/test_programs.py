@@ -89,12 +89,6 @@ def test_gffread():
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..","src","utilities")
 
-def test_gmst(utiltiesPath=utilitiesPath):
-    """ Test if can be found """
-    gmst_path = os.path.join(utilitiesPath,"gmst","gmst.pl")
-    if shutil.which(gmst_path) is None:
-        pytest.fail(f"Cannot find executable {gmst_path}. Abort!")
-
 def test_gtf2genepred(utiltiesPath=utilitiesPath):
     """ Test if can be found """
     gtf2genepred_path = os.path.join(utilitiesPath,"gtfToGenePred")

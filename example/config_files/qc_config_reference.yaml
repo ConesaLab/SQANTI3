@@ -1,14 +1,14 @@
 main:
   refGTF: 'data/reference/gencode.v38.basic_chr22.gtf'
   refFasta: 'data/reference/GRCh38.p13_chr22.fasta'
-  cpus: 4
+  cpus: 7
   dir: example/SQANTI3_QC_reference
-  output: UHR_chr22
+  output: gencode.v38.basic_chr22
   log_level: INFO
 qc:
   enabled: true
   options:
-    isoforms: 'data/gencode.v38.basic_chr22.gtf'
+    isoforms: 'data/reference/gencode.v38.basic_chr22.gtf'
     min_ref_len: 0
     force_id_ignore: false
     fasta: false
@@ -26,7 +26,7 @@ qc:
     polyA_peak: ''
     phyloP_bed: ''
     saturation: false
-    report: both
+    report: skip
     isoform_hits: false
     ratio_TSS_metric: max
     chunks: 1
@@ -34,7 +34,7 @@ qc:
     expression: ''
     coverage: ''
     window: 20
-    fl_count: 'data/UHR_abundance.tsv'
+    fl_count: ''
     isoAnnotLite: false
     gff3: ''
 filter:

@@ -28,7 +28,7 @@ Number of fastq files for each mate = 1
 ParametersSolo: --soloCellFilterType CellRanger2.2 filtering parameters:  3000 0.99 10
 Finished loading and checking parameters
 --genomeDir directory exists and will be overwritten: example/SQANTI3_QC_output/STAR_index/
-Apr 23 11:54:25 ... starting to generate Genome files
+Jun 20 10:22:36 ... starting to generate Genome files
 data/reference/GRCh38.p13_chr22.fasta : chr # 0  "chr22" chrStart: 0
 Chromosome sequence lengths: 
 chr22	50818468
@@ -38,25 +38,25 @@ Genome size with padding = 50855936
 Estimated genome size with padding and SJs: total=genome+SJ=251855936 = 50855936 + 201000000
 GstrandBit=32
 Number of SA indices: 78319554
-Apr 23 11:54:26 ... starting to sort Suffix Array. This may take a long time...
+Jun 20 10:22:37 ... starting to sort Suffix Array. This may take a long time...
 Number of chunks: 4;   chunks size limit: 208852144 bytes
-Apr 23 11:54:26 ... sorting Suffix Array chunks and saving them to disk...
-Writing 208178008 bytes into example/SQANTI3_QC_output/STAR_index//SA_0 ; empty space on disk = 5360996352 bytes ... done
-Writing 206604960 bytes into example/SQANTI3_QC_output/STAR_index//SA_1 ; empty space on disk = 5152739328 bytes ... done
-Writing 203895040 bytes into example/SQANTI3_QC_output/STAR_index//SA_2 ; empty space on disk = 4945555456 bytes ... done
-Writing 7878424 bytes into example/SQANTI3_QC_output/STAR_index//SA_3 ; empty space on disk = 4741652480 bytes ... done
-Apr 23 11:55:07 ... loading chunks from disk, packing SA...
-Apr 23 11:55:08 ... finished generating suffix array
-Apr 23 11:55:08 ... generating Suffix Array index
-Apr 23 11:55:25 ... completed Suffix Array index
-Apr 23 11:55:25 ... writing Genome to disk ...
-Writing 50855936 bytes into example/SQANTI3_QC_output/STAR_index//Genome ; empty space on disk = 5359656960 bytes ... done
+Jun 20 10:22:37 ... sorting Suffix Array chunks and saving them to disk...
+Writing 208178008 bytes into example/SQANTI3_QC_output/STAR_index//SA_0 ; empty space on disk = 31647293440 bytes ... done
+Writing 206604960 bytes into example/SQANTI3_QC_output/STAR_index//SA_1 ; empty space on disk = 31439114240 bytes ... done
+Writing 203895040 bytes into example/SQANTI3_QC_output/STAR_index//SA_2 ; empty space on disk = 31232507904 bytes ... done
+Writing 7878424 bytes into example/SQANTI3_QC_output/STAR_index//SA_3 ; empty space on disk = 31028609024 bytes ... done
+Jun 20 10:23:10 ... loading chunks from disk, packing SA...
+Jun 20 10:23:11 ... finished generating suffix array
+Jun 20 10:23:11 ... generating Suffix Array index
+Jun 20 10:23:25 ... completed Suffix Array index
+Jun 20 10:23:25 ... writing Genome to disk ...
+Writing 50855936 bytes into example/SQANTI3_QC_output/STAR_index//Genome ; empty space on disk = 31647289344 bytes ... done
 SA size in bytes: 323068164
-Apr 23 11:55:25 ... writing Suffix Array to disk ...
-Writing 323068164 bytes into example/SQANTI3_QC_output/STAR_index//SA ; empty space on disk = 5308792832 bytes ... done
-Apr 23 11:55:25 ... writing SAindex to disk
-Writing 8 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985651200 bytes ... done
-Writing 120 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985651200 bytes ... done
-Writing 1565873491 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 4985647104 bytes ... done
-Apr 23 11:55:26 ..... finished successfully
+Jun 20 10:23:25 ... writing Suffix Array to disk ...
+Writing 323068164 bytes into example/SQANTI3_QC_output/STAR_index//SA ; empty space on disk = 31596433408 bytes ... done
+Jun 20 10:23:25 ... writing SAindex to disk
+Writing 8 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 31273361408 bytes ... done
+Writing 120 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 31273361408 bytes ... done
+Writing 1565873491 bytes into example/SQANTI3_QC_output/STAR_index//SAindex ; empty space on disk = 31273357312 bytes ... done
+Jun 20 10:23:26 ..... finished successfully
 DONE: Genome generation, EXITING

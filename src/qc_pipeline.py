@@ -37,7 +37,8 @@ from src.module_logging import qc_logger
 def run(args):
     global isoform_hits_name
 
-    corrGTF, corrSAM, corrFASTA, corrORF , _ = get_corr_filenames(args.dir, args.output)
+    # Get filenames
+    corrGTF, corrSAM, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output) # Fix the path to the corrected CDS file
     badstrandGTF = args.dir + "/unknown_strand.gtf"
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
 
@@ -54,7 +55,7 @@ def run(args):
     gmap_index=args.gmap_index, annotation=args.refGTF)
     
     orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
-                         corrFASTA, corrORF)
+                         corrFASTA, corrORF,args.cpus)
 
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
@@ -151,7 +152,7 @@ def run(args):
     else:
         # Write corrected GTF with CDS
         if not args.skipORF:
-            write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, os.path.splitext(corrGTF)[0] + ".cds.gff3")
+            write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
 
         # Write final classification
         write_classification_output(isoforms_info, outputClassPath, fields_class_cur)

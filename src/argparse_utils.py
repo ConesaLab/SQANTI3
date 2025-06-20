@@ -102,6 +102,13 @@ def valid_sr(filename,logger):
                 sys.exit(1)
     return filename
 
+def contains_gene_name(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            if 'gene_name' in line:
+                return True
+    return False
+
 ### Validation for the arguments
 
 def qc_args_validation(args):
@@ -160,6 +167,14 @@ def qc_args_validation(args):
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
+
+    # Check for gene_name attribute in GTF
+    if args.isoAnnotLite or args.genename:
+        if not contains_gene_name(args.isoforms):
+            option = "--isoAnnotLite" if args.isoAnnotLite else "--genename"
+            qc_logger.error("The 'gene_name' tag was not found in the input GTF file. SQANTI3 requires this tag to function properly.")
+            qc_logger.error(f"Please include the 'gene_name' tag in the GTF, or omit the {option} option.")
+            sys.exit(1)
 
 
     # Fusion isoforms checks
@@ -235,8 +250,6 @@ def rescue_args_validation(args):
     valid_dir(args.dir,rescue_logger)
     valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
-    if args.rescue_isoforms is not None:
-        valid_fasta(args.rescue_isoforms,rescue_logger)
     if args.rescue_gtf is not None:
         valid_gtf(args.rescue_gtf,rescue_logger)
     if args.mode == "full":
@@ -245,10 +258,15 @@ def rescue_args_validation(args):
         except:
             rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
             sys.exit(1)
-    if args.subcommand == 'rules':
-        valid_file(args.json_filter, rescue_logger)
-    if args.subcommand == "ml":
-        if args.threshold < 0 or args.threshold > 1.:
-            rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
-            sys.exit(-1)
-        valid_file(args.random_forest,rescue_logger)
+        try:
+            valid_fasta(args.rescue_isoforms,rescue_logger)
+        except:
+            rescue_logger.error("When running the rescue in full mode, the corrected isoforms FASTA file is mandatory.")
+            sys.exit(1)
+        if args.subcommand == 'rules':
+            valid_file(args.json_filter, rescue_logger)
+        if args.subcommand == "ml":
+            if args.threshold < 0 or args.threshold > 1.:
+                rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
+                sys.exit(-1)
+            valid_file(args.random_forest,rescue_logger)
