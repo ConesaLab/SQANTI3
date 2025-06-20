@@ -68,19 +68,15 @@ filter:
 rescue:
   enabled: false
   options:
-    common:
-      filter_class: example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt
-      rescue_isoforms: example/rules_filter_output/UHR_chr22_corrected.fasta
-      rescue_gtf: example/rules_filter_output//UHR_chr22.filtered.gtf
-      refClassif: ''
-      rescue_mono_exonic: all
-      mode: automatic
-    rules:
-      enabled: true
-      options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
-    ml:
-      enabled: false
-      options:
-        random_forest: ''
-        threshold: 0.7
+    filter_class: example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt
+    corrected_isoforms_fasta: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
+    filtered_isoforms_gtf: example/rules_filter_output/UHR_chr22.filtered.gtf
+    refClassif: ''
+    counts: ''
+    rescue_mono_exonic: all
+    mode: automatic
+    requant: false
+    strategy: rules
+    json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+    random_forest: 
+    threshold: 0.7

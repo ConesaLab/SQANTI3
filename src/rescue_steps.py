@@ -130,7 +130,7 @@ def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
     return rescue_targets.tolist()
 
 ## Run mapping of rescue candidates (artifacts) to targets
-def run_candidate_mapping(refGTF,refFasta,targets_list,candidates_list,
+def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
                           corrected_isoforms, out_dir, out_prefix):
     prefix = f"{out_dir}/{out_prefix}"
     #### PREPARATION OF FILES FOR MINIMAP2 ####
@@ -138,8 +138,7 @@ def run_candidate_mapping(refGTF,refFasta,targets_list,candidates_list,
     targets_fasta = f"{prefix}_rescue_targets.fasta"
     candidates_fasta = f"{prefix}_rescue_candidates.fasta"
 
-    ## Convert reference transcriptome GTF to FASTA
-    ref_trans_fasta = prepare_fasta_transcriptome(refGTF,refFasta,out_dir)
+
 
     ## Filter reference transcriptome FASTA to only include target ref transcripts
     rescue_logger.info("Filtering reference transcriptome FASTA to only rescue targets.")

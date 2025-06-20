@@ -8,7 +8,7 @@ main:
 qc:
   enabled: true
   options:
-    isoforms: 'data/gencode.v38.basic_chr22.gtf'
+    isoforms: 'data/reference/gencode.v38.basic_chr22.gtf'
     min_ref_len: 0
     force_id_ignore: false
     fasta: false
@@ -26,7 +26,7 @@ qc:
     polyA_peak: ''
     phyloP_bed: ''
     saturation: false
-    report: both
+    report: false
     isoform_hits: false
     ratio_TSS_metric: max
     chunks: 1

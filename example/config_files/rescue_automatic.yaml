@@ -6,39 +6,40 @@ main:
   output: UHR_chr22
   log_level: INFO
 qc:
-  enabled: false
+  enabled: true
   options:
     isoforms: ''
     min_ref_len: 0
     force_id_ignore: false
     fasta: false
     genename: false
-    short_reads: ''
-    SR_bam: ''
     novel_gene_prefix: ''
+    sites: ATAC,GCAG,GTAG
+    window: 20
     aligner_choice: minimap2
     gmap_index: ''
-    sites: ATAC,GCAG,GTAG
     skipORF: false
     orf_input: ''
+    short_reads: ''
+    SR_bam: ''
     CAGE_peak: ''
     polyA_motif_list: ''
     polyA_peak: ''
     phyloP_bed: ''
+    expression: ''
+    coverage: ''
+    fl_count: ''
+    isoAnnotLite: false
+    gff3: ''
     saturation: false
     report: html
     isoform_hits: false
     ratio_TSS_metric: max
     chunks: 1
     is_fusion: false
-    expression: ''
-    coverage: ''
-    window: 20
-    fl_count: ''
-    isoAnnotLite: false
-    gff3: ''
+    bugsi: ''
 filter:
-  enabled: false
+  enabled: true
   options:
     common:
       sqanti_class: example/SQANTI3_QC_output/UHR_chr22_classification.txt
@@ -68,19 +69,15 @@ filter:
 rescue:
   enabled: true
   options:
-    common:
-      filter_class: example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt
-      rescue_isoforms: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
-      rescue_gtf: example/rules_filter_output/UHR_chr22.filtered.gtf
-      refClassif: ''
-      rescue_mono_exonic: all
-      mode: automatic
-    rules:
-      enabled: true
-      options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
-    ml:
-      enabled: false
-      options:
-        random_forest: ''
-        threshold: 0.7
+    filter_class: example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt
+    corrected_isoforms_fasta: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
+    filtered_isoforms_gtf: example/rules_filter_output/UHR_chr22.filtered.gtf
+    refClassif: ''
+    counts: ''
+    rescue_mono_exonic: all
+    mode: automatic
+    requant: false
+    strategy: rules
+    json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+    random_forest: 
+    threshold: 0.7

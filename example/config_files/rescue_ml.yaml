@@ -66,21 +66,18 @@ filter:
         max_class_size: 3000
         intrapriming: 60
 rescue:
-  enabled: true
+  enabled: false
   options:
-    common:
-      filter_class: example/ml_filter_output/UHR_chr22_ML_result_classification.txt
-      rescue_isoforms: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
-      rescue_gtf: example/ml_filter_output/UHR_chr22.filtered.gtf
-      refClassif: 'data/reference/gencode.v38.basic_chr22_classification.txt'
-      rescue_mono_exonic: all
-      mode: full
-    rules:
-      enabled: false
-      options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
-    ml:
-      enabled: true
-      options:
-        random_forest: 'example/ml_filter_output/UHR_chr22_randomforest.RData'
-        threshold: 0.7
+    filter_class: example/ml_filter_output/UHR_chr22_ML_result_classification.txt
+    corrected_isoforms_fasta: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
+    filtered_isoforms_gtf: example/ml_filter_output/UHR_chr22.filtered.gtf
+    refClassif: data/reference/gencode.v38.basic_chr22_classification.txt
+    counts: ''
+    rescue_mono_exonic: all
+    mode: full
+    requant: false
+    strategy: ml
+    json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+    random_forest: example/ml_filter_output/UHR_chr22_randomfores.RData
+    threshold: 0.7
+
