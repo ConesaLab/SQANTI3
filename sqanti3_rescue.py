@@ -65,14 +65,14 @@ def main():
     # isoforms passing the filter (targets)
 
     run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                          args.corrected_isoforms_fasta,args.dir,args.output)
+                          args.rescue_isoforms,args.dir,args.output)
 
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
     # and is therefore run only for ML filter
 
-    if args.strategy == "ml":
+    if args.subcommand == "ml":
 
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
@@ -83,7 +83,7 @@ def main():
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome
     # and combines the results with the mapping hits obtained in the previous step
-    if args.strategy == "rules":
+    if args.subcommand == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
       rescued = run_rules_rescue(args.filter_class, args.refClassif,
@@ -93,7 +93,7 @@ def main():
     # Finish print if output exists (same for rules and ML) ####
     inclusion_list = f"{prefix}_full_inclusion_list.tsv"
     if os.path.isfile(inclusion_list):
-      message(f"Rescue {args.strategy} finished successfully!",rescue_logger)
+      message(f"Rescue {args.subcommand} finished successfully!",rescue_logger)
       rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list}")
     else:
       rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list}")
@@ -102,7 +102,7 @@ def main():
 
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
-  if args.filtered_isoforms_gtf is None:
+  if args.rescue_gtf is None:
     rescue_logger.warning("No filtered GTF provided.")
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
@@ -119,14 +119,14 @@ def main():
       for line in f:
         rescued_transcripts.add(line.strip())
     f.close()    
-    write_rescue_gtf(args.filtered_isoforms_gtf, args.refGTF, rescued_transcripts, prefix)
+    write_rescue_gtf(args.rescue_gtf, args.refGTF, rescued_transcripts, prefix)
     rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
     ## Create new FASTA including rescued transcripts #
     good_transcripts = get_good_transcripts(args.filter_class)
     ref_trans_fasta = os.path.join(args.dir, 
                                   os.path.basename(args.refGTF).replace('.gtf', '.fasta'))
-    write_rescue_fasta(args.corrected_isoforms_fasta,ref_trans_fasta, good_transcripts, rescued_transcripts, prefix)
+    write_rescue_fasta(args.rescue_isoforms,ref_trans_fasta, good_transcripts, rescued_transcripts, prefix)
     rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
   ## END ##
   message("Rescue finished successfully!",rescue_logger)
