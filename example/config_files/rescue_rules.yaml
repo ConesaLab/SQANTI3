@@ -66,7 +66,7 @@ filter:
         max_class_size: 3000
         intrapriming: 60
 rescue:
-  enabled: false
+  enabled: true
   options:
     filter_class: example/filter_rules/UHR_chr22_RulesFilter_result_classification.txt
     corrected_isoforms_fasta: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
