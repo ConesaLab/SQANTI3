@@ -2,7 +2,7 @@ main:
   refGTF: 'data/reference/gencode.v38.basic_chr22.txt'
   refFasta: 'data/reference/GRCh38.p13_chr22.fasta'
   cpus: 4
-  dir: example/ml_filter_output
+  dir: example/filter_ml
   output: UHR_chr22
   log_level: INFO
 qc:

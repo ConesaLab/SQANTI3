@@ -68,9 +68,9 @@ filter:
 rescue:
   enabled: false
   options:
-    filter_class: example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt
+    filter_class: example/filter_rules/UHR_chr22_RulesFilter_result_classification.txt
     corrected_isoforms_fasta: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
-    filtered_isoforms_gtf: example/rules_filter_output/UHR_chr22.filtered.gtf
+    filtered_isoforms_gtf: example/filter_rules/UHR_chr22.filtered.gtf
     refClassif: data/reference/gencode.v38.basic_chr22_classification.txt
     counts: ''
     rescue_mono_exonic: all
