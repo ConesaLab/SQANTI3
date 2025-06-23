@@ -1,4 +1,3 @@
-
 import sys,os,pytest
 import json
 import pandas as pd
@@ -142,3 +141,66 @@ def test_apply_rules_force_monoexon(classification_df: pd.DataFrame, rules_dict:
     result = apply_rules(row, True, rules_dict)
     assert result == "Artifact"
     
+# Reasons for filtering
+from src.utilities.filter.sqanti3_rules_filter import get_reasons
+
+def test_get_reasons_isoform_passes(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
+    row = classification_df.iloc[1]  # Should be an Isoform
+    result = get_reasons(row, False, rules_dict)
+    
+    assert result["isoform"] == row["isoform"]
+    assert result["structural_category"] == row["structural_category"]
+    assert result["filter_reason"] == ""
+
+def test_get_reasons_artifact_due_to_monoexon(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
+    row = classification_df.iloc[0]  # 1-exon FSM or rest
+    result = get_reasons(row, True, rules_dict)
+    
+    assert "Mono-exonic" in result["filter_reason"]
+    assert result["isoform"] == row["isoform"]
+
+def test_get_reasons_threshold_violation(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
+    row = classification_df.iloc[39]  # Should be an Artifact by threshold
+    result = get_reasons(row, False, rules_dict)
+
+    assert result["isoform"] == row["isoform"]
+    assert result["filter_reason"] != ""  # At least one reason should be present
+    assert any(x in result["filter_reason"] for x in ["<", ">"])  # Threshold message present
+
+def test_get_reasons_categorical_mismatch():
+    row = pd.Series({
+        "isoform": "fake_iso",
+        "structural_category": "category",
+        "col": "Mismatch"
+    })
+    rules_dict = {
+        "category": [pd.DataFrame([["col", "Category", "expected"]], columns=["column", "type", "rule"])],
+        "rest": []
+    }
+    result = get_reasons(row, False, rules_dict)
+    
+    assert "col: Mismatch" in result["filter_reason"]
+
+def test_get_reasons_multiple_failures():
+    row = pd.Series({
+        "isoform": "fake_iso",
+        "structural_category": "category",
+        "col1": 3,      # should fail min
+        "col2": 20,     # should fail max
+        "col3": "bad"   # should fail category
+    })
+    rules_df = pd.DataFrame([
+        ["col1", "Min_Threshold", 5],
+        ["col2", "Max_Threshold", 10],
+        ["col3", "Category", "good"]
+    ], columns=["column", "type", "rule"])
+    rules_dict = {
+        "category": [rules_df],
+        "rest": []
+    }
+    result = get_reasons(row, False, rules_dict)
+
+    assert "col1: 3 < 5" in result["filter_reason"]
+    assert "col2: 20 > 10" in result["filter_reason"]
+    assert "col3: bad" in result["filter_reason"]
+    assert result["isoform"] == "fake_iso"

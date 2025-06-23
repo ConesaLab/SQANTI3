@@ -69,12 +69,14 @@ rescue:
   enabled: true
   options:
     common:
-      filter_class: example/ml_filter_output/UHR_chr22_ML_result_classification.txt
-      rescue_isoforms: example/SQANTI3_QC_output/UHR_chr22_corrected.fasta
-      rescue_gtf: example/ml_filter_output/UHR_chr22.filtered.gtf
+      filter_class: 'example/filter_ml/UHR_chr22_ML_result_classification.txt'
+      rescue_isoforms: 'example/SQANTI3_QC_output/UHR_chr22_corrected.fasta'
+      rescue_gtf: 'example/filter_ml/UHR_chr22.filtered.gtf'
       refClassif: 'data/reference/gencode.v38.basic_chr22_classification.txt'
+      counts: ''
       rescue_mono_exonic: all
       mode: full
+      requant: false
     rules:
       enabled: false
       options:
@@ -82,5 +84,6 @@ rescue:
     ml:
       enabled: true
       options:
-        random_forest: 'example/ml_filter_output/UHR_chr22_randomforest.RData'
+        random_forest: 'example/filter_ml/UHR_chr22_randomforest.RData'
         threshold: 0.7
+

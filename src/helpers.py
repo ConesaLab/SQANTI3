@@ -1,21 +1,17 @@
 import os
 import sys
-import subprocess
 import gzip
-import re
+
 
 from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
-from bx.intervals import Interval #type: ignore
 
-
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
 
 from src.config import seqid_rex1, seqid_rex2, seqid_fusion
-from src.commands import get_aligner_command, GFFREAD_PROG, run_command, run_gmst
-from src.parsers import parse_GMST, parse_corrORF
+from src.commands import get_aligner_command, GFFREAD_PROG, run_command, run_td2
+from src.parsers import parse_TD2, parse_corrORF
 from src.module_logging import qc_logger
 
 ### Environment manipulation functions ###
@@ -65,16 +61,14 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
     f.close()
     return out_file
 
-
 ### Input/Output functions ###
-   
 def get_corr_filenames(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     corrGTF = corrPathPrefix + "_corrected.gtf"
     corrSAM = corrPathPrefix + "_corrected.sam"
     corrFASTA = corrPathPrefix + "_corrected.fasta"
     corrORF = corrPathPrefix + "_corrected.faa"
-    corrCDS_GTF_GFF = corrPathPrefix + "_corrected.gtf.cds.gff"
+    corrCDS_GTF_GFF = corrPathPrefix + "_corrected.cds.gff3"
     return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
 
 def get_isoform_hits_name(outdir, prefix):
@@ -164,14 +158,10 @@ def filter_gtf(isoforms: str, corrGTF, badstrandGTF, genome_dict: Dict[str, str]
             open(isoforms, 'r') as isoforms_gtf, \
             open(badstrandGTF, 'w') as discard_gtf:
             for line in isoforms_gtf:
-                qc_logger.debug(line)
                 process_gtf_line(line, genome_dict, corrGTF_out, discard_gtf)
     except IOError as e:
         qc_logger.error(f"Something went wrong processing GTF files: {e}")
         raise
-
-
-
 
 def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, discard_gtf: str,logger=qc_logger):
     """
@@ -213,29 +203,26 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
         else:
             corrGTF_out.write(line)
 
-def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF):
+def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
     # ORF generation
     qc_logger.info("**** Predicting ORF sequences...")
 
-    gmst_dir = os.path.join(os.path.abspath(outdir), "GMST")
-    gmst_pre = os.path.join(gmst_dir, "GMST_tmp")
-    if not os.path.exists(gmst_dir):
-        os.makedirs(gmst_dir) 
+    td2_dir = os.path.join(os.path.abspath(outdir), "TD2")
+    if not os.path.exists(td2_dir):
+        os.makedirs(td2_dir)
 
-    # sequence ID example: PB.2.1 gene_4|GeneMark.hmm|264_aa|+|888|1682
-    gmst_rex = re.compile(r'(\S+\t\S+\|GeneMark.hmm)\|(\d+)_aa\|(\S)\|(\d+)\|(\d+)')
     # GMST seq id --> myQueryProteins object
     orfDict = {}
     if skipORF:
         qc_logger.warning("Skipping ORF prediction because user requested it. All isoforms will be non-coding!")
     elif os.path.exists(corrORF):
         qc_logger.info(f"ORF file {corrORF} already exists. Using it.")
-        orfDict = parse_corrORF(corrORF,gmst_rex)
+        orfDict = parse_corrORF(corrORF)
     else:
         qc_logger.info(f"Running ORF prediction on {corrFASTA}")
-        run_gmst(corrFASTA,orf_input,gmst_pre)
+        td2_output = run_td2(corrFASTA, orf_input,threads)  # threads is not used in TD2.Predict
         # Modifying ORF sequences by removing sequence before ATG
-        orfDict = parse_GMST(corrORF, gmst_rex, gmst_pre)
+        orfDict = parse_TD2(corrORF,td2_output)
     if len(orfDict) == 0:
         qc_logger.warning("All input isoforms were predicted as non-coding")
 

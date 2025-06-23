@@ -16,6 +16,7 @@ def rescue_argparse():
   cr.add_argument("--refFasta", 
                   required=True,
                   help = "Full path to reference genome FASTA used when running SQANTI3 QC.")
+
   # Specific input options
   ci = common.add_argument_group("Input options")
   ci.add_argument("--rescue_isoforms", 
@@ -27,6 +28,7 @@ def rescue_argparse():
                         \nMandatory when running the rescue on full mode")
   ci.add_argument("--counts",
                       help = 'Isoforms abundancy values: "Isoform" \t "Count". Column names may differ')
+
   # Customization options
   cc = common.add_argument_group("Customization options")
   cc.add_argument("-e","--rescue_mono_exonic", 
@@ -42,7 +44,6 @@ def rescue_argparse():
   cc.add_argument("-q","--requant",
                   action="store_true",
                   help = "Run requantification of the rescued isoforms.")
-
   # Output options
   co = common.add_argument_group("Output options")
   co.add_argument("-o","--output", 

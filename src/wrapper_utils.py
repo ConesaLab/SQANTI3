@@ -58,6 +58,13 @@ def get_user_options(options, sqanti_options):
         key, value = option.split('=')
         if key not in sqanti_options:
             main_logger.warning(f"Option '{key}' not found in the default configuration.")
+            main_logger.warning("Would you like to continue? (y/n)")
+            answer = input().strip().lower()
+            if answer != 'y':
+                main_logger.error("Aborting...")
+                sys.exit(1)
+            else:
+                continue
             continue
         # Try to convert the value to an integer or float
         if value.isdigit():
@@ -93,21 +100,24 @@ def set_default_values(config,user_options):
             'filter_faa': '_corrected.faa'
         },
         'rescue': {
-            'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_MLFilter_result_classification.txt',
+            'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_result_classification.txt',
             'rescue_isoforms': '_corrected.fasta',
             'rescue_gtf': '.filtered.gtf',
-            'random_forest': 'randomforest.RData'
+            'random_forest': '_randomforest.RData'
         }
     }
 
     for section, options in default_values.items():
         for key, default_filename in options.items():
             if key not in user_options:
-                if section == 'filter' and key == 'filter_faa' and config['qc']['options']['skipORF']:
-                    config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+                if section != 'qc':
+                   # Avoids including the protein sequences if the user has set skipORF
+                   if key == 'filter_faa' and config['qc']['options']['skipORF']:
+                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+                   else:
+                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
                 else:
-                    config[section]['options']['common'][key] = generate_default_path(config, default_filename)
-
+                     config[section]['options'][key] = generate_default_path(config, default_filename)
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):
@@ -159,7 +169,7 @@ def flatten_dict(d):
 
 def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
-    return ' '.join(f'--{key}' if value is True else f'--{key} {value}' for key, value in options.items() if value not in ['',False])
+    return ' '.join(f'--{key}' if value is True or value == "True" or value == "true" else f'--{key} {value}' for key, value in options.items() if value not in ['',False])
 
 def validate_user_options(user_options, valid_keys):
     """Check if any user option is not in the list of valid keys."""
@@ -185,6 +195,7 @@ def run_step(step,config,dry_run, user_options):
         options = main_opt | config[step].get("options", "")
         if user_options is not None:
             modify_options(options,user_options)
+
         cmd = commands[step].format(options = format_options(options))
         
     else:

@@ -38,10 +38,6 @@ RSCRIPT_RULES = os.path.join(utilitiesPath,"filter","SQANTI3_rules_filter.R")
 
 def run_rules(args):
 
-    # cmd = f"{RSCRIPTPATH} {RSCRIPT_RULES} -c {args.sqanti_class} -o {args.output} -d {args.dir} -j {args.json_filter} -u {utilitiesPath} -e {args.filter_mono_exonic}"
-    # logFile = os.path.join(args.dir, 'logs', 'filter_rules.log')
-    # # TODO: Create a function to run the command and get the logs in real time?
-    # run_command(cmd,filter_logger,logFile,"Rules filtering",silent=False)
     prefix = os.path.join(args.dir, args.output)
     rules_filter(args.sqanti_class,args.json_filter,args.filter_mono_exonic,
                  prefix,filter_logger)
@@ -62,11 +58,11 @@ def prepare_ml_cmd(sq_class,prefix,outdir,percent_training,threshold,intraprimin
         -z {max_class_size}"
 
     if TP is not None:
-        cmd += f" -p {TP}"
+        cmd += f" --TP {TP}"
     if TN is not None:
-        cmd += f" -n {TN}"
+        cmd += f" --TN {TN}"
     if remove_columns is not None:
-        cmd += f" -r {remove_columns}"
+        cmd += f" --remove_columns {remove_columns}"
     return cmd
 
 # TODO: These two functions are almost the same. There should be some way around to merge them ;)
