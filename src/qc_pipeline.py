@@ -53,9 +53,8 @@ def run(args):
     args.dir, args.output, args.cpus, args.chunks, args.fasta,
     genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
     gmap_index=args.gmap_index, annotation=args.refGTF)
-    
-    orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
-                         corrFASTA, corrORF,args.cpus)
+    orfDict = predictORF(args.dir, args.skipORF, args.td2_precise, args.orf_input,
+                         corrFASTA, corrORF, args.cpus)
 
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
