@@ -25,6 +25,8 @@ def read_json_rules(json_file):
     with open(json_file, 'r') as f:
         json_data = json.load(f)
 
+    names_check(json_data,)
+
     rules_dict = {} 
     for sc, rules in json_data.items():
         rules_dict[sc] = []
@@ -48,6 +50,22 @@ def read_json_rules(json_file):
         filter_logger.warning("No rules defined for 'rest' structural category. Defaulting to no filtering.")
     return rules_dict
 
+def names_check(input_dict):
+    """Check if the input dictionary has the required keys.
+    
+    Args:
+        input_dict (dict): Dictionary containing structural categories as keys
+        
+    Raises:
+        ValueError: If any required key is missing in the input dictionary.
+    """
+    required_keys = ['full-splice_match', 'incomplete-splice_match','novel_in_catalog','novel_not_in_catalog',
+                     'genic_intron','genic','antisense','fusion','intergenic']
+    for key in list(input_dict.keys()):
+        if key not in required_keys and key != 'rest':
+            filter_logger.error(f"Invalid structural category '{key}' found in rules file. "
+                                f"Expected one of {required_keys} or 'rest'.")
+            sys.exit(1)
 
 def apply_rules(row, force_multiexon, rules_dict):
     """
