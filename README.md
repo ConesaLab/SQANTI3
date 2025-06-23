@@ -13,13 +13,15 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.4) (23/03/2025) is **version 5.4**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5) (23/06/2025) is **version 5.5**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
 **⚠️WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will therefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
 
 **⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
+
+**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. You might want to re-run SQANTI3 QC. However, the changes are expected to be minimal.
 
 ## Documentation
 
