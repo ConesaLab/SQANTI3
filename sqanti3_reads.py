@@ -129,6 +129,19 @@ def make_UJC_hash(args, df):
 
         print("**** Calculating UJCs...", file = sys.stdout)
                 
+        # Ensure the corrected GTF contains gene_id attributes on every exon/CDS line so that
+        # downstream `gtftools` does not fail with `IndexError: list index out of range`.
+        # `gffread` will rewrite the file adding the missing attributes. We write to a
+        # temporary file and then move it back so the final filename remains unchanged.
+        gffread_tmp = f"{outputPathPrefix}_corrected.gtf.gffread_tmp"
+        gffread_cmd = f"gffread {outputPathPrefix}_corrected.gtf -T -o {gffread_tmp} && mv {gffread_tmp} {outputPathPrefix}_corrected.gtf"
+
+        try:
+            subprocess.check_call(gffread_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            print(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread", file=sys.stderr)
+            sys.exit(-1)
+            
         ## Take the corrected GTF
         # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
         introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
