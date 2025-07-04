@@ -2,6 +2,8 @@
 import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
+from dataclasses import dataclass, field
+from typing import List, Dict, Union, Optional
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
 
@@ -172,198 +174,112 @@ class genePredRecord(object):
         else:
             return (str(seq_a.reverse_complement())+str(seq_d.reverse_complement())).upper()
 
+
+@dataclass
 class myQueryTranscripts:
-    def __init__(self, id, tss_diff, tts_diff, num_exons, length, str_class, subtype=None,
-                 genes=None, transcripts=None, chrom=None, strand=None, bite ="NA",
-                 RT_switching ="????", canonical="NA", min_cov ="NA",
-                 min_cov_pos ="NA", min_samp_cov="NA", sd ="NA", FL ="NA", FL_dict={},
-                 nIndels ="NA", nIndelsJunc ="NA", proteinID=None,
-                 ORFlen="NA", CDS_start="NA", CDS_end="NA",
-                 CDS_genomic_start="NA", CDS_genomic_end="NA",
-                 ORFseq="NA",
-                 is_NMD="NA",
-                 isoExp ="NA", geneExp ="NA", coding ="non_coding",
-                 refLen ="NA", refExons ="NA",
-                 refStart = "NA", refEnd = "NA",
-                 q_splicesite_hit = 0,
-                 q_exon_overlap = 0,
-                 FSM_class = None, percAdownTTS = None, seqAdownTTS=None,
-                 dist_CAGE='NA', within_CAGE='NA',
-                 dist_polyA_site='NA', within_polyA_site='NA',
-                 polyA_motif='NA', polyA_dist='NA',
-                 polyA_motif_found='NA', ratio_TSS='NA'):
+    id: str
+    tss_diff: Union[int, str] = "NA"
+    tts_diff: Union[int, str] = "NA"
+    num_exons: Optional[int] = None
+    length: Optional[int] = None
+    str_class: str = ""
+    subtype: str = "no_subcategory"
 
-        self._validate_inputs(id,strand,CDS_start,CDS_end)
+    genes: List[str] = field(default_factory=list)
+    transcripts: List[str] = field(default_factory=list)
+    chrom: Optional[str] = None
+    strand: Optional[str] = None
 
-        self.id  = id
-        self.tss_diff    = tss_diff   # distance to TSS of best matching ref
-        self.tts_diff    = tts_diff   # distance to TTS of best matching ref
-        self.tss_gene_diff = 'NA'     # min distance to TSS of all genes matching the ref
-        self.tts_gene_diff = 'NA'     # min distance to TTS of all genes matching the ref
-        self.genes 		 = genes if genes is not None else []
-        self.AS_genes    = set()   # ref genes that are hit on the opposite strand
-        self.transcripts = transcripts if transcripts is not None else []
-        self.num_exons = num_exons
-        self.length      = length
-        self.str_class   = str_class  	# structural classification of the isoform
-        self.chrom       = chrom
-        self.strand 	 = strand
-        self.subtype 	 = subtype
-        self.RT_switching= RT_switching
-        self.canonical   = canonical
-        self.min_samp_cov = min_samp_cov
-        self.min_cov     = min_cov
-        self.min_cov_pos = min_cov_pos
-        self.sd 	     = sd
-        self.proteinID   = proteinID
-        self.ORFlen      = ORFlen
-        self.ORFseq      = ORFseq
-        self.CDS_start   = CDS_start
-        self.CDS_end     = CDS_end
-        self.coding      = coding
-        self.CDS_genomic_start = CDS_genomic_start  # 1-based genomic coordinate of CDS start - strand aware
-        self.CDS_genomic_end = CDS_genomic_end      # 1-based genomic coordinate of CDS end - strand aware
-        self.is_NMD      = is_NMD                   # (TRUE,FALSE) for NMD if is coding, otherwise "NA"
-        self.FL          = FL                       # count for a single sample
-        self.FL_dict     = FL_dict                  # dict of sample -> FL count
-        self.nIndels     = nIndels
-        self.nIndelsJunc = nIndelsJunc
-        self.isoExp      = isoExp
-        self.geneExp     = geneExp
-        self.refLen      = refLen
-        self.refExons    = refExons
-        self.refStart    = refStart
-        self.refEnd      = refEnd
-        self.q_splicesite_hit = q_splicesite_hit
-        self.q_exon_overlap = q_exon_overlap
-        self.FSM_class   = FSM_class
-        self.bite        = bite
-        self.percAdownTTS = percAdownTTS
-        self.seqAdownTTS  = seqAdownTTS
-        self.dist_CAGE   = dist_CAGE
-        self.within_CAGE = within_CAGE
-        self.within_polyA_site = within_polyA_site
-        self.dist_polyA_site   = dist_polyA_site    # distance to the closest polyA site (--polyA_peak, BEF file)
-        self.polyA_motif = polyA_motif
-        self.polyA_dist  = polyA_dist               # distance to the closest polyA motif (--polyA_motif_list, 6mer motif list)
-        self.polyA_motif_found = polyA_motif_found  # boolean output for polyA motif
-        self.ratio_TSS = ratio_TSS
+    # Expression & structure
+    bite: str = "NA"
+    RT_switching: str = "????"
+    canonical: str = "NA"
+    min_cov: Union[str, float] = "NA"
+    min_cov_pos: Union[str, float] = "NA"
+    min_samp_cov: Union[str, float] = "NA"
+    sd: Union[str, float] = "NA"
 
-    def _validate_inputs(self,id, strand,CDS_start,CDS_end):
-        if type(id) != str:
-            raise ValueError("ID must be provided in string format.")
-        if id == "":
-            raise ValueError("ID must be a non-empty string.")
-        if (strand == "+" and CDS_start > CDS_end ) or (strand == "-" and CDS_start < CDS_end):
-            raise ValueError("CDS start must be less than CDS end in the + strand, and greater in the - strand.")
+    FL: Union[str, int] = "NA"
+    FL_dict: Dict[str, int] = field(default_factory=dict)
 
+    nIndels: Union[str, int] = "NA"
+    nIndelsJunc: Union[str, int] = "NA"
 
-    def get_total_diff(self):
-        return abs(self.tss_diff)+abs(self.tts_diff)
-    def add_gene(self, gene):
-        self.genes.append(gene)
+    proteinID: Optional[str] = None
+    protein_length: Union[str,int] = "NA"
+    protein_seq: str = "NA"
+    psauron_score: Union[str,float] = "NA"
+    CDS_start: Union[str, int] = "NA"
+    CDS_end: Union[str, int] = "NA"
+    CDS_len: Union[str, int] = "NA" #TODO: Perhaps get this from the already present data
+    CDS_genomic_start: Union[str, int] = "NA"
+    CDS_genomic_end: Union[str, int] = "NA"
+    CDS_type: str = "NA"
+    is_NMD: Union[str, bool] = "NA"
+    coding: str = "non_coding"
 
-    def modify(self, ref_transcript, ref_gene, tss_diff, tts_diff, refLen, refExons):
-        self.transcripts = [ref_transcript]
-        self.genes = [ref_gene]
-        self.tss_diff = tss_diff
-        self.tts_diff = tts_diff
-        self.refLen = refLen
-        self.refExons = refExons
+    isoExp: Union[str, float] = "NA"
+    geneExp: Union[str, float] = "NA"
 
-    def geneName(self):
-        geneName = "_".join(sorted(set(self.genes))) # If it is not sorted, the order will be random
-        return geneName
+    refLen: Union[str, int] = "NA"
+    refExons: Union[str, int] = "NA"
+    refStart: Union[str, int] = "NA"
+    refEnd: Union[str, int] = "NA"
+
+    q_splicesite_hit: int = 0
+    q_exon_overlap: int = 0
+    FSM_class: Optional[str] = None
+
+    percAdownTTS: Union[str, float] = "NA"
+    seqAdownTTS: Optional[str] = None
+
+    dist_CAGE: Union[str, float] = "NA"
+    within_CAGE: Union[str, bool] = "NA"
+    dist_polyA_site: Union[str, float] = "NA"
+    within_polyA_site: Union[str, bool] = "NA"
+    polyA_motif: str = "NA"
+    polyA_dist: Union[str, int] = "NA"
+    polyA_motif_found: Union[str, bool] = "NA"
+    ratio_TSS: Union[str, float] = "NA"
+
+    tss_gene_diff: Union[str, float] = "NA"
+    tts_gene_diff: Union[str, float] = "NA"
+    AS_genes: set = field(default_factory=set)
 
     def ratioExp(self):
-        if self.geneExp == 0 or self.geneExp == "NA":
+        if self.geneExp in ("NA", None, 0):
             return "NA"
-        else:
-            ratio = float(self.isoExp)/float(self.geneExp)
-        return(ratio)
+        return float(self.isoExp) / float(self.geneExp)
 
-    def CDSlen(self):
-        if self.coding == "coding":
-            return(str(int(self.CDS_end) - int(self.CDS_start) + 1))
-        else:
-            return("NA")
+    def geneName(self):
+        return "_".join(sorted(set(self.genes)))
 
+    def get_total_diff(self):
+        if self.tss_diff == "NA" or self.tts_diff == "NA":
+            return "NA"
+        return abs(int(self.tss_diff)) + abs(int(self.tts_diff))
+
+    def get_orf_size(self):
+        if self.coding == 'coding':
+            size = abs(self.CDS_genomic_end - self.CDS_genomic_start) + 1
+        else:
+            size = "NA"
+        return size
     def __str__(self):
-        return '\t'.join([str(v) for v in (
-            self.chrom, self.strand,
-            self.length, self.num_exons, self.str_class,
-            "_".join(set(self.genes)), self.id, self.refLen,
-            self.refExons, self.tss_diff, self.tts_diff,
-            self.subtype, self.RT_switching, self.canonical,
-            self.min_samp_cov, self.min_cov, self.min_cov_pos,
-            self.sd, self.FL, self.nIndels, self.nIndelsJunc,
-            self.bite, self.isoExp, self.geneExp, self.ratioExp(),
-            self.FSM_class, self.coding, self.ORFlen, self.CDSlen(),
-            self.CDS_start, self.CDS_end, self.CDS_genomic_start,
-            self.CDS_genomic_end, self.is_NMD, self.percAdownTTS,
-            self.seqAdownTTS, self.dist_CAGE, self.within_CAGE,
-            self.dist_polyA_site, self.within_polyA_site,
-            self.polyA_motif, self.polyA_dist,
-            self.polyA_motif_found, self.ratio_TSS)])
-
+        return f"{self.id}: {self.gene_name()} ({self.str_class})"
 
     def as_dict(self):
-        d = {'isoform': self.id,
-         'chrom': self.chrom,
-         'strand': self.strand,
-         'length': self.length,
-         'exons': self.num_exons,
-         'structural_category': self.str_class,
-         'associated_gene': self.geneName(),
-         'associated_transcript': "_".join(set(self.transcripts)),
-         'ref_length': self.refLen,
-         'ref_exons': self.refExons,
-         'diff_to_TSS': self.tss_diff,
-         'diff_to_TTS': self.tts_diff,
-         'diff_to_gene_TSS': self.tss_gene_diff,
-         'diff_to_gene_TTS': self.tts_gene_diff,
-         'subcategory': self.subtype,
-         'RTS_stage': self.RT_switching,
-         'all_canonical': self.canonical,
-         'min_sample_cov': self.min_samp_cov,
-         'min_cov': self.min_cov,
-         'min_cov_pos': self.min_cov_pos,
-         'sd_cov': self.sd,
-         'FL': self.FL,
-         'n_indels': self.nIndels,
-         'n_indels_junc': self.nIndelsJunc,
-         'bite': self.bite,
-         'iso_exp': self.isoExp,
-         'gene_exp': self.geneExp,
-         'ratio_exp': self.ratioExp(),
-         'FSM_class': self.FSM_class,
-         'coding': self.coding,
-         'ORF_length': self.ORFlen,
-         'ORF_seq': self.ORFseq,
-         'CDS_length': self.CDSlen(),
-         'CDS_start': self.CDS_start,
-         'CDS_end': self.CDS_end,
-         'CDS_genomic_start': self.CDS_genomic_start,
-         'CDS_genomic_end': self.CDS_genomic_end,
-         'predicted_NMD': self.is_NMD,
-         'perc_A_downstream_TTS': self.percAdownTTS,
-         'seq_A_downstream_TTS': self.seqAdownTTS,
-         'dist_to_CAGE_peak': self.dist_CAGE,
-         'within_CAGE_peak': self.within_CAGE,
-         'dist_to_polyA_site': self.dist_polyA_site,
-         'within_polyA_site': self.within_polyA_site,
-         'polyA_motif': self.polyA_motif,
-         'polyA_dist': self.polyA_dist,
-         'polyA_motif_found':self.polyA_motif_found,
-         'ratio_TSS' : self.ratio_TSS
-         }
-        for sample,count in self.FL_dict.items():
-            d["FL."+sample] = count
-        return d
+        base = self.__dict__.copy()
+        base["ratio_exp"] = self.ratioExp()
+        base["gene_name"] = self.geneName()
+        base["ORF_length"] = self.get_orf_size()
+        for sample, count in self.FL_dict.items():
+            base[f"FL.{sample}"] = count
+        return base
 
+@dataclass
 class myQueryProteins:
-
-    def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA", psauron_score="NA", orf_type="NA"):
+    def __init__(self, cds_start, cds_end, protein_length, protein_seq=None, proteinID="NA", psauron_score="NA", cds_type="NA"):
         """
         Initialize a myQueryProteins object.
 
@@ -384,27 +300,28 @@ class myQueryProteins:
         orf_type : str, optional
             The type of the ORF (default is "NA").
         """
-        self._validate_input(cds_start, cds_end, orf_length)
+        self._validate_input(cds_start, cds_end,protein_length)
 
-        self.orf_length  = orf_length
+        self.protein_length  = protein_length
         self.cds_start   = cds_start       # 1-based start on transcript
         self.cds_end     = cds_end         # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
         self.cds_genomic_start = None      # 1-based genomic start of ORF, if - strand, is greater than end
         self.cds_genomic_end = None        # 1-based genomic end of ORF
-        self.orf_seq     = orf_seq
+        self.protein_seq     = protein_seq
         self.proteinID   = proteinID
         self.psauron_score = psauron_score # Psauron score for the ORF, if available
-        self.orf_type = orf_type           # Type of ORF according to TD2 classification ("complete","5prime_partial",etc...)
+        self.cds_type = cds_type           # Type of ORF according to TD2 classification ("complete","5prime_partial",etc...)
+        self.cds_length = cds_end - cds_start + 1
 
-    def _validate_input(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
+    def _validate_input(self, cds_start, cds_end, cds_length, cds_seq=None, proteinID="NA"):
         if cds_start > cds_end:
             raise ValueError("CDS start must be less than CDS end.")
-        if orf_length < 0:
-            raise ValueError("ORF length must be non-negative.")
+        if cds_length < 0:
+            raise ValueError("CDS length must be non-negative.")
         if cds_start < 0 or cds_end < 0:
             raise ValueError("CDS start and end must be non-negative.")
-        if orf_seq is not None and not isinstance(orf_seq, str):
-            raise ValueError("ORF sequence must be a string.")
+        if cds_seq is not None and not isinstance(cds_seq, str):
+            raise ValueError("CDS sequence must be a string.")
         if not isinstance(proteinID, str):
             raise ValueError("Protein ID must be a string.")
 

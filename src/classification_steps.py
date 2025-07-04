@@ -80,6 +80,8 @@ def fill_orf_info(isoform_hit, rec, orfDict, is_fusion, fusion_components):
         isoform_hit.CDS_start = orfDict[rec.id].cds_start
         isoform_hit.CDS_end = orfDict[rec.id].cds_end
         isoform_hit.ORFseq = orfDict[rec.id].orf_seq
+        isoform_hit.psauron_score = orfDict[rec.id].psauron_score
+        isoform_hit.ORFtype = orfDict[rec.id].orf_type
 
 def assign_genomic_coordinates(isoform_hit, rec):
     m = {}
