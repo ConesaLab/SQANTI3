@@ -92,10 +92,12 @@ def run_td2(corrFASTA, orf_input,threads):
     """
     # Initial setup
     sqanti_path = os.path.dirname(corrFASTA)
+
     if orf_input is None:
         orf_input = corrFASTA
     qc_logger.info(f"Running TD2 ORF search on {orf_input}...")
     td2_path = os.path.join(sqanti_path, "TD2")
+    orf_output = os.path.join(td2_path, f"{os.path.basename(orf_input)}.TD2.pep")
 
     # First we run the ORF search
     search_cmd = f"TD2.LongOrfs -t {corrFASTA} -O {td2_path} -S --threads {threads}"
@@ -103,12 +105,15 @@ def run_td2(corrFASTA, orf_input,threads):
     run_command(search_cmd, qc_logger, logFile, description="TD2 ORF search")
 
     # Now the actual prediction
-    predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ "
-    logFile = f"{sqanti_path}/logs/TD2_Predict.log"
-    run_command(predict_cmd, qc_logger, logFile, description="TD2 ORF prediction")
+    if os.path.exists(orf_output):
+        qc_logger.info(f"{orf_output} already exists. Using it.")
+    else:
+        qc_logger.info(f"Running TD2 ORF prediction on {orf_input}...")
+        predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ "
+        logFile = f"{sqanti_path}/logs/TD2_Predict.log"
+        run_command(predict_cmd, qc_logger, logFile, description="TD2 ORF prediction")
     
     # get the name of the output file
-    orf_output = os.path.join(td2_path, f"{os.path.basename(orf_input)}.TD2.pep")
     return orf_output
 
 def GTF_to_genePred(corrGTF):

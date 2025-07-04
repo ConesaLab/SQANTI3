@@ -370,6 +370,8 @@ def parse_td2_to_dict(td2_faa):
 
     for r in SeqIO.parse(open(td2_faa), 'fasta'):
         info = extract_variables(r.description)
+        print(info)
+        input()
         id_pre = info['id_pre']
 
         orfDict[id_pre] = myQueryProteins(
@@ -377,7 +379,9 @@ def parse_td2_to_dict(td2_faa):
             info['cds_end'],
             info['orf_length'],
             str(r.seq),
-            proteinID=id_pre
+            proteinID=id_pre,
+            psauron_score=info['psauron_score'],
+            orf_type=info['orf_type']
         )
 
         # Include the record object along with extracted info
@@ -412,22 +416,18 @@ def parse_TD2(corrORF, td2_faa):
     
 def extract_variables(s):
     # Extract the ID prefix and CDS coordinates with strand
-    match = re.search(r'([^\s:]+):(\d+)-(\d+)\(([\+\-])\)', s)
+    match = re.search(r'ORF type:(?P<orf_type>[^\s:]+)\ .*?psauron_score=(?P<psauron_score>[0-9.]+).*?len:(?P<orf_length>\d+).*?(?P<id>[^\s:]+):(?P<start>\d+)-(?P<end>\d+)\([+-]\)', s)
     if not match:
         qc_logger.error(f"Failed to parse coordinates and strand from: {s}")
         sys.exit(1)
 
-    id_pre = match.group(1)
-    cds_start = int(match.group(2))
-    cds_end = int(match.group(3))  # Add 1 as requested
-    orf_strand = match.group(4)
-    orf_length = abs(cds_end - cds_start +1) // 3  # Calculate ORF length in amino acids
-
-    return {
-        'id_pre': id_pre,
-        'cds_start': cds_start,
-        'cds_end': cds_end,
-        'orf_strand': orf_strand,
-        'orf_length': orf_length
-        }   
     
+    return {
+        'id_pre': match.group('id'),
+        'cds_start': int(match.group('start')),
+        'cds_end': int(match.group('end')),
+        'orf_length': int(match.group('orf_length')),
+        'psauron_score': float(match.group('psauron_score')),
+        'orf_type': match.group('orf_type')
+    }
+

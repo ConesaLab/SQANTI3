@@ -4,6 +4,7 @@ from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
+
 class genePredReader(object):
     """
     A class to read gene prediction records from a file.
@@ -362,7 +363,27 @@ class myQueryTranscripts:
 
 class myQueryProteins:
 
-    def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
+    def __init__(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA", psauron_score="NA", orf_type="NA"):
+        """
+        Initialize a myQueryProteins object.
+
+        Parameters
+        ----------
+        cds_start : int
+            The start position of the CDS (coding sequence) on the transcript.
+        cds_end : int
+            The end position of the CDS on the transcript.
+        orf_length : int
+            The length of the ORF (open reading frame).
+        orf_seq : str, optional
+            The amino acid sequence of the ORF (default is None).
+        proteinID : str, optional
+            The protein ID associated with the ORF (default is "NA").
+        psauron_score : float, optional
+            The Psauron score for the ORF (default is "NA").
+        orf_type : str, optional
+            The type of the ORF (default is "NA").
+        """
         self._validate_input(cds_start, cds_end, orf_length)
 
         self.orf_length  = orf_length
@@ -372,6 +393,8 @@ class myQueryProteins:
         self.cds_genomic_end = None        # 1-based genomic end of ORF
         self.orf_seq     = orf_seq
         self.proteinID   = proteinID
+        self.psauron_score = psauron_score # Psauron score for the ORF, if available
+        self.orf_type = orf_type           # Type of ORF according to TD2 classification ("complete","5prime_partial",etc...)
 
     def _validate_input(self, cds_start, cds_end, orf_length, orf_seq=None, proteinID="NA"):
         if cds_start > cds_end:
@@ -380,6 +403,10 @@ class myQueryProteins:
             raise ValueError("ORF length must be non-negative.")
         if cds_start < 0 or cds_end < 0:
             raise ValueError("CDS start and end must be non-negative.")
+        if orf_seq is not None and not isinstance(orf_seq, str):
+            raise ValueError("ORF sequence must be a string.")
+        if not isinstance(proteinID, str):
+            raise ValueError("Protein ID must be a string.")
 
 
 

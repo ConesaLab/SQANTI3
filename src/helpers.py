@@ -211,7 +211,7 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
     if not os.path.exists(td2_dir):
         os.makedirs(td2_dir)
 
-    # GMST seq id --> myQueryProteins object
+    # TD2 output --> myQueryProteins object
     orfDict = {}
     if skipORF:
         qc_logger.warning("Skipping ORF prediction because user requested it. All isoforms will be non-coding!")
@@ -219,7 +219,6 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
         qc_logger.info(f"ORF file {corrORF} already exists. Using it.")
         orfDict = parse_corrORF(corrORF)
     else:
-        qc_logger.info(f"Running ORF prediction on {corrFASTA}")
         td2_output = run_td2(corrFASTA, orf_input,threads)  # threads is not used in TD2.Predict
         # Modifying ORF sequences by removing sequence before ATG
         orfDict = parse_TD2(corrORF,td2_output)

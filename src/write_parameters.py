@@ -5,7 +5,7 @@ from src.module_logging import qc_logger,filter_logger
 
 def write_qc_parameters(args):
     params_file = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
-    qc_logger.info(f"Write arguments to {params_file}...")
+    qc_logger.info(f"Write arguments to {params_file}")
     with open(params_file, 'w') as f:
         f.write("Version\t" + __version__ + "\n")
         f.write("Input\t" + os.path.abspath(args.isoforms) + "\n")
