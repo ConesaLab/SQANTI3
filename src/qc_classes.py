@@ -3,7 +3,7 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Set, Optional
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
 
@@ -177,156 +177,146 @@ class genePredRecord(object):
 # TODO: Make this class attributes to directly create the header of the classification file
 @dataclass
 class myQueryTranscripts:
-    id: str
+    isoform: str
     chrom: Optional[str] = None
     start: Optional[int] = None
     end: Optional[int] = None
     strand: Optional[str] = None
-    tss_diff: Union[int, str] = "NA"
-    tts_diff: Union[int, str] = "NA"
-    num_exons: Optional[int] = None
     length: Optional[int] = None
-    str_class: str = ""
-    subtype: str = "no_subcategory"
+    exons: Optional[int] = None
 
-    genes: List[str] = field(default_factory=list)
-    transcripts: List[str] = field(default_factory=list)
+    structural_category: str = ""
+    subcategory: str = "no_subcategory"
+    associated_gene: List[str] = field(default_factory=list)
+    associated_transcript: List[str] = field(default_factory=list)
 
-    # Expression & structure
-    bite: str = "NA"
-    RT_switching: str = "????"
-    canonical: str = "NA"
-    min_cov: Union[str, float] = "NA"
-    min_cov_pos: Union[str, float] = "NA"
-    min_samp_cov: Union[str, float] = "NA"
-    sd: Union[str, float] = "NA"
+    ref_length: Optional[int] = None
+    ref_exons: Optional[int] = None
 
-    FL: Union[str, int] = "NA"
-    FL_dict: Dict[str, int] = field(default_factory=dict)
+    diff_to_TSS: Optional[int] = None
+    diff_to_TTS: Optional[int] = None
+    diff_to_gene_TSS: Optional[float] = None
+    diff_to_gene_TTS: Optional[float] = None
 
-    nIndels: Union[str, int] = "NA"
-    nIndelsJunc: Union[str, int] = "NA"
+    RTS_stage: Optional[str] = None
+    all_canonical: Optional[str] = None
 
-    proteinID: Optional[str] = None
-    protein_length: Union[str,int] = "NA"
-    protein_seq: str = "NA"
-    psauron_score: Union[str,float] = "NA"
-    CDS_start: Union[str, int] = "NA"
-    CDS_end: Union[str, int] = "NA"
-    CDS_len: Union[str, int] = "NA" #TODO: Perhaps get this from the already present data
-    CDS_genomic_start: Union[str, int] = "NA"
-    CDS_genomic_end: Union[str, int] = "NA"
-    CDS_type: str = "NA"
-    is_NMD: Union[str, bool] = "NA"
-    coding: str = "non_coding"
+    min_sample_cov: Optional[float] = None
+    min_cov: Optional[float] = None
+    min_cov_pos: Optional[float] = None
+    sd_cov: Optional[float] = None
 
-    isoExp: Union[str, float] = "NA"
-    geneExp: Union[str, float] = "NA"
+    FL: Optional[int] = None
 
-    refLen: Union[str, int] = "NA"
-    refExons: Union[str, int] = "NA"
-    refStart: Union[str, int] = "NA"
-    refEnd: Union[str, int] = "NA"
+    n_indels: Optional[int] = None
+    n_indels_junc: Optional[int] = None
+    bite: Optional[str] = None
 
-    q_splicesite_hit: int = 0
-    q_exon_overlap: int = 0
+    iso_exp: Optional[float] = None
+    gene_exp: Optional[float] = None
+    ratio_exp: Optional[float] = None  # Computed field, may be updated dynamically
+
     FSM_class: Optional[str] = None
+    coding: str = "non_coding"
+    ORF_length: Optional[int] = None
+    CDS_length: Optional[int] = None
+    CDS_start: Optional[int] = None
+    CDS_end: Optional[int] = None
+    CDS_genomic_start: Optional[int] = None
+    CDS_genomic_end: Optional[int] = None
+    predicted_NMD: Optional[bool] = None
 
-    percAdownTTS: Union[str, float] = "NA"
-    seqAdownTTS: Optional[str] = None
+    perc_A_downstream_TTS: Optional[float] = None
+    seq_A_downstream_TTS: Optional[str] = None
 
-    dist_CAGE: Union[str, float] = "NA"
-    within_CAGE: Union[str, bool] = "NA"
-    dist_polyA_site: Union[str, float] = "NA"
-    within_polyA_site: Union[str, bool] = "NA"
-    polyA_motif: str = "NA"
-    polyA_dist: Union[str, int] = "NA"
-    polyA_motif_found: Union[str, bool] = "NA"
-    ratio_TSS: Union[str, float] = "NA"
+    dist_to_CAGE_peak: Optional[float] = None
+    within_CAGE_peak: Optional[bool] = None
+    dist_to_polyA_site: Optional[float] = None
+    within_polyA_site: Optional[bool] = None
 
-    tss_gene_diff: Union[str, float] = "NA"
-    tts_gene_diff: Union[str, float] = "NA"
-    AS_genes: set = field(default_factory=set)
+    polyA_motif: Optional[str] = None
+    polyA_dist: Optional[int] = None
+    polyA_motif_found: Optional[bool] = None
+
+    ORF_seq: Optional[str] = None
+    ratio_TSS: Optional[float] = None
+
+    # Extra fields not in FIELDS_CLASS
+    FL_dict: Dict[str, int] = field(default_factory=dict)
+    AS_genes: Set[str] = field(default_factory=set)
 
     def ratioExp(self):
-        if self.geneExp in ("NA", None, 0):
-            return "NA"
-        return float(self.isoExp) / float(self.geneExp)
+        if self.gene_exp in (None, 0) or self.iso_exp is None:
+            return None
+        return float(self.iso_exp) / float(self.gene_exp)
 
     def geneName(self):
-        return "_".join(sorted(set(self.genes)))
+        return "_".join(sorted(set(self.associated_gene)))
 
     def get_total_diff(self):
-        if self.tss_diff == "NA" or self.tts_diff == "NA":
-            return "NA"
-        return abs(int(self.tss_diff)) + abs(int(self.tts_diff))
+        if self.diff_to_TSS is None or self.diff_to_TTS is None:
+            return None
+        return abs(int(self.diff_to_TSS)) + abs(int(self.diff_to_TTS))
 
     def get_orf_size(self):
-        if self.coding == 'coding':
-            size = abs(self.CDS_genomic_end - self.CDS_genomic_start) + 1
-        else:
-            size = "NA"
-        return size
+        if self.coding == 'coding' and self.CDS_genomic_end is not None and self.CDS_genomic_start is not None:
+            try:
+                return abs(int(self.CDS_genomic_end) - int(self.CDS_genomic_start)) + 1
+            except:
+                return None
+        return None
+
+
     def __str__(self):
-        return f"{self.id}: {self.gene_name()} ({self.str_class})"
+        return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
 
     def as_dict(self):
         base = self.__dict__.copy()
         base["ratio_exp"] = self.ratioExp()
-        base["gene_name"] = self.geneName()
         base["ORF_length"] = self.get_orf_size()
+        base["gene_name"] = self.geneName()
+
+        # Replace None with "NA"
+        for k, v in base.items():
+            if v is None:
+                base[k] = "NA"
+
         for sample, count in self.FL_dict.items():
             base[f"FL.{sample}"] = count
         return base
-
+    
 @dataclass
 class myQueryProteins:
-    def __init__(self, cds_start, cds_end, protein_length, protein_seq=None, proteinID="NA", psauron_score="NA", cds_type="NA"):
-        """
-        Initialize a myQueryProteins object.
+    cds_start: int
+    cds_end: int
+    protein_length: int
 
-        Parameters
-        ----------
-        cds_start : int
-            The start position of the CDS (coding sequence) on the transcript.
-        cds_end : int
-            The end position of the CDS on the transcript.
-        orf_length : int
-            The length of the ORF (open reading frame).
-        orf_seq : str, optional
-            The amino acid sequence of the ORF (default is None).
-        proteinID : str, optional
-            The protein ID associated with the ORF (default is "NA").
-        psauron_score : float, optional
-            The Psauron score for the ORF (default is "NA").
-        orf_type : str, optional
-            The type of the ORF (default is "NA").
-        """
-        self._validate_input(cds_start, cds_end,protein_length)
+    protein_seq: Optional[str] = None
+    proteinID: Optional[str] = None
+    psauron_score: Optional[float] = None
+    cds_type: Optional[str] = None
 
-        self.protein_length  = protein_length
-        self.cds_start   = cds_start       # 1-based start on transcript
-        self.cds_end     = cds_end         # 1-based end on transcript (stop codon), ORF is seq[cds_start-1:cds_end].translate()
-        self.cds_genomic_start = None      # 1-based genomic start of ORF, if - strand, is greater than end
-        self.cds_genomic_end = None        # 1-based genomic end of ORF
-        self.protein_seq     = protein_seq
-        self.proteinID   = proteinID
-        self.psauron_score = psauron_score # Psauron score for the ORF, if available
-        self.cds_type = cds_type           # Type of ORF according to TD2 classification ("complete","5prime_partial",etc...)
-        self.cds_length = cds_end - cds_start + 1
+    cds_genomic_start: Optional[int] = None
+    cds_genomic_end: Optional[int] = None
+    cds_length: Optional[int] = field(init=False)
 
-    def _validate_input(self, cds_start, cds_end, cds_length, cds_seq=None, proteinID="NA"):
-        if cds_start > cds_end:
+    def __post_init__(self):
+        self._validate_input()
+
+        # Automatically compute CDS length
+        self.cds_length = self.cds_end - self.cds_start + 1
+
+    def _validate_input(self):
+        if self.cds_start > self.cds_end:
             raise ValueError("CDS start must be less than CDS end.")
-        if cds_length < 0:
-            raise ValueError("CDS length must be non-negative.")
-        if cds_start < 0 or cds_end < 0:
+        if self.cds_start < 0 or self.cds_end < 0:
             raise ValueError("CDS start and end must be non-negative.")
-        if cds_seq is not None and not isinstance(cds_seq, str):
-            raise ValueError("CDS sequence must be a string.")
-        if not isinstance(proteinID, str):
+        if self.protein_length < 0:
+            raise ValueError("Protein length must be non-negative.")
+        if self.protein_seq is not None and not isinstance(self.protein_seq, str):
+            raise ValueError("Protein sequence must be a string.")
+        if self.proteinID is not None and not isinstance(self.proteinID, str):
             raise ValueError("Protein ID must be a string.")
-
 
 
 class CAGEPeak:

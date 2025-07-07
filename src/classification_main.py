@@ -23,10 +23,8 @@ def isoform_classification_pipeline(
     qc_logger.info("**** Performing Classification of Isoforms")
 
     accepted_canonical_sites = list(sites.split(","))
-    # Creates a temporary file to write the classification and junction results
-    handle_class = open(outputClassPath+"_tmp", "w")
-    fout_class = DictWriter(handle_class, fieldnames=FIELDS_CLASS, delimiter='\t')
-    fout_class.writeheader()
+    # Creates a temporary file to write the junction results
+
 
     handle_junc = open(outputJuncPath+"_tmp", "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter='\t')

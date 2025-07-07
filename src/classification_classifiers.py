@@ -12,7 +12,8 @@ from .classification_utils import (
 )
 
 
-def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, start_ends_by_gene, trec, genome_dict, nPolyA):
+def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, 
+                                start_ends_by_gene, trec, genome_dict, nPolyA):
     """
     This function determines if the isoform hits a known splice site, categorizing it as either
     FSM or ISM.
@@ -37,15 +38,12 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     percA = float(seq_downTTS.count('A'))/nPolyA*100
 
     # Generation of the isoform hit object
-    isoform_hit = myQueryTranscripts(id=trec.id, tts_diff="NA", tss_diff="NA",\
-                                    num_exons=trec.exonCount,
-                                    length=trec.length,
-                                    str_class="", \
-                                    chrom=trec.chrom,
-                                    strand=trec.strand, \
-                                    subtype="no_subcategory",\
-                                    percAdownTTS=str(percA),\
-                                    seqAdownTTS=seq_downTTS)
+    isoform_hit = myQueryTranscripts(isoform = trec.id, chrom = trec.chrom, 
+                                     start = trec.txStart, end = trec.txEnd,
+                                     strand = trec.strand, length = trec.length, exons = trec.exonCount,
+                                     perc_A_downstream_TTS = str(percA),
+                                     seq_A_downstream_TTS = seq_downTTS)
+
 
     ##***************************************##
     ########### SPLICED TRANSCRIPTS ###########
@@ -77,8 +75,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                              chrom=trec.chrom,
                                              strand=trec.strand, \
                                              subtype="no_subcategory", \
-                                             percAdownTTS=str(percA), \
-                                             seqAdownTTS=seq_downTTS)
+                                             perc_A_downstream_TTS=str(percA), \
+                                             seq_A_downstream_TTS=seq_downTTS)
 
             for ref in hits_by_gene[ref_gene]:
                 if trec.strand != ref.strand:
@@ -102,8 +100,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=0,
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA),
-                                                             seqAdownTTS=seq_downTTS)
+                                                             perc_A_downstream_TTS=str(percA),
+                                                             seq_A_downstream_TTS=seq_downTTS)
 
                 else: # multi-exonic reference
                     match_type = compare_junctions(trec, ref, internal_fuzzy_max_dist=0, max_5_diff=999999, max_3_diff=999999)
@@ -154,8 +152,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                               refEnd=ref.txEnd,
                                                               q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                               q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                              percAdownTTS=str(percA),
-                                                              seqAdownTTS=seq_downTTS)
+                                                              perc_A_downstream_TTS=str(percA),
+                                                              seq_A_downstream_TTS=seq_downTTS)
                     # #######################################################
                     # SQANTI's incomplete-splice_match
                     # (only check if don't already have a FSM match)
@@ -185,8 +183,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA),
-                                                             seqAdownTTS=seq_downTTS)
+                                                             perc_A_downstream_TTS=str(percA),
+                                                             seq_A_downstream_TTS=seq_downTTS)
                     # #######################################################
                     # Some kind of junction match that isn't ISM/FSM
                     # #######################################################
@@ -211,8 +209,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                              refEnd=ref.txEnd,
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                             percAdownTTS=str(percA),
-                                                             seqAdownTTS=seq_downTTS)
+                                                             perc_A_downstream_TTS=str(percA),
+                                                             seq_A_downstream_TTS=seq_downTTS)
                     else: # must be nomatch
                         assert match_type == 'nomatch'
                         # at this point, no junction overlap, but may be a single splice site (donor or acceptor) match?
@@ -232,8 +230,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                              q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                              q_exon_overlap=calc_exon_overlap(trec.exons,
                                                                                               ref.exons),
-                                                             percAdownTTS=str(percA),
-                                                             seqAdownTTS=seq_downTTS)
+                                                             perc_A_downstream_TTS=str(percA),
+                                                             seq_A_downstream_TTS=seq_downTTS)
 
                         if isoform_hit.str_class=="": # still not hit yet, check exonic overlap
                             if cat_ranking[isoform_hit.str_class] < cat_ranking["geneOverlap"] and calc_exon_overlap(trec.exons, ref.exons) > 0:
@@ -250,8 +248,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                                  refEnd=ref.txEnd,
                                                                  q_splicesite_hit=calc_splicesite_agreement(trec.exons, ref.exons),
                                                                  q_exon_overlap=calc_exon_overlap(trec.exons, ref.exons),
-                                                                 percAdownTTS=str(percA),
-                                                                 seqAdownTTS=seq_downTTS)
+                                                                 perc_A_downstream_TTS=str(percA),
+                                                                 seq_A_downstream_TTS=seq_downTTS)
 
             best_by_gene[ref_gene] = isoform_hit
         # now we have best_by_gene:
@@ -276,7 +274,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     ##***************************************####
     ########### UNSPLICED TRANSCRIPTS ###########
     ##***************************************####
-    else: # single exon id
+    else: # single exon isoform
         if trec.chrom in refs_1exon_by_chr:
             for ref in refs_1exon_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
                 if ref.strand != trec.strand:
@@ -295,8 +293,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                             transcripts=[ref.id],
                                                             refLen=ref.length,
                                                             refExons = ref.exonCount,
-                                                            percAdownTTS=str(percA),
-                                                            seqAdownTTS=seq_downTTS)
+                                                            perc_A_downstream_TTS=str(percA),
+                                                            seq_A_downstream_TTS=seq_downTTS)
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.modify(ref.id, ref.gene, diff_tss, diff_tts, ref.length, ref.exonCount)
 
