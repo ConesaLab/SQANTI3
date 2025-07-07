@@ -11,7 +11,7 @@ from src.utils import alphanum_key
 from src.config import  FIELDS_CLASS
 from src.module_logging import qc_logger
 
-
+# TODO: Check why there is a temporary classification output
 def isoform_classification_pipeline(
         sites,window,is_fusion, isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
         junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,

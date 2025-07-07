@@ -394,7 +394,6 @@ def parse_corrORF(corrORF):
         if m is None:
             qc_logger.error(f"Expected the CDS IDs to be of format '<protein_id> cds_name|<size>_aa|<psauron_score>|<orf_type>|<cds_start>|<cds_end>' but instead saw: {r.description} Abort!")
             sys.exit(1)
-        print(m)
         orfDict[r.id] = myQueryProteins(
             int(m.group('start')),
             int(m.group('end')),

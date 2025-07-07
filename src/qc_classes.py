@@ -174,10 +174,14 @@ class genePredRecord(object):
         else:
             return (str(seq_a.reverse_complement())+str(seq_d.reverse_complement())).upper()
 
-
+# TODO: Make this class attributes to directly create the header of the classification file
 @dataclass
 class myQueryTranscripts:
     id: str
+    chrom: Optional[str] = None
+    start: Optional[int] = None
+    end: Optional[int] = None
+    strand: Optional[str] = None
     tss_diff: Union[int, str] = "NA"
     tts_diff: Union[int, str] = "NA"
     num_exons: Optional[int] = None
@@ -187,8 +191,6 @@ class myQueryTranscripts:
 
     genes: List[str] = field(default_factory=list)
     transcripts: List[str] = field(default_factory=list)
-    chrom: Optional[str] = None
-    strand: Optional[str] = None
 
     # Expression & structure
     bite: str = "NA"

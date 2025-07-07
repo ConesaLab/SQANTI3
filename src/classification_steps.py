@@ -48,6 +48,32 @@ def find_polya_motif_info(isoform_hit, rec, genome_dict, polyA_motif_list):
     isoform_hit.polyA_dist = polyA_dist
     isoform_hit.polyA_motif_found = polyA_motif_found
 
+def fill_orf_info(
+    isoform_hit: myQueryTranscripts,
+    rec,
+    orf_dict: Dict[str, ORFInfo],
+    is_fusion: bool,
+    fusion_components: Dict[str, Tuple[int, int]]
+) -> None:
+    if is_fusion:
+        handle_fusion_orf(isoform_hit, rec, orf_dict, fusion_components)
+    elif rec.id in orf_dict:
+        handle_regular_orf(isoform_hit, orf_dict[rec.id])
+
+def handle_regular_orf(isoform_hit, cds_info):
+    isoform_hit.proteinID = cds_info.proteinID
+    isoform_hit.protein_length = cds_info.protein_length
+    isoform_hit.protein_seq = cds_info.protein_se1
+    isoform_hit.psauron_score = cds_info.psauron_score
+    isoform_hit.CDS_start = cds_info.cds_start
+    isoform_hit.CDS_end = cds_info.cds_end
+    isoform_hit.CDS_len = cds_info.cds_len
+    isoform_hit.CDS_genomic_start = isoform_hit.start #CONTINUE
+    isoform_hit.CDS_genomic_end = cds_info.cds_genomic_end
+    isoform_hit.CDS_type = cds_info.cds_type
+    isoform_hit.is_NMD = cds_info.is_NMD
+    isoform_hit.coding: str = "non_coding"
+
 def fill_orf_info(isoform_hit, rec, orfDict, is_fusion, fusion_components):
     if is_fusion:
         # fusion - special case handling, need to see which part of the ORF this segment falls on

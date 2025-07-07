@@ -212,20 +212,20 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
         os.makedirs(td2_dir)
 
     # TD2 output --> myQueryProteins object
-    orfDict = {}
+    cdsDict = {}
     if skipORF:
         qc_logger.warning("Skipping ORF prediction because user requested it. All isoforms will be non-coding!")
     elif os.path.exists(corrORF):
         qc_logger.info(f"ORF file {corrORF} already exists. Using it.")
-        orfDict = parse_corrORF(corrORF)
+        cdsDict = parse_corrORF(corrORF)
     else:
         td2_output = run_td2(corrFASTA, orf_input,threads)  # threads is not used in TD2.Predict
         # Modifying ORF sequences by removing sequence before ATG
-        orfDict = parse_TD2(corrORF,td2_output)
-    if len(orfDict) == 0:
+        cdsDict = parse_TD2(corrORF,td2_output)
+    if len(cdsDict) == 0:
         qc_logger.warning("All input isoforms were predicted as non-coding")
 
-    return(orfDict)
+    return(cdsDict)
 
 
 def rename_novel_genes(isoform_info,novel_gene_prefix=None):
