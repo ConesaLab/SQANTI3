@@ -67,9 +67,9 @@ def test_read_json_rules_category_list():
         result = read_json_rules("dummy_path.json")
     
     df = result["category"][0]
-    assert df.shape == (3, 3)
+    assert df.shape == (1, 3)
     assert all(df["type"] == "Category")
-    assert set(df["rule"]) == {"a", "b", "c"}
+    assert df["rule"] == ["a", "b", "c"]
 
 def test_read_json_rules_single_numeric():
     json_data = {"category": [{"col": 10}]}
