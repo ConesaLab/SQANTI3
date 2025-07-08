@@ -69,7 +69,7 @@ def test_read_json_rules_category_list():
     df = result["category"][0]
     assert df.shape == (1, 3)
     assert all(df["type"] == "Category")
-    assert df["rule"] == ["a", "b", "c"]
+    assert df.iloc[0]["rule"] == ["a", "b", "c"]
 
 def test_read_json_rules_single_numeric():
     json_data = {"category": [{"col": 10}]}
