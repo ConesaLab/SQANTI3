@@ -192,9 +192,13 @@ def qc_args_validation(args):
         else:
             for f in args.expression.split(','):
                 valid_matrix(f,qc_logger)
+    if args.fl_count is not None:
+        valid_file(args.fl_count,qc_logger)
+    
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
+    
     
     return args
 ## This sense argument is no longer present

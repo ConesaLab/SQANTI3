@@ -62,7 +62,7 @@ def get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene):
         start_ends_by_gene: A dictionary containing the start and end sites for all isoforms of a gene.
 
     Modifies:
-        isoform_hit: Updates the `tss_gene_diff` and `tts_gene_diff` attributes with the nearest 
+        isoform_hit: Updates the `diff_to_gene_TSS` and `diff_to_gene_TTS` attributes with the nearest 
                         TSS and TTS differences, respectively. If no valid difference is found, 
                         the attribute is set to 'NA'.
     """
@@ -80,11 +80,12 @@ def get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene):
                 nearest_end_diff = d
 
     if trec.strand == '+':
-        isoform_hit.tss_gene_diff = nearest_start_diff if nearest_start_diff!=float('inf') else 'NA'
-        isoform_hit.tts_gene_diff = nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TSS = nearest_start_diff if nearest_start_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TTS = nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
     else:
-        isoform_hit.tss_gene_diff = nearest_end_diff if nearest_start_diff!=float('inf') else 'NA'
-        isoform_hit.tts_gene_diff = nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TSS = nearest_end_diff if nearest_start_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TTS = nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
+
 
 def categorize_incomplete_matches(trec, ref):
     """
@@ -113,8 +114,8 @@ def categorize_incomplete_matches(trec, ref):
             return ("3prime_fragment" if trec.strand=='+' else '5prime_fragment')
         else: # TODO: check if the case of the test would be possible
             return "internal_fragment"
-        
-def full_splice_match_subtype(diff_tss,diff_tts):
+
+def categorize_full_matches(diff_tss, diff_tts):
     # subcategory for matching 5' and matching 3'
     if abs(diff_tss) <= 50 and abs(diff_tts) <= 50:
             subtype = 'reference_match'
@@ -128,3 +129,16 @@ def full_splice_match_subtype(diff_tss,diff_tts):
     if abs(diff_tss) > 50 and abs(diff_tts) > 50:
         subtype = 'alternative_3end5end'
     return subtype
+
+
+def add_coding_info(isoform_hit, cds_info):
+    isoform_hit.update({
+        "coding": "coding",
+        "CDS_length": cds_info.cds_length,
+        "CDS_start": cds_info.cds_start,
+        "CDS_end": cds_info.cds_end,
+        "CDS_type": cds_info.cds_type,
+        "protein_length": cds_info.protein_length,
+        "protein_seq": cds_info.protein_seq,
+        "psauron_score": cds_info.psauron_score
+    })

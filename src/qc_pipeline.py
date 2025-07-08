@@ -54,7 +54,7 @@ def run(args):
     genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
     gmap_index=args.gmap_index, annotation=args.refGTF)
     
-    orfDict = predictORF(args.dir, args.skipORF, args.orf_input, 
+    cdsDict = predictORF(args.dir, args.skipORF, args.orf_input, 
                          corrFASTA, corrORF,args.cpus)
 
     ## parse reference id (GTF) to dicts
@@ -93,8 +93,8 @@ def run(args):
     isoforms_info, ratio_TSS_dict = isoform_classification_pipeline(
         args.sites, args.window, args.is_fusion,
         isoforms_by_chr, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
-        junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, orfDict,
-        outputClassPath, outputJuncPath, fusion_components, isoform_hits_name,
+        junctions_by_gene, start_ends_by_gene, genome_dict, indelsJunc, cdsDict,
+        outputJuncPath, fusion_components, isoform_hits_name,
         SJcovNames, SJcovInfo, fields_junc_cur, ratio_TSS_dict, cage_peak_obj,
         polya_peak_obj, polyA_motif_list, phyloP_reader)
 
@@ -134,9 +134,9 @@ def run(args):
     if indelsTotal is not None:
         for iso in isoforms_info:
             if iso in indelsTotal:
-                isoforms_info[iso].nIndels = indelsTotal[iso]
+                isoforms_info[iso].n_indels = indelsTotal[iso]
             else:
-                isoforms_info[iso].nIndels = 0
+                isoforms_info[iso].n_indels = 0
 
     ## Read junction files and create attributes per id
     reader = DictReader(open(outputJuncPath+"_tmp"), delimiter='\t')

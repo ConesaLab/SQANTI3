@@ -187,11 +187,15 @@ class myQueryTranscripts:
 
     structural_category: str = ""
     subcategory: str = "no_subcategory"
+    FSM_class: Optional[str] = None
     associated_gene: List[str] = field(default_factory=list)
     associated_transcript: List[str] = field(default_factory=list)
 
     ref_length: Optional[int] = None
     ref_exons: Optional[int] = None
+
+    q_splicesite_hit: Optional[int] = None
+    q_exon_overlap: Optional[int] = None
 
     diff_to_TSS: Optional[int] = None
     diff_to_TTS: Optional[int] = None
@@ -216,16 +220,17 @@ class myQueryTranscripts:
     gene_exp: Optional[float] = None
     ratio_exp: Optional[float] = None  # Computed field, may be updated dynamically
 
-    FSM_class: Optional[str] = None
     coding: str = "non_coding"
-    ORF_length: Optional[int] = None
     CDS_length: Optional[int] = None
+    protein_length: Optional[int] = None
     CDS_start: Optional[int] = None
     CDS_end: Optional[int] = None
     CDS_genomic_start: Optional[int] = None
     CDS_genomic_end: Optional[int] = None
+    psauron_score: Optional[float] = None
+    CDS_type: Optional[str] = None
     predicted_NMD: Optional[bool] = None
-
+    
     perc_A_downstream_TTS: Optional[float] = None
     seq_A_downstream_TTS: Optional[str] = None
 
@@ -238,12 +243,17 @@ class myQueryTranscripts:
     polyA_dist: Optional[int] = None
     polyA_motif_found: Optional[bool] = None
 
-    ORF_seq: Optional[str] = None
+    protein_seq: Optional[str] = None
     ratio_TSS: Optional[float] = None
 
-    # Extra fields not in FIELDS_CLASS
+    # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
     AS_genes: Set[str] = field(default_factory=set)
+    genes: Optional[list] = None  # List of genes associated with the isoform
+    transcripts: Optional[list] = None  # List of transcripts associated with the isoform
+    ref_start: Optional[int] = None
+    ref_end: Optional[int] = None
+
 
     def ratioExp(self):
         if self.gene_exp in (None, 0) or self.iso_exp is None:
@@ -251,8 +261,20 @@ class myQueryTranscripts:
         return float(self.iso_exp) / float(self.gene_exp)
 
     def geneName(self):
-        return "_".join(sorted(set(self.associated_gene)))
+        return "_".join(sorted(set(self.genes)))
 
+    def add_gene(self, gene):
+        """
+        Add a gene to the associated genes list.
+        If the gene is already present, it will not be added again.
+        """
+        if self.genes is None:
+            self.genes = [gene]
+            return
+        if gene not in self.genes:
+            self.genes.append(gene)
+            return
+        
     def get_total_diff(self):
         if self.diff_to_TSS is None or self.diff_to_TTS is None:
             return None
@@ -266,7 +288,11 @@ class myQueryTranscripts:
                 return None
         return None
 
-
+    def update(self, attrs: dict):
+        for key, val in attrs.items():
+            setattr(self, key, val)
+    
+    # Output methods
     def __str__(self):
         return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
 
@@ -274,7 +300,8 @@ class myQueryTranscripts:
         base = self.__dict__.copy()
         base["ratio_exp"] = self.ratioExp()
         base["ORF_length"] = self.get_orf_size()
-        base["gene_name"] = self.geneName()
+        base["associated_gene"] = self.geneName()
+        base["associated_transcript"] = '_'.join(set(self.transcripts))
 
         # Replace None with "NA"
         for k, v in base.items():
@@ -283,6 +310,12 @@ class myQueryTranscripts:
 
         for sample, count in self.FL_dict.items():
             base[f"FL.{sample}"] = count
+
+        # Eliminate non-report attributes
+        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end']
+        for attr in non_report_attrs:
+            if attr in base:
+                del base[attr]
         return base
     
 @dataclass
@@ -291,14 +324,12 @@ class myQueryProteins:
     cds_end: int
     protein_length: int
 
+    cds_type: Optional[str] = None
+    cds_length: Optional[int] = field(init=False)
+
     protein_seq: Optional[str] = None
     proteinID: Optional[str] = None
     psauron_score: Optional[float] = None
-    cds_type: Optional[str] = None
-
-    cds_genomic_start: Optional[int] = None
-    cds_genomic_end: Optional[int] = None
-    cds_length: Optional[int] = field(init=False)
 
     def __post_init__(self):
         self._validate_input()

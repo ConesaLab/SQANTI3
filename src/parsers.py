@@ -356,17 +356,20 @@ def parse_td2_to_dict(td2_faa):
     for r in SeqIO.parse(open(td2_faa), 'fasta'):
         info = extract_variables(r.description)
         id_pre = info['id_pre']
-
-        cdsDict[id_pre] = myQueryProteins(
-            info['cds_start'],
-            info['cds_end'],
-            info['protein_length'],
-            str(r.seq),
-            proteinID=id_pre,
-            psauron_score=info['psauron_score'],
-            cds_type=info['cds_type']
-        )
-
+        try:
+            cdsDict[id_pre] = myQueryProteins(
+                info['cds_start'],
+                info['cds_end'],
+                info['protein_length'],
+                protein_seq = str(r.seq),
+                proteinID=id_pre,
+                psauron_score=info['psauron_score'],
+                cds_type=info['cds_type']
+            )
+        except TypeError as e:
+            print(f"Error parsing record {r.id}: {e}")
+            print(info['cds_type'],type(info['cds_type']))
+            sys.exit(1)
         # Include the record object along with extracted info
         records.append({
             'record': r,
