@@ -71,7 +71,17 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         if len(hits_by_gene) == 0: return isoform_hit
 
         for ref_gene, references in hits_by_gene.items(): # Iterate over the matching genes
+
+            # Regenerate the isoform hit object for each gene
+            isoform_hit = myQueryTranscripts(isoform = trec.id, chrom = trec.chrom, 
+                                            start = trec.txStart, end = trec.txEnd,
+                                            strand = trec.strand, length = trec.length, 
+                                            exons = trec.exonCount, subcategory= "no_subcategory",
+                                            perc_A_downstream_TTS = str(percA),
+                                            seq_A_downstream_TTS = seq_downTTS)
+
             for ref in references: # Iterate over the matching transcripts for that gene
+                
                 if trec.strand != ref.strand:
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
@@ -96,7 +106,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                 else: # multi-exonic reference
                     match_type = compare_junctions(trec, ref, internal_fuzzy_max_dist=0, max_5_diff=999999, max_3_diff=999999)
-
                     if match_type not in ('exact', 'subset', 'partial', 'concordant', 'super', 'nomatch'):
                         qc_logger.error(f"Unknown match category {match_type} for isoform {trec.id} against reference {ref.id}!")
                         sys.exit(1)
@@ -169,10 +178,12 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     elif match_type in ('partial', 'concordant', 'super'):
 
                         q_exon_d = abs(trec.exonCount - ref.exonCount)
+                    
                         if cat_ranking[isoform_hit.structural_category] < cat_ranking["anyKnownJunction"] or \
                                 (isoform_hit.structural_category=='anyKnownJunction' and splicesite_hit > isoform_hit.q_splicesite_hit) or \
                                 (isoform_hit.structural_category=='anyKnownJunction' and splicesite_hit == isoform_hit.q_splicesite_hit and exon_overlap > isoform_hit.q_exon_overlap) or \
                                 (isoform_hit.structural_category=='anyKnownJunction' and splicesite_hit == isoform_hit.q_splicesite_hit and q_exon_d < abs(trec.exonCount-isoform_hit.ref_exons)):
+
                             isoform_hit.update({"structural_category": "anyKnownJunction",
                                                 "subcategory": "no_subcategory",
                                                 "genes": [ref.gene],
@@ -230,10 +241,11 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                          x.iso_hit.q_splicesite_hit+(x.iso_hit.q_exon_overlap)*1./sum(e.end-e.start for e in trec.exons)+calc_overlap(x.rStart,x.rEnd,trec.txStart,trec.txEnd)*1./(x.rEnd-x.rStart)-abs(trec.exonCount-x.iso_hit.ref_exons)), reverse=True)  # sort by (ranking score, overlap)
         isoform_hit = best_by_gene[0].iso_hit
         cur_start, cur_end = best_by_gene[0].rStart, best_by_gene[0].rEnd
+
         for t in best_by_gene[1:]: # Add extra genes if they don't overlap
             if t.score==0: break
             if calc_overlap(cur_start, cur_end, t.rStart, t.rEnd) <= 0:
-                isoform_hit.genes.append(t.rGene)
+                isoform_hit.add_gene(t.rGene)
                 cur_start, cur_end = min(cur_start, t.rStart), max(cur_end, t.rEnd)
 
     ##***************************************####
@@ -250,11 +262,14 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                 # see if there's already an existing match AND if so, if this one is better
                 if isoform_hit.structural_category == "": # no match so far
-                    isoform_hit.update({"subcategory": "mono-exon",
+                    isoform_hit.update({"structural_category": "full-splice_match",
+                                        "subcategory": "mono-exon",
                                         "genes": [ref.gene],
                                         "transcripts": [ref.id],
                                         "ref_length": ref.length,
-                                        "ref_exons": ref.exonCount,})
+                                        "ref_exons": ref.exonCount,
+                                        "diff_to_TSS": diff_tss,
+                                        "diff_to_TTS": diff_tts})
 
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.update({"genes": [ref.gene],
@@ -264,8 +279,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
                                         "ref_exons": ref.exonCount})
-
-        if isoform_hit.structural_category == "" and trec.chrom in refs_exons_by_chr:
+        if isoform_hit.structural_category == ""and trec.chrom in refs_exons_by_chr:
             # no hits to single exon genes, let's see if it hits multi-exon genes
             # (1) if it overlaps with a ref exon and is contained in an exon, we call it ISM
             # (2) else, if it spans one or more introns, we call it NIC by intron retention
@@ -327,10 +341,10 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     return isoform_hit
 
 
-def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_gene):
+def novelIsoformsKnownGenes(isoform_hit, trec, junctions_by_chr, junctions_by_gene):
     """
     At this point: definitely not FSM or ISM, see if it is NIC, NNC, or fusion
-    :return isoforms_hit: updated isoforms hit (myQueryTranscripts object)
+    :return isoform_hit: updated isoforms hit (myQueryTranscripts object)
     """
     def has_intron_retention():
         """
@@ -348,13 +362,12 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
                 return True
         return False
 
-    ref_genes = list(set(isoforms_hit.genes))
-
+    ref_genes = isoform_hit.genes
     # at this point, we have already found matching genes/transcripts
     # hence we do not need to update ref_length or ref_exons
     # or tss_diff and tts_diff (always set to "NA" for non-FSM/ISM matches)
     
-    isoforms_hit.transcripts = ["novel"]
+    isoform_hit.transcripts = ["novel"]
     if len(ref_genes) == 1:
         # hits exactly one gene, must be either NIC or NNC
         ref_gene_junctions = junctions_by_gene[ref_genes[0]]
@@ -366,15 +379,15 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
             all_junctions_known = all_junctions_known and (d in junctions_by_chr[trec.chrom]['donors']) and (a in junctions_by_chr[trec.chrom]['acceptors'])
             all_junctions_in_hit_ref = all_junctions_in_hit_ref and ((d,a) in ref_gene_junctions)
         if all_junctions_known:
-            isoforms_hit.structural_category = "novel_in_catalog"
+            isoform_hit.structural_category = "novel_in_catalog"
             if all_junctions_in_hit_ref:
-                isoforms_hit.subcategory = "combination_of_known_junctions"
+                isoform_hit.subcategory = "combination_of_known_junctions"
             else:
-                isoforms_hit.subcategory = "combination_of_known_splicesites"
+                isoform_hit.subcategory = "combination_of_known_splicesites"
         else:
-            isoforms_hit.structural_category="novel_not_in_catalog"
-            isoforms_hit.subcategory = "at_least_one_novel_splicesite"
-    else: # see if it is fusion
+            isoform_hit.structural_category="novel_not_in_catalog"
+            isoform_hit.subcategory = "at_least_one_novel_splicesite"
+    elif len(ref_genes) > 1: # see if it is fusion
         # list of a ref junctions from all genes, including potential shared junctions
         # NOTE: some ref genes could be mono-exonic so no junctions
         all_ref_junctions = list(itertools.chain(junctions_by_gene[ref_gene] for ref_gene in ref_genes if ref_gene in junctions_by_gene))
@@ -384,27 +397,27 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
 
         # if the same query junction appears in more than one of the hit references, it is not a fusion
         if max(junction_ref_hit.values()) > 1:
-            isoforms_hit.structural_category = "moreJunctions"
+            isoform_hit.structural_category = "moreJunctions"
         else:
-            isoforms_hit.structural_category = "fusion"
-            isoforms_hit.subcategory = "mono-exon" if trec.exonCount==1 else "multi-exon"
+            isoform_hit.structural_category = "fusion"
+            isoform_hit.subcategory = "mono-exon" if trec.exonCount==1 else "multi-exon"
 
     if has_intron_retention():
-        isoforms_hit.subcategory = "intron_retention"
+        isoform_hit.subcategory = "intron_retention"
 
-    return isoforms_hit
+    return isoform_hit
 
-def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
+def associationOverlapping(isoform_hit, trec, junctions_by_chr):
     """
     Classify the given isoform based on its overlap with known genes and junctions.
 
     Parameters:
-    isoforms_hit (object): An object representing the isoform hit, which will be updated with classification information.
+    isoform_hit (object): An object representing the isoform hit, which will be updated with classification information.
     trec (object): An object representing the transcript record, containing information such as exon count, chromosome, start, and end positions.
     junctions_by_chr (dict): A dictionary where keys are chromosome names and values are dictionaries containing junction information.
 
     Returns:
-    object: The updated isoforms_hit object with classification information added.
+    object: The updated isoform_hit object with classification information added.
     """
     # at this point: definitely not FSM or ISM or NIC or NNC
     # possibly (in order of preference assignment):
@@ -412,31 +425,32 @@ def associationOverlapping(isoforms_hit, trec, junctions_by_chr):
     #  - genic (overlaps a combination of exons and introns), ignore strand
     #  - genic_intron  (completely within an intron), ignore strand
     #  - intergenic (does not overlap a gene at all), ignore strand
-    isoforms_hit.update({"structural_category": "intergenic",
+    isoform_hit.update({"structural_category": "intergenic",
                          "transcripts": ["novel"],
                          "subcategory": "mono-exon" if trec.exonCount==1 else "multi-exon"})
 
     #if trec.id.startswith('PB.37872.'):
     #    pdb.set_trace()
-    if isoforms_hit.genes is None:
+    if isoform_hit.genes is None:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
-        if isoforms_hit.AS_genes is None:
+
+        if len(isoform_hit.AS_genes) == 0:
             if trec.chrom in junctions_by_chr:
                 # no hit even on opp strand
                 # see if it is completely contained within a junction
                 da_pairs = junctions_by_chr[trec.chrom]['da_tree'].find(trec.txStart, trec.txEnd)
                 for junction in da_pairs:
                     if junction[0] <= trec.txStart <= trec.txEnd <= junction[1]:
-                        isoforms_hit.structural_category = "genic_intron"
+                        isoform_hit.structural_category = "genic_intron"
                         break
             else:
                 pass # remain intergenic
         else:
             # hits one or more genes on the opposite strand
-            isoforms_hit.structural_category = "antisense"
-            isoforms_hit.genes = ["novelGene_{g}_AS".format(g=g) for g in isoforms_hit.AS_genes]
+            isoform_hit.structural_category = "antisense"
+            isoform_hit.genes = ["novelGene_{g}_AS".format(g=g) for g in isoform_hit.AS_genes]
     else:
-        isoforms_hit.structural_category = "genic"
+        isoform_hit.structural_category = "genic"
 
-    return isoforms_hit
+    return isoform_hit
