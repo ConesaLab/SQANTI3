@@ -294,7 +294,8 @@ class myQueryTranscripts:
     
     # Output methods
     def __str__(self):
-        return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
+        return str([{k: getattr(self, k)} for k in vars(self)])
+        # return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
 
     def as_dict(self):
         base = self.__dict__.copy()
