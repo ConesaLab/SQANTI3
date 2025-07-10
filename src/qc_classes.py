@@ -253,6 +253,7 @@ class myQueryTranscripts:
     transcripts: Optional[list] = None  # List of transcripts associated with the isoform
     ref_start: Optional[int] = None
     ref_end: Optional[int] = None
+    ref_strand: Optional[str] = None
 
 
     def ratioExp(self):
@@ -313,7 +314,7 @@ class myQueryTranscripts:
             base[f"FL.{sample}"] = count
 
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end']
+        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand']
         for attr in non_report_attrs:
             if attr in base:
                 del base[attr]

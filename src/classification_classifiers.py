@@ -86,8 +86,17 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 
                 if trec.strand != ref.strand:
                     # opposite strand, just record it in AS_genes
-          
+                    isoform_hit.update({"structural_category": "antisense",
+                                        "genes": [ref.gene],
+                                        "transcripts": ["novel"],
+                                        "q_splicesite_hit": splicesite_hit,
+                                        "q_exon_overlap": exon_overlap,
+                                        "ref_start": ref.txStart,
+                                        "ref_end": ref.txEnd,
+                                        "ref_strand":ref.strand,
+                                        "ref_exons": ref.exonCount})
                     isoform_hit.AS_genes.add(ref.gene)
+    
                     if isoform_hit.isoform == "PB.37948.1": # DEBUG
                         print(f"Opposite strand: {trec.id} vs {ref.id} for gene {ref_gene}")
                     continue
@@ -107,6 +116,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                             "ref_exons": ref.exonCount,
                                             "ref_start": ref.txStart,
                                             "ref_end": ref.txEnd,
+                                            "ref_strand":ref.strand,
                                             "q_splicesite_hit": splicesite_hit,
                                             "q_exon_overlap": exon_overlap})
 
@@ -146,6 +156,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
+                                                "ref_strand": ref.strand,
                                                 "diff_to_TSS": diff_tss,
                                                 "diff_to_TTS": diff_tts,
                                                 "q_splicesite_hit": splicesite_hit,
@@ -174,6 +185,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
+                                                "ref_strand":ref.strand,
                                                 "diff_to_TSS": diff_tss,
                                                 "diff_to_TTS": diff_tts,
                                                 "q_splicesite_hit": splicesite_hit,
@@ -199,6 +211,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
+                                                "ref_strand":ref.strand,
                                                 "q_splicesite_hit": splicesite_hit,
                                                 "q_exon_overlap": exon_overlap})
 
@@ -218,6 +231,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
+                                                "ref_strand":ref.strand,
                                                 "q_splicesite_hit": splicesite_hit,
                                                 "q_exon_overlap": exon_overlap})
 
@@ -233,15 +247,16 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                     "ref_exons": ref.exonCount,
                                                     "ref_start": ref.txStart,
                                                     "ref_end": ref.txEnd,
+                                                    "ref_strand":ref.strand,
                                                     "q_splicesite_hit": splicesite_hit,
                                                     "q_exon_overlap": exon_overlap})
 
             best_by_gene[ref_gene] = isoform_hit
         # now we have the best transcript hit for each gene, we need to select the best one
         # start with the best scoring one (FSM is best) --> can add other genes if they don't overlap
-        geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'iso_hit'])
-        best_by_gene = [geneHitTuple(cat_ranking[iso_hit.structural_category],iso_hit.ref_start,iso_hit.ref_end,
-                                     ref_gene,iso_hit) for ref_gene, iso_hit in best_by_gene.items()]
+        geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'rStrand', 'iso_hit'])
+        best_by_gene = [geneHitTuple(cat_ranking[iso_hit.structural_category], iso_hit.ref_start, iso_hit.ref_end,
+                                     ref_gene, iso_hit.ref_strand, iso_hit) for ref_gene, iso_hit in best_by_gene.items()]
         if trec.id == "PB.37948.1": # DEBUG
             print(f"Best by gene before filtering for {trec.id}: {best_by_gene}")
             input()
@@ -257,11 +272,12 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         best_by_gene.sort(key=lambda x: (x.score,
                                          x.iso_hit.q_splicesite_hit+(x.iso_hit.q_exon_overlap)*1./sum(e.end-e.start for e in trec.exons)+calc_overlap(x.rStart,x.rEnd,trec.txStart,trec.txEnd)*1./(x.rEnd-x.rStart)-abs(trec.exonCount-x.iso_hit.ref_exons)), reverse=True)  # sort by (ranking score, overlap)
         isoform_hit = best_by_gene[0].iso_hit
-        cur_start, cur_end = best_by_gene[0].rStart, best_by_gene[0].rEnd
+        cur_start, cur_end, cur_strand = best_by_gene[0].rStart, best_by_gene[0].rEnd, best_by_gene[0].rStrand
 
         for t in best_by_gene[1:]: # Add extra genes if they don't overlap
             if t.score==0: break
-            if calc_overlap(cur_start, cur_end, t.rStart, t.rEnd) <= 0:
+            if calc_overlap(cur_start, cur_end, t.rStart, t.rEnd) <= 0 and \
+                cur_strand == t.rStrand: # no overlap and in the same strand strands
                 isoform_hit.add_gene(t.rGene)
                 cur_start, cur_end = min(cur_start, t.rStart), max(cur_end, t.rEnd)
 
@@ -272,13 +288,14 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         if trec.chrom in refs_1exon_by_chr:
             for ref in refs_1exon_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
                 if ref.strand != trec.strand:
+                    #isoform_hit.structural_category = "antisense"
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
                     continue
                 diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
 
                 # see if there's already an existing match AND if so, if this one is better
-                if isoform_hit.structural_category == "": # no match so far
+                if isoform_hit.structural_category in "": # no match so far
                     isoform_hit.update({"structural_category": "full-splice_match",
                                         "subcategory": "mono-exon",
                                         "genes": [ref.gene],
@@ -287,7 +304,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts})
-
+                    
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.update({"genes": [ref.gene],
                                         "transcripts": [ref.id],
@@ -461,23 +478,22 @@ def associationOverlapping(isoform_hit, trec, junctions_by_chr):
     if isoform_hit.genes is None:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
-
+        if trec.chrom in junctions_by_chr:
+            # no hit even on opp strand
+            # see if it is completely contained within a junction
+            da_pairs = junctions_by_chr[trec.chrom]['da_tree'].find(trec.txStart, trec.txEnd)
+            for junction in da_pairs:
+                if junction[0] <= trec.txStart <= trec.txEnd <= junction[1]:
+                    isoform_hit.structural_category = "genic_intron"
+                    break
+        else:
+            pass # remain intergenic
+    else:
         if len(isoform_hit.AS_genes) == 0:
-            if trec.chrom in junctions_by_chr:
-                # no hit even on opp strand
-                # see if it is completely contained within a junction
-                da_pairs = junctions_by_chr[trec.chrom]['da_tree'].find(trec.txStart, trec.txEnd)
-                for junction in da_pairs:
-                    if junction[0] <= trec.txStart <= trec.txEnd <= junction[1]:
-                        isoform_hit.structural_category = "genic_intron"
-                        break
-            else:
-                pass # remain intergenic
+            isoform_hit.structural_category = "genic"
         else:
             # hits one or more genes on the opposite strand
             isoform_hit.structural_category = "antisense"
             isoform_hit.genes = ["novelGene_{g}_AS".format(g=g) for g in isoform_hit.AS_genes]
-    else:
-        isoform_hit.structural_category = "genic"
-
+    
     return isoform_hit
