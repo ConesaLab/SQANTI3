@@ -96,12 +96,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_strand":ref.strand,
                                         "ref_exons": ref.exonCount})
                     isoform_hit.AS_genes.add(ref.gene)
-    
-                    if isoform_hit.isoform == "PB.37948.1": # DEBUG
-                        print(f"Opposite strand: {trec.id} vs {ref.id} for gene {ref_gene}")
                     continue
-                if isoform_hit.isoform == "PB.37948.1": # DEBUG
-                    print(f"Comparing {trec.id} against {ref.id} for gene {ref_gene}")
 
 
                 
@@ -125,8 +120,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     if match_type not in ('exact', 'subset', 'partial', 'concordant', 'super', 'nomatch'):
                         qc_logger.error(f"Unknown match category {match_type} for isoform {trec.id} against reference {ref.id}!")
                         sys.exit(1)
-                    if isoform_hit.isoform == "PB.37948.1": # DEBUG
-                        print(f"Match type for {trec.id} against {ref.id}: {match_type}")
                     diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
 
                     # #############################
@@ -217,9 +210,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                     else: # must be nomatch
                         assert match_type == 'nomatch'
-                        if isoform_hit.isoform == "PB.37948.1" and ref.gene == "ENSG00000100403.12": # DEBUG
-                            print(isoform_hit)
-                            input()
                         # at this point, no junction overlap, but may be a single splice site (donor or acceptor) match?
                         # also possibly just exonic (no splice site) overlap
                         if cat_ranking[isoform_hit.structural_category] < cat_ranking["anyKnownSpliceSite"] and splicesite_hit > 0:
@@ -236,8 +226,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "q_exon_overlap": exon_overlap})
 
                         if isoform_hit.structural_category == "": # still not hit yet, check exonic overlap
-                            if ref.gene == ["ENSG00000100403.12"]:
-                                print(f"The gene {ref.gene} has exon overlap: {exon_overlap}")
                             if cat_ranking[isoform_hit.structural_category] < cat_ranking["geneOverlap"] and exon_overlap > 0:
                                 isoform_hit.update({"structural_category": "geneOverlap",
                                                     "subcategory": "no_subcategory",
@@ -257,15 +245,9 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
         geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'rStrand', 'iso_hit'])
         best_by_gene = [geneHitTuple(cat_ranking[iso_hit.structural_category], iso_hit.ref_start, iso_hit.ref_end,
                                      ref_gene, iso_hit.ref_strand, iso_hit) for ref_gene, iso_hit in best_by_gene.items()]
-        if trec.id == "PB.37948.1": # DEBUG
-            print(f"Best by gene before filtering for {trec.id}: {best_by_gene}")
-            input()
         best_by_gene = list(filter(lambda x: x.score > 0, best_by_gene)) # filter out non-matches
-        if trec.id == "PB.37948.1": # DEBUG
-            print(f"Best by gene after filtering for {trec.id}: {best_by_gene}")
-            input()
-        if len(best_by_gene) == 0: # no hit
 
+        if len(best_by_gene) == 0: # no hit
             return isoform_hit
 
         # sort matching genes by ranking, allow for multi-gene match as long as they don't overlap
@@ -291,6 +273,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     #isoform_hit.structural_category = "antisense"
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
+                    isoform_hit.genes = [ref.gene]
                     continue
                 diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
 
@@ -303,7 +286,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_length": ref.length,
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
-                                        "diff_to_TTS": diff_tts})
+                                        "diff_to_TTS": diff_tts,
+                                        "AS_genes":{}})
                     
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.update({"genes": [ref.gene],
@@ -312,18 +296,22 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
-                                        "ref_exons": ref.exonCount})
+                                        "ref_exons": ref.exonCount,
+                                        "AS_genes":{}})
+                    
         if isoform_hit.structural_category == "" and trec.chrom in refs_exons_by_chr:
             # no hits to single exon genes, let's see if it hits multi-exon genes
             # (1) if it overlaps with a ref exon and is contained in an exon, we call it ISM
             # (2) else, if it spans one or more introns, we call it NIC by intron retention
 
             for ref in refs_exons_by_chr[trec.chrom].find(trec.txStart, trec.txEnd):
-                if calc_exon_overlap(trec.exons, ref.exons) == 0:   # no exonic overlap, skip!
+                exon_overlap = calc_exon_overlap(trec.exons, ref.exons)
+                if exon_overlap == 0:   # no exonic overlap, skip!
                     continue
-                if ref.strand != trec.strand:
+                if ref.strand != trec.strand and  exon_overlap > (isoform_hit.q_exon_overlap or 0):
                     # opposite strand, just record it in AS_genes
                     isoform_hit.AS_genes.add(ref.gene)
+                    isoform_hit.add_gene(ref.gene)
                     continue
 
                 diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
@@ -338,7 +326,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                             "ref_length": ref.length,
                                             "ref_exons": ref.exonCount,
                                             "diff_to_TSS": diff_tss,
-                                            "diff_to_TTS": diff_tts})
+                                            "diff_to_TTS": diff_tts,
+                                            "q_exon_overlap": exon_overlap})
                       
                         # this is as good a match as it gets, we can stop the search here
                         get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
@@ -357,8 +346,9 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "genes": [ref.gene],
                                                 "transcripts": ["novel"],
                                                 "ref_length": ref.length,
-                                                "ref_exons": ref.exonCount
-                                            })
+                                                "ref_exons": ref.exonCount,
+                                                "q_exon_overlap": exon_overlap
+                                                })
                             get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
 
                             # TODO: Why is this commented out?
@@ -366,17 +356,17 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
 
                 # if we get to here, means not ISM, so just add a ref gene and categorize further later
                 isoform_hit.add_gene(ref.gene)
+                if len(isoform_hit.AS_genes) != 0 and exon_overlap > (isoform_hit.q_exon_overlap or 0):
+                    # We found a gene in the correct strand that is longer than the AS gene, so we remove it
+                    isoform_hit.AS_genes = {}
+                isoform_hit.q_exon_overlap = exon_overlap
+
             if isoform_hit.structural_category == "novel_in_catalog":
                 return isoform_hit
             
     if isoform_hit.genes is not None:
         get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene)
         isoform_hit.genes.sort(key=lambda x: start_ends_by_gene[x]['begin'])
-    
-    if isoform_hit.isoform == "PB.37948.1":
-        print("Returning isoform hit for PB.37948.1")
-        print(isoform_hit)
-        input()
 
     return isoform_hit
 
@@ -469,12 +459,6 @@ def associationOverlapping(isoform_hit, trec, junctions_by_chr):
                          "transcripts": ["novel"],
                          "subcategory": "mono-exon" if trec.exonCount==1 else "multi-exon"})
 
-    #if trec.id.startswith('PB.37872.'):
-    #    pdb.set_trace()
-    if isoform_hit.isoform == "PB.37948.1":
-        print("Got to associationOverlapping for PB.37948.1")
-        print(isoform_hit)
-        input()
     if isoform_hit.genes is None:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
