@@ -284,7 +284,7 @@ class myQueryTranscripts:
                 raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
 
             if not self._is_instance_of_type(value, expected_type):
-                raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__}")
+                raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__} (value: {value})")
     @staticmethod
     def _is_instance_of_type(value, expected_type):
         origin = get_origin(expected_type)
