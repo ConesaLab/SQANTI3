@@ -80,11 +80,11 @@ def get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene):
                 nearest_end_diff = d
 
     if trec.strand == '+':
-        isoform_hit.diff_to_gene_TSS = nearest_start_diff if nearest_start_diff!=float('inf') else 'NA'
-        isoform_hit.diff_to_gene_TTS = nearest_end_diff if nearest_end_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TSS = nearest_start_diff if nearest_start_diff!=float('inf') else None
+        isoform_hit.diff_to_gene_TTS = nearest_end_diff if nearest_end_diff!=float('inf') else None
     else:
-        isoform_hit.diff_to_gene_TSS = nearest_end_diff if nearest_start_diff!=float('inf') else 'NA'
-        isoform_hit.diff_to_gene_TTS = nearest_start_diff if nearest_end_diff!=float('inf') else 'NA'
+        isoform_hit.diff_to_gene_TSS = nearest_end_diff if nearest_start_diff!=float('inf') else None
+        isoform_hit.diff_to_gene_TTS = nearest_start_diff if nearest_end_diff!=float('inf') else None
 
 
 def categorize_incomplete_matches(trec, ref):

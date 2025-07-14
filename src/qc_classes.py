@@ -215,8 +215,8 @@ class myQueryTranscripts:
     n_indels_junc: Optional[int] = None
     bite: Optional[str] = None
 
-    iso_exp: Optional[float] = None
-    gene_exp: Optional[float] = None
+    iso_exp: Optional[int] = None
+    gene_exp: Optional[int] = None
     ratio_exp: Optional[float] = None  # Computed field, may be updated dynamically
 
     coding: str = "non_coding"
@@ -326,7 +326,7 @@ class myQueryTranscripts:
     def get_total_diff(self):
         if self.diff_to_TSS is None or self.diff_to_TTS is None:
             return None
-        return abs(int(self.diff_to_TSS)) + abs(int(self.diff_to_TTS))
+        return abs(self.diff_to_TSS) + abs(self.diff_to_TTS)
 
     def get_orf_size(self):
         if self.coding == 'coding' and self.CDS_genomic_end is not None and self.CDS_genomic_start is not None:

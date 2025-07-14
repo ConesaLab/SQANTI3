@@ -102,16 +102,11 @@ def test_get_diff_tss_tts_positive_diff_negative_strand():
 TRec = namedtuple('TRec', ['txStart', 'txEnd', 'strand'])
 @pytest.fixture
 def isoform_hit():
-    return myQueryTranscripts(id="gene1", tts_diff="NA", tss_diff="NA",
-                       num_exons=0,
+    return myQueryTranscripts(isoform="gene1", 
+                       exons=0,
                        length=0,
-                       str_class="",
                        chrom="chr1",
-                       strand="+",
-                       subtype="no_subcategory",
-                       percAdownTTS=0,
-                       seqAdownTTS=0,
-                       genes=[])
+                       strand="+")
 
 # Test cases
 def test_positive_strand(isoform_hit):
@@ -126,8 +121,8 @@ def test_positive_strand(isoform_hit):
 
     get_gene_diff_tss_tts(isoform_hit, trec, start_ends_by_gene)
 
-    assert isoform_hit.tss_gene_diff == -100
-    assert isoform_hit.tts_gene_diff == 100
+    assert isoform_hit.diff_to_gene_TSS == -100
+    assert isoform_hit.diff_to_gene_TTS == 100
 
 def test_negative_strand(isoform_hit):
     isoform_hit.add_gene('gene1')
@@ -141,8 +136,8 @@ def test_negative_strand(isoform_hit):
 
     get_gene_diff_tss_tts(isoform_hit, trec, start_ends_by_gene)
 
-    assert isoform_hit.tss_gene_diff == 100
-    assert isoform_hit.tts_gene_diff == -100
+    assert isoform_hit.diff_to_gene_TSS == 100
+    assert isoform_hit.diff_to_gene_TTS == -100
 
 def test_multiple_genes(isoform_hit):
     isoform_hit.add_gene('gene1')
@@ -161,8 +156,8 @@ def test_multiple_genes(isoform_hit):
 
     get_gene_diff_tss_tts(isoform_hit, trec, start_ends_by_gene)
 
-    assert isoform_hit.tss_gene_diff == -50
-    assert isoform_hit.tts_gene_diff == 50
+    assert isoform_hit.diff_to_gene_TSS == -50
+    assert isoform_hit.diff_to_gene_TTS == 50
 
 def test_no_valid_difference(isoform_hit):
     isoform_hit.add_gene('gene1')
@@ -176,8 +171,8 @@ def test_no_valid_difference(isoform_hit):
 
     get_gene_diff_tss_tts(isoform_hit, trec, start_ends_by_gene)
 
-    assert isoform_hit.tss_gene_diff == 'NA'
-    assert isoform_hit.tts_gene_diff == 'NA'
+    assert isoform_hit.diff_to_gene_TSS is None
+    assert isoform_hit.diff_to_gene_TTS is None
 
 def test_exact_match(isoform_hit):
     isoform_hit.add_gene('gene1')
@@ -191,8 +186,8 @@ def test_exact_match(isoform_hit):
 
     get_gene_diff_tss_tts(isoform_hit, trec, start_ends_by_gene)
 
-    assert isoform_hit.tss_gene_diff == 0
-    assert isoform_hit.tts_gene_diff == 0
+    assert isoform_hit.diff_to_gene_TSS == 0
+    assert isoform_hit.diff_to_gene_TTS == 0
 
 
 ### categorize_incomplete_matches ###
