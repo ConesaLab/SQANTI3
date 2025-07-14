@@ -48,7 +48,7 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     for iso in isoforms_info:
         if iso in ratio_TSS_dict:
             if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
-                isoforms_info[iso].ratio_TSS = 'NA'
+                isoforms_info[iso].ratio_TSS = None
             else:
                 isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
         else:
@@ -135,15 +135,15 @@ def isoforms_junctions(isoforms_info, reader):
         # (1) the .canonical field is still "NA"
         # (2) the junction is non-canonical
         assert r['canonical'] in ('canonical', 'non_canonical')
-        if (isoforms_info[r['isoform']].all_canonical == 'NA') or \
+        if (isoforms_info[r['isoform']].all_canonical is None) or \
             (r['canonical'] == 'non_canonical'):
             isoforms_info[r['isoform']].all_canonical = r['canonical']
 
-        if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'TRUE'):
+        if (isoforms_info[r['isoform']].bite is None) or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
 
         if r['indel_near_junct'] == 'TRUE':
-            if isoforms_info[r['isoform']].n_indels_junc == 'NA':
+            if isoforms_info[r['isoform']].n_indels_junc is None:
                 isoforms_info[r['isoform']].n_indels_junc = 0
             isoforms_info[r['isoform']].n_indels_junc += 1
 
