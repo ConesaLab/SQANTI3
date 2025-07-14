@@ -66,9 +66,8 @@ def test_isoforms_output(isoforms_info,junction_file,genome,genome_dict,result_d
     isoforms_res, _ = process_rts(isoforms_info, junction_file,
                                                    genome,genome_dict,"")
     for _, result in isoforms_res.items():
-        expected_row = result_dataframe.loc[result_dataframe["isoform"] == result.id]
-        print(result.id,result.RT_switching)
-        assert result.RT_switching.upper() == str(expected_row["RTS_stage"].values[0]).upper(), f"Failed for {result.id}. Expected {expected_row['RTS_stage'].values[0]}, got {result.RT_switching}"
+        expected_row = result_dataframe.loc[result_dataframe["isoform"] == result.isoform]
+        assert result.RTS_stage.upper() == str(expected_row["RTS_stage"].values[0]).upper(), f"Failed for {result.isoform}. Expected {expected_row['RTS_stage'].values[0]}, got {result.RTS_stage}"
 
     
 # Junction output file

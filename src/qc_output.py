@@ -1,4 +1,5 @@
-from csv import DictReader, DictWriter
+from collections import defaultdict
+from csv import DictReader, DictWriter, writer
 import os, sys
 import pickle
 
@@ -12,6 +13,7 @@ from src.commands import (
 from src.config import utilitiesPath
 from src.helpers import get_isoform_hits_name, get_omitted_name
 from src.module_logging import qc_logger
+from src.utils import find_closest_in_list
 
 def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, fields_class_cur):
     if min_ref_len > 0 and not is_fusion:
@@ -33,10 +35,9 @@ def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, f
     return isoforms_info
 
 def write_classification_output(isoforms_info, outputClassPath, fields_class_cur):
-     
-    # iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, isoforms_info[x].id))
     with open(outputClassPath, 'w') as h:
-        fout_class = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
+        header = next(iter(isoforms_info.values())).as_dict().keys() 
+        fout_class = DictWriter(h, fieldnames=list(header), delimiter='\t')
         fout_class.writeheader()
         for iso_key in isoforms_info.keys():
             fout_class.writerow(isoforms_info[iso_key].as_dict())
@@ -115,10 +116,10 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                 r.ref_exons.reverse()
                 # Fix the reference exons 
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
-            s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
-            e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
             r.cds_exons = []
-            if s!='NA' and e!='NA': # has ORF prediction for this isoform
+            if isoforms_info[r.seqid].coding == "coding": # has ORF prediction for this isoform
+                s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
+                e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'
                 if r.strand == '+':
                     assert s < e
                     s = s - 1 # make it 0-based
@@ -135,3 +136,103 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
                     if exon.start > e: break
                     r.cds_exons.append(Interval(exon.start, min(e, exon.end)))
             write_collapseGFF_format(f, r)
+
+def write_isoform_hits(isoform_hits_name,data_list):
+    """
+    Write isoform hits to a temporary file.
+    :param isoform_hits_name: Name of the file to write the hits to.
+    :param data_list: List of data to write.
+    """
+    with open(isoform_hits_name+'_tmp', 'a') as out_file:
+        tsv_writer = writer(out_file, delimiter='\t')
+        tsv_writer.writerow(data_list)
+
+
+def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelInfo, genome_dict,
+                        fout, covInf=None, covNames=None, phyloP_reader=None):
+    """
+    :param trec: query isoform genePredRecord
+    :param junctions_by_chr: dict of chr -> {'donors': <sorted list of donors>, 'acceptors': <sorted list of acceptors>, 'da_pairs': <sorted list of junctions>}
+    :param accepted_canonical_sites: list of accepted canonical splice sites
+    :param indelInfo: indels near junction information, dict of pbid --> list of junctions near indel (in Interval format)
+    :param genome_dict: genome fasta dict
+    :param fout: DictWriter handle
+    :param covInf: (optional) junction coverage information, dict of (chrom,strand) -> (0-based start,1-based end) -> dict of {sample -> (unique, multi) read count}
+    :param covNames: (optional) list of sample names for the junction coverage information
+    :param phyloP_reader: (optional) dict of (chrom,0-based coord) --> phyloP score
+
+    Write a record for each junction in query isoform
+    """
+    # go through each trec junction
+    for junction_index, (d, a) in enumerate(trec.junctions):
+        # NOTE: donor just means the start, not adjusted for strand
+        # Check if the chromosome of the transcript has any annotation by the reference
+        # create a list in case there are chromosomes present in the input but not in the annotation dictionary junctions_by_chr
+        missing_chr=[]
+        junction_cat = "novel"
+        if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
+
+            if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]):
+                junction_cat = "known"
+                min_diff_s = min_diff_e = 0
+            else:
+                # Find the closest junction start site
+                min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
+                # find the closest junction end site
+                min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
+            
+        else:
+            # if there is no record in the reference of junctions in this chromosome, minimum distances will be NA
+            # add also new chromosome to the junctions_by_chr with one dummy SJ d=1, a=2
+            if trec.chrom not in missing_chr:
+                missing_chr.append(trec.chrom)
+            min_diff_s = float("NaN")
+            min_diff_e = float("NaN")
+
+        splice_site = trec.get_splice_site(genome_dict, junction_index)
+
+        indel_near_junction = "NA"
+        if indelInfo is not None:
+            indel_near_junction = "TRUE" if (trec.id in indelInfo and Interval(d,a) in indelInfo[trec.id]) else "FALSE"
+
+        sample_cov = defaultdict(lambda: (0,0))  # sample -> (unique, multi) count for this junction
+        if covInf is not None:
+            sample_cov = covInf[(trec.chrom, trec.strand)][(d,a)]
+
+        # if phyloP score dict exists, give the triplet score of (last base in donor exon), donor site -- similarly for acceptor
+        phyloP_start, phyloP_end = 'NA', 'NA'
+        if phyloP_reader is not None:
+            phyloP_start = ",".join([str(x) for x in [phyloP_reader.get_pos(trec.chrom, d-1), phyloP_reader.get_pos(trec.chrom, d), phyloP_reader.get_pos(trec.chrom, d+1)]])
+            phyloP_end = ",".join([str(x) for x in [phyloP_reader.get_pos(trec.chrom, a-1), phyloP_reader.get_pos(trec.chrom, a),
+                                              phyloP_reader.get_pos(trec.chrom, a+1)]])
+
+        qj = {'isoform': trec.id,
+              'junction_number': "junction_"+str(junction_index+1),
+              "chrom": trec.chrom,
+              "strand": trec.strand,
+              "genomic_start_coord": d+1,  # write out as 1-based start
+              "genomic_end_coord": a,      # already is 1-based end
+              "transcript_coord": "?????",  # this is where the exon ends w.r.t to id sequence, ToDo: implement later
+              "junction_category": junction_cat,
+              "start_site_category": "known" if min_diff_s==0 else "novel",
+              "end_site_category": "known" if min_diff_e==0 else "novel",
+              "diff_to_Ref_start_site": min_diff_s if min_diff_s==min_diff_s else "NA", # check if min_diff is actually nan
+              "diff_to_Ref_end_site": min_diff_e if min_diff_e==min_diff_e else "NA",   # check if min_diff is actually nan
+              "bite_junction": "TRUE" if ((min_diff_s<0 or min_diff_e<0) and not(min_diff_s>0 or min_diff_e>0)) else "FALSE",
+              "splice_site": splice_site,
+              "canonical": "canonical" if splice_site in accepted_canonical_sites else "non_canonical",
+              "RTS_junction": "????", # First write ???? in _tmp, later is TRUE/FALSE
+              "indel_near_junct": indel_near_junction,
+              "phyloP_start": phyloP_start,
+              "phyloP_end": phyloP_end,
+              "sample_with_cov": sum([cov_uniq>0 for (cov_uniq,_) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_unique": sum([cov_uniq for (cov_uniq,_ ) in sample_cov.values()]) if covInf is not None else "NA",
+              "total_coverage_multi": sum([cov_multi for (_,cov_multi ) in sample_cov.values()]) if covInf is not None else "NA"}
+
+        if covInf is not None:
+            for sample in covNames:
+                cov_uniq, cov_multi = sample_cov[sample]
+                qj[sample+'_unique'] = str(cov_uniq)
+                qj[sample+'_multi'] = str(cov_multi)
+
+        fout.writerow(qj)

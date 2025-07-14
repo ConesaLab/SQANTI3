@@ -53,22 +53,22 @@ def test_isoformClassification(reference_data: tuple[dict, dict, dict[Any, dict[
         for record in records:
             result = classify_isoform(record, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr,
                                       junctions_by_gene, start_ends_by_gene, genome_dict)
-            results_dict[result.id] = result
+            results_dict[result.isoform] = result
     
     result = rename_novel_genes(results_dict)
     for _, result in results_dict.items():
-        expected_row = expected_results.loc[expected_results["isoform"] == result.id]
+        expected_row = expected_results.loc[expected_results["isoform"] == result.isoform]
         expected_str_class = expected_row["structural_category"].values[0]
         expected_subtype = expected_row["subcategory"].values[0]
         expected_genes = expected_row["associated_gene"].values[0]
-        assert result.str_class == expected_str_class, (
-                        f"Isoform {result.id}. Expected {expected_str_class};{expected_subtype}, got {result.str_class};{result.subtype}"
+        assert result.structural_category == expected_str_class, (
+                        f"Isoform {result.isoform}. Expected {expected_str_class};{expected_subtype}, got {result.structural_category};{result.subcategory}"
         )
-        assert result.subtype == expected_subtype, (
-            f"Isoform {result.id}. Expected {expected_str_class};{expected_subtype}, got {result.str_class};{result.subtype}"
+        assert result.subcategory == expected_subtype, (
+            f"Isoform {result.isoform}. Expected {expected_str_class};{expected_subtype}, got {result.structural_category};{result.subcategory}"
         )
         detected_genes = "_".join(sorted(set(result.genes)))
         assert detected_genes == expected_genes, (
-            f"Isoform {result.id}. Expected {expected_genes}, got {result.genes}"
+            f"Isoform {result.isoform}. Expected {expected_genes}, got {result.genes}"
         )
 

@@ -3,7 +3,7 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set, Optional, Union, get_args, get_origin
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
 
@@ -174,7 +174,6 @@ class genePredRecord(object):
         else:
             return (str(seq_a.reverse_complement())+str(seq_d.reverse_complement())).upper()
 
-# TODO: Make this class attributes to directly create the header of the classification file
 @dataclass
 class myQueryTranscripts:
     isoform: str
@@ -187,11 +186,15 @@ class myQueryTranscripts:
 
     structural_category: str = ""
     subcategory: str = "no_subcategory"
+    FSM_class: Optional[str] = None
     associated_gene: List[str] = field(default_factory=list)
     associated_transcript: List[str] = field(default_factory=list)
 
     ref_length: Optional[int] = None
     ref_exons: Optional[int] = None
+
+    q_splicesite_hit: Optional[int] = None
+    q_exon_overlap: Optional[int] = None
 
     diff_to_TSS: Optional[int] = None
     diff_to_TTS: Optional[int] = None
@@ -212,20 +215,21 @@ class myQueryTranscripts:
     n_indels_junc: Optional[int] = None
     bite: Optional[str] = None
 
-    iso_exp: Optional[float] = None
-    gene_exp: Optional[float] = None
+    iso_exp: Optional[int] = None
+    gene_exp: Optional[int] = None
     ratio_exp: Optional[float] = None  # Computed field, may be updated dynamically
 
-    FSM_class: Optional[str] = None
     coding: str = "non_coding"
-    ORF_length: Optional[int] = None
     CDS_length: Optional[int] = None
+    protein_length: Optional[int] = None
     CDS_start: Optional[int] = None
     CDS_end: Optional[int] = None
     CDS_genomic_start: Optional[int] = None
     CDS_genomic_end: Optional[int] = None
+    psauron_score: Optional[float] = None
+    CDS_type: Optional[str] = None
     predicted_NMD: Optional[bool] = None
-
+    
     perc_A_downstream_TTS: Optional[float] = None
     seq_A_downstream_TTS: Optional[str] = None
 
@@ -238,12 +242,66 @@ class myQueryTranscripts:
     polyA_dist: Optional[int] = None
     polyA_motif_found: Optional[bool] = None
 
-    ORF_seq: Optional[str] = None
+    protein_seq: Optional[str] = None
     ratio_TSS: Optional[float] = None
 
-    # Extra fields not in FIELDS_CLASS
+    # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
     AS_genes: Set[str] = field(default_factory=set)
+    genes: Optional[list] = None  # List of genes associated with the isoform
+    transcripts: Optional[list] = None  # List of transcripts associated with the isoform
+    ref_start: Optional[int] = None
+    ref_end: Optional[int] = None
+    ref_strand: Optional[str] = None
+
+    def __post_init__(self):
+        self._validate_input()
+        self._validate_types()
+    
+    def _validate_input(self):
+        if self.isoform == "":
+            raise ValueError("Isoform identifier cannot be empty.")
+        if self.CDS_start is not None and self.CDS_end is not None:
+            if self.CDS_length is None:
+                self.CDS_length = self.CDS_end - self.CDS_start + 1
+            if self.CDS_start > self.CDS_end:
+                raise ValueError("CDS start must be less than CDS end.")
+        
+    def _validate_types(self):
+        for field_name, expected_type in self.__annotations__.items():
+            value = getattr(self, field_name)
+
+            # Skip None values unless the field is not Optional
+            if value is None:
+                origin = get_origin(expected_type)
+                if origin is Union and type(None) in get_args(expected_type):
+                    continue  # It's Optional[...] and value is None, which is fine
+                if expected_type is Optional:
+                    continue  # Fallback
+                if expected_type is type(None):
+                    continue
+                # If it's not optional and is None, raise
+                raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
+
+            if not self._is_instance_of_type(value, expected_type):
+                raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__} (value: {value})")
+    @staticmethod
+    def _is_instance_of_type(value, expected_type):
+        origin = get_origin(expected_type)
+        args = get_args(expected_type)
+
+        if origin is None:
+            return isinstance(value, expected_type)
+        if origin in (list, List):
+            return isinstance(value, list) and all(isinstance(v, args[0]) for v in value)
+        if origin in (set, Set):
+            return isinstance(value, set) and all(isinstance(v, args[0]) for v in value)
+        if origin in (dict, Dict):
+            return isinstance(value, dict) and all(
+                isinstance(k, args[0]) and isinstance(v, args[1]) for k, v in value.items()
+            )
+        # Fallback for unsupported generic types
+        return isinstance(value, expected_type)
 
     def ratioExp(self):
         if self.gene_exp in (None, 0) or self.iso_exp is None:
@@ -251,12 +309,24 @@ class myQueryTranscripts:
         return float(self.iso_exp) / float(self.gene_exp)
 
     def geneName(self):
-        return "_".join(sorted(set(self.associated_gene)))
+        return "_".join(sorted(set(self.genes)))
 
+    def add_gene(self, gene):
+        """
+        Add a gene to the associated genes list.
+        If the gene is already present, it will not be added again.
+        """
+        if self.genes is None:
+            self.genes = [gene]
+            return
+        if gene not in self.genes:
+            self.genes.append(gene)
+            return
+        
     def get_total_diff(self):
         if self.diff_to_TSS is None or self.diff_to_TTS is None:
             return None
-        return abs(int(self.diff_to_TSS)) + abs(int(self.diff_to_TTS))
+        return abs(self.diff_to_TSS) + abs(self.diff_to_TTS)
 
     def get_orf_size(self):
         if self.coding == 'coding' and self.CDS_genomic_end is not None and self.CDS_genomic_start is not None:
@@ -266,15 +336,21 @@ class myQueryTranscripts:
                 return None
         return None
 
-
+    def update(self, attrs: dict):
+        for key, val in attrs.items():
+            setattr(self, key, val)
+    
+    # Output methods
     def __str__(self):
-        return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
+        return str([{k: getattr(self, k)} for k in vars(self)])
+        # return f"{self.isoform}: {self.geneName()} ({self.structural_category})"
 
     def as_dict(self):
         base = self.__dict__.copy()
         base["ratio_exp"] = self.ratioExp()
         base["ORF_length"] = self.get_orf_size()
-        base["gene_name"] = self.geneName()
+        base["associated_gene"] = self.geneName()
+        base["associated_transcript"] = '_'.join(set(self.transcripts))
 
         # Replace None with "NA"
         for k, v in base.items():
@@ -283,6 +359,12 @@ class myQueryTranscripts:
 
         for sample, count in self.FL_dict.items():
             base[f"FL.{sample}"] = count
+
+        # Eliminate non-report attributes
+        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand']
+        for attr in non_report_attrs:
+            if attr in base:
+                del base[attr]
         return base
     
 @dataclass
@@ -291,14 +373,12 @@ class myQueryProteins:
     cds_end: int
     protein_length: int
 
+    cds_type: Optional[str] = None
+    cds_length: Optional[int] = field(init=False)
+
     protein_seq: Optional[str] = None
     proteinID: Optional[str] = None
     psauron_score: Optional[float] = None
-    cds_type: Optional[str] = None
-
-    cds_genomic_start: Optional[int] = None
-    cds_genomic_end: Optional[int] = None
-    cds_length: Optional[int] = field(init=False)
 
     def __post_init__(self):
         self._validate_input()

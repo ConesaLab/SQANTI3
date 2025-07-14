@@ -234,7 +234,7 @@ def rename_novel_genes(isoform_info,novel_gene_prefix=None):
     """
     novel_gene_index= 1
     for isoform_hit in isoform_info.values():
-        if isoform_hit.str_class in ("intergenic", "genic_intron"):
+        if isoform_hit.structural_category in ("intergenic", "genic_intron"):
             # Liz: I don't find it necessary to cluster these novel genes. They should already be always non-overlapping.
             prefix = f'novelGene_{novel_gene_prefix}_' if novel_gene_prefix is not None else 'novelGene_'
             isoform_hit.genes = [f'{prefix}{novel_gene_index}']

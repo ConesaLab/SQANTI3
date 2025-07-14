@@ -356,17 +356,20 @@ def parse_td2_to_dict(td2_faa):
     for r in SeqIO.parse(open(td2_faa), 'fasta'):
         info = extract_variables(r.description)
         id_pre = info['id_pre']
-
-        cdsDict[id_pre] = myQueryProteins(
-            info['cds_start'],
-            info['cds_end'],
-            info['protein_length'],
-            str(r.seq),
-            proteinID=id_pre,
-            psauron_score=info['psauron_score'],
-            cds_type=info['cds_type']
-        )
-
+        try:
+            cdsDict[id_pre] = myQueryProteins(
+                info['cds_start'],
+                info['cds_end'],
+                info['protein_length'],
+                protein_seq = str(r.seq),
+                proteinID=id_pre,
+                psauron_score=info['psauron_score'],
+                cds_type=info['cds_type']
+            )
+        except TypeError as e:
+            qc_logger.error(f"Error parsing record {r.id}: {e}")
+            qc_logger.error(info['cds_type'],type(info['cds_type']))
+            sys.exit(1)
         # Include the record object along with extracted info
         records.append({
             'record': r,
@@ -420,7 +423,7 @@ def extract_variables(s):
     # Extract the ID prefix and CDS coordinates with strand
     match = re.search(r'ORF type:(?P<cds_type>[^\s:]+)\ .*?psauron_score=(?P<psauron_score>[0-9.]+).*?len:(?P<protein_length>\d+).*?(?P<id>[^\s:]+):(?P<start>\d+)-(?P<end>\d+)\([+-]\)', s)
     if not match:
-        qc_logger.error(f"Failed to parse coordinates and strand from: {s}")
+        qc_logger.error(f"Failed to parse information from: {s}")
         sys.exit(1)
     return {
         'id_pre': match.group('id'),
