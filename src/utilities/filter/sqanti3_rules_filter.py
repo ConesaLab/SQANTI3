@@ -52,20 +52,27 @@ def read_json_rules(json_file):
 
 def names_check(input_dict):
     """Check if the input dictionary has the required keys.
-    
+
     Args:
         input_dict (dict): Dictionary containing structural categories as keys
-        
-    Raises:
-        ValueError: If any required key is missing in the input dictionary.
+
+    Exits:
+        Calls sys.exit(1) if any required key is missing in the input dictionary.
     """
-    required_keys = ['full-splice_match', 'incomplete-splice_match','novel_in_catalog','novel_not_in_catalog',
-                     'genic_intron','genic','antisense','fusion','intergenic']
-    for key in list(input_dict.keys()):
-        if key not in required_keys and key != 'rest':
-            filter_logger.error(f"Invalid structural category '{key}' found in rules file. "
-                                f"Expected one of {required_keys} or 'rest'.")
-            sys.exit(1)
+    required_keys = [
+        'full-splice_match', 'incomplete-splice_match', 'novel_in_catalog', 'novel_not_in_catalog',
+        'genic_intron', 'genic', 'antisense', 'fusion', 'intergenic'
+    ]
+
+    # Collect all invalid keys
+    invalid_keys = [key for key in input_dict if key not in required_keys and key != 'rest']
+    for key in invalid_keys: # In case there are any invalid keys
+        filter_logger.error(
+            f"Invalid structural category '{key}' found in rules file. "
+            f"Expected one of {required_keys} or 'rest'."
+        )
+    if invalid_keys: # We only exit once if there are any invalid keys
+        sys.exit(1)
 
 def apply_rules(row, force_multiexon, rules_dict):
     """

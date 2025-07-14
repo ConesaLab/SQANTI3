@@ -3,7 +3,7 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional
+from typing import List, Dict, Set, Optional, get_args, get_origin
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
 
@@ -174,7 +174,6 @@ class genePredRecord(object):
         else:
             return (str(seq_a.reverse_complement())+str(seq_d.reverse_complement())).upper()
 
-# TODO: Make this class attributes to directly create the header of the classification file
 @dataclass
 class myQueryTranscripts:
     isoform: str
@@ -255,6 +254,54 @@ class myQueryTranscripts:
     ref_end: Optional[int] = None
     ref_strand: Optional[str] = None
 
+    def __post_init__(self):
+        self._validate_input()
+        self._validate_types()
+    
+    def _validate_input(self):
+        if self.isoform == "":
+            raise ValueError("Isoform identifier cannot be empty.")
+        if self.CDS_start is not None and self.CDS_end is not None:
+            if self.CDS_length is None:
+                self.CDS_length = self.CDS_end - self.CDS_start + 1
+            if self.CDS_start > self.CDS_end:
+                raise ValueError("CDS start must be less than CDS end.")
+        
+    def _validate_types(self):
+        for field_name, expected_type in self.__annotations__.items():
+            value = getattr(self, field_name)
+
+            # Skip None values unless the field is not Optional
+            if value is None:
+                origin = get_origin(expected_type)
+                if origin is Union and type(None) in get_args(expected_type):
+                    continue  # It's Optional[...] and value is None, which is fine
+                if expected_type is Optional:
+                    continue  # Fallback
+                if expected_type is type(None):
+                    continue
+                # If it's not optional and is None, raise
+                raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
+
+            if not self._is_instance_of_type(value, expected_type):
+                raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__}")
+    @staticmethod
+    def _is_instance_of_type(value, expected_type):
+        origin = get_origin(expected_type)
+        args = get_args(expected_type)
+
+        if origin is None:
+            return isinstance(value, expected_type)
+        if origin in (list, List):
+            return isinstance(value, list) and all(isinstance(v, args[0]) for v in value)
+        if origin in (set, Set):
+            return isinstance(value, set) and all(isinstance(v, args[0]) for v in value)
+        if origin in (dict, Dict):
+            return isinstance(value, dict) and all(
+                isinstance(k, args[0]) and isinstance(v, args[1]) for k, v in value.items()
+            )
+        # Fallback for unsupported generic types
+        return isinstance(value, expected_type)
 
     def ratioExp(self):
         if self.gene_exp in (None, 0) or self.iso_exp is None:

@@ -8,7 +8,7 @@ sys.path.insert(0, main_path)
 
 from src.classification_steps import classify_isoform
 from src.parsers import isoforms_parser, reference_parser
-from src.classification_steps import write_junction_info
+from src.qc_output import write_junction_info
 from src.config import  FIELDS_JUNC
 
 # Test rts function

@@ -21,8 +21,21 @@ def test_read_json_rules(json_default: str):
     assert len(res_list['full-splice_match']) == 1
     assert len(res_list['rest']) == 3
 
+
 @pytest.fixture
-def sample_json_data():
+def sample_json_data_good():
+    return {
+        "full-splice_match": [
+            {"col1": [1, 5], "col2": "value"},
+            {"col3": 10}
+        ],
+        "genic": [
+            {"col4": ["A", "B", "C"]}
+        ]
+    }
+
+@pytest.fixture
+def sample_json_data_bad():
     return {
         "category1": [
             {"col1": [1, 5], "col2": "value"},
@@ -33,17 +46,24 @@ def sample_json_data():
         ]
     }
 
-def test_read_json_rules_structure(sample_json_data):
-    with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data))):
+def test_read_json_rules_structure(sample_json_data_good):
+    with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data_good))):
         result = read_json_rules("dummy_path.json")
     
     assert isinstance(result, dict)
-    assert set(result.keys()) == {"category1", "category2","rest"}
+    assert set(result.keys()) == {"full-splice_match", "genic","rest"}
     assert all(isinstance(v, list) for v in result.values())
     assert all(isinstance(df, pd.DataFrame) for category in result.values() for df in category)
 
-def test_read_json_rules_dataframe_columns(sample_json_data):
-    with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data))):
+def test_read_json_rules_invalid_structure(sample_json_data_bad):
+    with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data_bad))):
+        with patch("sys.exit") as mock_exit:
+            read_json_rules("dummy_path.json")
+            mock_exit.assert_called_once_with(1)
+    
+
+def test_read_json_rules_dataframe_columns(sample_json_data_good):
+    with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data_good))):
         result = read_json_rules("dummy_path.json")
     
     expected_columns = ['column', 'type', 'rule']
@@ -52,40 +72,40 @@ def test_read_json_rules_dataframe_columns(sample_json_data):
             assert list(df.columns) == expected_columns
 
 def test_read_json_rules_numeric_range():
-    json_data = {"category": [{"col": [1, 5]}]}
+    json_data = {"genic": [{"col": [1, 5]}]}
     with patch("builtins.open", mock_open(read_data=json.dumps(json_data))):
         result = read_json_rules("dummy_path.json")
     
-    df = result["category"][0]
+    df = result["genic"][0]
     assert df.shape == (2, 3)
     assert df.iloc[0].tolist() == ["col", "Min_Threshold", 1]
     assert df.iloc[1].tolist() == ["col", "Max_Threshold", 5]
 
 def test_read_json_rules_category_list():
-    json_data = {"category": [{"col": ["A", "B", "C"]}]}
+    json_data = {"genic": [{"col": ["A", "B", "C"]}]}
     with patch("builtins.open", mock_open(read_data=json.dumps(json_data))):
         result = read_json_rules("dummy_path.json")
     
-    df = result["category"][0]
+    df = result["genic"][0]
     assert df.shape == (3, 3)
     assert all(df["type"] == "Category")
     assert set(df["rule"]) == {"a", "b", "c"}
 
 def test_read_json_rules_single_numeric():
-    json_data = {"category": [{"col": 10}]}
+    json_data = {"genic": [{"col": 10}]}
     with patch("builtins.open", mock_open(read_data=json.dumps(json_data))):
         result = read_json_rules("dummy_path.json")
     
-    df = result["category"][0]
+    df = result["genic"][0]
     assert df.shape == (1, 3)
     assert df.iloc[0].tolist() == ["col", "Min_Threshold", 10]
 
 def test_read_json_rules_single_string():
-    json_data = {"category": [{"col": "value"}]}
+    json_data = {"genic": [{"col": "value"}]}
     with patch("builtins.open", mock_open(read_data=json.dumps(json_data))):
         result = read_json_rules("dummy_path.json")
     
-    df = result["category"][0]
+    df = result["genic"][0]
     assert df.shape == (1, 3)
     assert df.iloc[0].tolist() == ["col", "Category", "value"]
 

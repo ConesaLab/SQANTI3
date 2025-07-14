@@ -180,7 +180,6 @@ def test_genePredRecord_transcript_exons_mismatch():
     with pytest.raises(ValueError):  # Chromosome 'chr2' does not exist in genome_dict
         genePredRecord("gene1", "chr2", "+", 100, 200, 50, 150, 2, [100, 150], [200, 250])
 
-
 # get_splice_site
 def test_genePredRecord_get_splice_site_invalid_index():
     gene_pred = genePredRecord("gene1", "chr1", "+", 100, 250, 50, 150, 2, [100, 150], [200, 250])
@@ -194,30 +193,29 @@ def test_genePredRecord_get_splice_site_chrom_not_found():
     with pytest.raises(KeyError):  # Chromosome 'chr2' does not exist in genome_dict
         gene_pred.get_splice_site(genome_dict, 0)
 
-
 ### myQueryTranscript tests ###
 ## Class creation tests
 
 def test_myQueryTranscripts_init():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        exons=3,
         length=1000,
-        str_class="full-length",
+        structural_category="full-length",
         genes=["gene1", "gene2"],
         transcripts=["transcript1"],
         chrom="chr1",
         strand="+"
     )
 
-    assert obj.id == "transcript1"
-    assert obj.tss_diff == 10
-    assert obj.tts_diff == 20
-    assert obj.num_exons == 3
+    assert obj.isoform == "transcript1"
+    assert obj.diff_to_TSS == 10
+    assert obj.diff_to_TTS == 20
+    assert obj.exons == 3
     assert obj.length == 1000
-    assert obj.str_class == "full-length"
+    assert obj.structural_category == "full-length"
     assert obj.genes == ["gene1", "gene2"]
     assert obj.transcripts == ["transcript1"]
     assert obj.chrom == "chr1"
@@ -225,48 +223,49 @@ def test_myQueryTranscripts_init():
 
 
 def test_get_total_diff():
-    obj = myQueryTranscripts(id="transcript1", tss_diff=10, tts_diff=-20, num_exons=3, length=1000, str_class="full-length")
+    obj = myQueryTranscripts(isoform="transcript1", diff_to_TSS=10, diff_to_TTS=-20, exons=3, length=1000, structural_category="full-length")
     assert obj.get_total_diff() == 30
 
 
-def test_modify():
-    obj = myQueryTranscripts(id="transcript1", tss_diff=10, tts_diff=20, num_exons=3, length=1000, str_class="full-length")
-    obj.modify(
-        ref_transcript="ref_trans1",
-        ref_gene="gene1",
-        tss_diff=5,
-        tts_diff=15,
-        refLen=900,
-        refExons=2
+def test_update():
+    obj = myQueryTranscripts(isoform="transcript1", diff_to_TSS=10, diff_to_TTS=20, exons=3, length=1000, structural_category="full-length")
+    obj.update({
+        "transcripts":["ref_trans1"],
+        "genes":["gene1"],
+        "diff_to_TSS":5,
+        "diff_to_TTS":15,
+        "ref_length":900,
+        "ref_exons":2
+    }
     )
 
     assert obj.transcripts == ["ref_trans1"]
     assert obj.genes == ["gene1"]
-    assert obj.tss_diff == 5
-    assert obj.tts_diff == 15
-    assert obj.refLen == 900
-    assert obj.refExons == 2
+    assert obj.diff_to_TSS == 5
+    assert obj.diff_to_TTS == 15
+    assert obj.ref_length == 900
+    assert obj.ref_exons == 2
 
 def test_geneName_single():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        exons=3,
         length=1000,
-        str_class="full-length",
+        structural_category="full-length",
         genes=["gene1"]
     )
     assert obj.geneName() == "gene1"
 
 def test_geneName_multi():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        exons=3,
         length=1000,
-        str_class="full-length",
+        structural_category="full-length",
         genes=["gene1", "gene2", "gene1"]
     )
     assert obj.geneName() == "gene1_gene2"
@@ -274,53 +273,55 @@ def test_geneName_multi():
 
 def test_ratioExp():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        exons=3,
         length=1000,
-        str_class="full-length",
-        isoExp=10,
-        geneExp=50
+        structural_category="full-length",
+        iso_exp=10,
+        gene_exp=50
     )
     assert obj.ratioExp() == 0.2
 
-    obj.geneExp = 0
-    assert obj.ratioExp() == "NA"
+    obj.gene_exp = 0
+    assert obj.ratioExp() == None
 
 
 def test_CDSlen():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        CDS_genomic_start=100,
+        CDS_genomic_end=300,
+        exons=3,
         length=1000,
-        str_class="full-length",
+        structural_category="full-length",
         CDS_start=100,
         CDS_end=300,
         coding="coding"
     )
-    assert obj.CDSlen() == "201"
+    assert obj.get_orf_size() == 201
 
     obj.coding = "non_coding"
-    assert obj.CDSlen() == "NA"
+    assert obj.get_orf_size() == None
 
 
 def test_as_dict():
     obj = myQueryTranscripts(
-        id="transcript1",
-        tss_diff=10,
-        tts_diff=20,
-        num_exons=3,
+        isoform="transcript1",
+        diff_to_TSS=10,
+        diff_to_TTS=20,
+        exons=3,
         length=1000,
-        str_class="full-length",
+        structural_category="full-length",
         genes=["gene1", "gene2"],
         transcripts=["transcript1"],
         chrom="chr1",
         strand="+",
-        isoExp=10,
-        geneExp=50
+        iso_exp=10,
+        gene_exp=50
     )
     d = obj.as_dict()
 
@@ -335,38 +336,33 @@ def test_as_dict():
 
 ## ERROR cases
 def test_invalid_data_types():
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         myQueryTranscripts(
-            id=123,  # Invalid type for id
-            tss_diff="10",  # Invalid type for tss_diff
-            tts_diff=20,
-            num_exons=3,
-            length=1000,
-            str_class="full-length"
+            isoform=123
         )
 
 def test_empty_required_fields():
     with pytest.raises(ValueError):
         myQueryTranscripts(
-            id="",  # Empty id
-            tss_diff=10,
-            tts_diff=20,
-            num_exons=3,
+            isoform="",  # Empty id
+            diff_to_TSS=10,
+            diff_to_TTS=20,
+            exons=3,
             length=1000,
-            str_class="full-length"
+            structural_category="full-length"
         )
 
 ## TODO: Check if this depends on the strand
 def test_invalid_CDS():
     with pytest.raises(ValueError):
         obj = myQueryTranscripts(
-            id="transcript1",
-            tss_diff=10,
-            tts_diff=20,
-            num_exons=3,
+            isoform="transcript1",
+            diff_to_TSS=10,
+            diff_to_TTS=20,
+            exons=3,
             length=1000,
             strand="+",
-            str_class="full-length",
+            structural_category="full-length",
             CDS_start=300,
             CDS_end=100,
             coding="coding"
@@ -377,18 +373,18 @@ def test_invalid_CDS():
 
 def test_myQueryProteins_validate_input():
     with pytest.raises(ValueError):
-        myQueryProteins(cds_start=-1, cds_end=100, orf_length=99)  # Negative CDS start
+        myQueryProteins(cds_start=-1, cds_end=100, protein_length=99)  # Negative CDS start
 
     with pytest.raises(ValueError):
-        myQueryProteins(cds_start=100, cds_end=50, orf_length=49)  # CDS end < CDS start
+        myQueryProteins(cds_start=100, cds_end=50, protein_length=49)  # CDS end < CDS start
 
     with pytest.raises(ValueError):
-        myQueryProteins(cds_start=1, cds_end=100, orf_length=-50)  # Negative ORF length
+        myQueryProteins(cds_start=1, cds_end=100, protein_length=-50)  # Negative ORF length
 
-    obj = myQueryProteins(cds_start=1, cds_end=100, orf_length=100)
+    obj = myQueryProteins(cds_start=1, cds_end=100, protein_length=100)
     assert obj.cds_start == 1
     assert obj.cds_end == 100
-    assert obj.orf_length == 100
+    assert obj.cds_length == 100
 
 ### CAGEPeak ###
 

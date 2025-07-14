@@ -4,7 +4,7 @@ from collections import namedtuple
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 from src.classification_utils import (
-    calc_overlap, calc_splicesite_agreement, calc_exon_overlap, categorize_incomplete_matches, full_splice_match_subtype,
+    calc_overlap, calc_splicesite_agreement, calc_exon_overlap, categorize_incomplete_matches, categorize_full_matches,
     get_diff_tss_tts, get_gene_diff_tss_tts
 )
 from src.qc_classes import myQueryTranscripts
@@ -302,26 +302,26 @@ def test_with_complex_reference(complex_ref_transcript):
 (-75, -75, 'alternative_3end5end'),
 ])
     
-def test_full_splice_match_subtype(diff_tss, diff_tts, expected_subtype):
-    assert full_splice_match_subtype(diff_tss, diff_tts) == expected_subtype
+def test_categorize_full_matches(diff_tss, diff_tts, expected_subtype):
+    assert categorize_full_matches(diff_tss, diff_tts) == expected_subtype
 
 def test_edge_cases():
-    assert full_splice_match_subtype(50, 50) == 'reference_match'
-    assert full_splice_match_subtype(50, 51) == 'alternative_3end'
-    assert full_splice_match_subtype(51, 50) == 'alternative_5end'
-    assert full_splice_match_subtype(51, 51) == 'alternative_3end5end'
+    assert categorize_full_matches(50, 50) == 'reference_match'
+    assert categorize_full_matches(50, 51) == 'alternative_3end'
+    assert categorize_full_matches(51, 50) == 'alternative_5end'
+    assert categorize_full_matches(51, 51) == 'alternative_3end5end'
 
 def test_large_values():
-    assert full_splice_match_subtype(1000, 1000) == 'alternative_3end5end'
-    assert full_splice_match_subtype(-1000, -1000) == 'alternative_3end5end'
+    assert categorize_full_matches(1000, 1000) == 'alternative_3end5end'
+    assert categorize_full_matches(-1000, -1000) == 'alternative_3end5end'
 
 def test_mixed_signs():
-    assert full_splice_match_subtype(-25, 25) == 'reference_match'
-    assert full_splice_match_subtype(-75, 75) == 'alternative_3end5end'
-    assert full_splice_match_subtype(-75, 25) == 'alternative_5end'
-    assert full_splice_match_subtype(-25, 75) == 'alternative_3end'
+    assert categorize_full_matches(-25, 25) == 'reference_match'
+    assert categorize_full_matches(-75, 75) == 'alternative_3end5end'
+    assert categorize_full_matches(-75, 25) == 'alternative_5end'
+    assert categorize_full_matches(-25, 75) == 'alternative_3end'
 
 def test_zero_values():
-    assert full_splice_match_subtype(0, 0) == 'reference_match'
-    assert full_splice_match_subtype(0, 51) == 'alternative_3end'
-    assert full_splice_match_subtype(51, 0) == 'alternative_5end'
+    assert categorize_full_matches(0, 0) == 'reference_match'
+    assert categorize_full_matches(0, 51) == 'alternative_3end'
+    assert categorize_full_matches(51, 0) == 'alternative_5end'
