@@ -44,7 +44,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
     isoform_hit = myQueryTranscripts(isoform = trec.id, chrom = trec.chrom, 
                                      start = trec.txStart, end = trec.txEnd,
                                      strand = trec.strand, length = trec.length, exons = trec.exonCount,
-                                     perc_A_downstream_TTS = str(percA),
+                                     perc_A_downstream_TTS = percA,
                                      seq_A_downstream_TTS = seq_downTTS)
 
 
@@ -77,7 +77,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                             start = trec.txStart, end = trec.txEnd,
                                             strand = trec.strand, length = trec.length, 
                                             exons = trec.exonCount, subcategory= "no_subcategory",
-                                            perc_A_downstream_TTS = str(percA),
+                                            perc_A_downstream_TTS = percA,
                                             seq_A_downstream_TTS = seq_downTTS)
 
             for ref in references: # Iterate over the matching transcripts for that gene

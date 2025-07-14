@@ -3,7 +3,7 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional, get_args, get_origin
+from typing import List, Dict, Set, Optional, Union, get_args, get_origin
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
 
