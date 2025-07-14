@@ -367,8 +367,8 @@ def parse_td2_to_dict(td2_faa):
                 cds_type=info['cds_type']
             )
         except TypeError as e:
-            print(f"Error parsing record {r.id}: {e}")
-            print(info['cds_type'],type(info['cds_type']))
+            qc_logger.error(f"Error parsing record {r.id}: {e}")
+            qc_logger.error(info['cds_type'],type(info['cds_type']))
             sys.exit(1)
         # Include the record object along with extracted info
         records.append({

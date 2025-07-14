@@ -459,7 +459,7 @@ def associationOverlapping(isoform_hit, trec, junctions_by_chr):
                          "transcripts": ["novel"],
                          "subcategory": "mono-exon" if trec.exonCount==1 else "multi-exon"})
 
-    if isoform_hit.genes is None:
+    if not isoform_hit.genes:
         # completely no overlap with any genes on the same strand
         # check if it is anti-sense to a known gene, otherwise it's genic_intron or intergenic
         if trec.chrom in junctions_by_chr:
