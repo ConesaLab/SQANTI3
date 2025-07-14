@@ -179,7 +179,7 @@ def run(args):
         cleanup(outputClassPath, outputJuncPath)
 
     stop3 = timeit.default_timer()
-    qc_logger.info(f"SQANTI3 complete in {stop3 - start3} sec.")
+    qc_logger.info(f"SQANTI3 complete in {round(stop3 - start3,2)} sec.")
 
 
 ### IsoAnnot Lite implementation
