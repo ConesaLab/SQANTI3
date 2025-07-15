@@ -30,7 +30,7 @@ def qc_argparse():
     apo = ap.add_argument_group("ORF prediction")
     apo.add_argument("--include_ORF", action="store_true", help="Include ORF prediction.")
     apo.add_argument("--orf_input",  help="Input fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
-
+    apo.add_argument("--psauron_threshold", type=float, default=0.5, help="Threshold for P-Sauron ORF prediction (default: %(default)s)..")
     # Orthogonal data inputs
     apod = ap.add_argument_group("Orthogonal data inputs")
     apod.add_argument('--short_reads',  help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')

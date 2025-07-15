@@ -24,6 +24,7 @@ def write_qc_parameters(args):
         f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
         f.write("includeORF\t" + str(args.include_ORF) + "\n")
         f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
+        f.write("PsauronThreshold\t" + str(args.psauron_threshold) + "\n")
         f.write("FASTAused\t" + str(args.fasta) +"\n")
         f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA" ) + "\n")
         f.write("GMAPindex\t" + (os.path.abspath(args.gmap_index) if args.gmap_index is not None else "NA" ) + "\n")

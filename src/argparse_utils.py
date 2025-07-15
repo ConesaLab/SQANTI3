@@ -150,6 +150,9 @@ def qc_args_validation(args):
     # ORF prediction checks
     if args.orf_input is not None:
         valid_fasta(args.orf_input,qc_logger)
+    if args.psauron_threshold < 0 or args.psauron_threshold > 1.:
+        qc_logger.error(f"Invalid P-Sauron threshold: {args.psauron_threshold}. Must be between 0 and 1. Abort!")
+        sys.exit(-1)
 
     # Functional annotation checks
     if args.CAGE_peak is not None:

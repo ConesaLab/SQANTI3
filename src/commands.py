@@ -86,7 +86,7 @@ def get_aligner_command(aligner_choice, genome, isoforms, annotation,
     return cmd
 
 # TransDecoder2
-def run_td2(corrFASTA, orf_input,threads):
+def run_td2(corrFASTA, orf_input, psauron_thr, threads):
     """
     Runs the TD2 ORF prediction tool on the corrected FASTA file.
     """
@@ -109,7 +109,7 @@ def run_td2(corrFASTA, orf_input,threads):
         qc_logger.info(f"{orf_output} already exists. Using it.")
     else:
         qc_logger.info(f"Running TD2 ORF prediction on {orf_input}...")
-        predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ "
+        predict_cmd = f"cd {td2_path}; TD2.Predict -t {corrFASTA} -O ./ -P {psauron_thr} --retain-long-orfs-fdr 0"
         logFile = f"{sqanti_path}/logs/TD2_Predict.log"
         run_command(predict_cmd, qc_logger, logFile, description="TD2 ORF prediction")
     

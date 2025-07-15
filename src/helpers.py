@@ -203,7 +203,7 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
         else:
             corrGTF_out.write(line)
 
-def predictORF(outdir, include_ORF,orf_input , corrFASTA, corrORF,threads):
+def predictORF(outdir, include_ORF, orf_input, corrFASTA, corrORF, psauron_thr, threads):
     # ORF generation
     qc_logger.info("**** Predicting ORF sequences...")
 
@@ -219,7 +219,7 @@ def predictORF(outdir, include_ORF,orf_input , corrFASTA, corrORF,threads):
         qc_logger.info(f"ORF file {corrORF} already exists. Using it.")
         cdsDict = parse_corrORF(corrORF)
     else:
-        td2_output = run_td2(corrFASTA, orf_input,threads)  # threads is not used in TD2.Predict
+        td2_output = run_td2(corrFASTA, orf_input, psauron_thr, threads)  # threads is not used in TD2.Predict
         # Modifying ORF sequences by removing sequence before ATG
         cdsDict = parse_TD2(corrORF,td2_output)
     if len(cdsDict) == 0:

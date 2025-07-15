@@ -55,7 +55,7 @@ def run(args):
     gmap_index=args.gmap_index, annotation=args.refGTF)
     
     cdsDict = predictORF(args.dir, args.include_ORF, args.orf_input, 
-                         corrFASTA, corrORF,args.cpus)
+                         corrFASTA, corrORF,args.psauron_threshold, args.cpus)
 
     ## parse reference id (GTF) to dicts
     refs_1exon_by_chr, refs_exons_by_chr, \
