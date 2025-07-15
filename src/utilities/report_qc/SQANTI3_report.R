@@ -116,7 +116,11 @@ library(dplyr)
 # p30: intra-priming, by Classification
 # p31: intra-priming, Mono- vs Multi-Exons
 # p32: intra-priming, Coding vs Non-Coding
-
+#
+# p33: Psauron score by length
+# p34: Psauron score by structural category
+# p35: Psauron score by coding type
+# p36: Coding type by structural category
 
 # ***********************
 
@@ -133,7 +137,8 @@ subc.levels=c("alternative_3end",'alternative_3end5end', "alternative_5end","ref
 subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alternative 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Comb. of annot. junctions", "Comb. of annot. splice sites", "Intron retention", "Not comb. of annot. junctions", "Mono-exon by intron ret.", "At least 1 annot. don./accept.", "Mono-exon", "Multi-exon")
 coding.levels=c("coding", "non_coding")
 coding.labels=c("Coding", "Non coding")
-
+orf_type.levels=c("complete","5prime_partial","3prime_partial","internal")
+orf_type.labels=c("Complete ORF", "5' Partial ORF", "3' Partial ORF", "Internal ORF")
 
 data.class$structural_category = factor(data.class$structural_category,
                                         labels = xaxislabelsF1,
@@ -146,6 +151,11 @@ data.class$subcategory = factor(data.class$subcategory,
 data.class$coding = factor(data.class$coding,
                                 labels = coding.labels,
                                 levels = coding.levels,
+                                ordered=TRUE)
+                                
+data.class$orf_type = factor(data.class$orf_type,
+                                labels = orf_type.labels,
+                                levels = orf_type.levels,
                                 ordered=TRUE)
 legendLabelF1 <- levels(as.factor(data.class$coding));
 
@@ -3009,6 +3019,20 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))){
                                                    cage_detected_perc=round(cage_detected*100/count) ,
                                                    .groups = 'keep'))
 }
+
+### TransDecoder2 plots (p33, p34, p35)
+
+## p33: Psauron score for each structural category
+p33 <- ggplot(data.class, aes(x=structural_category, y=psauron_score, fill=structural_category)) +
+  geom_boxplot(outlier.size = 0.2, size=0.3) + my_theme +
+  scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
+  labs(title="Psauron score per structural category",
+       x="Structural category",
+       y="Psauron score") +
+  theme(legend.position="none")  +
+  theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
+
+
 
 ###** Output plots
 
