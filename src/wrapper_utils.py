@@ -112,7 +112,7 @@ def set_default_values(config,user_options):
             if key not in user_options:
                 if section != 'qc':
                    # Avoids including the protein sequences if the user has set skipORF
-                   if key == 'filter_faa' and config['qc']['options']['skipORF']:
+                   if key == 'filter_faa' and not config['qc']['options']['include_ORF']:
                        config[section]['options']['common'][key] = generate_default_path(config, default_filename)
                    else:
                        config[section]['options']['common'][key] = generate_default_path(config, default_filename)
