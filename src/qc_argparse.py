@@ -28,7 +28,7 @@ def qc_argparse():
 
     # ORF prediction
     apo = ap.add_argument_group("ORF prediction")
-    apo.add_argument("--skipORF", action="store_true", help="Skip ORF prediction (to save time)")
+    apo.add_argument("--include_ORF", action="store_true", help="Include ORF prediction.")
     apo.add_argument("--orf_input",  help="Input fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
 
     # Orthogonal data inputs

@@ -152,7 +152,7 @@ def combine_split_runs(args, split_dirs):
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
 
-    if not args.skipORF:
+    if args.include_ORF:
         f_faa = open(corrORF, 'w')
     f_fasta = open(corrFASTA, 'w')
     f_gtf = open(corrGTF, 'w')
@@ -163,7 +163,7 @@ def combine_split_runs(args, split_dirs):
         _gtf, _, _fasta, _orf , _ = get_corr_filenames(split_d,args.output)
         _, _junc = get_class_junc_filenames(split_d,args.output)
         _info = get_pickle_filename(split_d,args.output)
-        if not args.skipORF:
+        if args.include_ORF:
             with open(_orf) as h: f_faa.write(h.read())
         with open(_gtf) as h: f_gtf.write(h.read())
         with open(_fasta) as h: f_fasta.write(h.read())
@@ -192,7 +192,7 @@ def combine_split_runs(args, split_dirs):
     isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
-    if not args.skipORF:
+    if args.include_ORF:
         write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
     write_classification_output(isoforms_info, outputClassPath, FIELDS_CLASS)
     write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
@@ -204,7 +204,7 @@ def combine_split_runs(args, split_dirs):
     if args.isoform_hits:
         write_isoform_hits(args.dir, args.output, isoforms_info)
 
-    if not args.skipORF:
+    if args.include_ORF:
         f_faa.close()
 
     if args.report != 'skip':

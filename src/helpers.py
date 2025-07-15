@@ -203,7 +203,7 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
         else:
             corrGTF_out.write(line)
 
-def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
+def predictORF(outdir, include_ORF,orf_input , corrFASTA, corrORF,threads):
     # ORF generation
     qc_logger.info("**** Predicting ORF sequences...")
 
@@ -213,7 +213,7 @@ def predictORF(outdir, skipORF,orf_input , corrFASTA, corrORF,threads):
 
     # TD2 output --> myQueryProteins object
     cdsDict = {}
-    if skipORF:
+    if not include_ORF:
         qc_logger.warning("Skipping ORF prediction because user requested it. All isoforms will be non-coding!")
     elif os.path.exists(corrORF):
         qc_logger.info(f"ORF file {corrORF} already exists. Using it.")

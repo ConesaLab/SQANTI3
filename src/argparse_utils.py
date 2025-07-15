@@ -181,7 +181,7 @@ def qc_args_validation(args):
     if args.is_fusion:
         if args.orf_input is None:
             qc_logger.warning("Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!")
-            args.skipORF = True
+            args.include_ORF = False
         if args.fasta:
             qc_logger.error("If --is_fusion is on, must supply GTF as input")
             sys.exit(1)

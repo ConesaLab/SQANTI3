@@ -54,7 +54,7 @@ def run(args):
     genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
     gmap_index=args.gmap_index, annotation=args.refGTF)
     
-    cdsDict = predictORF(args.dir, args.skipORF, args.orf_input, 
+    cdsDict = predictORF(args.dir, args.include_ORF, args.orf_input, 
                          corrFASTA, corrORF,args.cpus)
 
     ## parse reference id (GTF) to dicts
@@ -120,7 +120,7 @@ def run(args):
         qc_logger.info("RT-switching computation")
         isoforms_info, RTS_info = process_rts(isoforms_info,outputJuncPath,
                                                         args.refFasta,genome_dict)
-        qc_logger.info(f"After RTS classificaion: {len(isoforms_info)}")
+        qc_logger.info(f"After RTS classification: {len(isoforms_info)}")
 
     
     ## TSS ratio dict reading
@@ -151,7 +151,7 @@ def run(args):
         
     else:
         # Write corrected GTF with CDS
-        if not args.skipORF:
+        if args.include_ORF:
             write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
 
         # Write final classification
