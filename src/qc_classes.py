@@ -328,7 +328,7 @@ class myQueryTranscripts:
             return None
         return abs(self.diff_to_TSS) + abs(self.diff_to_TTS)
 
-    def get_orf_size(self):
+    def get_cds_genomic_size(self):
         if self.coding == 'coding' and self.CDS_genomic_end is not None and self.CDS_genomic_start is not None:
             try:
                 return abs(int(self.CDS_genomic_end) - int(self.CDS_genomic_start)) + 1
@@ -348,7 +348,7 @@ class myQueryTranscripts:
     def as_dict(self):
         base = self.__dict__.copy()
         base["ratio_exp"] = self.ratioExp()
-        base["ORF_length"] = self.get_orf_size()
+        base["CDS_genomic_length"] = self.get_cds_genomic_size()
         base["associated_gene"] = self.geneName()
         base["associated_transcript"] = '_'.join(set(self.transcripts))
 

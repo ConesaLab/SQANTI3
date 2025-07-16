@@ -302,10 +302,10 @@ def test_CDSlen():
         CDS_end=300,
         coding="coding"
     )
-    assert obj.get_orf_size() == 201
+    assert obj.get_cds_genomic_size() == 201
 
     obj.coding = "non_coding"
-    assert obj.get_orf_size() == None
+    assert obj.get_cds_genomic_size() == None
 
 
 def test_as_dict():
