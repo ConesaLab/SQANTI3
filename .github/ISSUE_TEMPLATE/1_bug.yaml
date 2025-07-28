@@ -17,6 +17,13 @@ body:
           options:
               - label: I have loaded the SQANTI3.env conda environment
                 required: false
+    - type: checkboxes
+      attributes:
+          label: Are you running SQANTI3 on its latest release?
+          description: Please, check on the README page if the latest stable release and your SQANTI3 version are the same. If not, try to update and see if the bug is still present.
+          options:
+              - label: I have SQANTI3 updated to the latest release
+                required: true
     - type: textarea
       attributes:
           label: Problem description

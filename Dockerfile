@@ -1,4 +1,4 @@
-# Base image for SQANTI3/v5.3.0 with Ubuntu 22.04
+# Base image for SQANTI3/v5.5.0 with Ubuntu 22.04
 
 # Using ubuntu 22.04
 # Right now edlib doesn't work with python 3.12 which is the default version
@@ -16,7 +16,7 @@ ENV SQANTI3_VERSION="5.5.1"
 ENV DESALT_VERSION="1.5.6"
 ENV NAMFINDER_VERSION="0.1.3"
 
-LABEL maintainer="aarzalluz" \
+LABEL maintainer="pabloati" \
    base_image="ubuntu:22.04" \
    version="v0.9.0"   \
    software="sqanti3/v${SQANTI3_VERSION}" \
@@ -157,6 +157,8 @@ RUN mkdir -p /conda/miniconda3 && \
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
     bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
     rm /conda/miniconda3/miniconda.sh && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
     /conda/miniconda3/bin/conda clean -a
 
@@ -178,6 +180,7 @@ RUN chmod -R a+rX /opt2 && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_reads.py sqanti3_reads.py && \
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3 sqanti3 && \
     apt-get remove -y build-essential cmake && apt-get autoremove -y && apt-get clean -y && \
     apt-get clean autoclean -y
 
