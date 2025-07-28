@@ -157,8 +157,8 @@ RUN mkdir -p /conda/miniconda3 && \
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
     bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
     rm /conda/miniconda3/miniconda.sh && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
     /conda/miniconda3/bin/conda clean -a
 
