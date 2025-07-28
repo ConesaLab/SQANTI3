@@ -12,7 +12,7 @@ SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the versions of different softwares dependencies and SQANTI3 version
 # To install
-ENV SQANTI3_VERSION="5.3.6"
+ENV SQANTI3_VERSION="5.5.1"
 ENV DESALT_VERSION="1.5.6"
 ENV NAMFINDER_VERSION="0.1.3"
 
