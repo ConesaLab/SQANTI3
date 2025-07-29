@@ -55,6 +55,7 @@ RUN apt-get update \
        # gmap/2021-12-17
        gmap \
        gzip \
+       unzip \
        # kallisto/0.46.2
        kallisto \
        libcurl4-openssl-dev \
@@ -124,18 +125,17 @@ ENV PATH="${PATH}:/opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VER
 WORKDIR /opt2
 
 ########### SQANTI3 (currentily v${NAMFINDER_VERSION}) ############
-# Installs SQANTI3 with the version defined in the ENV variable (currently 5.3.0)
+# Installs SQANTI3 with the version defined in the ENV variable 0)
 # dependenciesand requirements have already been
 # satisfied, for more info see:
 # https://github.com/ConesaLab/SQANTI3
 RUN mkdir -p /opt2/sqanti3/${SQANTI3_VERSION}/ \
-   && wget https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v${SQANTI3_VERSION}.tar.gz -O /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
-   && tar -zvxf /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz -C /opt2/sqanti3/${SQANTI3_VERSION}/ \
-   && rm -f /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
+   && wget https://github.com/ConesaLab/SQANTI3/releases/download/v${SQANTI3_VERSION}/SQANTI3_v${SQANTI3_VERSION}.zip -O /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip \
+   && unzip /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip -d /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION} \
+   && rm -f /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip \
    # Removing exec bit for non-exec files
    && chmod -x \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/LICENSE \
-       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/.gitignore \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.md \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.yml \
    # Patch: adding absolute PATH to howToUse.png
