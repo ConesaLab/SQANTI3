@@ -302,7 +302,7 @@ if(is.null(opt$TP) == TRUE && is.null(opt$TN) == TRUE ){
  
 # Create new classification table for ML data preparation
 d1 <- d
-nrow(d1)
+
 if (run_ML) {
   cat("\n-------------------------------------------------")
   cat("\n\tML DATA PREPARATION:")
