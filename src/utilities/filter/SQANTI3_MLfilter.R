@@ -303,7 +303,6 @@ if(is.null(opt$TP) == TRUE && is.null(opt$TN) == TRUE ){
 # Create new classification table for ML data preparation
 d1 <- d
 
-
 if (run_ML) {
   cat("\n-------------------------------------------------")
   cat("\n\tML DATA PREPARATION:")
@@ -363,12 +362,17 @@ if (run_ML) {
   
   r = as.vector(which(apply(d1, 2, function(x) (anyNA(x)))))
   if (length(r) > 0){d1 <- d1[, -r]}
-  
+
   # Removing columns with zero variance
   cat("\nRemoving variables with near-zero variance...")
   nzv = caret::nearZeroVar(d1)
+  # Check if structural_category is in the list of columns to be removed and take it out
+  if("structural_category" %in% colnames(d1)[nzv]){
+    nzv <- nzv[-which(colnames(d1)[nzv] == "structural_category")]
+  }
+  
   if(length(colnames(d1)[nzv]) != 0){
-    cat("\tRemoved columns: ")
+    cat("\nRemoved columns: \n")
     print(paste(colnames(d1)[nzv]))
     d1 = d1[,-nzv]
   } else {
@@ -383,13 +387,13 @@ if (run_ML) {
   highCorr <- caret::findCorrelation(descrCorr, cutoff = 0.9, verbose = TRUE, names=TRUE)
   cat("\n\tList of removed features: ")
   if(length(highCorr)>0){
-    cat(paste("\t", highCorr))
+    cat(paste("\n\t", highCorr))
     d1 = d1[, -which(colnames(d1) %in% highCorr)]
   } else {
     cat("\tNo features removed.")
   }
-  
-  # END  of ML data preparation 
+
+  # END  of ML data preparation
   ############################
   
   
@@ -406,7 +410,6 @@ if (run_ML) {
   # Remove mono-exon transcripts from training set
   dmult <- d1[which(d1$exons != 1), ]
   
-  
   # Subset pre-processed data table (dmult) to make training dataset
   trainingset <- rbind(dmult[Positive_set, ],
                         dmult[Negative_set, ])
@@ -418,11 +421,11 @@ if (run_ML) {
   
   
   # Select columns that are not informative for ML
-colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
-                "ref_length", "ref_exons", "ORF_length", "CDS_length", "CDS_start",
-                "CDS_end", "CDS_genomic_start", "CDS_genomic_end", "all_canonical",
-                "seq_A_downstream_TTS", "ORF_seq", "subcategory", "structural_category",
-                "polyA_motif")
+  colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
+                  "ref_length", "ref_exons", "ORF_length", "CDS_length", "CDS_start",
+                  "CDS_end", "CDS_genomic_start", "CDS_genomic_end", "all_canonical",
+                  "seq_A_downstream_TTS", "ORF_seq", "subcategory", "structural_category",
+                  "polyA_motif")
 
   
   # Add RM TP set columns to remove to defined list (if it has been previously created)
@@ -497,8 +500,8 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
     cat("\nTraining Random Forest Classifier...")
     cat("\n\t***Note: this can take up to several hours.")
     cat("\nPre-defined Random Forest parameters (supplied to caret::trainControl()):")
-    cat("\t - Downsampling in training set (sampling = 'down').")
-    cat("\t - 10x cross-validation (repeats = 10).\n")
+    cat("\n\t - Downsampling in training set (sampling = 'down').")
+    cat("\n\t - 10x cross-validation (repeats = 10).\n")
     
     ctrl <- caret::trainControl(method = "repeatedcv", repeats = 10,
                       classProbs = TRUE,
@@ -506,7 +509,7 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
                       savePredictions = TRUE, returnResamp = "all")
     
     set.seed(1)
-    
+
     randomforest <- caret::train(x = training, 
                                  y = as.factor(Class[inTraining]),
                                  method = "rf",
@@ -638,8 +641,8 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
   dev.off()
   
   cat("\nROC curves saved to testSet_ROC_curve.pdf file. Includes:")
-  cat("\t - ROC curve with unbalanced classes.")
-  cat("\t - ROC curve with balanced classes.")
+  cat("\n\t - ROC curve with unbalanced classes.")
+  cat("\n\t - ROC curve with balanced classes.")
   
   
   #################################
@@ -667,8 +670,7 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
                                         rownames(negatives)] <- "Negative"
   cat("\nRandom forest classification results:")
   print(table(classified.isoforms$ML_classifier))
-  
-  
+    
   ####################################
   ## Add monoexons back to dataset  ##
   ####################################
@@ -708,17 +710,16 @@ colRem_def <- c("chrom", "strand", "associated_gene", "associated_transcript",
 ####################################
 
 cat("\n-------------------------------------------------")
-cat("\nApplying intra-priming filter to our dataset.")
-
+cat("\nApplying intra-priming filter to our dataset...")
 # apply to all not FSM transcripts and to all mono-exons from all categories
-d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) & 
+d1[,"intra_priming"] <- d1$perc_A_downstream_TTS > as.numeric(opt$intrapriming) &
   # not FSM: always TRUE
   (d1$structural_category != "full-splice_match" |
      # FSM: only TRUE when mono-exon
      (d1$structural_category == "full-splice_match" & d1$exons == 1))
 
 
-cat("\nIntra-priming filtered transcripts:")
+cat("\nIntra-priming filtered transcripts:\n")
 print(table(d1$intra_priming))
 
 
@@ -808,6 +809,7 @@ print(table(d_out$filter_result))
 cat("\n-------------------------------------------------")
 cat("\nSQANTI3 ML filter finished successfully!")
 cat("\n-------------------------------------------------")
+cat("\n")
 
 
 ################################################

@@ -33,7 +33,6 @@ def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, f
     return isoforms_info
 
 def write_classification_output(isoforms_info, outputClassPath, fields_class_cur):
-     
     # iso_keys = sorted(isoforms_info.keys(), key=lambda x: (isoforms_info[x].chrom, isoforms_info[x].id))
     with open(outputClassPath, 'w') as h:
         fout_class = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
@@ -112,8 +111,7 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
             # Fix negative strand coordinates
             if r.strand == '-': 
                 r.start, r.end =  r.ref_exons[-1].start, r.ref_exons[0].end # Positions get shifted by 1
-                r.ref_exons.reverse()
-                # Fix the reference exons 
+                r.ref_exons.reverse() # Fix the reference exons 
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
             s = isoforms_info[r.seqid].CDS_genomic_start  # could be 'NA'
             e = isoforms_info[r.seqid].CDS_genomic_end    # could be 'NA'

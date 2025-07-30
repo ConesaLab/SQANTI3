@@ -74,14 +74,14 @@ if(opt$filter_type == "ml"){
   
   which_classif <- stringr::str_detect(paths, "ML_result_classification")
   path_classif <- paths[which_classif]
+
   classif <- readr::read_tsv(path_classif, 
                              col_types = readr::cols(exons = readr::col_integer(),
                                                      ref_exons = readr::col_integer()))
-  
-  
+
   # Detect path and load variable importance table
   message("\nReading classifier variable importance table...")
-  
+
   which_imp <- stringr::str_detect(paths, "variable-importance_table")
   path_imp <- paths[which_imp]
   imp <- readr::read_tsv(path_imp, col_names = c("variable", "importance"))
@@ -394,8 +394,14 @@ fsm_redund.df <- fsm %>%
 
 
 # ism redundancy
-ism_before <- classif %>% 
-  dplyr::filter(structural_category == "ISM")
+if (length(classif$structural_category[classif$structural_category == "ISM"]) == 0){
+  message("\nNo ISM transcripts found in classification table.")
+  message("Skipping ISM redundancy plots.")
+  ism_redund <- NULL
+  comb_redund <- NULL
+} else {
+  ism_before <- classif %>% 
+    dplyr::filter(structural_category == "ISM")
 
 ism_after <- classif %>% 
   dplyr::filter(structural_category == "ISM" &
@@ -407,6 +413,7 @@ ism <- dplyr::bind_rows(list(Before = ism_before, After = ism_after),
                   forcats::fct_relevel(c("Before", "After"))) %>% 
   dplyr::select(isoform, associated_gene, associated_transcript, 
                 structural_category, filter)
+
 
 ism_redund.df <- ism %>% 
   dplyr::group_by(filter, associated_transcript) %>% 
@@ -455,7 +462,7 @@ comb_redund.df <- comb_fsm_ism %>%
           xlab("FSM+ISM per reference transcript") +
           ylab("Reference transcfript no.") +
           facet_grid(~filter)
-        
+}        
         
 
 #### END common filter plots ####
