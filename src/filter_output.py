@@ -25,7 +25,7 @@ def filter_gtf(filename,prefix,ids_to_keep):
     with open(outputGTF, 'w') as f:
         for r in collapseGFFReader(filename):
             # Fix negative strand coordinates
-            if (r.strand == '-') & (len(r.ref_exons) > 0): 
+            if (r.strand == '-') and (len(r.ref_exons) > 0): 
                 r.ref_exons.reverse()
                 r.start , r.end = r.ref_exons[0].start, r.ref_exons[-1].end # Positions get shifted by 1
             if r.seqid in ids_to_keep:
