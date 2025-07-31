@@ -277,6 +277,7 @@ def readGFF(gff3):
     dc_GFF3exonsTrans = {}
     dc_GFF3transExons = {}
     dc_GFF3coding = {}
+    dc_GFF3protein = {} 
     dc_GFF3strand = {}
     dc_GFF3geneTrans = {}
     dc_GFF3transGene = {}
@@ -346,7 +347,11 @@ def readGFF(gff3):
                     dc_GFF3coding.update({str(transcript) : [int(start), int(end)]}) #not int bc can be NA
                 else:                
                     dc_GFF3coding.update({str(transcript) : dc_GFF3coding.get(str(transcript)) + [int(start), int(end)]})
-
+            elif feature == "protein":
+                if not dc_GFF3protein.get(str(transcript)):
+                    dc_GFF3protein.update({str(transcript) : ["NA", "NA", int(start)]})
+                else:
+                    dc_GFF3protein.update({str(transcript) : dc_GFF3protein.get(str(transcript)) + [int(start), int(end)]})
             elif feature in ["splice_junction","transcript","gene","protein","genomic"] :
                 if not dc_GFF3_raw_annot.get(transcript):
                     dc_GFF3_raw_annot.update({str(transcript) : [line]})
@@ -362,7 +367,8 @@ def readGFF(gff3):
             print("File GFF3 doesn't have the correct number of columns (9).")
 
     sorted(dc_GFF3exonsTrans.keys())
-    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description
+    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, \
+        dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description, dc_GFF3protein
 
 def unique(list1): 
     global verbose
@@ -750,7 +756,7 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
             
             if trans == transInterest and fields[2]==featureOfInterest and verbose:
                 print("****newLine****")
-                print(new_line)
+                print(newline)
 
     return dc_newGFF3
 
@@ -3113,15 +3119,19 @@ def run(args):
         #dc_GFF3geneTrans = {gene : [trans1, trans2...]}
         #dc_GFF3_raw_annot = {trans : [line, line...]} #for not annot lines
         #dc_gene_description = {gene : [ID=...]} #description line
-        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description = readGFF(gff3) #dc_GFF3exons is sorted
+        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, \
+            dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, \
+                dc_gene_description, dc_GFF3protein = readGFF(gff3) #dc_GFF3exons is sorted
 
         print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
         #dc_SQexons = {trans : [[start,end], [start,end]...]}
         #dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         #dc_SQtransGene = {trans : [gene, category, transAssociated]}
         #dc_SQstrand = {trans : strand}
-        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
-        
+        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, \
+            dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, \
+                                                     dc_gene_description, filename)
+
         #create gene-trans dictionary for SQ file
         dc_SQgeneTrans = createDCgeneTrans(dc_SQtransGene)
         
