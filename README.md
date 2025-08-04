@@ -21,7 +21,7 @@ For information about previous releases and features introduced in them, see the
 
 **⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
-**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.**
+**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.** Release 5.5.1 updated the python version to 3.11.13, as on the previous version freezes might happen in some datasets.
 
 ## Documentation
 
