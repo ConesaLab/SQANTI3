@@ -13,7 +13,7 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5) (23/06/2025) is **version 5.5**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5.1) (04/08/2025) is **version 5.5.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
@@ -21,7 +21,7 @@ For information about previous releases and features introduced in them, see the
 
 **⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
-**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. You might want to re-run SQANTI3 QC. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.**
+**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.**
 
 ## Documentation
 
