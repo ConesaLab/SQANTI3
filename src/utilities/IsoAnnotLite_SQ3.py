@@ -349,7 +349,7 @@ def readGFF(gff3):
                     dc_GFF3coding.update({str(transcript) : dc_GFF3coding.get(str(transcript)) + [int(start), int(end)]})
             elif feature == "protein":
                 if not dc_GFF3protein.get(str(transcript)):
-                    dc_GFF3protein.update({str(transcript) : ["NA", "NA", int(start)]})
+                    dc_GFF3protein.update({str(transcript) : [int(start),int(end)]})
                 else:
                     dc_GFF3protein.update({str(transcript) : dc_GFF3protein.get(str(transcript)) + [int(start), int(end)]})
             elif feature in ["splice_junction","transcript","gene","protein","genomic"] :
