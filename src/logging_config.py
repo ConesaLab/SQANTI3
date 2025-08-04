@@ -78,7 +78,7 @@ MAIN_LOGGING_CONFIG = {
         'art_logger': {
             'handlers': ['main_script_handler'],
             'level': 'INFO',
-            'propagate': True
+            'propagate': False
         },
         'process_logger': {
             'handlers': ['process_handler'],

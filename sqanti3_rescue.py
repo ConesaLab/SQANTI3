@@ -19,7 +19,6 @@ from src.argparse_utils import rescue_args_validation
 from src.config import __version__
 from src.rescue_output import write_rescue_fasta, write_rescue_gtf
 from src.rescue_steps import (
-  concatenate_gtf_files,
   run_automatic_rescue,
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue
@@ -32,7 +31,9 @@ from src.utilities.rescue.rescue_helpers import get_good_transcripts
 def main():
   art_logger.info(rescue_art())
   args = rescue_argparse().parse_args()
-  update_logger(rescue_logger,args.dir,args.log_level)
+  update_logger(rescue_logger,args.dir,"rescue",args.log_level)
+  # Create the log directory if it does not exist
+  os.makedirs(f"{args.dir}/logs", exist_ok=True)
   # Check if the logs directory exists, if not create it
   rescue_args_validation(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
