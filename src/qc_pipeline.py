@@ -172,7 +172,8 @@ def run(args):
         if args.report != 'skip':
             # Run TUSCO benchmarking report if requested
             if hasattr(args, 'tusco') and args.tusco:
-                generate_tusco_report(args.tusco, outputClassPath, args.isoforms)
+                # Use the corrected GTF for plotting/reference in the TUSCO report
+                generate_tusco_report(args.tusco, outputClassPath, corrGTF)
             # Main SQANTI3 report
             generate_report(args.saturation, args.report, outputClassPath, outputJuncPath)
 
@@ -197,4 +198,3 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         qc_logger.error(f"Command failed: {ISOANNOT_CMD}")
         sys.exit(1)
-

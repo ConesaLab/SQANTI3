@@ -12,6 +12,7 @@ dependencies:
   - biopython<=1.81
   - bioconductor-noiseq=2.46.0
   - bioconductor-busparse=1.16.0
+  - bioconductor-gviz=1.48.0
   - bx-python=0.11.0
   - cython=3.0.11
   - desalt=1.5.6

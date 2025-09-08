@@ -71,19 +71,30 @@ def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
     """
     Generates the TUSCO benchmarking report using the provided classification file and transcript GTF.
     """
-    qc_logger.info("Generating TUSCO report....", file=sys.stderr)
+    # Log to the configured handlers (StreamHandler defaults to stderr)
+    qc_logger.info("Generating TUSCO report....")
+    # Prefer GTF (has coordinates for IGV-like plots); fallback to TSV
+    tusco_tsv = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.tsv")
     tusco_gtf = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.gtf")
+    tusco_ref = tusco_gtf if os.path.exists(tusco_gtf) else tusco_tsv
+    if not os.path.exists(tusco_ref):
+        qc_logger.error(f"TUSCO reference not found for species '{tusco}'. Searched: {tusco_tsv} and {tusco_gtf}")
+        raise FileNotFoundError("Missing TUSCO reference file")
+    else:
+        qc_logger.info(f"Using TUSCO reference: {tusco_ref}")
     # map species to genome assembly used by Gviz
     genome = {
         "human": "hg38",
         "mouse": "mm10",
     }.get(tusco, "hg38")
+    # RSCRIPT_TUSCO_REPORT already contains utilitiesPath; don't prefix again
     cmd = (
-        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_TUSCO_REPORT} "
-        f"{outputClassPath} {tusco_gtf} {transcript_gtf_file} {utilitiesPath} {genome}"
+        f"{RSCRIPTPATH} {RSCRIPT_TUSCO_REPORT} "
+        f"{outputClassPath} {tusco_ref} {transcript_gtf_file} {utilitiesPath} {genome}"
     )
     logFile = f"{os.path.dirname(outputClassPath)}/logs/tusco_report.log"
-    run_command(cmd, qc_logger, logFile, "TUSCO report")
+    # TUSCO is optional; if it fails (e.g., no matches), continue pipeline
+    run_command(cmd, qc_logger, logFile, "TUSCO report", fail_ok=True)
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")

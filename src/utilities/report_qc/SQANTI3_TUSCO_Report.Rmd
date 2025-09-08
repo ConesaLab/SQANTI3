@@ -34,7 +34,7 @@ params:
     <i class="fas fa-question-circle"></i> How to use the report?
   </a>
   
-  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="howToUse.png"></div>
 </body>
 
 
@@ -78,7 +78,7 @@ data_matrix <- tibble(
   Description = c(
     "TUSCO transcripts accurately detected as Reference Matches (RMs), representing perfect identification of known TUSCO genes.",
     "TUSCO transcripts identified as Full Splice Match (FSM) or Incomplete Splice Match (ISM) for a TUSCO gene but lacking RM qualification due to minor differences in transcript start or end positions.",
-    "TUSCO genes undetected as FSM or ISM, representing missed TUSCO transcripts.",
+    "TUSCO genes with no SQANTI3 transcripts detected (no isoforms matched to the TUSCO gene).",
     "TUSCO transcripts classified as Novel In Catalog (NIC), Novel Not in Catalog (NNC), Genic Intron, or fusion transcripts, potentially arising from sequencing artifacts, transcript model reconstruction artifacts, or biological transcript deviations."
   )
 )
@@ -182,6 +182,9 @@ metrics_values <- c(
   positive_detection_rate * 100,
   redundant_precision * 100
 )
+
+# Replace NA/Inf with 0 to avoid plot failures
+metrics_values[is.na(metrics_values) | is.infinite(metrics_values)] <- 0
 
 # Create labels for the metrics
 metrics_labels <- c("Sn", "nrPre", "1/red", "1-FDR", "PDR", "rPre")
@@ -301,7 +304,7 @@ TP <- TP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -345,7 +348,7 @@ PTP <- PTP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -414,7 +417,7 @@ FP <- FP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -444,6 +447,7 @@ datatable(
 )
 ```
 
-<script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
+<!-- Optional icon kit; can be omitted if offline -->
+<!-- <script src="https://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script> -->
 <script src="tusco_script.js"></script>
 <script src="script.js"></script>
