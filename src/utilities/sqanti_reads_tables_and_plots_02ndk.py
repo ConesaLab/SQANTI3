@@ -384,23 +384,46 @@ def proc_samples(design_file, ref):
         gene_count_DF[exp_factor] = exp_factor_val
     
         ##UJC DF
-        ujc_count_DF = class_DF.groupby('jxnHash').agg({
-            'isoform': 'nunique',  # Count unique isoforms for each jxnHash
-            'associated_gene': 'first',
-            'known_canonical': 'first', 
-            'known_non_canonical': 'first',
-            'novel_canonical': 'first',
-            'novel_non_canonical': 'first',
-            'structural_category': 'first' }).reset_index()
+        # Group by UJC plus associated gene and structural category
+        ujc_group_cols = ['jxnHash', 'associated_gene', 'structural_category']
+        ujc_count_DF = class_DF.groupby(ujc_group_cols).agg({
+            'isoform': 'nunique'  # Count unique isoforms for this group
+        }).reset_index()
+
+        for col in ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']:
+            if col in class_DF.columns:
+                first_vals = class_DF.groupby(ujc_group_cols)[col].first().reset_index()
+                ujc_count_DF = pd.merge(ujc_count_DF, first_vals, on=ujc_group_cols, how='left')
+            else:
+                ujc_count_DF[col] = 0
         for col in ujc_count_DF.columns:
             if ujc_count_DF[col].dtype == 'int64':
                 ujc_count_DF[col] = ujc_count_DF[col].fillna(0)
             elif ujc_count_DF[col].dtype == 'object' or ujc_count_DF[col].dtype.name == 'string':
                 ujc_count_DF[col] = ujc_count_DF[col].fillna('0')
         ujc_count_DF.rename(columns={'isoform': 'read_count'}, inplace=True)
-        ujc_count_DF['flag_MEI'] =  ujc_count_DF.groupby('associated_gene')['read_count'].transform(lambda x: x == x.max()).astype(int)
+        ujc_count_DF['flag_MEI'] = ujc_count_DF.groupby('associated_gene')['read_count'] \
+            .transform(lambda s: (s == s.max()).astype(int))
         ujc_count_DF['sampleID'] = sampleID
         ujc_count_DF[exp_factor] = exp_factor_val
+
+        # Reorder columns to original layout
+        desired_cols = [
+            'jxnHash',
+            'read_count',
+            'associated_gene',
+            'known_canonical',
+            'known_non_canonical',
+            'novel_canonical',
+            'novel_non_canonical',
+            'structural_category',
+            'flag_MEI',
+            'sampleID',
+            'flag_annotated_gene'
+        ]
+        existing_desired = [c for c in desired_cols if c in ujc_count_DF.columns]
+        remaining_cols = [c for c in ujc_count_DF.columns if c not in existing_desired]
+        ujc_count_DF = ujc_count_DF[existing_desired + remaining_cols]
     
         # Length DF
         # Calculating the length stats
