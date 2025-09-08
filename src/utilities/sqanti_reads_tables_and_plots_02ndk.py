@@ -384,8 +384,7 @@ def proc_samples(design_file, ref):
         gene_count_DF[exp_factor] = exp_factor_val
     
         ##UJC DF
-        # Group by UJC plus associated gene and structural category so monoexons with same
-        # jxnHash but different labels become separate rows
+        # Group by UJC plus associated gene and structural category
         ujc_group_cols = ['jxnHash', 'associated_gene', 'structural_category']
         ujc_count_DF = class_DF.groupby(ujc_group_cols).agg({
             'isoform': 'nunique'  # Count unique isoforms for this group
@@ -408,7 +407,7 @@ def proc_samples(design_file, ref):
         ujc_count_DF['sampleID'] = sampleID
         ujc_count_DF[exp_factor] = exp_factor_val
 
-        # Reorder columns to original layout; keep any extras (e.g., factor) at the end
+        # Reorder columns to original layout
         desired_cols = [
             'jxnHash',
             'read_count',
