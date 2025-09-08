@@ -549,6 +549,7 @@ if ("transcript_id" %in% names(transcript_gtf_df)) {
   tidx <- match(transcript_gtf_df$transcript_id, classification_data_cleaned$isoform)
   map_ok <- !is.na(tidx)
   message("Mapped transcript_id to classification isoform: ", sum(map_ok), "/", length(map_ok), " matched")
+  # Only remap gene_id if we actually matched sample isoforms; skip for reference GTF
   if (any(map_ok)) {
     transcript_gtf_df$gene_id[map_ok] <- classification_data_cleaned$associated_gene[tidx[map_ok]]
   }
@@ -583,7 +584,25 @@ for (gene in genes_to_plot) {
       # Drop rows with missing coordinates proactively
       dplyr::filter(.df, !is.na(seqnames) & !is.na(start) & !is.na(end) & !is.na(strand))
     } else {
-      data.frame()
+      # Derive TUSCO gene coordinates from the user-provided reference GTF
+      .ref <- transcript_gtf_df
+      if ("type" %in% names(.ref)) {
+        .ref <- dplyr::filter(.ref, type == "exon")
+      }
+      # Build match sets from TUSCO TSV annotations (prefer gene_name, then ensembl)
+      tusco_gene_names <- annotation_data$gene_name[!is.na(annotation_data$gene_name)]
+      tusco_ensembl_ids <- annotation_data$ensembl[!is.na(annotation_data$ensembl)]
+      tusco_ensembl_ids <- sub("\\.\\d+$", "", as.character(tusco_ensembl_ids))
+      match_vec <- rep(FALSE, nrow(.ref))
+      if ("gene_name" %in% names(.ref) && length(tusco_gene_names) > 0) {
+        match_vec <- match_vec | (!is.na(.ref$gene_name) & .ref$gene_name %in% tusco_gene_names)
+      }
+      if ("gene_id" %in% names(.ref) && length(tusco_ensembl_ids) > 0) {
+        gid <- sub("\\.\\d+$", "", as.character(.ref$gene_id))
+        match_vec <- match_vec | (!is.na(gid) & gid %in% tusco_ensembl_ids)
+      }
+      .ref <- .ref[match_vec %in% TRUE, , drop = FALSE]
+      dplyr::filter(.ref, !is.na(seqnames) & !is.na(start) & !is.na(end) & !is.na(strand))
     }
   }, error = function(e) data.frame())
   

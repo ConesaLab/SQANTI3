@@ -73,15 +73,15 @@ def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
     """
     # Log to the configured handlers (StreamHandler defaults to stderr)
     qc_logger.info("Generating TUSCO report....")
-    # Prefer GTF (has coordinates for IGV-like plots); fallback to TSV
-    tusco_tsv = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.tsv")
-    tusco_gtf = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.gtf")
-    tusco_ref = tusco_gtf if os.path.exists(tusco_gtf) else tusco_tsv
+    # Use species-specific TUSCO TSV (no longer depend on TUSCO GTF files)
+    tusco_ref = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.tsv")
     if not os.path.exists(tusco_ref):
-        qc_logger.error(f"TUSCO reference not found for species '{tusco}'. Searched: {tusco_tsv} and {tusco_gtf}")
-        raise FileNotFoundError("Missing TUSCO reference file")
+        qc_logger.error(
+            f"TUSCO reference TSV not found for species '{tusco}'. Searched: {tusco_ref}"
+        )
+        raise FileNotFoundError("Missing TUSCO TSV reference file")
     else:
-        qc_logger.info(f"Using TUSCO reference: {tusco_ref}")
+        qc_logger.info(f"Using TUSCO TSV reference: {tusco_ref}")
     # map species to genome assembly used by Gviz
     genome = {
         "human": "hg38",

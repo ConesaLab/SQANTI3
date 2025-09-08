@@ -172,8 +172,8 @@ def run(args):
         if args.report != 'skip':
             # Run TUSCO benchmarking report if requested
             if hasattr(args, 'tusco') and args.tusco:
-                # Use the corrected GTF for plotting/reference in the TUSCO report
-                generate_tusco_report(args.tusco, outputClassPath, corrGTF)
+                # Use the user-provided reference GTF for IGV-like plots in the TUSCO report
+                generate_tusco_report(args.tusco, outputClassPath, args.refGTF)
             # Main SQANTI3 report
             generate_report(args.saturation, args.report, outputClassPath, outputJuncPath)
 
