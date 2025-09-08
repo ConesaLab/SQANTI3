@@ -22,7 +22,7 @@ GFFREAD_PROG = "gffread"
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
-RSCRIPT_BUGSI_REPORT = os.path.join(utilitiesPath,"report_qc","BUGSI_report.R")
+RSCRIPT_TUSCO_REPORT = os.path.join(utilitiesPath,"report_qc","TUSCO_report.R")
 
 # Rscript filter
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")

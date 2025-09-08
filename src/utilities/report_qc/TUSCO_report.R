@@ -1,5 +1,5 @@
 #####################################
-#####       BUGSI Report       ######
+#####       TUSCO Report       ######
 #####################################
 ### Author: Tianyuan Liu
 ### Last Modified: 11/07/2024 by tianyuan.liu@csic.es
@@ -7,21 +7,23 @@
 #********************** Taking arguments from python script
 args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
-bugsi.file <- args[2]
+tusco.file <- args[2]
 transcript_gtf_file <- args[3]
 utilities.path <- args[4]
+# optional genome assembly (e.g., hg38, mm10)
+genome.assembly <- ifelse(length(args) >= 5, args[5], "hg38")
 
 # Define file paths
 
-# class.file <- '/media/tian/ubuntu/SQANTI_BUGSI/WTC11_cdna_ont/WTC11_cdna_ont_classification.txt'
-# bugsi.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/bugsi_human.gtf'
-# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_BUGSI/HUMAN/WTC11_cdna_ont.gtf'
+# class.file <- '/media/tian/ubuntu/SQANTI_TUSCO/WTC11_cdna_ont/WTC11_cdna_ont_classification.txt'
+# tusco.file <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities/report_qc/tusco_human.gtf'
+# transcript_gtf_file <- '/media/tian/ubuntu/SQANTI_TUSCO/HUMAN/WTC11_cdna_ont.gtf'
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
 output_directory <- dirname(class.file)
 output_name <- basename(report.prefix)
-html.report.file <- paste0(output_name, "_BUGSI_report.html")
+html.report.file <- paste0(output_name, "_TUSCO_report.html")
 
 # Load necessary libraries
 message("Loading necessary libraries...")
@@ -58,18 +60,18 @@ read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
 # Read input files
 classification_data <- read_tsv_safe(class.file)
 
-# Read BUGSI GTF file
-message("Reading BUGSI GTF file...")
-bugsi_gtf <- rtracklayer::import(bugsi.file)
-bugsi_gtf_df <- as.data.frame(bugsi_gtf)
+# Read TUSCO GTF file
+message("Reading TUSCO GTF file...")
+tusco_gtf <- rtracklayer::import(tusco.file)
+tusco_gtf_df <- as.data.frame(tusco_gtf)
 
 # Extract gene-level information
-annotation_data <- bugsi_gtf_df %>%
+annotation_data <- tusco_gtf_df %>%
   filter(type == "gene") %>%
   select(ensembl = ensembl, refseq = refseq, gene_name = gene_name) %>%
   distinct()
 
-rBUGSI <- nrow(annotation_data)
+rTUSCO <- nrow(annotation_data)
 
 # Read transcript GTF file
 message("Reading transcript GTF file...")
@@ -150,33 +152,33 @@ classification_data_cleaned <- classification_data %>%
   distinct(isoform, associated_gene, associated_transcript, .keep_all = TRUE) %>%
   arrange(isoform)
 
-# Metrics and definitions for evaluation against BUGSI
-message("Defining BUGSI-related transcript mappings...")
-# BUGSI_transcripts: Transcripts mapping to BUGSI genes
-BUGSI_transcripts <- classification_data_cleaned %>%
+# Metrics and definitions for evaluation against TUSCO
+message("Defining TUSCO-related transcript mappings...")
+# TUSCO_transcripts: Transcripts mapping to TUSCO genes
+TUSCO_transcripts <- classification_data_cleaned %>%
   filter(associated_gene %in% annotation_data[[top_id_type]])
 
-# BUGSI_RM: BUGSI_transcripts that match BUGSI genes as Reference Match (RM)
-BUGSI_RM <- BUGSI_transcripts %>%
+# TUSCO_RM: TUSCO_transcripts that match TUSCO genes as Reference Match (RM)
+TUSCO_RM <- TUSCO_transcripts %>%
   filter(associated_gene %in% annotation_data[[top_id_type]] & subcategory == "reference_match")
 
-# Define True Positives (TP): BUGSI transcripts identified as Reference Match (RM)
-TP <- BUGSI_RM
-TP_BUGSI <- unique(BUGSI_RM$associated_gene)
+# Define True Positives (TP): TUSCO transcripts identified as Reference Match (RM)
+TP <- TUSCO_RM
+TP_TUSCO <- unique(TUSCO_RM$associated_gene)
 
-# Define Partial True Positives (PTP): BUGSI transcripts identified as FSM or ISM but not RM
-PTP <- BUGSI_transcripts %>%
+# Define Partial True Positives (PTP): TUSCO transcripts identified as FSM or ISM but not RM
+PTP <- TUSCO_transcripts %>%
   filter(structural_category %in% c("full-splice_match", "incomplete-splice_match") & !associated_gene %in% TP$associated_gene)
 
-# Define False Negatives (FN): BUGSI genes that cannot find any FSM or ISM match
+# Define False Negatives (FN): TUSCO genes that cannot find any FSM or ISM match
 FN <- annotation_data %>%
-  filter(!(!!sym(top_id_type) %in% BUGSI_transcripts$associated_gene))
+  filter(!(!!sym(top_id_type) %in% TUSCO_transcripts$associated_gene))
 
-# Define False Positives (FP): Transcripts in NIC, NNC, genic, or fusion categories within BUGSI_transcripts
-FP <- BUGSI_transcripts %>%
+# Define False Positives (FP): Transcripts in NIC, NNC, genic, or fusion categories within TUSCO_transcripts
+FP <- TUSCO_transcripts %>%
   filter(structural_category %in% c("novel_in_catalog", "novel_not_in_catalog", "genic", "fusion"))
 
-fsm_ism_count <- BUGSI_transcripts %>%
+fsm_ism_count <- TUSCO_transcripts %>%
   filter(structural_category %in% c("full-splice_match", "incomplete-splice_match")) %>%
   nrow()
 
@@ -205,47 +207,47 @@ false_discovery_rate <- NA
 false_detection_rate <- NA
 redundancy <- NA
 
-# Calculate Non-redundant Precision: TP / BUGSI_transcripts
-if (nrow(BUGSI_transcripts) > 0) {
-  non_redundant_precision <- nrow(TP) / nrow(BUGSI_transcripts)
+# Calculate Non-redundant Precision: TP / TUSCO_transcripts
+if (nrow(TUSCO_transcripts) > 0) {
+  non_redundant_precision <- nrow(TP) / nrow(TUSCO_transcripts)
 } else {
-  warning("BUGSI_transcripts has zero rows. Non-redundant Precision set to NA.")
+  warning("TUSCO_transcripts has zero rows. Non-redundant Precision set to NA.")
 }
 
-# Calculate Precision: (TP + PTP) / BUGSI_transcripts
+# Calculate Precision: (TP + PTP) / TUSCO_transcripts
 message("Calculating redundant Precision...")
 if (fsm_ism_count > 0) {
-  redundant_precision <- (nrow(TP) + nrow(PTP)) /  nrow(BUGSI_transcripts)
+  redundant_precision <- (nrow(TP) + nrow(PTP)) /  nrow(TUSCO_transcripts)
   message("Precision calculated successfully.")
 } else {
   redundant_precision <- NA
   warning("FSM + ISM count is zero. Redundant Precision set to NA.")
 }
 
-# Calculate Sensitivity: TP_BUGSI/rBUGSI
+# Calculate Sensitivity: TP_TUSCO/rTUSCO
 message("Calculating Sensitivity...")
-non_redundant_sensitivity <- length(TP_BUGSI)/rBUGSI
+non_redundant_sensitivity <- length(TP_TUSCO)/rTUSCO
 
-# Calculate Positive Detection Rate: unique(TP + PTP) / rBUGSI
+# Calculate Positive Detection Rate: unique(TP + PTP) / rTUSCO
 unique_detected_genes <- length(unique(c(TP$associated_gene, PTP$associated_gene)))
-if (rBUGSI > 0) {
-  positive_detection_rate <- unique_detected_genes / rBUGSI
+if (rTUSCO > 0) {
+  positive_detection_rate <- unique_detected_genes / rTUSCO
 } else {
   warning("annotation_data has zero rows. Positive Detection Rate set to NA.")
 }
 
-# Calculate False Discovery Rate: (BUGSI_transcripts - BUGSI_RM) / BUGSI_transcripts
-if (nrow(BUGSI_transcripts) > 0) {
-  false_discovery_rate <- (nrow(BUGSI_transcripts) - nrow(BUGSI_RM)) / nrow(BUGSI_transcripts)
+# Calculate False Discovery Rate: (TUSCO_transcripts - TUSCO_RM) / TUSCO_transcripts
+if (nrow(TUSCO_transcripts) > 0) {
+  false_discovery_rate <- (nrow(TUSCO_transcripts) - nrow(TUSCO_RM)) / nrow(TUSCO_transcripts)
 } else {
-  warning("BUGSI_transcripts has zero rows. False Discovery Rate set to NA.")
+  warning("TUSCO_transcripts has zero rows. False Discovery Rate set to NA.")
 }
 
-# Calculate False Detection Rate: FP / BUGSI_transcripts
-if (nrow(BUGSI_transcripts) > 0) {
-  false_detection_rate <- nrow(FP) / nrow(BUGSI_transcripts)
+# Calculate False Detection Rate: FP / TUSCO_transcripts
+if (nrow(TUSCO_transcripts) > 0) {
+  false_detection_rate <- nrow(FP) / nrow(TUSCO_transcripts)
 } else {
-  warning("BUGSI_transcripts has zero rows. False Detection Rate set to NA.")
+  warning("TUSCO_transcripts has zero rows. False Detection Rate set to NA.")
 }
 # Calculate Redundancy: (FSM + ISM) / unique(TP + PTP)
 unique_tp_ptp_genes <- length(unique(c(TP$associated_gene, PTP$associated_gene)))
@@ -299,22 +301,16 @@ associated_genes_list <- combined_data %>%
   select(associated_gene, category) %>%
   distinct()
 
-# Pass data to RMarkdown
-params <- list(
-  metrics = metrics,
-  bugsi_gtf_df = bugsi_gtf_df,
-  transcript_gtf_df = transcript_gtf_df,
-  associated_genes_list = associated_genes_list
-)
+## NOTE: params will be created after all derived objects are computed
 ####################################################################
-# BUGSI: SQANTI strutural category
+# TUSCO: SQANTI structural category
 ####################################################################
-# Filter BUGSI_only to keep transcripts that match BUGSI genes
-# BUGSI_only should already be defined as BUGSI_transcripts.
-BUGSI_only <- BUGSI_transcripts
+# Filter TUSCO_only to keep transcripts that match TUSCO genes
+# TUSCO_only should already be defined as TUSCO_transcripts.
+TUSCO_only <- TUSCO_transcripts
 
 # Rename subcategories to match your palettes
-BUGSI_only <- BUGSI_only %>%
+TUSCO_only <- TUSCO_only %>%
   mutate(subcategory = case_when(
     subcategory == "reference_match" ~ "Reference match",
     subcategory == "alternative_3end" ~ "Alternative 3'end",
@@ -329,7 +325,7 @@ BUGSI_only <- BUGSI_only %>%
 # c (FP): NIC, NNC, Genic Intron, Genic Genomic, Antisense, Fusion, Intergenic
 # d (FN): Missing genes
 
-BUGSI_only <- BUGSI_only %>%
+TUSCO_only <- TUSCO_only %>%
   mutate(
     big_category = case_when(
       structural_category == "full-splice_match" & subcategory == "Reference match" ~ "TP", 
@@ -349,7 +345,7 @@ BUGSI_only <- BUGSI_only %>%
   )
 
 # final_label for plotting
-BUGSI_only <- BUGSI_only %>%
+TUSCO_only <- TUSCO_only %>%
   mutate(final_label = case_when(
     big_category == "TP" ~ "RM",
     big_category == "PTP" & subcategory == "Alternative 3'end" ~ "Alternative 3'end",
@@ -373,8 +369,8 @@ missing_df <- data.frame(
   count = nrow(FN)
 )
 
-# Summarize BUGSI_only counts
-plot_data <- BUGSI_only %>%
+# Summarize TUSCO_only counts
+plot_data <- TUSCO_only %>%
   filter(!is.na(final_label)) %>%
   group_by(big_category, final_label) %>%
   summarise(count = n(), .groups="drop")
@@ -450,13 +446,35 @@ mytheme <- theme_classic(base_family = "Helvetica") +
         plot.title = element_text(lineheight=.4, size=15, hjust = 0.5))
 
 # Plot
-p_bugsi_complex <- ggplot(plot_data, aes(x = final_label, y = percentage, fill = final_label)) +
+p_tusco_complex <- ggplot(plot_data, aes(x = final_label, y = percentage, fill = final_label)) +
   geom_bar(stat="identity", color="black", size=0.3, width=0.7) +
   xlab(NULL) +
   facet_grid(~big_category, scales="free_x", space="free") +
   scale_fill_manual(values = final_colors) +
   scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
   mytheme
+
+# Pass data to RMarkdown (after all objects are defined)
+params <- list(
+  metrics = metrics,
+  tusco_gtf_df = tusco_gtf_df,
+  transcript_gtf_df = transcript_gtf_df,
+  associated_genes_list = associated_genes_list,
+  p_tusco_complex = p_tusco_complex,
+  # pass objects to avoid global leakage
+  TP = TP,
+  PTP = PTP,
+  FN = FN,
+  FP = FP,
+  non_redundant_sensitivity = non_redundant_sensitivity,
+  non_redundant_precision = non_redundant_precision,
+  redundant_precision = redundant_precision,
+  positive_detection_rate = positive_detection_rate,
+  false_discovery_rate = false_discovery_rate,
+  redundancy = redundancy,
+  output_directory = output_directory,
+  genome_assembly = genome.assembly
+)
 ########################################################
 # Generate IGV plots for each gene
 ########################################################
@@ -480,8 +498,8 @@ transcript_gtf_df <- within(transcript_gtf_df, {
   )
 })
 for (gene in genes_to_plot) {
-  # Fetch BUGSI gene annotations (exons) for the current gene
-  bugsi_gene <- bugsi_gtf_df %>%
+# Fetch TUSCO gene annotations (exons) for the current gene
+  tusco_gene <- tusco_gtf_df %>%
     filter((gene_name == gene | ensembl == gene | refseq == gene ) & type == "exon")
   
   # Fetch transcript exons associated with this gene
@@ -551,10 +569,10 @@ for (gene in genes_to_plot) {
     mcols(sample_transcripts_gr_unlisted)$fill <- color_map[mcols(sample_transcripts_gr_unlisted)$transcript]
     mcols(sample_transcripts_gr_unlisted)$col <- color_map[mcols(sample_transcripts_gr_unlisted)$transcript]
     
-    # Create GRangesList for BUGSI reference transcripts
-    message("Creating GRangesList for BUGSI reference transcripts...")
-    bugsi_transcripts_gr <- makeGRangesListFromDataFrame(
-      bugsi_gene,
+    # Create GRangesList for TUSCO reference transcripts
+    message("Creating GRangesList for TUSCO reference transcripts...")
+    tusco_transcripts_gr <- makeGRangesListFromDataFrame(
+      tusco_gene,
       keep.extra.columns = TRUE,
       seqnames.field = "seqnames",
       start.field = "start",
@@ -563,24 +581,24 @@ for (gene in genes_to_plot) {
       split.field = "ensembl"
     )
     
-    bugsi_transcripts_gr_unlisted <- unlist(bugsi_transcripts_gr, use.names = TRUE)
-    mcols(bugsi_transcripts_gr_unlisted)$transcript <- rep(
-      names(bugsi_transcripts_gr),
-      elementNROWS(bugsi_transcripts_gr)
+    tusco_transcripts_gr_unlisted <- unlist(tusco_transcripts_gr, use.names = TRUE)
+    mcols(tusco_transcripts_gr_unlisted)$transcript <- rep(
+      names(tusco_transcripts_gr),
+      elementNROWS(tusco_transcripts_gr)
     )
     
-    # Set fill and col to 'darkgrey' for BUGSI
-    mcols(bugsi_transcripts_gr_unlisted)$fill <- 'darkgrey'
-    mcols(bugsi_transcripts_gr_unlisted)$col <- 'darkgrey'
+    # Set fill and col to 'darkgrey' for TUSCO
+    mcols(tusco_transcripts_gr_unlisted)$fill <- 'darkgrey'
+    mcols(tusco_transcripts_gr_unlisted)$col <- 'darkgrey'
     
     # Define the plotting range
     message("Defining the plotting range...")
-    gene_range_start <- min(c(gene_transcripts$start, bugsi_gene$start))
-    gene_range_end <- max(c(gene_transcripts$end, bugsi_gene$end))
+  gene_range_start <- min(c(gene_transcripts$start, tusco_gene$start))
+  gene_range_end <- max(c(gene_transcripts$end, tusco_gene$end))
     gene_range <- GRanges(
-      seqnames = unique(c(gene_transcripts$seqnames, bugsi_gene$seqnames)),
+      seqnames = unique(c(gene_transcripts$seqnames, tusco_gene$seqnames)),
       ranges = IRanges(start = gene_range_start, end = gene_range_end),
-      strand = unique(c(gene_transcripts$strand, bugsi_gene$strand))
+      strand = unique(c(gene_transcripts$strand, tusco_gene$strand))
     )
     
     genome_axis <- GenomeAxisTrack()
@@ -598,7 +616,7 @@ for (gene in genes_to_plot) {
       # Create a GeneRegionTrack for the current transcript
       GeneRegionTrack(
         current_transcript_gr,
-        genome = "hg38",
+        genome = genome.assembly,
         chromosome = as.character(seqnames(gene_range)[1]),
         name = transcript,
         background.title = current_color,
@@ -607,13 +625,13 @@ for (gene in genes_to_plot) {
       )
     })
     
-    # Create GeneRegionTrack for BUGSI reference
-    message("Creating GeneRegionTrack for BUGSI reference...")
-    bugsi_track <- GeneRegionTrack(
-      bugsi_transcripts_gr_unlisted,
-      genome = "hg38",
+    # Create GeneRegionTrack for TUSCO reference
+    message("Creating GeneRegionTrack for TUSCO reference...")
+    tusco_track <- GeneRegionTrack(
+      tusco_transcripts_gr_unlisted,
+      genome = genome.assembly,
       chromosome = as.character(seqnames(gene_range)[1]),
-      name = paste0(gene, " BUGSI Reference"),
+      name = paste0(gene, " TUSCO Reference"),
       background.title = "darkgrey",  # Set the title background color
       fill = "darkgrey",             # Set fill color
       col = "darkgrey"               # Set border color
@@ -622,7 +640,7 @@ for (gene in genes_to_plot) {
     sample_tracks <- unlist(sample_tracks, recursive = FALSE)
     
     # Combine all tracks for plotting
-    all_tracks <- c(genome_axis, bugsi_track, sample_tracks)
+    all_tracks <- c(genome_axis, tusco_track, sample_tracks)
     message("All tracks combined for plotting.")
     
     # Plot and save to file
@@ -647,11 +665,10 @@ for (gene in genes_to_plot) {
 # Render the HTML report
 message("Rendering the HTML report...")
 rmarkdown::render(
-  input = file.path(utilities.path, "report_qc", "SQANTI3_BUGSI_Report.Rmd"),
+  input = file.path(utilities.path, "report_qc", "SQANTI3_TUSCO_Report.Rmd"),
   intermediates_dir = output_directory,
   output_dir = output_directory,
   output_file = html.report.file,
   params = params,
   envir = new.env()
 )
-

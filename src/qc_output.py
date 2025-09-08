@@ -6,7 +6,7 @@ from bx.intervals import Interval
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.commands import (
-    RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
+    RSCRIPTPATH, RSCRIPT_QC_REPORT, RSCRIPT_TUSCO_REPORT, run_command
 
 )
 from src.config import utilitiesPath
@@ -67,17 +67,23 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
-def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
+def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
     """
-    Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
+    Generates the TUSCO benchmarking report using the provided classification file and transcript GTF.
     """
-    qc_logger.info("Generating BUGSI report....", file=sys.stderr)
-    bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
+    qc_logger.info("Generating TUSCO report....", file=sys.stderr)
+    tusco_gtf = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.gtf")
+    # map species to genome assembly used by Gviz
+    genome = {
+        "human": "hg38",
+        "mouse": "mm10",
+    }.get(tusco, "hg38")
     cmd = (
-        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
-        f"{outputClassPath} {bugsi_gtf} {transcript_gtf_file} {utilitiesPath}"
+        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_TUSCO_REPORT} "
+        f"{outputClassPath} {tusco_gtf} {transcript_gtf_file} {utilitiesPath} {genome}"
     )
-    run_command(cmd, "BUGSI report")
+    logFile = f"{os.path.dirname(outputClassPath)}/logs/tusco_report.log"
+    run_command(cmd, qc_logger, logFile, "TUSCO report")
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
