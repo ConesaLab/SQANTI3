@@ -175,7 +175,6 @@ WORKDIR /data2
 ENV PATH="${PATH}:/conda/miniconda3/bin/"
 
 RUN chmod -R a+rX /opt2 && \
-    chmod 777 -R /conda/miniconda3/envs && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_qc.py sqanti3_qc.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
