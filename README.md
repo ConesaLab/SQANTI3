@@ -12,6 +12,8 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
+SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see preprint https://doi.org/10.1101/2025.08.23.671926.
+
 ## Installation
 The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5.1) (04/08/2025) is **version 5.5.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
@@ -39,6 +41,7 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 * [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
 
 * [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
+* [TUSCO quick start (SQANTI3 QC)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-quick-start)
 
 * [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
 
@@ -63,3 +66,5 @@ If you are using SQANTI3 in your research, please cite the following paper in ad
 - Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
 
 - Keil, N., Monzó, C., McIntyre, L., Conesa, A. **Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads**. *Genome Res* (2025). https://doi.org/10.1101/gr.280021.124
+
+- Liu, T., Paniagua, A., Jetzinger, F., Ferrández-Peral, L., Frankish, A., Conesa, A. **Transcriptome Universal Single-isoform COntrol: A Framework for Evaluating Transcriptome reconstruction Quality**. *bioRxiv* (2025). https://doi.org/10.1101/2025.08.23.671926

@@ -22,7 +22,7 @@ GFFREAD_PROG = "gffread"
 # Rscript QC
 RSCRIPTPATH = shutil.which('Rscript')
 RSCRIPT_QC_REPORT = os.path.join(utilitiesPath,"report_qc","SQANTI3_report.R")
-RSCRIPT_BUGSI_REPORT = os.path.join(utilitiesPath,"report_qc","BUGSI_report.R")
+RSCRIPT_TUSCO_REPORT = os.path.join(utilitiesPath,"report_qc","TUSCO_report.R")
 
 # Rscript filter
 RSCRIPT_FILTER_REPORT = os.path.join(utilitiesPath,"report_filter","SQANTI3_filter_report.R")
@@ -125,7 +125,7 @@ def GTF_to_genePred(corrGTF):
         run_command(cmd,qc_logger,logFile, "GTF to genePred conversion")
     return queryFile
 
-def run_command(cmd,logger,out_file='log/program.log',description="command execution",silent=True):
+def run_command(cmd,logger,out_file='log/program.log',description="command execution",silent=True, fail_ok=False):
     """
     Executes a shell command and handles errors gracefully.
     
@@ -140,9 +140,19 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
         MAIN_LOGGING_CONFIG['handlers']['process_handler']['filename'] = out_file
         logging.config.dictConfig(MAIN_LOGGING_CONFIG)
         process_logger = logging.getLogger('process_logger')
-        result = subprocess.run(cmd, shell=True,capture_output=silent,
-                                check=True,encoding="utf-8")
-        process_logger.info(result.stdout)
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            capture_output=silent,
+            check=True,
+            encoding="utf-8",
+        )
+        # On success, log both STDOUT and STDERR so that tools like Rscript
+        # (which emit informative messages to STDERR) are not lost.
+        if result.stdout:
+            process_logger.info(result.stdout)
+        if result.stderr:
+            process_logger.info(result.stderr)
 
         logger.debug(f"Process {cmd} had {result.returncode}")
         logger.debug(f"Returncode {result.returncode} class is {type(result.returncode)}")
@@ -156,7 +166,15 @@ def run_command(cmd,logger,out_file='log/program.log',description="command execu
         process_logger.error(e.stderr)
         logger.error(f"Something went wrong during {description}")
         logger.error(f"For more inflo, check {out_file}")
-        sys.exit(1)
+        if fail_ok:
+            logger.warning(f"Continuing despite failure in {description}.")
+            return -1
+        else:
+            sys.exit(1)
     except BrokenPipeError as e:
-        sys.exit(1)
+        if fail_ok:
+            logger.warning(f"Continuing despite failure in {description}: {e}")
+            return -1
+        else:
+            sys.exit(1)
     
