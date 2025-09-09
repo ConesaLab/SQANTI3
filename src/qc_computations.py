@@ -1,6 +1,4 @@
 from collections import defaultdict
-import os
-import sys
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts
@@ -19,9 +17,9 @@ def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extensio
     RTS_info = rts([outputJuncPath+extension, genome, "-a"], genome_dict)
     for pbid in isoforms_info:
         if pbid in RTS_info:
-            isoforms_info[pbid].RT_switching = "TRUE"
+            isoforms_info[pbid].RTS_stage = "TRUE"
         else:
-            isoforms_info[pbid].RT_switching = "FALSE"
+            isoforms_info[pbid].RTS_stage = "FALSE"
 
     return isoforms_info, RTS_info
 
@@ -30,7 +28,7 @@ def classify_fsm(isoforms_info):
     geneFSM_dict = defaultdict(list)
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()
-        geneFSM_dict[gene].append(isoforms_info[iso].str_class)
+        geneFSM_dict[gene].append(isoforms_info[iso].structural_category)
     
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()
@@ -50,7 +48,7 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     for iso in isoforms_info:
         if iso in ratio_TSS_dict:
             if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
-                isoforms_info[iso].ratio_TSS = 'NA'
+                isoforms_info[iso].ratio_TSS = None
             else:
                 isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
         else:
@@ -59,9 +57,6 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     return isoforms_info
 
 def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
-    if not os.path.exists(fl_count):
-        qc_logger.error(f"FL count file {fl_count} does not exist!")
-        sys.exit(1)
 
     qc_logger.info("**** Reading Full-length read abundance files.")
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
@@ -124,8 +119,8 @@ def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFAST
     for iso in isoforms_info:
         gene = isoforms_info[iso].geneName()
         if exp_dict is not None and gene_exp_dict is not None:
-            isoforms_info[iso].geneExp = gene_exp_dict[gene]
-            isoforms_info[iso].isoExp  = exp_dict[iso]
+            isoforms_info[iso].gene_exp = gene_exp_dict[gene]
+            isoforms_info[iso].iso_exp  = exp_dict[iso]
     return isoforms_info
 
 
@@ -140,17 +135,17 @@ def isoforms_junctions(isoforms_info, reader):
         # (1) the .canonical field is still "NA"
         # (2) the junction is non-canonical
         assert r['canonical'] in ('canonical', 'non_canonical')
-        if (isoforms_info[r['isoform']].canonical == 'NA') or \
+        if (isoforms_info[r['isoform']].all_canonical is None) or \
             (r['canonical'] == 'non_canonical'):
-            isoforms_info[r['isoform']].canonical = r['canonical']
+            isoforms_info[r['isoform']].all_canonical = r['canonical']
 
-        if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'TRUE'):
+        if (isoforms_info[r['isoform']].bite is None) or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
 
         if r['indel_near_junct'] == 'TRUE':
-            if isoforms_info[r['isoform']].nIndelsJunc == 'NA':
-                isoforms_info[r['isoform']].nIndelsJunc = 0
-            isoforms_info[r['isoform']].nIndelsJunc += 1
+            if isoforms_info[r['isoform']].n_indels_junc is None:
+                isoforms_info[r['isoform']].n_indels_junc = 0
+            isoforms_info[r['isoform']].n_indels_junc += 1
 
         # min_cov: min( total_cov[j] for each junction j in this isoform )
         # min_cov_pos: the junction [j] that attributed to argmin(total_cov[j])
@@ -158,13 +153,13 @@ def isoforms_junctions(isoforms_info, reader):
         # sd_cov: sd( total_cov[j] for each junction j in this isoform )
         if r['sample_with_cov'] != 'NA':
             sample_with_cov = int(r['sample_with_cov'])
-            if (isoforms_info[r['isoform']].min_samp_cov == 'NA') or (isoforms_info[r['isoform']].min_samp_cov > sample_with_cov):
-                isoforms_info[r['isoform']].min_samp_cov = sample_with_cov
+            if (isoforms_info[r['isoform']].min_sample_cov is None) or (isoforms_info[r['isoform']].min_sample_cov > sample_with_cov):
+                isoforms_info[r['isoform']].min_sample_cov = sample_with_cov
 
         if r['total_coverage_unique'] != 'NA':
             total_cov = int(r['total_coverage_unique'])
             sj_covs_by_isoform[r['isoform']].append(total_cov)
-            if (isoforms_info[r['isoform']].min_cov == 'NA') or (isoforms_info[r['isoform']].min_cov > total_cov):
+            if (isoforms_info[r['isoform']].min_cov is None) or (isoforms_info[r['isoform']].min_cov > total_cov):
                 isoforms_info[r['isoform']].min_cov = total_cov
                 isoforms_info[r['isoform']].min_cov_pos = r['junction_number']
 

@@ -77,7 +77,7 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --skipORF --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
 
                 if args.force_id_ignore:
                     cmd_sqanti = cmd_sqanti + " --force_id_ignore"
@@ -103,7 +103,7 @@ def get_method_runSQANTI3(args, df):
 
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
                                 --isoforms {fastq_files} --refGTF {args.annotation} --refFasta {args.genome} \
-                                --skipORF --min_ref_len {args.min_ref_len} \
+                                --min_ref_len {args.min_ref_len} \
                                 --aligner_choice {args.aligner_choice} \
                                 -t {args.cpus} -d {args.dir}/{file_acc} \
                                 -o {sampleID} -s {args.sites} -n {args.chunks} \
@@ -129,9 +129,22 @@ def make_UJC_hash(args, df):
 
         print("**** Calculating UJCs...", file = sys.stdout)
                 
+        # Ensure the corrected GTF contains gene_id attributes on every exon/CDS line so that
+        # downstream `gtftools` does not fail with `IndexError: list index out of range`.
+        # `gffread` will rewrite the file adding the missing attributes. We write to a
+        # temporary file and then move it back so the final filename remains unchanged.
+        gffread_tmp = f"{outputPathPrefix}_corrected.gtf.gffread_tmp"
+        gffread_cmd = f"gffread {outputPathPrefix}_corrected.gtf -T -o {gffread_tmp} && mv {gffread_tmp} {outputPathPrefix}_corrected.gtf"
+
+        try:
+            subprocess.check_call(gffread_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            print(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread", file=sys.stderr)
+            sys.exit(-1)
+            
         ## Take the corrected GTF
         # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
-        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.cds.gff3 | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.cds.gff3"""
+        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
@@ -212,7 +225,7 @@ def main():
 
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
-
+    print(__file__)
     cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
     if args.inFACTOR:
         cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"

@@ -157,12 +157,15 @@ def corrORF_file():
 def test_parse_corrORF(corrORF_file):
     corrORF = parse_corrORF(corrORF_file)
     assert len(corrORF) == 4
-    assert corrORF["PB.96068.1"].orf_length == 112
+    assert corrORF["PB.96068.1"].cds_length == 336
     assert corrORF["PB.96068.1"].cds_start == 40
     assert corrORF["PB.96068.1"].cds_end == 375
-    assert corrORF["PB.96068.1"].orf_seq == "MSLRVGARAKRNPWASGDPGGPDQCPLVVGADAWAHCGRAGPEVQVPAVDPGGGWENRRGVPAVKRILEAQEQLCFQCPLGVSKSNKKRINLWVPQKSPIFKSSVYESTDS*"
+    assert corrORF["PB.96068.1"].psauron_score == 0.546
+    assert corrORF["PB.96068.1"].cds_type == "complete"
+    assert corrORF["PB.96068.1"].protein_seq == "MSLRVGARAKRNPWASGDPGGPDQCPLVVGADAWAHCGRAGPEVQVPAVDPGGGWENRRGVPAVKRILEAQEQLCFQCPLGVSKSNKKRINLWVPQKSPIFKSSVYESTDS*"
+    assert corrORF["PB.96068.1"].protein_length == 112
     assert corrORF["PB.96068.1"].proteinID == "PB.96068.1"
-    assert len(corrORF["PB.124735.1"].orf_seq) == corrORF["PB.124735.1"].orf_length
+    assert len(corrORF["PB.124735.1"].protein_seq) == corrORF["PB.124735.1"].protein_length
     
 def test_parse_corrORF_empty_file():
     with patch('builtins.open', mock_open(read_data="")):
@@ -214,24 +217,24 @@ def test_parse_TD2_goodORF(corrORF_td2_file, corrORF_file, td2_file):
     assert len(orfDict) == 4, "Expected 4 ORFs, but got a different number"
 
     # Check properties of a good ORF (PB.124735.1)
-    assert orfDict["PB.124735.1"].orf_length == 195, "ORF length mismatch for PB.124735.1"
+    assert orfDict["PB.124735.1"].protein_length == 195, "ORF length mismatch for PB.124735.1"
     assert orfDict["PB.124735.1"].cds_start == 1312, "CDS start position mismatch for PB.124735.1"
     assert orfDict["PB.124735.1"].cds_end == 1896, "CDS end position mismatch for PB.124735.1"
-    assert orfDict["PB.124735.1"].orf_seq == "MESCSVSQAGVQWHYLRSLQPAPSLFKRFSNLSLSRTWDHRCPPPCPANFLVFLVETVFLHVDQASLELVTSGDLPASASQTAGIAGMNHRTQPNVILFKNFFSFVFSFFSFLFFYFLFFLSLSFLSFFFLRRCLTLFPKLEHSGTISADCNLHLPSSSNSPASASQVAGTTGVCHYAQLIFVFLTEIEFYYLY*", "ORF sequence mismatch for PB.124735.1"
+    assert orfDict["PB.124735.1"].protein_seq == "MESCSVSQAGVQWHYLRSLQPAPSLFKRFSNLSLSRTWDHRCPPPCPANFLVFLVETVFLHVDQASLELVTSGDLPASASQTAGIAGMNHRTQPNVILFKNFFSFVFSFFSFLFFYFLFFLSLSFLSFFFLRRCLTLFPKLEHSGTISADCNLHLPSSSNSPASASQVAGTTGVCHYAQLIFVFLTEIEFYYLY*", "ORF sequence mismatch for PB.124735.1"
     assert orfDict["PB.124735.1"].proteinID == "PB.124735.1", "Protein ID mismatch for PB.124735.1"
 
     # Check properties of a fixed ORF (PB.96068.1)
-    assert orfDict["PB.96068.1"].orf_length == 112, "ORF length mismatch for PB.96068.1"
+    assert orfDict["PB.96068.1"].protein_length == 112, "ORF length mismatch for PB.96068.1"
     assert orfDict["PB.96068.1"].cds_start == 40, "CDS start position mismatch for PB.96068.1"
     assert orfDict["PB.96068.1"].cds_end == 375, "CDS end position mismatch for PB.96068.1"
-    assert orfDict["PB.96068.1"].orf_seq == "MSLRVGARAKRNPWASGDPGGPDQCPLVVGADAWAHCGRAGPEVQVPAVDPGGGWENRRGVPAVKRILEAQEQLCFQCPLGVSKSNKKRINLWVPQKSPIFKSSVYESTDS*", "ORF sequence mismatch for PB.96068.1"
+    assert orfDict["PB.96068.1"].protein_seq == "MSLRVGARAKRNPWASGDPGGPDQCPLVVGADAWAHCGRAGPEVQVPAVDPGGGWENRRGVPAVKRILEAQEQLCFQCPLGVSKSNKKRINLWVPQKSPIFKSSVYESTDS*", "ORF sequence mismatch for PB.96068.1"
     assert orfDict["PB.96068.1"].proteinID == "PB.96068.1", "Protein ID mismatch for PB.96068.1"
 
     # check properties of non_PacBio
-    assert orfDict["Non.standard12"].orf_length == 407, "ORF length mismatch for Non.standard12"
+    assert orfDict["Non.standard12"].protein_length == 407, "ORF length mismatch for Non.standard12"
     assert orfDict["Non.standard12"].cds_start == 123, "CDS start position mismatch for Non.standard12"
     assert orfDict["Non.standard12"].cds_end == 1343, "CDS end position mismatch for Non.standard12"
-    assert orfDict["Non.standard12"].orf_seq == "ASDFASFFADSFAADFFF*", "ORF sequence mismatch for Non.standard12"
+    assert orfDict["Non.standard12"].protein_seq == "ASDFASFFADSFAADFFF*", "ORF sequence mismatch for Non.standard12"
     assert orfDict["Non.standard12"].proteinID == "Non.standard12", "Protein ID mismatch for Non.standard12"
     # Compare output file with expected file
     expected_records = list(SeqIO.parse(corrORF_file, 'fasta'))

@@ -150,6 +150,9 @@ def qc_args_validation(args):
     # ORF prediction checks
     if args.orf_input is not None:
         valid_fasta(args.orf_input,qc_logger)
+    if args.psauron_threshold < 0 or args.psauron_threshold > 1.:
+        qc_logger.error(f"Invalid P-Sauron threshold: {args.psauron_threshold}. Must be between 0 and 1. Abort!")
+        sys.exit(-1)
 
     # Functional annotation checks
     if args.CAGE_peak is not None:
@@ -181,7 +184,7 @@ def qc_args_validation(args):
     if args.is_fusion:
         if args.orf_input is None:
             qc_logger.warning("Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!")
-            args.skipORF = True
+            args.include_ORF = False
         if args.fasta:
             qc_logger.error("If --is_fusion is on, must supply GTF as input")
             sys.exit(1)
@@ -192,9 +195,13 @@ def qc_args_validation(args):
         else:
             for f in args.expression.split(','):
                 valid_matrix(f,qc_logger)
+    if args.fl_count is not None:
+        valid_file(args.fl_count,qc_logger)
+    
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
+    
     
     return args
 ## This sense argument is no longer present

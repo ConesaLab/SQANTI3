@@ -13,7 +13,8 @@ FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_c
                    'RTS_junction', 'indel_near_junct',
                    'phyloP_start', 'phyloP_end', 'sample_with_cov', "total_coverage_unique", "total_coverage_multi"] #+coverage_header
 
-FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_category',
+#TODO: Add the new fields relative to the CDS and the protein information
+FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',  'structural_category',
                 'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
                 'diff_to_TSS', 'diff_to_TTS', 'diff_to_gene_TSS', 'diff_to_gene_TTS',
                 'subcategory', 'RTS_stage', 'all_canonical',

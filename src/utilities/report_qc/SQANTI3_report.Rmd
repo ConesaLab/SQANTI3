@@ -23,6 +23,7 @@ The code contains several parts:
   7.Redundancy Analysis
   8.Intra−Priming Quality Check
   9.QC Features of Bad Qualities
+  10.Coding potential
 -->
 
 <!---Basic setting-->
@@ -1270,5 +1271,46 @@ cat ('\n')
 ```
 
 
+<!--
+Coding potential analysis
+  1. Psauron score among structural category
+  2. Coding quailty per structural category
+  3. ORF type per structural category
+  4. Psauron score per ORF type
+-->
+```{r, eval=exists("p33")}
+cat("## Coding potential {.tabset .tabset-fade}", '\n')
+cat('### Psauron score by structural category {.tabset .tabset-fade}', '\n')
+ggplotly(p33)%>%
+  layout(margin = list(r = 130))%>%
+  style(textposition="none")
+cat ('\n')
+```
+
+```{r, eval=exists("p34")}
+categories <- c("FSM","ISM","NNC","NIC","Genic Genomic",
+                "Antisense","Fusion","Intergenic","Genic Intron")
+cat("### Coding potential by structural category {.tabset .tabset-fade .tabset-dropdown}", '\n')
+for (i in categories) {
+  if (i %in% names(p34)){
+  cat('#### ', i, '\n')
+  print(htmltools::tagList(ggplotly(p34[[i]]) %>% layout(width=800, height=800, margin = list(r = 150))))
+  cat ('\n')
+  }
+}
+```
+
+```{r,eval=exists("p35")}
+cat("### ORF type by structural category {.tabset .tabset-fade}", '\n')
+ggplotly(p35)
+cat ('\n')
+```
+
+```{r, eval=exists("p36")}
+cat("### Psauron score by ORF type {.tabset .tabset-fade}", '\n')
+ggplotly(p36)%>%
+  layout(margin = list(r = 130))
+cat ('\n')
+```
 <script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
 <script src="script.js"></script>
