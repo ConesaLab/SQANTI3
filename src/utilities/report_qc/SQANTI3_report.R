@@ -48,19 +48,19 @@ class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep='');
 
 #********************** Packages 
 
-library(ggplot2)
-library(ggplotify)
-library(scales)
-library(reshape)
-library(grid)
-library(gridExtra)
-library(NOISeq)
-library(rmarkdown)
-library(htmltools)
-library(DT)
-library(plyr)
-library(plotly)
-library(dplyr)
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggplotify))
+suppressMessages(library(scales))
+suppressMessages(library(reshape))
+suppressMessages(library(grid))
+suppressMessages(library(gridExtra))
+suppressMessages(library(NOISeq))
+suppressMessages(library(rmarkdown))
+suppressMessages(library(htmltools))
+suppressMessages(library(DT))
+suppressMessages(library(plyr))
+suppressMessages(library(plotly))
+suppressMessages(library(dplyr))
 
 # ***********************
 # ***********************
@@ -137,8 +137,6 @@ subc.levels=c("alternative_3end",'alternative_3end5end', "alternative_5end","ref
 subc.labels=c("Alternative 3'end", "Alternative 3'5'end", "Alternative 5'end", "Reference match", "3' fragment", "Internal fragment", "5' fragment", "Comb. of annot. junctions", "Comb. of annot. splice sites", "Intron retention", "Not comb. of annot. junctions", "Mono-exon by intron ret.", "At least 1 annot. don./accept.", "Mono-exon", "Multi-exon")
 coding.levels=c("coding", "non_coding")
 coding.labels=c("Coding", "Non coding")
-orf_type.levels=c("complete","5prime_partial","3prime_partial","internal")
-orf_type.labels=c("Complete ORF", "5' Partial ORF", "3' Partial ORF", "Internal ORF")
 
 data.class$structural_category = factor(data.class$structural_category,
                                         labels = xaxislabelsF1,
@@ -152,11 +150,7 @@ data.class$coding = factor(data.class$coding,
                                 labels = coding.labels,
                                 levels = coding.levels,
                                 ordered=TRUE)
-                                
-data.class$orf_type = factor(data.class$orf_type,
-                                labels = orf_type.labels,
-                                levels = orf_type.levels,
-                                ordered=TRUE)
+
 legendLabelF1 <- levels(as.factor(data.class$coding));
 
 ####### SRTM and SNTM functions
@@ -296,8 +290,8 @@ cat.palette = c("FSM"="#6BAED6", "ISM"="#FC8D59", "NIC"="#78C679",
  
 
 mytheme <- theme_classic(base_family = "Helvetica") +
-  theme(axis.line.x = element_line(color="black", size = 0.4),
-        axis.line.y = element_line(color="black", size = 0.4)) +
+  theme(axis.line.x = element_line(color="black", linewidth = 0.4),
+        axis.line.y = element_line(color="black", linewidth = 0.4)) +
   theme(axis.title.x = element_text(size=13),
         axis.text.x  = element_text(size=12),
         axis.title.y = element_text(size=13),
@@ -515,7 +509,7 @@ p1 <- ggplot(data=data.class, aes(x=structural_category)) +
   ggtitle("Isoform Distribution Across Structural Categories\n\n" ) +
   theme(axis.title.x=element_blank()) +  theme(axis.text.x  = element_text(margin=ggplot2::margin(17,0,0,0), size=12)) +
   scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
-  theme(legend.justification=c(1,1), legend.position=c(1,1))
+  theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
 
 p1.s.titles = list("Isoform Distribution Across FSM\n\n",
                    "Isoform Distribution Across ISM\n\n",
@@ -1120,7 +1114,7 @@ if (nrow(data.FSM) > 0) {
     labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
               subtitle="Negative values indicate upstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   
   p21.b <- ggplot(data=data.FSM, aes(x=diffTTSCat)) +
@@ -1134,7 +1128,7 @@ if (nrow(data.FSM) > 0) {
     labs(     title="Distance to annotated Transcription Termination Site (TTS)\n\nFSM",
               subtitle="Negative values indicate upstream of annotated termination site\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   p21.stitles.FSM<-list("Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'End",
                         "Distance to annotated Transcription Termination Site (TTS)\n\nFSM Alternative 3'5'End",
@@ -1158,7 +1152,7 @@ if (nrow(data.FSM) > 0) {
         labs(     title=p21.stitles.FSM[i],
                   subtitle="Negative values indicate upstream of annotated termination site\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
         geom_bar(aes(alpha=eval(parse(text = alpha21)), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
@@ -1170,7 +1164,7 @@ if (nrow(data.FSM) > 0) {
         labs(     title=p21.stitles.FSM[i],
                   subtitle="Negative values indicate upstream of annotated termination site\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
         
       p21.FSM.list[[i]] = p21.s
       p21.FSM.list.a[[i]] = p21.s.a
@@ -1198,7 +1192,7 @@ if (nrow(data.FSM) > 0) {
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   p22.b <- ggplot(data=data.FSM, aes(x=diffTSSCat)) +
     geom_bar(aes(y = (..count..)/sum(..count..) , alpha=eval(parse(text = alpha22tss))), fill=myPalette[6], color="black", size=0.3)+
@@ -1211,7 +1205,7 @@ if (nrow(data.FSM) > 0) {
     labs(title="Distance to Annotated Transcription Start Site for FSM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
     #FSM_TSS
   p22.FSM.list = list()
@@ -1240,7 +1234,7 @@ if (nrow(data.FSM) > 0) {
         labs(     title=p22.stitles.FSM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
         geom_bar(aes(alpha=eval(parse(text = alpha22tss)), y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
@@ -1252,7 +1246,7 @@ if (nrow(data.FSM) > 0) {
         labs(     title=p22.stitles.FSM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p22.FSM.list[[i]] = p22.s
       p22.FSM.list.a[[i]] = p22.s.a
     }
@@ -1285,7 +1279,7 @@ if (nrow(data.ISM) > 0) {
     labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
               subtitle="Negative values indicate upstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   # plot histogram of distance to polyA site, Y-axis percentages
   p21.dist3.ISM.b <- ggplot(data=data.ISM, aes(x=diffTTSCat)) +
@@ -1299,7 +1293,7 @@ if (nrow(data.ISM) > 0) {
     labs(     title="Distance to Annotated Transcription Termination Site (TTS)\n\n",
               subtitle="Negative values indicate upstream of annotated TTS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.a <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
@@ -1312,7 +1306,7 @@ if (nrow(data.ISM) > 0) {
     labs(     title="Distance to Annotated Transcription Start Site for ISM\n\n",
               subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   
   # plot histogram of distance to start site, Y-axis absolute count
   p22.dist5.ISM.b <- ggplot(data=data.ISM, aes(x=diffTSSCat)) +
@@ -1326,7 +1320,7 @@ if (nrow(data.ISM) > 0) {
     labs(title="Distance to Annotated Transcription Start Site for ISM\n\n",
          subtitle="Negative values indicate downstream of annotated TSS\n\n") +
     theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-    theme(legend.justification=c(1,1), legend.position=c(1,1))
+    theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
   p21.stitles.ISM<-list("Distance to Annotated Transcription Termination Site for ISM\n\n3' Fragment",
                         "Distance to Annotated Transcription Termination Site for ISM\n\nInternal Fragment",
                         "Distance to Annotated Transcription Termination Site for ISM\n\nA5' Fragment",
@@ -1350,7 +1344,7 @@ if (nrow(data.ISM) > 0) {
         labs(     title=p21.stitles.ISM[i],
                   subtitle="Negative values indicate upstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p21.s.a <- ggplot(data=c, aes(x=diffTTSCat)) +
         geom_bar(aes(alpha= !is.na(polyA_motif), y = (..count..)/sum(..count..)), fill=myPalette[4], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
@@ -1362,7 +1356,7 @@ if (nrow(data.ISM) > 0) {
         labs(     title=p21.stitles.ISM[i],
                   subtitle="Negative values indicate upstream of annotated TTS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       
       p21.ISM.list[[i]] = p21.s
       p21.ISM.list.a[[i]] = p21.s.a
@@ -1393,7 +1387,7 @@ if (nrow(data.ISM) > 0) {
         labs(     title=p22.stitles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p22.s.a <- ggplot(data=c, aes(x=diffTSSCat)) +
         geom_bar(aes( alpha= within_CAGE_peak, y = (..count..)/sum(..count..)), fill=myPalette[6], color="black", size=0.3)+
         scale_y_continuous(breaks=c(0.0,0.25,0.50,0.75,1),
@@ -1405,7 +1399,7 @@ if (nrow(data.ISM) > 0) {
         labs(     title=p22.stitles.ISM[i],
                   subtitle="Negative values indicate downstream of annotated TSS\n\n") +
         theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-        theme(legend.justification=c(1,1), legend.position=c(1,1))
+        theme(legend.justification=c(1,1), legend.position.inside=c(1,1))
       p22.ISM.list[[i]] = p22.s
       p22.ISM.list.a[[i]] = p22.s.a
     }
@@ -2535,7 +2529,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
   #  scale_x_continuous(breaks = seq(0,max_num_iso,1)) +
   #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
   #  mytheme+theme(axis.title.x=element_text()) +
-  #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
+  #  theme(legend.justification=c(1,1), legend.position.inside=c(1,1))  +
   #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
   #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
   #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.")
@@ -2656,7 +2650,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
     #  scale_x_continuous(breaks = seq(0,max_num_iso_cage,1)) +
     #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
-    #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
+    #  theme(legend.justification=c(1,1), legend.position.inside=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
     #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
@@ -2777,7 +2771,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
     #  scale_x_continuous(breaks = seq(0,max_num_iso_polya,1)) +
     #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
-    #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
+    #  theme(legend.justification=c(1,1), legend.position.inside=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
     #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
@@ -2900,7 +2894,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
     #  scale_x_continuous(breaks = seq(0,max_num_iso_cage_polya,1)) +
     #  scale_fill_manual(values = myPalette, guide='none', name="Percentage of FSM isoforms") +
     #  mytheme+theme(axis.title.x=element_text()) +
-    #  theme(legend.justification=c(1,1), legend.position=c(1,1))  +
+    #  theme(legend.justification=c(1,1), legend.position.inside=c(1,1))  +
     #  guides(fill = guide_legend(keywidth = 0.9, keyheight = 0.9)) +
     #  labs(x="Number of FSM+ISM isoforms \n associated to the same Ref. transcript",
     #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.",
@@ -3020,20 +3014,63 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))){
                                                    .groups = 'keep'))
 }
 
-### TransDecoder2 plots (p33, p34, p35)
-
+### TransDecoder2 plots (p33, p34, p35, p36)
+if (!all(is.na(data.class$CDS_type))){
 ## p33: Psauron score for each structural category
 p33 <- ggplot(data.class, aes(x=structural_category, y=psauron_score, fill=structural_category)) +
-  geom_boxplot(outlier.size = 0.2, size=0.3) + my_theme +
-  scale_fill_manual(values = myPalette[c(1,7,3,2)], drop=FALSE) +
+  geom_boxplot(outlier.size = 0.2, size=0.3) + mytheme +
+  scale_fill_manual(values = myPalette, drop=FALSE) +
   labs(title="Psauron score per structural category",
        x="Structural category",
        y="Psauron score") +
-  theme(legend.position="none")  +
+  theme(legend.position="none") +
   theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
 
+## p34: Psauron score vs size per category
+p34 <- list()
+for (cat in unique(data.class$structural_category)){
+  ncat <- gsub("\n"," ",cat)
+  p34[[ncat]] <- ggplot(data.class[data.class$structural_category==cat,], aes(x=length, y=psauron_score)) +
+    geom_point(aes(color = structural_category)) + 
+    mytheme +
+    ylim(0,1) +
+    scale_color_manual(values = cat.palette, drop=FALSE) +
+    labs(title = paste0("P-Sauron Score vs Length (", ncat, ")"),
+         x = "Length (bp)",
+         y = "P-Sauron Score") +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5)) 
+}
 
+## p35: ORF type per structural category
 
+cds_type_levels = c("complete","5prime_partial","3prime_partial","internal","non coding")
+cds_type_labels = c("Complete","5' partial","3' partial","Internal","Non coding")
+cds_type_colors = c("Complete" = "#1b9e77", "5' partial" = "#d95f02", "3' partial" = "#7570b3",
+                    "Internal" = "#e7298a", "Non coding" = "#a61e1e")
+data.class <- data.class %>% 
+    mutate(CDS_type = ifelse(is.na(CDS_type), "non coding", CDS_type)) %>%
+    mutate(CDS_type = factor(CDS_type, levels = cds_type_levels, labels = cds_type_labels)) 
+
+p35 <- ggplot(data.class, aes(x = structural_category, fill = CDS_type)) +
+      geom_bar(position = "fill",color="black") + mytheme +
+      scale_fill_manual(values = cds_type_colors,drop=FALSE) +
+      labs(title="CDS type by subcategory",
+          y="Proportion",
+          fill = "CDS Type") +
+      theme(axis.title.x= element_blank(),
+            axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0)))
+
+# p36: Psauron score per ORF type boxplot
+p36 <- ggplot(data.class, aes(x=CDS_type, y=psauron_score, fill=CDS_type)) +
+  geom_boxplot(outlier.size = 0.2, size=0.3) + mytheme +
+  scale_fill_manual(values = cds_type_colors, drop=FALSE) +
+  labs(title="Psauron score per ORF type",
+       x="ORF type",
+       y="Psauron score") +
+  theme(legend.position="none") +
+  theme(axis.text.x = element_text(angle = 45,margin=margin(15,0,0,0), size=12))
+}
 ###** Output plots
 
 if (report.format == 'both') {
