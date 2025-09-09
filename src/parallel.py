@@ -33,6 +33,7 @@ def split_input_run(args, outdir):
     else:
         os.makedirs(SPLIT_ROOT_DIR)
 
+    # TODO: Check here the effect of the strand when ussing collapseGFFReader
     if not args.fasta:
         try:
             recs = [r for r in collapseGFFReader(args.isoforms)]

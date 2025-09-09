@@ -12,8 +12,10 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes IsoAnnot and tappAS.
 
+SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see preprint https://doi.org/10.1101/2025.08.23.671926.
+
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5) (23/06/2025) is **version 5.5**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5.1) (04/08/2025) is **version 5.5.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
@@ -21,7 +23,7 @@ For information about previous releases and features introduced in them, see the
 
 **⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
-**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. You might want to re-run SQANTI3 QC. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.**
+**⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.** Release 5.5.1 updated the python version to 3.11.13, as on the previous version freezes might happen in some datasets.
 
 ## Documentation
 
@@ -39,6 +41,7 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 * [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
 
 * [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
+* [TUSCO quick start (SQANTI3 QC)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-quick-start)
 
 * [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
 
@@ -63,3 +66,5 @@ If you are using SQANTI3 in your research, please cite the following paper in ad
 - Pardo-Palacios, F.J., Arzalluz-Luque, A. et al. **SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms**. *Nat Methods* (2024). https://doi.org/10.1038/s41592-024-02229-2
 
 - Keil, N., Monzó, C., McIntyre, L., Conesa, A. **Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads**. *Genome Res* (2025). https://doi.org/10.1101/gr.280021.124
+
+- Liu, T., Paniagua, A., Jetzinger, F., Ferrández-Peral, L., Frankish, A., Conesa, A. **Transcriptome Universal Single-isoform COntrol: A Framework for Evaluating Transcriptome reconstruction Quality**. *bioRxiv* (2025). https://doi.org/10.1101/2025.08.23.671926

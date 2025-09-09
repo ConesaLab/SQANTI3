@@ -60,7 +60,7 @@ def rescue_argparse():
   cp.add_argument("-v", "--version", 
                       help="Display program version number.", 
                       action='version', 
-                      version=f"SQANTI3 f{__version__}")
+                      version=f"SQANTI3 v{__version__}")
   cp.add_argument("-l","--log_level", default="INFO",choices=["ERROR","WARNING","INFO","DEBUG"],
                       help="Set the logging level %(default)s")
 

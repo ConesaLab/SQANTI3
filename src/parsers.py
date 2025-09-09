@@ -231,6 +231,10 @@ def get_fusion_component(fusion_gtf):
     """
     components = defaultdict(lambda: {})
     for r in collapseGFFReader(fusion_gtf):
+        # Fix negative strand coordinates
+        if r.strand == '-': 
+            r.start, r.end =  r.ref_exons[-1].start, r.ref_exons[0].end # Positions get shifted by 1
+            r.ref_exons.reverse() # Fix the reference exons 
         m = seqid_fusion.match(r.seqid)
         gene, iso = int(m.group(1)), int(m.group(2))
         components[gene][iso] = sum(e.end-e.start for e in r.ref_exons)

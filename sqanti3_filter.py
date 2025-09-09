@@ -33,7 +33,7 @@ def main():
     # Create the log directory if it does not exist
     art_logger.info(filter_art())
     args = filter_argparse().parse_args()
-    update_logger(filter_logger,args.dir,args.log_level)
+    update_logger(filter_logger,args.dir,"filter",args.log_level)
     # Create the log directory if it does not exist
     os.makedirs(f"{args.dir}/logs", exist_ok=True)
     filter_args_validation(args)

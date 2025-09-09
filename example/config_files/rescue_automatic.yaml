@@ -37,7 +37,7 @@ qc:
     ratio_TSS_metric: max
     chunks: 1
     is_fusion: false
-    bugsi: ''
+    tusco: ''
 filter:
   enabled: true
   options:

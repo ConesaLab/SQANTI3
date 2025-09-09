@@ -7,7 +7,7 @@ from Bio import SeqIO  # type: ignore
 from src.utilities.indels_annot import calc_indels_from_sam
 
 from src.qc_output import (
-    cleanup, generate_report, generate_bugsi_report, save_isoforms_info,
+    cleanup, generate_report, generate_tusco_report, save_isoforms_info,
     write_classification_output, write_isoform_hits, write_junction_output,
     write_omitted_isoforms, write_collapsed_GFF_with_CDS
 )
@@ -170,9 +170,10 @@ def run(args):
         
         ## Generating report
         if args.report != 'skip':
-            # Run BUGSI benchmarking report if requested
-            if hasattr(args, 'bugsi') and args.bugsi:
-                generate_bugsi_report(args.bugsi, outputClassPath, args.isoforms)
+            # Run TUSCO benchmarking report if requested
+            if hasattr(args, 'tusco') and args.tusco:
+                # Use the user-provided reference GTF for IGV-like plots in the TUSCO report
+                generate_tusco_report(args.tusco, outputClassPath, args.refGTF)
             # Main SQANTI3 report
             generate_report(args.saturation, args.report, outputClassPath, outputJuncPath)
 
@@ -197,5 +198,3 @@ def run_isoAnnotLite(correctedGTF, outClassFile, outJuncFile, outName, gff3_opt)
     if subprocess.check_call(ISOANNOT_CMD, shell=True)!=0:
         qc_logger.error(f"Command failed: {ISOANNOT_CMD}")
         sys.exit(1)
-
-

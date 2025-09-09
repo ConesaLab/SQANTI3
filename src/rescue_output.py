@@ -1,10 +1,5 @@
-import os
-
 import shutil
-
 from Bio import SeqIO
-
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 # GTF output
 # TODO: Perhaps fix the order of the - strand exons

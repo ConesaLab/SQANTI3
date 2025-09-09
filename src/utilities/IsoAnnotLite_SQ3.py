@@ -277,6 +277,7 @@ def readGFF(gff3):
     dc_GFF3exonsTrans = {}
     dc_GFF3transExons = {}
     dc_GFF3coding = {}
+    dc_GFF3protein = {} 
     dc_GFF3strand = {}
     dc_GFF3geneTrans = {}
     dc_GFF3transGene = {}
@@ -346,7 +347,11 @@ def readGFF(gff3):
                     dc_GFF3coding.update({str(transcript) : [int(start), int(end)]}) #not int bc can be NA
                 else:                
                     dc_GFF3coding.update({str(transcript) : dc_GFF3coding.get(str(transcript)) + [int(start), int(end)]})
-
+            elif feature == "protein":
+                if not dc_GFF3protein.get(str(transcript)):
+                    dc_GFF3protein.update({str(transcript) : [int(start),int(end)]})
+                else:
+                    dc_GFF3protein.update({str(transcript) : dc_GFF3protein.get(str(transcript)) + [int(start), int(end)]})
             elif feature in ["splice_junction","transcript","gene","protein","genomic"] :
                 if not dc_GFF3_raw_annot.get(transcript):
                     dc_GFF3_raw_annot.update({str(transcript) : [line]})
@@ -362,7 +367,8 @@ def readGFF(gff3):
             print("File GFF3 doesn't have the correct number of columns (9).")
 
     sorted(dc_GFF3exonsTrans.keys())
-    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description
+    return dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, \
+        dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description, dc_GFF3protein
 
 def unique(list1): 
     global verbose
@@ -394,7 +400,7 @@ def transformTransFeaturesToGenomic(dc_GFF3, dc_GFF3transExons, dc_GFF3coding, d
         #Print Length Transformation
         transcriptsAnnotated = transcriptsAnnotated + 1
         perct = transcriptsAnnotated/total_transcripts*100
-        print("\t" + "%.2f" % perct + " % of features transformed...", end='\r')
+        #print("\t" + "%.2f" % perct + " % of features transformed...", end='\r')
 
         if not dc_GFF3.get(trans):
             continue
@@ -750,7 +756,7 @@ def transformProtFeaturesToLocale(dc_GFF3, dc_SQexons, dc_SQcoding):
             
             if trans == transInterest and fields[2]==featureOfInterest and verbose:
                 print("****newLine****")
-                print(new_line)
+                print(newline)
 
     return dc_newGFF3
 
@@ -1554,7 +1560,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         perct = transcriptsChecked/len(dc_SQexons)*100
         m0 = "\n\n\t" + "%.2f" % perct + " % of transcripts annotated."
         
-        print("\t" + "%.2f" % perct + " % of GTF transcripts checked...", end="\r")
+        #print("\t" + "%.2f" % perct + " % of GTF transcripts checked...", end="\r")
 
         #######################
         #IF FULL-SPLICED-MATCH#
@@ -1653,7 +1659,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                     referenceTransNoAnnot = False #exists at least one feature
 
                     if(transGFF3==transInterest and fields[2] == featureOfInterest and verbose):
-                        print("\n\nTrans:" + transSQ + " con feature: " + featureOfInterest)
+                        print("\n\nTrans:" + transSQ + " with feature: " + featureOfInterest)
                         print("start: " + str(values[0]) + " end: " + str(values[1]))
                         print(strand)
 
@@ -1680,7 +1686,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                         #check if trans already in transAnnot - count transcript once, if it is a new trans, then added
                         protAnnotTranscriptCounts_dc = addTranscriptWithAnnot(fields[2], transSQ, protAnnotTranscriptCounts_dc, False)
                         protAnnotTotal_dc = addFeatureWithAnnot(fields[2], key, protAnnotTotal_dc, False) #sum 1
-                        
                         featuresAnnotated = featuresAnnotated + 1
                         anyAnnot = True
                         if values[2].endswith("\n"):
@@ -1859,10 +1864,10 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
 
             l_gene = 0
             l_alternative_gene = 0
-
             # if verbose:
             #     print("Gene associated to map features is: " + gene)
             if len(gene) != 0:
+                
                 if dc_geneID2geneName.get(gene):
                     alternative_gene = dc_geneID2geneName.get(gene)
                 elif dc_geneName2geneID.get(gene):
@@ -1884,8 +1889,8 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
 
                 if l_gene < l_alternative_gene:
                     if verbose:
-                        print("se cambia el gen!!\n")
-                        print("El transcript de referencia original es: " + transSQ + " y el de asociación " + transGFF3)
+                        print("The gene is being changed!!\n")
+                        print("The original reference transcript is: " + transSQ + " and the associated one is " + transGFF3)
                         print("gene: " + gene + " alternative_gene: " + alternative_gene + "\n")
                     gene = alternative_gene
                     if verbose:
@@ -1979,7 +1984,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
 
                             #Check if we had same CDS to add Protein information
                             coding, semicoding = checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand)
-
                             if(coding==False and semicoding==False):
                                 continue
 
@@ -2032,14 +2036,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                                 bannot = False
                                 #funcion match annot to its our CDSexons and match to CDSexonsSQ
                                 bannot = checkFeatureInCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, int(values[0]), int(values[1]), strand)
-
-                                # if verbose:
-                                #     print(transSQ)
-                                #     print(dc_SQcoding.get(transSQ))
-                                #     print(localePosition)
-                                #     print(coding, semicoding)
-                                #     print("______")
-
+   
                                 if bannot:
                                     index = values[2].find("\t")
 
@@ -2054,6 +2051,7 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
                                         new_line = '\t'.join(map(str, [transSQ, '\t'.join(map(str, line_text[1:3])), localePosition[0], localePosition[1], '\t'.join(map(str, line_text[5:]))]))
                                     else:
                                         new_line = '\t'.join(map(str, [transSQ, '\t'.join(map(str, line_text[1:3])), localePosition[0], localePosition[1], '\t'.join(map(str, line_text[5:])), "\n"]))
+                                    
                                     annotLines.append(new_line)
 
                             elif semicoding and values[0]=="." and values[1] == ".":
@@ -2283,7 +2281,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
         f.write(line)
 
     f.close()
-
     if SAVE_PROB_TRANSCRIPTS:
         file_novel_not_annot_by_PF.close()
         file_reference_gene_not_annot.close()
@@ -3113,15 +3110,19 @@ def run(args):
         #dc_GFF3geneTrans = {gene : [trans1, trans2...]}
         #dc_GFF3_raw_annot = {trans : [line, line...]} #for not annot lines
         #dc_gene_description = {gene : [ID=...]} #description line
-        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, dc_gene_description = readGFF(gff3) #dc_GFF3exons is sorted
+        dc_GFF3, dc_GFF3exonsTrans, dc_GFF3transExons, dc_GFF3coding, dc_GFF3strand, \
+            dc_GFF3geneTrans, dc_GFF3transGene, dc_GFF3geneNameTrans, dc_GFF3_raw_annot, \
+                dc_gene_description, dc_GFF3protein = readGFF(gff3) #dc_GFF3exons is sorted
 
         print("\nReading SQANTI 3 Files and creating an auxiliar GFF...")
         #dc_SQexons = {trans : [[start,end], [start,end]...]}
         #dc_SQcoding = {trans : [CDSstart, CDSend, orf]}
         #dc_SQtransGene = {trans : [gene, category, transAssociated]}
         #dc_SQstrand = {trans : strand}
-        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, dc_gene_description, filename) 
-        
+        dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQstrand, dc_geneID2geneName, \
+            dc_geneName2geneID = createGTFFromSqanti(gtf, classification, junctions, \
+                                                     dc_gene_description, filename)
+
         #create gene-trans dictionary for SQ file
         dc_SQgeneTrans = createDCgeneTrans(dc_SQtransGene)
         

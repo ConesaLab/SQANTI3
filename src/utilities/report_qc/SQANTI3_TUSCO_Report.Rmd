@@ -1,18 +1,31 @@
 ---
-title: "BUGSI Benchmarking Report"
+title: "TUSCO Benchmarking Report"
 date: "`r paste0('  ','Date', ': ', format(Sys.time(), '%d %B %Y'))`"
 output:
   html_document:
     toc: true
     toc_float: true
     toc_depth: 3
-    css: bugsi_style.css   # Use the BUGSI-specific CSS
+    css: tusco_style.css   # Use the TUSCO-specific CSS
 runtime: shiny
 params:
   metrics: NULL
-  bugsi_gtf_df: NULL
+  tusco_gtf_df: NULL
   transcript_gtf_df: NULL
   associated_genes_list: NULL
+  p_tusco_complex: NULL
+  TP: NULL
+  PTP: NULL
+  FN: NULL
+  FP: NULL
+  non_redundant_sensitivity: NULL
+  non_redundant_precision: NULL
+  redundant_precision: NULL
+  positive_detection_rate: NULL
+  false_discovery_rate: NULL
+  redundancy: NULL
+  output_directory: NULL
+  genome_assembly: NULL
 ---
 
 <!-- "How to use the report?" Modal -->
@@ -21,7 +34,7 @@ params:
     <i class="fas fa-question-circle"></i> How to use the report?
   </a>
   
-  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="https://raw.githubusercontent.com/ConesaLab/SQANTI3/master/utilities/report_qc/howToUse.png"></div>
+  <div class="overlay hidden"><button class="close-modal">&times;</button><p class="header">How to read the report?</p><p>The report contains several parts, please see the following plot to get more detail about the report</p><img src="howToUse.png"></div>
 </body>
 
 
@@ -36,9 +49,18 @@ suppressPackageStartupMessages({
   library(htmltools)
 })
 metrics <- params$metrics
-bugsi_gtf_df <- params$bugsi_gtf_df
+tusco_gtf_df <- params$tusco_gtf_df
 transcript_gtf_df <- params$transcript_gtf_df
 associated_genes_list <- params$associated_genes_list
+TP <- params$TP; PTP <- params$PTP; FN <- params$FN; FP <- params$FP
+non_redundant_sensitivity <- params$non_redundant_sensitivity
+non_redundant_precision <- params$non_redundant_precision
+redundant_precision <- params$redundant_precision
+positive_detection_rate <- params$positive_detection_rate
+false_discovery_rate <- params$false_discovery_rate
+redundancy <- params$redundancy
+output_directory <- params$output_directory
+genome_assembly <- params$genome_assembly
 transcript_gtf_df$gene_id <- sub("\\.\\d+$", "", transcript_gtf_df$gene_id)
 
 # Ensure that the images are accessible
@@ -54,10 +76,10 @@ data_matrix <- tibble(
   Category = c("True Positive (TP)", "Partial True Positive (PTP)", "False Negative (FN)", "False Positive (FP)"),
   Value = c(nrow(TP), nrow(PTP), nrow(FN), nrow(FP)),
   Description = c(
-    "BUGSI transcripts accurately detected as Reference Matches (RMs), representing perfect identification of known BUGSI genes.",
-    "BUGSI transcripts identified as Full Splice Match (FSM) or Incomplete Splice Match (ISM) for a BUGSI gene but lacking RM qualification due to minor differences in transcript start or end positions. These may reflect RNA degradation during RNA extraction and library preparation.",
-    "BUGSI genes undetected as FSM or ISM, representing missed BUGSI transcripts. This suggests insufficient sequencing depth or limited coverage of specific gene regions.",
-    "BUGSI transcripts classified as Novel In Catalog (NIC), Novel Not in Catalog (NNC), Genic Intron, or fusion transcripts, potentially arising from sequencing artifacts, transcript model reconstruction artifacts, or biological transcript deviations."
+    "TUSCO transcripts accurately detected as Reference Matches (RMs), representing perfect identification of known TUSCO genes.",
+    "TUSCO transcripts identified as Full Splice Match (FSM) or Incomplete Splice Match (ISM) for a TUSCO gene but lacking RM qualification due to minor differences in transcript start or end positions.",
+    "TUSCO genes with no SQANTI3 transcripts detected (no isoforms matched to the TUSCO gene).",
+    "TUSCO transcripts classified as Novel In Catalog (NIC), Novel Not in Catalog (NNC), Genic Intron, or fusion transcripts, potentially arising from sequencing artifacts, transcript model reconstruction artifacts, or biological transcript deviations."
   )
 )
 
@@ -72,7 +94,7 @@ datatable(
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 1: Summary of BUGSI classification metrics used in the evaluation.'
+    'Table 1: Summary of TUSCO classification metrics used in the evaluation.'
   )
 ) %>%
   formatStyle(
@@ -109,7 +131,7 @@ datatable(
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center;',
-    htmltools::em('Table 2: Evaluation metrics of BUGSI classification.')
+    htmltools::em('Table 2: Evaluation metrics of TUSCO classification.')
   )
 )
 ```
@@ -118,27 +140,27 @@ datatable(
 
 #### 1. Sensitivity (Sn):
 
-\[ \text{Sn} = \frac{\text{Unique (TP)}}{\text{Total BUGSI Genes}} \]
+\[ \text{Sn} = \frac{\text{Unique (TP)}}{\text{Total TUSCO Genes}} \]
 
 #### 2. Non-redundant Precision (nrPre):
 
-\[ \text{nrPre} = \frac{\text{TP}}{\text{Total BUGSI Match Transcripts}} \]
+\[ \text{nrPre} = \frac{\text{TP}}{\text{Total TUSCO Match Transcripts}} \]
 
 #### 3. Precision (Pre):
 
-\[ \text{Pre} = \frac{\text{TP} + \text{PTP}}{\text{Total BUGSI Match Transcripts}} \]
+\[ \text{Pre} = \frac{\text{TP} + \text{PTP}}{\text{Total TUSCO Match Transcripts}} \]
 
 #### 4. Positive Detection Rate (PDR):
 
-\[ \text{PDR} = \frac{\text{Unique (TP + PTP)}}{\text{Total BUGSI Genes}} \]
+\[ \text{PDR} = \frac{\text{Unique (TP + PTP)}}{\text{Total TUSCO Genes}} \]
 
 #### 5. False Discovery Rate (FDR):
 
-\[ \text{FDR} = \frac{\text{Total BUGSI Match Transcripts} - \text{TP}}{\text{Total BUGSI Match Transcripts}} \]
+\[ \text{FDR} = \frac{\text{Total TUSCO Match Transcripts} - \text{TP}}{\text{Total TUSCO Match Transcripts}} \]
 
 #### 6. False Detection Rate:
 
-\[ \text{False Detection Rate} = \frac{\text{FP}}{\text{Total BUGSI Match Transcripts}} \]
+\[ \text{False Detection Rate} = \frac{\text{FP}}{\text{Total TUSCO Match Transcripts}} \]
 
 #### 7. Redundancy (1/Red):
 
@@ -151,7 +173,7 @@ datatable(
 ### Radar Plot
 
 ```{r echo=FALSE, message=FALSE}
-# Calculate the metrics values
+# Calculate the metrics values (raw numerics)
 metrics_values <- c(
   non_redundant_sensitivity * 100,
   non_redundant_precision * 100,
@@ -160,6 +182,9 @@ metrics_values <- c(
   positive_detection_rate * 100,
   redundant_precision * 100
 )
+
+# Replace NA/Inf with 0 to avoid plot failures
+metrics_values[is.na(metrics_values) | is.infinite(metrics_values)] <- 0
 
 # Create labels for the metrics
 metrics_labels <- c("Sn", "nrPre", "1/red", "1-FDR", "PDR", "rPre")
@@ -211,7 +236,7 @@ interactive_radar_plot <- plot_ly(
       list(
         x = 0.5,
         y = -0.1,  # Adjusted position within visible range
-        text = "<span style='font-style:italic; color:grey;'> Figure 1: Radar plot illustrating the evaluation metrics of the BUGSI benchmarking result. </span>",
+        text = "<span style='font-style:italic; color:grey;'> Figure 1: Radar plot illustrating the evaluation metrics of the TUSCO benchmarking result. </span>",
         showarrow = FALSE,
         xref = "paper",
         yref = "paper",
@@ -237,7 +262,7 @@ interactive_radar_plot
 
 ```{r echo=FALSE, message=FALSE}
 # Convert ggplot to ggplotly
-p_plotly <- ggplotly(p_bugsi_complex) %>%
+p_plotly <- ggplotly(params$p_tusco_complex) %>%
   layout(
     margin = list(
       l = 50,  # Left margin
@@ -249,7 +274,7 @@ p_plotly <- ggplotly(p_bugsi_complex) %>%
       list(
         x = 0.5,  # Center of the plot horizontally
         y = -0.5,  # Move annotation well below the plot area
-        text = "<span style='font-style:italic; color:grey;'> Figure 2: BUGSI transcripts distribution in SQANTI3 Structural Categories. </span>",
+        text = "<span style='font-style:italic; color:grey;'> Figure 2: TUSCO transcripts distribution in SQANTI3 Structural Categories. </span>",
         showarrow = FALSE,
         xref = "paper",
         yref = "paper",
@@ -279,7 +304,7 @@ TP <- TP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -323,7 +348,7 @@ PTP <- PTP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -374,7 +399,7 @@ datatable(
   ),
   caption = htmltools::tags$caption(
     style = 'caption-side: bottom; text-align: center; font-style: italic;',
-    'Table 5: List of false negative BUGSI genes.'
+    'Table 5: List of false negative TUSCO genes.'
   )
 )
 ```
@@ -392,7 +417,7 @@ FP <- FP %>%
         <div id="modal_', associated_gene, '" class="modal plot-modal">
           <div class="modal-content">
             <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path(plots_dir, paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
+            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
           </div>
         </div>'
       ),
@@ -422,6 +447,7 @@ datatable(
 )
 ```
 
-<script src="http://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script>
-<script src="bugsi_script.js"></script>
+<!-- Optional icon kit; can be omitted if offline -->
+<!-- <script src="https://kit.fontawesome.com/46057cf47a.js" crossorigin="anonymous"></script> -->
+<script src="tusco_script.js"></script>
 <script src="script.js"></script>

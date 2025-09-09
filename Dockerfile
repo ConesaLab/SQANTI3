@@ -1,4 +1,4 @@
-# Base image for SQANTI3/v5.3.0 with Ubuntu 22.04
+# Base image for SQANTI3/v5.5.0 with Ubuntu 22.04
 
 # Using ubuntu 22.04
 # Right now edlib doesn't work with python 3.12 which is the default version
@@ -12,11 +12,11 @@ SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the versions of different softwares dependencies and SQANTI3 version
 # To install
-ENV SQANTI3_VERSION="5.3.6"
+ENV SQANTI3_VERSION="5.5.1"
 ENV DESALT_VERSION="1.5.6"
 ENV NAMFINDER_VERSION="0.1.3"
 
-LABEL maintainer="aarzalluz" \
+LABEL maintainer="pabloati" \
    base_image="ubuntu:22.04" \
    version="v0.9.0"   \
    software="sqanti3/v${SQANTI3_VERSION}" \
@@ -55,6 +55,7 @@ RUN apt-get update \
        # gmap/2021-12-17
        gmap \
        gzip \
+       unzip \
        # kallisto/0.46.2
        kallisto \
        libcurl4-openssl-dev \
@@ -124,18 +125,17 @@ ENV PATH="${PATH}:/opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VER
 WORKDIR /opt2
 
 ########### SQANTI3 (currentily v${NAMFINDER_VERSION}) ############
-# Installs SQANTI3 with the version defined in the ENV variable (currently 5.3.0)
+# Installs SQANTI3 with the version defined in the ENV variable 0)
 # dependenciesand requirements have already been
 # satisfied, for more info see:
 # https://github.com/ConesaLab/SQANTI3
 RUN mkdir -p /opt2/sqanti3/${SQANTI3_VERSION}/ \
-   && wget https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v${SQANTI3_VERSION}.tar.gz -O /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
-   && tar -zvxf /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz -C /opt2/sqanti3/${SQANTI3_VERSION}/ \
-   && rm -f /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.tar.gz \
+   && wget https://github.com/ConesaLab/SQANTI3/releases/download/v${SQANTI3_VERSION}/SQANTI3_v${SQANTI3_VERSION}.zip -O /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip \
+   && unzip /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip -d /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION} \
+   && rm -f /opt2/sqanti3/${SQANTI3_VERSION}/v${SQANTI3_VERSION}.zip \
    # Removing exec bit for non-exec files
    && chmod -x \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/LICENSE \
-       /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/.gitignore \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.md \
        /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/*.yml \
    # Patch: adding absolute PATH to howToUse.png
@@ -157,6 +157,8 @@ RUN mkdir -p /conda/miniconda3 && \
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
     bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
     rm /conda/miniconda3/miniconda.sh && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
     /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
     /conda/miniconda3/bin/conda clean -a
 
@@ -173,11 +175,11 @@ WORKDIR /data2
 ENV PATH="${PATH}:/conda/miniconda3/bin/"
 
 RUN chmod -R a+rX /opt2 && \
-    chmod 777 -R /conda/miniconda3/envs && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_qc.py sqanti3_qc.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_filter.py sqanti3_filter.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_rescue.py sqanti3_rescue.py && \
     ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3_reads.py sqanti3_reads.py && \
+    ln -s /opt2/sqanti3/${SQANTI3_VERSION}/SQANTI3-${SQANTI3_VERSION}/sqanti3 sqanti3 && \
     apt-get remove -y build-essential cmake && apt-get autoremove -y && apt-get clean -y && \
     apt-get clean autoclean -y
 

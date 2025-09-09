@@ -12,6 +12,7 @@ dependencies:
   - biopython<=1.81
   - bioconductor-noiseq=2.46.0
   - bioconductor-busparse=1.16.0
+  - bioconductor-gviz
   - bx-python=0.11.0
   - cython=3.0.11
   - desalt=1.5.6
@@ -30,7 +31,7 @@ dependencies:
   - psutil=6.1.0
   - pybedtools=0.10.0
   - pysam=0.22.1
-  - python>=3.10,<=3.11
+  - python=3.11.13
   - r>=4.3.0
   - r-biocmanager=1.30.25
   - r-caret=6.0_94

@@ -68,7 +68,6 @@ def qc_argparse():
     apoa = ap.add_argument_group("Optional arguments")
     apoa.add_argument("--is_fusion", action="store_true", help="Input are fusion isoforms, must supply GTF as input")
     apoa.add_argument("-v", "--version", help="Display program version number.", action='version', version='SQANTI3 '+str(__version__))
-    apoa.add_argument('--bugsi', choices=['human','mouse'], help='Generate a BUGSI benchmarking report for the given species (human or mouse)', required=False)
+    apoa.add_argument('--tusco', choices=['human','mouse'], help='Generate a TUSCO benchmarking report for the given species (human or mouse)', required=False)
 
     return ap
-

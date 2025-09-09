@@ -20,8 +20,8 @@ def read_json_rules(json_file):
             - column (str): Column name from classification data
             - type (str): Rule type (Category/Min_Threshold/Max_Threshold)
             - rule (str/float): Threshold value or category requirement
+
     """
-    
     with open(json_file, 'r') as f:
         json_data = json.load(f)
 
@@ -35,19 +35,19 @@ def read_json_rules(json_file):
             for col_name, r in rule_set.items():
                 if isinstance(r, list):
                     if all(isinstance(x, (int, float)) for x in r):
-                        rules_table.append([col_name, 'Min_Threshold' ,min(r)])
-                        rules_table.append([col_name, 'Max_Threshold' ,max(r)])
+                        rules_table.append([col_name, 'Min_Threshold', min(r)])
+                        rules_table.append([col_name, 'Max_Threshold', max(r)])
                     else:
-                        for value in r:
-                            rules_table.append([col_name,'Category',str(value).lower()])
+                        rules_table.append([col_name, 'Category', [str(value).lower() for value in r]])
                 elif isinstance(r, (int, float)):
-                    rules_table.append([col_name, 'Min_Threshold' ,r])
+                    rules_table.append([col_name, 'Min_Threshold', r])
                 else:
-                    rules_table.append([col_name,'Category',str(r).lower()])
+                    rules_table.append([col_name, 'Category', str(r).lower()])
             rules_dict[sc].append(pd.DataFrame(rules_table, columns=['column', 'type', 'rule']))
     if 'rest' not in rules_dict:
         rules_dict['rest'] = []
         filter_logger.warning("No rules defined for 'rest' structural category. Defaulting to no filtering.")
+
     return rules_dict
 
 def names_check(input_dict):
@@ -101,6 +101,7 @@ def apply_rules(row, force_multiexon, rules_dict):
     is_isoform = False
     for rules in rules_dict[structural_category]:
         isoform = True
+
         for _, rule in rules.iterrows():
             column = rule['column']
             rule_type = rule['type']
@@ -112,8 +113,12 @@ def apply_rules(row, force_multiexon, rules_dict):
                 else:
                     try:
                         if rule_type == 'Category':
-                            if str(row[column]).lower() != rule_value:
-                                isoform = False
+                            if isinstance(rule_value, list):
+                                if str(row[column]).lower() not in rule_value:
+                                    isoform = False
+                            else:
+                                if str(row[column]).lower() != rule_value:
+                                    isoform = False
                         elif rule_type == 'Min_Threshold':
                             if row[column] < rule_value:
                                 isoform = False
@@ -129,6 +134,9 @@ def apply_rules(row, force_multiexon, rules_dict):
                 filter_logger.error(f"Perhaps you misspelled the column name in the rules file?")
                 sys.exit(1)
         is_isoform = is_isoform or isoform
+        # no need to check next branch if this branch is passed, end early
+        if is_isoform:
+            break
     if is_isoform:
         return "Isoform"
     else:
@@ -164,8 +172,12 @@ def get_reasons(row, force_multiexon, rules_dict):
             rule_value = rule['rule']
 
             if rule_type == 'Category':
-                if str(row[column]).lower() != rule_value:
-                    reasons.add(f"{column}: {row[column]}")
+                if isinstance(rule_value, list):
+                    if str(row[column]).lower() not in rule_value:
+                        reasons.add(f"{column}: {row[column]}")
+                else:
+                    if str(row[column]).lower() != rule_value:
+                        reasons.add(f"{column}: {row[column]}")
             elif rule_type == 'Min_Threshold':
                 if row[column] < rule_value:
                     reasons.add(f"{column}: {row[column]} < {rule_value}")

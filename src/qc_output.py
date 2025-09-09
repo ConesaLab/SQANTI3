@@ -7,7 +7,7 @@ from bx.intervals import Interval
 
 from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 from src.commands import (
-    RSCRIPTPATH, RSCRIPT_QC_REPORT,RSCRIPT_BUGSI_REPORT, run_command
+    RSCRIPTPATH, RSCRIPT_QC_REPORT, RSCRIPT_TUSCO_REPORT, run_command
 
 )
 from src.config import utilitiesPath
@@ -69,17 +69,34 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
-def generate_bugsi_report(bugsi, outputClassPath, transcript_gtf_file):
+def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
     """
-    Generates the BUGSI benchmarking report using the provided classification file and transcript GTF.
+    Generates the TUSCO benchmarking report using the provided classification file and transcript GTF.
     """
-    qc_logger.info("Generating BUGSI report....", file=sys.stderr)
-    bugsi_gtf = os.path.join(utilitiesPath, "report_qc", f"bugsi_{bugsi}.gtf")
+    # Log to the configured handlers (StreamHandler defaults to stderr)
+    qc_logger.info("Generating TUSCO report....")
+    # Use species-specific TUSCO TSV (no longer depend on TUSCO GTF files)
+    tusco_ref = os.path.join(utilitiesPath, "report_qc", f"tusco_{tusco}.tsv")
+    if not os.path.exists(tusco_ref):
+        qc_logger.error(
+            f"TUSCO reference TSV not found for species '{tusco}'. Searched: {tusco_ref}"
+        )
+        raise FileNotFoundError("Missing TUSCO TSV reference file")
+    else:
+        qc_logger.info(f"Using TUSCO TSV reference: {tusco_ref}")
+    # map species to genome assembly used by Gviz
+    genome = {
+        "human": "hg38",
+        "mouse": "mm10",
+    }.get(tusco, "hg38")
+    # RSCRIPT_TUSCO_REPORT already contains utilitiesPath; don't prefix again
     cmd = (
-        f"{RSCRIPTPATH} {utilitiesPath}/{RSCRIPT_BUGSI_REPORT} "
-        f"{outputClassPath} {bugsi_gtf} {transcript_gtf_file} {utilitiesPath}"
+        f"{RSCRIPTPATH} {RSCRIPT_TUSCO_REPORT} "
+        f"{outputClassPath} {tusco_ref} {transcript_gtf_file} {utilitiesPath} {genome}"
     )
-    run_command(cmd, "BUGSI report")
+    logFile = f"{os.path.dirname(outputClassPath)}/logs/tusco_report.log"
+    # TUSCO is optional; if it fails (e.g., no matches), continue pipeline
+    run_command(cmd, qc_logger, logFile, "TUSCO report", fail_ok=True)
 
 def cleanup(outputClassPath, outputJuncPath):
     qc_logger.info("Removing temporary files.")
@@ -113,8 +130,7 @@ def write_collapsed_GFF_with_CDS(isoforms_info, input_gff, output_gff):
             # Fix negative strand coordinates
             if r.strand == '-': 
                 r.start, r.end =  r.ref_exons[-1].start, r.ref_exons[0].end # Positions get shifted by 1
-                r.ref_exons.reverse()
-                # Fix the reference exons 
+                r.ref_exons.reverse() # Fix the reference exons 
             r.geneid = isoforms_info[r.seqid].geneName()  # set the gene name
             r.cds_exons = []
             if isoforms_info[r.seqid].coding == "coding": # has ORF prediction for this isoform
