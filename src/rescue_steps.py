@@ -1,7 +1,5 @@
 import os
 import shutil
-import sys
-
 import pandas as pd
 
 from src.wrapper_utils import (sqanti_path)
@@ -289,10 +287,15 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
     rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
 
     # Save new classification
-    rClass = read_classification(ref_class)
-    tClass = read_classification(filter_class)
-    rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
-                                rClass[rClass['isoform'].isin(rescued_transcripts)]])
+    if ref_class is None:
+        rescue_logger.warning("No reference classification provided.")
+        rescue_logger.warning("Rescued classification will only include the user-defined isoforms.")
+        rescued_class = read_classification(filter_class)
+    else:
+        rClass = read_classification(ref_class) 
+        tClass = read_classification(filter_class)
+        rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
+                                    rClass[rClass['isoform'].isin(rescued_transcripts)]])
     rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
     rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.tsv")
     return(rescued_list,output_gtf)
