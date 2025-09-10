@@ -137,18 +137,12 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     targets_fasta = f"{prefix}_rescue_targets.fasta"
     candidates_fasta = f"{prefix}_rescue_candidates.fasta"
 
-
-
     ## Filter reference transcriptome FASTA to only include target ref transcripts
     rescue_logger.info("Filtering reference transcriptome FASTA to only rescue targets.")
-
-    # make file names
     ref_targets = filter_transcriptome(ref_trans_fasta,targets_list)
 
     ## Filter SQ3 transcriptome FASTA to only include target LR transcripts
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
-
-    # make file names
     LR_targets = filter_transcriptome(corrected_isoforms,targets_list)
 
     ## join both FASTA files
@@ -171,18 +165,15 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
 
     # make file names
     sam_file = f"{prefix}_mapped_rescue.sam"
-
-    # make command
-    minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {targets_fasta} {candidates_fasta} > {sam_file}"
-
-    # run
-    logFile=f"{out_dir}/logs/rescue/minimap2.log"
-    run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
-
     if os.path.isfile(sam_file):
-        rescue_logger.info(f"Minimap2 results were saved to {sam_file}")
-        rescue_logger.debug("minimap2 command used:")
-        rescue_logger.debug(minimap_cmd)
+        rescue_logger.info("Mapping file already exists, skipping mapping step.")
+    else:
+        # make command
+        minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {targets_fasta} {candidates_fasta} > {sam_file}"
+
+        # run
+        logFile=f"{out_dir}/logs/rescue/minimap2.log"
+        run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
 
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
