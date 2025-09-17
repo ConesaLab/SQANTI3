@@ -70,18 +70,14 @@ def main():
       run_candidate_mapping(args.refGTF,args.refFasta,targets,candidates,
                             args.corrected_isoforms_fasta,args.dir,args.output)
 
-
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
     # and is therefore run only for ML filter
-
-    if args.subcommand == "ml":
-
+    if args.strategy == "ml":
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
       run_ML_rescue(args.filter_class, args.refClassif,
                               args.dir, args.output, args.random_forest, args.threshold)
-
 
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome

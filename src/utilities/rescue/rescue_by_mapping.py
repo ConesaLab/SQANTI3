@@ -4,7 +4,7 @@ import numpy as np
 def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, 
               automatic_rescue_path,strategy):
     """Load input data files."""
-    mapping_hits = pd.read_csv(mapping_hits_path, sep="\t", names=["rescue_candidate", "mapping_hit", "sam_flag"])
+    mapping_hits = pd.read_csv(mapping_hits_path, sep="\t")
     
     if strategy == "rules":
         columns = ["isoform", "filter_result"]
@@ -50,12 +50,18 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
     if strategy == "rules":
         # Apply rules-based filtering
         mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
+        mapping_hits_filt['score'] = mapping_hits_filt['alignment_score']
         
     elif strategy == "ml":
         mapping_hits_filt = mapping_hits[mapping_hits['hit_POS_MLprob'] >= threshold]
-        # Get rows with maximum hit_POS_MLprob value for each rescue_candidate
-        max_probs = mapping_hits_filt.groupby('rescue_candidate')['hit_POS_MLprob'].transform('max')
-        mapping_hits_filt = mapping_hits_filt[mapping_hits_filt['hit_POS_MLprob'] == max_probs]
+        mapping_hits_filt['score'] = mapping_hits_filt['alignment_score'] * mapping_hits_filt['hit_POS_MLprob']
+
+    # Select the rows with the best score for each rescue candidate
+    best_score = mapping_hits_filt.groupby('rescue_candidate')['score'].transform('max')
+    mapping_hits_filt = mapping_hits_filt[mapping_hits_filt['score'] == best_score]
+
+    mapping_hits_filt.to_csv("debug_mapping_hits_filt.tsv", sep="\t", index=False)
+    input()
 
     # 2. Select only reference rescued transcripts
     rescued_ref = mapping_hits_filt[mapping_hits_filt["mapping_hit"].isin(class_ref["isoform"])]
@@ -282,7 +288,6 @@ def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_clas
     rescue_table = create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final,
                                        class_ref, rescued_ref, isoform_assoc_tr, automatic_fsm,
                                        strategy, threshold)
-
     # Write rescue table
     write_rescue_table(rescue_table, output_prefix)
 

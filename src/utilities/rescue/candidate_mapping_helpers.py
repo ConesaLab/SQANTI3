@@ -59,7 +59,7 @@ def process_sam_file(sam_file, output_dir, output_prefix):
                 data.append([read.query_name, read.reference_name, read.flag,0])
 
     # Convert to DataFrame and save as TSV
-    hits_df = pd.DataFrame(data, columns=["candidate", "target", "alignment_type","alignment_score"])
+    hits_df = pd.DataFrame(data, columns=["rescue_candidate", "mapping_hit", "alignment_type","alignment_score"])
     hits_df.to_csv(hits_file, sep="\t", index=False, header=True)
 
     rescue_logger.info(f"Mapping hit table was saved to {hits_file}")

@@ -194,18 +194,14 @@ def run_rules_rescue(filter_classification, reference_classification,
     # create reference out prefix and dir
     ref_out = "reference"
     ref_dir = f"{out_dir}/reference_rules_filter"
-
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
     # define command
     refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report"
-
-    # print command
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
 
     ## run rescue-by-mapping
     rescue_logger.info("Running rescue-by-mapping for rules filter.")
-
     # Filenames
     mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
     ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
