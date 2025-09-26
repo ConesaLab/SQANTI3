@@ -2091,8 +2091,8 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   }
   # Check for Non-empty Data
   if (nrow(x) > 0) {
-    x[which(x$diff_to_gene_TSS<=50),"Annotation"] <- "Annotated"
-    x[which(x$diff_to_gene_TSS>50),"Annotation"] <- "Not annotated"
+    x[which(abs(x$diff_to_gene_TSS)<=50),"Annotation"] <- "Annotated"
+    x[which(abs(x$diff_to_gene_TSS)>50),"Annotation"] <- "Not annotated"
     t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
     t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
