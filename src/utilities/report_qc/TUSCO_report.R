@@ -9,9 +9,10 @@ args <- commandArgs(trailingOnly = TRUE)
 class.file <- args[1]
 tusco.file <- args[2]
 transcript_gtf_file <- args[3]
-utilities.path <- args[4]
-# optional genome assembly (e.g., hg38, mm10)
-genome.assembly <- ifelse(length(args) >= 5, args[5], "hg38")
+reference_gtf_file <- args[4]
+utilities.path <- args[5]
+# genome assembly (hg38 or mm10)
+genome.assembly <- args[6]
 
 # Define file paths
 
@@ -60,60 +61,26 @@ read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
 # Read input files
 classification_data <- read_tsv_safe(class.file)
 
-## Read TUSCO reference (supports TSV or GTF)
-if (grepl("\\.tsv$", tusco.file, ignore.case = TRUE) || grepl("\\.txt$", tusco.file, ignore.case = TRUE)) {
-  message("Reading TUSCO TSV file...")
-  tusco_df <- tryCatch({
-    readr::read_delim(
-      tusco.file,
-      delim = "\t",
-      col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
-      col_types = readr::cols(.default = "c"),
-      trim_ws = TRUE
-    )
-  }, error = function(e) {
-    # fallback parser if needed
-    readr::read_table2(
-      tusco.file,
-      col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
-      col_types = readr::cols(.default = "c")
-    )
-  })
-  if (!all(c("ensembl","refseq","gene_name") %in% colnames(tusco_df))) {
-    stop("Tusco TSV must contain columns: ensembl, refseq, gene_name")
-  }
-  annotation_data <- tusco_df %>%
-    dplyr::select(ensembl, refseq, gene_name) %>%
-    dplyr::distinct()
-  # For downstream plotting code, keep a unified object name
-  tusco_gtf_df <- tusco_df
-} else {
-  message("Reading TUSCO GTF file...")
-  tusco_gtf <- rtracklayer::import(tusco.file)
-  tusco_gtf_df <- as.data.frame(tusco_gtf)
+# Read TUSCO reference TSV file
+message("Reading TUSCO TSV file...")
+tusco_df <- readr::read_delim(
+  tusco.file,
+  delim = "\t",
+  col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
+  comment = "#",
+  col_types = readr::cols(.default = "c"),
+  trim_ws = TRUE,
+  show_col_types = FALSE
+)
 
-  # Derive the expected columns if missing
-  if (!"ensembl" %in% names(tusco_gtf_df)) {
-    if ("gene_id" %in% names(tusco_gtf_df)) {
-      tusco_gtf_df$ensembl <- tusco_gtf_df$gene_id
-    } else {
-      tusco_gtf_df$ensembl <- NA_character_
-    }
-  }
-  if (!"gene_name" %in% names(tusco_gtf_df)) {
-    tusco_gtf_df$gene_name <- NA_character_
-  }
-  if (!"refseq" %in% names(tusco_gtf_df)) {
-    tusco_gtf_df$refseq <- NA_character_
-  }
+message(paste("Successfully read TUSCO TSV file with", nrow(tusco_df), "rows"))
 
-  # Extract gene-level information. Some GTFs might lack explicit 'gene' rows,
-  # so derive unique identifiers from any feature rows available.
-  annotation_data <- tusco_gtf_df %>%
-    dplyr::select(ensembl = ensembl, refseq = refseq, gene_name = gene_name) %>%
-    dplyr::filter(!is.na(ensembl) | !is.na(refseq) | !is.na(gene_name)) %>%
-    dplyr::distinct()
-}
+# Extract annotation data for matching
+annotation_data <- tusco_df %>%
+  dplyr::select(ensembl, refseq, gene_name) %>%
+  dplyr::distinct()
+
+# tusco_gtf_df will be created after determining top_id_type and normalizing IDs
 
 ## initial rTUSCO (may be recomputed after selecting id type)
 rTUSCO <- nrow(annotation_data)
@@ -123,7 +90,14 @@ message("Reading transcript GTF file...")
 transcript_gtf <- rtracklayer::import(transcript_gtf_file)
 transcript_gtf_df <- as.data.frame(transcript_gtf)
 message("transcript_gtf_df columns: ", paste(colnames(transcript_gtf_df), collapse = ", "))
-message("tusco_gtf_df columns: ", paste(colnames(tusco_gtf_df), collapse = ", "))
+
+# Read reference GTF file
+message("Reading reference GTF file...")
+reference_gtf <- rtracklayer::import(reference_gtf_file)
+reference_gtf_df <- as.data.frame(reference_gtf)
+message("reference_gtf_df columns: ", paste(colnames(reference_gtf_df), collapse = ", "))
+
+message("tusco_df columns: ", paste(colnames(tusco_df), collapse = ", "))
 
 message("Defining regex patterns for ID classification...")
 patterns <- list(
@@ -178,6 +152,10 @@ if (top_id_type == "ensembl" && "gene_id" %in% names(transcript_gtf_df)) {
   # Directly modify the 'gene_id' column
   transcript_gtf_df$gene_id <- sub("\\..*", "", transcript_gtf_df$gene_id)
 }
+if (top_id_type == "ensembl" && "gene_id" %in% names(reference_gtf_df)) {
+  # Directly modify the 'gene_id' column for reference GTF
+  reference_gtf_df$gene_id <- sub("\\..*", "", reference_gtf_df$gene_id)
+}
 
 # Also normalize annotation IDs to remove version suffixes
 if ("ensembl" %in% names(annotation_data)) {
@@ -187,13 +165,27 @@ if ("refseq" %in% names(annotation_data)) {
   annotation_data$refseq <- sub("\\..*", "", as.character(annotation_data$refseq))
 }
 
-# Normalize TUSCO GTF identifiers used for matching/plotting
-if ("ensembl" %in% names(tusco_gtf_df)) {
-  tusco_gtf_df$ensembl <- sub("\\..*", "", as.character(tusco_gtf_df$ensembl))
+# Extract TUSCO genes from reference GTF based on top_id_type
+message("Creating tusco_gtf_df from reference GTF using ", top_id_type, " identifiers...")
+
+# Get unique TUSCO identifiers based on top_id_type (already normalized)
+tusco_ids <- unique(annotation_data[[top_id_type]])
+tusco_ids <- tusco_ids[!is.na(tusco_ids)]
+
+# Subset reference GTF for TUSCO genes
+if (top_id_type == "ensembl" || top_id_type == "refseq") {
+  # Match by gene_id (already normalized at lines 156-159)
+  tusco_gtf_df <- reference_gtf_df[reference_gtf_df$gene_id %in% tusco_ids, ]
+} else if (top_id_type == "gene_name") {
+  # Match by gene_name
+  tusco_gtf_df <- reference_gtf_df[reference_gtf_df$gene_name %in% tusco_ids, ]
+} else {
+  # Fallback to empty data frame if unknown type
+  tusco_gtf_df <- reference_gtf_df[0, ]
+  warning("Unknown top_id_type: ", top_id_type, ". tusco_gtf_df will be empty.")
 }
-if ("refseq" %in% names(tusco_gtf_df)) {
-  tusco_gtf_df$refseq <- sub("\\..*", "", as.character(tusco_gtf_df$refseq))
-}
+
+message("Created tusco_gtf_df with ", nrow(tusco_gtf_df), " entries from reference GTF")
 
 ## associated_transcript version strip (if present) after cleaning
 if ("associated_transcript" %in% names(classification_data_cleaned)) {
@@ -348,6 +340,17 @@ combined_data <- bind_rows(
 associated_genes_list <- combined_data %>%
   dplyr::select(associated_gene, category) %>%
   dplyr::distinct()
+
+# Write TUSCO results to TSV file for programmatic access
+tusco_results_file <- file.path(output_directory, paste0(output_name, "_TUSCO_results.tsv"))
+tusco_results <- combined_data %>%
+  dplyr::select(isoform, associated_gene, structural_category, subcategory, category) %>%
+  dplyr::rename(
+    transcript_id = isoform,
+    TUSCO_category = category
+  )
+readr::write_tsv(tusco_results, tusco_results_file)
+message("TUSCO results written to: ", tusco_results_file)
 
 # Include FN genes for plotting (reference-only tracks if no sample transcripts)
 fn_ids <- tryCatch({
@@ -508,8 +511,8 @@ p_tusco_complex <- ggplot(plot_data, aes(x = final_label, y = percentage, fill =
 # Pass data to RMarkdown (after all objects are defined)
 params <- list(
   metrics = metrics,
-  tusco_gtf_df = tusco_gtf_df,
-  transcript_gtf_df = transcript_gtf_df,
+  sample_gtf_df = transcript_gtf_df,
+  reference_gtf_df = reference_gtf_df,
   associated_genes_list = associated_genes_list,
   p_tusco_complex = p_tusco_complex,
   # pass objects to avoid global leakage
@@ -566,6 +569,11 @@ msg_preview <- paste(utils::head(genes_to_plot, 15), collapse = ", ")
 message("IGV plotting preview (up to 15 genes): ", msg_preview)
 message("plots_dir: ", plots_dir)
 message("capabilities(cairo)=", paste0(isTRUE(capabilities("cairo"))), ", getOption(bitmapType)=", as.character(getOption("bitmapType")))
+
+# Create progress bar for plot generation
+pb <- txtProgressBar(min = 0, max = length(genes_to_plot), style = 3, width = 50)
+plot_counter <- 0
+
 for (gene in genes_to_plot) {
   # Fetch TUSCO gene annotations (exons) for the current gene, if available
   tusco_has_coords <- all(c("seqnames","start","end","strand") %in% names(tusco_gtf_df))
@@ -585,7 +593,7 @@ for (gene in genes_to_plot) {
       dplyr::filter(.df, !is.na(seqnames) & !is.na(start) & !is.na(end) & !is.na(strand))
     } else {
       # Derive TUSCO gene coordinates from the user-provided reference GTF
-      .ref <- transcript_gtf_df
+      .ref <- reference_gtf_df
       if ("type" %in% names(.ref)) {
         .ref <- dplyr::filter(.ref, type == "exon")
       }
@@ -618,8 +626,25 @@ for (gene in genes_to_plot) {
     .tdf <- .tdf[match_vec %in% TRUE, , drop = FALSE]
     dplyr::filter(.tdf, !is.na(seqnames) & !is.na(start) & !is.na(end) & !is.na(strand))
   }, error = function(e) transcript_gtf_df[0, , drop = FALSE])
-  
-  message("Gene ", gene, ": tusco_exons=", nrow(tusco_gene), ", sample_exons=", nrow(gene_transcripts))
+
+  # Fetch reference annotation transcripts for this gene (for comparison)
+  reference_transcripts <- tryCatch({
+    .ref <- reference_gtf_df
+    if ("type" %in% names(.ref)) {
+      .ref <- dplyr::filter(.ref, type == "exon")
+    }
+    match_vec <- rep(FALSE, nrow(.ref))
+    # Match by gene_name or gene_id
+    if ("gene_name" %in% names(.ref)) match_vec <- match_vec | (!is.na(.ref$gene_name) & as.character(.ref$gene_name) == gene)
+    if ("gene_id" %in% names(.ref)) {
+      gid <- sub("\\.\\d+$", "", as.character(.ref$gene_id))
+      match_vec <- match_vec | (!is.na(gid) & gid == gene)
+    }
+    .ref <- .ref[match_vec %in% TRUE, , drop = FALSE]
+    dplyr::filter(.ref, !is.na(seqnames) & !is.na(start) & !is.na(end) & !is.na(strand))
+  }, error = function(e) reference_gtf_df[0, , drop = FALSE])
+
+  message("Gene ", gene, ": tusco_exons=", nrow(tusco_gene), ", sample_exons=", nrow(gene_transcripts), ", reference_exons=", nrow(reference_transcripts))
   if (nrow(gene_transcripts) > 0) {
     message("Sample seqnames: ", paste(unique(as.character(gene_transcripts$seqnames)), collapse=","))
   }
@@ -745,24 +770,44 @@ for (gene in genes_to_plot) {
     
     # Define the plotting range
     message("Defining the plotting range...")
-    if (!is.null(tusco_transcripts_gr_unlisted) && nrow(tusco_gene) > 0) {
-      gene_range_start <- min(c(gene_transcripts$start, tusco_gene$start))
-      gene_range_end <- max(c(gene_transcripts$end, tusco_gene$end))
-      gene_seqnames <- unique(c(gene_transcripts$seqnames, tusco_gene$seqnames))
-      gene_strand <- unique(c(gene_transcripts$strand, tusco_gene$strand))
-    } else {
-      gene_range_start <- min(gene_transcripts$start, na.rm = TRUE)
-      gene_range_end <- max(gene_transcripts$end, na.rm = TRUE)
-      gene_seqnames <- unique(gene_transcripts$seqnames)
-      gene_strand <- unique(gene_transcripts$strand)
+    # Calculate range from both sample and reference transcripts
+    all_starts <- c()
+    all_ends <- c()
+    all_seqnames <- c()
+    all_strands <- c()
+
+    if (nrow(gene_transcripts) > 0) {
+      all_starts <- c(all_starts, gene_transcripts$start)
+      all_ends <- c(all_ends, gene_transcripts$end)
+      all_seqnames <- c(all_seqnames, as.character(gene_transcripts$seqnames))
+      all_strands <- c(all_strands, as.character(gene_transcripts$strand))
     }
+    if (nrow(reference_transcripts) > 0) {
+      all_starts <- c(all_starts, reference_transcripts$start)
+      all_ends <- c(all_ends, reference_transcripts$end)
+      all_seqnames <- c(all_seqnames, as.character(reference_transcripts$seqnames))
+      all_strands <- c(all_strands, as.character(reference_transcripts$strand))
+    }
+
+    gene_range_start <- min(all_starts, na.rm = TRUE)
+    gene_range_end <- max(all_ends, na.rm = TRUE)
+    gene_seqnames <- unique(all_seqnames)
+    gene_strand <- unique(all_strands)
     gene_range <- GRanges(
       seqnames = gene_seqnames[1],
       ranges = IRanges(start = gene_range_start, end = gene_range_end),
       strand = gene_strand[1]
     )
     message("gene_range: chr=", as.character(seqnames(gene_range)[1]), ", start=", gene_range_start, ", end=", gene_range_end, ", strand=", as.character(strand(gene_range)[1]))
-    
+
+    # Add ideogram track at the top showing chromosome location
+    chr_name <- as.character(seqnames(gene_range)[1])
+    ideoTrack <- IdeogramTrack(
+      genome = genome.assembly,  # "hg38" or "mm10" auto-detected
+      chromosome = chr_name
+    )
+    message("Ideogram track created for ", chr_name, " (genome: ", genome.assembly, ")")
+
     genome_axis <- GenomeAxisTrack()
     message("Genome axis created.")
     
@@ -799,16 +844,39 @@ for (gene in genes_to_plot) {
       message("No sample transcripts for ", gene, "; plotting TUSCO reference only if available.")
     }
     
-    # Create GeneRegionTrack for TUSCO reference
-    tusco_track <- NULL
-    if (!is.null(tusco_transcripts_gr_unlisted)) {
-      message("Creating GeneRegionTrack for TUSCO reference...")
-      message("TUSCO reference transcripts to track: ", length(unique(mcols(tusco_transcripts_gr_unlisted)$transcript)))
-      tusco_track <- GeneRegionTrack(
-        tusco_transcripts_gr_unlisted,
+    # Create GeneRegionTrack for reference annotation
+    reference_track <- NULL
+    if (nrow(reference_transcripts) > 0) {
+      message("Creating GeneRegionTrack for reference annotation...")
+
+      # Create GRangesList for reference transcripts
+      split_field <- if ("transcript_id" %in% names(reference_transcripts)) "transcript_id" else "gene_id"
+      reference_transcripts_gr <- makeGRangesListFromDataFrame(
+        reference_transcripts,
+        keep.extra.columns = TRUE,
+        seqnames.field = "seqnames",
+        start.field = "start",
+        end.field = "end",
+        strand.field = "strand",
+        split.field = split_field
+      )
+      reference_transcripts_gr_unlisted <- unlist(reference_transcripts_gr, use.names = TRUE)
+      mcols(reference_transcripts_gr_unlisted)$transcript <- rep(
+        names(reference_transcripts_gr),
+        elementNROWS(reference_transcripts_gr)
+      )
+
+      # Set color to dark grey for reference annotation
+      mcols(reference_transcripts_gr_unlisted)$fill <- 'darkgrey'
+      mcols(reference_transcripts_gr_unlisted)$col <- 'darkgrey'
+
+      message("Reference transcripts to track: ", length(unique(mcols(reference_transcripts_gr_unlisted)$transcript)))
+
+      reference_track <- GeneRegionTrack(
+        reference_transcripts_gr_unlisted,
         genome = genome.assembly,
         chromosome = as.character(seqnames(gene_range)[1]),
-        name = paste0(gene, " TUSCO Reference"),
+        name = paste0(gene, " Reference Annotation"),
         background.title = "darkgrey",
         fill = "darkgrey",
         col = "darkgrey"
@@ -818,10 +886,11 @@ for (gene in genes_to_plot) {
     sample_tracks <- if (!is.null(sample_transcripts_gr_unlisted)) unlist(sample_tracks, recursive = FALSE) else list()
     
     # Combine all tracks for plotting
-    if (is.null(tusco_track)) {
-      all_tracks <- c(genome_axis, sample_tracks)
+    # Combine tracks: ideogram, axis, reference annotation, sample transcripts
+    if (is.null(reference_track)) {
+      all_tracks <- c(ideoTrack, genome_axis, sample_tracks)
     } else {
-      all_tracks <- c(genome_axis, tusco_track, sample_tracks)
+      all_tracks <- c(ideoTrack, genome_axis, reference_track, sample_tracks)
     }
     if (length(all_tracks) <= 1) {
       message("No tracks to plot for gene: ", gene)
@@ -836,10 +905,10 @@ for (gene in genes_to_plot) {
     open_png <- function(file) {
       ok <- FALSE
       if (isTRUE(capabilities("cairo"))) {
-        try({ png(file, width = 1000, height = 600, type = "cairo"); ok <- TRUE }, silent = TRUE)
+        try({ png(file, width = 3000, height = 2400, type = "cairo", res = 300); ok <- TRUE }, silent = TRUE)
       }
       if (!ok) {
-        png(file, width = 1000, height = 600)
+        png(file, width = 3000, height = 2400, res = 300)
       }
     }
     message("Opening PNG device (cairo=", isTRUE(capabilities("cairo")), ", bitmapType=", as.character(getOption("bitmapType")), ")")
@@ -860,11 +929,18 @@ for (gene in genes_to_plot) {
       message("Warning: plot file was not written: ", plot_file)
     }
     plots_created <- plots_created + 1L
-    
+
   }, error = function(e) {
     message("Error while generating plot: ", e$message)
-  }) 
+  })
+
+  # Update progress bar
+  plot_counter <- plot_counter + 1
+  setTxtProgressBar(pb, plot_counter)
 }
+
+# Close progress bar
+close(pb)
 message("Total IGV plots created: ", plots_created)
 
 # Render the HTML report
