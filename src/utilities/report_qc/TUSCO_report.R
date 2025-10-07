@@ -63,24 +63,55 @@ classification_data <- read_tsv_safe(class.file)
 ## Read TUSCO reference (supports TSV or GTF)
 if (grepl("\\.tsv$", tusco.file, ignore.case = TRUE) || grepl("\\.txt$", tusco.file, ignore.case = TRUE)) {
   message("Reading TUSCO TSV file...")
+
+  # Read the TSV file with proper handling of comment lines
   tusco_df <- tryCatch({
-    readr::read_delim(
+    # First attempt: read with automatic comment detection (lines starting with #)
+    df <- readr::read_delim(
       tusco.file,
       delim = "\t",
-      col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
+      col_names = FALSE,  # Don't force column names yet
+      comment = "#",      # Skip lines starting with #
       col_types = readr::cols(.default = "c"),
-      trim_ws = TRUE
+      trim_ws = TRUE,
+      show_col_types = FALSE
     )
+
+    # Check if we got the expected number of columns (6)
+    if (ncol(df) == 6) {
+      # Assign the expected column names
+      colnames(df) <- c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq")
+      message(paste("Successfully read TSV with", nrow(df), "rows and", ncol(df), "columns"))
+    } else {
+      stop(paste("Expected 6 columns in TSV file, but found", ncol(df)))
+    }
+    df
   }, error = function(e) {
-    # fallback parser if needed
-    readr::read_table2(
+    # Fallback: try reading without comment parameter
+    message("Primary read failed, trying fallback method...")
+    df <- readr::read_delim(
       tusco.file,
-      col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
-      col_types = readr::cols(.default = "c")
+      delim = "\t",
+      col_names = FALSE,
+      col_types = readr::cols(.default = "c"),
+      trim_ws = TRUE,
+      skip = 2,  # Skip first 2 lines if they are comments
+      show_col_types = FALSE
     )
+
+    if (ncol(df) == 6) {
+      colnames(df) <- c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq")
+      message(paste("Fallback method: read TSV with", nrow(df), "rows and", ncol(df), "columns"))
+    } else {
+      stop(paste("Fallback method: Expected 6 columns in TSV file, but found", ncol(df)))
+    }
+    df
   })
+
+  # Verify that required columns exist
   if (!all(c("ensembl","refseq","gene_name") %in% colnames(tusco_df))) {
-    stop("Tusco TSV must contain columns: ensembl, refseq, gene_name")
+    message("Available columns in tusco_df: ", paste(colnames(tusco_df), collapse = ", "))
+    stop("TUSCO TSV must contain columns: ensembl, refseq, gene_name")
   }
   annotation_data <- tusco_df %>%
     dplyr::select(ensembl, refseq, gene_name) %>%
