@@ -73,15 +73,14 @@ tusco_df <- readr::read_delim(
   show_col_types = FALSE
 )
 
-message(paste("Successfully read TSV with", nrow(tusco_df), "rows"))
+message(paste("Successfully read TUSCO TSV file with", nrow(tusco_df), "rows"))
 
 # Extract annotation data for matching
 annotation_data <- tusco_df %>%
   dplyr::select(ensembl, refseq, gene_name) %>%
   dplyr::distinct()
 
-# For downstream plotting code, keep a unified object name
-tusco_gtf_df <- tusco_df
+# tusco_gtf_df will be created after determining top_id_type and normalizing IDs
 
 ## initial rTUSCO (may be recomputed after selecting id type)
 rTUSCO <- nrow(annotation_data)
@@ -98,7 +97,7 @@ reference_gtf <- rtracklayer::import(reference_gtf_file)
 reference_gtf_df <- as.data.frame(reference_gtf)
 message("reference_gtf_df columns: ", paste(colnames(reference_gtf_df), collapse = ", "))
 
-message("tusco_gtf_df columns: ", paste(colnames(tusco_gtf_df), collapse = ", "))
+message("tusco_df columns: ", paste(colnames(tusco_df), collapse = ", "))
 
 message("Defining regex patterns for ID classification...")
 patterns <- list(
@@ -166,13 +165,27 @@ if ("refseq" %in% names(annotation_data)) {
   annotation_data$refseq <- sub("\\..*", "", as.character(annotation_data$refseq))
 }
 
-# Normalize TUSCO GTF identifiers used for matching/plotting
-if ("ensembl" %in% names(tusco_gtf_df)) {
-  tusco_gtf_df$ensembl <- sub("\\..*", "", as.character(tusco_gtf_df$ensembl))
+# Extract TUSCO genes from reference GTF based on top_id_type
+message("Creating tusco_gtf_df from reference GTF using ", top_id_type, " identifiers...")
+
+# Get unique TUSCO identifiers based on top_id_type (already normalized)
+tusco_ids <- unique(annotation_data[[top_id_type]])
+tusco_ids <- tusco_ids[!is.na(tusco_ids)]
+
+# Subset reference GTF for TUSCO genes
+if (top_id_type == "ensembl" || top_id_type == "refseq") {
+  # Match by gene_id (already normalized at lines 156-159)
+  tusco_gtf_df <- reference_gtf_df[reference_gtf_df$gene_id %in% tusco_ids, ]
+} else if (top_id_type == "gene_name") {
+  # Match by gene_name
+  tusco_gtf_df <- reference_gtf_df[reference_gtf_df$gene_name %in% tusco_ids, ]
+} else {
+  # Fallback to empty data frame if unknown type
+  tusco_gtf_df <- reference_gtf_df[0, ]
+  warning("Unknown top_id_type: ", top_id_type, ". tusco_gtf_df will be empty.")
 }
-if ("refseq" %in% names(tusco_gtf_df)) {
-  tusco_gtf_df$refseq <- sub("\\..*", "", as.character(tusco_gtf_df$refseq))
-}
+
+message("Created tusco_gtf_df with ", nrow(tusco_gtf_df), " entries from reference GTF")
 
 ## associated_transcript version strip (if present) after cleaning
 if ("associated_transcript" %in% names(classification_data_cleaned)) {
