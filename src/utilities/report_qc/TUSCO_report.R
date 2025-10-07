@@ -11,8 +11,8 @@ tusco.file <- args[2]
 transcript_gtf_file <- args[3]
 reference_gtf_file <- args[4]
 utilities.path <- args[5]
-# optional genome assembly (e.g., hg38, mm10)
-genome.assembly <- ifelse(length(args) >= 6, args[6], "hg38")
+# genome assembly (hg38 or mm10)
+genome.assembly <- args[6]
 
 # Define file paths
 
@@ -61,91 +61,27 @@ read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
 # Read input files
 classification_data <- read_tsv_safe(class.file)
 
-## Read TUSCO reference (supports TSV or GTF)
-if (grepl("\\.tsv$", tusco.file, ignore.case = TRUE) || grepl("\\.txt$", tusco.file, ignore.case = TRUE)) {
-  message("Reading TUSCO TSV file...")
+# Read TUSCO reference TSV file
+message("Reading TUSCO TSV file...")
+tusco_df <- readr::read_delim(
+  tusco.file,
+  delim = "\t",
+  col_names = c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq"),
+  comment = "#",
+  col_types = readr::cols(.default = "c"),
+  trim_ws = TRUE,
+  show_col_types = FALSE
+)
 
-  # Read the TSV file with proper handling of comment lines
-  tusco_df <- tryCatch({
-    # First attempt: read with automatic comment detection (lines starting with #)
-    df <- readr::read_delim(
-      tusco.file,
-      delim = "\t",
-      col_names = FALSE,  # Don't force column names yet
-      comment = "#",      # Skip lines starting with #
-      col_types = readr::cols(.default = "c"),
-      trim_ws = TRUE,
-      show_col_types = FALSE
-    )
+message(paste("Successfully read TSV with", nrow(tusco_df), "rows"))
 
-    # Check if we got the expected number of columns (6)
-    if (ncol(df) == 6) {
-      # Assign the expected column names
-      colnames(df) <- c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq")
-      message(paste("Successfully read TSV with", nrow(df), "rows and", ncol(df), "columns"))
-    } else {
-      stop(paste("Expected 6 columns in TSV file, but found", ncol(df)))
-    }
-    df
-  }, error = function(e) {
-    # Fallback: try reading without comment parameter
-    message("Primary read failed, trying fallback method...")
-    df <- readr::read_delim(
-      tusco.file,
-      delim = "\t",
-      col_names = FALSE,
-      col_types = readr::cols(.default = "c"),
-      trim_ws = TRUE,
-      skip = 2,  # Skip first 2 lines if they are comments
-      show_col_types = FALSE
-    )
+# Extract annotation data for matching
+annotation_data <- tusco_df %>%
+  dplyr::select(ensembl, refseq, gene_name) %>%
+  dplyr::distinct()
 
-    if (ncol(df) == 6) {
-      colnames(df) <- c("ensembl", "transcript", "gene_name", "gene_id_num", "refseq", "prot_refseq")
-      message(paste("Fallback method: read TSV with", nrow(df), "rows and", ncol(df), "columns"))
-    } else {
-      stop(paste("Fallback method: Expected 6 columns in TSV file, but found", ncol(df)))
-    }
-    df
-  })
-
-  # Verify that required columns exist
-  if (!all(c("ensembl","refseq","gene_name") %in% colnames(tusco_df))) {
-    message("Available columns in tusco_df: ", paste(colnames(tusco_df), collapse = ", "))
-    stop("TUSCO TSV must contain columns: ensembl, refseq, gene_name")
-  }
-  annotation_data <- tusco_df %>%
-    dplyr::select(ensembl, refseq, gene_name) %>%
-    dplyr::distinct()
-  # For downstream plotting code, keep a unified object name
-  tusco_gtf_df <- tusco_df
-} else {
-  message("Reading TUSCO GTF file...")
-  tusco_gtf <- rtracklayer::import(tusco.file)
-  tusco_gtf_df <- as.data.frame(tusco_gtf)
-
-  # Derive the expected columns if missing
-  if (!"ensembl" %in% names(tusco_gtf_df)) {
-    if ("gene_id" %in% names(tusco_gtf_df)) {
-      tusco_gtf_df$ensembl <- tusco_gtf_df$gene_id
-    } else {
-      tusco_gtf_df$ensembl <- NA_character_
-    }
-  }
-  if (!"gene_name" %in% names(tusco_gtf_df)) {
-    tusco_gtf_df$gene_name <- NA_character_
-  }
-  if (!"refseq" %in% names(tusco_gtf_df)) {
-    tusco_gtf_df$refseq <- NA_character_
-  }
-
-  # Extract gene-level information. Some GTFs might lack explicit 'gene' rows,
-  # so derive unique identifiers from any feature rows available.
-  annotation_data <- tusco_gtf_df %>%
-    dplyr::select(ensembl = ensembl, refseq = refseq, gene_name = gene_name) %>%
-    dplyr::filter(!is.na(ensembl) | !is.na(refseq) | !is.na(gene_name)) %>%
-    dplyr::distinct()
-}
+# For downstream plotting code, keep a unified object name
+tusco_gtf_df <- tusco_df
 
 ## initial rTUSCO (may be recomputed after selecting id type)
 rTUSCO <- nrow(annotation_data)
@@ -392,6 +328,17 @@ associated_genes_list <- combined_data %>%
   dplyr::select(associated_gene, category) %>%
   dplyr::distinct()
 
+# Write TUSCO results to TSV file for programmatic access
+tusco_results_file <- file.path(output_directory, paste0(output_name, "_TUSCO_results.tsv"))
+tusco_results <- combined_data %>%
+  dplyr::select(isoform, associated_gene, structural_category, subcategory, category) %>%
+  dplyr::rename(
+    transcript_id = isoform,
+    TUSCO_category = category
+  )
+readr::write_tsv(tusco_results, tusco_results_file)
+message("TUSCO results written to: ", tusco_results_file)
+
 # Include FN genes for plotting (reference-only tracks if no sample transcripts)
 fn_ids <- tryCatch({
   if (nrow(FN) > 0) as.character(FN[[top_id_type]]) else character(0)
@@ -552,7 +499,7 @@ p_tusco_complex <- ggplot(plot_data, aes(x = final_label, y = percentage, fill =
 params <- list(
   metrics = metrics,
   sample_gtf_df = transcript_gtf_df,
-  reference_gtf_df = tusco_gtf_df,
+  reference_gtf_df = reference_gtf_df,
   associated_genes_list = associated_genes_list,
   p_tusco_complex = p_tusco_complex,
   # pass objects to avoid global leakage
