@@ -34,7 +34,7 @@ def fill_design_table(args):
     if df.shape[1] < 2:
         print("ERROR: is incorrectly formatted, is it not separated by commas?".format(args.inDESIGN), file=sys.stderr)
         sys.exit(-1)
-    
+
     # Create the new columns
     df['classification_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
     df['junction_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
@@ -42,7 +42,7 @@ def fill_design_table(args):
     return(df)
 
 def get_method_runSQANTI3(args, df):
-    
+
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -59,7 +59,7 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     print(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}", file=sys.stdout)
                 continue
-        
+
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
         print(gtf_pattern)
@@ -114,7 +114,7 @@ def get_method_runSQANTI3(args, df):
                 print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
-        
+
         # If none of the conditions are met, raise an error
         print(f"ERROR: The file_acc you included in your design file does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.input_dir} directory", file=sys.stdout)
         sys.exit(-1)
@@ -128,7 +128,7 @@ def make_UJC_hash(args, df):
         outputPathPrefix = os.path.join(args.dir, file_acc, sampleID)
 
         print("**** Calculating UJCs...", file = sys.stdout)
-                
+
         # Ensure the corrected GTF contains gene_id attributes on every exon/CDS line so that
         # downstream `gtftools` does not fail with `IndexError: list index out of range`.
         # `gffread` will rewrite the file adding the missing attributes. We write to a
@@ -141,19 +141,19 @@ def make_UJC_hash(args, df):
         except subprocess.CalledProcessError:
             print(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread", file=sys.stderr)
             sys.exit(-1)
-            
+
         ## Take the corrected GTF
         # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
         introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
-            
+
         if subprocess.check_call(introns_cmd, shell=True)!=0:
             print("ERROR running command: {0}\n Missing GTFTOOLS".format(introns_cmd), file=sys.stderr)
             sys.exit(-1)
-            
+
         if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
             os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
-            
+
         if subprocess.check_call(ujc_cmd, shell=True)!=0:
             print("ERROR running command: {0}\n Missing BEDTOOLS".format(introns_cmd), file=sys.stderr)
             sys.exit(-1)
@@ -164,19 +164,19 @@ def make_UJC_hash(args, df):
         clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
         clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
         ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
-        
+
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
         # Fill missing values in UJC column using the transcript ID
         merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
-        
+
         merged_df['jxnHash'] = merged_df['jxn_string'].apply(
                     lambda x: hashlib.sha256(x.encode('utf-8')).hexdigest())
-        
+
         merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
-        
+
         cmd_paste = f"""bash -c 'paste <(cat {classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
         subprocess.call(cmd_paste, shell = True)
-        
+
         os.remove(f"{outputPathPrefix}tmp_UJC.txt")
         os.remove(f"{outputPathPrefix}_temp.txt")
 
@@ -207,6 +207,7 @@ def main():
     parser.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and and underannotated gene tables')
     parser.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
     parser.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
+    parser.add_argument('--skip_plots', dest="SKIPPLOTS", action='store_true', help='Skip the plotting step')
     parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
     parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
     parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
@@ -224,26 +225,26 @@ def main():
         make_UJC_hash(args, df)
 
     # Run plotting script
-    plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
-    print(__file__)
-    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
-    if args.inFACTOR:
-        cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
-    if args.FACTORLVL != None:
-        cmd_plotting = cmd_plotting + f" --factor-level {args.FACTORLVL}"
-    if args.PREFIX:
-        cmd_plotting = cmd_plotting + f" --prefix {args.PREFIX}"
-    else:
-        cmd_plotting = cmd_plotting + " --prefix sqantiReads"
-    if args.ALLTABLES:
-        cmd_plotting = cmd_plotting + " --all-tables"
-    if args.PCATABLES:
-        cmd_plotting = cmd_plotting + " --pca-tables"
-    print(cmd_plotting)
+    if not args.SKIPPLOTS:
+        plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
+        print(__file__)
+        cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
+        if args.inFACTOR:
+            cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
+        if args.FACTORLVL != None:
+            cmd_plotting = cmd_plotting + f" --factor-level {args.FACTORLVL}"
+        if args.PREFIX:
+            cmd_plotting = cmd_plotting + f" --prefix {args.PREFIX}"
+        else:
+            cmd_plotting = cmd_plotting + " --prefix sqantiReads"
+        if args.ALLTABLES:
+            cmd_plotting = cmd_plotting + " --all-tables"
+        if args.PCATABLES:
+            cmd_plotting = cmd_plotting + " --pca-tables"
+        print(cmd_plotting)
 
-    subprocess.call(cmd_plotting, shell = True)
+        subprocess.call(cmd_plotting, shell = True)
 
 
 if __name__ == "__main__":
     main()
-
