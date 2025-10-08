@@ -2,6 +2,7 @@ import pytest, os,sys
 import warnings
 from test.utils import run_command_test
 import shutil
+import platform
 
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, main_path)
@@ -90,10 +91,22 @@ def test_gffread():
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..","src","utilities")
 
 def test_gtf2genepred(utiltiesPath=utilitiesPath):
-    """ Test if can be found """
-    gtf2genepred_path = os.path.join(utilitiesPath,"gtfToGenePred")
-    if shutil.which(gtf2genepred_path) is None:
+    """ Test if platform-specific gtfToGenePred binary can be found """
+    # Determine platform-specific binary name
+    system = platform.system()
+    if system == "Linux":
+        binary_name = "gtfToGenePred-linux-x86_64"
+    elif system == "Darwin":
+        binary_name = "gtfToGenePred-darwin-x86_64"
+    else:
+        pytest.fail(f"Unsupported platform: {system}. gtfToGenePred binary is only available for Linux and macOS.")
+
+    gtf2genepred_path = os.path.join(utilitiesPath, binary_name)
+    if not os.path.exists(gtf2genepred_path):
         pytest.fail(f"Cannot find executable {gtf2genepred_path}. Abort!")
+    if shutil.which(gtf2genepred_path) is None:
+        pytest.fail(f"Cannot execute {gtf2genepred_path}. Check file permissions. Abort!")
+
     # Remove the genePred file and run it again
     try:
         os.remove(os.path.join(main_path,"test","test_data","test_isoforms.genePred"))

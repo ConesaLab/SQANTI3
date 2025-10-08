@@ -3,6 +3,7 @@ import os
 import sys
 import shutil
 import subprocess
+import platform
 
 from src.module_logging import qc_logger
 from src.logging_config import MAIN_LOGGING_CONFIG
@@ -15,8 +16,27 @@ MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -uf -t {cpus} {g} {i} > {
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq"
 
-# GTF
-GTF2GENEPRED_PROG = os.path.join(utilitiesPath,"gtfToGenePred")
+# GTF - Platform-specific binary selection
+def _get_gtftogenepred_binary():
+    """
+    Select the correct gtfToGenePred binary based on the platform.
+    Supports Linux and macOS (Darwin). Raises an error for unsupported platforms.
+    """
+    system = platform.system()
+    if system == "Linux":
+        binary_name = "gtfToGenePred-linux-x86_64"
+    elif system == "Darwin":
+        binary_name = "gtfToGenePred-darwin-x86_64"
+    else:
+        raise OSError(f"Unsupported platform: {system}. gtfToGenePred binary is only available for Linux and macOS.")
+
+    binary_path = os.path.join(utilitiesPath, binary_name)
+    if not os.path.exists(binary_path):
+        raise FileNotFoundError(f"gtfToGenePred binary not found at {binary_path}")
+
+    return binary_path
+
+GTF2GENEPRED_PROG = _get_gtftogenepred_binary()
 GFFREAD_PROG = "gffread"
 
 # Rscript QC
