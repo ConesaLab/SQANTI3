@@ -72,30 +72,30 @@ def rescue_candidates(classification_file,monoexons,prefix):
     # Load classification TODO: Give this as input to the function? Only load it once
     classif_df = read_classification(classification_file)
     
-    # Identify transcripts that have a full-splice_match Artifact
-    transcripts_with_fsm_artifact = set(
-        classif_df[
-            (classif_df['structural_category'] == 'full-splice_match') &
-            (classif_df['filter_result'] == 'Artifact')
-        ]['associated_transcript']
+    # Identify transcripts that have a full-splice_match
+    transcripts_with_fsm = set(
+        classif_df[(classif_df['structural_category'] == 'full-splice_match')]['associated_transcript']
     )
 
-    # Get initial set of candidates
+    # Get NIC and NNC candidates
     rescue_candidates = classif_df[
-        (classif_df['structural_category'].isin(['incomplete-splice_match', 'novel_in_catalog', 'novel_not_in_catalog'])) &
+        (classif_df['structural_category'].isin(['novel_in_catalog', 'novel_not_in_catalog'])) &
         (classif_df['filter_result'] == 'Artifact')
     ]
 
-    # Exclude incomplete-splice_match with a conflicting full-splice_match Artifact
-    rescue_candidates = rescue_candidates[
-        ~(
-            (rescue_candidates['structural_category'] == 'incomplete-splice_match') &
-            (rescue_candidates['associated_transcript'].isin(transcripts_with_fsm_artifact))
-        )
+    # Get ISM candidates from lost references without FSM
+    lost_ids = get_lost_reference_id(classif_df)
+    
+    ism_candidates = classif_df[
+        (classif_df['structural_category'] == 'incomplete-splice_match') &
+        (classif_df['associated_transcript'].isin(lost_ids)) & 
+        ~classif_df['associated_transcript'].isin(transcripts_with_fsm)
     ]
 
+    rescue_candidates = pd.concat([rescue_candidates, ism_candidates])
+
     if monoexons != 'all':
-        rescue_novel = rescue_novel[rescue_novel['exons'] > 1]
+        rescue_candidates = rescue_candidates[rescue_candidates['exons'] > 1]
     
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
