@@ -146,9 +146,7 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     save_fasta(candidate_filt,candidates_fasta)
     
     #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
-    # TODO: eliminate file logic in the process
-    message("Artifact mapping (candidates vs targets)",rescue_logger)
-    
+    message("Artifact mapping (candidates vs targets)",rescue_logger)    
     # Mapping
     rescue_logger.info("Mapping rescue candidates to rescue targets with minimap2...")
     # make file names
@@ -161,12 +159,11 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
         # run
         logFile=f"{out_dir}/logs/rescue/minimap2.log"
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
-
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
     process_sam_file(sam_file,out_dir,out_prefix)
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
-
+    
 
 ## Run rescue steps specific to rules filter
 def run_rules_rescue(filter_classification, reference_classification,
@@ -175,12 +172,10 @@ def run_rules_rescue(filter_classification, reference_classification,
     ## Run rules filter on reference transcriptome
     message("Rules rescue selected!",rescue_logger)
     rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
-
-    # create reference out prefix and dir
     ref_out = "reference"
     ref_dir = f"{out_dir}/reference_rules_filter"
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
-    # define command
+    # Actual command
     refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report"
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")

@@ -5,37 +5,38 @@ def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path
               automatic_rescue_path,strategy):
     """Load input data files."""
     mapping_hits = pd.read_csv(mapping_hits_path, sep="\t")
-    
-    if strategy == "rules":
-        columns = ["isoform", "filter_result"]
-    elif strategy == "ml":
-        columns = ["isoform", "POS_MLprob"]
+    columns = ["isoform", "filter_result"]
+    if strategy == "ml":
+        columns += ["POS_MLprob"]
     class_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=columns)
     classif = pd.read_csv(sqanti_rules_classif_path, sep="\t")
     # Add the reference classification to the transcript classification
-    filter_combined = pd.concat([class_ref,classif[columns]])
+    class_ref["origin"] = "reference"
+    classif["origin"] = "lr_defined"
+    combined_class = pd.concat([class_ref, classif[columns + ["origin"]]])
     # Load automatic rescue results
     automatic_ref_rescued = pd.read_csv(automatic_rescue_path, sep="\t", header=0, names=["isoform", "associated_transcript","structural_category"])
     if automatic_ref_rescued.empty:
         # add a column with values "none" to avoid errors
         automatic_ref_rescued["associated_transcript"] = "none"
-        
-    return mapping_hits, class_ref, classif, filter_combined, automatic_ref_rescued
 
-def add_filter_results(mapping_hits, filter_combined, classif):
+    return mapping_hits, class_ref, classif, combined_class, automatic_ref_rescued
+
+def add_filter_results(mapping_hits, combined_class, classif):
     """Add the filter results to the mapping hits."""
     
     # Add filter result of mapping hits
     mapping_hits = mapping_hits.merge(
-        filter_combined.rename(columns={"isoform": "mapping_hit"}), 
+        combined_class.rename(columns={"isoform": "mapping_hit"}), 
         on="mapping_hit", 
         how="left"
     ).rename(columns={"filter_result": "hit_filter_result",
-                      "POS_MLprob": "hit_POS_MLprob"})
+                      "POS_MLprob": "hit_POS_MLprob",
+                      "origin": "hit_origin"})
 
     # Add structural categories of candidates
     mapping_hits = mapping_hits.merge(
-        classif[["isoform", "structural_category","associated_gene"]], 
+        classif[["isoform", "structural_category","associated_transcript"]], 
         left_on="rescue_candidate", 
         right_on="isoform", 
         how="left"
@@ -43,26 +44,34 @@ def add_filter_results(mapping_hits, filter_combined, classif):
     mapping_hits.drop(columns=["isoform"], inplace=True)
     return mapping_hits
 
+    
+def select_best_hits(df):
+    # Keep rows with max score per group
+    df = df[df['score'] == df['score'].max()]
+    # Prefer lr_defined over reference
+    if (df['hit_origin'] == 'lr_defined').any():
+        df = df[df['hit_origin'] == 'lr_defined']
+    # If still more than one, pick one randomly
+    return df
+
 def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
-                        strategy,threshold):
+                        strategy):
     """Filter mapping hits and remove redundant references."""
     # 1. Filter the mapping hits reference based on the results of filtering
+    mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
     if strategy == "rules":
         # Apply rules-based filtering
-        mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score']
-        
-    elif strategy == "ml":
-        mapping_hits_filt = mapping_hits[mapping_hits['hit_POS_MLprob'] >= threshold]
+
+    elif strategy == "ml": #TODO: make this weighted?
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score'] * mapping_hits_filt['hit_POS_MLprob']
 
     # Select the rows with the best score for each rescue candidate
-    best_score = mapping_hits_filt.groupby('rescue_candidate')['score'].transform('max')
-    mapping_hits_filt = mapping_hits_filt[mapping_hits_filt['score'] == best_score]
+    mapping_hits_filt = mapping_hits_filt.groupby('rescue_candidate',group_keys=False).apply(select_best_hits)
 
     mapping_hits_filt.to_csv("debug_mapping_hits_filt.tsv", sep="\t", index=False)
     input()
-
+    
     # 2. Select only reference rescued transcripts
     rescued_ref = mapping_hits_filt[mapping_hits_filt["mapping_hit"].isin(class_ref["isoform"])]
  
@@ -267,16 +276,16 @@ def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_clas
                       automatic_rescue_path, output_prefix,strategy, threshold=0.7):
     # Load data
     mapping_hits, class_ref, classif, \
-        filter_combined, automatic_rescued = load_data(mapping_hits_path, reference_rules_path,
+        combined_class, automatic_rescued = load_data(mapping_hits_path, reference_rules_path,
                                                        sqanti_rules_classif_path, automatic_rescue_path,strategy)
 
     # Join rules
-    mapping_hits = add_filter_results(mapping_hits, filter_combined, classif)
+    mapping_hits = add_filter_results(mapping_hits, combined_class, classif)
 
     # Filter mapping hits
     rescued_final, rescued_mapping_final,\
           best_mapping_hits, rescued_ref, isoform_assoc_tr = filter_mapping_hits(mapping_hits, class_ref, classif,
-                                                               automatic_rescued,strategy,threshold)
+                                                               automatic_rescued,strategy)
 
     # Write rescue inclusion list
     write_rescue_inclusion_list(rescued_final, output_prefix)
