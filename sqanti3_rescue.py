@@ -25,7 +25,7 @@ from src.rescue_steps import (
 )
 from src.utilities.rescue import sq_requant
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
-from src.utilities.rescue.rescue_helpers import get_good_transcripts
+from src.utilities.rescue.rescue_helpers import read_classification
 
 
 def main():
@@ -42,8 +42,11 @@ def main():
   # this part is run for both rules and ML and if all arg tests passed
   message(f"Initializing SQANTI3 rescue pipeline in {args.mode} mode",rescue_logger)
   prefix = f"{args.dir}/{args.output}"
-  #run_automatic_rescue(args)
-  run_automatic_rescue(args.filter_class,args.rescue_mono_exonic,prefix)
+  # Load classification
+  message("Reading filter classification file",rescue_logger)
+  class_df = read_classification(args.filter_class)
+  ## AUTOMATIC RESCUE ##
+  run_automatic_rescue(class_df,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
 
   ## Convert reference transcriptome GTF to FASTA
@@ -51,11 +54,11 @@ def main():
 
   ### RUN FULL RESCUE (IF REQUESTED) ###
   if args.mode == "full":
-    candidates = rescue_candidates(args.filter_class,args.rescue_mono_exonic,
+    candidates = rescue_candidates(class_df,args.rescue_mono_exonic,
                                    prefix)
     rescue_logger.debug(f"Rescue candidates: {len(candidates)}")
 
-    targets = rescue_targets(args.filter_class,candidates,
+    targets = rescue_targets(class_df,candidates,
                              args.refGTF,prefix)
     rescue_logger.debug(f"Rescue targets: {len(targets)}")    
     

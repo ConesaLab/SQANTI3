@@ -8,17 +8,16 @@ from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    read_classification, rescue_fsm_monoexons,
-    get_lost_reference_id, 
+    rescue_fsm_monoexons, get_lost_reference_id,
     rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
-    get_rescue_gene_targets,get_rescue_reference_targets
+    get_good_transcripts, get_rescue_gene_targets,
+    get_rescue_reference_targets, read_classification
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
     filter_transcriptome,
-    prepare_fasta_transcriptome,
     process_sam_file,
     save_fasta
 )
@@ -26,11 +25,7 @@ from src.utilities.rescue.candidate_mapping_helpers import (
 from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
 
 
-def run_automatic_rescue(classification_file,monoexons,prefix):
-    # Load classification
-    message("Reading filter classification file",rescue_logger)
-    classif_df = read_classification(classification_file)
-
+def run_automatic_rescue(classif_df,monoexons,prefix):
     message("Performing automatic rescue",rescue_logger)
     # Select the FSM and ISM isoforms with more than one exon 
     rescue_classif = classif_df[
@@ -64,14 +59,11 @@ def run_automatic_rescue(classification_file,monoexons,prefix):
     save_automatic_rescue(rescue_auto,classif_df,prefix)
     return
 
-def rescue_candidates(classification_file,monoexons,prefix):
+def rescue_candidates(classif_df,monoexons,prefix):
     """
     Selection of rescue candidates from non-FSM artifacts.
     The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
     """
-    # Load classification TODO: Give this as input to the function? Only load it once
-    classif_df = read_classification(classification_file)
-    
     # Identify transcripts that have a full-splice_match
     transcripts_with_fsm = set(
         classif_df[(classif_df['structural_category'] == 'full-splice_match')]['associated_transcript']
@@ -104,10 +96,7 @@ def rescue_candidates(classification_file,monoexons,prefix):
 
     return rescue_candidates["isoform"].tolist()
     
-def rescue_targets(classification_file,rescue_candidates,ref_gtf,prefix):
-    # Load classification
-    classif_df = read_classification(classification_file)
-    
+def rescue_targets(classif_df,rescue_candidates,ref_gtf,prefix):
     # Get the genes with associated rescue candidates
     target_genes = get_rescue_gene_targets(classif_df,rescue_candidates)
 
@@ -162,7 +151,6 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     
     # Mapping
     rescue_logger.info("Mapping rescue candidates to rescue targets with minimap2...")
-
     # make file names
     sam_file = f"{prefix}_mapped_rescue.sam"
     if os.path.isfile(sam_file):
@@ -170,16 +158,13 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     else:
         # make command
         minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {targets_fasta} {candidates_fasta} > {sam_file}"
-
         # run
         logFile=f"{out_dir}/logs/rescue/minimap2.log"
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
 
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
-
     process_sam_file(sam_file,out_dir,out_prefix)
-
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
 
 
