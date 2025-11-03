@@ -16,24 +16,7 @@ def rescue_fsm_monoexons(df):
     # Rescue mono
     for ref_id in lost_mono:
         rescue_mono = pd.concat([rescue_mono,rescue_lost_reference(ref_id, df_mono)])
-
     return rescue_mono
-
-def add_ism_monoexons(df_filt,df):
-    classif_ism_mono = df[
-        (df['structural_category'] == 'incomplete-splice_match') &
-        (df['exons'] == 1)
-    ]
-    return pd.concat([df_filt, classif_ism_mono])
-
-def rescue_monoexons(df,me):
-    df_mono = df[
-        (df['exons'] == 1) &
-        (df['filter_result'] == 'Artifact')
-    ]
-    if me == 'fsm':
-        df_mono = df_mono[df_mono['structural_category'] == 'full-splice_match']
-    return df_mono
 
 def get_lost_reference_id(df):
     all_ref = df['associated_transcript'].to_numpy()
@@ -53,11 +36,6 @@ def rescue_lost_reference(ref_id, classif):
     if ref_check:
         ref_df = pd.DataFrame({'isoform': [ref_id]})
         return ref_df
-    
-    # If there is no FSM associated, return ISM artifacts
-    else:
-        ism_df = classif_ref[['isoform']]
-        return ism_df
     
 def save_automatic_rescue(rescue_df,class_df,prefix):
     # First write operation: rescue_auto without headers
