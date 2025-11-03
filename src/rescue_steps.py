@@ -48,10 +48,9 @@ def run_automatic_rescue(classification_file,monoexons,prefix):
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
     for ref_id in lost_ref:
-        rescue_df = rescue_lost_reference(ref_id, rescue_classif)
-        rescue = pd.concat([rescue,rescue_df])
+        rescue = pd.concat([rescue,rescue_lost_reference(ref_id, rescue_classif)])
 
-    # Split into reference transcripts and ISM
+    # Split into reference transcripts and ISM TODO: Eliminate this step?
     rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
     # Adding monoexons
     if monoexons in ['all','fsm']:
@@ -60,9 +59,10 @@ def run_automatic_rescue(classification_file,monoexons,prefix):
     else:
         rescue_auto = rescue_ref
     rescue_logger.debug(f"Rescued {rescue_auto.shape[0]} transcripts")
-
+    
     # Save the automatic rescue
     save_automatic_rescue(rescue_auto,classif_df,prefix)
+    return
 
 def rescue_candidates(classification_file,monoexons,prefix):
     """
