@@ -69,7 +69,7 @@ def rescue_candidates(classification_file,monoexons,prefix):
     Selection of rescue candidates from non-FSM artifacts.
     The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
     """
-    # Load classification
+    # Load classification TODO: Give this as input to the function? Only load it once
     classif_df = read_classification(classification_file)
     
     # Identify transcripts that have a full-splice_match Artifact
