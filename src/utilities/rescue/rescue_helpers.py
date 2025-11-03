@@ -2,6 +2,9 @@ import pandas as pd
 from gtfparse import read_gtf
 from src.module_logging import rescue_logger
 
+def read_classification(filename):
+    return pd.read_csv(filename, sep="\t")
+
 def get_rescue_gene_targets(df, rescue_candidates):
     """Get the genes with associated rescue candidates.
     

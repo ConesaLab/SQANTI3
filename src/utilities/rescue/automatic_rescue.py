@@ -3,9 +3,6 @@ import numpy as np
 
 from src.module_logging import rescue_logger
 
-def read_classification(filename):
-    return pd.read_csv(filename, sep="\t")
-
 def rescue_fsm_monoexons(df):
     df_mono = df[
         (df['structural_category'] == 'full-splice_match') &
