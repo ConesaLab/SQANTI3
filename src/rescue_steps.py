@@ -186,7 +186,7 @@ def run_rules_rescue(filter_classification, reference_classification,
     mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
     ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
     rescue_by_mapping(mapping_hits,ref_rules,filter_classification,
-                      f"{prefix}_automatic_rescue_table.tsv",prefix,"rules")
+                      f"{prefix}_automatic_inclusion_list.tsv",prefix,"rules")
 
 
 ## Run rescue steps specific to the ML filter
@@ -210,7 +210,7 @@ def run_ML_rescue(filter_classification, reference_classification,
     ref_isoform_predict = f"{prefix}_reference_isoform_predict.tsv"
 
     rescue_by_mapping(mapping_hits,ref_isoform_predict,filter_classification,
-                        f"{prefix}_automatic_rescue_table.tsv",prefix,"ml",thr)
+                        f"{prefix}_automatic_inclusion.tsv",prefix,"ml")
 
 def concatenate_gtf_files(input_files, output_file):
     """
@@ -226,7 +226,7 @@ def concatenate_gtf_files(input_files, output_file):
 
 def save_rescue_results(out_dir,out_prefix, mode, refGTF,
                         filtered_isoforms_gtf,corrected_isoforms_fasta,
-                        filter_class,ref_class):
+                        rescued_class,ref_class):
     prefix = f"{out_dir}/{out_prefix}"
     # create file names
     tmp_gtf = f"{out_dir}/rescued_only_tmp.gtf"
@@ -247,7 +247,7 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
     rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
     ## Create new FASTA including rescued transcripts #
-    good_transcripts = get_good_transcripts(filter_class)
+    good_transcripts = rescued_class[rescued_class['filter_result'] == 'Isoform']['isoform']
     ref_fasta_file = os.path.join(out_dir, 
                                   os.path.basename(refGTF).replace('.gtf', '.fasta'))
     write_rescue_fasta(corrected_isoforms_fasta,ref_fasta_file, good_transcripts, rescued_transcripts, prefix)
@@ -257,10 +257,9 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
     if ref_class is None:
         rescue_logger.warning("No reference classification provided.")
         rescue_logger.warning("Rescued classification will only include the user-defined isoforms.")
-        rescued_class = read_classification(filter_class)
     else:
         rClass = read_classification(ref_class) 
-        tClass = read_classification(filter_class)
+        tClass = rescued_class
         rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
                                     rClass[rClass['isoform'].isin(rescued_transcripts)]])
     rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from src.module_logging import rescue_logger
 
 def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, 
               automatic_rescue_path,strategy):
@@ -15,10 +16,10 @@ def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path
     classif["origin"] = "lr_defined"
     combined_class = pd.concat([class_ref, classif[columns + ["origin"]]])
     # Load automatic rescue results
-    automatic_ref_rescued = pd.read_csv(automatic_rescue_path, sep="\t", header=0, names=["isoform", "associated_transcript","structural_category"])
-    if automatic_ref_rescued.empty:
+    automatic_ref_rescued = np.loadtxt(automatic_rescue_path, dtype=str)
+    if automatic_ref_rescued.size == 0:
         # add a column with values "none" to avoid errors
-        automatic_ref_rescued["associated_transcript"] = "none"
+        automatic_ref_rescued = np.array([["none"]])
 
     return mapping_hits, class_ref, classif, combined_class, automatic_ref_rescued
 
@@ -66,24 +67,35 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
     elif strategy == "ml": #TODO: make this weighted?
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score'] * mapping_hits_filt['hit_POS_MLprob']
 
-    # Select the rows with the best score for each rescue candidate
-    mapping_hits_filt = mapping_hits_filt.groupby('rescue_candidate',group_keys=False).apply(select_best_hits)
+    # Select the best hit(s) per rescue candidate
+    best_mapping_hits = mapping_hits_filt.groupby('rescue_candidate',group_keys=False).apply(select_best_hits)
 
-    mapping_hits_filt.to_csv("debug_mapping_hits_filt.tsv", sep="\t", index=False)
-    input()
-    
+    return best_mapping_hits
+
+def find_reintroduced_transcripts(mapping_hits_filt, automatic_rescue_array):
+    """Find reintroduced transcripts after filtering."""
+    full_rescue_array = mapping_hits_filt.loc[
+        (mapping_hits_filt["hit_origin"] == "reference"), "mapping_hit"
+    ].unique()
+    # TODO: Should we not reintroduce a reference transcript if it is represented by an FSM?
+
+    combined = pd.Series(np.concatenate([automatic_rescue_array, full_rescue_array]))
+    return combined.drop_duplicates().reset_index(drop=True)
+
+def old_reintroduction(mapping_hits_filt, class_ref, classif, automatic_rescue_df):
+
+    #DEBUG: mapping_hits_filt.to_csv("debug_mapping_hits_filt.tsv", sep="\t", index=False)
     # 2. Select only reference rescued transcripts
-    rescued_ref = mapping_hits_filt[mapping_hits_filt["mapping_hit"].isin(class_ref["isoform"])]
+    rescued_ref = mapping_hits_filt[mapping_hits_filt["origin"] == "reference"]
  
     # 3. Remove reference transcripts already in the transcriptome
-
-    # Retrieve all reference transcripts already represented by isoforms
+    ## 3.1 Retrieve all reference transcripts already represented by isoforms
     isoform_assoc_tr = classif[
         (classif["filter_result"] == "Isoform") & 
         (classif["associated_transcript"] != "novel")
     ][["associated_transcript"]]
     
-    # Include those retrieved in automatic rescue
+    ## 3.2 Include those retrieved in automatic rescue
     isoform_assoc_tr = pd.concat([isoform_assoc_tr, automatic_rescue_df["associated_transcript"]]).drop_duplicates()
     # Find truly rescued references
     rescued_mapping_final = rescued_ref[
@@ -92,13 +104,20 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
     
     # Generate final list of rescued transcripts
     automatic_ref_rescued = automatic_rescue_df.rename(columns={"associated_transcript": "ref_transcript"})["ref_transcript"]
-    rescued_final = pd.concat([automatic_ref_rescued, rescued_mapping_final]).drop_duplicates()
-    return rescued_final, rescued_mapping_final, mapping_hits_filt, rescued_ref, isoform_assoc_tr
+    reintroduced_final = pd.concat([automatic_ref_rescued, rescued_mapping_final]).drop_duplicates()
+    return reintroduced_final, rescued_mapping_final, mapping_hits_filt, rescued_ref, isoform_assoc_tr
 
 def write_rescue_inclusion_list(rescued_final,output_prefix):
     """Write the rescue inclusion list to a file."""
     output_path = f"{output_prefix}_full_inclusion_list.tsv"
     rescued_final.to_csv(output_path, sep="\t", index=False, header=False)
+    rescue_logger.debug(f"Wrote rescue inclusion list to {output_path}")
+
+def write_rescue_full_table(best_mapping_hits, output_prefix):
+    """Write the full rescue mapping hits table to a file."""
+    output_path = f"{output_prefix}_full_rescue_mapping_hits.tsv"
+    best_mapping_hits.to_csv(output_path, sep="\t", index=False)
+    rescue_logger.debug(f"Wrote full rescue mapping hits to {output_path}")
 
 def process_automatic_rescue(classif, automatic_ref_rescued, class_ref):
     """Process automatic rescue results."""
@@ -282,21 +301,28 @@ def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_clas
     # Join rules
     mapping_hits = add_filter_results(mapping_hits, combined_class, classif)
 
-    # Filter mapping hits
-    rescued_final, rescued_mapping_final,\
-          best_mapping_hits, rescued_ref, isoform_assoc_tr = filter_mapping_hits(mapping_hits, class_ref, classif,
-                                                               automatic_rescued,strategy)
+    best_mapping_hits = filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescued,strategy)
 
+    reintroduced_full = find_reintroduced_transcripts(best_mapping_hits,automatic_rescued)
     # Write rescue inclusion list
-    write_rescue_inclusion_list(rescued_final, output_prefix)
+    write_rescue_inclusion_list(reintroduced_full, output_prefix)
+    
+    write_rescue_full_table(best_mapping_hits, output_prefix)
+
+
+    ### OLD PIPELINE (to generate the annoying table with useless information) ###
+    # Filter mapping hits
+    # reintroduced_final, rescued_mapping_final,\
+    #       best_mapping_hits, rescued_ref, isoform_assoc_tr = filter_mapping_hits(mapping_hits, class_ref, classif,
+    #                                                            automatic_rescued,strategy)
 
     # Process automatic rescue
-    automatic_fsm = process_automatic_rescue(classif, automatic_rescued, class_ref)
+    # automatic_fsm = process_automatic_rescue(classif, automatic_rescued, class_ref)
 
-    # Create rescue table
-    rescue_table = create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final,
-                                       class_ref, rescued_ref, isoform_assoc_tr, automatic_fsm,
-                                       strategy, threshold)
-    # Write rescue table
-    write_rescue_table(rescue_table, output_prefix)
+    # # Create rescue table
+    # rescue_table = create_rescue_table(mapping_hits, best_mapping_hits, rescued_mapping_final,
+    #                                    class_ref, rescued_ref, isoform_assoc_tr, automatic_fsm,
+    #                                    strategy, threshold)
+    # # Write rescue table
+    # write_rescue_table(rescue_table, output_prefix)
 
