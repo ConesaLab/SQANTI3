@@ -11,7 +11,6 @@ source:
 build:
   number: {{ build_number }}
   noarch: python
-  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
   entry_points:
     - sqanti3 = sqanti3:main
     - sqanti3-qc = sqanti3_qc:main
