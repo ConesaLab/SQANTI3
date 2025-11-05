@@ -50,14 +50,15 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
     # Adding monoexons
     if monoexons in ['all','fsm']:
         rescue_fsm_me = rescue_fsm_monoexons(classif_df)
-        rescue_auto = pd.concat([rescue_ref,rescue_fsm_me])
+        auto_inclusion_list = pd.concat([rescue_ref,rescue_fsm_me])
     else:
-        rescue_auto = rescue_ref
-    rescue_logger.debug(f"Rescued {rescue_auto.shape[0]} transcripts")
+        auto_inclusion_list = rescue_ref
+    rescue_logger.debug(f"Rescued {auto_inclusion_list.shape[0]} transcripts")
     
     # Save the automatic rescue
-    save_automatic_rescue(rescue_auto,classif_df,prefix)
-    return
+    rescue_df = save_automatic_rescue(auto_inclusion_list,classif_df,prefix)
+    return auto_inclusion_list.iloc[:,0], rescue_df
+
 
 def rescue_candidates(classif_df,monoexons,prefix):
     """
@@ -161,13 +162,14 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
-    process_sam_file(sam_file,out_dir,out_prefix)
+    hits_df = process_sam_file(sam_file,out_dir,out_prefix)
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
-    
+    return hits_df
 
 ## Run rescue steps specific to rules filter
-def run_rules_rescue(filter_classification, reference_classification,
-                     out_dir, out_prefix, json_filter):
+def run_rules_rescue(filter_classification, reference_classification, hits_df,
+                     rescue_df, automatic_inclusion_list, out_dir, out_prefix,
+                    json_filter):
     prefix = f"{out_dir}/{out_prefix}"
     ## Run rules filter on reference transcriptome
     message("Rules rescue selected!",rescue_logger)
@@ -183,11 +185,10 @@ def run_rules_rescue(filter_classification, reference_classification,
     ## run rescue-by-mapping
     rescue_logger.info("Running rescue-by-mapping for rules filter.")
     # Filenames
-    mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
     ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
-    rescue_by_mapping(mapping_hits,ref_rules,filter_classification,
-                      f"{prefix}_automatic_inclusion_list.tsv",prefix,"rules")
-
+    inclusion_list, rescue_df = rescue_by_mapping(hits_df,ref_rules,filter_classification, automatic_inclusion_list,
+                                                  rescue_df, prefix,"rules")
+    return inclusion_list, rescue_df
 
 ## Run rescue steps specific to the ML filter
 def run_ML_rescue(filter_classification, reference_classification,
@@ -224,26 +225,25 @@ def concatenate_gtf_files(input_files, output_file):
             with open(fname) as infile:
                 shutil.copyfileobj(infile, outfile)
 
-def save_rescue_results(out_dir,out_prefix, mode, refGTF,
+def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refGTF,
                         filtered_isoforms_gtf,corrected_isoforms_fasta,
                         rescued_class,ref_class):
     prefix = f"{out_dir}/{out_prefix}"
-    # create file names
-    tmp_gtf = f"{out_dir}/rescued_only_tmp.gtf"
-    output_gtf = f"{prefix}_rescued.gtf"
+    
+    ## Save inclusion list
+    inclusion_file = f"{prefix}_rescue_inclusion_list.tsv"
+    rescued_transcripts.to_frame(name='isoform').to_csv(inclusion_file,
+                                                    sep="\t",
+                                                    index=False)
+    rescue_logger.info(f"Final inclusion list written to file: {inclusion_file}")
 
-    # Select the propper inclusion list
-    if mode == "full":
-        rescued_list = f"{prefix}_full_inclusion_list.tsv"
-    else:
-        rescued_list = f"{prefix}_automatic_inclusion_list.tsv"
-    # Read the rescued transcripts from the inclusion list
-    rescued_transcripts = set()
-    with open(rescued_list, 'r') as f:
-      for line in f:
-        rescued_transcripts.add(line.strip())
-    f.close()    
-    output_gtf = write_rescue_gtf(filtered_isoforms_gtf, refGTF, rescued_transcripts, prefix)
+    ## Save rescue table
+    rescue_table_file = f"{prefix}_rescue_table.tsv"
+    rescue_df.to_csv(rescue_table_file, sep="\t", index=False)
+    rescue_logger.info(f"Final rescue table written to file: {rescue_table_file}")
+    
+    ## Create new GTF including rescued transcripts #
+    output_gtf = write_rescue_gtf(filtered_isoforms_gtf, refGTF, rescued_transcripts.to_list(), prefix)
     rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
     
     ## Create new FASTA including rescued transcripts #
@@ -264,4 +264,4 @@ def save_rescue_results(out_dir,out_prefix, mode, refGTF,
                                     rClass[rClass['isoform'].isin(rescued_transcripts)]])
     rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
     rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.tsv")
-    return(rescued_list,output_gtf)
+    return output_gtf

@@ -11,6 +11,8 @@ __author__  = "angeles.arzalluz@gmail.com"
 import os
 import sys
 
+import pandas as pd
+
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
@@ -46,9 +48,8 @@ def main():
   message("Reading filter classification file",rescue_logger)
   class_df = read_classification(args.filter_class)
   ## AUTOMATIC RESCUE ##
-  run_automatic_rescue(class_df,args.rescue_mono_exonic,prefix)
+  inclusion_list, rescue_df = run_automatic_rescue(class_df,args.rescue_mono_exonic,prefix)
   message("Automatic rescue completed",rescue_logger)
-
   ## Convert reference transcriptome GTF to FASTA
   ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
 
@@ -69,9 +70,10 @@ def main():
 
     if os.path.isfile(f"{prefix}_rescue_mapping_hits.tsv"):
       rescue_logger.info("Mapping hits already exist, skipping mapping step.")
+      hits_df = pd.read_csv(f"{prefix}_rescue_mapping_hits.tsv",sep="\t")
     else:
-      run_candidate_mapping(args.refGTF,args.refFasta,targets,candidates,
-                            args.corrected_isoforms_fasta,args.dir,args.output)
+      hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
+                           args.corrected_isoforms_fasta,args.dir,args.output)
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
@@ -88,18 +90,18 @@ def main():
     if args.subcommand == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
-      run_rules_rescue(args.filter_class, args.refClassif,
-                                  args.dir, args.output, args.json_filter)
+      inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
+                                                  inclusion_list,args.dir, args.output, args.json_filter)
 
 
     # Finish print if output exists (same for rules and ML) ####
-    inclusion_list = f"{prefix}_full_inclusion_list.tsv"
-    if os.path.isfile(inclusion_list):
-      message(f"Rescue {args.subcommand} finished successfully!",rescue_logger)
-      rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list}")
-    else:
-      rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list}")
-      sys.exit(1)
+    # inclusion_list_file = f"{prefix}_full_inclusion_list.tsv"
+    # if os.path.isfile(inclusion_list_file):
+    #   message(f"Rescue {args.strategy} finished successfully!",rescue_logger)
+    #   rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list_file}")
+    # else:
+    #   rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list_file}")
+    #   sys.exit(1)
   ### End of condition (mode == "full")
 
   #### WRITE FINAL OUTPUTS OF RESCUE ####
@@ -109,7 +111,7 @@ def main():
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
     message("Generating rescued GTF.",rescue_logger)
-    inclusion_file,rescue_gtf_path = save_rescue_results(args.dir, args.output, args.mode,
+    rescue_gtf_path = save_rescue_results(args.dir, args.output, inclusion_list, rescue_df,
                                        args.refGTF, args.filtered_isoforms_gtf,args.corrected_isoforms_fasta,
                                        class_df,args.refClassif)
 
@@ -118,12 +120,13 @@ def main():
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
+    #TODO: Make this take the variables from python directly
     rescue_gtf, inclusion_df, \
       counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,inclusion_file,
                                                      args.counts, prefix,args.mode)
 
-    sq_requant.run_requant(rescue_gtf, inclusion_df, counts, 
-                           rescued_table, prefix)
+    sq_requant.run_requant(rescue_gtf, inclusion_list, counts_df, 
+                           rescue_df, prefix)
     sq_requant.to_tpm(rescue_gtf, prefix)
     rescue_logger.info("Requantification finished!")
 
