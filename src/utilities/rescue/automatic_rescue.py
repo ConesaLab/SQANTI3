@@ -34,32 +34,38 @@ def rescue_lost_reference(ref_id, classif):
         ref_df = pd.DataFrame({'isoform': [ref_id]})
         return ref_df
     
-def save_automatic_rescue(rescue_df,class_df,prefix):
+def save_automatic_rescue(inclusion_df,class_df,prefix):
     # First write operation: rescue_auto without headers
-    rescue_df.to_csv(
-        f"{prefix}_automatic_inclusion_list.tsv",
-        sep='\t',
-        header=False,
-        index=False
-    )
-    if rescue_df.iloc[0,0] == "none":
+
+    if inclusion_df.iloc[0,0] == "none":
         rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
-        rescue_df["isoform"] = "none"
+        inclusion_df["isoform"] = "none"
     # Second write operation: rescue_table with headers 
     rescue_table = class_df[
-        class_df['associated_transcript'].isin(rescue_df['isoform'])
-    ][['isoform', 'associated_transcript', 'structural_category']].rename(
-        columns={
-            'isoform': 'artifact',
-            'associated_transcript': 'rescued_transcript'
-        }
+        class_df['associated_transcript'].isin(inclusion_df['isoform'])
+    ][['isoform', 'associated_transcript']].rename(
+        columns={'isoform': 'artifact', 'associated_transcript': 'assigned_transcript'}
     )
+    # Adding extra, important columns
+    rescue_table["rescue_mode"] = "automatic"
+    rescue_table["origin"] = "reference"
+    rescue_table["reintroduced"] = (
+        ~rescue_table.duplicated("assigned_transcript")
+    ).map({True: "yes", False: "no"})
 
-    rescue_table.to_csv(
-        f"{prefix}_automatic_rescue_table.tsv",
-        sep='\t',
-        index=False
-    )
-    if rescue_df.iloc[0,0] == "none":
+    # rescue_table.to_csv(
+    #     f"{prefix}_automatic_rescue_table.tsv",
+    #     sep='\t',
+    #     index=False
+    # )
+
+    # inclusion_df.to_csv(
+    # f"{prefix}_automatic_inclusion_list.tsv",
+    # sep='\t',
+    # header=False,
+    # index=False
+    # )
+
+    if inclusion_df.iloc[0,0] == "none":
         rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
-
+    return rescue_table

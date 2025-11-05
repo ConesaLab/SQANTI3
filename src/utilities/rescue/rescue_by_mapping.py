@@ -2,26 +2,19 @@ import pandas as pd
 import numpy as np
 from src.module_logging import rescue_logger
 
-def load_data(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path, 
-              automatic_rescue_path,strategy):
+def merge_classifications(reference_rules_path, classif, strategy):
     """Load input data files."""
-    mapping_hits = pd.read_csv(mapping_hits_path, sep="\t")
+    
     columns = ["isoform", "filter_result"]
     if strategy == "ml":
         columns += ["POS_MLprob"]
     class_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=columns)
-    classif = pd.read_csv(sqanti_rules_classif_path, sep="\t")
     # Add the reference classification to the transcript classification
     class_ref["origin"] = "reference"
     classif["origin"] = "lr_defined"
     combined_class = pd.concat([class_ref, classif[columns + ["origin"]]])
-    # Load automatic rescue results
-    automatic_ref_rescued = np.loadtxt(automatic_rescue_path, dtype=str)
-    if automatic_ref_rescued.size == 0:
-        # add a column with values "none" to avoid errors
-        automatic_ref_rescued = np.array([["none"]])
 
-    return mapping_hits, class_ref, classif, combined_class, automatic_ref_rescued
+    return  combined_class
 
 def add_filter_results(mapping_hits, combined_class, classif):
     """Add the filter results to the mapping hits."""
@@ -55,8 +48,7 @@ def select_best_hits(df):
     # If still more than one, pick one randomly
     return df
 
-def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
-                        strategy):
+def filter_mapping_hits(mapping_hits, strategy):
     """Filter mapping hits and remove redundant references."""
     # 1. Filter the mapping hits reference based on the results of filtering
     mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
@@ -71,6 +63,25 @@ def filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescue_df,
     best_mapping_hits = mapping_hits_filt.groupby('rescue_candidate',group_keys=False).apply(select_best_hits)
 
     return best_mapping_hits
+
+def merge_rescue_modes(auto_rescue_df, full_rescue_df,full_inclusion_list, strategy):
+    """Merge rescue modes into a single DataFrame."""
+    # Fix full rescue dataframe
+    full_rescue_df = full_rescue_df.rename(columns={
+        "rescue_candidate": "artifact",
+        "mapping_hit": "assigned_transcript",
+        "hit_origin":"origin"
+    })
+    full_rescue_df["rescue_mode"] = f"{strategy}_mapping"
+    full_rescue_df["reintroduced"] = (
+        full_rescue_df["assigned_transcript"].isin(full_inclusion_list)
+    ).map({True: "yes", False: "no"})
+    
+    full_rescue_df = full_rescue_df[[
+        "artifact", "assigned_transcript", "rescue_mode","origin", "reintroduced"]]
+    # Combine automatic and full rescue dataframes
+    rescue_df = pd.concat([auto_rescue_df, full_rescue_df])
+    return rescue_df
 
 def find_reintroduced_transcripts(mapping_hits_filt, automatic_rescue_array):
     """Find reintroduced transcripts after filtering."""
@@ -291,24 +302,25 @@ def write_rescue_table(rescue_table, output_prefix):
     output_path = f"{output_prefix}_full_rescue_table.tsv"
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
-def rescue_by_mapping(mapping_hits_path, reference_rules_path, sqanti_rules_classif_path,
-                      automatic_rescue_path, output_prefix,strategy, threshold=0.7):
+def rescue_by_mapping(mapping_hits, reference_rules_path, classif, automatic_rescue_list,
+                      rescue_df, output_prefix, strategy):
     # Load data
-    mapping_hits, class_ref, classif, \
-        combined_class, automatic_rescued = load_data(mapping_hits_path, reference_rules_path,
-                                                       sqanti_rules_classif_path, automatic_rescue_path,strategy)
+    combined_class = merge_classifications(reference_rules_path,classif,strategy)
 
     # Join rules
     mapping_hits = add_filter_results(mapping_hits, combined_class, classif)
 
-    best_mapping_hits = filter_mapping_hits(mapping_hits, class_ref, classif, automatic_rescued,strategy)
-
-    reintroduced_full = find_reintroduced_transcripts(best_mapping_hits,automatic_rescued)
-    # Write rescue inclusion list
-    write_rescue_inclusion_list(reintroduced_full, output_prefix)
+    full_rescue_df = filter_mapping_hits(mapping_hits, strategy)
     
-    write_rescue_full_table(best_mapping_hits, output_prefix)
+    full_inclusion_list = find_reintroduced_transcripts(full_rescue_df, automatic_rescue_list)
 
+    rescue_df = merge_rescue_modes(rescue_df, full_rescue_df, full_inclusion_list, strategy)
+
+    # write results
+    # write_rescue_inclusion_list(full_inclusion_list, output_prefix)
+    # write_rescue_full_table(rescue_df, output_prefix)
+
+    return full_inclusion_list, rescue_df
 
     ### OLD PIPELINE (to generate the annoying table with useless information) ###
     # Filter mapping hits
