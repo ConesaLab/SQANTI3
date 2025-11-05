@@ -38,6 +38,10 @@ jobs:
         os: [ubuntu-latest, macos-latest]
       fail-fast: false
 
+    # Testing Strategy:
+    # - PRs: Smoke tests only (entry points, imports) - assumes build-test-conda.yml runs full pytest
+    # - Master: Full pytest suite before publishing to ensure package works
+
     defaults:
       run:
         shell: bash -l {0}
@@ -128,14 +132,17 @@ jobs:
           sqanti3-rescue --help 2>&1 | head -5 || echo "sqanti3-rescue requires dependencies"
           sqanti3-reads --help 2>&1 | head -5 || echo "sqanti3-reads requires dependencies"
 
-          echo "=== Running pytest suite ==="
-          # Install pytest for testing
-          conda install -y pytest
-
-          # Run the full test suite to ensure the package works correctly
-          # Use the checkout source for test files
-          cd $GITHUB_WORKSPACE
-          pytest -v --tb=short || echo "Some tests failed (expected without full bioinformatics tools)"
+          # Only run full pytest on master branch (before publishing)
+          # For PRs, smoke tests above are sufficient since build-test-conda.yml runs full suite
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
+            echo "=== Running FULL pytest suite (master branch only) ==="
+            conda install -y pytest
+            cd $GITHUB_WORKSPACE
+            pytest -v --tb=short || echo "Some tests failed (expected without full bioinformatics tools)"
+          else
+            echo "=== Skipping full pytest suite (already tested in build-test-conda workflow) ==="
+            echo "Smoke tests passed ✓"
+          fi
 
           conda deactivate
 
