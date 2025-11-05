@@ -108,7 +108,6 @@ test:
     - sqanti3-filter --help || sqanti3_filter.py --help || true
     - sqanti3-rescue --help || sqanti3_rescue.py --help || true
     - sqanti3-reads --help || sqanti3_reads.py --help || true
-    - pytest --version
 
 about:
   home: https://github.com/ConesaLab/SQANTI3
