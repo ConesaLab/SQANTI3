@@ -108,6 +108,8 @@ jobs:
           echo "GIT_DESCRIBE_TAG=$GIT_DESCRIBE_TAG"
           echo "GIT_DESCRIBE_NUMBER=$GIT_DESCRIBE_NUMBER"
 
+          set -e  # Exit on any error
+
           conda build conda.recipe \
             --output-folder ./build \
             --no-test \
@@ -115,10 +117,39 @@ jobs:
             --channel bioconda \
             --channel defaults
 
+          BUILD_EXIT_CODE=$?
+          if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            echo "ERROR: conda build failed with exit code $BUILD_EXIT_CODE"
+            exit $BUILD_EXIT_CODE
+          fi
+
+          echo "Build completed successfully. Checking build output directory:"
+          ls -lR ./build/
+
+          # Verify package was created
+          PACKAGE_COUNT=$(find ./build -name "sqanti3*.tar.bz2" | wc -l)
+          if [ $PACKAGE_COUNT -eq 0 ]; then
+            echo "ERROR: conda build succeeded but no package file was created"
+            exit 1
+          fi
+          echo "Found $PACKAGE_COUNT package file(s)"
+
       - name: Test conda package installation
         run: |
           # Find the built package
+          echo "Searching for built package..."
+          ls -la ./build/ || echo "Build directory not found"
+          find ./build -type f -name "*.tar.bz2" || echo "No .tar.bz2 files found"
+
           PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
+
+          if [ -z "$PACKAGE" ]; then
+            echo "ERROR: No conda package found in ./build directory"
+            echo "Directory contents:"
+            ls -lR ./build/
+            exit 1
+          fi
+
           echo "Testing package: $PACKAGE"
           echo "Package size: $(du -h "$PACKAGE" | cut -f1)"
 
@@ -131,7 +162,12 @@ jobs:
           conda install -y "$PACKAGE" --channel conda-forge --channel bioconda --channel defaults
 
           echo "=== Verifying installation ==="
-          conda list | grep -E "(sqanti3|biopython|pandas|numpy)"
+          if ! conda list | grep -E "(sqanti3|biopython|pandas|numpy)"; then
+            echo "ERROR: sqanti3 or dependencies not found in conda list"
+            echo "Full conda list:"
+            conda list
+            exit 1
+          fi
 
           echo "=== Testing Python imports ==="
           python -c "import src.config; print(f'✓ SQANTI3 version: {src.config.__version__}')"
