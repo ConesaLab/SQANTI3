@@ -13,8 +13,8 @@ chmod +x ${PREFIX}/bin/sqanti3-rescue || true
 chmod +x ${PREFIX}/bin/sqanti3-reads || true
 
 # Copy the main Python scripts to bin if they're not already there
-if [ -f sqanti3 ]; then
-    cp sqanti3 ${PREFIX}/bin/ || true
+if [ -f sqanti3.py ]; then
+    cp sqanti3.py ${PREFIX}/bin/ || true
 fi
 if [ -f sqanti3_qc.py ]; then
     cp sqanti3_qc.py ${PREFIX}/bin/ || true

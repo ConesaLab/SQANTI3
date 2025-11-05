@@ -5,7 +5,7 @@ include pyproject.toml
 include setup.cfg
 
 # Include main Python scripts
-include sqanti3
+include sqanti3.py
 include sqanti3_qc.py
 include sqanti3_filter.py
 include sqanti3_rescue.py
