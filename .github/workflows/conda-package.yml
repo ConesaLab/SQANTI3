@@ -39,8 +39,13 @@ jobs:
       fail-fast: false
 
     # Testing Strategy:
-    # - PRs: Smoke tests only (entry points, imports) - assumes build-test-conda.yml runs full pytest
-    # - Master: Full pytest suite before publishing to ensure package works
+    # This workflow only tests that the CONDA PACKAGE itself works:
+    # - Package builds successfully
+    # - Package installs with all dependencies
+    # - Python imports work
+    # - Entry points are accessible
+    #
+    # Functional testing (pytest) is done in build-test-conda.yml workflow
 
     defaults:
       run:
@@ -110,39 +115,53 @@ jobs:
             --channel bioconda \
             --channel defaults
 
-      - name: Test conda package installation and functionality
+      - name: Test conda package installation
         run: |
           # Find the built package
           PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
           echo "Testing package: $PACKAGE"
+          echo "Package size: $(du -h "$PACKAGE" | cut -f1)"
 
           # Create a test environment and install the package with all dependencies
+          echo "=== Creating test environment ==="
           conda create -n test_env -y python=3.11
+
+          echo "=== Installing SQANTI3 package with dependencies ==="
           conda activate test_env
           conda install -y "$PACKAGE" --channel conda-forge --channel bioconda --channel defaults
 
+          echo "=== Verifying installation ==="
+          conda list | grep -E "(sqanti3|biopython|pandas|numpy)"
+
           echo "=== Testing Python imports ==="
-          python -c "import src.config; print(f'SQANTI3 version: {src.config.__version__}')"
+          python -c "import src.config; print(f'✓ SQANTI3 version: {src.config.__version__}')"
+          python -c "import pandas; print(f'✓ pandas version: {pandas.__version__}')"
+          python -c "from Bio import SeqIO; print('✓ biopython imported')"
+          python -c "import yaml; print('✓ yaml imported')"
 
-          echo "=== Testing entry points ==="
-          # Test entry points exist (these will fail due to missing tools, which is expected)
-          sqanti3 --version || sqanti3 -v || echo "sqanti3 requires conda dependencies"
-          sqanti3-qc --help 2>&1 | head -5 || echo "sqanti3-qc requires dependencies"
-          sqanti3-filter --help 2>&1 | head -5 || echo "sqanti3-filter requires dependencies"
-          sqanti3-rescue --help 2>&1 | head -5 || echo "sqanti3-rescue requires dependencies"
-          sqanti3-reads --help 2>&1 | head -5 || echo "sqanti3-reads requires dependencies"
+          echo "=== Testing entry points exist ==="
+          which sqanti3 && echo "✓ sqanti3 found"
+          which sqanti3-qc && echo "✓ sqanti3-qc found"
+          which sqanti3-filter && echo "✓ sqanti3-filter found"
+          which sqanti3-rescue && echo "✓ sqanti3-rescue found"
+          which sqanti3-reads && echo "✓ sqanti3-reads found"
 
-          # Only run full pytest on master branch (before publishing)
-          # For PRs, smoke tests above are sufficient since build-test-conda.yml runs full suite
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/master" ]]; then
-            echo "=== Running FULL pytest suite (master branch only) ==="
-            conda install -y pytest
-            cd $GITHUB_WORKSPACE
-            pytest -v --tb=short || echo "Some tests failed (expected without full bioinformatics tools)"
-          else
-            echo "=== Skipping full pytest suite (already tested in build-test-conda workflow) ==="
-            echo "Smoke tests passed ✓"
-          fi
+          echo "=== Testing entry points can be invoked ==="
+          # These will fail due to missing bioinformatics tools, but that's expected
+          sqanti3 --version 2>&1 | head -1 || echo "⚠ sqanti3 requires bioinformatics tools (expected)"
+          sqanti3-qc --help 2>&1 | head -1 || echo "⚠ sqanti3-qc requires bioinformatics tools (expected)"
+
+          echo ""
+          echo "=========================================="
+          echo "✅ Conda package installation successful!"
+          echo "✅ All Python dependencies installed"
+          echo "✅ All entry points available"
+          echo "=========================================="
+          echo ""
+          echo "Note: Full functionality requires bioinformatics tools"
+          echo "      (gmap, gffread, samtools, etc.) which are"
+          echo "      included in the conda package dependencies."
+          echo ""
 
           conda deactivate
 

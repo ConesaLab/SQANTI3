@@ -43,6 +43,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Free Disk Space (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          echo "=== Disk space before cleanup ==="
+          df -h
+
+          # Remove unnecessary pre-installed software to free ~30GB
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo apt-get clean
+          sudo docker system prune -a -f
+
+          echo "=== Disk space after cleanup ==="
+          df -h
+
+      - name: Configure conda package cache directory
+        run: |
+          echo "CONDA_PKGS_DIRS=$HOME/conda_pkgs_dir" >> $GITHUB_ENV
+          mkdir -p $HOME/conda_pkgs_dir
+
       - name: Set CONDA_SUBDIR for macOS Intel packages
         if: runner.os == 'macOS'
         run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
@@ -51,7 +73,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/conda_pkgs_dir
+            ${{ env.CONDA_PKGS_DIRS }}
             ~/.conda/envs
           key: ${{ runner.os }}-conda-${{ hashFiles('SQANTI3.conda_env.yml') }}
           restore-keys: |
@@ -65,15 +87,25 @@ jobs:
           environment-file: SQANTI3.conda_env.yml
           activate-environment: sqanti3
           auto-activate-base: false
+          use-mamba: true
+
       - name: Configure conda environment for Intel packages
         if: runner.os == 'macOS'
         run: conda config --env --set subdir osx-64
+
+      - name: Clean conda caches to free space
+        run: |
+          conda clean -afy
+          df -h
+
       - name: List conda packages
         run: |
           conda list
+
       - name: Test numpy dependency
         run: |
           python3 -c "import numpy"
+
       - name: Run unittests
         run: |
           pytest
