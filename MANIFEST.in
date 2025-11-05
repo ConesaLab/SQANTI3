@@ -1,0 +1,32 @@
+include README.md
+include LICENSE
+include sqanti3_config.yaml
+include pyproject.toml
+include setup.cfg
+
+# Include main Python scripts
+include sqanti3
+include sqanti3_qc.py
+include sqanti3_filter.py
+include sqanti3_rescue.py
+include sqanti3_reads.py
+
+# Include all source code
+recursive-include src *.py
+recursive-include src/utilities *
+recursive-include src/utilities/data *
+recursive-include src/utilities/filter *
+recursive-include src/utilities/rescue *
+recursive-include src/utilities/report_qc *
+recursive-include src/utilities/report_filter *
+recursive-include src/utilities/report_rescue *
+recursive-include src/utilities/cupcake *
+
+# Include data files
+recursive-include data *
+
+# Exclude test files and cache
+recursive-exclude test *
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .git*

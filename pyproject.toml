@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sqanti3"
+dynamic = ["version"]
+description = "Tool for the Quality Control of Long-Read Defined Transcriptomes"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "BSD-3-Clause-Clear"}
+authors = [
+    {name = "Elizabeth Tseng", email = "etseng@pacb.com"},
+    {name = "Ana Conesa Lab"},
+]
+keywords = [
+    "bioinformatics",
+    "transcriptomics",
+    "long-read-sequencing",
+    "quality-control",
+    "pacbio",
+    "nanopore",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+]
+
+dependencies = [
+    "numpy>=1.26.4",
+    "pandas>=2.2.3",
+    "scipy<=1.11.4",
+    "scikit-learn>=1.5.2",
+    "cython>=3.0.11",
+    "biopython<=1.81",
+    "pybedtools>=0.10.0",
+    "pysam>=0.22.1",
+    "bcbio-gff>=0.7.1",
+    "seaborn>=0.13.2",
+    "psutil>=6.1.0",
+    "jinja2>=3.1.4",
+    "argcomplete>=3.4.0",
+    "gffutils>=0.13",
+    "gtfparse>=2.5.0",
+    "parasail>=1.3.4",
+    "edlib>=1.3.9.post1",
+    "intervaltree>=3.1.0",
+    "polars>=0.20.31",
+    "pyarrow>=14.0.2",
+    "pyfaidx>=0.8.1.3",
+    "TD2>=1.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "flake8",
+]
+
+[project.urls]
+Homepage = "https://github.com/ConesaLab/SQANTI3"
+Documentation = "https://github.com/ConesaLab/SQANTI3/wiki"
+Repository = "https://github.com/ConesaLab/SQANTI3"
+Issues = "https://github.com/ConesaLab/SQANTI3/issues"
+
+[project.scripts]
+sqanti3 = "sqanti3:main"
+sqanti3-qc = "sqanti3_qc:main"
+sqanti3-filter = "sqanti3_filter:main"
+sqanti3-rescue = "sqanti3_rescue:main"
+sqanti3-reads = "sqanti3_reads:main"
+
+[tool.setuptools]
+packages = ["src"]
+py-modules = ["sqanti3", "sqanti3_qc", "sqanti3_filter", "sqanti3_rescue", "sqanti3_reads"]
+
+[tool.setuptools.package-data]
+src = [
+    "utilities/**/*",
+    "utilities/data/**/*",
+    "utilities/filter/**/*",
+    "utilities/rescue/**/*",
+    "utilities/report_qc/**/*",
+    "utilities/report_filter/**/*",
+    "utilities/report_rescue/**/*",
+    "utilities/cupcake/**/*",
+]
+
+# Include additional data files
+[tool.setuptools.data-files]
+"share/sqanti3" = ["sqanti3_config.yaml"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+write_to = "src/_version.py"
+fallback_version = "5.5.1"
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
