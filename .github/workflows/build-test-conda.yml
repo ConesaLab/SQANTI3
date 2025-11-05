@@ -5,9 +5,28 @@ on:
   push:
     branches:
       - '*'
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - '*.py'
+      - 'pyproject.toml'
+      - 'SQANTI3.conda_env.yml'
+      - '.github/workflows/build-test-conda.yml'
+      # Don't run for docs-only changes
+      - '!**.md'
+      - '!docs/**'
   pull_request:
     branches:
       - 'master'
+    paths:
+      - 'src/**'
+      - 'test/**'
+      - '*.py'
+      - 'pyproject.toml'
+      - 'SQANTI3.conda_env.yml'
+      - '.github/workflows/build-test-conda.yml'
+      - '!**.md'
+      - '!docs/**'
 
 jobs:
   test-on-conda:
@@ -23,9 +42,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set CONDA_SUBDIR for macOS Intel packages
         if: runner.os == 'macOS'
         run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
+
+      - name: Cache conda packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/conda_pkgs_dir
+            ~/.conda/envs
+          key: ${{ runner.os }}-conda-${{ hashFiles('SQANTI3.conda_env.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-conda-
+
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3.1.1
         with:

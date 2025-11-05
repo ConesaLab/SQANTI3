@@ -20,12 +20,12 @@ build:
 
 requirements:
   host:
-    - python >=3.11
+    - python >=3.11,<3.13
     - pip
     - setuptools >=64
     - setuptools_scm >=8
   run:
-    - python >=3.11
+    - python >=3.11,<3.13
     # Core Python dependencies
     - numpy >=1.26.4
     - pandas >=2.2.3
