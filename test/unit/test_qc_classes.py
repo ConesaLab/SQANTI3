@@ -334,6 +334,62 @@ def test_as_dict():
     assert d["ratio_exp"] == 0.2
 
 
+def test_as_dict_single_sample_FL():
+    """Test as_dict with single-sample FL count"""
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        exons=3,
+        length=1000,
+        structural_category="full-length",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+        FL=100
+    )
+    d = obj.as_dict()
+    
+    # Single sample: FL should be the value, no FL.{sample} columns
+    assert d["FL"] == 100
+    assert not any(key.startswith("FL.") for key in d.keys())
+
+
+def test_as_dict_multi_sample_FL():
+    """Test as_dict with multi-sample FL counts"""
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        exons=3,
+        length=1000,
+        structural_category="full-length",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+        FL_dict={"BioSample_1": 3, "BioSample_2": 5, "BioSample_3": 2}
+    )
+    d = obj.as_dict()
+    
+    # Multi-sample: should have FL.{sample} columns and FL as sum
+    assert d["FL.BioSample_1"] == 3
+    assert d["FL.BioSample_2"] == 5
+    assert d["FL.BioSample_3"] == 2
+    assert d["FL"] == 10  # sum of all samples
+    assert "FL_dict" not in d  # FL_dict should be removed
+
+
+def test_as_dict_multi_sample_FL_empty():
+    """Test as_dict with empty FL_dict"""
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        exons=3,
+        length=1000,
+        structural_category="full-length",
+        genes=["gene1"],
+        transcripts=["transcript1"]
+    )
+    d = obj.as_dict()
+    
+    # Empty FL_dict: FL should be "NA" (from None conversion)
+    assert d["FL"] == "NA"
+    assert not any(key.startswith("FL.") for key in d.keys())
+
+
 ## ERROR cases
 def test_invalid_data_types():
     with pytest.raises(TypeError):

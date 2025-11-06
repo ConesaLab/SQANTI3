@@ -357,8 +357,12 @@ class myQueryTranscripts:
             if v is None:
                 base[k] = "NA"
 
-        for sample, count in self.FL_dict.items():
-            base[f"FL.{sample}"] = count
+        # Handle multi-sample FL counts
+        if self.FL_dict:
+            for sample, count in self.FL_dict.items():
+                base[f"FL.{sample}"] = count
+            # Set FL to sum of all samples for multi-sample case
+            base["FL"] = sum(self.FL_dict.values())
 
         # Eliminate non-report attributes
         non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand']
