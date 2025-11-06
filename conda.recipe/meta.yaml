@@ -20,84 +20,84 @@ build:
 
 requirements:
   host:
-    - python >=3.11,<3.13
+    - python >=3.9,<3.13
     - pip
     - setuptools >=64
     - setuptools_scm >=8
   run:
-    - python >=3.11,<3.13
+    - python >=3.9,<3.13
     # Core Python dependencies
-    - numpy >=1.26.4
-    - pandas >=2.2.3
-    - scipy <=1.11.4
-    - scikit-learn >=1.5.2
-    - cython >=3.0.11
-    - biopython <=1.81
-    - pybedtools >=0.10.0
-    - pysam >=0.22.1
-    - bcbio-gff >=0.7.1
-    - seaborn >=0.13.2
-    - psutil >=6.1.0
-    - jinja2 >=3.1.4
+    - numpy >=1.22
+    - pandas >=2.0
+    - scipy >=1.9
+    - scikit-learn >=1.3
+    - cython >=3.0
+    - biopython >=1.79
+    - pybedtools >=0.9
+    - pysam >=0.20
+    - bcbio-gff >=0.7
+    - seaborn >=0.12
+    - psutil >=5.8
+    - jinja2 >=3.0
     - pyyaml
-    - argcomplete >=3.4.0
+    - argcomplete >=2.0
     # Additional Python packages
-    - gffutils >=0.13
-    - gtfparse >=2.5.0
-    - parasail >=1.3.4
+    - gffutils >=0.11
+    - gtfparse >=2.0
+    - parasail >=1.3
     - edlib >=1.3.9
-    - intervaltree >=3.1.0
-    - polars >=0.20.31
-    - pyarrow >=14.0.2
-    - pyfaidx >=0.8.1.3
+    - intervaltree >=3.0
+    - polars >=0.18
+    - pyarrow >=12.0
+    - pyfaidx >=0.7
     # Bioinformatics tools
-    - bedtools >=2.31.1
-    - gffread >=0.12.7
-    - gtftools >=0.9.0
-    - gmap >=2024.11.20
-    - kallisto >=0.51.1
-    - minimap2 >=2.28
-    - samtools >=1.21
-    - star >=2.7.11b
-    - seqtk >=1.4
-    - desalt >=1.5.6
+    - bedtools >=2.30
+    - gffread >=0.12
+    - gtftools >=0.9
+    - gmap >=2023.01.01
+    - kallisto >=0.48
+    - minimap2 >=2.24
+    - samtools >=1.15
+    - star >=2.7
+    - seqtk >=1.3
+    - desalt >=1.5
     # R and R packages
-    - r-base >=4.3.0
-    - r-biocmanager >=1.30.25
-    - r-caret >=6.0_94
-    - r-dplyr >=1.1.4
-    - r-dt >=0.33
-    - r-devtools >=2.4.5
-    - r-e1071 >=1.7_16
-    - r-forcats >=1.0.0
-    - r-ggplot2 >=3.4.0
-    - r-ggplotify >=0.1.2
-    - r-gridbase >=0.4_7
+    - r-base >=4.0
+    - r-biocmanager >=1.30
+    - r-caret >=6.0
+    - r-dplyr >=1.0
+    - r-dt >=0.20
+    - r-devtools >=2.4
+    - r-e1071 >=1.7
+    - r-forcats >=0.5
+    - r-ggplot2 >=3.3
+    - r-ggplotify >=0.1
+    - r-gridbase >=0.4
     - r-gridextra >=2.3
-    - r-htmltools >=0.5.8.1
-    - r-jsonlite >=1.8.9
-    - r-optparse >=1.7.5
-    - r-plotly >=4.10.4
-    - r-plyr >=1.8.9
-    - r-purrr >=1.0.2
-    - r-randomforest >=4.7
-    - r-rmarkdown >=2.29
-    - r-reshape >=0.8.9
-    - r-readr >=2.1.5
-    - r-scales >=1.3.0
-    - r-stringi >=1.8.4
-    - r-stringr >=1.5.1
-    - r-tibble >=3.2.1
-    - r-tidyr >=1.3.1
+    - r-htmltools >=0.5
+    - r-jsonlite >=1.7
+    - r-optparse >=1.7
+    - r-plotly >=4.9
+    - r-plyr >=1.8
+    - r-purrr >=0.3
+    - r-randomforest >=4.6
+    - r-rmarkdown >=2.0
+    - r-reshape >=0.8
+    - r-readr >=2.0
+    - r-scales >=1.1
+    - r-stringi >=1.7
+    - r-stringr >=1.4
+    - r-tibble >=3.0
+    - r-tidyr >=1.1
     # Bioconductor packages
-    - bioconductor-noiseq >=2.46.0
-    - bioconductor-busparse >=1.16.0
+    - bioconductor-noiseq >=2.40
+    - bioconductor-busparse >=1.10
     - bioconductor-gviz
     # Other dependencies
-    - bx-python >=0.11.0
-    - openssl >=3.5.0
-    - pandoc >=3.5
-    - perl >=5.32.1
+    - bx-python >=0.9
+    - openssl >=3.0
+    - pandoc >=2.0
+    - perl >=5.26
 
 test:
   imports:
