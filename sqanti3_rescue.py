@@ -121,9 +121,7 @@ def main():
   if args.requant:  
     message("Running requantification.",rescue_logger)
     #TODO: Make this take the variables from python directly
-    rescue_gtf, inclusion_df, \
-      counts, rescued_table = sq_requant.parse_files(rescue_gtf_path,inclusion_file,
-                                                     args.counts, prefix,args.mode)
+    rescue_gtf, counts_df = sq_requant.parse_files(rescue_gtf_path,args.counts, prefix,args.mode)
 
     sq_requant.run_requant(rescue_gtf, inclusion_list, counts_df, 
                            rescue_df, prefix)

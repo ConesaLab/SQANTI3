@@ -5,7 +5,7 @@ import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def parse_files(gtf_path,inclusion_file,count_file,prefix,mode):
+def parse_files(gtf_path,count_file,prefix,mode):
 
     col_names = [
         "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
@@ -19,20 +19,12 @@ def parse_files(gtf_path,inclusion_file,count_file,prefix,mode):
         low_memory=False
     )
     rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
-    
-    # Inclusion list
-    inclusion_df = pd.read_csv(inclusion_file, names = ['transcript_id'])
 
     # Load counts file
     counts = pd.read_csv(count_file, sep = '\t', comment = '#')
     counts.columns = ['transcript_id', 'count']
 
-    #Rescued table
-    rescued_path=f"{prefix}_{mode}_rescue_table.tsv"
-    rescued_table = pd.read_csv(rescued_path, sep = '\t')
-
-
-    return(rescue_gtf, inclusion_df, counts, rescued_table)
+    return(rescue_gtf, counts)
 
 def select_hit(isoform, rescued, new_counts, old_counts):
     group = rescued[rescued["mapping_hit"] == isoform]
@@ -58,16 +50,18 @@ def fill_old_counts(isoform, old_counts):
         count = 0
     return(count)
     
-def run_requant(rescue_gtf, inclusion_df, counts, 
+def run_requant(rescue_gtf, inclusion_list, counts, 
                 rescue_df, prefix):
 
+    # Modify input table to have the artifact, the transcripts that are associated and how many
+    result = (
+        rescue_df.groupby("artifact", as_index=False)
+        .agg({
+            "assigned_transcript": lambda x: x.tolist() if len(x) > 1 else x.iloc[0],
+        })
+    )
 
-    #select list of isoforms that were rescued by SQANTI3 rescue
-    rescued_iso = rescue_df[rescue_df['rescue_result'] != 'not_rescued']
-    additional_isoforms = rescue_df[rescue_df['exclusion_reason'] == 'reference_already_present']
-    rescued = pd.concat([rescued_iso, additional_isoforms])
-
-    # Selec only isoforms that were not rescued or had a transcript that was already rescued
+    # Select only isoforms that were not rescued or had a transcript that was already rescued
     summary_df = (
     rescue_df.groupby('rescue_candidate', as_index=False
                      ).apply(lambda g: pd.Series({
@@ -95,7 +89,7 @@ def run_requant(rescue_gtf, inclusion_df, counts,
     
     #reassign counts to surviving isoforms
     rescued = rescued[rescued['rescue_candidate'].isin(old_counts.keys())]
-    inclusion_df = pd.concat([inclusion_df, not_rescued['transcript_id']])
+    inclusion_df = pd.concat([inclusion_list, not_rescued['transcript_id']])
     inclusion_df.apply(lambda x: select_hit(x.iloc[0], rescued, new_counts, old_counts), axis = 1)
     #combine old and new counts
     counts_df = pd.DataFrame(rescue_gtf['transcript_id'].unique(), columns = ['transcript_id'])
