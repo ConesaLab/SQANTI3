@@ -158,9 +158,9 @@ jobs:
           echo "Package size: $(du -h "$PACKAGE" | cut -f1)"
 
           # Index the build directory to create a proper local conda channel
-          # This ensures dependencies are resolved when installing the package
+          # Use the conda-index executable (provided by conda-index package)
           echo "=== Indexing build directory as local conda channel ==="
-          conda index ./build
+          conda-index ./build
 
           # Create a test environment and install the package with all dependencies
           echo "=== Creating test environment ==="
