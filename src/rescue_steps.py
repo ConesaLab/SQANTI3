@@ -264,4 +264,4 @@ def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refG
                                     rClass[rClass['isoform'].isin(rescued_transcripts)]])
     rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
     rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.tsv")
-    return output_gtf
+    return rescued_class

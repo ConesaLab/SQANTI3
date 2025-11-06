@@ -111,7 +111,7 @@ def main():
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
     message("Generating rescued GTF.",rescue_logger)
-    rescue_gtf_path = save_rescue_results(args.dir, args.output, inclusion_list, rescue_df,
+    rescue_class = save_rescue_results(args.dir, args.output, inclusion_list, rescue_df,
                                        args.refGTF, args.filtered_isoforms_gtf,args.corrected_isoforms_fasta,
                                        class_df,args.refClassif)
 
@@ -121,11 +121,11 @@ def main():
   if args.requant:  
     message("Running requantification.",rescue_logger)
     #TODO: Make this take the variables from python directly
-    rescue_gtf, counts_df = sq_requant.parse_files(rescue_gtf_path,args.counts, prefix,args.mode)
+    counts_df = sq_requant.parse_files(args.counts)
 
-    sq_requant.run_requant(rescue_gtf, inclusion_list, counts_df, 
-                           rescue_df, prefix)
-    sq_requant.to_tpm(rescue_gtf, prefix)
+    requant_df = sq_requant.run_requant(counts_df, rescue_df, class_df, prefix)
+    # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
+    sq_requant.to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
 
 ## Run main()
