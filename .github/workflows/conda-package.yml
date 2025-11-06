@@ -157,13 +157,23 @@ jobs:
           echo "Testing package: $PACKAGE"
           echo "Package size: $(du -h "$PACKAGE" | cut -f1)"
 
+          # Index the build directory to create a proper local conda channel
+          # This ensures dependencies are resolved when installing the package
+          echo "=== Indexing build directory as local conda channel ==="
+          conda index ./build
+
           # Create a test environment and install the package with all dependencies
           echo "=== Creating test environment ==="
           conda create -n test_env -y python=3.11
 
           echo "=== Installing SQANTI3 package with dependencies ==="
           conda activate test_env
-          conda install -y "$PACKAGE" --channel conda-forge --channel bioconda --channel defaults
+          # Install from local channel by name (not file path) to ensure dependency resolution
+          conda install -y sqanti3 \
+            --channel file://$(pwd)/build \
+            --channel conda-forge \
+            --channel bioconda \
+            --channel defaults
 
           echo "=== Verifying installation ==="
           if ! conda list | grep -E "(sqanti3|biopython|pandas|numpy)"; then
