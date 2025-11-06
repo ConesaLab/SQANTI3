@@ -1,30 +1,14 @@
 import pandas as pd
-import os
 from collections import defaultdict
-import sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def parse_files(gtf_path,count_file,prefix,mode):
-
-    col_names = [
-        "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
-    ]
-    rescue_gtf = pd.read_csv(
-        gtf_path,
-        sep="\t",
-        comment="#",
-        names=col_names,
-        dtype={"Chromosome": str, "Start": int, "End": int},
-        low_memory=False
-    )
-    rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
-
+def parse_files(count_file):
     # Load counts file
     counts = pd.read_csv(count_file, sep = '\t', comment = '#')
     counts.columns = ['transcript_id', 'count']
 
-    return(rescue_gtf, counts)
+    return(counts)
 
 def select_hit(isoform, rescued, new_counts, old_counts):
     group = rescued[rescued["mapping_hit"] == isoform]
@@ -49,67 +33,73 @@ def fill_old_counts(isoform, old_counts):
     except KeyError:
         count = 0
     return(count)
-    
-def run_requant(rescue_gtf, inclusion_list, counts, 
-                rescue_df, prefix):
+
+def run_requant(counts, rescue_df, classif_df, prefix):
 
     # Modify input table to have the artifact, the transcripts that are associated and how many
-    result = (
+    collapsed_df = (
         rescue_df.groupby("artifact", as_index=False)
         .agg({
             "assigned_transcript": lambda x: x.tolist() if len(x) > 1 else x.iloc[0],
         })
     )
 
-    # Select only isoforms that were not rescued or had a transcript that was already rescued
-    summary_df = (
-    rescue_df.groupby('rescue_candidate', as_index=False
-                     ).apply(lambda g: pd.Series({
-        'rescued': ((g['rescue_result'] != 'not_rescued') | 
-                    (g['exclusion_reason'].fillna('')  == 'reference_already_present')).any(),
-        'associated_gene': g['associated_gene'].unique()[0]  # assumes unique
-    }))
-    .reset_index(drop=True)
+    collapsed_df["num_assigned_transcripts"] = collapsed_df["assigned_transcript"].apply(
+        lambda x: len(x) if isinstance(x, list) else 1
     )
-    not_rescued = summary_df[summary_df['rescued'] == False]
-    not_rescued['mapping_hit'] = not_rescued['associated_gene'] + '_TD'
-    not_rescued = not_rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])
+
+    # Select only isoforms that were not rescued or had a transcript that was already rescued
     
+    not_rescued = (
+        classif_df[
+            (classif_df["filter_result"] == "Artifact") &
+            ~(classif_df["isoform"].isin(collapsed_df["artifact"]))
+        ][["isoform"]]
+        .rename(columns={"isoform": "artifact"})
+    )
 
-    # Mixing both we can include the counts for the transcript divergence of each gene
-    rescued = pd.concat([rescued, not_rescued])
-    rescued = rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])
+    not_rescued["assigned_transcript"] = "artifact"
+    not_rescued["num_assigned_transcripts"] = 1
 
-    not_rescued = not_rescued[['rescue_candidate', 'mapping_hit']]
-    not_rescued.columns = ['rescue_candidate', 'transcript_id']
+    artifacts_df = pd.concat([collapsed_df, not_rescued], ignore_index=True)
 
     #create dictionaries of old and new counts
     old_counts = counts.set_index('transcript_id')['count'].to_dict()
     new_counts = defaultdict(int)
+
+    # Add good counts
+    true_isoforms = classif_df[classif_df['filter_result'] == 'Isoform']['isoform'].tolist()
+    for isoform in true_isoforms:
+        new_counts[isoform] = old_counts.get(isoform, 0)
     
-    #reassign counts to surviving isoforms
-    rescued = rescued[rescued['rescue_candidate'].isin(old_counts.keys())]
-    inclusion_df = pd.concat([inclusion_list, not_rescued['transcript_id']])
-    inclusion_df.apply(lambda x: select_hit(x.iloc[0], rescued, new_counts, old_counts), axis = 1)
+    # Add artifact counts
+    new_counts["multi_transcript_artifact"] = 0
+    for isoform in artifacts_df['artifact']:
+        new_counts[isoform] = 0
+        assigned_tr = artifacts_df.loc[artifacts_df['artifact'] == isoform, 'assigned_transcript'].values[0]
+        if isinstance(assigned_tr, list):  # How to handle this?
+            new_counts["multi_transcript_artifact"] += old_counts.get(isoform, 0)
+        else: # Single isoform match
+            if assigned_tr in new_counts:
+                new_counts[assigned_tr] += old_counts.get(isoform, 0)
+            else:
+                new_counts[assigned_tr] = old_counts.get(isoform, 0)
+    
+    
     #combine old and new counts
-    counts_df = pd.DataFrame(rescue_gtf['transcript_id'].unique(), columns = ['transcript_id'])
-    counts_df = pd.concat([counts_df,not_rescued['transcript_id']])
+    counts_df = pd.DataFrame({'transcript_id': list(set(old_counts.keys()) | set(new_counts.keys()))})
     counts_df['old_count'] = counts_df['transcript_id'].apply(lambda x: fill_old_counts(x, old_counts))
     list_of_changed = []
     counts_df['new_count'] = counts_df['transcript_id'].apply(lambda x: reassign_counts(x, old_counts, new_counts, list_of_changed))
     changed = pd.DataFrame()
     changed['changed_count'] = list_of_changed
-
     counts_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", header = True, index = False, sep = '\t')
     changed.to_csv(f"{prefix}_changed_counts.tsv", header = True, index = False, sep = '\t')
-
     counts_df_short = counts_df[['transcript_id', 'new_count']]
     counts_df_short.to_csv(f"{prefix}_reassigned_counts.tsv", header = True, index = False, sep = '\t')
+    return counts_df_short
 
-    # Save transcript divergency relations
-    not_rescued.to_csv(f"{prefix}_transcript_divergency_relations.tsv", header = True, index = False, sep = '\t')
-
-def to_tpm(rescue_gtf, prefix):
+def to_tpm(counts_df, class_df, prefix):
     def calculate_tpm(counts, lengths):
         # Convert lengths to kilobases
         lengths_kb = lengths / 1000
@@ -120,31 +110,16 @@ def to_tpm(rescue_gtf, prefix):
         # Calculate TPM
         tpm = (rpk / total_rpk) * 1e6
         return tpm
-    #check if requantification file was generated
-    counts_df_path=f"{prefix}_reassigned_counts.tsv"
-    if not os.path.isfile(counts_df_path):
-        print(f"ERROR: {counts_df_path} doesn't exist. Abort!", file=sys.stderr)
-    else:
-        counts_df = pd.read_csv(counts_df_path, sep = '\t')
 
-    #calculate transcripts length
-    exons = rescue_gtf[rescue_gtf['Feature'] == 'exon']
-    # Calculate exon lengths
-    exons['exon_length'] = exons['End'] - exons['Start'] + 1
-    # Sum exon lengths for each transcript to get the total transcript length
-    transcript_lengths = exons.groupby('transcript_id')['exon_length'].sum().reset_index()
-    transcript_lengths.columns = ['Transcript_ID', 'Length']
-    lengths_d = transcript_lengths.set_index('Transcript_ID')['Length'].to_dict()
-    
-    rescue_gtf = rescue_gtf[rescue_gtf.Feature == 'transcript']
-    rescue_gtf['t_length'] = rescue_gtf['transcript_id'].apply(lambda x: lengths_d[x])
+    class_df.rename(columns={'isoform': 'transcript_id'}, inplace=True)
+    class_df = class_df[["transcript_id","length"]]
     
     counts_d = defaultdict(int)
     counts_df.apply(lambda x: counts_d.update({x.iloc[0] : x.iloc[1]}), axis = 1)
-    rescue_gtf['counts'] = rescue_gtf['transcript_id'].apply(lambda x: counts_d[x])
+    class_df['counts'] = class_df['transcript_id'].apply(lambda x: counts_d[x])
     #remove zero values
-    rescue_gtf = rescue_gtf[rescue_gtf['counts'] != 0]
+    class_df = class_df[class_df['counts'] != 0]
     # Calculate TPM
-    rescue_gtf['TPM'] = calculate_tpm(rescue_gtf['counts'], rescue_gtf['t_length'])
-    final = rescue_gtf[['transcript_id', 'TPM']]
+    class_df['TPM'] = calculate_tpm(class_df['counts'], class_df['length'])
+    final = class_df[['transcript_id', 'TPM']]
     final.to_csv(f"{prefix}_reassigned_counts_TPM.tsv", header = True, sep='\t', index=False)
