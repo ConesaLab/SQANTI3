@@ -68,7 +68,7 @@ jobs:
 
       - name: Install conda-build and dependencies
         run: |
-          conda install -y conda-build conda-verify anaconda-client setuptools_scm
+          conda install -y conda-build conda-index conda-verify anaconda-client setuptools_scm
           conda config --set anaconda_upload no
 
       - name: Generate version with setuptools_scm
