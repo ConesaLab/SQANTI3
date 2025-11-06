@@ -126,8 +126,8 @@ jobs:
           echo "Build completed successfully. Checking build output directory:"
           ls -lR ./build/
 
-          # Verify package was created
-          PACKAGE_COUNT=$(find ./build -name "sqanti3*.tar.bz2" | wc -l)
+          # Verify package was created (modern conda uses .conda format, old format was .tar.bz2)
+          PACKAGE_COUNT=$(find ./build \( -name "sqanti3*.conda" -o -name "sqanti3*.tar.bz2" \) | wc -l)
           if [ $PACKAGE_COUNT -eq 0 ]; then
             echo "ERROR: conda build succeeded but no package file was created"
             exit 1
@@ -136,12 +136,16 @@ jobs:
 
       - name: Test conda package installation
         run: |
-          # Find the built package
+          # Find the built package (modern conda uses .conda format, old format was .tar.bz2)
           echo "Searching for built package..."
           ls -la ./build/ || echo "Build directory not found"
-          find ./build -type f -name "*.tar.bz2" || echo "No .tar.bz2 files found"
+          find ./build -type f \( -name "*.conda" -o -name "*.tar.bz2" \) || echo "No conda packages found"
 
-          PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
+          # Try .conda format first (modern), then .tar.bz2 (legacy)
+          PACKAGE=$(find ./build -name "sqanti3*.conda" | head -n 1)
+          if [ -z "$PACKAGE" ]; then
+            PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
+          fi
 
           if [ -z "$PACKAGE" ]; then
             echo "ERROR: No conda package found in ./build directory"
@@ -205,7 +209,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: conda-package-${{ matrix.os }}
-          path: ./build/**/*.tar.bz2
+          path: |
+            ./build/**/*.conda
+            ./build/**/*.tar.bz2
           retention-days: 30
 
   publish:
@@ -252,8 +258,11 @@ jobs:
             exit 0
           fi
 
-          # Find the package
-          PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
+          # Find the package (try .conda format first, then .tar.bz2)
+          PACKAGE=$(find ./build -name "sqanti3*.conda" | head -n 1)
+          if [ -z "$PACKAGE" ]; then
+            PACKAGE=$(find ./build -name "sqanti3*.tar.bz2" | head -n 1)
+          fi
           echo "Publishing package: $PACKAGE"
 
           # Upload to anaconda.org/conesalab with 'dev' label for master branch
