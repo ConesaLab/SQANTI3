@@ -160,7 +160,15 @@ jobs:
           # Index the build directory to create a proper local conda channel
           # Use the conda-index executable (provided by conda-index package)
           echo "=== Indexing build directory as local conda channel ==="
-          conda-index ./build
+
+          # Ensure conda-index is available (use Python module as fallback)
+          if command -v conda-index >/dev/null 2>&1; then
+            echo "Using conda-index executable"
+            conda-index ./build
+          else
+            echo "conda-index executable not found, using Python module"
+            python -m conda_index ./build
+          fi
 
           # Create a test environment and install the package with all dependencies
           echo "=== Creating test environment ==="
