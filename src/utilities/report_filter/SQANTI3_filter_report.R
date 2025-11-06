@@ -210,7 +210,15 @@ bygene_summary <- gene_artifacts %>%
 bygene_summary_long <- bygene_summary %>% 
   tidyr::pivot_wider(names_from = "all_artifacts", 
                      names_prefix = "all_artifacts_", 
-                     values_from = "isoform_no") %>% 
+                     values_from = "isoform_no",
+                     values_fill = 0)
+
+# Ensure all_artifacts_TRUE column exists (add if missing with 0 values)
+if (!("all_artifacts_TRUE" %in% names(bygene_summary_long))) {
+  bygene_summary_long$all_artifacts_TRUE <- 0
+}
+
+bygene_summary_long <- bygene_summary_long %>% 
   dplyr::select(gene_type, total_genes, all_artifacts_TRUE)
 
 
@@ -224,7 +232,15 @@ category_summary <- classif %>%
 # long-format table for grid.table()
 category_summary_long <- category_summary %>% 
   dplyr::select(-percent) %>% 
-  tidyr::pivot_wider(names_from = filter_result, values_from = n)
+  tidyr::pivot_wider(names_from = filter_result, values_from = n, values_fill = 0)
+
+# Ensure both Artifact and Isoform columns exist (add missing columns with 0 values)
+if (!("Artifact" %in% names(category_summary_long))) {
+  category_summary_long$Artifact <- 0
+}
+if (!("Isoform" %in% names(category_summary_long))) {
+  category_summary_long$Isoform <- 0
+}
 
 
 
