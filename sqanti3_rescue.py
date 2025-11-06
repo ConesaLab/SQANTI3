@@ -122,8 +122,10 @@ def main():
     message("Running requantification.",rescue_logger)
     #TODO: Make this take the variables from python directly
     counts_df = sq_requant.parse_files(args.counts)
-
+    rescue_logger.info("Counts file parsed.")
     requant_df = sq_requant.run_requant(counts_df, rescue_df, class_df, prefix)
+    rescue_logger.info("Requantification of counts completed.")
+    rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
     # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
     sq_requant.to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
