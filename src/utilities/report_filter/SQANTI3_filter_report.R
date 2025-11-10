@@ -123,8 +123,6 @@ if(opt$filter_type == "ml"){
   
 }
 
-
-
 # Format category factor for classification file
 classif <- classif %>% 
   dplyr::mutate(
@@ -511,28 +509,66 @@ ism_labels <- ism_plots.df %>%
 
       
 # combined redundancy (FSM + ISM)
+# Load this library if you haven't already
+library(tidyr) 
+
 comb_fsm_ism <- dplyr::bind_rows(fsm, ism)
 
+# --- 1. First-level summarization ---
+# This step is slightly cleaner.
+# I removed the redundant `dplyr::filter(total_tr > 0)`
+# as `dplyr::n()` will always be 1 or more for existing groups.
 comb_redund.df <- comb_fsm_ism %>% 
   dplyr::group_by(filter, associated_transcript) %>% 
   dplyr::summarize(total_tr = dplyr::n(), .groups = "drop") %>% 
-  dplyr::filter(total_tr > 0) %>% 
-  dplyr::mutate(tr_type = factor(ifelse(total_tr == 1, 
-                                  yes = "Unique", no = "Multiple"), levels = c("Unique", "Multiple")),
-                tr_bin = ifelse(total_tr <= 4, 
-                                 yes = as.character(total_tr), no = ">4") %>% 
-                  ordered(levels = c("1", "2", "3", "4", ">4")))
-      
-        # plot combined redundancy
-        comb_redund <- ggplot(comb_redund.df) + 
-          ggtitle("FSM+ISM redundancy") +
-          geom_bar(aes(x = tr_type, fill = tr_bin), color = "black", width = 0.5) +
-          geom_text(aes(x = tr_type, label = after_stat(count)), stat = "count", vjust = -1) +
-          scale_y_continuous(breaks = scales::pretty_breaks(6)) +
-          scale_fill_brewer("Total FSM+ISM \nper reference ID", palette = "Greens") +
-          xlab("FSM+ISM per reference transcript") +
-          ylab("Reference transcfript no.") +
-          facet_grid(~filter)
+  dplyr::mutate(
+    tr_type = factor(ifelse(total_tr == 1, "Unique", "Multiple"), 
+                     levels = fsm_type), # Assuming fsm_type is c("Unique", "Multiple")
+    tr_bin = factor(ifelse(total_tr <= 4, as.character(total_tr), ">4"), 
+                    levels = fsm_bins)
+  )
+
+# --- 2. Create the data frame for plotting ---
+# This pipe now calculates the counts AND fills in missing
+# combinations, replacing the entire 'for' loop block.
+comb_redund.plots <- comb_redund.df %>%
+  # Count the number of transcripts per bin
+  dplyr::group_by(filter, tr_bin) %>%
+  dplyr::summarize(n = dplyr::n(), .groups = "drop") %>%
+  
+  # Ensure 'filter' is a factor *before* completing
+  # This uses the full list from 'timepoint_levels'
+  dplyr::mutate(filter = factor(filter, levels = timepoint_levels)) %>%
+  
+  # --- THIS REPLACES THE ENTIRE 'FOR' LOOP ---
+  # It creates all combinations of 'filter' and 'tr_bin'
+  # and fills missing 'n' values with 0.
+  tidyr::complete(filter, tr_bin, fill = list(n = 0)) %>%
+  
+  # Now that all rows (including 0-count) exist,
+  # create the 'tr_type' column, just as your loop did.
+  dplyr::mutate(
+    tr_type = factor(ifelse(tr_bin == "1", "Unique", "Multiple"),
+                     levels = fsm_type)
+  )
+
+# --- 3. Create labels (this logic was already correct) ---
+combined_labels <- comb_redund.plots %>%
+  dplyr::group_by(tr_type, filter) %>%
+  dplyr::summarize(total_n = sum(n), .groups = "drop")
+
+# --- 4. Plot (no changes needed) ---
+# Your plotting code was already well-structured.
+comb_redund <- ggplot(comb_redund.plots) + 
+  ggtitle("FSM+ISM redundancy") +
+  geom_bar(aes(x = tr_type, y = n, fill = tr_bin), stat = "identity", color = "black", width = 0.5) +
+  geom_text(data = combined_labels, aes(x = tr_type, y = total_n, label = total_n), vjust = -1) +
+  scale_y_continuous(breaks = scales::pretty_breaks(6),
+                     expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_brewer("Total FSM+ISM \nper reference ID", palette = "Greens") +
+  xlab("FSM+ISM per reference transcript") +
+  ylab("Reference transcript no.") +
+  facet_grid(~filter)
         
         
 
