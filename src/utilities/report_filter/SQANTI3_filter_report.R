@@ -525,7 +525,7 @@ if(opt$filter_type == "ml"){
       dplyr::group_by(structural_category, reason) %>% 
       dplyr::summarize(n = dplyr::n(), .groups = "drop") %>% 
       dplyr::mutate(percent = n/sum(n))
-    
+
         # totals
         artifact_totals <- ggplot(artifact_summary) +
           ggtitle("Reason to flag transcripts as artifacts, by category") +
@@ -605,6 +605,7 @@ if(opt$filter_type == "ml"){
     ## Variables used in ML: values for isoforms and artifacts by category
     source(paste0(opt$utilities_path, "/report_filter/compare_MLvariables.R"))
     
+
     var_compare <- purrr::map2(imp$variable, imp$importance,
                                ~compare_MLvariables(classif, .x, .y))
     
@@ -630,7 +631,7 @@ if(opt$filter_type == "ml"){
     geom_boxplot(aes(x = structural_category, y = perc_A_downstream_TTS),
                  width = 0.5, fill = "navajowhite1") +
     geom_hline(aes(yintercept = a_value), 
-               color = "firebrick3", size = 1, linetype = "dashed") +
+               color = "firebrick3", linewidth = 1, linetype = "dashed") +
     xlab("Structural category") +
     ylab("% A's downstream of TTS")
   
