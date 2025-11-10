@@ -21,7 +21,7 @@
 ####------------------------- FILTER REPORT ARG LIST -----------------------####
 
 #### Define script arguments ####
-
+#options(error = function() traceback(2))
 option_list <- list(
   optparse::make_option(c("-d","--dir"), type = "character", 
                         help = "Output/input directory - must be same as SQ3 filter."),
@@ -213,20 +213,33 @@ bygene_summary_long <- bygene_summary %>%
                      values_from = "isoform_no") %>% 
   dplyr::select(gene_type, total_genes, all_artifacts_TRUE)
 
-
-
 # Isoforms and artifacts by category
 category_summary <- classif %>% 
   dplyr::group_by(structural_category, filter_result) %>% 
   dplyr::summarize(n = dplyr::n()) %>%
-  dplyr::mutate(percent = n/sum(n))
+  dplyr::mutate(percent = n/sum(n)) %>%
+  dplyr::ungroup()
+
+# Check to see if any category is missing isoforms or artifacts and add 0 values
+all_cats <- unique(classif$structural_category)
+for(cat in all_cats){
+  for(res in c("Isoform", "Artifact")){
+    if(nrow(category_summary %>% 
+            dplyr::filter(structural_category == cat & 
+                            filter_result == res)) == 0){
+      category_summary <- category_summary %>% 
+        dplyr::add_row(structural_category = cat,
+                       filter_result = res,
+                       n = 0,
+                       percent = 0)
+    }
+  }
+}
 
 # long-format table for grid.table()
 category_summary_long <- category_summary %>% 
   dplyr::select(-percent) %>% 
   tidyr::pivot_wider(names_from = filter_result, values_from = n)
-
-
 
       ### Create table objects for report ###
       # Total genes and artifacts 
@@ -235,13 +248,12 @@ category_summary_long <- category_summary %>%
         dplyr::group_by(filter_result) %>% 
         dplyr::summarize(n = dplyr::n()) %>% 
         tibble::deframe()
-      
+
       iso_count <- tr_count["Isoform"]
       iso_pcnt <- iso_count*100/sum(tr_count)
       artif_count <- tr_count["Artifact"]
       artif_pcnt <- artif_count*100/sum(tr_count) %>% round
-      
-      
+
       sentence <- paste0("Total Genes: ", gene_count, "\n\n", 
                          "Total Transcripts: ", sum(tr_count), "\n",
                          "- Isoforms: ", 
@@ -259,6 +271,7 @@ category_summary_long <- category_summary %>%
                                                   "No. of genes with \nartifacts only"))
       
       # Total genes and genes with all artifacts
+      
       cat_table <- gridExtra::tableGrob(category_summary_long, rows = NULL,
                                         cols = c("Structural category",
                                                  "Artifact no.", "Isoform no."))
@@ -295,33 +308,52 @@ category_summary_long <- category_summary %>%
       
 # Number of isoforms per gene before and after filtering
 # calculate before
+isoform_no_levels <- c("1", "2-3", "4-5", ">=6")
+timepoint_levels <- c("Before", "After")
+
 isoforms_before <- classif %>% 
   dplyr::select(isoform, associated_gene) %>% 
   dplyr::group_by(associated_gene) %>% 
   dplyr::summarize(isoform_no = dplyr::n()) %>% 
-  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, max(.$isoform_no)),
-                                     labels = c("1", "2-3", "4-5", ">=6")))
+  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, Inf),
+                                     labels = isoform_no_levels),
+                                    )
 
 # calculate after
 isoforms_after <- classif %>% 
   dplyr::filter(filter_result == "Isoform") %>%  
   dplyr::group_by(associated_gene) %>% 
   dplyr::summarize(isoform_no = dplyr::n()) %>% 
-  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, max(.$isoform_no)),
-                                     labels = c("1", "2-3", "4-5", ">=6")))
+  dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, Inf),
+                                     labels = isoform_no_levels))
+
 
 # join both
 isoforms_per_gene <- dplyr::bind_rows(list(Before = isoforms_before, 
                                            After = isoforms_after),
                                       .id = "filter") %>% 
   dplyr::mutate(filter = factor(filter) %>% 
-                  forcats::fct_relevel(c("Before", "After")))
-
-# compute percentage
-isoforms_per_gene <- isoforms_per_gene %>% 
-  dplyr::group_by(filter, isoform_factor) %>% 
+                  forcats::fct_relevel(timepoint_levels)) %>% 
+  dplyr::group_by(filter, isoform_factor, .drop=FALSE) %>% 
   dplyr::summarize(gene_no = dplyr::n()) %>% 
-  dplyr::mutate(percent = gene_no/sum(gene_no))
+  dplyr::mutate(percent = gene_no/sum(gene_no)) %>% 
+  dplyr::ungroup()
+
+# In case any of the combinations is missing, so it shows up in the plot as 0 at least
+for (filter_value in timepoint_levels) {
+  for (isoform_number in isoform_no_levels) {
+    # If any of the combinations of timepoint_levels and isoform_factor is missing, add it with 0 value
+    if (isoforms_per_gene %>% dplyr::filter(filter == filter_value & isoform_factor == isoform_number) %>% nrow() == 0) {
+      isoforms_per_gene <- isoforms_per_gene %>%
+        dplyr::add_row(
+          filter = factor(filter_value, levels = timepoint_levels),
+          isoform_factor = factor(isoform_number, levels = isoform_no_levels),
+          gene_no = 0,
+          percent = 0
+        )
+    }
+  }
+}
 
       # plot
       iso_p_gene <- ggplot(isoforms_per_gene) +
@@ -330,12 +362,14 @@ isoforms_per_gene <- isoforms_per_gene %>%
                  stat = "identity", position = "dodge",
                  color = "black", width = 0.8) +
         labs(x = "Isoforms per gene", y = "% Genes") +
+        ylim(0, 1) +
         scale_fill_manual("Filter", values = c("tomato3", "#FFD4BF")) +
         scale_y_continuous(labels = scales::percent_format())
 
       
       
-# Redundancy before and after filtering
+## Redundancy before and after filtering
+# TODO: Fix the levels as done before
 # fsm redundancy
 fsm_before <- classif %>% 
   dplyr::filter(structural_category == "FSM")
@@ -351,27 +385,51 @@ fsm <- dplyr::bind_rows(list(Before = fsm_before, After = fsm_after),
   dplyr::select(isoform, associated_gene, associated_transcript, 
                 structural_category, filter)
 
+fsm_bins <- c("1", "2", "3", "4", ">4")
+fsm_type <- c("Unique", "Multiple")
+
 fsm_redund.df <- fsm %>% 
   dplyr::group_by(filter, associated_transcript) %>% 
   dplyr::summarize(fsm_no = dplyr::n()) %>% 
   dplyr::filter(fsm_no > 0) %>% 
-  dplyr::mutate(fsm_type = as.factor(ifelse(fsm_no == 1, 
-                                            yes = "Unique", no = "Multiple")) %>% 
-                  forcats::fct_relevel(c("Unique", "Multiple")),
-                fsm_bin = ifelse(fsm_no <= 4, 
+  dplyr::mutate(fsm_bin = ifelse(fsm_no <= 4, 
                                  yes = as.character(fsm_no), no = ">4") %>% 
-                  ordered(levels = c("1", "2", "3", "4", ">4")))
-      
+                  ordered(levels = fsm_bins)) %>%
+  dplyr::ungroup()
+
+fsm_plots.df <- fsm_redund.df %>%
+  dplyr::group_by(filter, fsm_bin) %>%
+  dplyr::summarize(n = dplyr::n()) %>%
+  dplyr::mutate(filter = factor(filter, levels = timepoint_levels),
+         fsm_bin = factor(fsm_bin, levels = fsm_bins),
+         fsm_type = factor(ifelse(fsm_bin == "1", 
+                                yes = "Unique", no = "Multiple"),
+                          levels = fsm_type)) %>%
+  dplyr::ungroup()
+
+for (timepoint in timepoint_levels){
+  for (number in fsm_bins){
+    if (nrow(fsm_plots.df %>% dplyr::filter(filter == timepoint & fsm_bin == number)) == 0){
+      fsm_plots.df <- fsm_plots.df %>%
+        dplyr::add_row(filter = factor(timepoint, levels = timepoint_levels),
+                       n = 0,
+                       fsm_type = factor(ifelse(number == "1", 
+                                               yes = "Unique", no = "Multiple"),
+                                         levels = fsm_type),
+                       fsm_bin = as.character(number))
+    }
+  }
+}
+
       # plot general reference transcript complexity
-      ref_complexity <- ggplot(fsm_redund.df) +
+      ref_complexity <- ggplot(fsm_plots.df) +
         ggtitle("Reference transcript complexity", 
                 subtitle = "No. of reference transcripts represented by FSM") +
-        geom_bar(aes(x = filter, fill = fsm_type), 
-                 stat = "count", position = "stack",
+        geom_bar(aes(x = filter, y = n, fill = fsm_type), 
+                 stat = "identity", position = "stack",
                  color = "black", width = 0.7) +
-        geom_text(aes(x = filter,
-                      label = after_stat(count)), 
-                  stat = "count", vjust = -1) +
+        geom_text(aes(x = filter, y = n, label = n), 
+                  stat = "identity", vjust = -1) +
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
                                         continuous = FALSE, reverse = FALSE) +
@@ -382,10 +440,10 @@ fsm_redund.df <- fsm %>%
         
       
       # plot FSM redundancy
-      fsm_redund <- ggplot(fsm_redund.df) + 
+      fsm_redund <- ggplot(fsm_plots.df) + 
         ggtitle("FSM redundancy") +
-        geom_bar(aes(x = fsm_type, fill = fsm_bin), color = "black", width = 0.5) +
-        geom_text(aes(x = fsm_type, label = after_stat(count)), stat = "count", vjust = -1) +
+        geom_bar(aes(x = fsm_type, y=n, fill = fsm_bin), stat = "identity", color = "black", width = 0.5) +
+        geom_text(aes(x = fsm_type, y = n, label = n), stat = "identity", vjust = -1) + # TODO: Try to make the numbers only show up once
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
         xlab("FSM per reference transcript") +
