@@ -12,7 +12,9 @@
 #
 # Affiliation: Institute for Integrative Systems Biology, CSIC, Valencia, Spain
 #
-# Last updated: 23/August/2023
+# Updated by: Pablo Atienza Lopez
+# Contact: pabloatienzalo@gmail.com
+# Last updated: 11/11/2025
 #
 #-------------------------------------------------------------------------------
 
@@ -519,13 +521,19 @@ if(opt$filter_type == "ml"){
       dplyr::mutate(reason = dplyr::case_when(
         intra_priming == TRUE & ML_classifier == "Negative" ~ "Both",
         intra_priming == TRUE | (ML_classifier == "Positive" | is.na(ML_classifier)) ~ "Intra-priming",
-        intra_priming == FALSE & ML_classifier == "Negative" ~ "ML"))
+        intra_priming == FALSE & ML_classifier == "Negative" ~ "Machine learning"))
     
+    reasons <- c("Machine learning","Intra-priming","Both")
+
     artifact_summary <- classif_artifacts %>% 
       dplyr::group_by(structural_category, reason) %>% 
       dplyr::summarize(n = dplyr::n(), .groups = "drop") %>% 
-      dplyr::mutate(percent = n/sum(n))
-
+      tidyr::complete(structural_category,reason, fill = list(n = 0)) %>%
+      dplyr::group_by(structural_category) %>%
+      dplyr::mutate(percent = n/sum(n),
+                    reason = factor(reason,levels = reasons)) %>%
+      dplyr::ungroup() 
+  
         # totals
         artifact_totals <- ggplot(artifact_summary) +
           ggtitle("Reason to flag transcripts as artifacts, by category") +
