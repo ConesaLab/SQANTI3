@@ -262,7 +262,6 @@ category_summary_long <- category_summary %>%
                                                   "No. of genes with \nartifacts only"))
       
       # Total genes and genes with all artifacts
-      
       cat_table <- gridExtra::tableGrob(category_summary_long, rows = NULL,
                                         cols = c("Structural category",
                                                  "Artifact no.", "Isoform no."))
@@ -296,9 +295,7 @@ category_summary_long <- category_summary %>%
         scale_alpha_manual("Filter result", values = c(0.3, 1))
 
       
-      
-# Number of isoforms per gene before and after filtering
-# calculate before
+# --- 5. Isoforms per gene (Optimized) ---
 isoform_no_levels <- c("1", "2-3", "4-5", ">=6")
 timepoint_levels <- c("Before", "After")
 
@@ -307,68 +304,52 @@ isoforms_before <- classif %>%
   dplyr::group_by(associated_gene) %>% 
   dplyr::summarize(isoform_no = dplyr::n(), .groups = "drop") %>% 
   dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, Inf),
-                                     labels = isoform_no_levels),
-                                    )
+                                    labels = isoform_no_levels),
+               )
 
-# calculate after
 isoforms_after <- classif %>% 
   dplyr::filter(filter_result == "Isoform") %>%  
   dplyr::group_by(associated_gene) %>% 
   dplyr::summarize(isoform_no = dplyr::n(), .groups = "drop") %>% 
   dplyr::mutate(isoform_factor = cut(isoform_no, c(0, 1, 3, 5, Inf),
-                                     labels = isoform_no_levels))
+                                    labels = isoform_no_levels))
 
-
-# join both
 isoforms_per_gene <- dplyr::bind_rows(list(Before = isoforms_before, 
                                            After = isoforms_after),
                                       .id = "filter") %>% 
   dplyr::mutate(filter = factor(filter, levels = timepoint_levels)) %>% 
+  # Count occurrences of each factor level
   dplyr::group_by(filter, isoform_factor, .drop=FALSE) %>% 
-  dplyr::summarize(gene_no = dplyr::n(), .groups = "drop") %>% 
-  dplyr::mutate(percent = gene_no/sum(gene_no))
+  dplyr::summarize(gene_no = dplyr::n(), .groups = "drop") %>%
+  # Replaces the nested for-loop
+  tidyr::complete(filter, isoform_factor, fill = list(gene_no = 0)) %>%
+  # Calculate percent *within each filter group* (matches plot intent)
+  dplyr::group_by(filter) %>%
+  dplyr::mutate(percent = gene_no / sum(gene_no)) %>%
+  dplyr::ungroup()
 
-# In case any of the combinations is missing, so it shows up in the plot as 0 at least
-for (filter_value in timepoint_levels) {
-  for (isoform_number in isoform_no_levels) {
-    # If any of the combinations of timepoint_levels and isoform_factor is missing, add it with 0 value
-    if (isoforms_per_gene %>% dplyr::filter(filter == filter_value & isoform_factor == isoform_number) %>% nrow() == 0) {
-      isoforms_per_gene <- isoforms_per_gene %>%
-        dplyr::add_row(
-          filter = factor(filter_value, levels = timepoint_levels),
-          isoform_factor = factor(isoform_number, levels = isoform_no_levels),
-          gene_no = 0,
-          percent = 0
-        )
-    }
-  }
-}
+# plot
+iso_p_gene <- ggplot(isoforms_per_gene) +
+  ggtitle("Number of isoforms per gene") +
+  geom_bar(aes(x = isoform_factor, y = percent, fill = filter),
+           stat = "identity", position = "dodge",
+           color = "black", width = 0.8) +
+  labs(x = "Isoforms per gene", y = "% Genes") +
+  # ylim(0, 1) is no longer needed if percent is correctly calculated
+  scale_fill_manual("Filter", values = c("tomato3", "#FFD4BF")) +
+  scale_y_continuous(labels = scales::percent_format())
 
-      # plot
-      iso_p_gene <- ggplot(isoforms_per_gene) +
-        ggtitle("Number of isoforms per gene") +
-        geom_bar(aes(x = isoform_factor, y = percent, fill = filter),
-                 stat = "identity", position = "dodge",
-                 color = "black", width = 0.8) +
-        labs(x = "Isoforms per gene", y = "% Genes") +
-        ylim(0, 1) +
-        scale_fill_manual("Filter", values = c("tomato3", "#FFD4BF")) +
-        scale_y_continuous(labels = scales::percent_format())
-
-      
-      
-## Redundancy before and after filtering
-# TODO: Fix the levels as done before
-# fsm redundancy
+# --- 6. FSM redundancy (Optimized) ---
 fsm_before <- classif %>% 
   dplyr::filter(structural_category == "FSM")
 
 fsm_after <- classif %>% 
   dplyr::filter(structural_category == "FSM" &
-                  filter_result == "Isoform")
+                filter_result == "Isoform")
 
 fsm <- dplyr::bind_rows(list(Before = fsm_before, After = fsm_after),
                         .id = "filter") %>% 
+  # Use factor() with levels to avoid warnings if "After" is missing
   dplyr::mutate(filter = factor(filter, levels = timepoint_levels)) %>% 
   dplyr::select(isoform, associated_gene, associated_transcript, 
                 structural_category, filter)
@@ -381,73 +362,61 @@ fsm_redund.df <- fsm %>%
   dplyr::summarize(fsm_no = dplyr::n(), .groups = "drop") %>% 
   dplyr::filter(fsm_no > 0) %>% 
   dplyr::mutate(fsm_bin = ifelse(fsm_no <= 4, 
-                                 yes = as.character(fsm_no), no = ">4"))
+                                yes = as.character(fsm_no), no = ">4"))
 
 fsm_plots.df <- fsm_redund.df %>%
   dplyr::group_by(filter, fsm_bin) %>%
   dplyr::summarize(n = dplyr::n(), .groups = "drop") %>%
+  # Ensure factors are set *before* completing
   dplyr::mutate(filter = factor(filter, levels = timepoint_levels),
-                fsm_bin = factor(fsm_bin, levels = fsm_bins),
-                fsm_type = factor(ifelse(fsm_bin == "1", yes = "Unique", no = "Multiple"),
-                           levels = fsm_type))
+                fsm_bin = factor(fsm_bin, levels = fsm_bins)) %>%
+  # Replaces the nested for-loop
+  tidyr::complete(filter, fsm_bin, fill = list(n = 0)) %>%
+  # Create 'fsm_type' *after* all rows (including 0-count) exist
+  dplyr::mutate(fsm_type = factor(ifelse(fsm_bin == "1", yes = "Unique", no = "Multiple"),
+                                  levels = fsm_type))
 
-for (timepoint in timepoint_levels){
-  for (number in fsm_bins){
-    if (nrow(fsm_plots.df %>% dplyr::filter(filter == timepoint & fsm_bin == number)) == 0){
-      fsm_plots.df <- fsm_plots.df %>%
-        dplyr::add_row(filter = factor(timepoint, levels = timepoint_levels),
-                       n = 0,
-                       fsm_type = factor(ifelse(number == "1", 
-                                               yes = "Unique", no = "Multiple"),
-                                         levels = fsm_type),
-                       fsm_bin = factor(number, levels = fsm_bins))
-    }
-  }
-}
+fsm_labels <- fsm_plots.df %>%
+  dplyr::group_by(fsm_type, filter) %>%
+  dplyr::summarize(total_n = sum(n), .groups = "drop") 
 
-  fsm_labels <- fsm_plots.df %>%
-    dplyr::group_by(fsm_type, filter) %>%
-    dplyr::summarize(total_n = sum(n), .groups = "drop") 
+# plot general reference transcript complexity
+ref_complexity <- ggplot(fsm_plots.df) +
+  ggtitle("Reference transcript complexity", 
+          subtitle = "No. of reference transcripts represented by FSM") +
+  geom_bar(aes(x = filter, y = n, fill = fsm_type), 
+           stat = "identity", position = "stack",
+           color = "black", width = 0.7) +
+  geom_text(data = fsm_labels, aes(x = filter, y = total_n, label = total_n), 
+            stat = "identity", vjust = -1) +
+  scale_y_continuous(breaks = scales::pretty_breaks(6),
+                     expand = expansion(mult = c(0, 0.1))) +
+  RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
+                                 continuous = FALSE, reverse = FALSE) +
+  theme(plot.subtitle = element_text(hjust = 0.5, size = 12,
+                                     face = "italic")) +
+  xlab("Filter") +
+  ylab("Reference transcfript no.") 
+    
+# plot FSM redundancy
+fsm_redund <- ggplot(fsm_plots.df) + 
+  ggtitle("FSM redundancy") +
+  geom_bar(aes(x = fsm_type, y=n, fill = fsm_bin), stat = "identity", color = "black", width = 0.5) +
+  geom_text(data = fsm_labels, aes(x = fsm_type, y = total_n, label = total_n), stat = "identity", vjust = -1) + 
+  scale_y_continuous(breaks = scales::pretty_breaks(6),
+                     expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
+  xlab("FSM per reference transcript") +
+  ylab("Reference transcfript no.") +
+  facet_grid(~filter)
 
-      # plot general reference transcript complexity
-      ref_complexity <- ggplot(fsm_plots.df) +
-        ggtitle("Reference transcript complexity", 
-                subtitle = "No. of reference transcripts represented by FSM") +
-        geom_bar(aes(x = filter, y = n, fill = fsm_type), 
-                 stat = "identity", position = "stack",
-                 color = "black", width = 0.7) +
-        geom_text(data = fsm_labels, aes(x = filter, y = total_n, label = total_n), 
-                  stat = "identity", vjust = -1) +
-        scale_y_continuous(breaks = scales::pretty_breaks(6),
-                           expand = expansion(mult = c(0, 0.1))) +
-        RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
-                                        continuous = FALSE, reverse = FALSE) +
-        theme(plot.subtitle = element_text(hjust = 0.5, size = 12,
-                                           face = "italic")) +
-        xlab("Filter") +
-        ylab("Reference transcfript no.") 
-        
-      
-      # plot FSM redundancy
-      fsm_redund <- ggplot(fsm_plots.df) + 
-        ggtitle("FSM redundancy") +
-        geom_bar(aes(x = fsm_type, y=n, fill = fsm_bin), stat = "identity", color = "black", width = 0.5) +
-        geom_text(data = fsm_labels, aes(x = fsm_type, y = total_n, label = total_n), stat = "identity", vjust = -1) + 
-        scale_y_continuous(breaks = scales::pretty_breaks(6),
-                           expand = expansion(mult = c(0, 0.1))) +
-        scale_fill_brewer("Total FSM \nper reference ID", palette = "Blues") +
-        xlab("FSM per reference transcript") +
-        ylab("Reference transcfript no.") +
-        facet_grid(~filter)
-
-
-# ISM redundancy
+# --- 7. ISM redundancy (Optimized) ---
 ism_before <- classif %>% 
   dplyr::filter(structural_category == "ISM")
 
 ism_after <- classif %>% 
   dplyr::filter(structural_category == "ISM" &
-                  filter_result == "Isoform")
+                filter_result == "Isoform")
 
 ism_bins = c("1", "2", "3", "4", ">4")
 ism_type = c("Unique", "Multiple")
@@ -463,102 +432,68 @@ ism_redund.df <- ism %>%
   dplyr::summarize(total_ism = dplyr::n(), .groups = "drop") %>% 
   dplyr::filter(total_ism > 0) %>% 
   dplyr::mutate(ism_bin = ifelse(total_ism <= 4, 
-                                 yes = as.character(total_ism), no = ">4"))
+                                yes = as.character(total_ism), no = ">4"))
 
 ism_plots.df <- ism_redund.df %>%
   dplyr::group_by(filter, ism_bin) %>%
   dplyr::summarize(n = dplyr::n(), .groups = "drop") %>%
   dplyr::mutate(filter = factor(filter, levels = timepoint_levels),
-         ism_bin = factor(ism_bin, levels = ism_bins),
-         ism_type = factor(ifelse(ism_bin == "1", 
-                                yes = "Unique", no = "Multiple"),
-                          levels = ism_type))
+                ism_bin = factor(ism_bin, levels = ism_bins)) %>%
+  # Replaces the nested for-loop
+  tidyr::complete(filter, ism_bin, fill = list(n = 0)) %>%
+  # Create 'ism_type' *after* all rows (including 0-count) exist
+  dplyr::mutate(ism_type = factor(ifelse(ism_bin == "1", 
+                                        yes = "Unique", no = "Multiple"),
+                                  levels = ism_type))
 
-for (timepoint in timepoint_levels){
-  for (number in ism_bins){
-    if (nrow(ism_plots.df %>% dplyr::filter(filter == timepoint & ism_bin == number)) == 0){
-      ism_plots.df <- ism_plots.df %>%
-        dplyr::add_row(filter = factor(timepoint, levels = timepoint_levels),
-                       ism_bin = factor(as.character(number), levels = ism_bins),
-                       ism_type = factor(ifelse(number == "1", 
-                                               yes = "Unique", no = "Multiple"),
-                                         levels = ism_type),
-                       n = 0)
-    }
-  }
-}
-# Create only one label per column. Otherwise the numbers overlap
 ism_labels <- ism_plots.df %>%
   dplyr::group_by(ism_type, filter) %>%
   dplyr::summarize(total_n = sum(n), .groups = "drop")
-      # plot ISM redundancy
-      ism_redund <- ggplot(ism_plots.df) + 
-        ggtitle("ISM redundancy") +
-        geom_bar(aes(x = ism_type, y = n, fill = ism_bin), stat= "identity", color = "black", width = 0.5) +
-        geom_text(
-            data = ism_labels, 
-            aes(x = ism_type, y = total_n, label = total_n), 
-            vjust = -1.0 # Use -1.0 to move it slightly higher
-          )  +
-        scale_y_continuous(breaks = scales::pretty_breaks(6),
-                           expand = expansion(mult = c(0, 0.1))) +
-        scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
-        xlab("ISM per reference transcript") +
-        ylab("Reference transcfripts") +
-        facet_grid(~filter)
 
-      
-# combined redundancy (FSM + ISM)
-# Load this library if you haven't already
-library(tidyr) 
+# plot ISM redundancy
+ism_redund <- ggplot(ism_plots.df) + 
+  ggtitle("ISM redundancy") +
+  geom_bar(aes(x = ism_type, y = n, fill = ism_bin), stat= "identity", color = "black", width = 0.5) +
+  geom_text(
+      data = ism_labels, 
+      aes(x = ism_type, y = total_n, label = total_n), 
+      vjust = -1.0
+    )  +
+  scale_y_continuous(breaks = scales::pretty_breaks(6),
+                     expand = expansion(mult = c(0, 0.1))) +
+  scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
+  xlab("ISM per reference transcript") +
+  ylab("Reference transcfripts") +
+  facet_grid(~filter)
 
+# --- 8. Combined redundancy (FSM + ISM) ---
+# This section was already optimized
 comb_fsm_ism <- dplyr::bind_rows(fsm, ism)
 
-# --- 1. First-level summarization ---
-# This step is slightly cleaner.
-# I removed the redundant `dplyr::filter(total_tr > 0)`
-# as `dplyr::n()` will always be 1 or more for existing groups.
 comb_redund.df <- comb_fsm_ism %>% 
   dplyr::group_by(filter, associated_transcript) %>% 
   dplyr::summarize(total_tr = dplyr::n(), .groups = "drop") %>% 
   dplyr::mutate(
     tr_type = factor(ifelse(total_tr == 1, "Unique", "Multiple"), 
-                     levels = fsm_type), # Assuming fsm_type is c("Unique", "Multiple")
+                     levels = fsm_type), 
     tr_bin = factor(ifelse(total_tr <= 4, as.character(total_tr), ">4"), 
                     levels = fsm_bins)
   )
 
-# --- 2. Create the data frame for plotting ---
-# This pipe now calculates the counts AND fills in missing
-# combinations, replacing the entire 'for' loop block.
 comb_redund.plots <- comb_redund.df %>%
-  # Count the number of transcripts per bin
   dplyr::group_by(filter, tr_bin) %>%
   dplyr::summarize(n = dplyr::n(), .groups = "drop") %>%
-  
-  # Ensure 'filter' is a factor *before* completing
-  # This uses the full list from 'timepoint_levels'
   dplyr::mutate(filter = factor(filter, levels = timepoint_levels)) %>%
-  
-  # --- THIS REPLACES THE ENTIRE 'FOR' LOOP ---
-  # It creates all combinations of 'filter' and 'tr_bin'
-  # and fills missing 'n' values with 0.
   tidyr::complete(filter, tr_bin, fill = list(n = 0)) %>%
-  
-  # Now that all rows (including 0-count) exist,
-  # create the 'tr_type' column, just as your loop did.
   dplyr::mutate(
     tr_type = factor(ifelse(tr_bin == "1", "Unique", "Multiple"),
                      levels = fsm_type)
   )
 
-# --- 3. Create labels (this logic was already correct) ---
 combined_labels <- comb_redund.plots %>%
   dplyr::group_by(tr_type, filter) %>%
   dplyr::summarize(total_n = sum(n), .groups = "drop")
 
-# --- 4. Plot (no changes needed) ---
-# Your plotting code was already well-structured.
 comb_redund <- ggplot(comb_redund.plots) + 
   ggtitle("FSM+ISM redundancy") +
   geom_bar(aes(x = tr_type, y = n, fill = tr_bin), stat = "identity", color = "black", width = 0.5) +
@@ -569,9 +504,6 @@ comb_redund <- ggplot(comb_redund.plots) +
   xlab("FSM+ISM per reference transcript") +
   ylab("Reference transcript no.") +
   facet_grid(~filter)
-        
-        
-
 #### END common filter plots ####
       
       
