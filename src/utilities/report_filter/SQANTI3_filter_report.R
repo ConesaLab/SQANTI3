@@ -459,6 +459,9 @@ ism_after <- classif %>%
   dplyr::filter(structural_category == "ISM" &
                   filter_result == "Isoform")
 
+ism_bins = c("1", "2", "3", "4", ">4")
+ism_type = c("Unique", "Multiple")
+
 ism <- dplyr::bind_rows(list(Before = ism_before, After = ism_after),
                         .id = "filter") %>% 
   dplyr::mutate(filter = factor(filter) %>% 
@@ -470,18 +473,39 @@ ism_redund.df <- ism %>%
   dplyr::group_by(filter, associated_transcript) %>% 
   dplyr::summarize(total_ism = dplyr::n()) %>% 
   dplyr::filter(total_ism > 0) %>% 
-  dplyr::mutate(ism_type = ifelse(total_ism == 1, 
-                                  yes = "Unique", no = "Multiple") %>% 
-                  forcats::fct_relevel(c("Unique", "Multiple")),
-                ism_bin = ifelse(total_ism <= 4, 
+  dplyr::mutate(ism_bin = ifelse(total_ism <= 4, 
                                  yes = as.character(total_ism), no = ">4") %>% 
-                  ordered(levels = c("1", "2", "3", "4", ">4")))
+                  ordered(levels = ism_bins)) %>%
+  dplyr::ungroup()
 
-      # plot FSM redundancy
-      ism_redund <- ggplot(ism_redund.df) + 
+ism_plots.df <- ism_redund.df %>%
+  dplyr::group_by(filter, ism_bin) %>%
+  dplyr::summarize(n = dplyr::n()) %>%
+  dplyr::mutate(filter = factor(filter, levels = timepoint_levels),
+         ism_bin = factor(ism_bin, levels = ism_bins),
+         ism_type = factor(ifelse(ism_bin == "1", 
+                                yes = "Unique", no = "Multiple"),
+                          levels = ism_type)) %>%
+  dplyr::ungroup()
+
+for (timepoint in timepoint_levels){
+  for (number in ism_bins){
+    if (nrow(ism_plots.df %>% dplyr::filter(filter == timepoint & ism_bin == number)) == 0){
+      ism_plots.df <- ism_plots.df %>%
+        dplyr::add_row(filter = factor(timepoint, levels = timepoint_levels),
+                       n = 0,
+                       ism_type = factor(ifelse(number == "1", 
+                                               yes = "Unique", no = "Multiple"),
+                                         levels = ism_type),
+                       ism_bin = as.character(number))
+    }
+  }
+}
+      # plot ISM redundancy
+      ism_redund <- ggplot(ism_plots.df) + 
         ggtitle("ISM redundancy") +
-        geom_bar(aes(x = ism_type, fill = ism_bin), color = "black", width = 0.5) +
-        geom_text(aes(x = ism_type, label = after_stat(count)), stat = "count", vjust = -1) +
+        geom_bar(aes(x = ism_type, y = n, fill = ism_bin), stat= "identity", color = "black", width = 0.5) +
+        geom_text(aes(x = ism_type, label = n), stat = "identity", vjust = -1) +
         scale_y_continuous(breaks = scales::pretty_breaks(6)) +
         scale_fill_brewer("Total ISM \nper reference ID", palette = "Oranges") +
         xlab("ISM per reference transcript") +
@@ -494,7 +518,7 @@ comb_fsm_ism <- dplyr::bind_rows(fsm, ism)
 
 comb_redund.df <- comb_fsm_ism %>% 
   dplyr::group_by(filter, associated_transcript) %>% 
-  dplyr::summarize(total_tr = dplyr::n()) %>% 
+  dplyr::summarize(total_tr = dplyr::n(),.groups = "drop") %>% 
   dplyr::filter(total_tr > 0) %>% 
   dplyr::mutate(tr_type = ifelse(total_tr == 1, 
                                   yes = "Unique", no = "Multiple") %>% 
