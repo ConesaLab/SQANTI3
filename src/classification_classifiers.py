@@ -375,6 +375,9 @@ def novelIsoformsKnownGenes(isoforms_hit, trec, junctions_by_chr, junctions_by_g
     # or tss_diff and tts_diff (always set to "NA" for non-FSM/ISM matches)
     
     isoforms_hit.transcripts = ["novel"]
+    isoforms_hit.refLen = "NA"
+    isoforms_hit.refExons = "NA"
+
     if len(ref_genes) == 1:
         # hits exactly one gene, must be either NIC or NNC
         ref_gene_junctions = junctions_by_gene[ref_genes[0]]
