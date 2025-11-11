@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+addopts = "-v --tb=long"
+collect_ignore = [
+    "test/test_argparser.py",
+    "test/integration/test_tusco.py",
+    "test/unit/test_computations.py",
+]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+]
