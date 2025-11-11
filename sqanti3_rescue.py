@@ -9,7 +9,6 @@ __author__  = "angeles.arzalluz@gmail.com"
 
 ## Module import
 import os
-import sys
 
 import pandas as pd
 
@@ -25,10 +24,9 @@ from src.rescue_steps import (
   run_candidate_mapping, run_rules_rescue, run_ML_rescue,
   save_rescue_results
 )
-from src.utilities.rescue import sq_requant
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
-
+from src.utilities.rescue.sq_requant import parse_files, run_requant, to_tpm
 
 def main():
   art_logger.info(rescue_art())
@@ -81,8 +79,9 @@ def main():
     if args.strategy == "ml":
       message("Rescue-by-mapping for ML filter",rescue_logger)
       # run ML-specific steps of rescue
-      run_ML_rescue(args.filter_class, args.refClassif,
-                              args.dir, args.output, args.random_forest, args.threshold)
+      inclusion_list, rescue_df = run_ML_rescue(class_df, args.refClassif, hits_df, rescue_df,
+                                                inclusion_list, args.dir, args.output, 
+                                                args.random_forest, args.threshold)
 
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome
@@ -91,7 +90,7 @@ def main():
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
       inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
-                                                  inclusion_list,args.dir, args.output, args.json_filter)
+                                                   inclusion_list,args.dir, args.json_filter)
 
 
     # Finish print if output exists (same for rules and ML) ####
@@ -121,13 +120,13 @@ def main():
   if args.requant:  
     message("Running requantification.",rescue_logger)
     #TODO: Make this take the variables from python directly
-    counts_df = sq_requant.parse_files(args.counts)
+    counts_df = parse_files(args.counts)
     rescue_logger.info("Counts file parsed.")
-    requant_df = sq_requant.run_requant(counts_df, rescue_df, class_df, prefix)
+    requant_df = run_requant(counts_df, rescue_df, class_df, prefix)
     rescue_logger.info("Requantification of counts completed.")
     rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
     # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
-    sq_requant.to_tpm(requant_df,rescue_class, prefix)
+    to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
 
 ## Run main()

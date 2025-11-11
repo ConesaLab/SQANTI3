@@ -12,8 +12,7 @@ from src.utilities.rescue.automatic_rescue import (
     rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
-    get_good_transcripts, get_rescue_gene_targets,
-    get_rescue_reference_targets, read_classification
+    get_rescue_gene_targets, get_rescue_reference_targets, read_classification
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
@@ -38,8 +37,8 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
-       save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),classif_df,prefix)
-       return
+       rescue_df = save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),classif_df,prefix)
+       return pd.DataFrame(columns=['isoform']), rescue_df
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
     for ref_id in lost_ref:
@@ -144,6 +143,9 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
 
     # make file names
     candidate_filt = filter_transcriptome(corrected_isoforms,candidates_list)
+    if len(candidate_filt) == 0:
+        rescue_logger.wartning("No rescue candidates found in the supplied long read transcriptome FASTA (--corrected_isoforms_fasta).")
+        rescue_logger.wartning("Are you sure the file is the correct one? It should be the corrected output from SQANTI3 qc, not filter")
     save_fasta(candidate_filt,candidates_fasta)
     
     #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
@@ -167,10 +169,8 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     return hits_df
 
 ## Run rescue steps specific to rules filter
-def run_rules_rescue(filter_classification, reference_classification, hits_df,
-                     rescue_df, automatic_inclusion_list, out_dir, out_prefix,
-                    json_filter):
-    prefix = f"{out_dir}/{out_prefix}"
+def run_rules_rescue(filter_classification, reference_classification, hits_df, 
+                     rescue_df, automatic_inclusion_list, out_dir, json_filter):
     ## Run rules filter on reference transcriptome
     message("Rules rescue selected!",rescue_logger)
     rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
@@ -187,12 +187,12 @@ def run_rules_rescue(filter_classification, reference_classification, hits_df,
     # Filenames
     ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
     inclusion_list, rescue_df = rescue_by_mapping(hits_df,ref_rules,filter_classification, automatic_inclusion_list,
-                                                  rescue_df, prefix,"rules")
+                                                  rescue_df,"rules")
     return inclusion_list, rescue_df
 
 ## Run rescue steps specific to the ML filter
-def run_ML_rescue(filter_classification, reference_classification,
-                  out_dir,out_prefix, random_forest, thr):
+def run_ML_rescue(filter_classification, reference_classification, hits_df, rescue_df,
+                  automatic_inclusion_list, out_dir,out_prefix, random_forest, thr):
     prefix = f"{out_dir}/{out_prefix}"
     ## run pre-trained ML classifier on reference transcriptome
     message("ML rescue selected!",rescue_logger)
@@ -207,11 +207,12 @@ def run_ML_rescue(filter_classification, reference_classification,
     rescue_logger.info("Running rescue-by-mapping for ML filter.")
 
     # input file name
-    mapping_hits = f"{prefix}_rescue_mapping_hits.tsv"
     ref_isoform_predict = f"{prefix}_reference_isoform_predict.tsv"
 
-    rescue_by_mapping(mapping_hits,ref_isoform_predict,filter_classification,
-                        f"{prefix}_automatic_inclusion.tsv",prefix,"ml")
+    inclusion_list, rescue_df = rescue_by_mapping(hits_df,ref_isoform_predict,filter_classification, 
+                                                  automatic_inclusion_list, rescue_df,"ml",thr)
+    
+    return inclusion_list, rescue_df
 
 def concatenate_gtf_files(input_files, output_file):
     """
