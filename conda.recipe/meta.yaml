@@ -91,7 +91,7 @@ requirements:
     - r-tidyr >=1.1
     # Bioconductor packages
     - bioconductor-noiseq >=2.40
-    - bioconductor-busparse >=1.10
+    - bioconductor-busparse >=1.0
     - bioconductor-gviz
     # Other dependencies
     - bx-python >=0.9
