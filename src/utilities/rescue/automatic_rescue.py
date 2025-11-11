@@ -65,7 +65,4 @@ def save_automatic_rescue(inclusion_df,class_df,prefix):
     # header=False,
     # index=False
     # )
-
-    if inclusion_df.iloc[0,0] == "none":
-        rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
     return rescue_table

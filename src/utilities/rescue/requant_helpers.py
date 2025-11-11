@@ -1,6 +1,6 @@
 import pandas as pd
-from sklearn.base import defaultdict
 
+from sklearn.base import defaultdict
 
 def reassign_counts(isoform, old_counts, new_counts, list_of_changed):
     if isoform in new_counts.keys():

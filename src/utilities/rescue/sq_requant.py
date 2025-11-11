@@ -1,10 +1,9 @@
 import pandas as pd
 import warnings
-warnings.filterwarnings("ignore") # TODO: See why pandas raises the warning on copying
+warnings.filterwarnings("ignore") #TODO: See why pandas raises the warning on copying
 
 from collections import defaultdict
 
-from src.module_logging import rescue_logger
 from src.utilities.rescue.requant_helpers import (
     build_artifact_table, export_counts, redistribute_counts, calculate_tpm
 )
@@ -21,7 +20,6 @@ def run_requant(counts, rescue_df, classif_df, prefix):
     old_counts = counts.set_index('transcript_id')['count'].to_dict()
     # Redistribute counts based on the rescue results
     new_counts = redistribute_counts(artifacts_df, classif_df, old_counts)
-    
     return export_counts(old_counts, new_counts, prefix)
 
 def to_tpm(counts_df, class_df, prefix):

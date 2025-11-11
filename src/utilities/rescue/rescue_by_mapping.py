@@ -2,13 +2,20 @@ import pandas as pd
 import numpy as np
 from src.module_logging import rescue_logger
 
-def merge_classifications(reference_rules_path, classif, strategy):
+def merge_classifications(reference_rules_path, classif, strategy, thr = 0.7):
     """Load input data files."""
     
     columns = ["isoform", "filter_result"]
     if strategy == "ml":
+        class_ref = pd.read_csv(reference_rules_path, sep="\t")
+        # Create a filter_result column based on the threshold with Isoform/Artifact respectivelyt
+        class_ref["filter_result"] = np.where(
+            class_ref["POS_MLprob"] >= thr, "Isoform", "Artifact"
+        )
+        
         columns += ["POS_MLprob"]
-    class_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=columns)
+    else: # rules
+        class_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=columns)
     # Add the reference classification to the transcript classification
     class_ref["origin"] = "reference"
     classif["origin"] = "lr_defined"
@@ -89,8 +96,10 @@ def find_reintroduced_transcripts(mapping_hits_filt, automatic_rescue_array):
         (mapping_hits_filt["hit_origin"] == "reference"), "mapping_hit"
     ].unique()
     # TODO: Should we not reintroduce a reference transcript if it is represented by an FSM?
-
-    combined = pd.Series(np.concatenate([automatic_rescue_array, full_rescue_array]))
+    if automatic_rescue_array.empty:
+        combined = pd.Series(full_rescue_array)
+    else:
+        combined = pd.Series(np.concatenate([automatic_rescue_array, full_rescue_array]))
     return combined.drop_duplicates().reset_index(drop=True)
 
 def old_reintroduction(mapping_hits_filt, class_ref, classif, automatic_rescue_df):
@@ -303,9 +312,9 @@ def write_rescue_table(rescue_table, output_prefix):
     rescue_table.to_csv(output_path, sep="\t", index=False)
 
 def rescue_by_mapping(mapping_hits, reference_rules_path, classif, automatic_rescue_list,
-                      rescue_df, output_prefix, strategy):
+                      rescue_df, strategy, thr=0.7):
     # Load data
-    combined_class = merge_classifications(reference_rules_path,classif,strategy)
+    combined_class = merge_classifications(reference_rules_path,classif,strategy,thr)
 
     # Join rules
     mapping_hits = add_filter_results(mapping_hits, combined_class, classif)
