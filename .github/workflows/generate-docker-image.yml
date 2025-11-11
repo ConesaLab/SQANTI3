@@ -3,8 +3,24 @@ name: Docker Image CI
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - 'Dockerfile'
+      - 'src/**'
+      - '*.py'
+      - 'pyproject.toml'
+      - 'SQANTI3.conda_env.yml'
+      - '.github/workflows/generate-docker-image.yml'
+      - '!**.md'
   pull_request:
     branches: [ "master" ]
+    paths:
+      - 'Dockerfile'
+      - 'src/**'
+      - '*.py'
+      - 'pyproject.toml'
+      - 'SQANTI3.conda_env.yml'
+      - '.github/workflows/generate-docker-image.yml'
+      - '!**.md'
 
 jobs:
 

@@ -151,3 +151,4 @@ src/data/module_logger_config.json
 /bugfix
 example/ogs
 test/logs/test_module.log
+src/_version.py
