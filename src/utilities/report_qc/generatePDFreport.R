@@ -105,7 +105,7 @@ generatePDFreport = function()
   print_plot(pSTM_perc.s1)
   print_plot(pSTM.s2)
   print_plot(pSTM_perc.s2)
-
+print_plot
   if (!all(is.na(data.class$iso_exp))){
     print(p8)
     if (!all(is.na(data.FSMISM$iso_exp))){
@@ -486,16 +486,22 @@ generatePDFreport = function()
   
   if (saturation.curves=='True'){
     if (!all(is.na(data.class$FL))) {
-      s <- textGrob("Saturation curves", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
-      grid.arrange(s)
-      print(rar1[[1]])
-      print(rar1[[2]])
-      print(rar2[[1]])
-      print(rar2[[2]])
-      print(rar3[[1]])
-      print(rar3[[2]])
-      print(rar5[[1]])
-      print(rar5[[2]])
+      if (exists("rar1") && exists("rar2") && exists("rar3") && exists("rar5")) {
+        s <- textGrob("Saturation curves", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+        grid.arrange(s)
+        print(rar1[[1]])
+        print(rar1[[2]])
+        print(rar2[[1]])
+        print(rar2[[2]])
+        print(rar3[[1]])
+        print(rar3[[2]])
+        print(rar5[[1]])
+        print(rar5[[2]])
+      } else {
+        cat("Warning: Saturation curve objects (rar1, rar2, rar3, rar5) do not exist. Skipping saturation plots.\n")
+      }
+    } else {
+      cat("Warning: FL data is all NA. Cannot generate saturation curves.\n")
     }
   }
   
