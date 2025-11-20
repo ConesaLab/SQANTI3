@@ -144,23 +144,24 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.info("Filtering reference transcriptome FASTA to only rescue targets.")
 
     # make file names
-    ref_targets = filter_transcriptome(ref_trans_fasta,targets_list)
+    ref_targets, seen_ids = filter_transcriptome(ref_trans_fasta, targets_list)
 
     ## Filter SQ3 transcriptome FASTA to only include target LR transcripts
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
 
     # make file names
-    LR_targets = filter_transcriptome(corrected_isoforms,targets_list)
+    LR_targets, _ = filter_transcriptome(corrected_isoforms, targets_list, exclude_ids=seen_ids)
 
-    ## join both FASTA files
+    ## join both FASTA files and remove duplicates
     all_targets = ref_targets + LR_targets
+
     save_fasta(all_targets,targets_fasta)
 
     ## Filter SQ3 FASTA to include rescue candidates
     rescue_logger.info("Creating rescue candidate FASTA from supplied long read transcriptome fasta (--isoforms)...")
 
     # make file names
-    candidate_filt = filter_transcriptome(corrected_isoforms,candidates_list)
+    candidate_filt, _ = filter_transcriptome(corrected_isoforms, candidates_list)
     save_fasta(candidate_filt,candidates_fasta)
     
     #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
