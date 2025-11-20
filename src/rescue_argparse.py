@@ -43,7 +43,7 @@ def rescue_argparse():
                      \nIf 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
   cc.add_argument("-q","--requant",
                   action="store_true",
-                  help = "Run requantification of the rescued isoforms.")
+                  help = argparse.SUPPRESS)  # Hidden option - kept for potential future use
   # Output options
   co = common.add_argument_group("Output options")
   co.add_argument("-o","--output", 

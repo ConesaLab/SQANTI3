@@ -15,7 +15,7 @@ SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https:/
 SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see preprint https://doi.org/10.1101/2025.08.23.671926.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5.2) (17/11/2025) is **version 5.5.2**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5.3) (17/11/2025) is **version 5.5.3**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
 
 For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
 
