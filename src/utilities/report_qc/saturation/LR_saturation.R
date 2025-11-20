@@ -16,7 +16,8 @@ LR.rarefaction <- function (input, ticks = NULL, rep = 5, samples = 1) {
     simulation <- myticks <- vector("list", length(samples))
     names(simulation) <- names(myticks) <- colnames(data[, samples])
     for (s in 1:length(samples)) {
-        print(paste("sample", s))
+        # Replace NA values with 0
+        #data[is.na(data[, samples[s]]), samples[s]] <- 0
         expand.data <- base::rep(genes, data[, samples[s]])
         if (is.null(ticks)) {
             sticks <- round(length(expand.data) * seq(0.1, 1, 
@@ -28,10 +29,8 @@ LR.rarefaction <- function (input, ticks = NULL, rep = 5, samples = 1) {
         }
         transcripts <- list()
         for (i in 1:length(sticks)) {
-            print(paste("tick", i))
             number = list()
             for (j in 1:rep) {
-                print(paste("rep", j))
                 number[[j]] <- table(sample(expand.data, sticks[i], 
                   replace = FALSE))
             }

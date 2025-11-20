@@ -1,0 +1,4 @@
+superPBID	sample1	sample2
+PB.103698.1	10	15
+PB.103704.2	-5	30
+PB.103705.1	100	-10

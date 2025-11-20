@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser
+from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, FLcount_parser
 from bx.intervals.intersection import IntervalTree
 
 ### reference_parser ###
@@ -249,4 +249,234 @@ def test_parse_TD2_goodORF(corrORF_td2_file, corrORF_file, td2_file):
 
     # Clean up: remove the output file after the test
     os.remove(corrORF_td2_file)
+
+
+### test FLcount_parser and related functions ###
+
+@pytest.fixture
+def fl_count_single_sample():
+    return os.path.join(main_path, "test/test_data/FL_count_single_sample.txt")
+
+@pytest.fixture
+def fl_count_multi_chain():
+    return os.path.join(main_path, "test/test_data/FL_count_multi_chain.txt")
+
+@pytest.fixture
+def fl_count_multi_demux():
+    return os.path.join(main_path, "test/test_data/FL_count_multi_demux.txt")
+
+@pytest.fixture
+def fl_count_with_na():
+    return os.path.join(main_path, "test/test_data/FL_count_with_NA.txt")
+
+@pytest.fixture
+def fl_count_invalid():
+    return os.path.join(main_path, "test/test_data/FL_count_invalid_format.txt")
+
+@pytest.fixture
+def fl_count_float():
+    return os.path.join(main_path, "test/test_data/FL_count_float_values.txt")
+
+@pytest.fixture
+def fl_count_duplicate_ids():
+    return os.path.join(main_path, "test/test_data/FL_count_duplicate_ids.txt")
+
+@pytest.fixture
+def fl_count_negative():
+    return os.path.join(main_path, "test/test_data/FL_count_negative.txt")
+
+@pytest.fixture
+def fl_count_whitespace():
+    return os.path.join(main_path, "test/test_data/FL_count_whitespace.txt")
+
+@pytest.fixture
+def fl_count_large_values():
+    return os.path.join(main_path, "test/test_data/FL_count_large_values.txt")
+
+@pytest.fixture
+def fl_count_empty():
+    return os.path.join(main_path, "test/test_data/FL_count_empty.txt")
+
+# Test 1: Single sample count file
+def test_FLcount_parser_single_sample(fl_count_single_sample):
+    """Test parsing a single sample FL count file"""
+    samples, fl_count_dict = FLcount_parser(fl_count_single_sample)
+    
+    # Should return ['NA'] for single sample
+    assert samples == ['NA']
+    
+    # Check dictionary structure
+    assert len(fl_count_dict) == 5
+    assert fl_count_dict['PB.103698.1'] == 10
+    assert fl_count_dict['PB.103704.2'] == 25
+    assert fl_count_dict['PB.103705.1'] == 5
+    assert fl_count_dict['PB.103707.1'] == 100
+    assert fl_count_dict['PB.103709.3'] == 0
+
+# Test 2: Multi-sample count file (chain-based)
+def test_FLcount_parser_multi_chain(fl_count_multi_chain):
+    """Test parsing a multi-sample chain-based FL count file"""
+    samples, fl_count_dict = FLcount_parser(fl_count_multi_chain)
+    
+    # Check samples
+    assert len(samples) == 2
+    assert 'sample1' in samples
+    assert 'sample2' in samples
+    assert samples == ['sample1', 'sample2']  # Should be sorted
+    
+    # Check dictionary structure for multi-sample
+    assert len(fl_count_dict) == 5
+    
+    # Check specific isoform counts across samples
+    assert fl_count_dict['PB.103698.1']['sample1'] == 10
+    assert fl_count_dict['PB.103698.1']['sample2'] == 15
+    
+    assert fl_count_dict['PB.103704.2']['sample1'] == 25
+    assert fl_count_dict['PB.103704.2']['sample2'] == 30
+    
+    # Test isoform with 0 in one sample
+    assert fl_count_dict['PB.103705.1']['sample1'] == 5
+    assert fl_count_dict['PB.103705.1']['sample2'] == 0
+    
+    assert fl_count_dict['PB.103709.3']['sample1'] == 0
+    assert fl_count_dict['PB.103709.3']['sample2'] == 20
+
+# Test 3: Multi-sample count file (demux-based)
+def test_FLcount_parser_multi_demux(fl_count_multi_demux):
+    """Test parsing a multi-sample demux-based FL count file"""
+    samples, fl_count_dict = FLcount_parser(fl_count_multi_demux)
+    
+    # Check samples
+    assert len(samples) == 2
+    assert 'sample1' in samples
+    assert 'sample2' in samples
+    
+    # Check dictionary structure
+    assert len(fl_count_dict) == 5
+    
+    # Check specific isoform counts
+    assert fl_count_dict['PB.103698.1']['sample1'] == 10
+    assert fl_count_dict['PB.103698.1']['sample2'] == 15
+    
+    # Test isoform with 0 in one sample
+    assert fl_count_dict['PB.103705.1']['sample2'] == 0
+
+# Test 4: Multi-sample with NA values
+def test_FLcount_parser_with_NA(fl_count_with_na):
+    """Test parsing FL count file with NA values (missing isoforms in some samples)"""
+    samples, fl_count_dict = FLcount_parser(fl_count_with_na)
+    
+    # Check samples
+    assert len(samples) == 3
+    assert sorted(samples) == ['sample1', 'sample2', 'sample3']
+    
+    # Check that NA values are converted to 0
+    assert fl_count_dict['PB.103698.1']['sample1'] == 10
+    assert fl_count_dict['PB.103698.1']['sample2'] == 0  # Was NA
+    assert fl_count_dict['PB.103698.1']['sample3'] == 5
+    
+    assert fl_count_dict['PB.103704.2']['sample1'] == 0  # Was NA
+    assert fl_count_dict['PB.103704.2']['sample2'] == 30
+    assert fl_count_dict['PB.103704.2']['sample3'] == 15
+    
+    assert fl_count_dict['PB.103705.1']['sample1'] == 5
+    assert fl_count_dict['PB.103705.1']['sample2'] == 0
+    assert fl_count_dict['PB.103705.1']['sample3'] == 0  # Was NA
+
+# Test 5: Invalid file format
+def test_FLcount_parser_invalid_format(fl_count_invalid):
+    """Test that invalid format raises an exception"""
+    with pytest.raises(Exception) as excinfo:
+        FLcount_parser(fl_count_invalid)
+    assert "Unexpected count file format" in str(excinfo.value)
+
+# Test 6: Float values in count file
+def test_FLcount_parser_float_values(fl_count_float):
+    """Test parsing FL count file with float values"""
+    samples, fl_count_dict = FLcount_parser(fl_count_float)
+    
+    # Should handle float values
+    assert fl_count_dict['PB.103698.1'] == 10.5
+    assert fl_count_dict['PB.103704.2'] == 25.75
+    assert fl_count_dict['PB.103705.1'] == 5.25
+    assert isinstance(fl_count_dict['PB.103698.1'], float)
+
+# Test 7: Check that samples are sorted
+def test_FLcount_parser_samples_sorted(fl_count_multi_chain):
+    """Test that sample names are returned in sorted order"""
+    samples, _ = FLcount_parser(fl_count_multi_chain)
+    assert samples == sorted(samples)
+
+# Test 8: Empty or missing isoforms
+def test_FLcount_parser_missing_isoforms(fl_count_multi_chain):
+    """Test handling when some isoforms might be missing from expected set"""
+    samples, fl_count_dict = FLcount_parser(fl_count_multi_chain)
+    
+    # Check that only the isoforms in the file are present
+    expected_isoforms = {'PB.103698.1', 'PB.103704.2', 'PB.103705.1', 'PB.103707.1', 'PB.103709.3'}
+    assert set(fl_count_dict.keys()) == expected_isoforms
+    
+    # Check that querying non-existent isoform raises KeyError
+    with pytest.raises(KeyError):
+        _ = fl_count_dict['PB.999999.1']
+
+# Test 9: Duplicate isoform IDs
+def test_FLcount_parser_duplicate_ids(fl_count_duplicate_ids):
+    """Test handling of duplicate isoform IDs - should keep last occurrence or sum"""
+    samples, fl_count_dict = FLcount_parser(fl_count_duplicate_ids)
+    
+    # Check that duplicate ID handling doesn't crash
+    # The behavior depends on implementation - either last value or sum
+    assert 'PB.103698.1' in fl_count_dict
+    assert isinstance(fl_count_dict['PB.103698.1'], dict)
+    
+# Test 10: Negative count values
+def test_FLcount_parser_negative_values(fl_count_negative):
+    """Test parsing FL count file with negative values"""
+    samples, fl_count_dict = FLcount_parser(fl_count_negative)
+    
+    # Should handle negative values (though they may be biologically invalid)
+    assert fl_count_dict['PB.103704.2']['sample1'] == -5
+    assert fl_count_dict['PB.103705.1']['sample2'] == -10
+    assert isinstance(fl_count_dict['PB.103704.2']['sample1'], (int, float))
+
+# Test 11: Whitespace handling
+def test_FLcount_parser_whitespace(fl_count_whitespace):
+    """Test that parser preserves leading/trailing whitespace in isoform IDs"""
+    samples, fl_count_dict = FLcount_parser(fl_count_whitespace)
+    
+    # Parser preserves whitespace in isoform IDs (does not strip)
+    assert '  PB.103698.1' in fl_count_dict
+    assert 'PB.103704.2  ' in fl_count_dict
+    assert 'PB.103705.1' in fl_count_dict
+    
+    # Check that counts are correctly parsed
+    assert fl_count_dict['  PB.103698.1']['sample1'] == 10
+    assert fl_count_dict['PB.103704.2  ']['sample2'] == 30
+    assert fl_count_dict['PB.103705.1']['sample1'] == 100
+
+# Test 12: Large count values
+def test_FLcount_parser_large_values(fl_count_large_values):
+    """Test parsing FL count file with very large count values"""
+    samples, fl_count_dict = FLcount_parser(fl_count_large_values)
+    
+    # Should handle large integer values
+    assert fl_count_dict['PB.103698.1']['sample1'] == 1000000
+    assert fl_count_dict['PB.103704.2']['sample2'] == 10000000
+    assert fl_count_dict['PB.103705.1']['sample2'] == 1234567890
+    assert isinstance(fl_count_dict['PB.103705.1']['sample2'], (int, float))
+
+# Test 13: Empty file with only header
+def test_FLcount_parser_empty_file(fl_count_empty):
+    """Test parsing an empty FL count file (only header, no data)"""
+    # Empty file should cause issues with sample list construction
+    # This is an edge case that may not be handled gracefully
+    try:
+        samples, fl_count_dict = FLcount_parser(fl_count_empty)
+        # If it doesn't error, check that dictionary is empty
+        assert len(fl_count_dict) == 0
+    except ValueError:
+        # Parser may fail on empty file - this is acceptable behavior
+        pass
+
 
