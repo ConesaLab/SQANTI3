@@ -1,4 +1,4 @@
-![SQANTI3 logo](https://github.com/ConesaLab/blob/master/src/utilities/data/sqanti3_logo.png?raw=true)
+![SQANTI3 logo](https://github.com/ConesaLab/SQANTI3/blob/master/src/data/2025-4_Logos_AnaConesa_V3_SQANTI3.png)
 
 # SQANTI3
 
