@@ -59,10 +59,7 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     return isoforms_info
 
 def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
-    if not os.path.exists(fl_count):
-        qc_logger.error(f"FL count file {fl_count} does not exist!")
-        sys.exit(1)
-
+    
     qc_logger.info("**** Reading Full-length read abundance files.")
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
     for pbid in fl_count_dict:
