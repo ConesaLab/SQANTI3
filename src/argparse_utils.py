@@ -165,8 +165,8 @@ def qc_args_validation(args):
     valid_dir(args.dir,qc_logger)
     
     # FL counts given
-    if args.FL_count is not None:
-        valid_file(args.FL_count,qc_logger)
+    if args.fl_count is not None:
+        valid_file(args.fl_count,qc_logger)
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
