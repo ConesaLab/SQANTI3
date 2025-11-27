@@ -1,4 +1,4 @@
-# Base image for SQANTI3/v5.5.0 with Ubuntu 22.04
+# Base image for SQANTI3/v5.5.3 with Ubuntu 22.04
 
 # Using ubuntu 22.04
 # Right now edlib doesn't work with python 3.12 which is the default version
@@ -10,8 +10,9 @@
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
 
-# Set the SQANTI3 version to install
-ENV SQANTI3_VERSION="5.5.1"
+# Set the SQANTI3 version to install 
+# Taken from src/config.py
+ENV SQANTI3_VERSION="5.5.3"
 
 LABEL maintainer="pabloati" \
    base_image="ubuntu:22.04" \

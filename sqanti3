@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from src.wrapper_utils import (
-    create_config, run_step, run_step_help,sqanti_path,check_conda
+    create_config, run_step, run_step_help,check_conda
 )
 from src.logging_config import sqanti_art, main_logger
 script_dir = os.path.dirname(os.path.abspath(__file__))
