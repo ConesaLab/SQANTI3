@@ -12,7 +12,8 @@ SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the SQANTI3 version to install 
 # Taken from src/config.py
-ENV SQANTI3_VERSION="5.5.3"
+ARG SQANTI3_VERSION
+ENV SQANTI3_VERSION=${SQANTI3_VERSION}
 
 LABEL maintainer="pabloati" \
    base_image="ubuntu:22.04" \
