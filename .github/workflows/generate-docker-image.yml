@@ -39,4 +39,4 @@ jobs:
         df -h
 
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag sqanti3:$(date +%s)
+      run: bash build_docker.sh
