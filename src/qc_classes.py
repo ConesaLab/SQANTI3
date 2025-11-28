@@ -356,7 +356,7 @@ class myQueryTranscripts:
          'polyA_motif_found':self.polyA_motif_found,
          'ratio_TSS' : self.ratio_TSS
          }
-        for sample,count in self.FL_dict.items():
+        for sample, count in self.FL_dict.items():
             d["FL."+sample] = count
         return d
 

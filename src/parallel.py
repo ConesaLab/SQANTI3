@@ -195,7 +195,7 @@ def combine_split_runs(args, split_dirs):
     fields_junc_cur = headers[0]
     if not args.skipORF:
         write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
-    write_classification_output(isoforms_info, outputClassPath, FIELDS_CLASS)
+    write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
     write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
     #write omitted isoforms if requested minimum reference length is more than 0
     isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
