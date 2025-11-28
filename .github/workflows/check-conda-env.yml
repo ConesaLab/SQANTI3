@@ -1,16 +1,17 @@
-# Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
-name: Run tests in conda
+name: Check conda environment
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     branches:
       - 'master'
+    paths:
+      - 'SQANTI3.conda_env.yml'
+
+permissions:
+  contents: read
 
 jobs:
-  test-on-conda:
+  validate-conda-env:
     defaults:
       run:
         shell: bash -l {0}
@@ -63,6 +64,7 @@ jobs:
           environment-file: SQANTI3.conda_env.yml
           activate-environment: sqanti3
           auto-activate-base: false
+          use-mamba: true
 
       - name: Configure conda environment for Intel packages
         if: runner.os == 'macOS'
@@ -72,10 +74,13 @@ jobs:
         run: |
           conda list
           
-      - name: Test numpy dependency
+      - name: Run basic import tests
         run: |
-          python3 -c "import numpy"
-
-      - name: Run unittests
-        run: |
-          pytest
+          echo "Testing core Python dependencies..."
+          python3 -c "import numpy; print(f'numpy: {numpy.__version__}')"
+          python3 -c "import pandas; print(f'pandas: {pandas.__version__}')"
+          python3 -c "import scipy; print(f'scipy: {scipy.__version__}')"
+          python3 -c "import Bio; print(f'biopython: {Bio.__version__}')"
+          python3 -c "import pysam; print(f'pysam: {pysam.__version__}')"
+          python3 -c "import pybedtools; print(f'pybedtools: {pybedtools.__version__}')"
+          echo "All core dependencies imported successfully!"

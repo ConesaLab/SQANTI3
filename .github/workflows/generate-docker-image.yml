@@ -1,10 +1,12 @@
 name: Docker Image CI
 
 on:
-  push:
-    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+    paths:
+      - 'Dockerfile'
+      - 'build_docker.sh'
+      - '.dockerignore'
 
 jobs:
 
