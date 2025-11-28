@@ -4,10 +4,10 @@ name: Run tests in conda
 on:
   push:
     branches:
-      - 'master'
+      - '*'
   pull_request:
     branches:
-      - 'master'
+      - 'master' # In case someone wants to PR into master (the other branches are PR by us only)
 
 permissions:
   contents: read

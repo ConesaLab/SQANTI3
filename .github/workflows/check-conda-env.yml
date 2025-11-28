@@ -1,11 +1,17 @@
 name: Check conda environment
 
 on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'SQANTI3.conda_env.yml'
   pull_request:
     branches:
       - 'master'
     paths:
       - 'SQANTI3.conda_env.yml'
+  
 
 permissions:
   contents: read
