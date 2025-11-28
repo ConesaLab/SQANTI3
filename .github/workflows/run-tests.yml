@@ -2,6 +2,9 @@
 name: Run tests in conda
 
 on:
+  push:
+    branches:
+      - 'master'
   pull_request:
     branches:
       - 'master'
