@@ -7,6 +7,7 @@ echo "Building SQANTI3 Docker image version ${VERSION}..."
 
 # Build Docker image with version as build argument
 docker build \
+    --no-cache \
     --build-arg SQANTI3_VERSION="${VERSION}" \
     -t anaconesalab/sqanti3:v${VERSION} \
     -t anaconesalab/sqanti3:latest \

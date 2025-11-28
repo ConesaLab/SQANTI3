@@ -1,10 +1,10 @@
 ## Adapted from https://medium.com/@jaredhatfield/publishing-semantic-versioned-docker-images-to-github-packages-using-github-actions-ebe88fa74522
 ## and https://github.com/docker/build-push-action
-name: Docker autogenerate and push to DockerHub when a new release is published
+name: Docker autogenerate and push to DockerHub when a new release is published or updated
 
 on:
   release:
-    types: [published]
+    types: [published, edited]
 
 jobs:
   build-and-push-docker:
