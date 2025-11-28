@@ -1,5 +1,5 @@
 # Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
-name: Run tests in conda
+name: Run tests suite of SQANTI3
 
 on:
   push:
@@ -75,7 +75,7 @@ jobs:
           activate-environment: sqanti3
           auto-activate-base: false
           use-mamba: true
-          conda-pkgs-dirs: ~/conda_pkgs_dir
+          pkgs-dirs: ~/conda_pkgs_dir
 
       - name: Configure conda environment for Intel packages
         if: runner.os == 'macOS'
