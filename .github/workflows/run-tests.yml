@@ -58,28 +58,15 @@ jobs:
         if: runner.os == 'macOS'
         run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
 
-      - name: Cache conda packages
-        uses: actions/cache@v4
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v1
         with:
-          path: ~/conda_pkgs_dir
-          key: ${{ runner.os }}-conda-${{ hashFiles('SQANTI3.conda_env.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-conda-
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.1.1
-        with:
-          miniconda-version: 'latest'
-          channels: conda-forge,bioconda,anaconda,r,defaults
           environment-file: SQANTI3.conda_env.yml
-          activate-environment: sqanti3
-          auto-activate-base: false
-          use-mamba: true
-          pkgs-dirs: ~/conda_pkgs_dir
-
-      - name: Configure conda environment for Intel packages
-        if: runner.os == 'macOS'
-        run: conda config --env --set subdir osx-64
+          environment-name: sqanti3
+          cache-environment: true
+          cache-downloads: true
+          # Automatically uses the correct paths and handles caching
+          init-shell: bash
 
       - name: List conda packages
         run: |
