@@ -46,7 +46,7 @@ jobs:
           # CACHING SETTINGS
           cache-environment: false
           cache-downloads: true
-          cache-environment-key: "env-ubuntu-${{ hashFiles('SQANTI3.conda_env.yml') }}"
+          #cache-environment-key: "env-ubuntu-${{ hashFiles('SQANTI3.conda_env.yml') }}"
           post-cleanup: 'all'
 
       - name: List conda packages
