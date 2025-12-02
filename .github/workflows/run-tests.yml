@@ -1,5 +1,5 @@
 # Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
-name: Run tests suite of SQANTI3
+name: Run tests in conda
 
 on:
   push:
@@ -62,11 +62,17 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: SQANTI3.conda_env.yml
-          environment-name: sqanti3
+          activate-environment: sqanti3
+          auto-activate-base: false
           cache-environment: true
-          cache-downloads: true
-          # Automatically uses the correct paths and handles caching
-          init-shell: bash
+          cache-environment-key: "env-${{ runner.os}}-${{ hashFiles('SQANTI3.conda_env.yml') }}"
+          post-cleanup: 'all'
+          use-mamba: true
+          conda-pkgs-dirs: ~/conda_pkgs_dir
+
+      - name: Configure conda environment for Intel packages
+        if: runner.os == 'macOS'
+        run: conda config --env --set subdir osx-64
 
       - name: List conda packages
         run: |
