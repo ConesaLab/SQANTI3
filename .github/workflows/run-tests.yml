@@ -72,7 +72,7 @@ jobs:
 
       - name: List conda packages
         run: |
-          conda list
+          micromamba list
           
       - name: Test numpy dependency
         run: |
