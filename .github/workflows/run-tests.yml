@@ -17,19 +17,14 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       # --- ADDED STEPS TO FREE DISK SPACE ---
-      - name: Clean up disk space (Linux)
-        if: runner.os == 'Linux'
+      - name: Clean up disk space
         run: |
           echo "Initial free space:"
           df -h
@@ -40,23 +35,7 @@ jobs:
           sudo docker image prune -a -f
           echo "Space after cleanup:"
           df -h
-
-      - name: Clean up disk space (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          echo "Initial free space:"
-          df -h
-          # Remove large, non-essential tools. Adjust as needed.
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/local/share/dotnet
-          sudo rm -rf ~/Library/Caches/pip
-          echo "Space after cleanup:"
-          df -h
       # --- END OF ADDED STEPS ---
-
-      - name: Set CONDA_SUBDIR for macOS Intel packages
-        if: runner.os == 'macOS'
-        run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
 
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v1
@@ -66,8 +45,7 @@ jobs:
           environment-name: sqanti3 
           # CACHING SETTINGS
           cache-environment: true
-          # We keep the arch/os keys for safety
-          cache-environment-key: "env-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('SQANTI3.conda_env.yml') }}"
+          cache-environment-key: "env-ubuntu-${{ hashFiles('SQANTI3.conda_env.yml') }}"
           post-cleanup: 'all'
 
       - name: List conda packages
