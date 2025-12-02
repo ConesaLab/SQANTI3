@@ -44,7 +44,8 @@ jobs:
           # RENAMED: 'activate-environment' -> 'environment-name'
           environment-name: sqanti3 
           # CACHING SETTINGS
-          cache-environment: true
+          cache-environment: false
+          cache-downloads: true
           cache-environment-key: "env-ubuntu-${{ hashFiles('SQANTI3.conda_env.yml') }}"
           post-cleanup: 'all'
 
