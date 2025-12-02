@@ -62,13 +62,13 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: SQANTI3.conda_env.yml
-          activate-environment: sqanti3
-          auto-activate-base: false
+          # RENAMED: 'activate-environment' -> 'environment-name'
+          environment-name: sqanti3 
+          # CACHING SETTINGS
           cache-environment: true
-          cache-environment-key: "env-${{ runner.os}}-${{ hashFiles('SQANTI3.conda_env.yml') }}"
+          # We keep the arch/os keys for safety
+          cache-environment-key: "env-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('SQANTI3.conda_env.yml') }}"
           post-cleanup: 'all'
-          use-mamba: true
-          conda-pkgs-dirs: ~/conda_pkgs_dir
 
       - name: List conda packages
         run: |
