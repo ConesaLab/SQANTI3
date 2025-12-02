@@ -12,10 +12,11 @@ from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_fo
 from src.config import FIELDS_CLASS
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_pickle_filename, rename_novel_genes 
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes 
 from src.qc_output import (
     cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
+
 # TODO: Create a special logging for the parallelization, to handle the individual logs of the splits into  their own files
 
 def get_split_dir(outdir,prefix):
@@ -152,18 +153,22 @@ def combine_split_runs(args, split_dirs):
     """
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
-
+    
+    if args.isoform_hits is not None:
+        isoform_hits = open(get_isoform_hits_name(args.dir, args.output)+'_tmp', 'w')
     if not args.skipORF:
         f_faa = open(corrORF, 'w')
     f_fasta = open(corrFASTA, 'w')
     f_gtf = open(corrGTF, 'w')
     f_junc_temp = open(outputJuncPath+"_tmp", "w")
+    
     isoforms_info = {}
     headers = []
     for i,split_d in enumerate(split_dirs):
         _gtf, _, _fasta, _orf , _ = get_corr_filenames(split_d,args.output)
         _, _junc = get_class_junc_filenames(split_d,args.output)
         _info = get_pickle_filename(split_d,args.output)
+
         if not args.skipORF:
             with open(_orf) as h: f_faa.write(h.read())
         with open(_gtf) as h: f_gtf.write(h.read())
@@ -174,6 +179,15 @@ def combine_split_runs(args, split_dirs):
             else:
                 h.readline()
             f_junc_temp.write(h.read())
+
+        if args.isoform_hits is not None:
+            _iso_hits = f"{get_isoform_hits_name(split_d, args.output)}_tmp"
+            with open(_iso_hits) as h:
+                if i == 0:
+                    isoform_hits.write(h.readline())
+                else: # skip the header line
+                    h.readline()
+                isoform_hits.write(h.read())
         # Retrieving the isoform object and the junctions header
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
@@ -200,13 +214,13 @@ def combine_split_runs(args, split_dirs):
     #write omitted isoforms if requested minimum reference length is more than 0
     isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
                                             args.min_ref_len, args.is_fusion, fields_class_cur)
-    cleanup(outputClassPath, outputJuncPath)
     #isoform hits to file if requested
     if args.isoform_hits:
         write_isoform_hits(args.dir, args.output, isoforms_info)
 
     if not args.skipORF:
         f_faa.close()
+    cleanup(outputClassPath, outputJuncPath)
 
     if args.report != 'skip':
         generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
