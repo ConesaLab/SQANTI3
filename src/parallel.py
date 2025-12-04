@@ -180,7 +180,7 @@ def combine_split_runs(args, split_dirs):
                 h.readline()
             f_junc_temp.write(h.read())
 
-        if args.isoform_hits is not None:
+        if args.isoform_hits:
             _iso_hits = f"{get_isoform_hits_name(split_d, args.output)}_tmp"
             with open(_iso_hits) as h:
                 if i == 0:
