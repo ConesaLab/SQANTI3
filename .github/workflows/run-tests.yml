@@ -1,0 +1,62 @@
+# Based on https://www.leahwasser.com/how-to-setup-testing-python-environments-github-actions
+name: Run tests in conda
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - 'master' # In case someone wants to PR into master (the other branches are PR by us only)
+
+permissions:
+  contents: read
+
+jobs:
+  test-on-conda:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- ADDED STEPS TO FREE DISK SPACE ---
+      - name: Clean up disk space
+        run: |
+          echo "Initial free space:"
+          df -h
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo docker image prune -a -f
+          echo "Space after cleanup:"
+          df -h
+      # --- END OF ADDED STEPS ---
+
+      - name: Setup Micromamba
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: SQANTI3.conda_env.yml
+          # RENAMED: 'activate-environment' -> 'environment-name'
+          environment-name: sqanti3 
+          # CACHING SETTINGS
+          cache-environment: false
+          cache-downloads: true
+          #cache-environment-key: "env-ubuntu-${{ hashFiles('SQANTI3.conda_env.yml') }}"
+          post-cleanup: 'none'
+
+      - name: List conda packages
+        run: |
+          micromamba list
+          
+      - name: Test numpy dependency
+        run: |
+          python3 -c "import numpy"
+
+      - name: Run unittests
+        run: |
+          pytest
