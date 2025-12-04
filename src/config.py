@@ -2,7 +2,7 @@ import os, re
 
 #__author__  = "etseng@pacb.com"
 __author__ = "pablo.atienza@csic.es"
-__version__ = '5.5.3'  # Python 3.7
+__version__ = '5.5.4'  # Python 3.7
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
