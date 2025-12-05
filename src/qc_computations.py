@@ -1,6 +1,4 @@
 from collections import defaultdict
-import os
-import sys
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts

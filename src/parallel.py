@@ -154,7 +154,7 @@ def combine_split_runs(args, split_dirs):
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
     
-    if args.isoform_hits is not None:
+    if args.isoform_hits:
         isoform_hits = open(get_isoform_hits_name(args.dir, args.output)+'_tmp', 'w')
     if not args.skipORF:
         f_faa = open(corrORF, 'w')
@@ -217,6 +217,7 @@ def combine_split_runs(args, split_dirs):
     #isoform hits to file if requested
     if args.isoform_hits:
         write_isoform_hits(args.dir, args.output, isoforms_info)
+        isoform_hits.close()
 
     if not args.skipORF:
         f_faa.close()
