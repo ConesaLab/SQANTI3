@@ -377,7 +377,6 @@ def FLcount_parser(fl_count_filename):
             
             # Reset pointer to the start of the header line
             f.seek(pos)
-            
             # 2. Detect delimiter (comma vs tab)
             # Read a sample chunk to sniff the dialect
             sample_chunk = f.read(2048)
@@ -387,7 +386,6 @@ def FLcount_parser(fl_count_filename):
                 dialect = csv.Sniffer().sniff(sample_chunk)
                 delimiter = dialect.delimiter
             except csv.Error:
-                # Fallback if Sniffer fails (e.g. simple files)
                 if '\t' in line:
                     delimiter = '\t'
                 else:
@@ -395,8 +393,6 @@ def FLcount_parser(fl_count_filename):
             
             # 3. Read using DictReader with detected delimiter
             reader = csv.DictReader(f, delimiter=delimiter)
-            
-            # Get headers
             headers = reader.fieldnames
             if not headers or len(headers) < 2:
                 # We need at least 1 ID column and 1 Sample column
@@ -412,7 +408,7 @@ def FLcount_parser(fl_count_filename):
 
             # 5. Parse rows
             for row in reader:
-                pbid = row[id_col_name]
+                pbid = row.get(id_col_name)
                 
                 if is_single_sample:
                     # Single Sample Mode: Flat dictionary {id: count}
