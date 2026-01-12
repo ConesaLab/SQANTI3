@@ -60,26 +60,28 @@ def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
 
     qc_logger.info("**** Reading Full-length read abundance files.")
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
-    for pbid in fl_count_dict:
-        if pbid not in isoforms_info:
-            qc_logger.warning(f"{pbid} found in FL count file but not in input fasta.")
+    n = 0
     if len(fl_samples) == 1: # single sample from PacBio
         qc_logger.info("Single-sample PacBio FL count format detected.")
-        for iso in isoforms_info:
-            if iso in fl_count_dict:
-                isoforms_info[iso].FL = fl_count_dict[iso]
+        for iso, obj in isoforms_info.items():
+            count = fl_count_dict.get(iso)
+            if count is not None:
+                obj.FL = count
             else:
-                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
-                isoforms_info[iso].FL = 0
+                n += 1
+                obj.FL = 0
     else: # multi-sample
         qc_logger.info("Multi-sample PacBio FL count format detected.")
-        fields_class_cur = fields_class_cur + ["FL."+s for s in fl_samples]
-        for iso in isoforms_info:
-            if iso in fl_count_dict:
-                isoforms_info[iso].FL_dict = fl_count_dict[iso]
+        fields_class_cur.extend(f"FL.{s}" for s in fl_samples)
+        for iso, obj in isoforms_info.items():
+            count = fl_count_dict.get(iso)
+            if count is not None:
+                obj.FL_dict = count
             else:
-                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
-                isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
+                n += 1
+                obj.FL_dict = defaultdict(int)
+    if n > 0:
+        qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")
     return isoforms_info, fields_class_cur
 
 def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFASTA,cpus):
