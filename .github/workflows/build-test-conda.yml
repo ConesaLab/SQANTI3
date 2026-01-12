@@ -18,6 +18,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Cleanup Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          docker system prune -af
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3.1.1
         with:
