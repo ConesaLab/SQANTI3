@@ -769,7 +769,7 @@ PolyA Distance Analysis
 -->
 
 ```{r , eval = exists("p.polyA_dist") || exists("p.polyA_dist_subcat")}
-cat ("## PolyA Distance Analysis {.tabset .tabset-fade }", '\n')
+cat ("## PolyA Distance Analysis {.tabset .tabset-fade}", '\n')
 ```
 
 <!-- 1 -->
@@ -801,11 +801,13 @@ datatable(df.polyA_freq,
 
 
 ```{r, eval = exists("p.polyA_dist_subcat")}
-cat ('\n###',"PolyA Distance Analysis by subcategories", '\n')
+cat ('\n###',"PolyA Distance Analysis by subcategories {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat ('\n####',"By FSM/ISM Subcategory" , '\n')
 ggplotly(p.polyA_dist_subcat)%>%
   layout(margin = list(r = 130))
 cat ('\n')
 
+cat ('\n####',"By Non-FSM/ISM Subcategory", '\n')
 ggplotly(p.polyA_dist_subcat.s2)
 
 ```
@@ -835,12 +837,13 @@ CAGE distances analysis
   3.Multi-exonic NIC/NCC
 -->
 
-```{r , eval = !all(is.na(data.class$dist_to_cage_peak))}
-cat ('\n##'," CAGE distances analysis {.tabset .tabset-fade }", '\n')
+```{r , eval = !all(is.na(data.class$dist_to_CAGE_peak))}
+cat ('\n## CAGE distances analysis {.tabset .tabset-fade}', '\n')
 ```
 
 ```{r, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc")}
 cat ('\n###'," Multi-exonic FSM {.tabset .tabset-fade .tabset-dropdown}", '\n')
+
 ```
 
 ```{r, eval = exists("cage_hist_FSM") || exists ("cage_hist_FSM_perc")}
@@ -1119,7 +1122,7 @@ Intra−Priming Quality Check
 <!-- 1 -->
 
 ```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
-cat ('\n###',"By Structural Category", '\n')
+cat ('\n###',"By Structural Category {.tabset .tabset-fade .tabset-dropdown}", '\n')
 render_ggplotly(p30.s1) 
 render_ggplotly(p30.s2)
 render_ggplotly(p30.s3) 

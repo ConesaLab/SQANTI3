@@ -1543,7 +1543,7 @@ if (!all(is.na(data.junction$total_coverage_unique))){
 ##### Distances to CAGE peaks by FSM and ISM
 
 if (!all(is.na(data.class$dist_to_CAGE_peak))) {
-  diff_max=11000     ##diff_max <- max(abs(data.class$dist_to_cage_peak));
+  diff_max=11000     ##diff_max <- max(abs(data.class$dist_to_CAGE_peak));
   diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
   
   breaks_labels <- c("Larger than -200", "-200 to -180","-180 to -160","-160 to -140","-140 to -120",
@@ -1558,7 +1558,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
   #  max_height <- max(max(table(data.class$dist_cage_Cat)), max(table(data.class$dist_cage_Cat)));
   #  max_height <- (max_height %/% 10+1) * 10;
   
-  #  ggplot(data=d.fsm, aes(x=dist_to_cage_peak , fill=structural_category)) +
+  #  ggplot(data=d.fsm, aes(x=dist_to_CAGE_peak , fill=structural_category)) +
   #    geom_density( color="black", size=0.3) + xlim(c(-50,50))+
   #   scale_y_continuous(expand = c(0,0), limits = c(0,max_height))+
   #    mytheme  + facet_wrap(~structural_category , nrow=2)+
@@ -1611,7 +1611,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
       if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
         #diff_max=11000
         #diff_breaks <- c(-(diff_max+1), seq(-200, 100, by = 20), diff_max+1);
-        #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+        #c$dist_to_CAGE_peak[is.na(c$dist_to_CAGE_peak)] <- -11000
         c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
         cage.FSM.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
           geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[1]) +
@@ -1690,7 +1690,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
       if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
         #diff_max=11000
         #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-        #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+        #c$dist_to_CAGE_peak[is.na(c$dist_to_CAGE_peak)] <- -11000
         c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
         cage.ISM.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
           geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[2]) +
@@ -1764,7 +1764,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
       if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
         #diff_max=11000
         #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-        #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+        #c$dist_to_CAGE_peak[is.na(c$dist_to_CAGE_peak)] <- -11000
         c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
         cage.NIC.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
           geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[3]) +
@@ -1840,7 +1840,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
       if (!(dim(c))[1]==0 & !all(is.na(c$dist_to_CAGE_peak))){
         #diff_max=11000
         #diff_breaks <- c(-(diff_max+1), seq(-500, 500, by = 20), diff_max+1);
-        #c$dist_to_cage_peak[is.na(c$dist_to_cage_peak)] <- -11000
+        #c$dist_to_CAGE_peak[is.na(c$dist_to_CAGE_peak)] <- -11000
         c$dist_CAGE_Cat = cut(-(c$dist_to_CAGE_peak), breaks = diff_breaks);
         cage.NNC.s=ggplot(data=subset(c, !is.na(dist_CAGE_Cat)), aes(x=dist_CAGE_Cat , fill=structural_category)) +
           geom_bar(aes(alpha=within_CAGE_peak), color="black", size=0.3,  fill=myPalette[4]) +
@@ -1873,21 +1873,23 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
       }
     }
   }
-  
-  
-  
-  
-
 }
 
-#########
+if (any(is.na(data.class$dist_to_CAGE_peak))){
+  print("hello")
+} else {
+  print("No CAGE peak distance data available")
+}
+
+######
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
     geom_freqpoly(binwidth=1, size=1) +
     scale_color_manual(values = cat.palette)+
     xlab("Distance of polyA motif from 3' end, bp") +
     ylab("Count") +
-    labs(title="Distance of Detected PolyA Motif From 3' end") +
+    labs(title="Distance of Detected PolyA Motif From 3' end",
+         color = "Structural Category") +
     mytheme+
     theme(legend.title=element_blank())
 p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory)) +
@@ -1895,7 +1897,8 @@ p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory))
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
-  labs(title="Distance of Detected PolyA Motif From 3'End \n\nby FSM and ISM Subcategories")+
+  labs(title="Distance of Detected PolyA Motif From 3'End \n\nby FSM and ISM Subcategories",
+         color = "Structural Subcategory") +
   mytheme+
   theme(legend.title=element_blank())
 
@@ -1905,7 +1908,8 @@ p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) 
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
-  labs(title="Distance of Detected PolyA Motif From 3'End \n\nby Non-FSM/ISM  Subcategories")+
+  labs(title="Distance of Detected PolyA Motif From 3'End \n\nby Non-FSM/ISM  Subcategories",
+       color = "Structural Subcategory") +
   mytheme+
   theme(legend.title=element_blank())
 }
@@ -2059,7 +2063,7 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
     t3.Cage$perc <- t3.Cage$count.x / t3.Cage$count.y * 100
     t3.Cage <- subset(t3.Cage, Coverage_Cage=='Has Coverage CAGE');
     t3.Cage$Var <- t3.Cage$Coverage_Cage
-    t3.data.sets[[length(t3.data.sets) + 1]] <- data.class$dist_to_cage_peak
+    t3.data.sets[[length(t3.data.sets) + 1]] <- data.class$dist_to_CAGE_peak
     t3.list[[length(t3.list) + 1]] <- t3.Cage
     p28.a.Cage <- ggplot(t3.Cage, aes(x=structural_category, y=perc)) +
       geom_col(position='dodge', width = 0.7,  size=0.3, fill=myPalette[2] ,color="black") +
@@ -2535,7 +2539,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
   #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.")
 
   #### Now only with cage + isoforms
-  if (!all(is.na(data.class$dist_to_cage_peak))) {
+  if (!all(is.na(data.class$dist_to_CAGE_peak))) {
     ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
     fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
@@ -2781,7 +2785,7 @@ if(as.numeric(X["FSM_per_tr"])==1){
 
 
   #### Now with just isoforms polyA and Cage +
-  if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_cage_peak))) {
+  if (!all(is.na(data.class$polyA_motif)) && !all(is.na(data.class$dist_to_CAGE_peak))) {
     ism_per_transcript_cage_polya=data.ISM[which(!is.na(data.ISM$polyA_motif) & data.ISM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')
     names(ism_per_transcript_cage_polya)[3]<-"ISM_per_tr"
     fsm_per_transcript_cage_polya=data.FSM[which(!is.na(data.FSM$polyA_motif) & data.FSM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n(), .groups='keep')

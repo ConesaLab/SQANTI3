@@ -56,6 +56,7 @@ def star_cmd(cpus,index_dir,files,sample_prefix,compressed):
             'STAR', '--runThreadN', str(cpus), '--genomeDir', index_dir,
             '--readFilesIn'] + files + [
             '--outFileNamePrefix', sample_prefix,
+            #'--outTmpDir ', '/tmp/' + sample_prefix.split('/')[-1] + '_STARtmp/',
             '--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1',
             '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within',
             '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04',
