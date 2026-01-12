@@ -1122,9 +1122,12 @@ Intra−Priming Quality Check
 <!-- 1 -->
 
 ```{r p30, eval=exists("p30.s1") && exists("p30.s2") && exists("p30.s3")}
-cat ('\n###',"By Structural Category {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat('\n###',"By Structural Category {.tabset .tabset-fade .tabset-dropdown}", '\n')
+cat('\n####','FSM and ISM', '\n')
 render_ggplotly(p30.s1) 
+cat ('\n####','NIC and NNC', '\n')
 render_ggplotly(p30.s2)
+cat ('\n####','Other Categories', '\n')
 render_ggplotly(p30.s3) 
 cat ('\n')
 ```
@@ -1167,10 +1170,8 @@ cat ('\n')
 
 ## Features of Bad Quality {.tabset .tabset-fade }
 
-### Quality Control Attributes Across Structural Categories {.tabset .tabset-fade  .tabset-dropdown}
-
 ```{r , eval=exists("p28")}
-cat("#### Quality Control Attributes Across Structural Categories",'\n')
+cat("### Quality Control Attributes Across Structural Categories",'\n')
 ggplotly(p28)%>%
   layout(margin = list(r = 130) , textposition="outside")  %>%
   style(textposition= 'none')
@@ -1178,7 +1179,7 @@ cat ('\n')
 ```
 
 ```{r , eval = exists("p28.RTS")}
-cat("#### RT-switching {.tabset .tabset-fade }")
+cat("### RT-switching ")
 ggplotly(p28.RTS)%>%
   layout(margin = list(r = 130)) %>%
   layout(showlegend = T) %>%
@@ -1187,7 +1188,7 @@ cat ('\n')
 ```
 
 ```{r, eval=exists("p28.SJ")}
-cat("#### Non-Canonical Junctions",'\n')
+cat("### Non-Canonical Junctions",'\n')
 ggplotly(p28.SJ)%>%
   layout(margin = list(r = 130)) %>%
   style(textposition="none")
@@ -1195,7 +1196,7 @@ cat ('\n')
 ```
 
 ```{r ,eval= exists("p28.Cov")}
-cat("#### Splice Junctions Without Short Read Coverage",'\n')
+cat("### Splice Junctions Without Short Read Coverage",'\n')
 ggplotly(p28.Cov)%>%
   layout(margin = list(r = 130)) %>%
   style( textposition="none")
@@ -1203,7 +1204,7 @@ cat ('\n')
 ```
 
 ```{r , eval=exists("p28.NMD")}
-cat("#### Nonsense-Mediated Decay by Structural Category",'\n')
+cat("### Nonsense-Mediated Decay by Structural Category",'\n')
 ggplotly(p28.NMD)%>%
   layout(margin = list(r = 130))%>%
   style(textposition="none")
@@ -1211,6 +1212,23 @@ cat ('\n')
 ```
 
 ## Features of Good Quality {.tabset .tabset-fade }
+
+### Attributes {.tabset .tabset-fade .tabset-dropdown}
+
+```{r , eval=exists("p28.a")}
+cat("#### Good Quality Control Attributes", '\n') 
+ggplotly(p28.a)%>%
+  layout(margin = list(t = 50))%>%
+  style(textposition="none")
+cat ('\n')
+```
+
+```{r, eval=exists("p28.a.ratio.html")}
+cat("#### Ratio TSS", '\n') 
+ggplotly(p28.a.ratio.html)%>%
+  layout(margin = list(t = 130)) 
+cat ('\n')
+```
 
 ### TSS and TTS Support Percentages {.tabset .tabset-fade .tabset-dropdown}
 
@@ -1256,22 +1274,6 @@ ggplotly(p28.a.Cov)%>%
 cat ('\n')
 ```
 
-### Attributes {.tabset .tabset-fade .tabset-dropdown}
-
-```{r , eval=exists("p28.a")}
-cat("#### Good Quality Control Attributes", '\n') 
-ggplotly(p28.a)%>%
-  layout(margin = list(t = 50))%>%
-  style(textposition="none")
-cat ('\n')
-```
-
-```{r, eval=exists("p28.a.ratio.html")}
-cat("#### ratio TSS", '\n') 
-ggplotly(p28.a.ratio.html)%>%
-  layout(margin = list(t = 130)) 
-cat ('\n')
-```
 
 
 <!--

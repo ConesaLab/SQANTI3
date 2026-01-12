@@ -1875,11 +1875,6 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
   }
 }
 
-if (any(is.na(data.class$dist_to_CAGE_peak))){
-  print("hello")
-} else {
-  print("No CAGE peak distance data available")
-}
 
 ######
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
@@ -2348,8 +2343,9 @@ p30.s1 <- ggplot(data=data.FSMISM,
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
-  labs(title="Possible Intra-Priming by Structural Category\n\n",
-       subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
+  labs(title="Possible Intra-Priming by Structural Category\n",
+       subtitle="Percent of genomic 'A's in downstream 20 bp\n",
+       fill= "Subcategory") +
   theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
@@ -2364,8 +2360,9 @@ p30.s2 <- ggplot(data=data.NICNNC,
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
-  labs(title="Possible Intra-Priming by Structural Category\n\n",
-       subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
+  labs(title="Possible Intra-Priming by Structural Category\n",
+       subtitle="Percent of genomic 'A's in downstream 20 bp\n",
+       fill= "Subcategory") +
   theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
@@ -2380,8 +2377,9 @@ p30.s3 <- ggplot(data=data.other,
   mytheme +
   xlab("Structural category") +
   ylab("'A's, %") +
-  labs(title="Possible Intra-Priming by Structural Category\n\n",
-       subtitle="Percent of genomic 'A's in downstream 20 bp\n\n") +
+  labs(title="Possible Intra-Priming by Structural Category\n",
+       subtitle="Percent of genomic 'A's in downstream 20 bp\n",
+       fill = "Subcategory") +
   theme(legend.position="right", legend.title=element_blank()) +
   theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
         axis.ticks.x = element_blank()) +
