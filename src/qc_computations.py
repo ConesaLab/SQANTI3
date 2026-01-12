@@ -62,7 +62,7 @@ def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
     n = 0
     if len(fl_samples) == 1: # single sample from PacBio
-        qc_logger.info("Single-sample PacBio FL count format detected.")
+        qc_logger.info("Single-sample FL count format detected.")
         for iso, obj in isoforms_info.items():
             count = fl_count_dict.get(iso)
             if count is not None:
@@ -71,7 +71,7 @@ def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
                 n += 1
                 obj.FL = 0
     else: # multi-sample
-        qc_logger.info("Multi-sample PacBio FL count format detected.")
+        qc_logger.info("Multi-sample FL count format detected.")
         fields_class_cur.extend(f"FL.{s}" for s in fl_samples)
         for iso, obj in isoforms_info.items():
             count = fl_count_dict.get(iso)
