@@ -15,36 +15,36 @@ from src.utilities.rt_switching import rts
 # Test rts function
 
 @pytest.fixture
-def junction_file():
-    return os.path.join(main_path, "test/test_data/test_junctions.txt")
+def junctions_file():
+    return os.path.join(main_path, "test/test_data/junctions/test_junctions.txt")
 
 @pytest.fixture
 def genome():
-    return os.path.join(main_path, "test/test_data/genome_test.fasta")
+    return os.path.join(main_path, "test/test_data/genome/genome_test.fasta")
 
 @pytest.fixture
 def genome_dict(genome):
     return dict((r.name, r) for r in SeqIO.parse(open(genome), 'fasta'))
 
-def test_result(junction_file,genome,genome_dict):
-    RTS_info = rts([junction_file, genome, "-a"], genome_dict)
+def test_result(junctions_file,genome,genome_dict):
+    RTS_info = rts([junctions_file, genome, "-a"], genome_dict)
     assert RTS_info['PB.137296.2'] == ['junction_1','junction_3']
     assert RTS_info['PB.137356.1'] == ['junction_1']
     # test that should raise and error
     with pytest.raises(KeyError):
         assert RTS_info['PB.103688.1']
 
-def test_result_shared(junction_file,genome,genome_dict):
-    RTS_info = rts([junction_file, genome, "-a"], genome_dict)
+def test_result_shared(junctions_file,genome,genome_dict):
+    RTS_info = rts([junctions_file, genome, "-a"], genome_dict)
     assert RTS_info['PB.124736.2'] == ['junction_3']
     assert RTS_info['PB.124736.3'] == ['junction_5']
 
 ## Test isoforms_info
 @pytest.fixture
 def isoforms_info(genome_dict):
-    isoforms_dict = isoforms_parser(os.path.join(main_path, "test/test_data/test_isoforms.genePred"))
+    isoforms_dict = isoforms_parser(os.path.join(main_path, "test/test_data/isoforms/test_isoforms.genePred"))
 
-    annotation = os.path.join(main_path, "test/test_data/test_reference.gtf")
+    annotation = os.path.join(main_path, "test/test_data/reference/test_reference.gtf")
     refs_1exon_by_chr, refs_exons_by_chr, \
     junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference_parser(annotation,os.path.join(main_path,"test/test_data"),
                                                                                "test",list(genome_dict.keys()))
@@ -59,11 +59,11 @@ def isoforms_info(genome_dict):
 
 @pytest.fixture
 def result_dataframe():
-    return pd.read_csv(os.path.join(main_path,"test/test_data/test_isoforms_classification.tsv"),sep="\t")
+    return pd.read_csv(os.path.join(main_path,"test/test_data/isoforms/test_isoforms_classification.tsv"),sep="\t")
     
 
-def test_isoforms_output(isoforms_info,junction_file,genome,genome_dict,result_dataframe):
-    isoforms_res, _ = process_rts(isoforms_info, junction_file,
+def test_isoforms_output(isoforms_info,junctions_file,genome,genome_dict,result_dataframe):
+    isoforms_res, _ = process_rts(isoforms_info, junctions_file,
                                                    genome,genome_dict,"")
     for _, result in isoforms_res.items():
         expected_row = result_dataframe.loc[result_dataframe["isoform"] == result.isoform]

@@ -1,6 +1,4 @@
 import sys,os,pytest
-import json
-import pandas as pd
 from Bio import SeqIO
 
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -9,12 +7,11 @@ sys.path.insert(0, main_path)
 # filter_isoforms
 @pytest.fixture
 def fasta_file():
-    return os.path.join(main_path, "test", "test_data", "test_isoforms.fasta")
+    return os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms.fasta")
 
 @pytest.fixture
 def fastq_file():
-    return os.path.join(main_path, "test", "test_data", "test_isoforms.fastq")
-
+    return os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms.fastq")
 @pytest.fixture
 def isoform_list():
     return ["PB.3853.1","PB.124830.1","PB.103763.1","PB.103724.1"]
@@ -57,7 +54,7 @@ from src.filter_output import filter_gtf
 
 @pytest.fixture
 def gtf_file():
-    return os.path.join(main_path, "test", "test_data", "test_isoforms.gtf")
+    return os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms.gtf")
 
 def test_filter_gtf(gtf_file, prefix, isoform_list):
     filter_gtf(gtf_file, prefix, isoform_list)
@@ -81,7 +78,7 @@ def test_filter_gtf_empty(gtf_file, prefix):
 from src.filter_output import filter_faa
 @pytest.fixture
 def faa_file():
-    return os.path.join(main_path, "test", "test_data", "TD2_test.faa")
+    return os.path.join(main_path, "test", "test_data", "orfs", "TD2_test.faa")
 
 @pytest.fixture
 def faa_isoform_list():

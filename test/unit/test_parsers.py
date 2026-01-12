@@ -14,7 +14,7 @@ from bx.intervals.intersection import IntervalTree
 @pytest.fixture
 def reference_parser_input():
     data = {
-        "gtf": os.path.join(main_path, "test/test_data/test_reference.gtf"),
+        "gtf": os.path.join(main_path, "test/test_data/reference/test_reference.gtf"),
         "outdir": os.path.join(main_path, "test/test_data"),
         "prefix": "test",
         "genome_dict": {"chr22": "Sequence"},
@@ -130,7 +130,7 @@ def test_reference_parser_correctStartEnds(reference_parser_input):
 
 @pytest.fixture
 def input_file():
-    return os.path.join(main_path, "test/test_data/test_isoforms.genePred")
+    return os.path.join(main_path, "test/test_data/isoforms/test_isoforms.genePred")
 
 def count_lines(filename):
     with open(filename) as f:
@@ -152,7 +152,7 @@ def test_isoforms_parser_sorted(input_file):
 
 @pytest.fixture
 def corrORF_file():
-    return os.path.join(main_path, "test/test_data/corrected_ORF_test.fasta")
+    return os.path.join(main_path, "test/test_data/orfs/corrected_ORF_test.fasta")
 
 def test_parse_corrORF(corrORF_file):
     corrORF = parse_corrORF(corrORF_file)
@@ -201,11 +201,11 @@ MDEGTYIHALNNGLFTLGAPHKEVDEGPSPPEQFTAVKLSDSRITLKSGYGKYLGINSDELVVGHSDAIGPREQWEPVFK
 
 @pytest.fixture
 def td2_file():
-    return os.path.join(main_path, "test/test_data/TD2_test.faa")
+    return os.path.join(main_path, "test/test_data/orfs/TD2_test.faa")
 
 @pytest.fixture
 def corrORF_td2_file():
-    return os.path.join(main_path, "test/test_data/corrORF_td2_test.fasta")
+    return os.path.join(main_path, "test/test_data/orfs/corrORF_td2_test.fasta")
 
 def test_parse_TD2_goodORF(corrORF_td2_file, corrORF_file, td2_file):
     # Ensure the output file doesn't exist before running the function
@@ -258,35 +258,35 @@ def test_parse_TD2_goodORF(corrORF_td2_file, corrORF_file, td2_file):
 
 @pytest.fixture
 def fl_count_single_tsv():
-    return os.path.join(main_path, "test/test_data/fl_count_single_sample.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_single_sample.tsv")
 
 @pytest.fixture
 def fl_count_single_csv():
-    return os.path.join(main_path, "test/test_data/fl_count_single_sample.csv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_single_sample.csv")
 
 @pytest.fixture
 def fl_count_multi_tsv():
-    return os.path.join(main_path, "test/test_data/fl_count_multi_sample.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_multi_sample.tsv")
 
 @pytest.fixture
 def fl_count_multi_csv():
-    return os.path.join(main_path, "test/test_data/fl_count_multi_sample.csv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_multi_sample.csv")
 
 @pytest.fixture
 def fl_count_with_comments():
-    return os.path.join(main_path, "test/test_data/fl_count_with_comments.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_with_comments.tsv")
 
 @pytest.fixture
 def fl_count_with_na():
-    return os.path.join(main_path, "test/test_data/fl_count_with_na.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_with_na.tsv")
 
 @pytest.fixture
 def fl_count_mixed_numeric():
-    return os.path.join(main_path, "test/test_data/fl_count_mixed_numeric.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_mixed_numeric.tsv")
 
 @pytest.fixture
 def fl_count_empty():
-    return os.path.join(main_path, "test/test_data/fl_count_empty.tsv")
+    return os.path.join(main_path, "test/test_data/abundance/fl_count_empty.tsv")
 
 
 def test_FLcount_parser_single_sample_tsv(fl_count_single_tsv):

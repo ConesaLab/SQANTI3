@@ -96,10 +96,10 @@ def test_gtf2genepred(utiltiesPath=utilitiesPath):
         pytest.fail(f"Cannot find executable {gtf2genepred_path}. Abort!")
     # Remove the genePred file and run it again
     try:
-        os.remove(os.path.join(main_path,"test","test_data","test_isoforms.genePred"))
+        os.remove(os.path.join(main_path,"test","test_data","isoforms","test_isoforms.genePred"))
     except FileNotFoundError:
         pass
-    genePred_file = GTF_to_genePred(os.path.join(main_path,"test","test_data","test_isoforms.gtf"))
+    genePred_file = GTF_to_genePred(os.path.join(main_path,"test","test_data","isoforms","test_isoforms.gtf"))
     assert os.path.exists(genePred_file), f"Cannot find genePred file {genePred_file}. Abort!"
     #os.remove(genePred_file)
 

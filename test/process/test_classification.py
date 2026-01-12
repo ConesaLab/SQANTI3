@@ -23,21 +23,21 @@ def data_path():
 
 @pytest.fixture
 def result_dataframe(data_path: str):
-    return pd.read_csv(os.path.join(data_path,"test_isoforms_classification.tsv"),sep="\t")
+    return pd.read_csv(os.path.join(data_path,"isoforms","test_isoforms_classification.tsv"),sep="\t")
 
 @pytest.fixture
 def genome_dict(data_path: str):
-    return dict((r.name, r) for r in SeqIO.parse(open(os.path.join(data_path,"genome_test.fasta")), 'fasta'))
+    return dict((r.name, r) for r in SeqIO.parse(open(os.path.join(data_path,"genome","genome_test.fasta")), 'fasta'))
 
 
 @pytest.fixture
 def reference_data(data_path: str,genome_dict: dict):
-    annotation = os.path.join(data_path,"test_reference.gtf")
+    annotation = os.path.join(data_path,"reference","test_reference.gtf")
     return reference_parser(annotation,data_path,"test",list(genome_dict.keys()))
      
 @pytest.fixture
 def isoform_data(data_path: str):
-    isoform = os.path.join(data_path,"test_isoforms.genePred")
+    isoform = os.path.join(data_path,"isoforms","test_isoforms.genePred")
     isoforms_dict = isoforms_parser(isoform)
     return isoforms_dict
 
