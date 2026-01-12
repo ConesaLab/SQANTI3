@@ -2,9 +2,9 @@ import os
 import sys
 import glob
 import re
+import csv
 
 from collections import defaultdict
-from csv import DictReader
 from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
@@ -179,7 +179,7 @@ def expression_parser(expressionFile):
     exp_all = {}
     ismatrix = False
     for exp_file in exp_paths:
-        reader = DictReader(open(exp_file), delimiter='\t')
+        reader = csv.DictReader(open(exp_file), delimiter='\t')
         # Finds the file format based on the header
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
                 qc_logger.info("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.")
@@ -297,7 +297,7 @@ def FLcount_parser_old(fl_count_filename):
             break
 
 
-    reader = DictReader(f, delimiter=sep)
+    reader = csv.DictReader(f, delimiter=sep)
     count_header = reader.fieldnames
     if type=='SINGLE_SAMPLE':
         if 'count_fl' not in count_header:
@@ -345,16 +345,12 @@ def FLcount_parser_old(fl_count_filename):
 
     return samples, fl_count_dict
 
-
-import sys
-import csv
-
 def FLcount_parser(fl_count_filename):
     """
     Parses a count file to extract isoform counts.
     Automatically detects CSV or TSV format.
     
-    Assumption:
+    Requirements:
     - The 1st column is the Isoform ID (key).
     - All subsequent columns are Samples.
 
@@ -423,14 +419,13 @@ def FLcount_parser(fl_count_filename):
                         fl_count_dict[pbid][sample] = val
 
     except Exception as e:
-        print(f"Error parsing count file {fl_count_filename}: {e}", file=sys.stderr)
+        qc_logger.error(f"Error parsing count file {fl_count_filename}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    samples.sort()
     return samples, fl_count_dict
 
 def _parse_count_value(value):
-    """Helper to convert strings to numbers, handling NA."""
+    """Helper to convert strings to numbers, handling NA or missing values as 0"""
     if value == 'NA':
         return 0
     try:

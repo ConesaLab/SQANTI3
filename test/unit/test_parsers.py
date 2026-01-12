@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser
+from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, FLcount_parser
 from bx.intervals.intersection import IntervalTree
 
 ### reference_parser ###
@@ -252,4 +252,141 @@ def test_parse_TD2_goodORF(corrORF_td2_file, corrORF_file, td2_file):
 
     # Clean up: remove the output file after the test
     os.remove(corrORF_td2_file)
+
+
+### FLcount_parser ###
+
+@pytest.fixture
+def fl_count_single_tsv():
+    return os.path.join(main_path, "test/test_data/fl_count_single_sample.tsv")
+
+@pytest.fixture
+def fl_count_single_csv():
+    return os.path.join(main_path, "test/test_data/fl_count_single_sample.csv")
+
+@pytest.fixture
+def fl_count_multi_tsv():
+    return os.path.join(main_path, "test/test_data/fl_count_multi_sample.tsv")
+
+@pytest.fixture
+def fl_count_multi_csv():
+    return os.path.join(main_path, "test/test_data/fl_count_multi_sample.csv")
+
+@pytest.fixture
+def fl_count_with_comments():
+    return os.path.join(main_path, "test/test_data/fl_count_with_comments.tsv")
+
+@pytest.fixture
+def fl_count_with_na():
+    return os.path.join(main_path, "test/test_data/fl_count_with_na.tsv")
+
+@pytest.fixture
+def fl_count_mixed_numeric():
+    return os.path.join(main_path, "test/test_data/fl_count_mixed_numeric.tsv")
+
+@pytest.fixture
+def fl_count_empty():
+    return os.path.join(main_path, "test/test_data/fl_count_empty.tsv")
+
+
+def test_FLcount_parser_single_sample_tsv(fl_count_single_tsv):
+    samples, fl_count_dict = FLcount_parser(fl_count_single_tsv)
+    
+    # Single sample returns flat dictionary
+    assert len(samples) == 1
+    assert samples[0] == "count_fl"
+    assert len(fl_count_dict) == 5
+    assert fl_count_dict["PB.124830.1"] == 150
+    assert fl_count_dict["PB.103714.1"] == 200
+    assert fl_count_dict["PB.103724.1"] == 50
+    assert fl_count_dict["PB.103781.1"] == 300
+    assert fl_count_dict["PB.23068.2"] == 25
+
+
+def test_FLcount_parser_single_sample_csv(fl_count_single_csv):
+    samples, fl_count_dict = FLcount_parser(fl_count_single_csv)
+    
+    assert len(samples) == 1
+    assert samples[0] == "count_fl"
+    assert len(fl_count_dict) == 5
+    assert fl_count_dict["PB.124830.1"] == 150
+    assert fl_count_dict["PB.103714.1"] == 200
+    assert fl_count_dict["PB.103724.1"] == 50
+
+
+def test_FLcount_parser_multi_sample_tsv(fl_count_multi_tsv):
+    samples, fl_count_dict = FLcount_parser(fl_count_multi_tsv)
+    
+    # Multi-sample returns nested dictionary
+    assert len(samples) == 3
+    assert set(samples) == {"sample1", "sample2", "sample3"}
+    assert len(fl_count_dict) == 5
+    
+    # Check nested structure
+    assert fl_count_dict["PB.124830.1"]["sample1"] == 150
+    assert fl_count_dict["PB.124830.1"]["sample2"] == 200
+    assert fl_count_dict["PB.124830.1"]["sample3"] == 180
+    
+    assert fl_count_dict["PB.103781.1"]["sample1"] == 300
+    assert fl_count_dict["PB.103781.1"]["sample2"] == 280
+    assert fl_count_dict["PB.103781.1"]["sample3"] == 310
+
+
+def test_FLcount_parser_multi_sample_csv(fl_count_multi_csv):
+    samples, fl_count_dict = FLcount_parser(fl_count_multi_csv)
+    
+    assert len(samples) == 3
+    assert set(samples) == {"sample1", "sample2", "sample3"}
+    assert len(fl_count_dict) == 5
+    
+    assert fl_count_dict["PB.103714.1"]["sample1"] == 200
+    assert fl_count_dict["PB.103714.1"]["sample2"] == 220
+    assert fl_count_dict["PB.103714.1"]["sample3"] == 190
+
+
+def test_FLcount_parser_with_comments(fl_count_with_comments):
+    samples, fl_count_dict = FLcount_parser(fl_count_with_comments)
+    
+    # Should skip comment lines and parse correctly
+    assert len(samples) == 1
+    assert len(fl_count_dict) == 3
+    assert fl_count_dict["PB.124830.1"] == 150
+    assert fl_count_dict["PB.103714.1"] == 200
+    assert fl_count_dict["PB.103724.1"] == 50
+
+
+def test_FLcount_parser_with_na_values(fl_count_with_na):
+    samples, fl_count_dict = FLcount_parser(fl_count_with_na)
+    
+    # NA values should be converted to 0
+    assert len(samples) == 3
+    assert fl_count_dict["PB.124830.1"]["sample1"] == 150
+    assert fl_count_dict["PB.124830.1"]["sample2"] == 0  # NA converted to 0
+    assert fl_count_dict["PB.124830.1"]["sample3"] == 180
+    
+    assert fl_count_dict["PB.103724.1"]["sample1"] == 0  # NA converted to 0
+    assert fl_count_dict["PB.103724.1"]["sample2"] == 60
+    assert fl_count_dict["PB.103724.1"]["sample3"] == 55
+
+
+def test_FLcount_parser_mixed_numeric_types(fl_count_mixed_numeric):
+    _, fl_count_dict = FLcount_parser(fl_count_mixed_numeric)
+    
+    # Should handle both int and float values
+    assert fl_count_dict["PB.124830.1"] == 150
+    assert fl_count_dict["PB.103714.1"] == 200.5
+    assert fl_count_dict["PB.103724.1"] == 50
+    assert fl_count_dict["PB.103781.1"] == 300.75
+    
+    # Check types
+    assert isinstance(fl_count_dict["PB.124830.1"], int)
+    assert isinstance(fl_count_dict["PB.103714.1"], float)
+
+
+def test_FLcount_parser_empty_file(fl_count_empty):
+    samples, fl_count_dict = FLcount_parser(fl_count_empty)
+    
+    # Empty file (only header) should return empty dict
+    assert len(samples) == 1
+    assert len(fl_count_dict) == 0
 
