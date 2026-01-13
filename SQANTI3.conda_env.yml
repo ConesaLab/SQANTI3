@@ -39,7 +39,7 @@ dependencies:
   - desalt>=1.5
   - gmap==2024-11-20
   - kallisto==0.48.0
-  - minimap2==2.28-r1209
+  - minimap2==2.28
   - star==2.7.11b
   - slamem>=0.8.5
   
