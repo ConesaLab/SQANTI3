@@ -40,8 +40,8 @@ dependencies:
   - gmap>=2024.11
   - kallisto>=0.48
   - minimap2>=2.28
-  - star>=2.7.11
-  - slamem>=0.8
+  - star>=2.7.11b
+  - slamem>=0.8.5
   
   # R and Bioconductor - major version constraints
   - r>=4.3.0,<4.4

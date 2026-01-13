@@ -24,18 +24,40 @@ jobs:
       - name: Free disk space (remove unneeded packages & Docker images)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get clean
-          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
-          docker rmi $(docker images -q) || true
+          echo "Initial free space:"
           df -h
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo docker image prune -a -f
+          echo "Space after cleanup:"
+          df -h
+
+      - name: Clean up disk space (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "Initial free space:"
+          df -h
+          # Remove large, non-essential tools. Adjust as needed.
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/share/dotnet
+          sudo rm -rf ~/Library/Caches/pip
+          echo "Space after cleanup:"
+          df -h
+      # --- END OF ADDED STEPS ---
+
+      - name: Set CONDA_SUBDIR for macOS Intel packages
+        if: runner.os == 'macOS'
+        run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3.1.1
         with:
           miniconda-version: 'latest'
-          channels: conda-forge,bioconda,anaconda,r,defaults
           environment-file: SQANTI3.conda_env.yml
           activate-environment: sqanti3
           auto-activate-base: false
+
       - name: List conda packages
         run: |
           conda list
