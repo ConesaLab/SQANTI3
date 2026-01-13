@@ -44,7 +44,7 @@ dependencies:
   - slamem>=0.8.5
   
   # R and Bioconductor - major version constraints
-  - r==4.3.3
+  - r>=4.3.3
   - r-biocmanager>=1.30
   - r-caret>=6.0
   - r-dplyr>=1.1
