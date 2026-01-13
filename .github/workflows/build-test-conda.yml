@@ -42,6 +42,6 @@ jobs:
       - name: Test numpy dependency
         run: |
           python3 -c "import numpy"
-      - name: Run unittests
+      - name: Run pytest
         run: |
           pytest

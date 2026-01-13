@@ -6,82 +6,101 @@ channels:
   - r
   - defaults
 dependencies:
-  - argcomplete=3.4.0
-  - bcbio-gff=0.7.1
-  - bedtools=2.31.1
-  - biopython<=1.81
-  - bioconductor-noiseq=2.46.0
-  - bioconductor-busparse=1.16.0
-  - bioconductor-gviz
-  - bx-python=0.11.0
-  - cython=3.0.11
-  - desalt=1.5.6
-  - gffread=0.12.7
-  - gtftools=0.9.0
-  - gmap=2024.11.20
-  - jinja2=3.1.4
-  - kallisto=0.48.0
-  - minimap2=2.28
-  - numpy=1.26.4
-  - openssl=3.4.0
-  - pandas=2.2.3
-  - pandoc=3.5
-  - perl=5.32.1
-  - pip=24.3.1
-  - psutil=6.1.0
-  - pybedtools=0.10.0
-  - pysam=0.22.1
-  - python=3.11.13
-  - r>=4.3.0
-  - r-biocmanager=1.30.25
-  - r-caret=6.0_94
-  - r-dplyr=1.1.4
-  - r-dt=0.33
-  - r-devtools=2.4.5
-  - r-e1071=1.7_16
-  - r-forcats=1.0.0
+  # Core Python - pin major.minor
+  - python>=3.11,<3.12
+  
+  # Core scientific computing - compatible releases
+  - numpy>=1.26,<2.0
+  - scipy>=1.11,<1.12
+  - pandas>=2.2,<2.3
+  - scikit-learn>=1.5,<1.6
+  - seaborn>=0.13,<0.14
+  
+  # Core Python utilities - relaxed pinning
+  - argcomplete>=3.4
+  - cython>=3.0
+  - jinja2>=3.1
+  - psutil>=6.1
+  - pip>=24.0
+  
+  # Bioinformatics tools - major version pin
+  - bcbio-gff>=0.7
+  - bedtools>=2.31
+  - biopython>=1.81,<1.82
+  - bx-python>=0.11
+  - gffread>=0.12
+  - gtftools>=0.9
+  - pybedtools>=0.10
+  - pysam>=0.22,<0.23
+  - samtools>=1.21
+  - seqtk>=1.4
+  
+  # Aligners and mappers - version ranges
+  - desalt>=1.5
+  - gmap>=2024.11
+  - kallisto>=0.48
+  - minimap2>=2.28
+  - star>=2.7.11
+  - slamem>=0.8
+  
+  # R and Bioconductor - major version constraints
+  - r>=4.3.0,<4.4
+  - r-biocmanager>=1.30
+  - r-caret>=6.0
+  - r-dplyr>=1.1
+  - r-dt>=0.33
+  - r-devtools>=2.4
+  - r-e1071>=1.7
+  - r-forcats>=1.0
   - r-ggplot2>=3.4.0
-  - r-ggplotify=0.1.2
-  - r-gridbase=0.4_7
-  - r-gridextra=2.3
-  - r-htmltools=0.5.8.1
-  - r-jsonlite=1.8.9
-  - r-optparse=1.7.5
-  - r-plotly=4.10.4
-  - r-plyr=1.8.9
-  - r-purrr=1.0.2
-  - r-randomForest=4.7
-  - r-rmarkdown=2.29
-  - r-reshape=0.8.9
-  - r-readr=2.1.5
-  - r-scales=1.3.0
-  - r-stringi=1.8.4
-  - r-stringr=1.5.1
-  - r-tibble=3.2.1
-  - r-tidyr=1.3.1
-  - samtools=1.21
-  - scipy<=1.11.4
-  - seqtk=1.4
-  - star=2.7.11b
-  - slamem=0.8.5
-  - seaborn=0.13.2
-  - scikit-learn=1.5.2
-  - pytest=7.4.4
+  - r-ggplotify>=0.1
+  - r-gridbase>=0.4
+  - r-gridextra>=2.3
+  - r-htmltools>=0.5
+  - r-jsonlite>=1.8
+  - r-optparse>=1.7
+  - r-plotly>=4.10
+  - r-plyr>=1.8
+  - r-purrr>=1.0
+  - r-randomforest>=4.7
+  - r-rmarkdown>=2.29
+  - r-reshape>=0.8
+  - r-readr>=2.1
+  - r-scales>=1.3
+  - r-stringi>=1.8
+  - r-stringr>=1.5
+  - r-tibble>=3.2
+  - r-tidyr>=1.3
+  
+  # Bioconductor packages
+  - bioconductor-noiseq>=2.46
+  - bioconductor-busparse>=1.16
+  - bioconductor-gviz
+  
+  # System utilities
+  - openssl>=3.4
+  - pandoc>=3.5
+  - perl>=5.32,<5.33
+  
+  # Testing
+  - pytest>=7.4,<8.0
+  
+  # Pip packages - more flexible
   - pip:
-    - argh==0.31.3
-    - dill==0.3.9
-    - edlib==1.3.9.post1
-    - gffutils==0.13
-    - gtfparse==2.5.0
-    - importlib-metadata==8.5.0
-    - intervaltree==3.1.0
-    - parasail==1.3.4
-    - pdf2image==1.17.0
-    - polars==0.20.31
-    - pyarrow==14.0.2
-    - pyfaidx==0.8.1.3
-    - simplejson==3.19.3
-    - sortedcontainers==2.4.0
-    - ultra-bioinformatics==0.1
-    - zipp==3.21.0
-    - TD2==1.0.6
+    - argh>=0.31
+    - dill>=0.3.9
+    - edlib>=1.3.9
+    - gffutils>=0.13
+    - gtfparse>=2.5
+    - importlib-metadata>=8.5
+    - intervaltree>=3.1
+    - parasail>=1.3
+    - pdf2image>=1.17
+    - polars>=0.20,<0.21
+    - pyarrow>=14.0,<15.0
+    - pyfaidx>=0.8
+    - simplejson>=3.19
+    - sortedcontainers>=2.4
+    - ultra-bioinformatics>=0.1
+    - zipp>=3.21
+    - TD2>=1.0
