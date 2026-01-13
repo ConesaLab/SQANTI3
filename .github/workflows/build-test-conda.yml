@@ -14,10 +14,20 @@ jobs:
     defaults:
       run:
         shell: bash -l {0}
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+      - name: Free disk space (remove unneeded packages & Docker images)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get clean
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc
+          docker rmi $(docker images -q) || true
+          df -h
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3.1.1
         with:
