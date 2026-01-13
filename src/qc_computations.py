@@ -24,27 +24,36 @@ def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extensio
     return isoforms_info, RTS_info
 
 def classify_fsm(isoforms_info):
-    """Classify Full Splice Match (FSM) for each isoform."""
-    geneFSM_dict = defaultdict(list)
-    for iso in isoforms_info:
-        gene = isoforms_info[iso].geneName()
-        geneFSM_dict[gene].append(isoforms_info[iso].structural_category)
-    
-    for iso in isoforms_info:
-        gene = isoforms_info[iso].geneName()
-        if len(geneFSM_dict[gene]) == 1:
-            isoforms_info[iso].FSM_class = "A"
-        elif "full-splice_match" in geneFSM_dict[gene]:
-            isoforms_info[iso].FSM_class = "C"
-        else:
-            isoforms_info[iso].FSM_class = "B"
-    return isoforms_info
+    # Use a dict to track only the count and boolean flag per gene
+    gene_stats = defaultdict(lambda: {"count": 0, "has_FSM": False})
+    for iso in isoforms_info.values():
+        gene = iso.geneName()
+        gene_stats[gene]["count"] += 1
+        
+        # We only need to know if *at least one* FSM exists, not all of them
+        if iso.structural_category == "full-splice_match":
+            gene_stats[gene]["has_FSM"] = True
 
+    # Preclassification of each gene
+    gene_class_map = {}
+    for gene, stats in gene_stats.items():
+        if stats["count"] == 1:
+            gene_class_map[gene] = "A"
+        elif stats["has_FSM"]:
+            gene_class_map[gene] = "C"
+        else:
+            gene_class_map[gene] = "B"
+
+    # Assign class via direct O(1) lookup
+    for iso in isoforms_info.values():
+        iso.FSM_class = gene_class_map[iso.geneName()]
+            
+    return isoforms_info
 def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     qc_logger.info('**** Adding TSS ratio data.')
-    for iso in ratio_TSS_dict:
-        if iso not in isoforms_info:
-            qc_logger.warning(f"Isoform {iso} found in ratio TSS file but not in input FASTA/GTF")
+    # for iso in ratio_TSS_dict:
+    #     if iso not in isoforms_info:
+    #         qc_logger.warning(f"Isoform {iso} found in ratio TSS file but not in input FASTA/GTF")
     for iso in isoforms_info:
         if iso in ratio_TSS_dict:
             if str(ratio_TSS_dict[iso]['return_ratio']) == 'nan':
@@ -52,34 +61,36 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             else:
                 isoforms_info[iso].ratio_TSS = ratio_TSS_dict[iso]['return_ratio']
         else:
-            qc_logger.warning(f"Isoform {iso} not found in ratio TSS file. Assign count as 1.")
-            isoforms_info[iso].ratio_TSS = 1
+            qc_logger.warning(f"Isoform {iso} not found in ratio TSS file. Assigning value as 1.")
+            isoforms_info[iso].ratio_TSS = None
     return isoforms_info
 
 def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
 
     qc_logger.info("**** Reading Full-length read abundance files.")
     fl_samples, fl_count_dict = FLcount_parser(fl_count)
-    for pbid in fl_count_dict:
-        if pbid not in isoforms_info:
-            qc_logger.warning(f"{pbid} found in FL count file but not in input fasta.")
+    n = 0
     if len(fl_samples) == 1: # single sample from PacBio
-        qc_logger.info("Single-sample PacBio FL count format detected.")
-        for iso in isoforms_info:
-            if iso in fl_count_dict:
-                isoforms_info[iso].FL = fl_count_dict[iso]
+        qc_logger.info("Single-sample FL count format detected.")
+        for iso, obj in isoforms_info.items():
+            count = fl_count_dict.get(iso)
+            if count is not None:
+                obj.FL = count
             else:
-                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
-                isoforms_info[iso].FL = 0
+                n += 1
+                obj.FL = 0
     else: # multi-sample
-        qc_logger.info("Multi-sample PacBio FL count format detected.")
-        fields_class_cur = fields_class_cur + ["FL."+s for s in fl_samples]
-        for iso in isoforms_info:
-            if iso in fl_count_dict:
-                isoforms_info[iso].FL_dict = fl_count_dict[iso]
+        qc_logger.info("Multi-sample FL count format detected.")
+        fields_class_cur.extend(f"FL.{s}" for s in fl_samples)
+        for iso, obj in isoforms_info.items():
+            count = fl_count_dict.get(iso)
+            if count is not None:
+                obj.FL_dict = count
             else:
-                qc_logger.warning(f"Isoform {iso} not found in FL count file. Assign count as 0.")
-                isoforms_info[iso].FL_dict = defaultdict(lambda: 0)
+                n += 1
+                obj.FL_dict = defaultdict(int)
+    if n > 0:
+        qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")
     return isoforms_info, fields_class_cur
 
 def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFASTA,cpus):

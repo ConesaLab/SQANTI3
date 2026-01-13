@@ -2,9 +2,9 @@ import os
 import sys
 import glob
 import re
+import csv
 
 from collections import defaultdict
-from csv import DictReader
 from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
@@ -179,7 +179,7 @@ def expression_parser(expressionFile):
     exp_all = {}
     ismatrix = False
     for exp_file in exp_paths:
-        reader = DictReader(open(exp_file), delimiter='\t')
+        reader = csv.DictReader(open(exp_file), delimiter='\t')
         # Finds the file format based on the header
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
                 qc_logger.info("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.")
@@ -254,7 +254,7 @@ def get_fusion_component(fusion_gtf):
 
 
 # TODO: make it less specific
-def FLcount_parser(fl_count_filename):
+def FLcount_parser_old(fl_count_filename):
     """
     :param fl_count_filename: could be a single sample or multi-sample (chained or demux) count file
     :return: list of samples, <dict>
@@ -297,7 +297,7 @@ def FLcount_parser(fl_count_filename):
             break
 
 
-    reader = DictReader(f, delimiter=sep)
+    reader = csv.DictReader(f, delimiter=sep)
     count_header = reader.fieldnames
     if type=='SINGLE_SAMPLE':
         if 'count_fl' not in count_header:
@@ -345,6 +345,96 @@ def FLcount_parser(fl_count_filename):
 
     return samples, fl_count_dict
 
+def FLcount_parser(fl_count_filename):
+    """
+    Parses a count file to extract isoform counts.
+    Automatically detects CSV or TSV format.
+    
+    Requirements:
+    - The 1st column is the Isoform ID (key).
+    - All subsequent columns are Samples.
+
+    :param fl_count_filename: path to the file
+    :return: list of samples, dict
+             - If single sample: dict is {isoform_id: count}
+             - If multi-sample: dict is {isoform_id: {sample_id: count}}
+    """
+    fl_count_dict = {}
+    samples = []
+
+    try:
+        with open(fl_count_filename, 'r') as f:
+            # 1. Skip comments (lines starting with #) to find the header
+            pos = f.tell()
+            line = f.readline()
+            while line and line.startswith('#'):
+                pos = f.tell()
+                line = f.readline()
+            
+            # Reset pointer to the start of the header line
+            f.seek(pos)
+            # 2. Detect delimiter (comma vs tab)
+            # Read a sample chunk to sniff the dialect
+            sample_chunk = f.read(2048)
+            f.seek(pos) # Reset again to read actual data
+            
+            try:
+                dialect = csv.Sniffer().sniff(sample_chunk)
+                delimiter = dialect.delimiter
+            except csv.Error:
+                if '\t' in line:
+                    delimiter = '\t'
+                else:
+                    delimiter = ','
+            
+            # 3. Read using DictReader with detected delimiter
+            reader = csv.DictReader(f, delimiter=delimiter)
+            headers = reader.fieldnames
+            if not headers or len(headers) < 2:
+                # We need at least 1 ID column and 1 Sample column
+                print(f"Error: File {fl_count_filename} must contain at least two columns (ID and Sample).", file=sys.stderr)
+                sys.exit(1)
+
+            # 4. Determine columns dynamically
+            id_col_name = headers[0]      # First column is always ID
+            sample_cols = headers[1:]     # All rest are samples
+            
+            samples = list(sample_cols)
+            is_single_sample = (len(samples) == 1)
+
+            # 5. Parse rows
+            for row in reader:
+                pbid = row.get(id_col_name)
+                
+                if is_single_sample:
+                    # Single Sample Mode: Flat dictionary {id: count}
+                    sample_name = samples[0]
+                    val = _parse_count_value(row[sample_name])
+                    fl_count_dict[pbid] = val
+                else:
+                    # Multi Sample Mode: Nested dictionary {id: {sample: count}}
+                    fl_count_dict[pbid] = {}
+                    for sample in samples:
+                        val = _parse_count_value(row[sample])
+                        fl_count_dict[pbid][sample] = val
+
+    except Exception as e:
+        qc_logger.error(f"Error parsing count file {fl_count_filename}: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    return samples, fl_count_dict
+
+def _parse_count_value(value):
+    """Helper to convert strings to numbers, handling NA or missing values as 0"""
+    if value == 'NA':
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            return 0
 
 def parse_td2_to_dict(td2_faa):
     """

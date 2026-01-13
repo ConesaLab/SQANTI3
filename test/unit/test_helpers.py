@@ -20,17 +20,17 @@ from src.helpers import (
 @pytest.fixture
 def mock_fasta_file():
     """Fixture to return the path to the mock FASTA file."""
-    return Path(main_path,"test","test_data","isoform_mock.fasta")
+    return Path(main_path,"test","test_data","isoforms","isoform_mock.fasta")
 
 @pytest.fixture
 def mock_fastq_file():
     """Fixture to return the path to the mock FASTA file."""
-    return Path(main_path,"test","test_data","isoform_mock.fastq")
+    return Path(main_path,"test","test_data","isoforms","isoform_mock.fastq")
 
 @pytest.fixture
 def mock_gz_file():
     """Fixture to return the path to the mock FASTA file."""
-    return Path(main_path,"test","test_data","isoform_mock.fasta.gz")
+    return Path(main_path,"test","test_data","isoforms","isoform_mock.fasta.gz")
 
 def test_rename_isoform_seqids_fasta(mock_fasta_file):
     # Arrange

@@ -14,12 +14,12 @@ from src.config import  FIELDS_JUNC
 # Test rts function
 
 @pytest.fixture
-def junction_file():
-    return os.path.join(main_path, "test/test_data/test_junctions.txt")
+def junctions_file():
+    return os.path.join(main_path, "test/test_data/junctions/test_junctions.txt")
 
 @pytest.fixture
 def genome():
-    return os.path.join(main_path, "test/test_data/genome_test.fasta")
+    return os.path.join(main_path, "test/test_data/genome/genome_test.fasta")
 
 @pytest.fixture
 def genome_dict(genome):
@@ -27,7 +27,7 @@ def genome_dict(genome):
 
 @pytest.fixture
 def junctions_dicts(genome_dict):
-    annotation = os.path.join(main_path, "test/test_data/test_reference.gtf")
+    annotation = os.path.join(main_path, "test/test_data/reference/test_reference.gtf")
     refs_1exon_by_chr, refs_exons_by_chr, \
         junctions_by_chr, junctions_by_gene, \
             start_ends_by_gene = reference_parser(annotation,os.path.join(main_path,"test/test_data"),
@@ -54,7 +54,7 @@ def isoforms_info(genome_dict,junctions_dicts):
 
 @pytest.fixture
 def result_dataframe():
-    return pd.read_csv(os.path.join(main_path,"test/test_data/test_junctions.txt"),sep="\t")
+    return pd.read_csv(os.path.join(main_path,"test/test_data/junctions/test_junctions.txt"),sep="\t")
 
 def test_initial_junctions(junctions_dicts,genome_dict,result_dataframe):
     outputJuncPath = os.path.join(main_path,"test","test_data","intermediates","junctions_temporal.txt")
@@ -73,7 +73,7 @@ def test_initial_junctions(junctions_dicts,genome_dict,result_dataframe):
     handle_junc = open(outputJuncPath, "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter='\t')
     fout_junc.writeheader()
-    isoforms_dict = isoforms_parser(os.path.join(main_path, "test/test_data/test_isoforms.genePred"))
+    isoforms_dict = isoforms_parser(os.path.join(main_path, "test/test_data/isoforms/test_isoforms.genePred"))
 
     for rec in isoforms_dict["chr22"]:
         write_junction_info(rec,junctions_by_chr,accepted_cannonical_sites,indelsJunc,genome_dict,fout_junc)

@@ -448,7 +448,7 @@ def test_myQueryProteins_validate_input():
 # Mock data for testing
 @pytest.fixture
 def mock_bed_file():
-    return f"{sys.path[0]}/test/test_data/mock_peaks.bed"
+    return f"{sys.path[0]}/test/test_data/bedfiles/mock_peaks.bed"
 
 # Tests for CAGEPeak
 def test_cagepeak_init(mock_bed_file):

@@ -11,7 +11,7 @@ from src.utilities.filter.sqanti3_rules_filter import read_json_rules
 
 ## Reading JSON rules
 @pytest.fixture
-def json_default():    return os.path.join(main_path, "test","test_data","filter_rules.json")
+def json_default():    return os.path.join(main_path, "test","test_data","other","filter_rules.json")
 
 
 def test_read_json_rules(json_default: str):
@@ -114,7 +114,7 @@ from src.utilities.filter.sqanti3_rules_filter import apply_rules
 
 @pytest.fixture
 def classification_df():
-    file = os.path.join(main_path, "test", "test_data", "test_isoforms_classification.tsv")
+    file = os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms_classification.tsv")
     return pd.read_csv(file, sep="\t")
 
 @pytest.fixture
