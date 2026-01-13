@@ -56,6 +56,7 @@ def star_cmd(cpus,index_dir,files,sample_prefix,compressed):
             'STAR', '--runThreadN', str(cpus), '--genomeDir', index_dir,
             '--readFilesIn'] + files + [
             '--outFileNamePrefix', sample_prefix,
+            #'--outTmpDir ', '/tmp/' + sample_prefix.split('/')[-1] + '_STARtmp/',
             '--alignSJoverhangMin', '8', '--alignSJDBoverhangMin', '1',
             '--outFilterType', 'BySJout', '--outSAMunmapped', 'Within',
             '--outFilterMultimapNmax', '20', '--outFilterMismatchNoverLmax', '0.04',
@@ -81,7 +82,7 @@ def star(genome, SR_fofn, output_dir, cpus):
         if not os.path.exists(index_dir_o):
             qc_logger.info('** Running indexing.')
             cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
-            logFile = f"{output_dir}/logs/STAR_idex.log"
+            logFile = f"{output_dir}/logs/STAR_index.log"
             run_command(cmd,qc_logger,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')
     else:

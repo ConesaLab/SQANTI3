@@ -143,6 +143,8 @@ dmypy.json
 #Examples Pablo
 sqanti_qc.out
 /pablo_tests
+/data
+/example
 /wiki
 src/data/module_logger_config.json
 
