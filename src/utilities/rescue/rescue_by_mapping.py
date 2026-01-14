@@ -8,7 +8,7 @@ def merge_classifications(reference_rules_path, classif, strategy, thr = 0.7):
     columns = ["isoform", "filter_result"]
     if strategy == "ml":
         class_ref = pd.read_csv(reference_rules_path, sep="\t")
-        # Create a filter_result column based on the threshold with Isoform/Artifact respectivelyt
+        # Create a filter_result column based on the threshold with Isoform/Artifact respectively
         class_ref["filter_result"] = np.where(
             class_ref["POS_MLprob"] >= thr, "Isoform", "Artifact"
         )
@@ -52,7 +52,8 @@ def select_best_hits(df):
     # Prefer lr_defined over reference
     if (df['hit_origin'] == 'lr_defined').any():
         df = df[df['hit_origin'] == 'lr_defined']
-    # If still more than one, pick one randomly
+    # For now, we are keeping all best hits (in case of ties)
+
     return df
 
 def filter_mapping_hits(mapping_hits, strategy):

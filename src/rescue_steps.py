@@ -144,8 +144,8 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     # make file names
     candidate_filt = filter_transcriptome(corrected_isoforms,candidates_list)
     if len(candidate_filt) == 0:
-        rescue_logger.wartning("No rescue candidates found in the supplied long read transcriptome FASTA (--corrected_isoforms_fasta).")
-        rescue_logger.wartning("Are you sure the file is the correct one? It should be the corrected output from SQANTI3 qc, not filter")
+        rescue_logger.warning("No rescue candidates found in the supplied long read transcriptome FASTA (--corrected_isoforms_fasta).")
+        rescue_logger.warning("Are you sure the file is the correct one? It should be the corrected output from SQANTI3 qc, not filter")
     save_fasta(candidate_filt,candidates_fasta)
     
     #### MAPPING ARTIFACTS (CANDIDATES) WITH MINIMAP2 ####
@@ -245,7 +245,7 @@ def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refG
     
     ## Create new GTF including rescued transcripts #
     output_gtf = write_rescue_gtf(filtered_isoforms_gtf, refGTF, rescued_transcripts.to_list(), prefix)
-    rescue_logger.info(f"Final output GTF written to file:  {prefix}_rescued.gtf")
+    rescue_logger.info(f"Final output GTF written to file:  {output_gtf}")
     
     ## Create new FASTA including rescued transcripts #
     good_transcripts = rescued_class[rescued_class['filter_result'] == 'Isoform']['isoform']
