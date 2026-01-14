@@ -72,18 +72,15 @@ rules <- bind_rows(rules.ref, rules.LR)
 
 # add filter result of mapping hits to entire table
 mapping_hits <- mapping_hits %>%
-  left_join(rules %>%
-                      rename(mapping_hit = "isoform"),
-                    by = "mapping_hit") %>%
+  left_join(rules,
+            by = c("mapping_hit" = "isoform")) %>%
   rename(hit_filter_result = "filter_result")
 
 # add structural categories of candidates to mapping hits table
 mapping_hits <- mapping_hits %>%
-  rename(isoform = "rescue_candidate") %>%
   left_join(classif %>%
                       select(isoform, structural_category),
-                    by = "isoform") %>%
-  rename(rescue_candidate = "isoform") %>%
+                    by = c("rescue_candidate" = "isoform")) %>%
   rename(candidate_structural_category = "structural_category")
 
 
@@ -121,7 +118,7 @@ rescued_mapping_final <- rescued_ref %>%
                     isoform_assoc.tr$associated_transcript)) %>%
   select(mapping_hit) %>%
   rename(ref_transcript = "mapping_hit") %>%
-  unique
+  unique()
 
 # make compatible colnames
 automatic_ref_rescued <- automatic_ref_rescued %>%
@@ -144,25 +141,24 @@ write_tsv(rescued_final,
 
 # find FSM rescued during automatic rescue to add to rescue table
 automatic_fsm <- classif %>%
+  dplyr::filter(associated_transcript %in% automatic_ref_rescued$ref_transcript &
+                  filter_result == "Artifact") %>%
   select(isoform, associated_transcript,
                 structural_category) %>%
-  right_join(automatic_ref_rescued %>% rename(associated_transcript = "ref_transcript"),
-                    by = "associated_transcript") %>%
 # add rules result for automatic rescued references
-  left_join(rules.ref %>% rename(associated_transcript = "isoform"),
-                    by = "associated_transcript") %>%
+  left_join(rules.ref,
+                    by = c("associated_transcript" = "isoform")) %>%
   # and add SAM flag, rescue_result and exclusion_reason columns
   mutate(sam_flag = NA,
                 rescue_result = "rescued_automatic",
                 exclusion_reason = NA) %>%
 # reorder and rename
   rename(rescue_candidate = "isoform",
-                mapping_hit = "associated_transcript",
-                hit_filter_result = "filter_result",
-                candidate_structural_category = "structural_category") %>%
+          mapping_hit = "associated_transcript",
+          hit_filter_result = "filter_result",
+          candidate_structural_category = "structural_category") %>%
   relocate(sam_flag, .after = rescue_candidate) %>%
   relocate(hit_filter_result, .after = mapping_hit)
-
 
 # include final rescue result in mapping hits table
 rescue_table <- mapping_hits %>%
@@ -215,75 +211,71 @@ rescue_table <- rescue_table %>%
 
 # create candidate - best match ID table
 
-    # filter by ML probability (by rescue candidate groups)
+    # filter by only passed hits
     rescue_table.iso <- rescue_table %>%
-      filter(hit_filter_result == "Isoform")
+      dplyr::filter(hit_filter_result == "Isoform")
 
-    # get rescue candidates with clear best match by probability
+    # get rescue candidates with the best hit
     match_unique.ids <- rescue_table.iso %>%
-      filter(n() == 1) %>%
-      select(rescue_candidate, mapping_hit) %>%
-      rename(best_match_id = "mapping_hit")
+      dplyr::group_by(rescue_candidate) %>%
+      dplyr::filter(n() == 1) %>%
+      dplyr::select(rescue_candidate, mapping_hit) %>%
+      dplyr::rename(best_match_id = "mapping_hit") %>%
+      dplyr::ungroup()
 
     # find out which rescue candidates have ambiguity/ties
-    rescue_ties <- rescue_table.iso %>%
-      summarize(matches = n()) %>%
-      filter(matches > 1) %>%
-      select(rescue_candidate) %>% unlist
+    rescue_table.ties <- rescue_table.iso %>%
+      dplyr::group_by(rescue_candidate) %>%
+      dplyr::filter(n() > 1) %>%
+      dplyr::ungroup()
 
-    # run
-    rescue_table.ties <- rescue_table.iso[
-      rescue_table.iso$rescue_candidate %in% rescue_ties,]
 
     # split table for candidates with primary alignments
     # and candidates with no primary alignments
     rescue_table.ties.prim <- rescue_table.ties %>%
-      filter(sam_flag == 0)
+      dplyr::filter(sam_flag == 0)  
 
     # ids of candidate with no primary alignments
-    nonprim <- setdiff(rescue_table.ties$rescue_candidate,
-                rescue_table.ties.prim$rescue_candidate)
-
-    rescue_table.ties.nonprim <- rescue_table.ties[
-      rescue_table.ties$rescue_candidate %in% nonprim,]
+    rescue_table.ties.nonprim <- rescue_table.ties %>%
+      dplyr::filter(!rescue_candidate %in% rescue_table.ties.prim$rescue_candidate)
 
     # get best matches using primary alignments only
     match_tie.ids.prim <- rescue_table.ties.prim %>%
-      group_by(rescue_candidate) %>%
-      summarise(best_match_id = paste(mapping_hit, collapse=","))
+      dplyr::group_by(rescue_candidate) %>%
+      dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
 
     # get best matches using secondary alignments only
     match_tie.ids.nonprim <- rescue_table.ties.nonprim %>%
-      group_by(rescue_candidate) %>%
-      summarise(best_match_id = paste(mapping_hit, collapse=","))
+      dplyr::group_by(rescue_candidate) %>%
+      dplyr::summarise(best_match_id = paste(mapping_hit, collapse=","))
 
     # merge matches
     match_tie.ids <- rbind(match_tie.ids.prim, match_tie.ids.nonprim)
 
     # join match tables
     match_ids <- bind_rows(match_tie.ids,
-                                  match_unique.ids %>% ungroup())
-
+                                  match_unique.ids)
 
 # add match ID column to rescue table
-rescue_table <- rescue_table %>%
-  left_join(match_ids,
+rescue_table <- rescue_table %>% 
+  dplyr::left_join(match_ids, 
                     by = "rescue_candidate")
 
-    # handle match ID col NAs caused by:
-    # unknown best match cases
-    rescue_table <- rescue_table %>%
-      mutate(best_match_id = if_else(best_match_for_candidate == "unknown",
-                                                    true = "unknown",
-                                                    false = best_match_id))
-    # automatic rescue cases
-    rescue_table <- rescue_table %>%
-      mutate(best_match_id = if_else(rescue_result == "rescued_automatic",
-                                                    true = mapping_hit,
-                                                    false = best_match_id))
-
+  # handle match ID col NAs caused by:
+  # unknown best match cases
+  rescue_table <- rescue_table %>% 
+    dplyr::mutate(best_match_id = dplyr::if_else(best_match_for_candidate == "unknown", 
+                                                  true = "unknown", 
+                                                  false = best_match_id))
+  # automatic rescue cases
+  rescue_table <- rescue_table %>% 
+    dplyr::mutate(best_match_id = dplyr::if_else(rescue_result == "rescued_automatic", 
+                                                 true = mapping_hit,
+                                                 false = best_match_id))
+  rescue_table <- rescue_table %>% 
+    dplyr::left_join(classif %>% dplyr::select(isoform, associated_gene),
+                      by = c("rescue_candidate" = "isoform")) 
 # output rescue table
-write_tsv(rescue_table,
-                  file = paste0(opt$dir, "/", opt$output,
-                                "_rescue_table.tsv"))
-
+readr::write_tsv(rescue_table,
+                  file = paste0(opt$dir, "/", opt$output, 
+                                "_full_rescue_table.tsv"))

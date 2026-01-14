@@ -1,11 +1,11 @@
 import os, sys
+import pysam
+import pandas as pd
 
 from Bio import SeqIO
 
 from src.module_logging import rescue_logger
 from src.commands import run_command
-
-
 
 def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     rescue_logger.info("Creating reference transcriptome FASTA from provided GTF (--refGTF).")
@@ -40,8 +40,9 @@ def save_fasta(records, output_fasta):
     with open(output_fasta, 'w') as output_handle:
         SeqIO.write(records, output_handle, 'fasta')
 
-import pysam
-import pandas as pd
+def tags_to_dict(tags):
+    """Convert a list of (tag, value) tuples to a dictionary."""
+    return {tag: value for tag, value in tags}
 
 def process_sam_file(sam_file, output_dir, output_prefix):
     # Define file paths
@@ -52,10 +53,14 @@ def process_sam_file(sam_file, output_dir, output_prefix):
         # Extract candidate-target pairs and alignment type
         data = []
         for read in sam.fetch(until_eof=True):  # Skip header automatically
-            data.append([read.query_name, read.reference_name, read.flag])
+            try:
+                data.append([read.query_name, read.reference_name, read.flag,tags_to_dict(read.tags)['AS']])
+            except KeyError:
+                data.append([read.query_name, read.reference_name, read.flag,0])
 
     # Convert to DataFrame and save as TSV
-    hits_df = pd.DataFrame(data, columns=["candidate", "target", "alignment_type"])
-    hits_df.to_csv(hits_file, sep="\t", index=False, header=False)
+    hits_df = pd.DataFrame(data, columns=["rescue_candidate", "mapping_hit", "alignment_type","alignment_score"])
+    hits_df.to_csv(hits_file, sep="\t", index=False, header=True)
 
-    rescue_logger.info(f"Mapping hit table was saved to {hits_file}")
+    rescue_logger.info(f"Mapping hit table was saved to {hits_file}") 
+    return hits_df
