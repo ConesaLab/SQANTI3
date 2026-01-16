@@ -31,10 +31,11 @@ def parse_rescue_gtf(gtf_file):
     # Load the GTF file into a DataFrame
     df = read_gtf(gtf_file)
     df = df.to_pandas()
-    print(df.columns)
+    print(df.head())
    
-    # Filter rows that contain both 'gene_id' and 'transcript_id'
-    df = df[df['transcript_id'] != ''][['gene_id','transcript_id']]
+    # Filter rows where the feature is transcript
+    df = df[df['feature'] == 'transcript']
+    #df = df[df['transcript_id'] != ''][['gene_id','transcript_id']]
     
     # Group by 'gene_id' and aggregate transcript_ids into lists
     gene_to_transcripts = df.groupby('gene_id')['transcript_id'].apply(list).to_dict()
