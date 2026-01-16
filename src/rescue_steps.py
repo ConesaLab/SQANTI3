@@ -26,11 +26,19 @@ from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
 
 def run_automatic_rescue(classif_df,monoexons,prefix):
     message("Performing automatic rescue",rescue_logger)
-    # Select the FSM and ISM isoforms with more than one exon 
+    # Select the FSM  isoforms with more than one exon 
     rescue_classif = classif_df[
         (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
+    if monoexons != 'none':
+        rescue_classif = pd.concat([
+            rescue_classif,
+            classif_df[
+                (classif_df['structural_category'].isin(['full-splice_match'])) & 
+                (classif_df['exons'] == 1)
+            ]
+        ])
  
     # Find the references that are lost and get the ones that are not represented by isoforms
     lost_ref = get_lost_reference_id(rescue_classif)
@@ -46,17 +54,11 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
 
     # Split into reference transcripts and ISM TODO: Eliminate this step?
     rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
-    # Adding monoexons
-    if monoexons in ['all','fsm']:
-        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
-        auto_inclusion_list = pd.concat([rescue_ref,rescue_fsm_me])
-    else:
-        auto_inclusion_list = rescue_ref
-    rescue_logger.debug(f"Rescued {auto_inclusion_list.shape[0]} transcripts")
+    rescue_logger.debug(f"Rescued {rescue_ref.shape[0]} transcripts")
     
     # Save the automatic rescue
-    rescue_df = save_automatic_rescue(auto_inclusion_list,classif_df,prefix)
-    return auto_inclusion_list.iloc[:,0], rescue_df
+    rescue_df = save_automatic_rescue(rescue_ref,classif_df,prefix)
+    return rescue_ref.iloc[:,0], rescue_df
 
 
 def rescue_candidates(classif_df,monoexons,prefix):
