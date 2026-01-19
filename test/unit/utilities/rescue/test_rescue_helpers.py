@@ -14,8 +14,8 @@ sys.path.insert(0, main_path)
 
 from src.utilities.rescue.rescue_helpers import (
     get_rescue_gene_targets,
-    parse_rescue_gtf,
-    get_rescue_reference_targets
+    get_rescue_reference_targets,
+    identify_rescue_candidates
 )
 
 
@@ -40,9 +40,173 @@ def sample_classification_df():
 
 
 @pytest.fixture
+def extended_classification_df(test_data_dir):
+    """Extended classification DataFrame for comprehensive testing - loaded from file."""
+    file_path = test_data_dir / "extended_classification.tsv"
+    return pd.read_csv(file_path, sep="\t")
+
+
+@pytest.fixture
 def mini_gtf_file(test_data_dir):
     """Return path to mini reference GTF file."""
     return test_data_dir / "reference_mini.gtf"
+
+
+class TestIdentifyRescueCandidates:
+    """Test suite for identify_rescue_candidates function."""
+    
+    def test_nic_artifacts_included(self, extended_classification_df):
+        """NIC artifacts should be included in rescue candidates."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        # PB.2.1 is NIC artifact
+        assert 'PB.2.1' in result['isoform'].values
+    
+    def test_nnc_artifacts_included(self, extended_classification_df):
+        """NNC artifacts should be included in rescue candidates."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        # PB.2.2 is NNC artifact
+        assert 'PB.2.2' in result['isoform'].values
+    
+    def test_ism_with_lost_reference_included(self, extended_classification_df):
+        """ISM with lost reference (no FSM) should be included."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        # PB.3.1 has reference REF5 which has no FSM
+        assert 'PB.3.1' in result['isoform'].values
+        # PB.8.1 has reference REF10 which has no FSM
+        assert 'PB.8.1' in result['isoform'].values
+    
+    def test_ism_with_existing_fsm_excluded(self, extended_classification_df):
+        """ISM with reference that has FSM should be excluded."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        # PB.3.2 has reference REF2 which has FSM (PB.1.2)
+        assert 'PB.3.2' not in result['isoform'].values
+    
+    def test_fsm_excluded(self, extended_classification_df):
+        """FSM transcripts should never be included."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        assert 'PB.1.1' not in result['isoform'].values
+        assert 'PB.1.2' not in result['isoform'].values
+    
+    def test_non_artifacts_excluded(self, extended_classification_df):
+        """Non-artifact NIC/NNC should be excluded."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        # PB.5.1 is NIC but filter_result is 'Isoform'
+        assert 'PB.5.1' not in result['isoform'].values
+        # PB.6.1 is NNC but filter_result is 'Isoform'
+        assert 'PB.6.1' not in result['isoform'].values
+    
+    def test_monoexon_filtering_all(self, extended_classification_df):
+        """With monoexons='all', monoexon candidates should be included."""
+        result = identify_rescue_candidates(extended_classification_df, monoexons='all')
+        
+        # PB.4.1 is ISM artifact with 1 exon
+        assert 'PB.4.1' in result['isoform'].values
+        # PB.7.1 is NIC artifact with 1 exon
+        assert 'PB.7.1' in result['isoform'].values
+    
+    def test_monoexon_filtering_excluded(self, extended_classification_df):
+        """With monoexons != 'all', monoexon candidates should be excluded."""
+        result = identify_rescue_candidates(extended_classification_df, monoexons='fsm')
+        
+        # PB.4.1 is ISM artifact with 1 exon - should be excluded
+        assert 'PB.4.1' not in result['isoform'].values
+        # PB.7.1 is NIC artifact with 1 exon - should be excluded
+        assert 'PB.7.1' not in result['isoform'].values
+        
+        # Multi-exon candidates should still be included
+        assert 'PB.2.1' in result['isoform'].values  # NIC, 2 exons
+        assert 'PB.3.1' in result['isoform'].values  # ISM, 2 exons
+    
+    def test_empty_dataframe(self):
+        """Empty DataFrame should return empty result."""
+        empty_df = pd.DataFrame({
+            'isoform': [],
+            'structural_category': [],
+            'exons': [],
+            'filter_result': [],
+            'associated_transcript': [],
+            'associated_gene': []
+        })
+        
+        result = identify_rescue_candidates(empty_df)
+        
+        assert len(result) == 0
+    
+    def test_no_candidates(self):
+        """DataFrame with no valid candidates should return empty result."""
+        no_candidates_df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2'],
+            'structural_category': ['full-splice_match', 'full-splice_match'],
+            'exons': [2, 3],
+            'filter_result': ['Isoform', 'Isoform'],
+            'associated_transcript': ['REF1', 'REF2'],
+            'associated_gene': ['GENE1', 'GENE2']
+        })
+        
+        result = identify_rescue_candidates(no_candidates_df)
+        
+        assert len(result) == 0
+    
+    def test_only_nic_nnc_artifacts(self):
+        """DataFrame with only NIC/NNC artifacts should return all of them."""
+        nic_nnc_only = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2'],
+            'structural_category': ['novel_in_catalog', 'novel_not_in_catalog'],
+            'exons': [2, 3],
+            'filter_result': ['Artifact', 'Artifact'],
+            'associated_transcript': ['REF1', 'REF2'],
+            'associated_gene': ['GENE1', 'GENE2']
+        })
+        
+        result = identify_rescue_candidates(nic_nnc_only)
+        
+        assert len(result) == 2
+        assert 'PB.1.1' in result['isoform'].values
+        assert 'PB.1.2' in result['isoform'].values
+    
+    def test_result_is_dataframe(self, extended_classification_df):
+        """Result should be a pandas DataFrame."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        assert isinstance(result, pd.DataFrame)
+    
+    def test_result_columns_preserved(self, extended_classification_df):
+        """Result should have same columns as input DataFrame."""
+        result = identify_rescue_candidates(extended_classification_df)
+        
+        if len(result) > 0:
+            assert list(result.columns) == list(extended_classification_df.columns)
+    
+    def test_candidate_count(self, extended_classification_df):
+        """Verify expected number of candidates from extended test data."""
+        result = identify_rescue_candidates(extended_classification_df, monoexons='all')
+        
+        # Expected candidates:
+        # - PB.2.1 (NIC artifact, REF3)
+        # - PB.2.2 (NNC artifact, REF4)
+        # - PB.3.1 (ISM with lost reference REF5)
+        # - PB.4.1 (ISM with lost reference REF6, monoexon)
+        # - PB.7.1 (NIC artifact REF9, monoexon)
+        # - PB.8.1 (ISM with lost reference REF10)
+        assert len(result) == 6
+    
+    def test_candidate_count_no_monoexons(self, extended_classification_df):
+        """Verify expected number of candidates when monoexons are filtered."""
+        result = identify_rescue_candidates(extended_classification_df, monoexons='exclude')
+        
+        # Expected candidates (excluding monoexons):
+        # - PB.2.1 (NIC artifact, REF3, 2 exons)
+        # - PB.2.2 (NNC artifact, REF4, 3 exons)
+        # - PB.3.1 (ISM with lost reference REF5, 2 exons)
+        # - PB.8.1 (ISM with lost reference REF10, 4 exons)
+        assert len(result) == 4
+
 
 class TestGetRescueGeneTargets:
     """Test suite for get_rescue_gene_targets function."""

@@ -11,6 +11,7 @@ from src.utilities.rescue.automatic_rescue import (
     get_lost_reference_id, rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
+    identify_rescue_candidates,
     get_rescue_gene_targets, get_rescue_reference_targets, read_classification
 )
 
@@ -66,30 +67,7 @@ def rescue_candidates(classif_df,monoexons,prefix):
     Selection of rescue candidates from non-FSM artifacts.
     The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
     """
-    # Identify transcripts that have a full-splice_match
-    transcripts_with_fsm = set(
-        classif_df[(classif_df['structural_category'] == 'full-splice_match')]['associated_transcript']
-    )
-
-    # Get NIC and NNC candidates
-    rescue_candidates = classif_df[
-        (classif_df['structural_category'].isin(['novel_in_catalog', 'novel_not_in_catalog'])) &
-        (classif_df['filter_result'] == 'Artifact')
-    ]
-
-    # Get ISM candidates from lost references without FSM
-    lost_ids = get_lost_reference_id(classif_df)
-    
-    ism_candidates = classif_df[
-        (classif_df['structural_category'] == 'incomplete-splice_match') &
-        (classif_df['associated_transcript'].isin(lost_ids)) & 
-        ~classif_df['associated_transcript'].isin(transcripts_with_fsm)
-    ]
-
-    rescue_candidates = pd.concat([rescue_candidates, ism_candidates])
-
-    if monoexons != 'all':
-        rescue_candidates = rescue_candidates[rescue_candidates['exons'] > 1]
+    rescue_candidates = identify_rescue_candidates(classif_df, monoexons)
     
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
