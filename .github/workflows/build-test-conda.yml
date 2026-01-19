@@ -58,6 +58,10 @@ jobs:
           activate-environment: sqanti3
           auto-activate-base: false
 
+      - name: Configure conda environment for Intel packages
+        if: runner.os == 'macOS'
+        run: conda config --env --set subdir osx-64
+
       - name: List conda packages
         run: |
           conda list
