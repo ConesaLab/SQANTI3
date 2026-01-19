@@ -44,9 +44,7 @@ def tags_to_dict(tags):
     """Convert a list of (tag, value) tuples to a dictionary."""
     return {tag: value for tag, value in tags}
 
-def process_sam_file(sam_file, output_dir, output_prefix):
-    # Define file paths
-    hits_file = f"{output_dir}/{output_prefix}_rescue_mapping_hits.tsv"
+def process_sam_file(sam_file):
 
     # Open the SAM file and process it
     with pysam.AlignmentFile(sam_file, "r") as sam:
@@ -58,9 +56,4 @@ def process_sam_file(sam_file, output_dir, output_prefix):
             except KeyError:
                 data.append([read.query_name, read.reference_name, read.flag,0])
 
-    # Convert to DataFrame and save as TSV
-    hits_df = pd.DataFrame(data, columns=["rescue_candidate", "mapping_hit", "alignment_type","alignment_score"])
-    hits_df.to_csv(hits_file, sep="\t", index=False, header=True)
-
-    rescue_logger.info(f"Mapping hit table was saved to {hits_file}") 
-    return hits_df
+    return pd.DataFrame(data, columns=["rescue_candidate", "mapping_hit", "alignment_type","alignment_score"])

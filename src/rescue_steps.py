@@ -144,7 +144,12 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
-    hits_df = process_sam_file(sam_file,out_dir,out_prefix)
+    hits_df = process_sam_file(sam_file)
+    # Save as TSV
+    hits_file = f"{out_dir}/{out_prefix}_rescue_mapping_hits.tsv"
+    hits_df.to_csv(hits_file, sep="\t", index=False, header=True)
+
+    rescue_logger.info(f"Mapping hit table was saved to {hits_file}") 
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
     return hits_df
 
