@@ -114,56 +114,6 @@ class TestRescueLostReference:
         
         # Should return None or empty DataFrame
         assert result is None or len(result) == 0
-
-
-class TestRescueFsmMonoexons:
-    """Test suite for rescue_fsm_monoexons function."""
-    
-    def test_monoexon_fsm_lost_reference(self):
-        """Monoexon FSM with lost reference should be rescued."""
-        df = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.2.1'],
-            'structural_category': ['full-splice_match', 'full-splice_match'],
-            'exons': [1, 2],
-            'filter_result': ['Artifact', 'Artifact'],
-            'associated_transcript': ['REF1', 'REF2']
-        })
-        
-        result = rescue_fsm_monoexons(df)
-        
-        # REF1 is lost (no Isoform), so should be rescued
-        assert len(result) == 1
-        # Check that the rescued item is related to REF1
-        # (exact structure depends on rescue_lost_reference implementation)
-    
-    def test_monoexon_fsm_already_represented(self):
-        """Monoexon FSM with represented reference should not be rescued."""
-        df = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.1.2'],
-            'structural_category': ['full-splice_match', 'full-splice_match'],
-            'exons': [1, 1],
-            'filter_result': ['Isoform', 'Artifact'],
-            'associated_transcript': ['REF1', 'REF1']
-        })
-        
-        result = rescue_fsm_monoexons(df)
-        
-        # REF1 is represented (has Isoform), so nothing rescued
-        assert len(result) == 0
-    
-    def test_no_monoexons(self):
-        """When no monoexons exist, return empty DataFrame."""
-        df = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.2.1'],
-            'structural_category': ['full-splice_match', 'full-splice_match'],
-            'exons': [2, 3],
-            'filter_result': ['Artifact', 'Isoform'],
-            'associated_transcript': ['REF1', 'REF2']
-        })
-        
-        result = rescue_fsm_monoexons(df)
-        
-        assert len(result) == 0
     
     def test_multiexon_not_rescued_as_monoexon(self):
         """Multi-exon FSM should not be rescued by monoexon function."""

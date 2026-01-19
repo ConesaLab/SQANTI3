@@ -20,7 +20,7 @@ def get_rescue_gene_targets(df, rescue_candidates):
     return target_genes
 
 def parse_rescue_gtf(gtf_file):
-    """Parse a GTF file to return a dictionary of gene_id and transcript.
+    """Parse a GTF file to return a dictionary of gene_id and associated transcript_id.
     
     Args:
         gtf_filename (str): Path to GTF file
@@ -29,17 +29,18 @@ def parse_rescue_gtf(gtf_file):
         Dictionary of gene_id and transcript_id
     """
     # Load the GTF file into a DataFrame
-    df = read_gtf(gtf_file)
-    df = df.to_pandas()
-    print(df.head())
+    df = read_gtf(gtf_file).to_pandas()
    
-    # Filter rows where the feature is transcript
-    df = df[df['feature'] == 'transcript']
-    #df = df[df['transcript_id'] != ''][['gene_id','transcript_id']]
+    # 1. Filter rows AND select only needed columns in one step to reduce memory footprint
+    # 2. Use .copy() to avoid SettingWithCopy warnings later
+    subset = df.loc[df['feature'] == 'transcript', ['gene_id', 'transcript_id']].copy()
     
-    # Group by 'gene_id' and aggregate transcript_ids into lists
-    gene_to_transcripts = df.groupby('gene_id')['transcript_id'].apply(list).to_dict()
-    return gene_to_transcripts
+    # 3. Drop rows with missing values (robustness)
+    subset = subset.dropna()
+    
+    # 4. Group by gene_id. 
+    # using .agg(list) is idiomatic and often slightly optimized over .apply(list)
+    return subset.groupby('gene_id')['transcript_id'].agg(list).to_dict()
 
 def get_rescue_reference_targets(ref_gtf, target_genes):
 

@@ -8,21 +8,21 @@ from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    rescue_fsm_monoexons, get_lost_reference_id,
-    rescue_lost_reference, save_automatic_rescue
+    get_lost_reference_id, rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
     get_rescue_gene_targets, get_rescue_reference_targets, read_classification
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
-    filter_transcriptome,
-    process_sam_file,
-    save_fasta
+    filter_transcriptome, process_sam_file, save_fasta
 )
 
 from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
 
+from src.rescue_output import (
+    write_rescue_gtf, write_rescue_fasta
+)
 
 def run_automatic_rescue(classif_df,monoexons,prefix):
     message("Performing automatic rescue",rescue_logger)
