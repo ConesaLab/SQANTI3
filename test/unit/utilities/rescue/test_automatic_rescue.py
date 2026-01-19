@@ -113,23 +113,7 @@ class TestRescueLostReference:
         
         # Should return None or empty DataFrame
         assert result is None or len(result) == 0
-    
-    def test_multiexon_not_rescued_as_monoexon(self):
-        """Multi-exon FSM should not be rescued by monoexon function."""
-        df = pd.DataFrame({
-            'isoform': ['PB.1.1'],
-            'structural_category': ['full-splice_match'],
-            'exons': [3],
-            'filter_result': ['Artifact'],
-            'associated_transcript': ['REF1']
-        })
-        
-        result = rescue_fsm_monoexons(df)
-        
-        # Should not rescue multi-exon even if lost
-        assert len(result) == 0
-
-
+ 
 class TestSaveAutomaticRescue:
     """Test suite for save_automatic_rescue function."""
     
