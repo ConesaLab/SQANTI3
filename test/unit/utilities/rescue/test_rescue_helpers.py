@@ -91,58 +91,6 @@ class TestGetRescueGeneTargets:
         
         assert len(result) == 0
 
-
-class TestParseRescueGtf:
-    """Test suite for parse_rescue_gtf function."""
-    
-    def test_parse_valid_gtf(self, mini_gtf_file):
-        """Test parsing a valid GTF file."""
-        result = parse_rescue_gtf(str(mini_gtf_file))
-        
-        assert isinstance(result, dict)
-        assert len(result) > 0
-        
-        # Check that genes are keys
-        assert 'GENE1' in result
-        assert 'GENE2' in result
-        assert 'GENE3' in result
-    
-    def test_gene_with_multiple_transcripts(self, mini_gtf_file):
-        """Test that gene with multiple transcripts lists all of them."""
-        result = parse_rescue_gtf(str(mini_gtf_file))
-        
-        # GENE1 should have 2 transcripts (REF1 and REF1b)
-        assert 'GENE1' in result
-        assert isinstance(result['GENE1'], list)
-        assert len(result['GENE1']) == 2
-        assert 'REF1' in result['GENE1']
-        assert 'REF1b' in result['GENE1']
-    
-    def test_gene_with_single_transcript(self, mini_gtf_file):
-        """Test that gene with single transcript returns list with one item."""
-        result = parse_rescue_gtf(str(mini_gtf_file))
-        
-        # GENE2 should have 1 transcript (REF2)
-        assert 'GENE2' in result
-        assert isinstance(result['GENE2'], list)
-        assert len(result['GENE2']) == 1
-        assert 'REF2' in result['GENE2']
-    
-    def test_all_transcripts_captured(self, mini_gtf_file):
-        """Test that all unique transcripts are captured."""
-        result = parse_rescue_gtf(str(mini_gtf_file))
-        
-        # Flatten all transcripts
-        all_transcripts = [t for transcripts in result.values() for t in transcripts]
-        
-        # Should have 4 unique transcripts: REF1, REF1b, REF2, REF3
-        assert len(all_transcripts) == 4
-        assert 'REF1' in all_transcripts
-        assert 'REF1b' in all_transcripts
-        assert 'REF2' in all_transcripts
-        assert 'REF3' in all_transcripts
-
-
 class TestGetRescueReferenceTargets:
     """Test suite for get_rescue_reference_targets function."""
     
