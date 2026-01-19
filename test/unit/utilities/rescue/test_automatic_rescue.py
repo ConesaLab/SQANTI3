@@ -16,7 +16,6 @@ sys.path.insert(0, main_path)
 from src.utilities.rescue.automatic_rescue import (
     get_lost_reference_id,
     rescue_lost_reference,
-    rescue_fsm_monoexons,
     save_automatic_rescue
 )
 
