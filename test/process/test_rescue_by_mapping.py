@@ -233,7 +233,7 @@ class TestRescueByMapping:
         automatic_df = pd.DataFrame(columns=['artifact', 'assigned_transcript', 
                                              'rescue_mode', 'origin', 'reintroduced'])
         
-        inclusion_list, rescue_df = rescue_by_mapping(
+        _, rescue_df = rescue_by_mapping(
             mapping_hits_df,
             reference_ml_file,
             classif_minimal,
