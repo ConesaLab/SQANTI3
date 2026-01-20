@@ -3,7 +3,6 @@ Unit tests for rescue_output.py functions.
 Tests GTF and FASTA output generation functions.
 """
 import pytest
-import pandas as pd
 from pathlib import Path
 import sys
 import os
@@ -16,7 +15,6 @@ sys.path.insert(0, main_path)
 
 from src.rescue_output import (
     write_rescue_gtf,
-    write_fasta_file,
     read_fasta_file,
     write_rescue_fasta
 )
@@ -316,7 +314,6 @@ class TestWriteRescueGtf:
         # Count transcript and exon features for the rescued transcript
         transcript_lines = [l for l in lines if 'REF1' in l and '\ttranscript\t' in l]
         exon_lines = [l for l in lines if 'REF1' in l and '\texon\t' in l]
-        print(exon_lines)
         assert len(transcript_lines) == 1
         assert len(exon_lines) == 2
     

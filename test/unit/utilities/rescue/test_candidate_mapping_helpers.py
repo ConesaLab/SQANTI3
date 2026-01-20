@@ -8,8 +8,7 @@ from pathlib import Path
 import sys
 import os
 import tempfile
-from unittest.mock import patch, MagicMock
-from Bio import SeqIO
+from unittest.mock import patch
 
 # Add main path to sys.path
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..'))

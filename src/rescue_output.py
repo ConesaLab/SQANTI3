@@ -78,7 +78,7 @@ def read_fasta_file(fasta_file, filter_ids=None):
     # Use a set for O(1) lookups if filter_ids is a large list
     filter_ids_set = set(filter_ids)
 
-    # List comprehension is faster and cleaner a the manual loop
+    # List comprehension is faster and cleaner than a manual loop
     return [record for record in sequences_raw if record.id in filter_ids_set]
 
 def write_rescue_fasta(input_fasta, ref_fasta_file, good_transcripts, inclusion_list, prefix):

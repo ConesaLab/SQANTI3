@@ -7,7 +7,7 @@ def get_lost_reference_id(df):
     """
     Get the reference IDs that have lost all their isoforms during filtering.
     
-    :param df: SQANTI classificaiton dataframe in Pandas
+    :param df: SQANTI classification dataframe in Pandas
     """
     all_ref = df['associated_transcript'].to_numpy()
     # Find all references were one of their transcripts is classified as "Isoforms"  

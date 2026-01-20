@@ -4,7 +4,6 @@ Tests the complete automatic rescue workflow with realistic data.
 """
 import pytest
 import pandas as pd
-from pathlib import Path
 import sys
 import os
 

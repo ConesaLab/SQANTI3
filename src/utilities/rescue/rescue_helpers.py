@@ -55,7 +55,7 @@ def get_rescue_gene_targets(df, rescue_candidates):
     """Get the genes with associated rescue candidates.
     
     Args:
-        classification_file (str): Path to SQANTI3 classification file
+        df (pd.DataFrame): Classification dataframe
         rescue_candidates (pd.Series): List of rescue candidates
         
     Returns:
