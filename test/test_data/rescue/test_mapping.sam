@@ -1,0 +1,12 @@
+@HD	VN:1.6	SO:unsorted
+@SQ	SN:REF1	LN:100
+@SQ	SN:REF2	LN:100
+@SQ	SN:REF3	LN:100
+@PG	ID:minimap2	PN:minimap2	VN:2.24
+PB.1.1	0	REF1	1	60	100M	*	0	0	*	*	NM:i:0	ms:i:200	AS:i:200	nn:i:0
+PB.1.2	4	*	0	0	*	*	0	0	*	*
+PB.2.1	0	REF2	1	60	98M2S	*	0	0	*	*	NM:i:2	ms:i:190	AS:i:190	nn:i:0
+PB.2.2	0	REF3	1	30	50M50S	*	0	0	*	*	NM:i:10	ms:i:150	AS:i:150	nn:i:0
+PB.3.1	0	REF1	1	60	100M	*	0	0	*	*	NM:i:0	ms:i:200	AS:i:200	nn:i:0
+PB.3.1	0	REF2	1	40	95M5S	*	0	0	*	*	NM:i:5	ms:i:180	AS:i:180	nn:i:0
+PB.4.1	16	REF3	1	60	100M	*	0	0	*	*	NM:i:1	ms:i:195	nn:i:0

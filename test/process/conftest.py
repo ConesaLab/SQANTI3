@@ -156,3 +156,100 @@ def junction_file():
 def genome_file():
     """Path to test genome file."""
     return os.path.join(main_path, "test/test_data/genome/genome_test.fasta")
+
+
+# ============================================================================
+# Rescue Module Fixtures
+# ============================================================================
+
+@pytest.fixture
+def sample_rescue_classification_mix():
+    """
+    Loading the test rescue classification with all isoforms together
+    """
+    import pandas as pd
+
+    return pd.read_csv(os.path.join(main_path, "test/test_data/rescue/classification_rescue_automatic.tsv"), sep="\t")
+
+
+@pytest.fixture
+def sample_rescue_classification():
+    """
+    Create a sample classification DataFrame for rescue testing.
+    Contains FSM, ISM, and artifact isoforms with various scenarios.
+    
+    Returns:
+        pd.DataFrame: Classification DataFrame with rescue scenarios
+    """
+    import pandas as pd
+    
+    return pd.DataFrame({
+        'isoform': ['PB.1.1', 'PB.1.2', 'PB.2.1', 'PB.3.1', 'PB.4.1', 'PB.4.2'],
+        'structural_category': [
+            'full-splice_match', 'full-splice_match', 'incomplete-splice_match',
+            'full-splice_match', 'full-splice_match', 'incomplete-splice_match'
+        ],
+        'exons': [2, 2, 2, 3, 2, 2],
+        'filter_result': ['Isoform', 'Artifact', 'Artifact', 'Isoform', 'Artifact', 'Artifact'],
+        'associated_transcript': ['REF1', 'REF1', 'REF2', 'REF3', 'REF4', 'REF4'],
+        'associated_gene': ['GENE1', 'GENE1', 'GENE2', 'GENE3', 'GENE4', 'GENE4'],
+        'length': [1500, 1500, 1200, 2000, 1800, 1600],
+        'chrom': ['chr1', 'chr1', 'chr1', 'chr2', 'chr2', 'chr2'],
+        'strand': ['+', '+', '+', '+', '-', '-']
+    })
+
+
+@pytest.fixture
+def sample_rescue_classification_monoexon():
+    """
+    Create a classification DataFrame with monoexonic isoforms for testing.
+    
+    Returns:
+        pd.DataFrame: Classification DataFrame with monoexon scenarios
+    """
+    import pandas as pd
+    
+    return pd.DataFrame({
+        'isoform': ['PB.5.1', 'PB.6.1', 'PB.7.1', 'PB.8.1'],
+        'structural_category': [
+            'full-splice_match', 'full-splice_match', 
+            'incomplete-splice_match', 'full-splice_match'
+        ],
+        'exons': [1, 1, 1, 2],
+        'filter_result': ['Artifact', 'Artifact', 'Artifact', 'Isoform'],
+        'associated_transcript': ['REF5', 'REF6', 'REF7', 'REF8'],
+        'associated_gene': ['GENE1', 'GENE2', 'GENE3', 'GENE4'],
+        'length': [800, 750, 900, 1500],
+        'chrom': ['chr1', 'chr1', 'chr2', 'chr2'],
+        'strand': ['+', '+', '+', '-']
+    })
+
+
+@pytest.fixture
+def rescue_classification_file_lost_fsm():
+    """Path to classification file with lost FSM references."""
+    return os.path.join(main_path, "test/test_data/rescue/classification_lost_fsm.tsv")
+
+
+@pytest.fixture
+def rescue_classification_file_monoexon():
+    """Path to classification file with monoexonic isoforms."""
+    return os.path.join(main_path, "test/test_data/rescue/classification_monoexon.tsv")
+
+
+@pytest.fixture
+def rescue_classification_file_no_lost():
+    """Path to classification file with no lost references."""
+    return os.path.join(main_path, "test/test_data/rescue/classification_no_lost.tsv")
+
+
+@pytest.fixture
+def rescue_classification_file_multi_artifact():
+    """Path to classification file with multiple artifacts per reference."""
+    return os.path.join(main_path, "test/test_data/rescue/classification_multi_artifact.tsv")
+
+
+@pytest.fixture
+def rescue_mini_gtf():
+    """Path to minimal reference GTF for rescue testing."""
+    return os.path.join(main_path, "test/test_data/rescue/reference_mini.gtf")

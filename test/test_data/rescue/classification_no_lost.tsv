@@ -1,0 +1,4 @@
+isoform	structural_category	exons	filter_result	associated_transcript	associated_gene	length	chrom	strand
+PB.1.1	full-splice_match	2	Isoform	REF1	GENE1	1500	chr1	+
+PB.2.1	full-splice_match	3	Isoform	REF2	GENE2	2000	chr1	+
+PB.3.1	incomplete-splice_match	2	Isoform	REF3	GENE3	1200	chr2	+

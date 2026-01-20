@@ -3,19 +3,12 @@ import numpy as np
 
 from src.module_logging import rescue_logger
 
-def rescue_fsm_monoexons(df):
-    df_mono = df[
-        (df['structural_category'] == 'full-splice_match') &
-        (df['exons'] == 1)
-    ]
-    rescue_mono = pd.DataFrame()
-    lost_mono = get_lost_reference_id(df_mono)
-    # Rescue mono
-    for ref_id in lost_mono:
-        rescue_mono = pd.concat([rescue_mono,rescue_lost_reference(ref_id, df_mono)])
-    return rescue_mono
-
 def get_lost_reference_id(df):
+    """
+    Get the reference IDs that have lost all their isoforms during filtering.
+    
+    :param df: SQANTI classification dataframe in Pandas
+    """
     all_ref = df['associated_transcript'].to_numpy()
     # Find all references were one of their transcripts is classified as "Isoforms"  
     isoform_ref = df.loc[df['filter_result'].eq('Isoform'), 'associated_transcript'].unique()

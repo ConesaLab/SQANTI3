@@ -8,29 +8,38 @@ from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    rescue_fsm_monoexons, get_lost_reference_id,
-    rescue_lost_reference, save_automatic_rescue
+    get_lost_reference_id, rescue_lost_reference, save_automatic_rescue
 )
 from src.utilities.rescue.rescue_helpers import (
+    identify_rescue_candidates,
     get_rescue_gene_targets, get_rescue_reference_targets, read_classification
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
-    filter_transcriptome,
-    process_sam_file,
-    save_fasta
+    filter_transcriptome, process_sam_file, save_fasta
 )
 
 from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
 
+from src.rescue_output import (
+    write_rescue_gtf, write_rescue_fasta
+)
 
 def run_automatic_rescue(classif_df,monoexons,prefix):
     message("Performing automatic rescue",rescue_logger)
-    # Select the FSM and ISM isoforms with more than one exon 
+    # Select the FSM  isoforms with more than one exon 
     rescue_classif = classif_df[
         (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
+    if monoexons != 'none':
+        rescue_classif = pd.concat([
+            rescue_classif,
+            classif_df[
+                (classif_df['structural_category'].isin(['full-splice_match'])) & 
+                (classif_df['exons'] == 1)
+            ]
+        ])
  
     # Find the references that are lost and get the ones that are not represented by isoforms
     lost_ref = get_lost_reference_id(rescue_classif)
@@ -46,17 +55,11 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
 
     # Split into reference transcripts and ISM TODO: Eliminate this step?
     rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
-    # Adding monoexons
-    if monoexons in ['all','fsm']:
-        rescue_fsm_me = rescue_fsm_monoexons(classif_df)
-        auto_inclusion_list = pd.concat([rescue_ref,rescue_fsm_me])
-    else:
-        auto_inclusion_list = rescue_ref
-    rescue_logger.debug(f"Rescued {auto_inclusion_list.shape[0]} transcripts")
+    rescue_logger.debug(f"Rescued {rescue_ref.shape[0]} transcripts")
     
     # Save the automatic rescue
-    rescue_df = save_automatic_rescue(auto_inclusion_list,classif_df,prefix)
-    return auto_inclusion_list.iloc[:,0], rescue_df
+    rescue_df = save_automatic_rescue(rescue_ref,classif_df,prefix)
+    return rescue_ref.iloc[:,0], rescue_df
 
 
 def rescue_candidates(classif_df,monoexons,prefix):
@@ -64,30 +67,7 @@ def rescue_candidates(classif_df,monoexons,prefix):
     Selection of rescue candidates from non-FSM artifacts.
     The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
     """
-    # Identify transcripts that have a full-splice_match
-    transcripts_with_fsm = set(
-        classif_df[(classif_df['structural_category'] == 'full-splice_match')]['associated_transcript']
-    )
-
-    # Get NIC and NNC candidates
-    rescue_candidates = classif_df[
-        (classif_df['structural_category'].isin(['novel_in_catalog', 'novel_not_in_catalog'])) &
-        (classif_df['filter_result'] == 'Artifact')
-    ]
-
-    # Get ISM candidates from lost references without FSM
-    lost_ids = get_lost_reference_id(classif_df)
-    
-    ism_candidates = classif_df[
-        (classif_df['structural_category'] == 'incomplete-splice_match') &
-        (classif_df['associated_transcript'].isin(lost_ids)) & 
-        ~classif_df['associated_transcript'].isin(transcripts_with_fsm)
-    ]
-
-    rescue_candidates = pd.concat([rescue_candidates, ism_candidates])
-
-    if monoexons != 'all':
-        rescue_candidates = rescue_candidates[rescue_candidates['exons'] > 1]
+    rescue_candidates = identify_rescue_candidates(classif_df, monoexons)
     
     # Write rescue candidates
     rescue_candidates.to_csv(f"{prefix}_rescue_candidates.tsv", 
@@ -164,7 +144,12 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
-    hits_df = process_sam_file(sam_file,out_dir,out_prefix)
+    hits_df = process_sam_file(sam_file)
+    # Save as TSV
+    hits_file = f"{out_dir}/{out_prefix}_rescue_mapping_hits.tsv"
+    hits_df.to_csv(hits_file, sep="\t", index=False, header=True)
+
+    rescue_logger.info(f"Mapping hit table was saved to {hits_file}") 
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
     return hits_df
 
