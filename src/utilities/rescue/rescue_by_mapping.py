@@ -4,7 +4,7 @@ from src.module_logging import rescue_logger
 
 def merge_classifications(reference_rules_path, classif, strategy, thr = 0.7):
     """Load input data files."""
-    
+    classif = classif.copy()
     columns = ["isoform", "filter_result"]
     if strategy == "ml":
         class_ref = pd.read_csv(reference_rules_path, sep="\t")
@@ -18,7 +18,7 @@ def merge_classifications(reference_rules_path, classif, strategy, thr = 0.7):
         class_ref = pd.read_csv(reference_rules_path, sep="\t", usecols=columns)
     # Add the reference classification to the transcript classification
     class_ref["origin"] = "reference"
-    classif["origin"] = "lr_defined"
+    classif.loc[:,"origin"] = "lr_defined"
     combined_class = pd.concat([class_ref, classif[columns + ["origin"]]])
 
     return  combined_class
@@ -59,7 +59,7 @@ def select_best_hits(df):
 def filter_mapping_hits(mapping_hits, strategy):
     """Filter mapping hits and remove redundant references."""
     # 1. Filter the mapping hits reference based on the results of filtering
-    mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"]
+    mapping_hits_filt = mapping_hits[mapping_hits["hit_filter_result"] == "Isoform"].copy()
     if strategy == "rules":
         # Apply rules-based filtering
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score']
@@ -68,7 +68,10 @@ def filter_mapping_hits(mapping_hits, strategy):
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score'] * mapping_hits_filt['hit_POS_MLprob']
 
     # Select the best hit(s) per rescue candidate
-    best_mapping_hits = mapping_hits_filt.groupby('rescue_candidate',group_keys=False).apply(select_best_hits)
+    best_mapping_hits = mapping_hits_filt.groupby(
+    'rescue_candidate', 
+    group_keys=False
+    )[mapping_hits_filt.columns].apply(select_best_hits).copy()
 
     return best_mapping_hits
 
