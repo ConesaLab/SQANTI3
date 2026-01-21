@@ -9,12 +9,26 @@ from src.utilities.rescue.requant_helpers import (
 )
 
 def run_requant(counts, rescue_df, classif_df, prefix):
+    """
+    Redistribute counts from artifacts to rescued isoforms.
+    Handles multiple sample columns.
+    
+    Args:
+        counts: DataFrame with 'transcript_id' column and one or more count columns
+        rescue_df: DataFrame with rescue results (artifact -> assigned_transcript mappings)
+        classif_df: DataFrame with SQANTI3 classification (Isoform vs Artifact)
+        prefix: Output file prefix
+    
+    Returns:
+        DataFrame with reassigned counts (artifacts removed, counts redistributed)
+    """
     # Creation of a table with all artifacts (rescued and not rescued)
     artifacts_df = build_artifact_table(rescue_df, classif_df)
-    old_counts = counts.set_index('transcript_id')['count'].to_dict()
+    
     # Redistribute counts based on the rescue results
-    new_counts = redistribute_counts(artifacts_df, classif_df, old_counts)
-    return export_counts(old_counts, new_counts, prefix)
+    new_counts = redistribute_counts(artifacts_df, classif_df, counts)
+    
+    return export_counts(counts, new_counts, prefix)
 
 def to_tpm(counts_df, class_df, prefix):
 

@@ -88,20 +88,64 @@ def redistribute_counts(artifacts_df, classif_df, old_counts):
     return new_counts
 
 
-def export_counts(old_counts, new_counts, prefix):
-    """Save full, changed, and summarized count tables."""
-    counts_df = pd.DataFrame({'transcript_id': list(set(old_counts) | set(new_counts))})
-    list_of_changed = []
-    counts_df['old_count'] = counts_df['transcript_id'].apply(lambda x: fill_old_counts(x, old_counts))
-    counts_df['new_count'] = counts_df['transcript_id'].apply(lambda x: reassign_counts(x, old_counts, new_counts, list_of_changed))
+def export_counts(old_counts_df, new_counts_dict, prefix):
+    """Save full, changed, and summarized count tables.
+    Handles multiple sample columns and excludes artifacts from final output."""
+    # Get sample columns
+    sample_cols = [col for col in old_counts_df.columns if col != 'transcript_id']
     
-    changed = pd.DataFrame({'changed_count': list_of_changed})
-
-    counts_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", sep='\t', index=False)
-    changed.to_csv(f"{prefix}_changed_counts.tsv", sep='\t', index=False)
-    counts_df[['transcript_id', 'new_count']].to_csv(f"{prefix}_reassigned_counts.tsv", sep='\t', index=False)
+    # Convert old counts to dict for comparison
+    old_counts_dict = old_counts_df.set_index('transcript_id')[sample_cols].to_dict('index')
     
-    return counts_df[['transcript_id', 'new_count']]
+    # Get all transcript IDs (union of old and new)
+    all_transcripts = list(set(old_counts_dict.keys()) | set(new_counts_dict.keys()))
+    
+    # Build extended comparison table
+    extended_data = []
+    changed_transcripts = []
+    
+    for transcript_id in all_transcripts:
+        row = {'transcript_id': transcript_id}
+        
+        # Add old counts
+        old_vals = old_counts_dict.get(transcript_id, {col: 0 for col in sample_cols})
+        for sample in sample_cols:
+            row[f'old_{sample}'] = old_vals.get(sample, 0)
+        
+        # Add new counts
+        new_vals = new_counts_dict.get(transcript_id, {col: 0 for col in sample_cols})
+        for sample in sample_cols:
+            row[f'new_{sample}'] = new_vals.get(sample, 0)
+        
+        # Check if any sample changed
+        if any(old_vals.get(s, 0) != new_vals.get(s, 0) for s in sample_cols):
+            changed_transcripts.append(transcript_id)
+        
+        extended_data.append(row)
+    
+    # Create DataFrames
+    extended_df = pd.DataFrame(extended_data)
+    changed_df = pd.DataFrame({'changed_transcript': changed_transcripts})
+    
+    # Create final reassigned counts (only new counts, excluding artifacts)
+    final_data = []
+    for transcript_id, counts in new_counts_dict.items():
+        row = {'transcript_id': transcript_id}
+        row.update(counts)
+        final_data.append(row)
+    
+    final_df = pd.DataFrame(final_data)
+    
+    # Sort by transcript_id for consistency
+    extended_df = extended_df.sort_values('transcript_id').reset_index(drop=True)
+    final_df = final_df.sort_values('transcript_id').reset_index(drop=True)
+    
+    # Save files
+    extended_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", sep='\t', index=False)
+    changed_df.to_csv(f"{prefix}_changed_counts.tsv", sep='\t', index=False)
+    final_df.to_csv(f"{prefix}_reassigned_counts.tsv", sep='\t', index=False)
+    
+    return final_df
 
 
 def calculate_tpm(counts, lengths):
