@@ -2,7 +2,7 @@ from collections import defaultdict
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts
-from src.parsers import FLcount_parser, expression_parser
+from src.parsers import FLcount_parser, expression_parser, parse_counts
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 from src.module_logging import qc_logger
@@ -65,32 +65,60 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             isoforms_info[iso].ratio_TSS = None
     return isoforms_info
 
-def full_length_quantification(fl_count, isoforms_info,fields_class_cur):
-
+def full_length_quantification(fl_count, isoforms_info, fields_class_cur):
     qc_logger.info("**** Reading Full-length read abundance files.")
-    fl_samples, fl_count_dict = FLcount_parser(fl_count)
+
+    # 1. Parse and set the ID as the index for easy lookup
+    df = parse_counts(fl_count)
+    df.set_index('isoforms', inplace=True)
+    
+    # 3. Get sample names
+    fl_samples = df.columns.tolist()
     n = 0
-    if len(fl_samples) == 1: # single sample from PacBio
+
+    if len(fl_samples) == 1:
+        # --- Single Sample Case ---
         qc_logger.info("Single-sample FL count format detected.")
+        
+        sample_name = fl_samples[0]
+        
+        # Optimization: Convert to dict for O(1) lookup speed inside the loop
+        # Result: {'transcript_1': 10, 'transcript_2': 5}
+        fl_count_lookup = df[sample_name].to_dict()
+
         for iso, obj in isoforms_info.items():
-            count = fl_count_dict.get(iso)
+            # .get() handles the lookup safely
+            count = fl_count_lookup.get(iso)
+            
             if count is not None:
                 obj.FL = count
             else:
                 n += 1
                 obj.FL = 0
-    else: # multi-sample
+
+    else:
+        # --- Multi-Sample Case ---
         qc_logger.info("Multi-sample FL count format detected.")
+        
+        # Extend the fields list
         fields_class_cur.extend(f"FL.{s}" for s in fl_samples)
+        
+        # Optimization: Convert to nested dict
+        # Result: {'transcript_1': {'SampleA': 10, 'SampleB': 5}, ...}
+        fl_count_lookup = df.to_dict('index')
+
         for iso, obj in isoforms_info.items():
-            count = fl_count_dict.get(iso)
-            if count is not None:
-                obj.FL_dict = count
+            count_data = fl_count_lookup.get(iso)
+            
+            if count_data is not None:
+                obj.FL_dict = count_data
             else:
                 n += 1
                 obj.FL_dict = defaultdict(int)
+
     if n > 0:
         qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")
+
     return isoforms_info, fields_class_cur
 
 def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFASTA,cpus):

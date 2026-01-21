@@ -4,11 +4,13 @@ import glob
 import re
 import csv
 
+import numpy as np
+import pandas as pd
+
 from collections import defaultdict
 from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
-import numpy as np
 
 from src.utilities.cupcake.sequence.STAR import STARJunctionReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader
@@ -251,100 +253,6 @@ def get_fusion_component(fusion_gtf):
             _acc += _len
     return result
 
-
-
-# TODO: make it less specific
-def FLcount_parser_old(fl_count_filename):
-    """
-    :param fl_count_filename: could be a single sample or multi-sample (chained or demux) count file
-    :return: list of samples, <dict>
-
-    If single sample, returns True, dict of {pbid} -> {count}
-    If multiple sample, returns False, dict of {pbid} -> {sample} -> {count}
-
-    For multi-sample, acceptable formats are:
-    //demux-based
-    id,JL3N,FL1N,CL1N,FL3N,CL3N,JL1N
-    PB.2.1,0,0,1,0,0,1
-    PB.3.3,33,14,47,24,15,38
-    PB.3.2,2,1,0,0,0,1
-
-    //chain-based
-    superPBID<tab>sample1<tab>sample2
-    """
-    fl_count_dict = {}
-    samples = ['NA']
-    flag_single_sample = True
-
-    f = open(fl_count_filename)
-    while True:
-        cur_pos = f.tell()
-        line = f.readline()
-        if not line.startswith('#'):
-            # if it first thing is superPBID or id or pbid
-            if line.startswith('pbid'):
-                type = 'SINGLE_SAMPLE'
-                sep  = '\t'
-            elif line.startswith('superPBID'):
-                type = 'MULTI_CHAIN'
-                sep = '\t'
-            elif line.startswith('id'):
-                type = 'MULTI_DEMUX'
-                sep = ','
-            else:
-                raise Exception("Unexpected count file format! Abort!")
-            f.seek(cur_pos)
-            break
-
-
-    reader = csv.DictReader(f, delimiter=sep)
-    count_header = reader.fieldnames
-    if type=='SINGLE_SAMPLE':
-        if 'count_fl' not in count_header:
-            qc_logger.error(f"Expected `count_fl` field in count file {fl_count_filename}. Abort!")
-            sys.exit(1)
-        d = dict((r['pbid'], r) for r in reader)
-    elif type=='MULTI_CHAIN':
-        d = dict((r['superPBID'], r) for r in reader)
-        flag_single_sample = False
-    elif type=='MULTI_DEMUX':
-        d = dict((r['id'], r) for r in reader)
-        flag_single_sample = False
-    else:
-        qc_logger.error(f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!")
-        sys.exit(1)
-    f.close()
-
-
-    if flag_single_sample: # single sample
-        for k,v in d.items():
-            try:
-                fl_count_dict[k] = int(v['count_fl'])
-            except ValueError:
-                fl_count_dict[k] = float(v['count_fl'])
-    else: # multi-sample
-        for k,v in d.items():
-            fl_count_dict[k] = {}
-            samples = list(v.keys())
-            for sample,count in v.items():
-                if sample not in ('superPBID', 'id'):
-                    if count=='NA':
-                        fl_count_dict[k][sample] = 0
-                    else:
-                        try:
-                            fl_count_dict[k][sample] = int(count)
-                        except ValueError:
-                            fl_count_dict[k][sample] = float(count)
-
-    samples.sort()
-
-    if type=='MULTI_CHAIN':
-        samples.remove('superPBID')
-    elif type=='MULTI_DEMUX':
-        samples.remove('id')
-
-    return samples, fl_count_dict
-
 def FLcount_parser(fl_count_filename):
     """
     Parses a count file to extract isoform counts.
@@ -435,6 +343,59 @@ def _parse_count_value(value):
             return float(value)
         except ValueError:
             return 0
+        
+def parse_counts(count_file):
+    """
+    Parses a count file into a Pandas DataFrame.
+    Optimized for multi-sample requantification pipelines.
+    
+    Features:
+    - Auto-detects delimiter (CSV/TSV).
+    - Preserves all sample columns dynamically.
+    - Handles 'NA' by converting to 0.
+    - Returns a dense matrix ready for groupby operations.
+    """
+    try:
+        # 1. Sniff the delimiter 
+        with open(count_file, 'r') as f:
+            # Skip comments to find header
+            pos = f.tell()
+            line = f.readline()
+            while line and line.startswith('#'):
+                pos = f.tell()
+                line = f.readline()
+            
+            # Sniff 
+            f.seek(pos)
+            chunk = f.read(2048)
+            try:
+                dialect = csv.Sniffer().sniff(chunk)
+                sep = dialect.delimiter
+            except csv.Error:
+                sep = '\t' if '\t' in line else ','
+
+        # 2. Read with Pandas (Fast Engine)
+        # dtype={'isoforms': str} ensures IDs like "001" aren't read as integer 1
+        df = pd.read_csv(count_file, sep=sep, comment='#', dtype={0: str})
+
+        # 3. Dynamic Column Validation
+        # Rename first column to standard 'isoforms' for easier merging later
+        df.rename(columns={df.columns[0]: 'isoforms'}, inplace=True)
+        
+        if df.shape[1] < 2:
+             print(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
+             sys.exit(1)
+
+        # 4. Handle NAs and dtypes
+        # Fills NA with 0 and ensures counts are integers (common requirement for counts)
+        sample_cols = df.columns[1:]
+        df[sample_cols] = df[sample_cols].fillna(0).astype(int)
+
+        return df
+
+    except Exception as e:
+        print(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
+        sys.exit(1)
 
 def parse_td2_to_dict(td2_faa):
     """

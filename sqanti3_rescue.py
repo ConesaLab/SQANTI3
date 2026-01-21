@@ -12,6 +12,7 @@ import os
 
 import pandas as pd
 
+from src.parsers import parse_counts
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
@@ -92,17 +93,6 @@ def main():
       inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
                                                    inclusion_list,args.dir, args.json_filter)
 
-
-    # Finish print if output exists (same for rules and ML) ####
-    # inclusion_list_file = f"{prefix}_full_inclusion_list.tsv"
-    # if os.path.isfile(inclusion_list_file):
-    #   message(f"Rescue {args.strategy} finished successfully!",rescue_logger)
-    #   rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list_file}")
-    # else:
-    #   rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list_file}")
-    #   sys.exit(1)
-  ### End of condition (mode == "full")
-
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
   if args.rescue_gtf is None:
@@ -120,7 +110,7 @@ def main():
   if args.requant:  
     message("Running requantification.",rescue_logger)
     #TODO: Make this take the variables from python directly
-    counts_df = parse_files(args.counts)
+    counts_df = parse_counts(args.counts)
     rescue_logger.info("Counts file parsed.")
     requant_df = run_requant(counts_df, rescue_df, class_df, prefix)
     rescue_logger.info("Requantification of counts completed.")

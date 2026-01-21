@@ -7,12 +7,6 @@ from collections import defaultdict
 from src.utilities.rescue.requant_helpers import (
     build_artifact_table, export_counts, redistribute_counts, calculate_tpm
 )
-def parse_files(count_file):
-    # Load counts file
-    counts = pd.read_csv(count_file, sep = '\t', comment = '#')
-    counts.columns = ['transcript_id', 'count']
-    return(counts)
-
 
 def run_requant(counts, rescue_df, classif_df, prefix):
     # Creation of a table with all artifacts (rescued and not rescued)
