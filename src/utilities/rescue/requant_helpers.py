@@ -39,11 +39,18 @@ def get_unrescued_artifacts(classif_df, collapsed_df):
         classif_df[
             (classif_df["filter_result"] == "Artifact") &
             ~(classif_df["isoform"].isin(collapsed_df["artifact"]))
-        ][["isoform"]]
+        ][["isoform", "assigned_gene"]]
         .rename(columns={"isoform": "artifact"})
     )
-    not_rescued["assigned_transcript"] = "artifact"
+    # Assing transcript divergency for unrescued artifacts
+    # If there is an associated gene, assign it to '<gene_name>_TD; else, label as 'general_TD'
+    not_rescued["assigned_transcript"] = not_rescued["assigned_gene"].apply(
+        lambda gene: f"{gene}_TD" if pd.notna(gene) else "general_TD"
+    )
+    # remove the assigned_gene column as it's no longer needed
+    not_rescued.drop(columns=["assigned_gene"], inplace=True)
     not_rescued["num_assigned_transcripts"] = 1
+    
     return not_rescued
 
 
