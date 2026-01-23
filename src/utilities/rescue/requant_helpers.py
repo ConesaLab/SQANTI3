@@ -42,7 +42,7 @@ def get_unrescued_artifacts(classif_df, collapsed_df):
         ][["isoform", "assigned_gene"]]
         .rename(columns={"isoform": "artifact"})
     )
-    # Assing transcript divergency for unrescued artifacts
+    # Assign transcript divergency for unrescued artifacts
     # If there is an associated gene, assign it to '<gene_name>_TD; else, label as 'general_TD'
     not_rescued["assigned_transcript"] = not_rescued["assigned_gene"].apply(
         lambda gene: f"{gene}_TD" if pd.notna(gene) else "general_TD"

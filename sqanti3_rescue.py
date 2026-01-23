@@ -27,7 +27,7 @@ from src.rescue_steps import (
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
-from src.utilities.rescue.sq_requant import parse_files, run_requant, to_tpm
+from src.utilities.rescue.sq_requant import run_requant, to_tpm
 
 def main():
   art_logger.info(rescue_art())
@@ -87,7 +87,7 @@ def main():
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome
     # and combines the results with the mapping hits obtained in the previous step
-    if args.subcommand == "rules":
+    elif args.strategy == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
       inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
@@ -95,7 +95,7 @@ def main():
 
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
-  if args.rescue_gtf is None:
+  if args.filtered_isoforms_gtf is None:
     rescue_logger.warning("No filtered GTF provided.")
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:

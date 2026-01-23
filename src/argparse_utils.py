@@ -150,9 +150,6 @@ def qc_args_validation(args):
     # ORF prediction checks
     if args.orf_input is not None:
         valid_fasta(args.orf_input,qc_logger)
-    if args.psauron_threshold < 0 or args.psauron_threshold > 1.:
-        qc_logger.error(f"Invalid P-Sauron threshold: {args.psauron_threshold}. Must be between 0 and 1. Abort!")
-        sys.exit(-1)
 
     # Functional annotation checks
     if args.CAGE_peak is not None:
@@ -184,7 +181,7 @@ def qc_args_validation(args):
     if args.is_fusion:
         if args.orf_input is None:
             qc_logger.warning("Currently if --is_fusion is used, no ORFs will be predicted. Supply --orf_input if you want ORF to run!")
-            args.include_ORF = False
+            args.skipORF = True
         if args.fasta:
             qc_logger.error("If --is_fusion is on, must supply GTF as input")
             sys.exit(1)
@@ -195,13 +192,9 @@ def qc_args_validation(args):
         else:
             for f in args.expression.split(','):
                 valid_matrix(f,qc_logger)
-    if args.fl_count is not None:
-        valid_file(args.fl_count,qc_logger)
-    
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
-    
     
     return args
 ## This sense argument is no longer present
@@ -257,8 +250,8 @@ def rescue_args_validation(args):
     valid_dir(args.dir,rescue_logger)
     valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
-    if args.rescue_gtf is not None:
-        valid_gtf(args.rescue_gtf,rescue_logger)
+    if args.filtered_isoforms_gtf is not None:
+        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)
@@ -266,13 +259,13 @@ def rescue_args_validation(args):
             rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
             sys.exit(1)
         try:
-            valid_fasta(args.rescue_isoforms,rescue_logger)
+            valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
         except:
             rescue_logger.error("When running the rescue in full mode, the corrected isoforms FASTA file is mandatory.")
             sys.exit(1)
-        if args.subcommand == 'rules':
+        if args.strategy == 'rules':
             valid_file(args.json_filter, rescue_logger)
-        if args.subcommand == "ml":
+        if args.strategy == "ml":
             if args.threshold < 0 or args.threshold > 1.:
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
