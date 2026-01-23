@@ -228,7 +228,7 @@ class TestPrepareFastaTranscriptome:
         ref_fasta = str(test_data_dir / "genome.fasta")
         
         # Create a fake output file for the test
-        expected_output = Path(temp_output_dir) / "reference_mini.fasta"
+        expected_output = Path(temp_output_dir) / "reference_mini.isoforms.fasta"
         expected_output.write_text(">transcript1\nATGC\n")
         
         # Mock run_command to create the file
@@ -255,7 +255,7 @@ class TestPrepareFastaTranscriptome:
         ref_fasta = str(test_data_dir / "genome.fasta")
         
         # Create expected output file
-        expected_output = Path(temp_output_dir) / "reference_mini.fasta"
+        expected_output = Path(temp_output_dir) / "reference_mini.isoforms.fasta"
         expected_output.write_text(">transcript1\nATGC\n")
         
         prepare_fasta_transcriptome(ref_gtf, ref_fasta, temp_output_dir)
@@ -288,13 +288,13 @@ class TestPrepareFastaTranscriptome:
         ref_gtf = "/path/to/my_annotation.gtf"
         ref_fasta = "/path/to/genome.fasta"
         
-        expected_output = Path(temp_output_dir) / "my_annotation.fasta"
+        expected_output = Path(temp_output_dir) / "my_annotation.isoforms.fasta"
         expected_output.write_text(">transcript1\nATGC\n")
         
         result = prepare_fasta_transcriptome(ref_gtf, ref_fasta, temp_output_dir)
         
         assert result == str(expected_output)
-        assert "my_annotation.fasta" in result
+        assert "my_annotation.isoforms.fasta" in result
 
 
 if __name__ == '__main__':
