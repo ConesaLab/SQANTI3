@@ -22,12 +22,6 @@ def get_unrescued_artifacts(classif_df, rescue_df):
  
     return not_rescued
 
-def build_artifact_table(rescue_df, classif_df):
-    """Combine rescued and non-rescued artifacts into one table."""
-    not_rescued = get_unrescued_artifacts(classif_df, rescue_df)
-    return pd.concat([rescue_df, not_rescued], ignore_index=True).rename(columns={'artifact': 'isoform'})
-
-
 def redistribute_counts(artifacts_df, classif_df, old_counts):
     """Reassign counts from artifacts to their rescued isoforms.
     - Multi-transcript artifacts are grouped into a single placeholder entry.
@@ -152,62 +146,72 @@ def distribute_integer_counts(source_df, exploded_map, fractions, sample_cols):
     
     return final_additions
 
-def export_counts(old_counts_df, new_counts_dict, prefix):
-    """Save full, changed, and summarized count tables.
-    Handles multiple sample columns and excludes artifacts from final output."""
+def export_counts(old_counts_df, new_counts_df, prefix):
+    """Save two count tables:
+    1. Reassigned counts (new counts only, with 'isoform' column)
+    2. Extended table for ALL isoforms (with old and new counts for each sample)
+       - Good isoforms (kept their counts)
+       - Artifacts (lost their counts: old > 0, new = 0)
+       - Rescued/TD isoforms (gained counts: old = 0, new > 0)
+    
+    Handles multiple sample columns.
+    """
+   # Standardize column names if needed to ensure 'isoform' key exists
+    if 'isoform' not in old_counts_df.columns:
+        old_counts_df = old_counts_df.rename(columns={old_counts_df.columns[0]: 'isoform'})
+    if 'isoform' not in new_counts_df.columns:
+        new_counts_df = new_counts_df.rename(columns={'transcript_id': 'isoform'})
+
     # Get sample columns
     sample_cols = [col for col in old_counts_df.columns if col != 'isoform']
     
-    # Convert old counts to dict for comparison
-    old_counts_dict = old_counts_df.set_index('isoform')[sample_cols].to_dict('index')
+    # Create first dataframe: new counts with 'isoform' column + sample columns
+    final_df = new_counts_df[['isoform'] + sample_cols].copy()
+    final_df = final_df.sort_values('isoform').reset_index(drop=True)
     
-    # Get all transcript IDs (union of old and new)
-    all_transcripts = list(set(old_counts_dict.keys()) | set(new_counts_dict.keys()))
+    # Create second dataframe: extended table for ALL isoforms
+    # Optimized: Use Outer Join to align Old and New counts automatically (avoids manual looping)
+    extended_df = pd.merge(
+        old_counts_df, 
+        new_counts_df, 
+        on='isoform', 
+        how='outer', 
+        suffixes=('_old', '_new')
+    )
     
-    # Build extended comparison table
-    extended_data = []
-    changed_transcripts = []
+    # Fill missing values (0 if not present in one of the tables)
+    # This covers cases where artifacts are missing in new, or rescued are missing in old
+    extended_df = extended_df.fillna(0)
     
-    for transcript_id in all_transcripts:
-        row = {'transcript_id': transcript_id}
+    # Rename columns to match desired format (old_Sample, new_Sample)
+    # and reorder them for readability
+    ordered_cols = ['isoform']
+    rename_map = {}
+    
+    for sample in sample_cols:
+        col_old = f"{sample}_old"
+        col_new = f"{sample}_new"
         
-        # Add old counts
-        old_vals = old_counts_dict.get(transcript_id, {col: 0 for col in sample_cols})
-        for sample in sample_cols:
-            row[f'old_{sample}'] = old_vals.get(sample, 0)
+        # Verify columns exist before renaming (robustness check)
+        if col_old in extended_df.columns and col_new in extended_df.columns:
+            rename_map[col_old] = f"old_{sample}"
+            rename_map[col_new] = f"new_{sample}"
+            ordered_cols.extend([f"old_{sample}", f"new_{sample}"])
+
+    extended_df = extended_df.rename(columns=rename_map)
+    
+    # Sort and save both dataframes
+    if not extended_df.empty:
+        # Select specific columns to clean up any extra metadata and apply sorting
+        extended_df = extended_df[ordered_cols].sort_values('isoform').reset_index(drop=True)
         
-        # Add new counts
-        new_vals = new_counts_dict.get(transcript_id, {col: 0 for col in sample_cols})
-        for sample in sample_cols:
-            row[f'new_{sample}'] = new_vals.get(sample, 0)
-        
-        # Check if any sample changed
-        if any(old_vals.get(s, 0) != new_vals.get(s, 0) for s in sample_cols):
-            changed_transcripts.append(transcript_id)
-        
-        extended_data.append(row)
-    
-    # Create DataFrames
-    extended_df = pd.DataFrame(extended_data)
-    changed_df = pd.DataFrame({'changed_transcript': changed_transcripts})
-    
-    # Create final reassigned counts (only new counts, excluding artifacts)
-    final_data = []
-    for transcript_id, counts in new_counts_dict.items():
-        row = {'transcript_id': transcript_id}
-        row.update(counts)
-        final_data.append(row)
-    
-    final_df = pd.DataFrame(final_data)
-    
-    # Sort by transcript_id for consistency
-    extended_df = extended_df.sort_values('transcript_id').reset_index(drop=True)
-    final_df = final_df.sort_values('transcript_id').reset_index(drop=True)
+        # Ensure integer counts (Merge converts to float due to NaNs)
+        numeric_cols = extended_df.columns.drop('isoform')
+        extended_df[numeric_cols] = extended_df[numeric_cols].astype(int)
     
     # Save files
-    extended_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", sep='\t', index=False)
-    changed_df.to_csv(f"{prefix}_changed_counts.tsv", sep='\t', index=False)
     final_df.to_csv(f"{prefix}_reassigned_counts.tsv", sep='\t', index=False)
+    extended_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", sep='\t', index=False)
     
     return final_df
 

@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 import warnings
 
@@ -8,7 +9,9 @@ from collections import defaultdict
 
 from src.module_logging import rescue_logger
 from src.utilities.rescue.requant_helpers import (
-    build_artifact_table, calculate_distribution_fractions, distribute_integer_counts, export_counts, prepare_count_matrices, calculate_tpm
+    calculate_distribution_fractions, distribute_integer_counts, 
+    export_counts, get_unrescued_artifacts, prepare_count_matrices, 
+    calculate_tpm
 )
 
 def requantificaiton_pipeline(output_dir, output_prefix, counts_file, rescue_df, rescue_class):
@@ -46,6 +49,11 @@ def run_requant(counts, rescue_df, classif_df, prefix):
     
     return export_counts(counts, new_counts, prefix)
 
+def build_artifact_table(rescue_df, classif_df):
+    """Combine rescued and non-rescued artifacts into one table."""
+    not_rescued = get_unrescued_artifacts(classif_df, rescue_df)
+    return pd.concat([rescue_df, not_rescued], ignore_index=True).rename(columns={'artifact': 'isoform'})
+
 def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
     """
     Main pipeline to reassign artifact counts.
@@ -60,27 +68,27 @@ def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
 
     # 2. Prepare Matrices (Base vs Source)
     base_df, source_df = prepare_count_matrices(old_counts, classid_df)
-
+    print(rescue_df)
     # 3. Calculate Weights
     fractions = calculate_distribution_fractions(rescue_df, base_df, sample_cols)
   
     fractions = fractions.fillna(0)
-    # 5. Distribute & Conserve Integers
+    # 4. Distribute & Conserve Integers
     final_additions = distribute_integer_counts(source_df, rescue_df, fractions, sample_cols)
 
-    # 6. Merge Result
+    # 5. Merge Result
     final_counts = base_df.add(final_additions, fill_value=0).astype(int)
 
     return final_counts.reset_index().rename(columns={'index': 'isoform'})
 
 def to_tpm(counts_df, class_df, prefix):
 
-    class_df.rename(columns={'isoform': 'transcript_id'}, inplace=True)
-    class_df = class_df[["transcript_id","length"]]
+    class_df = class_df.rename(columns={'isoform': 'transcript_id'})
+    class_df = class_df[["transcript_id","length"]].copy()
     
     counts_d = defaultdict(int)
     counts_df.apply(lambda x: counts_d.update({x.iloc[0] : x.iloc[1]}), axis = 1) 
-    class_df['counts'] = class_df['transcript_id'].apply(lambda x: counts_d[x]) # Apparently this line triggers a SettingWithCopyWarning
+    class_df['counts'] = class_df['transcript_id'].apply(lambda x: counts_d[x])
     #remove zero values
     class_df = class_df[class_df['counts'] != 0]
     # Calculate TPM
