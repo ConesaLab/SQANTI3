@@ -58,7 +58,7 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
     rescue_logger.debug(f"Rescued {rescue_ref.shape[0]} transcripts")
     
     # Save the automatic rescue
-    rescue_df = generate_automatic_table(rescue_ref,classif_df,)
+    rescue_df = generate_automatic_table(rescue_ref,classif_df)
     return rescue_ref.iloc[:,0], rescue_df
 
 

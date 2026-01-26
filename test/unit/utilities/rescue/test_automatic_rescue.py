@@ -14,7 +14,7 @@ sys.path.insert(0, main_path)
 from src.utilities.rescue.automatic_rescue import (
     get_lost_reference_id,
     rescue_lost_reference,
-    save_automatic_rescue
+    generate_automatic_table
 )
 
 
@@ -112,8 +112,8 @@ class TestRescueLostReference:
         # Should return None or empty DataFrame
         assert result is None or len(result) == 0
  
-class TestSaveAutomaticRescue:
-    """Test suite for save_automatic_rescue function."""
+class TestGenerateAutomaticTable:
+    """Test suite for generate_automatic_table function."""
     
     def test_normal_rescue(self, tmp_path):
         """Test normal rescue with valid inclusion list."""
@@ -123,12 +123,11 @@ class TestSaveAutomaticRescue:
         
         class_df = pd.DataFrame({
             'isoform': ['PB.1.1', 'PB.1.2', 'PB.2.1'],
-            'associated_transcript': ['REF1', 'REF1', 'REF2']
+            'associated_transcript': ['REF1', 'REF1', 'REF2'],
+            'filter_result': ['Artifact', 'Artifact', 'Artifact']
         })
-        
-        prefix = str(tmp_path / "test_output")
-        
-        result = save_automatic_rescue(inclusion_df, class_df, prefix)
+                
+        result = generate_automatic_table(inclusion_df, class_df)
         
         # Check result structure
         assert 'artifact' in result.columns
@@ -150,12 +149,13 @@ class TestSaveAutomaticRescue:
         
         class_df = pd.DataFrame({
             'isoform': ['PB.1.1'],
-            'associated_transcript': ['REF1']
+            'associated_transcript': ['REF1'],
+            'filter_result': ['Artifact']
         })
         
         prefix = str(tmp_path / "test_output")
         
-        result = save_automatic_rescue(inclusion_df, class_df, prefix)
+        result = generate_automatic_table(inclusion_df, class_df)
         
         # Should handle 'none' gracefully
         assert 'isoform' in result.columns or 'artifact' in result.columns
@@ -168,12 +168,11 @@ class TestSaveAutomaticRescue:
         
         class_df = pd.DataFrame({
             'isoform': ['PB.1.1', 'PB.1.2', 'PB.1.3'],
-            'associated_transcript': ['REF1', 'REF1', 'REF1']
+            'associated_transcript': ['REF1', 'REF1', 'REF1'],
+            'filter_result': ['Artifact', 'Artifact', 'Artifact']
         })
-        
-        prefix = str(tmp_path / "test_output")
-        
-        result = save_automatic_rescue(inclusion_df, class_df, prefix)
+                
+        result = generate_automatic_table(inclusion_df, class_df)
         
         # First artifact should be marked "yes", rest "no"
         reintroduced_values = result['reintroduced'].tolist()
@@ -189,12 +188,11 @@ class TestSaveAutomaticRescue:
         
         class_df = pd.DataFrame({
             'isoform': ['PB.1.1', 'PB.2.1', 'PB.3.1', 'PB.3.2'],
-            'associated_transcript': ['REF1', 'REF2', 'REF3', 'REF3']
+            'associated_transcript': ['REF1', 'REF2', 'REF3', 'REF3'],
+            'filter_result': ['Artifact', 'Artifact', 'Artifact', 'Artifact']
         })
-        
-        prefix = str(tmp_path / "test_output")
-        
-        result = save_automatic_rescue(inclusion_df, class_df, prefix)
+                
+        result = generate_automatic_table(inclusion_df, class_df)
         
         # Check all references present
         assert len(result) == 4
