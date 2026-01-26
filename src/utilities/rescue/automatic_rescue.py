@@ -27,7 +27,7 @@ def rescue_lost_reference(ref_id, classif):
         ref_df = pd.DataFrame({'isoform': [ref_id]})
         return ref_df
     
-def save_automatic_rescue(inclusion_df,class_df,prefix):
+def generate_automatic_table(inclusion_df,class_df):
     # First write operation: rescue_auto without headers
 
     if inclusion_df.iloc[0,0] == "none":
@@ -35,7 +35,7 @@ def save_automatic_rescue(inclusion_df,class_df,prefix):
         inclusion_df["isoform"] = "none"
     # Second write operation: rescue_table with headers 
     rescue_table = class_df[
-        class_df['associated_transcript'].isin(inclusion_df['isoform'])
+        class_df['associated_transcript'].isin(inclusion_df['isoform']) & class_df['filter_result'].eq('Artifact')
     ][['isoform', 'associated_transcript']].rename(
         columns={'isoform': 'artifact', 'associated_transcript': 'assigned_transcript'}
     )
@@ -46,16 +46,4 @@ def save_automatic_rescue(inclusion_df,class_df,prefix):
         ~rescue_table.duplicated("assigned_transcript")
     ).map({True: "yes", False: "no"})
 
-    # rescue_table.to_csv(
-    #     f"{prefix}_automatic_rescue_table.tsv",
-    #     sep='\t',
-    #     index=False
-    # )
-
-    # inclusion_df.to_csv(
-    # f"{prefix}_automatic_inclusion_list.tsv",
-    # sep='\t',
-    # header=False,
-    # index=False
-    # )
     return rescue_table

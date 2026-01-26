@@ -52,7 +52,11 @@ def select_best_hits(df):
     # Prefer lr_defined over reference
     if (df['hit_origin'] == 'lr_defined').any():
         df = df[df['hit_origin'] == 'lr_defined']
-    # For now, we are keeping all best hits (in case of ties)
+    # For now, we are keeping all best hits (in case of ties) 
+    # If there is a tie between two reference hits, keep one 
+    # if (df['hit_origin'] == 'reference').sum() > 1:
+    #     df = df[df['hit_origin'] == 'reference'].iloc[[0]]
+
 
     return df
 

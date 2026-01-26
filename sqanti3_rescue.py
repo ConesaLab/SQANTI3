@@ -27,7 +27,7 @@ from src.rescue_steps import (
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
-from src.utilities.rescue.sq_requant import run_requant, to_tpm
+from src.utilities.rescue.sq_requant import requantificaiton_pipeline
 
 def main():
   art_logger.info(rescue_art())
@@ -109,15 +109,7 @@ def main():
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
-    #TODO: Make this take the variables from python directly
-    counts_df = parse_counts(args.counts)
-    rescue_logger.info("Counts file parsed.")
-    requant_df = run_requant(counts_df, rescue_df, class_df, prefix)
-    rescue_logger.info("Requantification of counts completed.")
-    rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
-    # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
-    to_tpm(requant_df,rescue_class, prefix)
-    rescue_logger.info("Requantification finished!")
+    requantificaiton_pipeline(args.dir, args.output, args.counts, rescue_df, class_df)
 
 ## Run main()
 if __name__ == "__main__":

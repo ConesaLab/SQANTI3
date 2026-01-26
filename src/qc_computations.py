@@ -70,7 +70,7 @@ def full_length_quantification(fl_count, isoforms_info, fields_class_cur):
 
     # 1. Parse and set the ID as the index for easy lookup
     df = parse_counts(fl_count)
-    df.set_index('isoforms', inplace=True)
+    df.set_index('isoform', inplace=True)
     
     # 3. Get sample names
     fl_samples = df.columns.tolist()

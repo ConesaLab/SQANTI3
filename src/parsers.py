@@ -375,12 +375,12 @@ def parse_counts(count_file):
                 sep = '\t' if '\t' in line else ','
 
         # 2. Read with Pandas (Fast Engine)
-        # dtype={'isoforms': str} ensures IDs like "001" aren't read as integer 1
+        # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1
         df = pd.read_csv(count_file, sep=sep, comment='#', dtype={0: str})
 
         # 3. Dynamic Column Validation
-        # Rename first column to standard 'isoforms' for easier merging later
-        df.rename(columns={df.columns[0]: 'isoforms'}, inplace=True)
+        # Rename first column to standard 'isoform' for easier merging later
+        df.rename(columns={df.columns[0]: 'isoform'}, inplace=True)
         
         if df.shape[1] < 2:
              print(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
