@@ -83,7 +83,7 @@ class TestGetUnrescuedArtifacts:
         
         assert len(result) == 0
 
-
+# Perhaps this can be deleted or merged with the test in test_requantification.py
 class TestBuildArtifactTable:
     """Test suite for build_artifact_table function."""
     
@@ -153,7 +153,7 @@ class TestPrepareCountMatrices:
             'filter_result': ['Isoform', 'Artifact']
         })
         
-        base_df, source_df = prepare_count_matrices(old_counts, classif_df)
+        _, source_df = prepare_count_matrices(old_counts, classif_df)
         
         # PB.2.1 should be in source with 0 counts
         assert 'PB.2.1' in source_df.index

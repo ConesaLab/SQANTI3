@@ -22,32 +22,6 @@ def get_unrescued_artifacts(classif_df, rescue_df):
  
     return not_rescued
 
-def redistribute_counts(artifacts_df, classif_df, old_counts):
-    """Reassign counts from artifacts to their rescued isoforms.
-    - Multi-transcript artifacts are grouped into a single placeholder entry.
-    - Ensures count conservation while keeping multi-mapped cases separate.
-    """
-    new_counts = defaultdict(int)
-    true_isoforms = classif_df[classif_df['filter_result'] == 'Isoform']['isoform'].tolist()
-
-    # Retain valid isoforms’ counts
-    for iso in true_isoforms:
-        new_counts[iso] = old_counts.get(iso, 0)
-
-    new_counts["multi_transcript_artifact"] = 0
-
-    for _, row in artifacts_df.iterrows():
-        iso = row['artifact']
-        assigned = row['assigned_transcript']
-        artifact_count = old_counts.get(iso, 0)
-
-        if isinstance(assigned, list): # TODO: How to better handle this casuistic?
-            new_counts["multi_transcript_artifact"] += artifact_count
-        else: # Single isoform match
-            new_counts[assigned] += artifact_count
-
-    return new_counts
-
 def prepare_count_matrices(old_counts, classid_df):
     """
     Splits the original count table into two matrices:
@@ -74,11 +48,7 @@ def calculate_distribution_fractions(exploded_map, base_df, sample_cols):
       - Proportional to target's abundance in base_df.
       - If all targets have 0 counts, split evenly (Uniform).
     """
-    # DEBUG
-    # import pickle
-    # with open("trial_issues.pkl", "wb") as f:
-    #     pickle.dump((exploded_map, base_df, sample_cols), f)
-    # f.close()
+
     # 1. Align Target Counts to the Map
     # Join the counts of the 'assigned_transcript' onto the exploded rows
     target_weights = exploded_map.merge(
@@ -214,7 +184,6 @@ def export_counts(old_counts_df, new_counts_df, prefix):
     extended_df.to_csv(f"{prefix}_reassigned_counts_extended.tsv", sep='\t', index=False)
     
     return final_df
-
 
 def calculate_tpm(counts, lengths):
     # Convert lengths to kilobases

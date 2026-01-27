@@ -483,6 +483,40 @@ class TestMergeRescueModes:
         # Should have both automatic and ml_mapping modes
         assert "automatic" in result["rescue_mode"].values
         assert "ml_mapping" in result["rescue_mode"].values
+        
+    def test_merge_reintroduces_propperly(self, automatic_rescue_df):
+        """ Test that a reference transcript is not reintroduced if it 
+        was already reintroduced by automatic rescue."""
+        full_rescue = pd.DataFrame({
+            'rescue_candidate': ['PB.1.1', 'PB.2.1'],
+            'mapping_hit': ['REF.AUTO.1', 'REF2'],
+            'hit_origin': ['reference', 'reference']
+        })
+        
+        inclusion_list = pd.Series(['REF.AUTO.1', 'REF2'])
+        
+        result = merge_rescue_modes(automatic_rescue_df, full_rescue, inclusion_list, "rules")
+        
+        # For the isoform PB.1.1 the reintroduced column should be 'no' 
+        ref1_entries = result[result["artifact"] == "PB.1.1"]
+        assert ref1_entries["reintroduced"].iloc[0] == "no"
+        assert ref1_entries["rescue_mode"].iloc[0] == "rules_mapping"
+
+    def test_merge_multiple_reintroduced(self, automatic_rescue_df):
+        """ Test that multiple different reference transcripts are marked as reintroduced correctly."""
+        full_rescue = pd.DataFrame({
+            'rescue_candidate': ['PB.1.1', 'PB.2.1'],
+            'mapping_hit': ['REF1', 'REF1'],
+            'hit_origin': ['reference', 'reference']
+        })
+        
+        inclusion_list = pd.Series(['REF1'])
+
+        result = merge_rescue_modes(automatic_rescue_df, full_rescue, inclusion_list, "rules")
+        # REF2 should be marked as reintroduced by mapping rescue
+        ref_entries = result[result["assigned_transcript"] == "REF1"]
+        assert ref_entries["reintroduced"].iloc[0] == "yes"
+        assert ref_entries["reintroduced"].iloc[1] == "no"
 
 
 class TestFindReintroducedTranscripts:

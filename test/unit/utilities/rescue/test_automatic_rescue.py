@@ -112,10 +112,11 @@ class TestRescueLostReference:
         # Should return None or empty DataFrame
         assert result is None or len(result) == 0
  
+
 class TestGenerateAutomaticTable:
     """Test suite for generate_automatic_table function."""
     
-    def test_normal_rescue(self, tmp_path):
+    def test_normal_rescue(self):
         """Test normal rescue with valid inclusion list."""
         inclusion_df = pd.DataFrame({
             'isoform': ['REF1', 'REF2']
@@ -140,8 +141,9 @@ class TestGenerateAutomaticTable:
         assert all(result['rescue_mode'] == 'automatic')
         assert all(result['origin'] == 'reference')
         assert len(result) == 3  # Three artifacts matched
-    
-    def test_empty_inclusion_list(self, tmp_path):
+
+
+    def test_empty_inclusion_list(self):
         """Test with 'none' in inclusion list."""
         inclusion_df = pd.DataFrame({
             'associated_transcript': ['none']
@@ -152,15 +154,13 @@ class TestGenerateAutomaticTable:
             'associated_transcript': ['REF1'],
             'filter_result': ['Artifact']
         })
-        
-        prefix = str(tmp_path / "test_output")
-        
+                
         result = generate_automatic_table(inclusion_df, class_df)
         
         # Should handle 'none' gracefully
         assert 'isoform' in result.columns or 'artifact' in result.columns
     
-    def test_reintroduced_column_logic(self, tmp_path):
+    def test_reintroduced_column_logic(self):
         """Test that 'reintroduced' column correctly marks first occurrence."""
         inclusion_df = pd.DataFrame({
             'isoform': ['REF1']
@@ -180,7 +180,7 @@ class TestGenerateAutomaticTable:
         assert reintroduced_values.count('no') == 2
         assert reintroduced_values[0] == 'yes'
     
-    def test_multiple_different_references(self, tmp_path):
+    def test_multiple_different_references(self):
         """Test with multiple different rescued references."""
         inclusion_df = pd.DataFrame({
             'isoform': ['REF1', 'REF2', 'REF3']
