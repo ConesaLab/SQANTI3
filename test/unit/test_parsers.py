@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, FLcount_parser
+from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
 from bx.intervals.intersection import IntervalTree
 
 class TestReferenceParser:
@@ -253,7 +253,7 @@ class TestParseTD2:
         os.remove(corrORF_td2_file)
 
 
-class TestFLcountParser:
+class TestParseCounts:
     @pytest.fixture
     def fl_count_single_tsv(self):
         return os.path.join(main_path, "test/test_data/abundance/fl_count_single_sample.tsv")
@@ -286,97 +286,117 @@ class TestFLcountParser:
     def fl_count_empty(self):
         return os.path.join(main_path, "test/test_data/abundance/fl_count_empty.tsv")
 
-    def test_FLcount_parser_single_sample_tsv(self, fl_count_single_tsv):
-        samples, fl_count_dict = FLcount_parser(fl_count_single_tsv)
+    def test_parse_counts_single_sample_tsv(self, fl_count_single_tsv):
+        df = parse_counts(fl_count_single_tsv)
         
-        # Single sample returns flat dictionary
-        assert len(samples) == 1
-        assert samples[0] == "count_fl"
-        assert len(fl_count_dict) == 5
-        assert fl_count_dict["PB.124830.1"] == 150
-        assert fl_count_dict["PB.103714.1"] == 200
-        assert fl_count_dict["PB.103724.1"] == 50
-        assert fl_count_dict["PB.103781.1"] == 300
-        assert fl_count_dict["PB.23068.2"] == 25
+        # Single sample returns DataFrame with isoform and count_fl columns
+        assert 'isoform' in df.columns
+        assert 'count_fl' in df.columns
+        assert len(df.columns) == 2  # isoform + 1 sample
+        assert len(df) == 5
+        assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
+        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300
+        assert df[df['isoform'] == "PB.23068.2"]['count_fl'].values[0] == 25
 
-    def test_FLcount_parser_single_sample_csv(self, fl_count_single_csv):
-        samples, fl_count_dict = FLcount_parser(fl_count_single_csv)
+    def test_parse_counts_single_sample_csv(self, fl_count_single_csv):
+        df = parse_counts(fl_count_single_csv)
         
-        assert len(samples) == 1
-        assert samples[0] == "count_fl"
-        assert len(fl_count_dict) == 5
-        assert fl_count_dict["PB.124830.1"] == 150
-        assert fl_count_dict["PB.103714.1"] == 200
-        assert fl_count_dict["PB.103724.1"] == 50
+        assert 'isoform' in df.columns
+        assert 'count_fl' in df.columns
+        assert len(df.columns) == 2
+        assert len(df) == 5
+        assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
 
-    def test_FLcount_parser_multi_sample_tsv(self, fl_count_multi_tsv):
-        samples, fl_count_dict = FLcount_parser(fl_count_multi_tsv)
+    def test_parse_counts_multi_sample_tsv(self, fl_count_multi_tsv):
+        df = parse_counts(fl_count_multi_tsv)
         
-        # Multi-sample returns nested dictionary
-        assert len(samples) == 3
-        assert set(samples) == {"sample1", "sample2", "sample3"}
-        assert len(fl_count_dict) == 5
+        # Multi-sample returns DataFrame with isoform and all sample columns
+        assert 'isoform' in df.columns
+        sample_cols = [col for col in df.columns if col != 'isoform']
+        assert len(sample_cols) == 3
+        assert set(sample_cols) == {"sample1", "sample2", "sample3"}
+        assert len(df) == 5
         
-        # Check nested structure
-        assert fl_count_dict["PB.124830.1"]["sample1"] == 150
-        assert fl_count_dict["PB.124830.1"]["sample2"] == 200
-        assert fl_count_dict["PB.124830.1"]["sample3"] == 180
+        # Check values
+        pb124830_row = df[df['isoform'] == "PB.124830.1"].iloc[0]
+        assert pb124830_row["sample1"] == 150
+        assert pb124830_row["sample2"] == 200
+        assert pb124830_row["sample3"] == 180
         
-        assert fl_count_dict["PB.103781.1"]["sample1"] == 300
-        assert fl_count_dict["PB.103781.1"]["sample2"] == 280
-        assert fl_count_dict["PB.103781.1"]["sample3"] == 310
+        pb103781_row = df[df['isoform'] == "PB.103781.1"].iloc[0]
+        assert pb103781_row["sample1"] == 300
+        assert pb103781_row["sample2"] == 280
+        assert pb103781_row["sample3"] == 310
 
-    def test_FLcount_parser_multi_sample_csv(self, fl_count_multi_csv):
-        samples, fl_count_dict = FLcount_parser(fl_count_multi_csv)
+    def test_parse_counts_multi_sample_csv(self, fl_count_multi_csv):
+        df = parse_counts(fl_count_multi_csv)
         
-        assert len(samples) == 3
-        assert set(samples) == {"sample1", "sample2", "sample3"}
-        assert len(fl_count_dict) == 5
+        assert 'isoform' in df.columns
+        sample_cols = [col for col in df.columns if col != 'isoform']
+        assert len(sample_cols) == 3
+        assert set(sample_cols) == {"sample1", "sample2", "sample3"}
+        assert len(df) == 5
         
-        assert fl_count_dict["PB.103714.1"]["sample1"] == 200
-        assert fl_count_dict["PB.103714.1"]["sample2"] == 220
-        assert fl_count_dict["PB.103714.1"]["sample3"] == 190
+        pb103714_row = df[df['isoform'] == "PB.103714.1"].iloc[0]
+        assert pb103714_row["sample1"] == 200
+        assert pb103714_row["sample2"] == 220
+        assert pb103714_row["sample3"] == 190
 
-    def test_FLcount_parser_with_comments(self, fl_count_with_comments):
-        samples, fl_count_dict = FLcount_parser(fl_count_with_comments)
+    def test_parse_counts_with_comments(self, fl_count_with_comments):
+        df = parse_counts(fl_count_with_comments)
         
         # Should skip comment lines and parse correctly
-        assert len(samples) == 1
-        assert len(fl_count_dict) == 3
-        assert fl_count_dict["PB.124830.1"] == 150
-        assert fl_count_dict["PB.103714.1"] == 200
-        assert fl_count_dict["PB.103724.1"] == 50
+        assert 'isoform' in df.columns
+        assert len(df.columns) == 2  # isoform + 1 sample
+        assert len(df) == 3
+        assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
 
-    def test_FLcount_parser_with_na_values(self, fl_count_with_na):
-        samples, fl_count_dict = FLcount_parser(fl_count_with_na)
+    def test_parse_counts_with_na_values(self, fl_count_with_na):
+        df = parse_counts(fl_count_with_na)
         
         # NA values should be converted to 0
-        assert len(samples) == 3
-        assert fl_count_dict["PB.124830.1"]["sample1"] == 150
-        assert fl_count_dict["PB.124830.1"]["sample2"] == 0  # NA converted to 0
-        assert fl_count_dict["PB.124830.1"]["sample3"] == 180
+        assert 'isoform' in df.columns
+        sample_cols = [col for col in df.columns if col != 'isoform']
+        assert len(sample_cols) == 3
         
-        assert fl_count_dict["PB.103724.1"]["sample1"] == 0  # NA converted to 0
-        assert fl_count_dict["PB.103724.1"]["sample2"] == 60
-        assert fl_count_dict["PB.103724.1"]["sample3"] == 55
+        pb124830_row = df[df['isoform'] == "PB.124830.1"].iloc[0]
+        assert pb124830_row["sample1"] == 150
+        assert pb124830_row["sample2"] == 0  # NA converted to 0
+        assert pb124830_row["sample3"] == 180
+        
+        pb103724_row = df[df['isoform'] == "PB.103724.1"].iloc[0]
+        assert pb103724_row["sample1"] == 0  # NA converted to 0
+        assert pb103724_row["sample2"] == 60
+        assert pb103724_row["sample3"] == 55
 
-    def test_FLcount_parser_mixed_numeric_types(self, fl_count_mixed_numeric):
-        _, fl_count_dict = FLcount_parser(fl_count_mixed_numeric)
+    def test_parse_counts_mixed_numeric_types(self, fl_count_mixed_numeric):
+        df = parse_counts(fl_count_mixed_numeric)
         
-        # Should handle both int and float values
-        assert fl_count_dict["PB.124830.1"] == 150
-        assert fl_count_dict["PB.103714.1"] == 200.5
-        assert fl_count_dict["PB.103724.1"] == 50
-        assert fl_count_dict["PB.103781.1"] == 300.75
+        # parse_counts converts all to int, so float values will be truncated
+        # But the function actually ensures counts are integers
+        assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
+        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300
         
-        # Check types
-        assert isinstance(fl_count_dict["PB.124830.1"], int)
-        assert isinstance(fl_count_dict["PB.103714.1"], float)
+        # All counts should be integers
+        sample_cols = [col for col in df.columns if col != 'isoform']
+        for col in sample_cols:
+            assert df[col].dtype == int
 
-    def test_FLcount_parser_empty_file(self, fl_count_empty):
-        samples, fl_count_dict = FLcount_parser(fl_count_empty)
+    def test_parse_counts_empty_file(self, fl_count_empty):
+        df = parse_counts(fl_count_empty)
         
-        # Empty file (only header) should return empty dict
-        assert len(samples) == 1
-        assert len(fl_count_dict) == 0
+        # Empty file (only header) should return DataFrame with columns but no rows
+        assert 'isoform' in df.columns
+        assert len(df.columns) == 2  # isoform + 1 sample column
+        assert len(df) == 0
+    
+
 
