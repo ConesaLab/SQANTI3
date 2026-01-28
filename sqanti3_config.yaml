@@ -10,7 +10,6 @@ qc:
   options:
     isoforms: ''
     min_ref_len: 0
-    force_id_ignore: false
     fasta: false
     genename: false
     novel_gene_prefix: ''

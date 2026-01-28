@@ -1,7 +1,7 @@
 import os
 
 from src.config import __version__
-from src.module_logging import qc_logger,filter_logger
+from src.module_logging import qc_logger, filter_logger, rescue_logger
 
 def write_qc_parameters(args):
     params_file = os.path.join(os.path.abspath(args.dir), args.output+".qc_params.txt")
@@ -12,7 +12,6 @@ def write_qc_parameters(args):
         f.write("Annotation\t" + os.path.abspath(args.refGTF) + "\n")
         f.write("Genome\t" + os.path.abspath(args.refFasta) + "\n")
         f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
-        f.write("ForceIdIgnore\t"+str(args.force_id_ignore) + "\n")
         f.write("Aligner\t" + str(args.aligner_choice) + "\n")
         f.write("FLCount\t" + (os.path.abspath(args.fl_count) if args.fl_count is not None else "NA") + "\n")
         f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA") + "\n")
@@ -40,6 +39,13 @@ def write_qc_parameters(args):
         f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
         f.write("ShortReadsBAMs\t" + (os.path.abspath(args.SR_bam) if args.SR_bam is not None else "NA") + "\n")
         f.write("ratioTSSmetric\t" + str(args.ratio_TSS_metric) + "\n")
+        f.write("NovelGenePrefix\t" + (str(args.novel_gene_prefix) if args.novel_gene_prefix is not None else "NA") + "\n")
+        f.write("CPUs\t" + str(args.cpus) + "\n")
+        f.write("Chunks\t" + str(args.chunks) + "\n")
+        f.write("LogLevel\t" + str(args.log_level) + "\n")
+        f.write("IsoformHits\t" + str(args.isoform_hits) + "\n")
+        f.write("Saturation\t" + str(args.saturation) + "\n")
+        f.write("TUSCO\t" + (str(args.tusco) if args.tusco is not None else "NA") + "\n")
 
 
 def write_filter_parameters(args):
@@ -58,6 +64,8 @@ def write_filter_parameters(args):
       f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
       f.write("FilterMonoexonic\t" + str(args.filter_mono_exonic) + "\n")
       f.write("SkipReport\t" + str(args.skip_report) + "\n")
+      f.write("CPUs\t" + str(args.cpus) + "\n")
+      f.write("LogLevel\t" + str(args.log_level) + "\n")
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
       if args.subcommand == 'ml':
@@ -70,3 +78,31 @@ def write_filter_parameters(args):
           f.write("ColumnsRemoved\t" + (str(args.remove_columns) if args.remove_columns is not None else "NA") + "\n")
           f.write("MaxClassSize\t" + str(args.max_class_size) + "\n")
           f.write("Intrapriming\t" + str(args.intrapriming) + "\n")
+
+
+def write_rescue_parameters(args):
+    params_file = os.path.join(os.path.abspath(args.dir), f"{args.output}_rescue_params.txt")
+    rescue_logger.info(f"Write arguments to {params_file}...")
+    with open(params_file, 'w') as f:
+        f.write("Version\t" + __version__ + "\n")
+        f.write("FilterClassification\t" + os.path.abspath(args.filter_class) + "\n")
+        f.write("ReferenceGTF\t" + os.path.abspath(args.refGTF) + "\n")
+        f.write("ReferenceFasta\t" + os.path.abspath(args.refFasta) + "\n")
+        f.write("CorrectedIsoformsFasta\t" + (os.path.abspath(args.corrected_isoforms_fasta) if args.corrected_isoforms_fasta is not None else "NA") + "\n")
+        f.write("FilteredIsoformsGTF\t" + (os.path.abspath(args.filtered_isoforms_gtf) if args.filtered_isoforms_gtf is not None else "NA") + "\n")
+        f.write("ReferenceClassification\t" + (os.path.abspath(args.refClassif) if args.refClassif is not None else "NA") + "\n")
+        f.write("Counts\t" + (os.path.abspath(args.counts) if args.counts is not None else "NA") + "\n")
+        f.write("RescueMonoexonic\t" + str(args.rescue_mono_exonic) + "\n")
+        f.write("Mode\t" + str(args.mode) + "\n")
+        f.write("Requant\t" + str(args.requant) + "\n")
+        f.write("Strategy\t" + str(args.strategy) + "\n")
+        f.write("OutputPrefix\t" + str(args.output) + "\n")
+        f.write("OutputDirectory\t" + os.path.abspath(args.dir) + "\n")
+        f.write("CPUs\t" + str(args.cpus) + "\n")
+        f.write("LogLevel\t" + str(args.log_level) + "\n")
+        if args.strategy == 'rules':
+            f.write("JSON\t" + (os.path.abspath(args.json_filter) if args.json_filter is not None else "NA") + "\n")
+        if args.strategy == 'ml':
+            f.write("RandomForest\t" + (os.path.abspath(args.random_forest) if args.random_forest is not None else "NA") + "\n")
+            f.write("Threshold\t" + str(args.threshold) + "\n")
+
