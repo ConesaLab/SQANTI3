@@ -78,7 +78,7 @@ def valid_matrix(filename,logger):
 
 def valid_abundance_file(filename,logger):
     valid_file(filename,logger)
-    if not filename.endswith('tsv') and not filename.endswith('csv'):
+    if not filename.endswith('.tsv') and not filename.endswith('.csv'):
         logger.error(f"File {filename} is not a TSV/CSV file. Abort!")
         sys.exit(1)
     return filename

@@ -122,7 +122,7 @@ class TestRenameIsoformSeqids:
         result_file = rename_isoform_seqids(arbitrary_fasta)
 
         # Assert
-        assert os.path.exists(output_fasta), "Output file was not created."
+        assert result_file == output_fasta, "Output file was not created."
         
         with open(output_fasta, "r") as output:
             renamed_records = list(SeqIO.parse(output, "fasta"))
@@ -174,7 +174,7 @@ class TestFilenameGetters:
 
     def test_get_omitted_name(self, sample_paths):
         """Test get_omitted_name returns correct path."""
-        expected_prefix = os.path.join(os.path.join(sample_paths['outdir'], sample_paths['prefix']))
+        expected_prefix = os.path.join(sample_paths['outdir'], sample_paths['prefix'])
         omitted_name = get_omitted_name(**sample_paths)
         
         assert omitted_name == expected_prefix + "_omitted_due_to_min_ref_len.txt"
@@ -253,10 +253,11 @@ class TestProcessGtfLine:
             os.remove(mock_corrGTF_out)
             os.remove(mock_discard_gtf)
         except FileNotFoundError:
+             # Files may not exist from previous runs; it's safe to ignore if they are absent.
             pass
         line = "# This is a comment\n"
         result = process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf, logger=tester_logger)
-        assert result == None, "The result was not empty"
+        assert result is None, "The result was not empty"
         assert not os.path.exists(mock_corrGTF_out), "The corrected GTF file was created"
         assert not os.path.exists(mock_discard_gtf), "The discarded GTF file was created"
 

@@ -41,12 +41,12 @@ def rename_isoform_seqids(input_fasta):
         out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(out_file, mode='wt')
-    for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
-        # Extract the first part of the ID (before '|' or space)
-        newid = r.id.split('|')[0].split()[0]
-        f.write(">{0}\n{1}\n".format(newid, r.seq))
-    f.close()
+        
+    with open(out_file, mode='wt') as f:
+        for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
+            # Extract the first part of the ID (before '|' or space)
+            newid = r.id.split('|')[0].split()[0]
+            f.write(">{0}\n{1}\n".format(newid, r.seq))
     return out_file
 
 ### Input/Output functions ###
