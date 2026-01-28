@@ -1,5 +1,4 @@
 import os
-import sys
 import gzip
 
 
@@ -15,16 +14,17 @@ from src.parsers import parse_TD2, parse_corrORF
 from src.module_logging import qc_logger
 
 ### Environment manipulation functions ###
-def rename_isoform_seqids(input_fasta, force_id_ignore=False):
+def rename_isoform_seqids(input_fasta):
     """
-    Rename input isoform fasta/fastq, which is usually mapped, collapsed Iso-Seq data with IDs like:
-
-    PB.1.1|chr1:10-100|xxxxxx
-
-    to just being "PB.1.1"
+    Rename input isoform fasta/fastq by extracting the first part of the sequence ID.
+    
+    Handles various ID formats by taking the content before '|' or space characters.
+    For example:
+    - "PB.1.1|chr1:10-100|xxxxxx" becomes "PB.1.1"
+    - "transcript_name some_annotation" becomes "transcript_name"
 
     :param input_fasta: Could be either fasta or fastq, autodetect. Can be gzipped.
-    :return: output fasta with the cleaned up sequence ID, is_fusion flag
+    :return: output fasta with the cleaned up sequence ID
     """
     type = 'fasta'
     # gzip.open and open have different default open modes:
@@ -41,24 +41,12 @@ def rename_isoform_seqids(input_fasta, force_id_ignore=False):
         out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
     with open_function(input_fasta, mode="rt") as h:
         if h.readline().startswith('@'): type = 'fastq'
-    f = open(out_file, mode='wt')
-    for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
-        m1 = seqid_rex1.match(r.id)
-        m2 = seqid_rex2.match(r.id)
-        m3 = seqid_fusion.match(r.id)
-        if not force_id_ignore and (m1 is None and m2 is None and m3 is None):
-            qc_logger.error(f"Invalid input IDs! Expected PB.X.Y or PB.X.Y|xxxxx or PBfusion.X format but saw {r.id} instead. Abort!")
-            sys.exit(1)
-        if r.id.startswith('PB.') or r.id.startswith('PBfusion.'):  # PacBio fasta header
-            newid = r.id.split('|')[0]
-        else:
-            raw = r.id.split('|')
-            if len(raw) > 4:  # RefSeq fasta header
-                newid = raw[3]
-            else:
-                newid = r.id.split()[0]  # Ensembl fasta header
-        f.write(">{0}\n{1}\n".format(newid, r.seq))
-    f.close()
+        
+    with open(out_file, mode='wt') as f:
+        for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
+            # Extract the first part of the ID (before '|' or space)
+            newid = r.id.split('|')[0].split()[0]
+            f.write(">{0}\n{1}\n".format(newid, r.seq))
     return out_file
 
 ### Input/Output functions ###
@@ -120,6 +108,10 @@ def sequence_correction(
     else:
         qc_logger.info("Correcting fasta")
         if fasta:
+            qc_logger.info("Cleaning up isoform IDs...")
+            isoforms = rename_isoform_seqids(isoforms)
+            qc_logger.info(f"Cleaned up isoform fasta file written to: {isoforms}")
+    
             if os.path.exists(corrSAM):
                 qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
             else:

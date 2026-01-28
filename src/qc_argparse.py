@@ -13,7 +13,6 @@ def qc_argparse():
     # Customization and filtering args
     apc = ap.add_argument_group("Customization and filtering")
     apc.add_argument("--min_ref_len", type=int, default=0, help="Minimum reference transcript length (default: 0 bp)")
-    apc.add_argument("--force_id_ignore", action="store_true", help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     apc.add_argument('--fasta', action='store_true', help='Use when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms')
     apc.add_argument('--genename', action='store_true' ,help='Use gene_name tag from GTF to define genes. Default: gene_id used to define genes',)
     apc.add_argument('--novel_gene_prefix', default=None, help='Prefix for novel isoforms (default: None)')

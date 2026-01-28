@@ -28,6 +28,7 @@ from src.rescue_steps import (
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
 from src.utilities.rescue.sq_requant import requantification_pipeline
+from src.write_parameters import write_rescue_parameters
 
 def main():
   art_logger.info(rescue_art())
@@ -37,6 +38,7 @@ def main():
   os.makedirs(f"{args.dir}/logs", exist_ok=True)
   # Check if the logs directory exists, if not create it
   rescue_args_validation(args)
+  write_rescue_parameters(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
   #### RUN AUTOMATIC RESCUE ####
