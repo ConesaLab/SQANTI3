@@ -2,13 +2,13 @@ import os
 import shutil
 import pandas as pd
 
-from src.wrapper_utils import (sqanti_path)
+from src.wrapper_utils import sqanti_path
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    get_lost_reference_id, rescue_lost_reference, save_automatic_rescue
+    get_lost_reference_id, rescue_lost_reference, generate_automatic_table
 )
 from src.utilities.rescue.rescue_helpers import (
     identify_rescue_candidates,
@@ -25,13 +25,15 @@ from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
 
-def run_automatic_rescue(classif_df,monoexons,prefix):
+def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
     # Select the FSM  isoforms with more than one exon 
     rescue_classif = classif_df[
         (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
+
+    # Include monoexonic FSM if requested
     if monoexons != 'none':
         rescue_classif = pd.concat([
             rescue_classif,
@@ -46,7 +48,7 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
     if len(lost_ref) == 0:
        rescue_logger.info("No lost references found")
        rescue_logger.info("Automatic rescue is not needed")
-       rescue_df = save_automatic_rescue(pd.DataFrame({'associated_transcript': ['none']}),classif_df,prefix)
+       rescue_df = generate_automatic_table(pd.DataFrame({'associated_transcript': ['none']}),classif_df)
        return pd.DataFrame(columns=['isoform']), rescue_df
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
     rescue = pd.DataFrame()
@@ -58,7 +60,7 @@ def run_automatic_rescue(classif_df,monoexons,prefix):
     rescue_logger.debug(f"Rescued {rescue_ref.shape[0]} transcripts")
     
     # Save the automatic rescue
-    rescue_df = save_automatic_rescue(rescue_ref,classif_df,prefix)
+    rescue_df = generate_automatic_table(rescue_ref,classif_df)
     return rescue_ref.iloc[:,0], rescue_df
 
 
@@ -75,6 +77,7 @@ def rescue_candidates(classif_df,monoexons,prefix):
                             index=False)
 
     return rescue_candidates["isoform"].tolist()
+    
     
 def rescue_targets(classif_df,rescue_candidates,ref_gtf,prefix):
     # Get the genes with associated rescue candidates
@@ -235,7 +238,7 @@ def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refG
     ## Create new FASTA including rescued transcripts #
     good_transcripts = rescued_class[rescued_class['filter_result'] == 'Isoform']['isoform']
     ref_fasta_file = os.path.join(out_dir, 
-                                  os.path.basename(refGTF).replace('.gtf', '.fasta'))
+                                  os.path.basename(refGTF).replace('.gtf', '.isoforms.fasta'))
     write_rescue_fasta(corrected_isoforms_fasta,ref_fasta_file, good_transcripts, rescued_transcripts, prefix)
     rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
 

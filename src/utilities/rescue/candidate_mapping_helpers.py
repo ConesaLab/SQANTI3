@@ -12,7 +12,7 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
 
     # make FASTA file name
     pre, _ = os.path.splitext(os.path.basename(ref_gtf))
-    ref_trans_Fasta = os.path.join(outdir,f"{pre}.fasta")
+    ref_trans_Fasta = os.path.join(outdir,f"{pre}.isoforms.fasta")
 
     # build gffread command
     ref_cmd = f"gffread -w {ref_trans_Fasta} -g {ref_fasta} {ref_gtf}"

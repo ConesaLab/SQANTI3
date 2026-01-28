@@ -12,6 +12,7 @@ import os
 
 import pandas as pd
 
+from src.parsers import parse_counts
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
@@ -26,7 +27,7 @@ from src.rescue_steps import (
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
-from src.utilities.rescue.sq_requant import parse_files, run_requant, to_tpm
+from src.utilities.rescue.sq_requant import requantification_pipeline
 
 def main():
   art_logger.info(rescue_art())
@@ -46,7 +47,7 @@ def main():
   message("Reading filter classification file",rescue_logger)
   class_df = read_classification(args.filter_class)
   ## AUTOMATIC RESCUE ##
-  inclusion_list, rescue_df = run_automatic_rescue(class_df,args.rescue_mono_exonic,prefix)
+  inclusion_list, rescue_df = run_automatic_rescue(class_df,args.rescue_mono_exonic)
   message("Automatic rescue completed",rescue_logger)
   ## Convert reference transcriptome GTF to FASTA
   ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
@@ -86,26 +87,15 @@ def main():
     #### RUN RULES FILTER RESCUE ####
     # this part runs SQ3 rules filter for the reference transcriptome
     # and combines the results with the mapping hits obtained in the previous step
-    if args.subcommand == "rules":
+    elif args.strategy == "rules":
       message("Rescue-by-mapping for rules filter", rescue_logger)
       # run rules-specific steps of rescue
       inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
                                                    inclusion_list,args.dir, args.json_filter)
 
-
-    # Finish print if output exists (same for rules and ML) ####
-    # inclusion_list_file = f"{prefix}_full_inclusion_list.tsv"
-    # if os.path.isfile(inclusion_list_file):
-    #   message(f"Rescue {args.strategy} finished successfully!",rescue_logger)
-    #   rescue_logger.info(f"Final rescued transcript list written to file: {inclusion_list_file}")
-    # else:
-    #   rescue_logger.error(f"Something went wrong, inclusion list not found: {inclusion_list_file}")
-    #   sys.exit(1)
-  ### End of condition (mode == "full")
-
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
-  if args.rescue_gtf is None:
+  if args.filtered_isoforms_gtf is None:
     rescue_logger.warning("No filtered GTF provided.")
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
@@ -119,15 +109,7 @@ def main():
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
-    #TODO: Make this take the variables from python directly
-    counts_df = parse_files(args.counts)
-    rescue_logger.info("Counts file parsed.")
-    requant_df = run_requant(counts_df, rescue_df, class_df, prefix)
-    rescue_logger.info("Requantification of counts completed.")
-    rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
-    # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
-    to_tpm(requant_df,rescue_class, prefix)
-    rescue_logger.info("Requantification finished!")
+    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df)
 
 ## Run main()
 if __name__ == "__main__":
