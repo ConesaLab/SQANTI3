@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from src.module_logging import rescue_logger
 
 def merge_classifications(reference_rules_path, classif, strategy, thr = 0.7):
     """Load input data files."""
@@ -44,7 +43,6 @@ def add_filter_results(mapping_hits, combined_class, classif):
     ).rename(columns={"structural_category": "candidate_structural_category"})
     mapping_hits.drop(columns=["isoform"], inplace=True)
     return mapping_hits
-
     
 def select_best_hits(df):
     # Keep rows with max score per group
@@ -53,9 +51,6 @@ def select_best_hits(df):
     if (df['hit_origin'] == 'lr_defined').any():
         df = df[df['hit_origin'] == 'lr_defined']
     # For now, we are keeping all best hits (in case of ties) 
-    # If there is a tie between two reference hits, keep one 
-    # if (df['hit_origin'] == 'reference').sum() > 1:
-    #     df = df[df['hit_origin'] == 'reference'].iloc[[0]]
     return df
 
 def filter_mapping_hits(mapping_hits, strategy):
@@ -82,37 +77,12 @@ def find_reintroduced_transcripts(mapping_hits_filt, automatic_rescue_array):
     full_rescue_array = mapping_hits_filt.loc[
         (mapping_hits_filt["hit_origin"] == "reference"), "mapping_hit"
     ].unique()
-    # TODO: Should we not reintroduce a reference transcript if it is represented by an FSM?
+    # We decided to reintroduce a reference transcript even though there is an FSM that covers it
     if automatic_rescue_array.empty:
         combined = pd.Series(full_rescue_array)
     else:
         combined = pd.Series(np.concatenate([automatic_rescue_array, full_rescue_array]))
     return combined.drop_duplicates().reset_index(drop=True)
-
-def merge_rescue_modes_old(auto_rescue_df, mapping_rescue_df,full_inclusion_list, strategy):
-    """Merge rescue modes into a single DataFrame."""
-    # Fix full rescue dataframe
-    mapping_rescue_df = mapping_rescue_df.rename(columns={
-        "rescue_candidate": "artifact",
-        "mapping_hit": "assigned_transcript",
-        "hit_origin":"origin"
-    })
-    mapping_rescue_df["rescue_mode"] = f"{strategy}_mapping"
-
-    # Reintroduced transcripts are present in the full_inclusion_list but not in auto_rescue_df["assigned_transcript"]
-    # Only mark as "yes" the first occurrence of each transcript
-    mapping_rescue_df["reintroduced"] = (
-        mapping_rescue_df["assigned_transcript"].isin(full_inclusion_list) &
-        ~mapping_rescue_df["assigned_transcript"].isin(auto_rescue_df["assigned_transcript"]) &
-        ~mapping_rescue_df.duplicated(subset="assigned_transcript", keep="first")
-    ).map({True: "yes", False: "no"})
-    
-    mapping_rescue_df = mapping_rescue_df[[
-        "artifact", "assigned_transcript", "rescue_mode","origin", "reintroduced"]]
-    # Combine automatic and full rescue dataframes
-    rescue_df = pd.concat([auto_rescue_df, mapping_rescue_df])
-
-    return rescue_df
 
 def merge_rescue_modes(auto_rescue_df, mapping_rescue_df, full_inclusion_list, strategy):
     """

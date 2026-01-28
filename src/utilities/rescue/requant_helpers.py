@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 
-from collections import defaultdict
-
 def get_unrescued_artifacts(classif_df, rescue_df):
     """Find artifacts that remain unrescued or were not linked to any rescued transcript."""
     not_rescued = (

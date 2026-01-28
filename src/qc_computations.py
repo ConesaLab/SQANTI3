@@ -2,7 +2,7 @@ from collections import defaultdict
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts
-from src.parsers import FLcount_parser, expression_parser, parse_counts
+from src.parsers import expression_parser, parse_counts
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 from src.module_logging import qc_logger

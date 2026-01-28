@@ -236,7 +236,7 @@ def run_step_help(step):
     help = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} -h",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} -h"
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} -h"
     }
     if step == "filter":
         filter_type = input(f"Which {step} option do you want to see the help from (rules/ml)? ")

@@ -4,7 +4,6 @@ Tests the complete requantification workflow as an integrated pipeline.
 """
 import pytest
 import pandas as pd
-import numpy as np
 import sys
 import os
 
@@ -13,9 +12,9 @@ main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
 
 from src.utilities.rescue.sq_requant import (
-    run_requant,
+    requantify,
     redistribute_counts_vectorized,
-    requantificaiton_pipeline
+    requantification_pipeline
 )
 
 
@@ -156,8 +155,8 @@ class TestRedistributeCountsVectorized:
         assert gene2_td_row['sample1'] == 75
 
 
-class TestRunRequant:
-    """Test suite for run_requant function (main entry point)."""
+class TestRequantify:
+    """Test suite for requantify function (main entry point)."""
     
     def test_full_requant_workflow(self, tmp_path):
         """Test the complete requantification workflow with file output."""
@@ -182,7 +181,7 @@ class TestRunRequant:
         prefix = str(tmp_path / "test_output")
         
         # Execute
-        result = run_requant(counts, rescue_df, classif_df, prefix)
+        result = requantify(counts, rescue_df, classif_df, prefix)
         
         # Verify
         assert result is not None
@@ -215,10 +214,10 @@ class TestRunRequant:
 
 
 class TestRequantificationPipeline:
-    """Test suite for the full requantification pipeline including TPM calculation."""
+    """Test suite for the full requantification pipeline."""
     
-    def test_pipeline_with_tpm_output(self, tmp_path):
-        """Test the complete pipeline including TPM calculation."""
+    def test_pipeline_workflow(self, tmp_path):
+        """Test the complete requantification pipeline workflow."""
         # Create temporary count file
         counts_file = tmp_path / "counts.tsv"
         counts_df = pd.DataFrame({
@@ -244,7 +243,7 @@ class TestRequantificationPipeline:
         output_prefix = "test_output"
         
         # Execute
-        requantificaiton_pipeline(
+        requantification_pipeline(
             output_dir,
             output_prefix,
             str(counts_file),
@@ -252,18 +251,18 @@ class TestRequantificationPipeline:
             classif_df
         )
         
-        # Verify all output files
+        # Verify output files
         assert os.path.exists(f"{output_dir}/{output_prefix}_reassigned_counts.tsv")
         assert os.path.exists(f"{output_dir}/{output_prefix}_reassigned_counts_extended.tsv")
-        assert os.path.exists(f"{output_dir}/{output_prefix}_reassigned_counts_TPM.tsv")
         
-        # Verify TPM file
-        tpm_df = pd.read_csv(f"{output_dir}/{output_prefix}_reassigned_counts_TPM.tsv", sep='\t')
-        assert 'transcript_id' in tpm_df.columns
-        assert 'TPM' in tpm_df.columns
+        # Verify reassigned counts file
+        reassigned_df = pd.read_csv(f"{output_dir}/{output_prefix}_reassigned_counts.tsv", sep='\t')
+        assert 'isoform' in reassigned_df.columns
+        assert 'sample1' in reassigned_df.columns
         
-        # TPM should sum to approximately 1 million
-        assert pytest.approx(tpm_df['TPM'].sum(), abs=1) == 1e6
+        # Verify PB.1.1 received artifact1's counts
+        pb11_row = reassigned_df[reassigned_df['isoform'] == 'PB.1.1'].iloc[0]
+        assert pb11_row['sample1'] == 150  # 100 + 50
 
 
 class TestEdgeCases:

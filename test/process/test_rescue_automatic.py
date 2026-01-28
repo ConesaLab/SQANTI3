@@ -19,13 +19,11 @@ class TestRunAutomaticRescueMultiExon:
     
     def test_rescue_lost_fsm_multiexon(self, sample_rescue_classification_mix, tmp_path):
         """Test rescuing lost FSM multi-exon references."""
-        prefix = str(tmp_path / "test_output")
         
         inclusion_list, rescue_df = run_automatic_rescue(
             sample_rescue_classification_mix,
-            monoexons='none',  # No monoexon rescue by default
-            prefix=prefix
-        )
+            monoexons='none'  # No monoexon rescue by default
+            )
         
         # REF2 and REF4 are lost (no Isoform), should be rescued
         # REF2 has no FSM, so won't be rescued
@@ -59,12 +57,9 @@ class TestRunAutomaticRescueMultiExon:
             'associated_gene': ['GENE1', 'GENE2']
         })
         
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, rescue_df = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should return empty inclusion list
@@ -84,12 +79,9 @@ class TestRunAutomaticRescueMultiExon:
             'associated_gene': ['GENE1', 'GENE2']
         })
         
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, _ = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # REF2 is lost but has no FSM, shouldn't be rescued
@@ -101,12 +93,9 @@ class TestRunAutomaticRescueMonoexon:
     
     def test_monoexon_rescue_all(self, sample_rescue_classification_mix, tmp_path):
         """Test monoexon rescue with 'all' parameter."""
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, rescue_df = run_automatic_rescue(
             sample_rescue_classification_mix,
-            monoexons='all',
-            prefix=prefix
+            monoexons='all'
         )
         
         # Should rescue lost FSM monoexons
@@ -121,12 +110,9 @@ class TestRunAutomaticRescueMonoexon:
     
     def test_monoexon_rescue_fsm(self, sample_rescue_classification_mix, tmp_path):
         """Test monoexon rescue with 'fsm' parameter."""
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, rescue_df = run_automatic_rescue(
             sample_rescue_classification_mix,
-            monoexons='fsm',
-            prefix=prefix
+            monoexons='fsm'
         )
         
         # Should rescue lost FSM monoexons only
@@ -138,12 +124,9 @@ class TestRunAutomaticRescueMonoexon:
     
     def test_monoexon_rescue_only(self, sample_rescue_classification_monoexon, tmp_path):
         """Test that monoexons are  rescued when there are only monoexons."""
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, _ = run_automatic_rescue(
             sample_rescue_classification_monoexon,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should not rescue monoexons
@@ -161,13 +144,10 @@ class TestRunAutomaticRescueMonoexon:
         monoexons_param
     ):
         """Test that different monoexon parameters work without errors."""
-        prefix = str(tmp_path / "test_output")
-        
         # Should not raise any errors
         inclusion_list, rescue_df = run_automatic_rescue(
             sample_rescue_classification_mix,
-            monoexons=monoexons_param,
-            prefix=prefix
+            monoexons=monoexons_param
         )
         
         assert isinstance(inclusion_list, pd.Series)
@@ -191,12 +171,9 @@ class TestRunAutomaticRescueMultipleArtifacts:
             'associated_gene': ['GENE1', 'GENE1', 'GENE1', 'GENE2']
         })
         
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, rescue_df = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # REF1 should be rescued once
@@ -220,12 +197,10 @@ class TestRunAutomaticRescueRealData:
     def test_with_lost_fsm_file(self, rescue_classification_file_lost_fsm, tmp_path):
         """Test rescue with classification file containing lost FSM."""
         classif_df = pd.read_csv(rescue_classification_file_lost_fsm, sep='\t')
-        prefix = str(tmp_path / "test_output")
         
         inclusion_list, rescue_df = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should successfully process the file
@@ -235,12 +210,10 @@ class TestRunAutomaticRescueRealData:
     def test_with_monoexon_file(self, rescue_classification_file_monoexon, tmp_path):
         """Test rescue with monoexonic classification file."""
         classif_df = pd.read_csv(rescue_classification_file_monoexon, sep='\t')
-        prefix = str(tmp_path / "test_output")
         
         inclusion_list, rescue_df = run_automatic_rescue(
             classif_df,
-            monoexons='all',
-            prefix=prefix
+            monoexons='all'
         )
         
         # Should successfully process the file
@@ -250,12 +223,10 @@ class TestRunAutomaticRescueRealData:
     def test_with_no_lost_file(self, rescue_classification_file_no_lost, tmp_path):
         """Test rescue when no references are lost."""
         classif_df = pd.read_csv(rescue_classification_file_no_lost, sep='\t')
-        prefix = str(tmp_path / "test_output")
         
         inclusion_list, _ = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should return empty inclusion list
@@ -264,12 +235,10 @@ class TestRunAutomaticRescueRealData:
     def test_with_multi_artifact_file(self, rescue_classification_file_multi_artifact, tmp_path):
         """Test rescue with multiple artifacts per reference."""
         classif_df = pd.read_csv(rescue_classification_file_multi_artifact, sep='\t')
-        prefix = str(tmp_path / "test_output")
         
         inclusion_list, rescue_df = run_automatic_rescue(
             classif_df,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should successfully process the file
@@ -291,12 +260,9 @@ class TestRunAutomaticRescueOutputFormat:
     
     def test_inclusion_list_format(self, sample_rescue_classification, tmp_path):
         """Test that inclusion list has correct format."""
-        prefix = str(tmp_path / "test_output")
-        
         inclusion_list, _ = run_automatic_rescue(
             sample_rescue_classification,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Should be a pandas Series
@@ -309,12 +275,9 @@ class TestRunAutomaticRescueOutputFormat:
     
     def test_rescue_df_columns(self, sample_rescue_classification, tmp_path):
         """Test that rescue_df has all required columns."""
-        prefix = str(tmp_path / "test_output")
-        
         _, rescue_df = run_automatic_rescue(
             sample_rescue_classification,
-            monoexons=None,
-            prefix=prefix
+            monoexons=None
         )
         
         # Required columns
@@ -331,12 +294,9 @@ class TestRunAutomaticRescueOutputFormat:
     
     def test_rescue_mode_values(self, sample_rescue_classification, tmp_path):
         """Test that rescue_mode column has correct values."""
-        prefix = str(tmp_path / "test_output")
-        
         _, rescue_df = run_automatic_rescue(
             sample_rescue_classification,
-            monoexons='all',
-            prefix=prefix
+            monoexons='all'
         )
         
         if len(rescue_df) > 0:
@@ -345,12 +305,9 @@ class TestRunAutomaticRescueOutputFormat:
     
     def test_origin_values(self, sample_rescue_classification, tmp_path):
         """Test that origin column has correct values."""
-        prefix = str(tmp_path / "test_output")
-        
         _, rescue_df = run_automatic_rescue(
             sample_rescue_classification,
-            monoexons='all',
-            prefix=prefix
+            monoexons='all'
         )
         
         if len(rescue_df) > 0:
@@ -359,12 +316,9 @@ class TestRunAutomaticRescueOutputFormat:
     
     def test_reintroduced_values(self, sample_rescue_classification, tmp_path):
         """Test that reintroduced column has valid values."""
-        prefix = str(tmp_path / "test_output")
-        
         _, rescue_df = run_automatic_rescue(
             sample_rescue_classification,
-            monoexons='all',
-            prefix=prefix
+            monoexons='all'
         )
         
         if len(rescue_df) > 0:

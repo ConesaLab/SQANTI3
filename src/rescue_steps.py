@@ -2,7 +2,7 @@ import os
 import shutil
 import pandas as pd
 
-from src.wrapper_utils import (sqanti_path)
+from src.wrapper_utils import sqanti_path
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
@@ -25,13 +25,15 @@ from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
 
-def run_automatic_rescue(classif_df,monoexons,prefix):
+def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
     # Select the FSM  isoforms with more than one exon 
     rescue_classif = classif_df[
         (classif_df['structural_category'].isin(['full-splice_match'])) & 
         (classif_df['exons'] > 1)
     ]
+
+    # Include monoexonic FSM if requested
     if monoexons != 'none':
         rescue_classif = pd.concat([
             rescue_classif,
@@ -75,6 +77,7 @@ def rescue_candidates(classif_df,monoexons,prefix):
                             index=False)
 
     return rescue_candidates["isoform"].tolist()
+    
     
 def rescue_targets(classif_df,rescue_candidates,ref_gtf,prefix):
     # Get the genes with associated rescue candidates

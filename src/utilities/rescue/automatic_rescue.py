@@ -28,18 +28,23 @@ def rescue_lost_reference(ref_id, classif):
         return ref_df
     
 def generate_automatic_table(inclusion_df,class_df):
-    # First write operation: rescue_auto without headers
+    """
+    Generate the rescue table with the results of automatic rescue
 
+    :param inclusion_df: Pandas Series with the isoforms to be reintrouced
+    :param class_df: SQANTI3 classification DataFrame (after filtering)
+    """
+    # Handle case with nothing to be rescued in the automatic mode
     if inclusion_df.iloc[0,0] == "none":
         rescue_logger.info("No FSM mono-exonic artifacts found for automatic rescue.")
         inclusion_df["isoform"] = "none"
-    # Second write operation: rescue_table with headers 
+
     rescue_table = class_df[
         class_df['associated_transcript'].isin(inclusion_df['isoform']) & class_df['filter_result'].eq('Artifact')
     ][['isoform', 'associated_transcript']].rename(
         columns={'isoform': 'artifact', 'associated_transcript': 'assigned_transcript'}
     )
-    # Adding extra, important columns
+    # Adding the important columns
     rescue_table["rescue_mode"] = "automatic"
     rescue_table["origin"] = "reference"
     rescue_table["reintroduced"] = (

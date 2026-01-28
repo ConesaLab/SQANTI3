@@ -484,7 +484,7 @@ class TestMergeRescueModes:
         assert "automatic" in result["rescue_mode"].values
         assert "ml_mapping" in result["rescue_mode"].values
         
-    def test_merge_reintroduces_propperly(self, automatic_rescue_df):
+    def test_merge_reintroduces_properly(self, automatic_rescue_df):
         """ Test that a reference transcript is not reintroduced if it 
         was already reintroduced by automatic rescue."""
         full_rescue = pd.DataFrame({
@@ -513,7 +513,7 @@ class TestMergeRescueModes:
         inclusion_list = pd.Series(['REF1'])
 
         result = merge_rescue_modes(automatic_rescue_df, full_rescue, inclusion_list, "rules")
-        # REF2 should be marked as reintroduced by mapping rescue
+        # REF1 should be marked as reintroduced by mapping rescue but only for the first occurrence
         ref_entries = result[result["assigned_transcript"] == "REF1"]
         assert ref_entries["reintroduced"].iloc[0] == "yes"
         assert ref_entries["reintroduced"].iloc[1] == "no"

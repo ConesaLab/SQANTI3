@@ -7,7 +7,6 @@ import os
 import sys
 import pytest
 import pandas as pd
-from pathlib import Path
 
 # Add main path to sys.path
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))

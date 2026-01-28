@@ -27,7 +27,7 @@ from src.rescue_steps import (
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
-from src.utilities.rescue.sq_requant import requantificaiton_pipeline
+from src.utilities.rescue.sq_requant import requantification_pipeline
 
 def main():
   art_logger.info(rescue_art())
@@ -47,7 +47,7 @@ def main():
   message("Reading filter classification file",rescue_logger)
   class_df = read_classification(args.filter_class)
   ## AUTOMATIC RESCUE ##
-  inclusion_list, rescue_df = run_automatic_rescue(class_df,args.rescue_mono_exonic,prefix)
+  inclusion_list, rescue_df = run_automatic_rescue(class_df,args.rescue_mono_exonic)
   message("Automatic rescue completed",rescue_logger)
   ## Convert reference transcriptome GTF to FASTA
   ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
@@ -109,7 +109,7 @@ def main():
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
-    requantificaiton_pipeline(args.dir, args.output, args.counts, rescue_df, class_df)
+    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df)
 
 ## Run main()
 if __name__ == "__main__":

@@ -9,8 +9,6 @@ sys.path.insert(0, main_path)
 from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, FLcount_parser
 from bx.intervals.intersection import IntervalTree
 
-### reference_parser ###
-
 class TestReferenceParser:
     @pytest.fixture
     def reference_parser_input(self):
@@ -117,7 +115,7 @@ class TestReferenceParser:
         _, _, _, junctions_by_gene, _ = reference_parser(*list(reference_parser_input.values()))
         assert len(junctions_by_gene.keys()) == 913
         assert len(junctions_by_gene["ENSG00000206195.11"]) == 11
-        assert junctions_by_gene["ENSG00000206195.11"].pop() == (15791152, 15815475)
+        assert (15791152, 15815475) in junctions_by_gene["ENSG00000206195.11"]
 
     def test_reference_parser_correctStartEnds(self, reference_parser_input):
         _, _, _, _, start_ends_by_gene = reference_parser(*list(reference_parser_input.values()))
@@ -125,8 +123,6 @@ class TestReferenceParser:
         assert start_ends_by_gene["ENSG00000206195.11"]["begin"] == {15784958, 15784962, 15784976, 15784991, 15787699}
         assert start_ends_by_gene["ENSG00000206195.11"]["end"] == {15829984, 15827434, 15790573, 15791387, 15827708}
 
-
-### isoforms_parser ###
 
 class TestIsoformsParser:
     @pytest.fixture
@@ -148,8 +144,6 @@ class TestIsoformsParser:
         txStarts = [isoform.txStart for isoform in isoforms_by_chr["chr22"]]
         assert txStarts == sorted(txStarts)
 
-
-### parse_corrORF ###
 
 class TestParseCorrORF:
     @pytest.fixture
@@ -198,8 +192,6 @@ MDEGTYIHALNNGLFTLGAPHKEVDEGPSPPEQFTAVKLSDSRITLKSGYGKYLGINSDELVVGHSDAIGPREQWEPVFK
         with patch('builtins.open', mock_open(read_data=non_integer_fasta)):
             with pytest.raises(SystemExit):
                 parse_corrORF('dummy_file.fasta')
-
-### parse_TD2 ###
 
 class TestParseTD2:
     @pytest.fixture
@@ -260,8 +252,6 @@ class TestParseTD2:
         # Clean up: remove the output file after the test
         os.remove(corrORF_td2_file)
 
-
-### FLcount_parser ###
 
 class TestFLcountParser:
     @pytest.fixture
