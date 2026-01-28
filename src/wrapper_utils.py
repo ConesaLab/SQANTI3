@@ -112,12 +112,12 @@ def set_default_values(config,user_options):
             if key not in user_options:
                 if section == 'filter':
                    # Avoids including the protein sequences if the user has set skipORF
-                   if key == 'filter_faa' and config['qc']['options']['skipORF']:
-                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
-                   else:
-                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+                    if key == 'filter_faa' and not config['qc']['options']['include_ORF']:
+                        continue
+                    else:
+                        config[section]['options']['common'][key] = generate_default_path(config, default_filename)
                 else:
-                     config[section]['options'][key] = generate_default_path(config, default_filename)
+                    config[section]['options'][key] = generate_default_path(config, default_filename)
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):
