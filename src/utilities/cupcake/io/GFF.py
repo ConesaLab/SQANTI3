@@ -560,12 +560,12 @@ class pasaGFFReader(gmapGFFReader):
 
 def write_collapseGFF_format(f, r):
     
-    f.write("{chr}\tPacBio\ttranscript\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=r.start+1, e=r.end, strand=r.strand,gid=r.geneid, tid=r.seqid))
+    f.write("{chr}\tSQANTI3\ttranscript\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=r.start+1, e=r.end, strand=r.strand,gid=r.geneid, tid=r.seqid))
     for exon in r.ref_exons:
-        f.write("{chr}\tPacBio\texon\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=exon.start+1, e=exon.end, strand=r.strand, gid=r.geneid, tid=r.seqid))
+        f.write("{chr}\tSQANTI3\texon\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=exon.start+1, e=exon.end, strand=r.strand, gid=r.geneid, tid=r.seqid))
     if r.cds_exons is not None:
         for exon in r.cds_exons:
-            f.write("{chr}\tPacBio\tCDS\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=exon.start+1, e=exon.end, strand=r.strand, gid=r.geneid, tid=r.seqid))
+            f.write("{chr}\tSQANTI3\tCDS\t{s}\t{e}\t.\t{strand}\t.\ttranscript_id \"{tid}\"; gene_id \"{gid}\";\n".format(chr=r.chr, s=exon.start+1, e=exon.end, strand=r.strand, gid=r.geneid, tid=r.seqid))
 
 
 class collapseGFFReader(gmapGFFReader):
