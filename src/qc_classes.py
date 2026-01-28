@@ -220,6 +220,7 @@ class myQueryTranscripts:
     ratio_exp: Optional[float] = None  # Computed field, may be updated dynamically
 
     coding: str = "non_coding"
+    ORF_length: Optional[int] = None
     CDS_length: Optional[int] = None
     protein_length: Optional[int] = None
     CDS_start: Optional[int] = None
@@ -228,6 +229,8 @@ class myQueryTranscripts:
     CDS_genomic_end: Optional[int] = None
     psauron_score: Optional[float] = None
     CDS_type: Optional[str] = None
+    protein_seq: Optional[str] = None
+
     predicted_NMD: Optional[bool] = None
     
     perc_A_downstream_TTS: Optional[float] = None
@@ -242,7 +245,6 @@ class myQueryTranscripts:
     polyA_dist: Optional[int] = None
     polyA_motif_found: Optional[bool] = None
 
-    protein_seq: Optional[str] = None
     ratio_TSS: Optional[float] = None
 
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
@@ -365,7 +367,7 @@ class myQueryTranscripts:
             base["FL"] = sum(self.FL_dict.values())
 
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand']
+        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand','protein_seq']
         for attr in non_report_attrs:
             if attr in base:
                 del base[attr]

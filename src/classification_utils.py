@@ -139,6 +139,5 @@ def add_coding_info(isoform_hit, cds_info):
         "CDS_end": cds_info.cds_end,
         "CDS_type": cds_info.cds_type,
         "protein_length": cds_info.protein_length,
-        "protein_seq": cds_info.protein_seq,
         "psauron_score": cds_info.psauron_score
     })
