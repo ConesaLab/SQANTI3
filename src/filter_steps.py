@@ -47,7 +47,7 @@ def run_rules(args):
       run_command(report_cmd,filter_logger,logFile,"Rules filtering report")
 
     # After running Rules Filter code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
+    inclusion_list = os.path.join(args.dir,f"{args.output}_pass_isoforms.txt")
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
 
@@ -80,7 +80,7 @@ def run_ML(args):
       run_command(report_cmd,filter_logger,logFile,"Machine learning filtering report")
 
     # After running ML R code, an inclusion list will be generated. Those IDs must be passed to the filter files function
-    inclusion_list = os.path.join(args.dir,f"{args.output}_inclusion-list.txt")
+    inclusion_list = os.path.join(args.dir,f"{args.output}_pass_isoforms.txt")
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
 

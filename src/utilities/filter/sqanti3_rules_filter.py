@@ -203,8 +203,8 @@ def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
         
     Output Files:
         Creates three files in current directory:
-        - {prefix}_RulesFilter_result_classification.txt: Full classification with filter results
-        - {prefix}_inclusion-list.txt: List of passing isoforms
+        - {prefix}_RulesFilter_classification.txt: Full classification with filter results
+        - {prefix}_pass_isoforms.txt: List of passing isoforms
         - {prefix}_filtering_reasons.txt: Detailed filtering reasons for artifacts
         
     Example:
@@ -228,7 +228,7 @@ def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
     reasons_df = artifacts_classif.apply(lambda row: get_reasons(row, force_multi_exon, rules_dict), axis=1)
 
     message("Writing results",logger)
-    classif.to_csv(os.path.join(f"{prefix}_RulesFilter_result_classification.txt"), sep='\t', index=False)
-    inclusion_list.to_csv(os.path.join(f"{prefix}_inclusion-list.txt"), sep='\t', index=False, header=False)
+    classif.to_csv(os.path.join(f"{prefix}_RulesFilter_classification.txt"), sep='\t', index=False)
+    inclusion_list.to_csv(os.path.join(f"{prefix}_pass_isoforms.txt"), sep='\t', index=False, header=False)
     reasons_df.to_csv(os.path.join(f"{prefix}_filtering_reasons.txt"), sep='\t', index=False)
 
