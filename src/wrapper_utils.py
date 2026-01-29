@@ -100,7 +100,7 @@ def set_default_values(config,user_options):
             'filter_faa': '_corrected.faa'
         },
         'rescue': {
-            'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_result_classification.txt',
+            'filter_class': '_RulesFilter_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_classification.txt',
             'corrected_isoforms_fasta': '_corrected.fasta',
             'filtered_isoforms_gtf': '.filtered.gtf',
             'random_forest': 'randomforest.RData'

@@ -367,7 +367,8 @@ class myQueryTranscripts:
             base["FL"] = sum(self.FL_dict.values())
 
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start', 'ref_end', 'ref_strand','protein_seq']
+        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start',
+                            'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap']
         for attr in non_report_attrs:
             if attr in base:
                 del base[attr]

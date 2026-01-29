@@ -69,7 +69,7 @@ filter:
 rescue:
   enabled: true
   options:
-    filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
+    filter_class: sqanti3_results/isoforms_RulesFilter_classification.txt
     corrected_isoforms_fasta: sqanti3_results/isoforms_corrected.fasta
     filtered_isoforms_gtf: sqanti3_results/isoforms.filtered.gtf
     refClassif: ''
