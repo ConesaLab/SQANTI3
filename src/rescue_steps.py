@@ -173,7 +173,7 @@ def run_rules_rescue(filter_classification, reference_classification, hits_df,
     ## run rescue-by-mapping
     rescue_logger.info("Running rescue-by-mapping for rules filter.")
     # Filenames
-    ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_result_classification.txt"
+    ref_rules = f"{out_dir}/reference_rules_filter/reference_RulesFilter_classification.txt"
     inclusion_list, rescue_df = rescue_by_mapping(hits_df,ref_rules,filter_classification, automatic_inclusion_list,
                                                   rescue_df,"rules")
     return inclusion_list, rescue_df
