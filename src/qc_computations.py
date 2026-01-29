@@ -204,5 +204,5 @@ def isoforms_junctions(isoforms_info, reader):
 
 
     for pbid, covs in sj_covs_by_isoform.items():
-        isoforms_info[pbid].sd = pstdev(covs)
+        isoforms_info[pbid].sd_cov = pstdev(covs)
     return isoforms_info

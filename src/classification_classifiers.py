@@ -287,7 +287,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
-                                        "AS_genes":{}})
+                                        "AS_genes":set()})
                     
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
                     isoform_hit.update({"genes": [ref.gene],
@@ -297,7 +297,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
                                         "ref_exons": ref.exonCount,
-                                        "AS_genes":{}})
+                                        "AS_genes":set()})
                     
         if isoform_hit.structural_category == "" and trec.chrom in refs_exons_by_chr:
             # no hits to single exon genes, let's see if it hits multi-exon genes
@@ -358,7 +358,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                 isoform_hit.add_gene(ref.gene)
                 if len(isoform_hit.AS_genes) != 0 and exon_overlap > (isoform_hit.q_exon_overlap or 0):
                     # We found a gene in the correct strand that is longer than the AS gene, so we remove it
-                    isoform_hit.AS_genes = {}
+                    isoform_hit.AS_genes = set()
                 isoform_hit.q_exon_overlap = exon_overlap
 
             if isoform_hit.structural_category == "novel_in_catalog":

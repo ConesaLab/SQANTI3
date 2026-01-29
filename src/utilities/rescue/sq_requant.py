@@ -14,7 +14,7 @@ from src.utilities.rescue.requant_helpers import (
     calculate_tpm
 )
 
-def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df, rescue_class):
+def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df, original_class, rescue_class):
     """
     Executes the requantification pipeline for transcript abundance estimation.
 
@@ -52,9 +52,10 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
     #TODO: Make this take the variables from python directly
     counts_df = parse_counts(counts_file)
     rescue_logger.info("Counts file parsed.")
-    requant_df = requantify(counts_df, rescue_df, rescue_class, prefix)
+    requant_df = requantify(counts_df, rescue_df, original_class, prefix)
     rescue_logger.info("Requantification of counts completed.")
     rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
+    update_classification(requant_df, rescue_class, prefix)
     # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
     #to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
@@ -113,6 +114,53 @@ def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
     final_counts = base_df.add(final_additions, fill_value=0).astype(int)
 
     return final_counts.reset_index().rename(columns={'index': 'isoform'})
+
+def update_classification(requant_df, rescue_class, prefix):
+    """
+    Update the FL count columns in the rescue classification based on reassigned counts.
+    - Safe: Only updates isoforms present in BOTH files.
+    - Prevents creation of 'ghost' rows (NaNs) if requant_df has extra IDs.
+    """
+    # 1. Set Indices
+    req_df = requant_df.set_index('isoform')
+    class_df = rescue_class.set_index('isoform').copy()
+    
+    # 2. Safety Filter: Intersection of indices
+    # We only want to update rows that actually exist in the classification file.
+    common_ids = req_df.index.intersection(class_df.index)
+    
+    # If no matches found, warn and return early
+    if common_ids.empty:
+        print("Warning: No matching isoforms found between requantification and classification files.")
+        return class_df.reset_index()
+
+    # Create a subset of the source data ensuring alignment
+    req_subset = req_df.loc[common_ids]
+    sample_cols = req_df.columns
+
+    # 3. Update Individual Sample Columns
+    for sample in sample_cols:
+        target_col = f"FL.{sample}"
+        
+        # Initialize column if it doesn't exist (important to avoid NaNs for rows we don't update)
+        if target_col not in class_df.columns:
+            class_df[target_col] = 0
+        
+        # Update ONLY the common rows
+        class_df.loc[common_ids, target_col] = req_subset[sample]
+
+    # 4. Update Total 'FL' Column
+    # Calculate sum only for the subset
+    new_totals = req_subset.sum(axis=1)
+    
+    # Update 'FL', initializing it if needed
+    if 'FL' not in class_df.columns:
+        class_df['FL'] = 0
+    class_df.loc[common_ids, 'FL'] = new_totals
+
+    # 5. Save
+    output_file = f"{prefix}_rescue_classification.txt"
+    class_df.reset_index().to_csv(output_file, sep='\t', index=False)
 
 def to_tpm(counts_df, class_df, prefix):
 

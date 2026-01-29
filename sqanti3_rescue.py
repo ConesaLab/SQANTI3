@@ -111,7 +111,7 @@ def main():
 
   if args.requant:  
     message("Running requantification.",rescue_logger)
-    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df)
+    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df, rescue_class)
 
 ## Run main()
 if __name__ == "__main__":
