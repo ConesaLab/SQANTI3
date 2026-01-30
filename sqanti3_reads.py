@@ -7,7 +7,9 @@ import hashlib
 # Author: Carolina Monzo
 
 from src.reads_argparse import reads_argparser
-from src.commands import RSCRIPTPATH
+from src.module_logging import reads_logger, update_logger
+from src.utilities.sqanti_reads_tables_and_plots_02ndk import run_reads_plots
+import logging
 
 __author__  = "carolina.monzo@csic.es"
 __version__ = '1.0'  # Python 3.7
@@ -17,21 +19,11 @@ utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/u
 sys.path.insert(0, utilitiesPath)
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
-
-FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
-                   'genomic_end_coord', 'junction_category',
-                   'diff_to_Ref_start_site', 'diff_to_Ref_end_site', 'canonical']
-
-FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_category',
-                'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
-                'subcategory', 'RTS_stage', 'all_canonical',
-                'predicted_NMD', 'perc_A_downstream_TTS', "jxn_string"]
-
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
     # If number of columns is less than 2, probably wrongly formatted
     if df.shape[1] < 2:
-        print("ERROR: is incorrectly formatted, is it not separated by commas?".format(args.inDESIGN), file=sys.stderr)
+        reads_logger.error("ERROR: is incorrectly formatted, is it not separated by commas?".format(args.inDESIGN))
         sys.exit(-1)
     
     # Create the new columns
@@ -56,12 +48,12 @@ def get_method_runSQANTI3(args, df):
             junction_file_path = os.path.join(junction_file)
             if os.path.isfile(classification_file_path) and os.path.isfile(junction_file_path):
                 if args.verbose:
-                    print(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}", file=sys.stdout)
+                    reads_logger.debug(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}")
                 continue
         
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
-        print(gtf_pattern)
+        reads_logger.debug(gtf_pattern)
         try:
             gtf_files = glob.glob(gtf_pattern)[0]
         except IndexError:
@@ -69,13 +61,13 @@ def get_method_runSQANTI3(args, df):
         else:
             if os.path.isfile(gtf_files):
                 if os.path.isfile(args.refFasta) is False:
-                    print(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference genome FASTA', file=sys.stdout)
+                    reads_logger.error(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
-                    print(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference annotation GTF', file=sys.stdout)
+                    reads_logger.error(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference annotation GTF')
                     sys.exit(-1)
                 if args.verbose:
-                    print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
+                    reads_logger.debug(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}')
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
                                --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} \
                                 -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
@@ -92,13 +84,13 @@ def get_method_runSQANTI3(args, df):
         else:
             if os.path.isfile(fastq_files):
                 if os.path.isfile(args.refFasta) is False:
-                    print(f'[ERROR] You inputted fastq files to map but no reference genome FASTA', file=sys.stdout)
+                    reads_logger.error(f'[ERROR] You inputted fastq files to map but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
-                    print(f'[ERROR] You inputted fastq files to map but no reference annotation GTF', file=sys.stdout)
+                    reads_logger.error(f'[ERROR] You inputted fastq files to map but no reference annotation GTF')
                     sys.exit(-1)
                 if args.verbose:
-                    print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
+                    reads_logger.debug(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}')
 
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
                                 --isoforms {fastq_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
@@ -108,12 +100,12 @@ def get_method_runSQANTI3(args, df):
                                 -o {sampleID} -s {args.sites} -n {args.chunks} \
                                 --fasta"
 
-                print(cmd_sqanti, file=sys.stdout)
+                reads_logger.debug(cmd_sqanti)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
         
         # If none of the conditions are met, raise an error
-        print(f"ERROR: The file_acc you included in your design file does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.input_dir} directory", file=sys.stdout)
+        reads_logger.error(f"ERROR: The file_acc you included in your design file does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.input_dir} directory")
         sys.exit(-1)
 
 def make_UJC_hash(args, df):
@@ -124,7 +116,7 @@ def make_UJC_hash(args, df):
         # Input dir, sqanti3 dir, samplename
         outputPathPrefix = os.path.join(args.dir, file_acc, sampleID)
 
-        print("**** Calculating UJCs...", file = sys.stdout)
+        reads_logger.info("**** Calculating UJCs...")
                 
         # Ensure the corrected GTF contains gene_id attributes on every exon/CDS line so that
         # downstream `gtftools` does not fail with `IndexError: list index out of range`.
@@ -136,7 +128,7 @@ def make_UJC_hash(args, df):
         try:
             subprocess.check_call(gffread_cmd, shell=True)
         except subprocess.CalledProcessError:
-            print(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread", file=sys.stderr)
+            reads_logger.error(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread")
             sys.exit(-1)
             
         ## Take the corrected GTF
@@ -145,14 +137,14 @@ def make_UJC_hash(args, df):
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
-            print("ERROR running command: {0}\n Missing GTFTOOLS".format(introns_cmd), file=sys.stderr)
+            reads_logger.error("ERROR running command: {0}\n Missing GTFTOOLS".format(introns_cmd))
             sys.exit(-1)
             
         if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
             os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
             
         if subprocess.check_call(ujc_cmd, shell=True)!=0:
-            print("ERROR running command: {0}\n Missing BEDTOOLS".format(introns_cmd), file=sys.stderr)
+            reads_logger.error("ERROR running command: {0}\n Missing BEDTOOLS".format(introns_cmd))
             sys.exit(-1)
         os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
@@ -183,6 +175,14 @@ def main():
 
     args = reads_argparser().parse_args()
 
+    # Set up logger
+    if args.verbose:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+    
+    update_logger(reads_logger, args.dir, "reads", log_level)
+
     # Check and read design file
     df = fill_design_table(args)
 
@@ -193,25 +193,26 @@ def main():
     if not args.SKIPHASH:
         make_UJC_hash(args, df)
 
-    # Run plotting script
-    plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
-    print(__file__)
-    cmd_plotting = f"python {plotting_script_path} --ref {args.refGTF} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
-    if args.inFACTOR:
-        cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
-    if args.FACTORLVL != None:
-        cmd_plotting = cmd_plotting + f" --factor-level {args.FACTORLVL}"
-    if args.PREFIX:
-        cmd_plotting = cmd_plotting + f" --prefix {args.PREFIX}"
-    else:
-        cmd_plotting = cmd_plotting + " --prefix sqantiReads"
-    if args.ALLTABLES:
-        cmd_plotting = cmd_plotting + " --all-tables"
-    if args.PCATABLES:
-        cmd_plotting = cmd_plotting + "--pca-tables"
-    print(cmd_plotting)
-
-    subprocess.call(cmd_plotting, shell = True)
+    # Run plotting script directly as a function call
+    reads_logger.info("Running SQANTI-reads tables and plots generation...")
+    
+    prefix = args.PREFIX if args.PREFIX else "sqantiReads"
+    
+    run_reads_plots(
+        ref_gtf=args.refGTF,
+        design_file=args.inDESIGN,
+        out_dir=args.dir,
+        prefix=prefix,
+        factor=args.inFACTOR,
+        gene_expression=args.ANNOTEXP,
+        jxn_expression=args.JXNEXP,
+        perc_coverage=args.PERCCOV,
+        perc_junctions=args.PERCMAXJXN,
+        factor_level=args.FACTORLVL,
+        all_tables=args.ALLTABLES,
+        pca_tables=args.PCATABLES,
+        report=args.report
+    )
 
 
 if __name__ == "__main__":

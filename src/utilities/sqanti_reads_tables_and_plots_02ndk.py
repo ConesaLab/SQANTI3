@@ -24,6 +24,48 @@ from pdf2image import convert_from_path
 import base64
 from jinja2 import Template
 import io
+import logging
+from dataclasses import dataclass
+from typing import Optional
+
+try:
+    from src.module_logging import reads_logger
+except ImportError:
+    # Add the project root to sys.path if running as a script
+    import sys
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+    try:
+        from src.module_logging import reads_logger
+    except ImportError:
+        # Fallback logger if module_logging is not available
+        reads_logger = logging.getLogger('reads_plots')
+        reads_logger.setLevel(logging.INFO)
+        if not reads_logger.handlers:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('[%(levelname)s] %(message)s'))
+            reads_logger.addHandler(handler)
+
+
+@dataclass
+class ReadsPlotArgs:
+    """Arguments for the reads plotting functions."""
+    inREF: str
+    inDESIGN: str
+    OUT: str
+    PREFIX: str
+    inFACTOR: Optional[str] = None
+    ANNOTEXP: int = 100
+    JXNEXP: int = 10
+    PERCCOV: int = 20
+    PERCMAXJXN: int = 80
+    FACTORLVL: Optional[str] = None
+    ALLTABLES: bool = False
+    PCATABLES: bool = False
+    report: str = 'pdf'
+
+
+# Global args variable for backward compatibility
+args = None
 
 ## Update options
 def getOptions():
@@ -222,7 +264,7 @@ def flag_ref_monoexon(inRef):
             elif 'transcript_id' in item:
                 transcript_id = item.split('transcript_id')[-1].strip().strip('\"')
         if transcript_id == np.nan and refexon.at[i, 'feature'] != "gene" :
-            print("WARNING: transcript_id not found in {}".format(refexon[i]))
+            reads_logger.warning("transcript_id not found in {}".format(refexon[i]))
         refexon.at[i, 'gene_id'] = str(gene_id)
         refexon.at[i, 'transcript_id'] = str(transcript_id)
 #    print("Total transcripts in original GTF= "+str(refexon["transcript_id"].nunique()))
@@ -292,11 +334,11 @@ def proc_samples(design_file, ref):
         else:
             exp_factor_val = row[exp_factor]
         
-        print("Loading junction file: "+ sampleID)
+        reads_logger.info("Loading junction file: "+ sampleID)
         jxn_DF = load_sqanti_file(jxn_file, jxn_cols, jxn_dtypes)
         #jxn_DF = load_sqanti_file(jxn_file, jxn_cols)
         
-        print("Loading classification file: "+ sampleID)
+        reads_logger.info("Loading classification file: "+ sampleID)
         class_DF = load_sqanti_file(class_file, class_cols, class_dtypes)
         #class_DF = load_sqanti_file(class_file, class_cols)
     
@@ -482,11 +524,11 @@ def proc_samples(design_file, ref):
         nic_nnc_dfs[sampleID] = NIC_NNC_DF
         nov_can_dfs[sampleID] = nov_can_DF
     
-        print(sampleID + " done processing")
+        reads_logger.info(sampleID + " done processing")
         del(cv_DF)
         del(class_DF)
         del(jxn_DF)
-        print("Memory cleared for next sample")  
+        reads_logger.debug("Memory cleared for next sample")  
         
     return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct )
 
@@ -705,14 +747,14 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     
     ## Categorize genes based on gene categories
     if merged_df.empty:
-        print("ERROR: The filtering was too scrict and no genes were found that meet the criteria.")
+        reads_logger.error("The filtering was too strict and no genes were found that meet the criteria.")
         sys.exit(1)
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
     
     # if merged_df is an empty dataframe, raise an error
     if merged_df.empty:
-        print("ERROR: The filtering was too scrict and no genes were found that meet the criteria.")
+        reads_logger.error("The filtering was too strict and no genes were found that meet the criteria.")
         sys.exit(1)
     # Apply the categorization function to each group
     gene_categories = grouped.apply(categorize_gene,include_groups=False)
@@ -1068,7 +1110,7 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
             row[exp_factor] = exp_factor_DF.loc[exp_factor_DF['sampleID'] == sampleID, exp_factor].iloc[0]
             row = pd.DataFrame([row])
             cv_don_summary = pd.concat([cv_don_summary, row], ignore_index=True)
-            print(f"Note: {sampleID} has no donors in annotated genes with > {jxn_exp} reads")
+            reads_logger.info(f"Note: {sampleID} has no donors in annotated genes with > {jxn_exp} reads")
             
         if sampleID not in cv_acc_summary['sampleID'].values:
             row = {column: 0 for column in cv_acc_summary.columns}
@@ -1076,7 +1118,7 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
             row[exp_factor] = exp_factor_DF.loc[exp_factor_DF['sampleID'] == sampleID, exp_factor].iloc[0]
             row = pd.DataFrame([row])
             cv_acc_summary = pd.concat([cv_acc_summary, row], ignore_index=True)
-            print(f"Note: {sampleID} has no acceptors in annotated genes with > {jxn_exp} reads")
+            reads_logger.info(f"Note: {sampleID} has no acceptors in annotated genes with > {jxn_exp} reads")
      
     
     if args.ALLTABLES:
@@ -1232,7 +1274,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 # Update bottom only with non-zero values
                 bottom += values
             else:
-                print(f"Color for {category} not found in palette.")
+                reads_logger.warning(f"Color for {category} not found in palette.")
 
     def plot_side_by_side_bars(*args, **kwargs):
         data = kwargs.pop('data')
@@ -2567,9 +2609,85 @@ def makeHTML(drty, prefx, sufx):
     with open(drty + prefx + sufx[:-4] + ".html", "w") as f:
         f.write(html_content)
 
-    print(f"HTML report saved as {drty + prefx + sufx[:-4]}.html")
+    reads_logger.info(f"HTML report saved as {drty + prefx + sufx[:-4]}.html")
+
+
+def run_reads_plots(
+    ref_gtf: str,
+    design_file: str,
+    out_dir: str,
+    prefix: str,
+    factor: Optional[str] = None,
+    gene_expression: int = 100,
+    jxn_expression: int = 10,
+    perc_coverage: int = 20,
+    perc_junctions: int = 80,
+    factor_level: Optional[str] = None,
+    all_tables: bool = False,
+    pca_tables: bool = False,
+    report: str = 'pdf'
+):
+    """
+    Run the reads plotting pipeline.
     
+    This function can be called directly from other modules instead of using subprocess.
     
+    Parameters:
+    -----------
+    ref_gtf : str
+        Path to the reference GTF file.
+    design_file : str
+        Path to the design file (must have sampleID column).
+    out_dir : str
+        Output directory for saving plots and tables.
+    prefix : str
+        Output filename prefix.
+    factor : str, optional
+        Experimental factor column in design file to use for faceting plots.
+    gene_expression : int, default=100
+        Expression cutoff level for determining underannotated genes.
+    jxn_expression : int, default=10
+        Coverage threshold for detected reference donors and acceptors.
+    perc_coverage : int, default=20
+        Percent gene coverage of UJC for determining well-covered transcripts.
+    perc_junctions : int, default=80
+        Percent of the max junctions in gene for determining near full-length putative novel transcripts.
+    factor_level : str, optional
+        Factor level to evaluate for underannotation.
+    all_tables : bool, default=False
+        Export all output tables.
+    pca_tables : bool, default=False
+        Export table for making PCA plots.
+    report : str, default='pdf'
+        Report format: 'pdf', 'html', or 'both'.
+    """
+    global args
+    
+    # Create args object
+    args = ReadsPlotArgs(
+        inREF=ref_gtf,
+        inDESIGN=design_file,
+        OUT=out_dir,
+        PREFIX=prefix,
+        inFACTOR=factor,
+        ANNOTEXP=gene_expression,
+        JXNEXP=jxn_expression,
+        PERCCOV=perc_coverage,
+        PERCMAXJXN=perc_junctions,
+        FACTORLVL=factor_level,
+        ALLTABLES=all_tables,
+        PCATABLES=pca_tables,
+        report=report
+    )
+    
+    reads_logger.info("Starting SQANTI-reads tables and plots generation...")
+    
+    # Run the main pipeline
+    main()
+    
+    reads_logger.info("SQANTI-reads tables and plots generation completed.")
+
+
 def main():
     ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct = proc_samples(args.inDESIGN, args.inREF)
     
@@ -2592,10 +2710,9 @@ def main():
     if args.report == "html":
         os.remove(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
         os.remove(os.path.join(args.OUT, f'{args.PREFIX}_annotation_plots.pdf'))
-    
+
         
 if __name__ == '__main__':
     #Parse command line arguments
-    global args
     args = getOptions()
     main()
