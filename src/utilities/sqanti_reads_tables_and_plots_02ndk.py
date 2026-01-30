@@ -819,6 +819,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
+        plt.close()
 
         #UJC scatterplots
         for gene_category in merged_df['gene_category'].unique():
@@ -856,6 +857,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
             matplotlib.rcParams['pdf.fonttype'] = 42
             # Save the plot to file
             pdf.savefig()
+            plt.close()
 
 def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct):
     
@@ -1337,6 +1339,9 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     }
     
     cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
+    
+    # Suppress warning about too many open figures
+    plt.rcParams['figure.max_open_warning'] = 0
     
     #Define sample color palette
     
@@ -1986,6 +1991,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     
     plt.rcParams.update({'font.size': 16})
     plt.rcParams['pdf.fonttype'] = 42
+    # Suppress warning about too many open figures
+    plt.rcParams['figure.max_open_warning'] = 0
     
     num_samples = all_gene_percs_long_DF['sampleID'].nunique()
     exp_factor = 'temp_factor'
@@ -2710,6 +2717,9 @@ def main():
     if args.report == "html":
         os.remove(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
         os.remove(os.path.join(args.OUT, f'{args.PREFIX}_annotation_plots.pdf'))
+    
+    # Close all remaining figures to free memory
+    plt.close('all')
 
         
 if __name__ == '__main__':
