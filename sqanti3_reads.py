@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import subprocess, os, re, sys, glob
-import argparse
+import subprocess, os, sys, glob
 import pandas as pd
-import shutil
 import hashlib
 #!/usr/bin/env python3
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
 # Author: Carolina Monzo
+
+from src.reads_argparse import reads_argparser
+from src.commands import RSCRIPTPATH
 
 __author__  = "carolina.monzo@csic.es"
 __version__ = '1.0'  # Python 3.7
@@ -25,8 +26,6 @@ FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_c
                 'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
                 'subcategory', 'RTS_stage', 'all_canonical',
                 'predicted_NMD', 'perc_A_downstream_TTS', "jxn_string"]
-
-RSCRIPTPATH = shutil.which('Rscript')
 
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
@@ -69,18 +68,18 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(gtf_files):
-                if os.path.isfile(args.genome) is False:
+                if os.path.isfile(args.refFasta) is False:
                     print(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference genome FASTA', file=sys.stdout)
                     sys.exit(-1)
-                if os.path.isfile(args.annotation) is False:
+                if os.path.isfile(args.refGTF) is False:
                     print(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference annotation GTF', file=sys.stdout)
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}', file=sys.stdout)
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.annotation} --refFasta {args.genome} --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
+                               --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} \
+                                -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
 
-                if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
 
@@ -92,24 +91,22 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(fastq_files):
-                if os.path.isfile(args.genome) is False:
+                if os.path.isfile(args.refFasta) is False:
                     print(f'[ERROR] You inputted fastq files to map but no reference genome FASTA', file=sys.stdout)
                     sys.exit(-1)
-                if os.path.isfile(args.annotation) is False:
+                if os.path.isfile(args.refGTF) is False:
                     print(f'[ERROR] You inputted fastq files to map but no reference annotation GTF', file=sys.stdout)
                     sys.exit(-1)
                 if args.verbose:
                     print(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}', file=sys.stdout)
 
                 cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
-                                --isoforms {fastq_files} --refGTF {args.annotation} --refFasta {args.genome} \
+                                --isoforms {fastq_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
                                 --min_ref_len {args.min_ref_len} \
                                 --aligner_choice {args.aligner_choice} \
                                 -t {args.cpus} -d {args.dir}/{file_acc} \
                                 -o {sampleID} -s {args.sites} -n {args.chunks} \
                                 --fasta"
-                if args.force_id_ignore:
-                    cmd_sqanti = cmd_sqanti + " --force_id_ignore"
 
                 print(cmd_sqanti, file=sys.stdout)
                 subprocess.call(cmd_sqanti, shell = True)
@@ -184,34 +181,7 @@ def main():
     global utilitiesPath
     global sqantiqcPath
 
-    #arguments
-    parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
-    parser.add_argument('--genome', type=str, help='\t\tReference genome (Fasta format).', default = False, required = False)
-    parser.add_argument('--annotation', type=str, help='\t\tReference annotation file (GTF format).', default = False, required = True)
-    parser.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID and file_acc column.')
-    parser.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs. Default: Directory where the script was run.')
-    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
-    parser.add_argument('-p','--prefix', type=str, dest="PREFIX", required=False, help='SQANTI-reads output filename prefix. Default: sqantiReads')
-    parser.add_argument('-d','--dir', type=str, help='\t\tDirectory for output sqanti_reads files. Default: Directory where the script was run.', default = "./", required=False)
-    parser.add_argument('--min_ref_len', type=int, default=0, help="\t\tMinimum reference transcript length. Default: 0 bp")
-    parser.add_argument('--force_id_ignore', action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
-    parser.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2', help="\t\tDefault: minimap2")
-    parser.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. Default: 10')
-    parser.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up. Default: 1')
-    parser.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
-    parser.add_argument('-ge','--gene_expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes. Default = 100', default = 100)
-    parser.add_argument('-je','--jxn_expression', type=int, dest="JXNEXP", required=False, help='Coverage threshold for detected reference donors and acceptor. Default = 10', default = 10)
-    parser.add_argument('-pc','--perc_coverage', type=int, dest="PERCCOV", required=False, help='Percent gene coverage of UJC for determining well-covered unannotated transcripts. Default = 20', default = 20)
-    parser.add_argument('-pj','--perc_junctions', type=int, dest="PERCMAXJXN", required=False, help='Percent of the max junctions in gene for determining near full-length putative novel transcripts. Default = 80', default = 80)
-    parser.add_argument('-fl','--factor_level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
-    parser.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and and underannotated gene tables')
-    parser.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
-    parser.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
-    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
-    parser.add_argument('--verbose', help = 'If verbose is run, it will print all steps, by default it is FALSE', action="store_true")
-    parser.add_argument('-v', '--version', help="Display program version number.", action='version', version='sqanti-reads '+str(__version__))
-
-    args = parser.parse_args()
+    args = reads_argparser().parse_args()
 
     # Check and read design file
     df = fill_design_table(args)
@@ -226,7 +196,7 @@ def main():
     # Run plotting script
     plotting_script_path = os.path.join(os.path.dirname(__file__), 'src/utilities', 'sqanti_reads_tables_and_plots_02ndk.py')
     print(__file__)
-    cmd_plotting = f"python {plotting_script_path} --ref {args.annotation} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
+    cmd_plotting = f"python {plotting_script_path} --ref {args.refGTF} --design {args.inDESIGN} -o {args.dir} --gene-expression {args.ANNOTEXP} --jxn-expression {args.JXNEXP} --perc-coverage {args.PERCCOV} --perc-junctions {args.PERCMAXJXN} --report {args.report}"
     if args.inFACTOR:
         cmd_plotting = cmd_plotting + f" --factor {args.inFACTOR}"
     if args.FACTORLVL != None:

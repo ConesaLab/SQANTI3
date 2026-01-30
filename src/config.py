@@ -1,7 +1,8 @@
 import os, re
 
-__author__  = "etseng@pacb.com"
+__author__  = "pablo.atienza@csic.es"
 __version__ = '6.0.0'  # Python 3.7
+__reads_version__ = '1.0.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
