@@ -252,5 +252,5 @@ def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refG
         rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
                                     rClass[rClass['isoform'].isin(rescued_transcripts)]])
     rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
-    rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.tsv")
+    rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.txt")
     return rescued_class

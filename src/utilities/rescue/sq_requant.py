@@ -159,7 +159,7 @@ def update_classification(requant_df, rescue_class, prefix):
     class_df.loc[common_ids, 'FL'] = new_totals
 
     # 5. Save
-    output_file = f"{prefix}_rescue_classification.txt"
+    output_file = f"{prefix}_rescued_classification.txt"
     class_df.reset_index().to_csv(output_file, sep='\t', index=False)
 
 def to_tpm(counts_df, class_df, prefix):
