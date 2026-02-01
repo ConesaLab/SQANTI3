@@ -10,7 +10,6 @@ dependencies:
   - bcbio-gff=0.7.1
   - bedtools=2.31.1
   - biopython<=1.81
-  - bioconductor-noiseq=2.46.0
   - bioconductor-busparse=1.16.0
   - bioconductor-gviz
   - bx-python=0.11.0
