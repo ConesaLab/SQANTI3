@@ -311,13 +311,7 @@ if(opt$mode == "full"){
   # get targets from reference transcriptome
   cat("\n\t Finding target isoforms from reference transcriptome...\n")
   
-  reference_ids <- BUSpaRse::tr2g_gtf(opt$refGTF, 
-                                      gene_version = NULL,
-                                      get_transcriptome = FALSE, 
-                                      out_path = opt$dir, 
-                                      save_filtered_gtf = FALSE,
-                                      write_tr2g = FALSE,
-                                      chrs_only = FALSE)
+  reference_ids <- get_tr2g_gtf(opt$refGTF)
   
   rescue_targets.ref <- reference_ids %>% 
     dplyr::filter(gene %in% target_genes) %>% 
