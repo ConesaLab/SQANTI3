@@ -1,0 +1,92 @@
+name: Check conda environment
+
+on:
+  push:
+    branches:
+      - '*'
+    paths:
+      - 'SQANTI3.conda_env.yml'
+  pull_request:
+    branches:
+      - 'master'
+    paths:
+      - 'SQANTI3.conda_env.yml'
+  
+
+permissions:
+  contents: read
+
+jobs:
+  validate-conda-env:
+    defaults:
+      run:
+        shell: bash -l {0}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # --- ADDED STEPS TO FREE DISK SPACE ---
+      - name: Clean up disk space (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          echo "Initial free space:"
+          df -h
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo docker image prune -a -f
+          echo "Space after cleanup:"
+          df -h
+
+      - name: Clean up disk space (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          echo "Initial free space:"
+          df -h
+          # Remove large, non-essential tools. Adjust as needed.
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/share/dotnet
+          sudo rm -rf ~/Library/Caches/pip
+          echo "Space after cleanup:"
+          df -h
+      # --- END OF ADDED STEPS ---
+
+      - name: Set CONDA_SUBDIR for macOS Intel packages
+        if: runner.os == 'macOS'
+        run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3.1.1
+        with:
+          miniconda-version: 'latest'
+          channels: conda-forge,bioconda,anaconda,r,defaults
+          environment-file: SQANTI3.conda_env.yml
+          activate-environment: sqanti3
+          auto-activate-base: false
+          use-mamba: true
+
+      - name: Configure conda environment for Intel packages
+        if: runner.os == 'macOS'
+        run: conda config --env --set subdir osx-64
+
+      - name: List conda packages
+        run: |
+          conda list
+          
+      - name: Run basic import tests
+        run: |
+          echo "Testing core Python dependencies..."
+          python3 -c "import numpy; print(f'numpy: {numpy.__version__}')"
+          python3 -c "import pandas; print(f'pandas: {pandas.__version__}')"
+          python3 -c "import scipy; print(f'scipy: {scipy.__version__}')"
+          python3 -c "import Bio; print(f'biopython: {Bio.__version__}')"
+          python3 -c "import pysam; print(f'pysam: {pysam.__version__}')"
+          python3 -c "import pybedtools; print(f'pybedtools: {pybedtools.__version__}')"
+          echo "All core dependencies imported successfully!"

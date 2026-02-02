@@ -10,8 +10,8 @@ output:
 runtime: shiny
 params:
   metrics: NULL
-  tusco_gtf_df: NULL
-  transcript_gtf_df: NULL
+  sample_gtf_df: NULL
+  reference_gtf_df: NULL
   associated_genes_list: NULL
   p_tusco_complex: NULL
   TP: NULL
@@ -49,8 +49,8 @@ suppressPackageStartupMessages({
   library(htmltools)
 })
 metrics <- params$metrics
-tusco_gtf_df <- params$tusco_gtf_df
-transcript_gtf_df <- params$transcript_gtf_df
+sample_gtf_df <- params$sample_gtf_df
+reference_gtf_df <- params$reference_gtf_df
 associated_genes_list <- params$associated_genes_list
 TP <- params$TP; PTP <- params$PTP; FN <- params$FN; FP <- params$FP
 non_redundant_sensitivity <- params$non_redundant_sensitivity
@@ -61,7 +61,7 @@ false_discovery_rate <- params$false_discovery_rate
 redundancy <- params$redundancy
 output_directory <- params$output_directory
 genome_assembly <- params$genome_assembly
-transcript_gtf_df$gene_id <- sub("\\.\\d+$", "", transcript_gtf_df$gene_id)
+sample_gtf_df$gene_id <- sub("\\.\\d+$", "", sample_gtf_df$gene_id)
 
 # Ensure that the images are accessible
 plots_dir <- file.path(output_directory, "igv_plots")
@@ -294,23 +294,33 @@ p_plotly
 ### TP
 
 ```{r echo=FALSE, eval=(nrow(TP) > 0)}
-# Add a column with the modal HTML code
+# Extract unique genes with available plots
+TP_genes_with_plots <- TP %>%
+  filter(file.exists(file.path(plots_dir, paste0(associated_gene, '.png')))) %>%
+  pull(associated_gene) %>%
+  unique()
+
+# Add only buttons to the dataframe (no modal HTML in each row)
 TP <- TP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
-      paste0(
-        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
-        <div id="modal_', associated_gene, '" class="modal plot-modal">
-          <div class="modal-content">
-            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
-          </div>
-        </div>'
-      ),
+      paste0('<button class="open-modal" data-modal="modal_tp_', associated_gene, '">View Plot</button>'),
       'No Plot Available'
     )
   )
+
+# Generate modal HTML once per unique gene
+TP_modals_html <- sapply(TP_genes_with_plots, function(gene) {
+  paste0(
+    '<div id="modal_tp_', gene, '" class="modal plot-modal">
+      <div class="modal-content">
+        <span class="close-modal" data-modal="modal_tp_', gene, '">&times;</span>
+        <img src="', file.path('igv_plots', paste0(gene, '.png')), '" alt="Plot for ', gene, '" style="width:100%;height:auto;">
+      </div>
+    </div>'
+  )
+}) %>% paste(collapse = "\n")
 
 # Display the table with the Plot column
 datatable(
@@ -333,29 +343,40 @@ datatable(
   )
 )
 
+# Render modals outside the table (one per unique gene)
+htmltools::HTML(TP_modals_html)
 ```
 
 ### PTP
 
 ```{r echo=FALSE, eval=(nrow(PTP) > 0)}
-# Add a column with the modal HTML code
+# Extract unique genes with available plots
+PTP_genes_with_plots <- PTP %>%
+  filter(file.exists(file.path(plots_dir, paste0(associated_gene, '.png')))) %>%
+  pull(associated_gene) %>%
+  unique()
+
+# Add only buttons to the dataframe (no modal HTML in each row)
 PTP <- PTP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
-      paste0(
-        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
-        <div id="modal_', associated_gene, '" class="modal plot-modal">
-          <div class="modal-content">
-            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
-          </div>
-        </div>'
-      ),
+      paste0('<button class="open-modal" data-modal="modal_ptp_', associated_gene, '">View Plot</button>'),
       'No Plot Available'
     )
   )
 
+# Generate modal HTML once per unique gene
+PTP_modals_html <- sapply(PTP_genes_with_plots, function(gene) {
+  paste0(
+    '<div id="modal_ptp_', gene, '" class="modal plot-modal">
+      <div class="modal-content">
+        <span class="close-modal" data-modal="modal_ptp_', gene, '">&times;</span>
+        <img src="', file.path('igv_plots', paste0(gene, '.png')), '" alt="Plot for ', gene, '" style="width:100%;height:auto;">
+      </div>
+    </div>'
+  )
+}) %>% paste(collapse = "\n")
 
 # Display the table with the Plot column
 datatable(
@@ -377,6 +398,9 @@ datatable(
     'Table 4: Classification metrics used in the evaluation of PTP.'
   )
 )
+
+# Render modals outside the table (one per unique gene)
+htmltools::HTML(PTP_modals_html)
 ```
 
 ### FN
@@ -407,23 +431,33 @@ datatable(
 ### FP
 
 ```{r echo=FALSE, eval = (nrow(FP) > 0)}
-# Add a column with the modal HTML code
+# Extract unique genes with available plots
+FP_genes_with_plots <- FP %>%
+  filter(file.exists(file.path(plots_dir, paste0(associated_gene, '.png')))) %>%
+  pull(associated_gene) %>%
+  unique()
+
+# Add only buttons to the dataframe (no modal HTML in each row)
 FP <- FP %>%
   mutate(
     Plot = ifelse(
       file.exists(file.path(plots_dir, paste0(associated_gene, '.png'))),
-      paste0(
-        '<button class="open-modal" data-modal="modal_', associated_gene, '">View Plot</button>
-        <div id="modal_', associated_gene, '" class="modal plot-modal">
-          <div class="modal-content">
-            <span class="close-modal" data-modal="modal_', associated_gene, '">&times;</span>
-            <img src="', file.path('igv_plots', paste0(associated_gene, '.png')), '" alt="Plot for ', associated_gene, '" style="width:100%;height:auto;">
-          </div>
-        </div>'
-      ),
+      paste0('<button class="open-modal" data-modal="modal_fp_', associated_gene, '">View Plot</button>'),
       'No Plot Available'
     )
   )
+
+# Generate modal HTML once per unique gene
+FP_modals_html <- sapply(FP_genes_with_plots, function(gene) {
+  paste0(
+    '<div id="modal_fp_', gene, '" class="modal plot-modal">
+      <div class="modal-content">
+        <span class="close-modal" data-modal="modal_fp_', gene, '">&times;</span>
+        <img src="', file.path('igv_plots', paste0(gene, '.png')), '" alt="Plot for ', gene, '" style="width:100%;height:auto;">
+      </div>
+    </div>'
+  )
+}) %>% paste(collapse = "\n")
 
 # Display the table with the Plot column
 datatable(
@@ -445,6 +479,9 @@ datatable(
     'Table 6: Classification metrics used in the evaluation of FP.'
   )
 )
+
+# Render modals outside the table (one per unique gene)
+htmltools::HTML(FP_modals_html)
 ```
 
 <!-- Optional icon kit; can be omitted if offline -->

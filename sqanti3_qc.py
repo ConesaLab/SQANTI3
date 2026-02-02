@@ -16,6 +16,7 @@ from src.argparse_utils import qc_args_validation
 from src.logging_config import qc_art, art_logger
 from src.module_logging import qc_logger, update_logger
 from src.write_parameters import write_qc_parameters
+
 def main():
     global qc_logger
     art_logger.info(qc_art())
@@ -38,7 +39,9 @@ def main():
     else:
         SPLIT_ROOT_DIR = get_split_dir(args.dir,args.output)
         split_dirs = split_input_run(args, SPLIT_ROOT_DIR)
+        qc_logger.info("Split runs completed. Merging results...")
         combine_split_runs(args,split_dirs)
+        qc_logger.info("All runs have been combined.")
         shutil.rmtree(SPLIT_ROOT_DIR)
 
     if args.isoAnnotLite:

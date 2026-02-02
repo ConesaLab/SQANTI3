@@ -117,8 +117,9 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
     LR_targets = filter_transcriptome(corrected_isoforms,targets_list)
 
-    ## join both FASTA files
+    ## join both FASTA files and remove duplicates
     all_targets = ref_targets + LR_targets
+
     save_fasta(all_targets,targets_fasta)
 
     ## Filter SQ3 FASTA to include rescue candidates

@@ -1,4 +1,4 @@
-# Base image for SQANTI3/v5.5.0 with Ubuntu 22.04
+# Base image for SQANTI3/v5.5.3 with Ubuntu 22.04
 
 # Using ubuntu 22.04
 # Right now edlib doesn't work with python 3.12 which is the default version
@@ -10,11 +10,10 @@
 FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
 
-# Set the versions of different softwares dependencies and SQANTI3 version
-# To install
-ENV SQANTI3_VERSION="5.5.1"
-ENV DESALT_VERSION="1.5.6"
-ENV NAMFINDER_VERSION="0.1.3"
+# Set the SQANTI3 version to install 
+# Taken from src/config.py
+ARG SQANTI3_VERSION
+ENV SQANTI3_VERSION=${SQANTI3_VERSION}
 
 LABEL maintainer="pabloati" \
    base_image="ubuntu:22.04" \
@@ -83,48 +82,8 @@ RUN localedef -i en_US -f UTF-8 en_US.UTF-8
 # Perl fix issue
 RUN cpanm FindBin Term::ReadLine
 
-## Installing miniconda inside the container
 
-############### MANUAL ################
-# Install tools from src manually,
-# Installs deSALT from GitHub: (current version, 1.5.6, defined in ENV variable)
-# https://github.com/ydLiu-HIT/deSALT/releases/tag/v1.5.6
-# This tool was created using an older
-# version of GCC that allowed multiple
-# definitions of global variables.
-# We are using GCC/10, which does not
-# allow multiple definitions. Adding
-# -Wl,--allow-multiple-definition
-# to the linker to fix this issue.
-RUN mkdir -p /opt2/desalt/${DESALT_VERSION}/ \
-   && wget https://github.com/ydLiu-HIT/deSALT/archive/refs/tags/v${DESALT_VERSION}.tar.gz -O /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz \
-   && tar -zvxf /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz -C /opt2/desalt/${DESALT_VERSION}/ \
-   && rm -f /opt2/desalt/${DESALT_VERSION}/v${DESALT_VERSION}.tar.gz \
-   && cd /opt2/desalt/${DESALT_VERSION}/deSALT-${DESALT_VERSION}/src/deBGA-master/ \
-   && make CFLAGS="-g -Wall -O2 -Wl,--allow-multiple-definition" \
-   && cd .. \
-   && make CFLAGS="-g -Wall -O3 -Wc++-compat -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function -Wl,--allow-multiple-definition"
-
-ENV PATH="${PATH}:/opt2/desalt/${DESALT_VERSION}/deSALT-${DESALT_VERSION}/src"
-WORKDIR /opt2
-
-# Installs namfinder, requirement of
-# ultra-bioinformatics tool from pypi.
-RUN mkdir -p /opt2/namfinder/${NAMFINDER_VERSION}/ \
-   && wget https://github.com/ksahlin/namfinder/archive/refs/tags/v${NAMFINDER_VERSION}.tar.gz -O /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz \
-   && tar -zvxf /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz -C /opt2/namfinder/${NAMFINDER_VERSION}/ \
-   && rm -f /opt2/namfinder/${NAMFINDER_VERSION}/v${NAMFINDER_VERSION}.tar.gz \
-   && cd /opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VERSION}/ \
-   # Build to be compatiable with most
-   # Intel x86 CPUs, should work with
-   # old hardware, i.e. sandybridge
-   && cmake -B build -DCMAKE_C_FLAGS="-msse4.2" -DCMAKE_CXX_FLAGS="-msse4.2" \
-   && make -j -C build
-
-ENV PATH="${PATH}:/opt2/namfinder/${NAMFINDER_VERSION}/namfinder-${NAMFINDER_VERSION}/build"
-WORKDIR /opt2
-
-########### SQANTI3 (currentily v${NAMFINDER_VERSION}) ############
+########### SQANTI3 (currently v${SQANTI3_VERSION}) ############
 # Installs SQANTI3 with the version defined in the ENV variable 0)
 # dependenciesand requirements have already been
 # satisfied, for more info see:
@@ -157,9 +116,7 @@ RUN mkdir -p /conda/miniconda3 && \
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /conda/miniconda3/miniconda.sh && \
     bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
     rm /conda/miniconda3/miniconda.sh && \
-    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    /conda/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
+    CI=true CONDA_PLUGINS_AUTO_ACCEPT_TOS=true /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
     /conda/miniconda3/bin/conda clean -a
 
 
