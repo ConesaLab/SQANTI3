@@ -11,9 +11,12 @@ with open(data_path,'r') as f:
 # Create the loggers
 logging.config.dictConfig(MODULE_LOGGING_CONFIG)
 qc_logger = logging.getLogger('module_logger')
-filter_logger = logging.getLogger('module_logger')
-rescue_logger = logging.getLogger('module_logger')
-rescue_logger.propagate = False
+module_logger = logging.getLogger('module_logger')
+module_logger.propagate = False
+qc_logger = module_logger
+filter_logger = module_logger
+rescue_logger = module_logger
+reads_logger = module_logger
 
 def message(text,logger):
     size = max(len(text)+4, 50)

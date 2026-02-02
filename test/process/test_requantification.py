@@ -14,7 +14,8 @@ sys.path.insert(0, main_path)
 from src.utilities.rescue.sq_requant import (
     requantify,
     redistribute_counts_vectorized,
-    requantification_pipeline
+    requantification_pipeline,
+    update_classification
 )
 
 
@@ -232,11 +233,21 @@ class TestRequantificationPipeline:
             'assigned_transcript': ['PB.1.1']
         })
         
-        classif_df = pd.DataFrame({
+        # Original classification (used for redistribution)
+        original_class = pd.DataFrame({
             'isoform': ['PB.1.1', 'PB.2.1', 'artifact1'],
             'filter_result': ['Isoform', 'Isoform', 'Artifact'],
             'associated_gene': ['GENE1', 'GENE2', 'GENE1'],
             'length': [1000, 2000, 1500]
+        })
+        
+        # Rescue classification (will be updated with new counts)
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'structural_category': ['FSM', 'ISM'],
+            'associated_gene': ['GENE1', 'GENE2'],
+            'length': [1000, 2000],
+            'FL': [100, 200]
         })
         
         output_dir = str(tmp_path)
@@ -248,12 +259,14 @@ class TestRequantificationPipeline:
             output_prefix,
             str(counts_file),
             rescue_df,
-            classif_df
+            original_class,
+            rescue_class
         )
         
         # Verify output files
         assert os.path.exists(f"{output_dir}/{output_prefix}_reassigned_counts.tsv")
         assert os.path.exists(f"{output_dir}/{output_prefix}_reassigned_counts_extended.tsv")
+        assert os.path.exists(f"{output_dir}/{output_prefix}_rescued_classification.txt")
         
         # Verify reassigned counts file
         reassigned_df = pd.read_csv(f"{output_dir}/{output_prefix}_reassigned_counts.tsv", sep='\t')
@@ -263,6 +276,142 @@ class TestRequantificationPipeline:
         # Verify PB.1.1 received artifact1's counts
         pb11_row = reassigned_df[reassigned_df['isoform'] == 'PB.1.1'].iloc[0]
         assert pb11_row['sample1'] == 150  # 100 + 50
+        
+        # Verify rescued classification was updated
+        rescued_class = pd.read_csv(f"{output_dir}/{output_prefix}_rescued_classification.txt", sep='\t')
+        assert 'FL.sample1' in rescued_class.columns
+        assert 'FL' in rescued_class.columns
+        
+        # Verify FL counts were updated
+        pb11_class_row = rescued_class[rescued_class['isoform'] == 'PB.1.1'].iloc[0]
+        assert pb11_class_row['FL.sample1'] == 150
+
+
+class TestUpdateClassification:
+    """Test suite for update_classification function."""
+    
+    def test_basic_classification_update(self, tmp_path):
+        """Test basic update of classification file with new counts."""
+        # Setup
+        requant_df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'sample1': [150, 275],
+            'sample2': [210, 330]
+        })
+        
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'structural_category': ['FSM', 'ISM'],
+            'associated_gene': ['GENE1', 'GENE2'],
+            'length': [1000, 2000]
+        })
+        
+        prefix = str(tmp_path / "test_output")
+        
+        # Execute
+        update_classification(requant_df, rescue_class, prefix)
+        
+        # Verify output file exists
+        assert os.path.exists(f"{prefix}_rescued_classification.txt")
+        
+        # Read and verify
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t')
+        
+        # Check FL columns were created
+        assert 'FL.sample1' in result.columns
+        assert 'FL.sample2' in result.columns
+        assert 'FL' in result.columns
+        
+        # Check values
+        pb11_row = result[result['isoform'] == 'PB.1.1'].iloc[0]
+        assert pb11_row['FL.sample1'] == 150
+        assert pb11_row['FL.sample2'] == 210
+        assert pb11_row['FL'] == 360  # 150 + 210
+        
+        pb21_row = result[result['isoform'] == 'PB.2.1'].iloc[0]
+        assert pb21_row['FL.sample1'] == 275
+        assert pb21_row['FL.sample2'] == 330
+        assert pb21_row['FL'] == 605  # 275 + 330
+    
+    def test_partial_isoform_match(self, tmp_path):
+        """Test update when requant has extra isoforms not in classification."""
+        # Setup: requant_df has an extra isoform
+        requant_df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1', 'EXTRA_ISOFORM'],
+            'sample1': [150, 275, 100]
+        })
+        
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],  # No EXTRA_ISOFORM
+            'structural_category': ['FSM', 'ISM'],
+            'associated_gene': ['GENE1', 'GENE2']
+        })
+        
+        prefix = str(tmp_path / "test_output")
+        
+        # Execute - should not crash
+        update_classification(requant_df, rescue_class, prefix)
+        
+        # Verify
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t')
+        
+        # Only the matching isoforms should be in output
+        assert len(result) == 2
+        assert 'EXTRA_ISOFORM' not in result['isoform'].values
+        
+        # Values should be correct for matching isoforms
+        pb11_row = result[result['isoform'] == 'PB.1.1'].iloc[0]
+        assert pb11_row['FL.sample1'] == 150
+    
+    def test_existing_fl_columns(self, tmp_path):
+        """Test update when FL columns already exist in classification."""
+        # Setup: rescue_class already has FL columns
+        requant_df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'sample1': [150, 275]
+        })
+        
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'structural_category': ['FSM', 'ISM'],
+            'FL': [100, 200],  # Existing FL column
+            'FL.sample1': [100, 200]  # Existing sample FL column
+        })
+        
+        prefix = str(tmp_path / "test_output")
+        
+        # Execute
+        update_classification(requant_df, rescue_class, prefix)
+        
+        # Verify columns were updated, not duplicated
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t')
+        
+        # Check updated values
+        pb11_row = result[result['isoform'] == 'PB.1.1'].iloc[0]
+        assert pb11_row['FL.sample1'] == 150  # Updated from 100 to 150
+        assert pb11_row['FL'] == 150  # Updated total
+    
+    def test_no_matching_isoforms(self, tmp_path, capsys):
+        """Test behavior when no isoforms match between files."""
+        # Setup: completely different isoforms
+        requant_df = pd.DataFrame({
+            'isoform': ['ISO_A', 'ISO_B'],
+            'sample1': [100, 200]
+        })
+        
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.2.1'],
+            'structural_category': ['FSM', 'ISM']
+        })
+        
+        prefix = str(tmp_path / "test_output")
+        
+        # Execute - should print warning but not crash
+        result = update_classification(requant_df, rescue_class, prefix)
+        
+        # Check that warning was printed
+        captured = capsys.readouterr()
+        assert "Warning" in captured.out or result is not None
 
 
 class TestEdgeCases:

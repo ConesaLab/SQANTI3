@@ -306,12 +306,11 @@ class TestIsoformsJunctions:
         result = isoforms_junctions(sample_isoforms_info, mock_junction_reader)
         
         # PB.124830.1 has coverages [100, 80], should have sd calculated
-        assert result["PB.124830.1"].sd is not None
-        assert result["PB.124830.1"].sd > 0  # Should be ~10
+        assert result["PB.124830.1"].sd_cov is not None
+        assert result["PB.124830.1"].sd_cov > 0  # Should be ~10
         
         # PB.103724.1 has only one junction, sd should be 0
-        assert result["PB.103724.1"].sd == 0
-
+        assert result["PB.103724.1"].sd_cov == 0
     def test_isoforms_without_junctions(self, sample_isoforms_info, mock_junction_reader):
         """Test isoforms that have no junctions remain unmodified."""
         # PB.103714.1 and others are not in mock_junction_reader
