@@ -50,28 +50,31 @@ def get_method_runSQANTI3(args, df):
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
-        classification_file = os.path.join(args.sqanti_dirs, file_acc, f"{sampleID}_classification.txt")
-        junction_file = row["junction_file"]
+        
+        # Only check for existing SQANTI3 output if sqanti_dirs is provided
+        if args.sqanti_dirs:
+            classification_file = os.path.join(args.sqanti_dirs, file_acc, f"{sampleID}_classification.txt")
+            junction_file = row["junction_file"]
 
-        # Check for directory containing classification and junction file
-        directory_path = os.path.join(args.sqanti_dirs, file_acc)
+            # Check for directory containing classification and junction file
+            directory_path = os.path.join(args.sqanti_dirs, file_acc)
 
-        if args.verbose:
-            reads_logger.debug(f"Checking for directory: {directory_path}")
-            reads_logger.debug(f"Checking for classification file: {classification_file}")
-            reads_logger.debug(f"Checking for junction file: {junction_file}")
+            if args.verbose:
+                reads_logger.debug(f"Checking for directory: {directory_path}")
+                reads_logger.debug(f"Checking for classification file: {classification_file}")
+                reads_logger.debug(f"Checking for junction file: {junction_file}")
 
-        if os.path.isdir(directory_path):
-            classification_file_path = os.path.join(classification_file)
-            junction_file_path = os.path.join(junction_file)
-            
-            if os.path.isfile(classification_file_path) and os.path.isfile(junction_file_path):
-                if args.verbose:
-                    reads_logger.debug(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}")
-                continue
-            else:
-                 if args.verbose:
-                     reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
+            if os.path.isdir(directory_path):
+                classification_file_path = os.path.join(classification_file)
+                junction_file_path = os.path.join(junction_file)
+                
+                if os.path.isfile(classification_file_path) and os.path.isfile(junction_file_path):
+                    if args.verbose:
+                        reads_logger.debug(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}")
+                    continue
+                else:
+                     if args.verbose:
+                         reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
         
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
@@ -159,13 +162,12 @@ def make_UJC_hash(args, df):
         # If so, the output is already in args.OUTPUT.
         # If not (fast mode), the output is in args.dir.
         possible_input_path_new = os.path.join(args.OUTPUT, file_acc, sampleID)
-        possible_input_path_existing = os.path.join(args.sqanti_dirs, file_acc, sampleID)
         
         # We check for the classification file to confirm presence
         if os.path.exists(f"{possible_input_path_new}_classification.txt"):
              inputPathPrefix = possible_input_path_new
-        elif os.path.exists(f"{possible_input_path_existing}_classification.txt"):
-             inputPathPrefix = possible_input_path_existing
+        elif args.sqanti_dirs and os.path.exists(os.path.join(args.sqanti_dirs, file_acc, f"{sampleID}_classification.txt")):
+             inputPathPrefix = os.path.join(args.sqanti_dirs, file_acc, sampleID)
         else:
              reads_logger.error(f"Could not find SQANTI3 output for sample {sampleID} in {args.OUTPUT} or {args.sqanti_dirs}")
              sys.exit(-1)
