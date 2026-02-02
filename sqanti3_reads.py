@@ -2,7 +2,7 @@
 import subprocess, os, sys, glob
 import pandas as pd
 import hashlib
-#!/usr/bin/env python3
+
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
 # Author: Carolina Monzo
 
@@ -23,7 +23,7 @@ def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
     # If number of columns is less than 2, probably wrongly formatted
     if df.shape[1] < 2:
-        reads_logger.error("ERROR: is incorrectly formatted, is it not separated by commas?".format(args.inDESIGN))
+        reads_logger.error(f"ERROR: {args.inDESIGN} is incorrectly formatted, is it not separated by commas?")
         sys.exit(-1)
     
     # Create the new columns
@@ -68,9 +68,18 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}')
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py --isoforms {gtf_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
-                               --min_ref_len {args.min_ref_len} --aligner_choice {args.aligner_choice} -t {args.cpus} \
-                                -d {args.dir}/{file_acc} -o {sampleID} -s {args.sites}"
+                cmd_sqanti = (
+                    f"python {sqantiqcPath}/sqanti3_qc.py "
+                    f"--isoforms {gtf_files} "
+                    f"--refGTF {args.refGTF} "
+                    f"--refFasta {args.refFasta} "
+                    f"--min_ref_len {args.min_ref_len} "
+                    f"--aligner_choice {args.aligner_choice} "
+                    f"-t {args.cpus} "
+                    f"-d {args.dir}/{file_acc} "
+                    f"-o {sampleID} "
+                    f"-s {args.sites}"
+                )
 
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
@@ -92,13 +101,20 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}')
 
-                cmd_sqanti = f"python {sqantiqcPath}/sqanti3_qc.py \
-                                --isoforms {fastq_files} --refGTF {args.refGTF} --refFasta {args.refFasta} \
-                                --min_ref_len {args.min_ref_len} \
-                                --aligner_choice {args.aligner_choice} \
-                                -t {args.cpus} -d {args.dir}/{file_acc} \
-                                -o {sampleID} -s {args.sites} -n {args.chunks} \
-                                --fasta"
+                cmd_sqanti = (
+                    f"python {sqantiqcPath}/sqanti3_qc.py "
+                    f"--isoforms {fastq_files} "
+                    f"--refGTF {args.refGTF} "
+                    f"--refFasta {args.refFasta} "
+                    f"--min_ref_len {args.min_ref_len} "
+                    f"--aligner_choice {args.aligner_choice} "
+                    f"-t {args.cpus} "
+                    f"-d {args.dir}/{file_acc} "
+                    f"-o {sampleID} "
+                    f"-s {args.sites} "
+                    f"-n {args.chunks} "
+                    f"--fasta"
+                )
 
                 reads_logger.debug(cmd_sqanti)
                 subprocess.call(cmd_sqanti, shell = True)
@@ -137,14 +153,14 @@ def make_UJC_hash(args, df):
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
-            reads_logger.error("ERROR running command: {0}\n Missing GTFTOOLS".format(introns_cmd))
+            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing GTFTOOLS")
             sys.exit(-1)
             
         if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
             os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
             
         if subprocess.check_call(ujc_cmd, shell=True)!=0:
-            reads_logger.error("ERROR running command: {0}\n Missing BEDTOOLS".format(introns_cmd))
+            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing BEDTOOLS")
             sys.exit(-1)
         os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
