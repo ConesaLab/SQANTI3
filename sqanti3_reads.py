@@ -9,7 +9,6 @@ import shutil
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
-from src.utilities.sqanti_reads_tables_and_plots_02ndk import run_reads_plots
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -268,6 +267,7 @@ def main():
     
     prefix = args.PREFIX if args.PREFIX else "sqantiReads"
     
+    from src.utilities.sqanti_reads_tables_and_plots_02ndk import run_reads_plots
     run_reads_plots(
         ref_gtf=args.refGTF,
         design_file=args.inDESIGN,
