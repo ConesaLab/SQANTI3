@@ -2,6 +2,7 @@
 import subprocess, os, sys, glob
 import pandas as pd
 import hashlib
+import shutil
 
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
 # Author: Carolina Monzo
@@ -27,9 +28,12 @@ def fill_design_table(args):
         sys.exit(-1)
     
     # Create the new columns
-    df['classification_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
-    df['junction_file'] = args.dir + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
-    df.to_csv(args.inDESIGN, sep = ',', index = False)
+    if 'classification_file' not in df.columns:
+        df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    
+    if 'junction_file' not in df.columns:
+        df['junction_file'] = args.sqanti_dirs + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
+        
     return(df)
 
 def get_method_runSQANTI3(args, df):
@@ -37,11 +41,11 @@ def get_method_runSQANTI3(args, df):
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
-        classification_file = os.path.join(args.dir, file_acc, f"{sampleID}_classification.txt")
+        classification_file = os.path.join(args.sqanti_dirs, file_acc, f"{sampleID}_classification.txt")
         junction_file = row["junction_file"]
 
         # Check for directory containing classification and junction file
-        directory_path = os.path.join(args.dir, file_acc)
+        directory_path = os.path.join(args.sqanti_dirs, file_acc)
 
         if os.path.isdir(directory_path):
             classification_file_path = os.path.join(classification_file)
@@ -68,6 +72,8 @@ def get_method_runSQANTI3(args, df):
                     sys.exit(-1)
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}')
+                
+                # Update output directory to be args.OUTPUT instead of args.dir
                 cmd_sqanti = (
                     f"python {sqantiqcPath}/sqanti3_qc.py "
                     f"--isoforms {gtf_files} "
@@ -76,7 +82,7 @@ def get_method_runSQANTI3(args, df):
                     f"--min_ref_len {args.min_ref_len} "
                     f"--aligner_choice {args.aligner_choice} "
                     f"-t {args.cpus} "
-                    f"-d {args.dir}/{file_acc} "
+                    f"-d {args.OUTPUT}/{file_acc} "
                     f"-o {sampleID} "
                     f"-s {args.sites}"
                 )
@@ -101,6 +107,7 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}')
 
+                # Update output directory to be args.OUTPUT instead of args.dir
                 cmd_sqanti = (
                     f"python {sqantiqcPath}/sqanti3_qc.py "
                     f"--isoforms {fastq_files} "
@@ -109,7 +116,7 @@ def get_method_runSQANTI3(args, df):
                     f"--min_ref_len {args.min_ref_len} "
                     f"--aligner_choice {args.aligner_choice} "
                     f"-t {args.cpus} "
-                    f"-d {args.dir}/{file_acc} "
+                    f"-d {args.OUTPUT}/{file_acc} "
                     f"-o {sampleID} "
                     f"-s {args.sites} "
                     f"-n {args.chunks} "
@@ -129,8 +136,27 @@ def make_UJC_hash(args, df):
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
-        # Input dir, sqanti3 dir, samplename
-        outputPathPrefix = os.path.join(args.dir, file_acc, sampleID)
+        
+        # Check if we processed this sample just now (in get_method_runSQANTI3)
+        # If so, the output is already in args.OUTPUT.
+        # If not (fast mode), the output is in args.dir.
+        possible_input_path_new = os.path.join(args.OUTPUT, file_acc, sampleID)
+        possible_input_path_existing = os.path.join(args.sqanti_dirs, file_acc, sampleID)
+        
+        # We check for the classification file to confirm presence
+        if os.path.exists(f"{possible_input_path_new}_classification.txt"):
+             inputPathPrefix = possible_input_path_new
+        elif os.path.exists(f"{possible_input_path_existing}_classification.txt"):
+             inputPathPrefix = possible_input_path_existing
+        else:
+             reads_logger.error(f"Could not find SQANTI3 output for sample {sampleID} in {args.OUTPUT} or {args.sqanti_dirs}")
+             sys.exit(-1)
+        
+        # Output: Always args.OUTPUT (where we write modified files)
+        outputPathPrefix = os.path.join(args.OUTPUT, file_acc, sampleID)
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(os.path.dirname(outputPathPrefix), exist_ok=True)
 
         reads_logger.info("**** Calculating UJCs...")
                 
@@ -138,8 +164,20 @@ def make_UJC_hash(args, df):
         # downstream `gtftools` does not fail with `IndexError: list index out of range`.
         # `gffread` will rewrite the file adding the missing attributes. We write to a
         # temporary file and then move it back so the final filename remains unchanged.
+        
+        # We need to work on a copy of the GTF to avoid modifying input
+        input_gtf = f"{inputPathPrefix}_corrected.gtf"
+        output_gtf = f"{outputPathPrefix}_corrected.gtf"
+        
+        if not os.path.exists(output_gtf):
+             if os.path.exists(input_gtf):
+                 shutil.copy(input_gtf, output_gtf)
+             else:
+                 reads_logger.error(f"Input GTF not found: {input_gtf}")
+                 sys.exit(-1)
+
         gffread_tmp = f"{outputPathPrefix}_corrected.gtf.gffread_tmp"
-        gffread_cmd = f"gffread {outputPathPrefix}_corrected.gtf -T -o {gffread_tmp} && mv {gffread_tmp} {outputPathPrefix}_corrected.gtf"
+        gffread_cmd = f"gffread {output_gtf} -T -o {gffread_tmp} && mv {gffread_tmp} {output_gtf}"
 
         try:
             subprocess.check_call(gffread_cmd, shell=True)
@@ -149,7 +187,7 @@ def make_UJC_hash(args, df):
             
         ## Take the corrected GTF
         # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
-        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {outputPathPrefix}_corrected.gtf | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {outputPathPrefix}_corrected.gtf"""
+        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {output_gtf} | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {output_gtf}"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
             
         if subprocess.check_call(introns_cmd, shell=True)!=0:
@@ -165,8 +203,12 @@ def make_UJC_hash(args, df):
         os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
         ## Pandas merge to the left
-        classfile = f"{outputPathPrefix}_classification.txt"
-        clas_df = pd.read_csv(classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
+        input_classfile = f"{inputPathPrefix}_classification.txt"
+        if not os.path.exists(input_classfile):
+             reads_logger.error(f"Input classification file not found: {input_classfile}")
+             sys.exit(-1)
+             
+        clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
         clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
         ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
         
@@ -179,7 +221,7 @@ def make_UJC_hash(args, df):
         
         merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
         
-        cmd_paste = f"""bash -c 'paste <(cat {classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
+        cmd_paste = f"""bash -c 'paste <(cat {input_classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
         subprocess.call(cmd_paste, shell = True)
         
         os.remove(f"{outputPathPrefix}tmp_UJC.txt")
@@ -191,16 +233,28 @@ def main():
 
     args = reads_argparser().parse_args()
 
+    # Ensure output directory exists
+    if not os.path.exists(args.OUTPUT):
+        os.makedirs(args.OUTPUT)
+
     # Set up logger
     if args.verbose:
         log_level = logging.DEBUG
     else:
         log_level = logging.INFO
     
-    update_logger(reads_logger, args.dir, "reads", log_level)
+    update_logger(reads_logger, args.OUTPUT, "reads", log_level)
 
     # Check and read design file
     df = fill_design_table(args)
+    
+    # Save the processed design file to OUTPUT directory
+    design_basename = os.path.basename(args.inDESIGN)
+    new_design_path = os.path.join(args.OUTPUT, f"processed_{design_basename}")
+    df.to_csv(new_design_path, index=False)
+    
+    # Update args to point to the new design file for downstream tools
+    args.inDESIGN = new_design_path
 
     # Check method and run SQANTI3
     get_method_runSQANTI3(args, df)
@@ -217,7 +271,7 @@ def main():
     run_reads_plots(
         ref_gtf=args.refGTF,
         design_file=args.inDESIGN,
-        out_dir=args.dir,
+        out_dir=args.OUTPUT,
         prefix=prefix,
         factor=args.inFACTOR,
         gene_expression=args.ANNOTEXP,
