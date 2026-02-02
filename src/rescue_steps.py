@@ -244,14 +244,15 @@ def save_rescue_results(out_dir,out_prefix, rescued_transcripts, rescue_df, refG
     rescue_logger.info(f"Rescued FASTA written to file: {prefix}_rescued.fasta")
 
     # Save new classification
+    rescued_class = rescued_class[rescued_class['isoform'].isin(good_transcripts)]
     if ref_class is None:
         rescue_logger.warning("No reference classification provided.")
-        rescue_logger.warning("Rescued classification will only include the user-defined isoforms.")
+        rescue_logger.warning("Rescued classification will only include the user-defined true isoforms.")
     else:
         rClass = read_classification(ref_class) 
         tClass = rescued_class
-        rescued_class = pd.concat([tClass[tClass['isoform'].isin(good_transcripts)],
-                                    rClass[rClass['isoform'].isin(rescued_transcripts)]])
-    rescued_class.to_csv(f"{prefix}_rescued_classification.tsv", sep="\t", index=False)
+        rescued_class = pd.concat([tClass, rClass[rClass['isoform'].isin(rescued_transcripts)]])
+
+    rescued_class.to_csv(f"{prefix}_rescued_classification.txt", sep="\t", index=False)
     rescue_logger.info(f"Rescued classification written to file: {prefix}_rescued_classification.txt")
     return rescued_class
