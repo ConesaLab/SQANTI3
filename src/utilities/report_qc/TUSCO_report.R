@@ -802,11 +802,17 @@ for (gene in genes_to_plot) {
 
     # Add ideogram track at the top showing chromosome location
     chr_name <- as.character(seqnames(gene_range)[1])
-    ideoTrack <- IdeogramTrack(
-      genome = genome.assembly,  # "hg38" or "mm10" auto-detected
-      chromosome = chr_name
-    )
-    message("Ideogram track created for ", chr_name, " (genome: ", genome.assembly, ")")
+    ideoTrack <- tryCatch({
+      ideo <- IdeogramTrack(
+        genome = genome.assembly,  # "hg38" or "mm10" auto-detected
+        chromosome = chr_name
+      )
+      message("Ideogram track created for ", chr_name, " (genome: ", genome.assembly, ")")
+      ideo
+    }, error = function(e) {
+      message("Skipping IdeogramTrack for non-standard chromosome: ", chr_name)
+      NULL
+    })
 
     genome_axis <- GenomeAxisTrack()
     message("Genome axis created.")
@@ -886,11 +892,11 @@ for (gene in genes_to_plot) {
     sample_tracks <- if (!is.null(sample_transcripts_gr_unlisted)) unlist(sample_tracks, recursive = FALSE) else list()
     
     # Combine all tracks for plotting
-    # Combine tracks: ideogram, axis, reference annotation, sample transcripts
+    # Combine tracks: ideogram (if available), axis, reference annotation, sample transcripts
     if (is.null(reference_track)) {
-      all_tracks <- c(ideoTrack, genome_axis, sample_tracks)
+      all_tracks <- c(if (!is.null(ideoTrack)) list(ideoTrack) else list(), list(genome_axis), sample_tracks)
     } else {
-      all_tracks <- c(ideoTrack, genome_axis, reference_track, sample_tracks)
+      all_tracks <- c(if (!is.null(ideoTrack)) list(ideoTrack) else list(), list(genome_axis), list(reference_track), sample_tracks)
     }
     if (length(all_tracks) <= 1) {
       message("No tracks to plot for gene: ", gene)
