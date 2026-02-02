@@ -27,11 +27,21 @@ def fill_design_table(args):
         sys.exit(-1)
     
     # Create the new columns
-    if 'classification_file' not in df.columns:
-        df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    # We always overwrite these columns to ensure they match the current run arguments
+    # regardless of what might be in the input CSV (which could have stale paths).
     
-    if 'junction_file' not in df.columns:
-        df['junction_file'] = args.sqanti_dirs + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
+    # Classification file is the OUTPUT file we will create
+    df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    
+    # Junction file is the INPUT file we need to read
+    # If using sqanti_dirs (fast mode), it's there. If running from scratch, it will be in OUTPUT.
+    # We default to pointing to sqanti_dirs here; if running from scratch, get_method_runSQANTI3 logic 
+    # implies we'll find it eventually or create it.
+    if args.sqanti_dirs:
+         df['junction_file'] = args.sqanti_dirs + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
+    else:
+         # If no sqanti_dirs provided, we assume we are generating it in OUTPUT
+         df['junction_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
         
     return(df)
 
@@ -46,13 +56,22 @@ def get_method_runSQANTI3(args, df):
         # Check for directory containing classification and junction file
         directory_path = os.path.join(args.sqanti_dirs, file_acc)
 
+        if args.verbose:
+            reads_logger.debug(f"Checking for directory: {directory_path}")
+            reads_logger.debug(f"Checking for classification file: {classification_file}")
+            reads_logger.debug(f"Checking for junction file: {junction_file}")
+
         if os.path.isdir(directory_path):
             classification_file_path = os.path.join(classification_file)
             junction_file_path = os.path.join(junction_file)
+            
             if os.path.isfile(classification_file_path) and os.path.isfile(junction_file_path):
                 if args.verbose:
                     reads_logger.debug(f"[INFO] You inputted SQANTI3 directories, we will run sqanti_reads in fast mode for sample {directory_path}")
                 continue
+            else:
+                 if args.verbose:
+                     reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
         
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
@@ -127,7 +146,7 @@ def get_method_runSQANTI3(args, df):
                 continue
         
         # If none of the conditions are met, raise an error
-        reads_logger.error(f"ERROR: The file_acc you included in your design file does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.input_dir} directory")
+        reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
 
 def make_UJC_hash(args, df):
@@ -231,6 +250,20 @@ def main():
     global sqantiqcPath
 
     args = reads_argparser().parse_args()
+
+    # Expand user paths (handle ~/) and absolute paths
+    if args.sqanti_dirs:
+        args.sqanti_dirs = os.path.abspath(os.path.expanduser(args.sqanti_dirs))
+    if args.input_dir:
+        args.input_dir = os.path.abspath(os.path.expanduser(args.input_dir))
+    if args.OUTPUT:
+        args.OUTPUT = os.path.abspath(os.path.expanduser(args.OUTPUT))
+    if args.inDESIGN:
+        args.inDESIGN = os.path.abspath(os.path.expanduser(args.inDESIGN))
+    if args.refGTF:
+        args.refGTF = os.path.abspath(os.path.expanduser(args.refGTF))
+    if args.refFasta:
+        args.refFasta = os.path.abspath(os.path.expanduser(args.refFasta))
 
     # Ensure output directory exists
     if not os.path.exists(args.OUTPUT):
