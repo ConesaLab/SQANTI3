@@ -48,7 +48,7 @@ jobs:
       # --- END OF ADDED STEPS ---
 
       - name: Set CONDA_SUBDIR for macOS Intel packages
-        if: runner.os == 'macOS' && runner.arch == 'X64'
+        if: runner.os == 'macOS'
         run: echo "CONDA_SUBDIR=osx-64" >> $GITHUB_ENV
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3.1.1
@@ -59,7 +59,7 @@ jobs:
           auto-activate-base: false
 
       - name: Configure conda environment for Intel packages
-        if: runner.os == 'macOS' && runner.arch == 'X64'
+        if: runner.os == 'macOS'
         run: conda config --env --set subdir osx-64
 
       - name: List conda packages
