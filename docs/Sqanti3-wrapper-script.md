@@ -35,7 +35,7 @@ rescue_mode="both" # rules, ml or both
 
 * Sqanti QC:
 
-Sqanti3 has many parameters, but only 3 of them are mandatory: input GTF, reference GTF and reference fasta. The references are defined in the general parameters section, so only the former on is present in this section. All other parameters are optional, but by default they are targeted to the example available, because they are the most common ones. Others have a default option in the script, or different posibilities to  be used. For a detailed infography of the different parameters, how they affect the pipeline, and how to use them effectively, please check the [SQANTI3 QC running tutorial](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control) or print the help with `sqanti3_qc.py -h`
+Sqanti3 has many parameters, but only 3 of them are mandatory: input GTF, reference GTF and reference fasta. The references are defined in the general parameters section, so only the former on is present in this section. All other parameters are optional, but by default they are targeted to the example available, because they are the most common ones. Others have a default option in the script, or different posibilities to  be used. For a detailed infography of the different parameters, how they affect the pipeline, and how to use them effectively, please check the [SQANTI3 QC running tutorial](Running-SQANTI3-Quality-Control.md) or print the help with `sqanti3_qc.py -h`
 ```
 QC_input="example/UHR_chr22.gtf" # Input data
 QC_output_prefix="UHR_chr22"
@@ -72,7 +72,7 @@ QC_ratio_TSS_metric="" # Which metric should be reported in the ratio_TSS column
 # SQANTI3 filter
 
 SQANTI3 filter parameters are classified in 3 categories: common arguments, rules specific arguments, and ml specific arguments. For the general parameters, the only mandatory argument is the input classification file. The default paths allow to execute the whole pipeline using
-the generated files in the QC step, but you can change it at will if you consider so. For a detailed infogram on how these parameters affect the pipeline, please check the [SQANTI3 filter running tutorial](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)
+the generated files in the QC step, but you can change it at will if you consider so. For a detailed infogram on how these parameters affect the pipeline, please check the [SQANTI3 filter running tutorial](Running-SQANTI3-filter.md)
 
 ```
 # Common elements for filter rules and ml

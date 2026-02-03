@@ -24,7 +24,7 @@
 
 ***
 
-<a name="intro"/>
+<a id="intro"></a>
 
 ## Introduction
 </a>
@@ -38,14 +38,14 @@ The idea behind this strategy is to avoid losing transcripts/genes that are dete
 In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Optionally, requantification can be performed to reassign expression values to the rescued isoforms.
 
 
-<a name="motivation"/>
+<a id="motivation"></a>
 
 ### Motivation
 </a>
 ⚠️To be completed⚠️
 
 
-<a name="strategy"/>
+<a id="strategy"></a>
 
 ## SQANTI3 rescue strategy
 </a>
@@ -101,9 +101,9 @@ Finally, all candidate-target pairs obtained during mapping -referred to as **ma
 
 #### 3. Application of SQ3 filter to the reference transcriptome
 
-Validation of transcripts using [orthogonal sources of data](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#optional) is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a **validation step for all reference rescue targets** before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).
+Validation of transcripts using [orthogonal sources of data](Running-SQANTI3-Quality-Control.md#optional) is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a **validation step for all reference rescue targets** before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).
 
-This requires users to [run SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control) on the reference transcriptome and supply the output `*_classification.txt` file to SQANTI3 rescue using the `--refClassif` (`-k`) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets.
+This requires users to [run SQANTI3 quality control](Running-SQANTI3-Quality-Control.md) on the reference transcriptome and supply the output `*_classification.txt` file to SQANTI3 rescue using the `--refClassif` (`-k`) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets.
 
 ⚠️ **Disclaimer**: note that this is a temporary solution -we are currently working on implementing an option to run this step internally as a part of the rescue-, however, we are aware that the same reference may be used for multiple transcriptomes, therefore, this option will remain active to save runtime and resources. ⚠️
 
@@ -130,7 +130,7 @@ After performing this last filter of the rescue target list, SQ3 rescue outputs 
 <img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798>
 
 
-<a name="running"/>
+<a id="running"></a>
 
 #### 5. Requantification
 
@@ -164,7 +164,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-<a name="args"/>
+<a id="args"></a>
 
 ### Input files and arguments
 </a>
@@ -196,7 +196,7 @@ reference isoforms.
 - **Output directory and outfile prefix**: the output directory can be set via the `-d` flag (default: current directory). Output files will be named using the prefix provided using the `-o` argument (default: SQANTI3).
 
 
-<a name="rules"/>
+<a id="rules"></a>
 
 ### Rules rescue arguments
 </a>
@@ -266,7 +266,7 @@ Rules specific options:
 ```
 </details><br>
 
-<a name="ml"/>
+<a id="ml"></a>
 
 ### Machine learning rescue arguments
 </a>
@@ -336,26 +336,26 @@ Machine Learning specific options:
 </details><br>
 
 
-<a name="out"/>
+<a id="out"></a>
 
 ## Rescue output files
 </a>
-The final result of SQANTI3 rescue is a **transcriptome GTF file** - named `prefix_rescued.gtf` - including all the transcripts that were classified as isoforms by either the rules or the ML filter (already included in the supplied `prefix.filtered.gtf` file) and the rescued transcript isoforms that were selected from the reference transcriptome (see [rescue strategy](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#strategy) section above).
+The final result of SQANTI3 rescue is a **transcriptome GTF file** - named `prefix_rescued.gtf` - including all the transcripts that were classified as isoforms by either the rules or the ML filter (already included in the supplied `prefix.filtered.gtf` file) and the rescued transcript isoforms that were selected from the reference transcriptome (see [rescue strategy](#strategy) section above).
 
 Other additional output files that are generated in the rescue process will be explained below.
 
-<a name="out_common"/>
+<a id="out_common"></a>
 
 ### Common rescue output files
 </a>
 - **Automatic rescue result** (both `--mode` options): a single-column file named `prefix_automatic_rescued_list.tsv` containing the IDs of reference transcripts that were selected during automatic rescue.
 
-- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#2-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:
+- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](#1b-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:
 
   - A rescue candidate ID list, named `prefix_rescue_candidates.tsv`.
   - A rescue candidate FASTA file named `prefix_rescue_candidates.fasta` containing the sequences of rescue candidates for mapping.
 
-- **Rescue target files** (for `--mode full`). As explained above, [rescue targets](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#2-selection-of-rescue-candidate-and-target-transcripts) are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, [candidates are mapped to targets](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#3-mapping-of-candidates-to-targets) using minimap2. Similarly to rescue candidates, two rescue target files are generated:
+- **Rescue target files** (for `--mode full`). As explained above, [rescue targets](#1b-selection-of-rescue-candidate-and-target-transcripts) are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, [candidates are mapped to targets](#2-mapping-of-candidates-to-targets) using minimap2. Similarly to rescue candidates, two rescue target files are generated:
 
   - ID list: `prefix_rescue_targets.tsv`.
   - FASTA file: `prefix_rescue_targets.fasta`.
@@ -432,14 +432,14 @@ PB.1.4	0	PB.7707.5	0.754	novel_not_in_catalog	not_rescued	long_read_transcript	r
 
 - **Rescue inclusion list** (`--mode full`): a single-column file containing the IDs of all rescued transcripts, named `prefix_rescue_inclusion-list.tsv`. In this list, both the IDs of rescued transcripts obtained via automatic rescue and via rescue-by-mapping are combined into a single inclusion list. This list is used to generate the final rescued transcriptome GTF, i.e. `prefix_rescued.gtf`.
 
-<a name="rules_out"/>
+<a id="rules_out"></a>
 
 ### Rules-specific output
 </a>
-In addition to the common output files, when running `--mode full`, the rules rescue will create a new folder within the designated output directory to save [rules filter output files](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#rulesout), i.e. the results of running the rules filer on the reference transcriptome. This folder is named `reference_rules_filter` in all cases, while all files within it will have `reference_` as prefix. The `reference_RulesFilter_result_classification.txt` file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.
+In addition to the common output files, when running `--mode full`, the rules rescue will create a new folder within the designated output directory to save [rules filter output files](Running-SQANTI3-filter.md#rulesout), i.e. the results of running the rules filer on the reference transcriptome. This folder is named `reference_rules_filter` in all cases, while all files within it will have `reference_` as prefix. The `reference_RulesFilter_result_classification.txt` file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.
 
 
-<a name="ml_out"/>
+<a id="ml_out"></a>
 
 ### Machine learning-specific output
 </a>

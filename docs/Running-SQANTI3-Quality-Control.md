@@ -39,10 +39,9 @@
 
 ______________________________________________________________________
 
-<a name="ready"/>
+<a id="ready"></a>
 
 ## Getting ready
-</a>
 Before running SQANTI3, you will need to:
 
 **Activate the SQANTI3 conda environment:**
@@ -52,10 +51,9 @@ Before running SQANTI3, you will need to:
 (SQANTI3.env)-bash-4.1$
 ```
 
-<a name="args"/>
+<a id="args"></a>
 
 ## Arguments and parameters in SQANTI3 QC
-</a>
 The SQANTI3 quality control script accepts the following arguments:
 
 ```bash
@@ -188,14 +186,13 @@ Optional arguments:
 ```
 </details><br>
 
-<a name="running"/>
+<a id="running"></a>
 
 ## Running SQANTI3 QC
-</a>
-<a name="minimal"/>
+
+<a id="minimal"></a>
 
 ### Minimal input (mandatory)
-</a>
 This are the minimal files that you will need to run SQANTI3 QC:
 
 *   **Long read-defined transcriptome**. It can be obtained after processing data from any of the available Third Generation Sequencing techonologies like Iso-Seq (PacBio) or Oxford Nanopore (ONT). SQANTI3 is compatible with the output of any long read-based transcriptome building pipeline, such as IsoSeq3, TALON, or FLAIR. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF:
@@ -210,15 +207,14 @@ This are the minimal files that you will need to run SQANTI3 QC:
     - The chromosome/scaffolds names must be same in the reference annotation and the reference genome.
 
 **⚠️WARNINGS:** 
-- Before running SQANTI3, it is strongly recommended to **collapse redundant transcript sequences** using [isoseq collapse](https://isoseq.how/classification/isoseq-collapse.html) or [TAMA](https://github.com/GenomeRIK/tama/wiki). To learn more about this, we suggest taking a look at our [recommended long read processing workflow](https://github.com/ConesaLab/SQANTI3/wiki/Introduction-to-SQANTI3#workflow).
+- Before running SQANTI3, it is strongly recommended to **collapse redundant transcript sequences** using [isoseq collapse](https://isoseq.how/classification/isoseq-collapse.html) or [TAMA](https://github.com/GenomeRIK/tama/wiki). To learn more about this, we suggest taking a look at our [recommended long read processing workflow](Introduction-to-SQANTI3.md#workflow).
 
 - Note that, by default, SQANTI3 expects PacBio-formatted IDs (i.e. PB.XX.XX). Users whose data was not processed using IsoSeq3 should add the `--force_id_ignore` flag to override this behavior.
 
 
-<a name="optional"/>
+<a id="optional"></a>
 
 ### Additional inputs (optional)
-</a>
 * **Short read data**: SQANTI3 QC uses short-read data to validate several aspects of long read defined transcripts, i.e. to compute gene/isoform expression, junction coverage and TSS ratio. To learn more about the different ways in which short reads can be supplied to SQANTI3 QC, see <a href="#SR">Provding short reads</a> section.
 
 * **CAGE Peak data:** In SQANTI2, a [CAGE peak database for the hg38 genome](https://github.com/Magdoll/images_public/blob/master/SQANTI2_support_data/hg38.cage_peak_phase1and2combined_coord.bed.gz) was provided, originally retrieved from [FANTOM5](http://fantom.gsc.riken.jp/5/datafiles/latest/extra/CAGE_peaks/). Now, we recommend to use data from [refTSS](http://reftss.clst.riken.jp/reftss/Main_Page). To ease usage, some versions of this annotation for several species have been uploaded to the `data/ref_TSS_annotation` folder, and we will try to keep them updated for new genome releases.
@@ -252,10 +248,9 @@ python sqanti3_qc.py --isoforms example/UHR_chr22.gtf \
 It is *highly recommended* to run SQANTI3 using a GTF file with the Long-Read defined isoforms instead of input FASTA/FASTQ file with their sequences. If you ran [isoseq collapse](https://isoseq.how/classification/isoseq-collapse.html), the obtained `*collapsed.gff` file is actually in GFF2 format (equivalent to GTF), so you can use it as is. If you provide the sequences, a mapping step will be needed and the decisions took by the mapping algorithm will affect the final results. 
 
 
-<a name="SR"/>
+<a id="SR"></a>
 
 ## Providing short reads
-</a>
 Short read data can be supplied to SQANTI3 in several ways:
 
 * **Raw short-read data:** for users who may want SQANTI3 to compute all short read-based attributes internally without the need to perform any additional pre-processing, short read FASTA/FASTQ files can be provided using the dedicated argument (see <a href="#fasta">Raw short read data</a> section below).
@@ -269,10 +264,9 @@ Alternatively, users may supply pre-processed short read data in one or more of 
 * **Short read BAMs:** should be obtained by mapping short reads against the reference genome using a splice-aware mapper, such as STAR. SQANTI3 QC will use this information to compute the TSS ratio.
 
 
-<a name="fasta"/>
+<a id="fasta"></a>
 
 ### Raw short read data (FASTA/FASTQ files)
-</a>
 Matching RNA-Seq data (i.e. obtained from the same samples as your long-read data) can be supplied to SQANTI3 in the form of FASTA/FASTQ files via the `--short_reads` argument. The expected file format is a **File Of File Names** (.fofn), which is a text file that contains the paths of the Short-Read RNA-Seq data with one line per replicate and separated by one space in the case of paired-end data. It should look like this:
 
 ```text
@@ -287,10 +281,9 @@ Please note that, if you are going to use the `--short_reads` option, you should
 
 
 
-<a name="exp"/> 
+<a id="exp"></a>
 
 ### Short read isoform expression
-</a>
 
 Users can supply their pre-computed isoform expression via the `--expression` argument. Depending on whether this information is provided as one or multiple files, two formats are supported: 
 - If you input **one expression file per sample**, you can provide several expression data files as a chain of comma-separated paths or by providing a directory where ONLY expression data is present. Accepted formats include the output of Kallisto and RSEM (see below).
@@ -328,10 +321,9 @@ PB.100.2        PB.100  226     81.11   20.18   2.26    9.47    100.00  16.84   
 34572   14.5141
 ```
 
-<a name="cov"/>
+<a id="cov"></a>
 
 ### Splice junction coverage by short reads
-</a>
 If you have short read data, you can run STAR to get the **junction file** (usually called `SJ.out.tab`) and supply it to SQANTI3 via the `-c` argument. It is possible to use a different mapper, however, SQANTI3 requires that the format of the junction is similar to that of STAR's `SJ.out.tab` file (see below). 
 
 As described in the [STAR manual](https://github.com/alexdobin/STAR/blob/master/doc/STARmanual.pdf):
@@ -356,17 +348,15 @@ If you have several samples, we recommend providing them as separated `*SJ.out.t
 - Provide each of their individual paths separated by a comma.
 - Use a wildcard to provide all paths at the same time, e.g. `/path/to/*my_suffix.tsv`.
 
-<a name="bam"/>
+<a id="bam"></a>
 
 ### Short read mapping results (BAM files)
-</a>
 If you used the `-c` argument to provide coverage information, but you want to calculate `ratio_TSS` values for each isoform, SQANTI3 QC will still require you to supply short read mapping information. Therefore, we recommend users to supply the BAM files obtained as a result of mapping short reads to the genome via the `--SR_bam` option. Otherwise, you may supply short reads as raw data to SQANTI3 and have all pre-processing steps done internally, however, keep in mind that this will take longer as well as require more memory/computational resources.
 
 
-<a name="cage"/>
+<a id="cage"></a>
 
 ## Incorporating CAGE peak data (`--CAGE_peak`)
-</a>
 To perform quality control of the **Transcription Start Site (TSS)**, users may provide CAGE peak data. This is particularly relevant given that 5' RNA degradation can generate variability in the TSS that can be mistaken for a novel TSS.
 
 CAGE peak data must be provided as a BED file, where:
@@ -380,31 +370,28 @@ The BED file needs to be supplied to `sqanti3_qc.py` via the `--CAGE_peak` argum
 
 Please, note that **public CAGE peak data** for human and mouse from the [refTSS](http://reftss.clst.riken.jp/reftss/Main_Page) database is supplied in SQANTI3's `data` folder.
 
-SQANTI3 QC will use this data to validate the transcript's TSS. First, it will evaluate whether the TSS of the different long read-defined transcripts fall inside a CAGE peak (`within_CAGE_peak` column). Then, it will calculate the distance to the nearest detected CAGE peak (`dist_to_CAGE_peak` column in the output `*_classification.txt` file). A detailed glossary of classification file columns can be found [here](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC).
+SQANTI3 QC will use this data to validate the transcript's TSS. First, it will evaluate whether the TSS of the different long read-defined transcripts fall inside a CAGE peak (`within_CAGE_peak` column). Then, it will calculate the distance to the nearest detected CAGE peak (`dist_to_CAGE_peak` column in the output `*_classification.txt` file). A detailed glossary of classification file columns can be found [here](Understanding-the-output-of-SQANTI3-QC.md).
 
 
-<a name="polya"/>
+<a id="polya"></a>
 
 ## Incorporating polyA information
-</a>
 To perform quality control of the **Transcription Termination Site (TTS)**, users may provide polyA motif or polyA site/peak information. SQANTI3 QC will use this data to create several descriptors regarding the presence of the TTS within polyA sites/motifs, as well as the distance to them, if detected.
 
 
-<a name="polyamotif"/>
+<a id="polyamotif"></a>
 
 ### PolyA motif data (`--polyA_motif_list`)
-</a>
 The polyA motif list should be supplied in the form of a text file. The most common polyA motifs for human and mouse are supplied in the SQANTI3 `data` folder (see [here](https://github.com/ConesaLab/SQANTI3/blob/master/data/polyA_motifs/mouse_and_human.polyA_motif.txt)).
 
 The list of polyA motifs with the `--polyA_motif_list` parameter in `sqanti3_qc.py`.
 
-If a polyA motif is identified at the 3' end of the transcript, the `polyA_motif_found` column in the classification file will be `TRUE`. In addition, SQANTI3 returns the sequence (`polyA_motif`) and the distance (`polyA_dist`) to the closest polyA motif detected. A detailed glossary of classification file columns can be found [here](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC).
+If a polyA motif is identified at the 3' end of the transcript, the `polyA_motif_found` column in the classification file will be `TRUE`. In addition, SQANTI3 returns the sequence (`polyA_motif`) and the distance (`polyA_dist`) to the closest polyA motif detected. A detailed glossary of classification file columns can be found [here](Understanding-the-output-of-SQANTI3-QC.md).
 
 
-<a name="polyasite"/>
+<a id="polyasite"></a>
 
 ### PolyA site data (`--polyA_peak`)
-</a>
 Complementary to polyA motif information, polyA site data can be supplied. It must be supplied as a BED file, where:
 
 - Column 1 contains the **chromosome** (chr1, chr2...).
@@ -420,13 +407,12 @@ sed -i 's/^/chr/' atlas.clusters.2.0.GRCh38.96.bed
  
 The polyA site BED file must be supplied to `sqanti3_qc.py` via the `--polyA_peak` argument.
 
-Using this information, SQANTI3 will write out the distance to the closest polyA site/peak (`dist_to_polyA_site` column) and whether the transcript's TTS was found inside a polyA site/peak (`within_polyA_site` column) to the output `*_classification.txt` file. A detailed glossary of classification file columns can be found [here](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC).
+Using this information, SQANTI3 will write out the distance to the closest polyA site/peak (`dist_to_polyA_site` column) and whether the transcript's TTS was found inside a polyA site/peak (`within_polyA_site` column) to the output `*_classification.txt` file. A detailed glossary of classification file columns can be found [here](Understanding-the-output-of-SQANTI3-QC.md).
 
 
-<a name="flcount"/>
+<a id="flcount"></a>
 
-## Supplying single or multi-sample full-length (FL) counts (`--fl_count`)
-</a> 
+## Supplying single or multi-sample full-length (FL) counts (`--fl_count`) 
 `sqanti3_qc.py` supports single or multi-sample FL counts from PacBio Iso-Seq pipeline. There are three acceptable formats.
 
 ### Single Sample FL Count
@@ -486,7 +472,7 @@ This is a comma-delimited file.
 
 For each sample provided through the `--fl_count` option, `sqanti3_qc.py` will create a column in the `*_classification.txt` output file that is `FL.<sample>`. Note that this is the raw FL count provided. The sum of all the FL reads accross the samples associated to one transcript will be recorded in th `FL` column of the `*_classification.txt` output file.
 
-When plotted, the script [SQANTI3_report.R](ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
+When plotted, the script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 
 ```
                            raw FL count for PB.X.Y in sample1
@@ -494,13 +480,13 @@ FL_TPM(PB.X.Y,sample1) = ------------------------------------- x 10^6
                                total FL count in sample1
 ```
 
-Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `*_classification_TPM.txt`. Please, do not mix up `*_classification_TPM.txt`  and `*_classification.txt` files. The one used in subsequent scripts (filtering, future isoAnnot, etc.) will be the `_classification.txt` one. A detailed glossary of classification file columns can be found [here](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC).
+Two additional columns, `FL_TPM.<sample>` and `FL_TPM.<sample>_log10` will be added and output to a new classification file with the suffix `*_classification_TPM.txt`. Please, do not mix up `*_classification_TPM.txt`  and `*_classification.txt` files. The one used in subsequent scripts (filtering, future isoAnnot, etc.) will be the `_classification.txt` one. A detailed glossary of classification file columns can be found [here](Understanding-the-output-of-SQANTI3-QC.md).
 
 
-<a name="tssratio"/>
+<a id="tssratio"></a>
 
 ## Selecting the metric used to aggregate TSS ratio across samples
-</a>
+
 As of v5.2, SQANTI3 includes the `--ratio_TSS_metric` argument, which can be used to tweak the results in the `TSS_ratio` column of the
 classification.txt file. Briefly, SQANTI3 calculates the TSS ratio metric for all supplied short-read samples and replicates, and then summarizes the results to provide a single TSS ratio value.
 
@@ -513,10 +499,9 @@ The following options are available:
 When aiming to discover novel and/or rare TSS, this metric will ensure that underrepresented sites will not be disregarded just because they are only captured in one sample. `median` and `3rd quartile`, on the other hand, allow the user to enforce different levels of robustness, preventing the metric from being driven by outliers and favoring widely-detected TSS to be preserved after QC. `mean` values, on the other hand, provide a balance between both scenarios in situations in which the degree of TSS novelty of the sample is unknown.
 
 
-<a name="gff3"/>
+<a id="gff3"></a>
 
 ## IsoAnnotLite and SQANTI3: using an existing tappAS annotation file (`--gff3`)
-</a>
 When the `--isoAnnotLite` flag is supplied to SQANTI3 QC, the tool will run [IsoAnnotLite](https://isoannot.tappas.org/isoannot-lite/) internally. IsoAnnotLite is a Python script designed to use the SQANTI3 QC output to generate the input for [tappAS](https://app.tappas.org/), i.e. tappAS-compatible  GFF3 file (see "Annotation features file format" section in the [tappAS overview](https://app.tappas.org/overview/)).
 
 If you want IsoAnnotLite to perform **positional transfer of functional features**, you will also need to provide a pre-annotated tappAS GFF3 file via the `--gff3` argument. By doing this, functional feature information will be added to your long read-defined transcriptome, unlocking tappAS functional and feature-level analyses. You can find all functional annotation files available for tappAS [here](http://app.tappas.org/resources/downloads/gffs/). 
@@ -526,10 +511,9 @@ Note that, if **no pre-annotated tappAS GFF3 file is provided** (e.g. because th
 **⚠️Warning:** we are aware that some of the tappAS GFF3 files correspond to old transcriptome releases of reference databases (ENSEMBL, RefSeq, etc.). We are currently working on updating these annotations to later transcriptome versions. 
 
 
-<a name="parallelization"/>
+<a id="parallelization"></a>
 
 ## Parallelization
-</a>
 There are two options related to parallelization:
 
 - The `-t` (`--cpus`) parameter designates the number of CPUs used by the aligners for long and short reads. If your have supplied your transcriptome a GTF file and you do not provide short-read FASTA/FASTQ files, the `-t` option has no effect.

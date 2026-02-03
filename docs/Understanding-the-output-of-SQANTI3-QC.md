@@ -16,7 +16,7 @@
 
 __________________________________
 
-<a name="output"/>
+<a id="output"></a>
 
 ## SQANTI3 QC output
 
@@ -28,7 +28,7 @@ The [example/SQANTI3_QC_output](https://github.com/ConesaLab/SQANTI3/tree/master
 
 This is the result of [running SQANTI3 QC on example data](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset), i.e. a subset of the UHR dataset. A more detailed explanation of the different output files included below.
 
-<a name="main"/>
+<a id="main"></a>
 
 ### Main output: classification and junctions files
 
@@ -39,7 +39,7 @@ SQANTI3 characterizes the input transcriptome by computing a series of attribute
 - **Juctions file**: a tab-separated file containing each junction for every PB isoform as rows. Rows are identified by the isoform ID and the junction number (shown in order, i.e. the 1st, 2nd, 3rd... ith junction), which are included in the two first columns. Take into account that the same junction may appear multiple times if they are shared by multiple PB isoforms, for instance, when several FSM and ISM transcripts associated to the same reference isoform are found. For a full glossary of columns and their meaning, [see below](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC#glossary-of-junction-file-columns-junctionstxt)
 
 
-<a name="transcriptome"/>
+<a id="transcriptome"></a>
 
 ### Transcriptome files
 
@@ -58,7 +58,7 @@ SQANTI3 characterizes the input transcriptome by computing a series of attribute
 SQ3 currently accepts both GTF (default) and FASTA transcriptome files as input. If a **FASTA input file** is supplied, sequences are mapped to the genome to generate the `_corrected.gtf` file. Using this GTF and the reference genome, SQ3 performs **indel correction** and generates the `_corrected.fasta` file. Please note that this type of reference-based correction **will remove SNPs**, therefore, users who are interested in this kind of information should refrain from using a FASTA file as input. Alternatively, if users supply a **GTF input file**, SQ3 will NOT perform indel correction, just extract transcript sequences using the reference genome and the transcriptome GTF file, which will be equivalent to the `_corrected.gtf` file.
 
 
-<a name="report"/>
+<a id="report"></a>
 
 ### SQANTI QC report
 
@@ -69,7 +69,7 @@ The report includes over 150 plots, therefore, in order to ease interpretation, 
 Users who are proficient in R are welcome to modify the R script to add new figures -we will be constantly adding new figures as well.
 
 
-<a name="supplementary"/>
+<a id="supplementary"></a>
 
 ### Supplementary output
 
@@ -123,7 +123,7 @@ ShortReadsBAMs  /path/to/raw_data/SR_bams.fofn
 
 - **genePred files**: reference annotation and long-read transriptome GTF files are converted to genePred format during isoform classification. The two `.genePred` files found in the output folder constitute the intermediate files that are generated in this process.
 
-<a name="classifcols"/>
+<a id="classifcols"></a>
 
 ## Glossary of classification file columns (`classification.txt`)
 
@@ -179,7 +179,7 @@ The output `_classification.txt` has the following fields:
 48. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform have a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
 
 
-<a name="junctioncols"/>
+<a id="junctioncols"></a>
 
 ## Glossary of junctions file columns (`junctions.txt`)
 

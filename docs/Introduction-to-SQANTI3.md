@@ -16,7 +16,7 @@
 
 __________________________________
 
-<a name="intro"/>
+<a id="intro"></a>
 
 ## Introduction
 
@@ -30,7 +30,7 @@ maintained/updated. All development efforts will continue in SQANTI3, aiming to 
 comprehensive characterization of long read-defined transcriptomes for the community.
 
 
-<a name="fit"/>
+<a id="fit"></a>
 
 ### SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline
 
@@ -42,14 +42,14 @@ After generating a high-quality transcriptome with SQANTI3, downstream steps inc
 
 - **Functional annotation** of isoform models, including positionally-defined functional features such as motifs,
 domains, etc. IsoAnnot, a tool for *de novo* annotation of isoforms, is currently under development, however,
-users can run [IsoAnnotLite](https://github.com/ConesaLab/SQANTI3/wiki/IsoAnnotLite) within or outside of SQANTI3 to impute functional features from other already-annotated
+users can run [IsoAnnotLite](IsoAnnotLite.md) within or outside of SQANTI3 to impute functional features from other already-annotated
 transcriptomes.
 - **Expression-based functional analysis** using [tappAS](https://app.tappas.org/). tappAS is a Java GUI application 
 that leverages both expression and domain/motif annotation information to gain insight into the functional implications 
 of alternative isoform expression.
 
 
-<a name="workflow"/>
+<a id="workflow"></a>
 
 ### Before running SQANTI3: recommended long read processing workflow
 
@@ -71,7 +71,7 @@ are removed from the transcriptome, the reads can be used to obtain a more accur
 
 
 
-<a name="sqanti"/>
+<a id="sqanti"></a>
 
 ## How does SQANTI3 work?
 
@@ -81,19 +81,19 @@ which are commonly returned in a fasta or GTF file format. SQANTI3 combines the 
 SQANTI3 is mainly designed to perform two 
 different tasks, both of them equally important:
 
-1. **Isoform classification and quality control** ([SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)) for long read-defined transcriptomes. The SQ3 [categories and subcategories](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories), 
+1. **Isoform classification and quality control** ([SQANTI3 QC](Running-SQANTI3-Quality-Control.md)) for long read-defined transcriptomes. The SQ3 [categories and subcategories](SQANTI3-isoform-classification:-categories-and-subcategories.md), 
 together with a long list of transcript-level attributes and descriptors, allow users to carefully inspect the properties of their isoform models, as well as identify potential problems generated during library preparation and raw data processing.
-2. **Artifact filtering** ([SQANTI3 filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.
+2. **Artifact filtering** ([SQANTI3 filter](Running-SQANTI3-filter.md)) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.
 
 To gain insight into these two steps, we encourage reading the original [SQANTI publication](https://genome.cshlp.org/content/early/2018/02/09/gr.222976.117). Recently, however, we have implemented a final step in the SQANTI3 workflow:
 
-3. **Reference transcript rescue** ([SQANTI3 rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.
+3. **Reference transcript rescue** ([SQANTI3 rescue](Running-SQANTI3-rescue.md)) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.
 
 ![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
 
 
-<a name="structure"/>
+<a id="structure"></a>
 
 ## SQANTI3 structure
 
@@ -105,14 +105,14 @@ At the moment, the SQANTI3 tool is directly called using the wrapper `sqanti3`. 
 
 To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the `src` (source) directory. _As of the [latest release](https://github.com/ConesaLab/SQANTI3/releases/latest), only sqanti3_qc.py has been fully modularized._
 
-<a name="source"/>
+<a id="source"></a>
 
 ### Source folder
 
 The `src` directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.
 
 
-<a name="utilities"/>
+<a id="utilities"></a>
 #### Utilities folder
 
 The `utilities` folder contains all the auxiliary scripts and functions required to run `sqanti3_qc.py` and `sqanti3_filter.py`.
@@ -143,7 +143,7 @@ The `rescue` subfolder contains a series of R scripts implementing the different
 
 GeneMarkST tool. Used internally during QC for ORF prediction.
 
-<a name="data"/>
+<a id="data"></a>
 
 ### Data folder
 
@@ -152,7 +152,7 @@ The `data` folder contains pre-computed TSS/TTS orthogonal data that is ready to
 - `ref_TSS_annotation` subfolder: human and mouse CAGE data from the [refTSS database](http://reftss.clst.riken.jp/reftss/Main_Page).
 - `polyA_motif` subfolder: contains a list of human and mouse canonical polyadenylation motifs. 
 
-<a name="example"/>
+<a id="example"></a>
 
 ### Example folder
 

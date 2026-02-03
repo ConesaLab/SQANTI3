@@ -14,7 +14,7 @@
   
 ____________________________________________________
 
-<a name="dependencies"/>
+<a id="dependencies"></a>
 
 ## Dependencies
 
@@ -55,7 +55,7 @@ Non-comprehensive list of the main dependencies for SQANTI3:
 * We have downloaded gtfToGenePred from [UCSC utilities](https://hgdownload.soe.ucsc.edu/admin/exe/) and gave execution permissions, so it is no longer necessary to do it after downloading SQANTI3.
 
 
-<a name="install"/>
+<a id="install"></a>
 
 ## Getting ready to use SQANTI3
 
@@ -68,7 +68,7 @@ The installation will be done just once and it usually takes less than 10 minute
 you just need to activate the conda environment of SQANTI3 and run it!
 
 
-<a name="install0"/>
+<a id="install0"></a>
 
 ### 0. Installing and updating Anaconda
 
@@ -83,7 +83,7 @@ conda update conda
 If you have not installed Anaconda, the generic installer for Linux OS can be found [here](http://docs.continuum.io/anaconda/install/#linux-install). Note that only Linux and Mac machines are currently supported.
 
 
-<a name="install1"/>
+<a id="install1"></a>
 
 ### 1. Downloading SQANTI3
 
@@ -106,9 +106,9 @@ Contributors outside the main development team are welcome submit a **pull-reque
  git clone https://github.com/ConesaLab/SQANTI3.git
 ```
 
-If you are interested in a previous version of SQANTI3, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history) in our wiki site, which contains a detailed account of all changes introduced for versions >=5.0.
+If you are interested in a previous version of SQANTI3, see the [version history](Version-history.md) in our wiki site, which contains a detailed account of all changes introduced for versions >=5.0.
 
-<a name="install2"/>
+<a id="install2"></a>
 
 ### 2. Creating the conda environment
 
@@ -137,7 +137,7 @@ Once you have activated the virtual environment, you should see your prompt chan
 If you had already installed SQANTI3 and have updated to a new version, creating a fresh environment may be required in **major and minor releases** (i.e. version bumps from 5.**1**.x to 5.**2**.x), but not in the case of **patches** (i.e. version bumps from 5.**1**.x to 5.**1**.y).
 However, if you experience errors running SQANTI3 after downloading a new version, we advise creating the conda environment again to discard dependency version issues.
 
-<a name="install3"/>
+<a id="install3"></a>
 
 ### 3. Installing gtfToGenePred
   
@@ -155,7 +155,7 @@ chmod +x <path_to>/SQANTI3/src/utilities/gtfToGenePred
 ```
 
 
-<a name="docker"/>
+<a id="docker"></a>
 
 ## Using SQANTI3 docker container
 

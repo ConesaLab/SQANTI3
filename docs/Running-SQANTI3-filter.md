@@ -29,7 +29,7 @@
 
 __________________________________________
 
-<a name="rules"/>
+<a id="rules"></a>
 
 ## Rules filter: removing artifacts using the SQANTI3 output and user-defined rules
 </a>
@@ -37,7 +37,7 @@ SQANTI3 filter has been reshaped to allow users to supply their own set of rules
 
 <img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977">
 
-<a name="running_rules"/>
+<a id="running_rules"></a>
 
 ### Running the rules filter
 </a>
@@ -104,7 +104,7 @@ Rules specific options:
 ```
 </details><br>
 
-<a name="default_filter"/>
+<a id="default_filter"></a>
 
 ### Default filter
 </a>
@@ -145,7 +145,7 @@ This filter is supplied in the `utilities/filter/filter_default.json` file:
 ```
 
 
-<a name="build_json"/> 
+<a id="build_json"></a> 
 
 ### Making your own filter
 </a>
@@ -243,7 +243,7 @@ The JSON file for that precise filter will look like this:
 ```
 
 
-<a name="rulesout"/>
+<a id="rulesout"></a>
 
 ## Rules filter output
 </a>
@@ -257,7 +257,7 @@ The main SQANTI rules filter output files are:
     * (3) Reason why the isoform was discarded as an artifact. If an isoform is catalogued as *Artifact* because it doesn't fulfill several rules, there will be multiple lines in this file regarding that isoform.
 * `*_SQANTI3_filter_report.pdf`: A PDF report with some plots describing the performance of the filtering.
 
-<a name="ml"/>
+<a id="ml"></a>
 
 ## Machine learning filter: removing artifacts using a random forest classifier
 </a>
@@ -280,7 +280,7 @@ the filter to find the best way to run it for their particular dataset. ⚠️
 <img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904">
 
 
-<a name="runml"/>
+<a id="runml"></a>
 
 ### Running the machine learning filter
 </a>
@@ -373,7 +373,7 @@ We next provide a detailed description of each of the ML filter parameters in or
 to help users understand how to best apply it to their own data.
 
 
-<a name="sets"/>
+<a id="sets"></a>
 
 ### True Positive (TP) and True Negative (TN) sets
 </a>
@@ -414,7 +414,7 @@ will be **downsized to 3000 transcripts** if they are larger than this,
 no matter if they were user-defined or generated internally.
 
 
-<a name="partition"/>
+<a id="partition"></a>
 
 ### Partitioning of the training data (model training/testing)
 </a>
@@ -445,7 +445,7 @@ model to a different transcriptome; however, if you wish to train a new model, y
 
 
 
-<a name="prob"/>
+<a id="prob"></a>
 
 ### Probability threshold to define Isoforms/Artifacts
 </a>
@@ -471,7 +471,7 @@ However, users may reproduce this lenient filter by lowering the threshold to 0.
 
 
 
-<a name="cols"/>
+<a id="cols"></a>
 
 ### Classification file columns excluded from the ML filter
 </a>
@@ -495,7 +495,7 @@ or NNC transcripts being used as a TN set.
 file) to prevent bias towards reference-similar isoforms when RM are used as a TP set.
 
 
-<a name="colrem"/>
+<a id="colrem"></a>
 
 ### Excluding additional data columns from the filter
 </a>
@@ -515,7 +515,7 @@ importance during Isoform/Artifact classification.
 before making a final decision on which are the artifacts in your transcriptome.*
 
 
-<a name="intraprim"/>
+<a id="intraprim"></a>
 
 ### Intra-priming filter
 </a>
@@ -533,7 +533,7 @@ intra-priming artifacts. By default, transcripts containing more than 60% A's at
 3' end will be flagged.
 
 
-<a name="retain"/>
+<a id="retain"></a>
 
 ### Forcing the removal/retention of specific isoform groups
 </a>
@@ -547,7 +547,7 @@ structural categories.
 be evaluated by the ML filter (only by the intra-priming filter).
 
 
-<a name="except"/>
+<a id="except"></a>
 
 ### Exceptions to running the SQANTI3 ML filter
 </a>
@@ -564,7 +564,7 @@ However, even in scenarios where no ML-based filtering can be applied, the
 **intra-primming filter** will still be applied to all input transcripts.
 
 
-<a name="mlout"/>
+<a id="mlout"></a>
 
 ## SQANTI ML filter output
 </a>
@@ -579,7 +579,7 @@ the main SQANTI3 directory (see our [example dataset tutorial](https://github.co
 The following output files are generated after running the filter:
 
 
-<a name="input"/>
+<a id="input"></a>
 
 ### Input-related files
 </a>
@@ -592,7 +592,7 @@ were provided).
 The supplied prefix will be appended to the filenames above.
 
 
-<a name="model"/>
+<a id="model"></a>
 
 ### Model-related files
 </a>
@@ -607,7 +607,7 @@ formatting, column removal, etc. This file will only be output if the `--interme
 argument is supplied. Note that this file is **NOT intented for downstream anaylsis**.
 
 
-<a name="test"/>
+<a id="test"></a>
 
 ### Test set files
 </a>
@@ -621,7 +621,7 @@ on the test set.
 specificity and AUROC.
 
 
-<a name="reportml"/>
+<a id="reportml"></a>
 
 ### Filter report
 </a>
@@ -633,7 +633,7 @@ relevant to discriminate both.
 Supplying the `--skip_report` flag will deactivate the report.
 
 
-<a name="classifml"/>
+<a id="classifml"></a>
 
 ### Classification file
 </a>
@@ -656,7 +656,7 @@ the `-e` argument. Similarly, all FSM transcripts will be flagged as true isofor
 the `-f` option is provided.
 
 
-<a name="inclusionml"/>
+<a id="inclusionml"></a>
 
 ### Inclusion list and filtering of SQANTI QC output files
 </a>
