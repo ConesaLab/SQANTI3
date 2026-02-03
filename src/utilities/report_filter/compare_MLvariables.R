@@ -11,6 +11,13 @@
 # Last updated: 2/September/2021
 #
 #-------------------------------------------------------------------------------
+# Install RColorConesa if not available
+pkg <- installed.packages() %>% rownames
+
+if(!("RColorConesa" %in% pkg)){
+  options(repos = c(CRAN = "https://cran.rstudio.com/"))
+  suppressMessages(install.packages("RColorConesa"))
+}
 
 compare_MLvariables <- function(classification, variable, importance){
   
