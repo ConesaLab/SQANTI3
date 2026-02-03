@@ -393,8 +393,8 @@ ref_complexity <- ggplot(fsm_plots.df) +
             stat = "identity", vjust = -1) +
   scale_y_continuous(breaks = scales::pretty_breaks(6),
                      expand = expansion(mult = c(0, 0.1))) +
-  RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
-                                 continuous = FALSE, reverse = FALSE) +
+  # RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
+  #                                continuous = FALSE, reverse = FALSE) +
   theme(plot.subtitle = element_text(hjust = 0.5, size = 12,
                                      face = "italic")) +
   xlab("Filter") +

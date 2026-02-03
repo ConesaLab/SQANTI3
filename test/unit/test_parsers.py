@@ -398,5 +398,3 @@ class TestParseCounts:
         assert len(df.columns) == 2  # isoform + 1 sample column
         assert len(df) == 0
     
-
-

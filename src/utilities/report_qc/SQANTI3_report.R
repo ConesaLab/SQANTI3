@@ -46,8 +46,7 @@ html.report.file <- paste0(output_name, "_SQANTI3_report.html");
 class.file2 <- paste(report.prefix, "_classification_TPM.txt", sep='');
 
 
-#********************** Packages 
-
+#********************** Packages loading
 suppressMessages(library(ggplot2))
 suppressMessages(library(ggplotify))
 suppressMessages(library(scales))
@@ -61,6 +60,7 @@ suppressMessages(library(DT))
 suppressMessages(library(plyr))
 suppressMessages(library(plotly))
 suppressMessages(library(dplyr))
+
 
 # ***********************
 # ***********************
@@ -466,7 +466,7 @@ if (length(FL_multisample_indices)>0) {  # has multiple samples
 }
 
 p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
-  geom_freqpoly(binwidth=100, size=1) +
+  geom_freqpoly(binwidth=100, linewidth=1) +
   scale_color_manual(values = cat.palette, name="Structural Category") +
   labs(x="Transcript length", y="Count", title="Transcript Lengths Distribution by Structural Category") +
   scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
@@ -474,7 +474,7 @@ p.length.cat <- ggplot(data.class, aes(x=length, color=structural_category)) +
   theme(legend.position="bottom", legend.title=element_blank())
 
 p.length.exon <- ggplot(data.class, aes(x=length, color=exonCat)) +
-  geom_freqpoly(binwidth=100, size=1) +
+  geom_freqpoly(binwidth=100, linewidth=1) +
   labs(x="Transcript length", y="Count", title="Mono- vs Multi- Exon Transcript Lengths Distribution") +
   scale_y_continuous(expand=expansion(mult = c(0,0.1))) +
   mytheme +
@@ -811,7 +811,7 @@ p7 <- ggplot(data=isoPerGene, aes(x=novelGene)) +
 ##**** PLOT  absolute and normalized % of different categories with increasing transcript length
 # requires use of dplyr package
 data.class$lenCat <- as.factor(as.integer(data.class$length %/% 1000))
-data.class.byLen <- data.class %>% dplyr::group_by(lenCat, structural_category) %>% dplyr::summarise(count=dplyr::n() ) %>% mutate(perc=count/sum(count))
+data.class.byLen <- data.class %>% dplyr::group_by(lenCat, structural_category) %>% dplyr::summarise(count=dplyr::n(),.groups = "drop") %>% mutate(perc=count/sum(count))
 data.class.byLen$structural_category <- factor(data.class.byLen$structural_category, levels=(xaxislabelsF1), order=TRUE)
 
 p.classByLen.a <- ggplot(data.class.byLen, aes(x=lenCat, y=count, fill=factor(structural_category))) +
@@ -1879,7 +1879,7 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))) {
 ######
 if (sum(!is.na(data.class$polyA_dist)) > 10) {
 p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category)) +
-    geom_freqpoly(binwidth=1, size=1) +
+    geom_freqpoly(binwidth=1, linewidth=1) +
     scale_color_manual(values = cat.palette)+
     xlab("Distance of polyA motif from 3' end, bp") +
     ylab("Count") +
@@ -1888,7 +1888,7 @@ p.polyA_dist <- ggplot(data.class, aes(x=polyA_dist, color=structural_category))
     mytheme+
     theme(legend.title=element_blank())
 p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory)) +
-  geom_freqpoly(binwidth=1, size=1) +
+  geom_freqpoly(binwidth=1, linewidth=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
@@ -1899,7 +1899,7 @@ p.polyA_dist_subcat <- ggplot(data.FSMISM, aes(x=polyA_dist, color=subcategory))
 
 data.s2=rbind(data.other, data.NICNNC)
 p.polyA_dist_subcat.s2 <- ggplot(data.s2, aes(x=polyA_dist, color=subcategory)) +
-  geom_freqpoly(binwidth=1, size=1) +
+  geom_freqpoly(binwidth=1, linewidth=1) +
   scale_color_manual(values = subcat.palette)+
   xlab("Distance of polyA motif from 3' end, bp") +
   ylab("Count") +
@@ -2094,8 +2094,8 @@ if (nrow(data.junction) > 0 && nrow(x) > 0){
   }
   # Check for Non-empty Data
   if (nrow(x) > 0) {
-    x[which(x$diff_to_gene_TSS<=50),"Annotation"] <- "Annotated"
-    x[which(x$diff_to_gene_TSS>50),"Annotation"] <- "Not annotated"
+    x[which(abs(x$diff_to_gene_TSS)<=50),"Annotation"] <- "Annotated"
+    x[which(abs(x$diff_to_gene_TSS)>50),"Annotation"] <- "Not annotated"
     t1.annot <- group_by(x, structural_category, Annotation) %>% dplyr::summarise(count=dplyr::n(), .groups = 'drop')
     t3.annot <- merge(t1.annot, t2.RTS, by="structural_category")
     t3.annot$perc <- t3.annot$count.x / t3.annot$count.y * 100
@@ -2417,9 +2417,9 @@ p32 <- ggplot(data=data.class, aes(y=perc_A_downstream_TTS, x=structural_categor
 ##### % of FSM or ISM associated to the same transcript ( histogram )
 
 if (nrow(data.ISM) > 0 || nrow(data.FSM) > 0) {
-  ism_per_transcript=data.ISM %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+  ism_per_transcript=data.ISM %>% group_by(associated_transcript, structural_category) %>% dplyr::summarise(dplyr::n(), .groups = "drop")
   names(ism_per_transcript)[3]<-"ISM_per_tr"
-  fsm_per_transcript=data.FSM %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+  fsm_per_transcript=data.FSM %>% group_by(associated_transcript, structural_category) %>% dplyr::summarise(dplyr::n(), .groups = "drop")
   names(fsm_per_transcript)[3]<-"FSM_per_tr"
 
   iso_per_knownTr=merge(x = fsm_per_transcript , y=ism_per_transcript, by = "associated_transcript", all=T)
@@ -2536,11 +2536,11 @@ if(as.numeric(X["FSM_per_tr"])==1){
   #  labs(x="Number of FSM+ISM isoforms \n associated to the same ref. transcript",
   #       y="Counts", title="Accumulation of FSM and ISM Isoforms \n\n Associated to the Same Reference Transcript.")
 
-  #### Now only with cage + isoforms
-  if (!all(is.na(data.class$dist_to_CAGE_peak))) {
-    ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+  #### Now only with cage + isoforms near CAGE peaks
+  if (!all(is.na(data.class$dist_to_cage_peak))) {
+    ism_per_transcript_cage=data.ISM[which(data.ISM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarise(dplyr::n(), .groups = "drop")
     names(ism_per_transcript_cage)[3]<-"ISM_per_tr"
-    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarize(dplyr::n())
+    fsm_per_transcript_cage=data.FSM[which(data.FSM$within_CAGE_peak),] %>% group_by(associated_transcript, structural_category) %>% dplyr::summarise(dplyr::n(), .groups = "drop")
     names(fsm_per_transcript_cage)[3]<-"FSM_per_tr"
 
     iso_per_knownTr_cage=merge(x = fsm_per_transcript_cage , y=ism_per_transcript_cage, by = "associated_transcript", all=T)
@@ -2923,10 +2923,15 @@ if (saturation.curves=='True'){
     mydata = readData(data = FL.counts, factors = myfactors, biotype = mybiotype, category=mycategory)
 
     rarefact <- LR.rarefaction(mydata , samples = 1)
+    print("rarefaction done")
     rar1 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 1, depth.increase = 2, break.by = "category"))
+    print("plotted k=1")
     rar2 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 2, depth.increase = 2, break.by = "category"))
+    print("plotted k=2")
     rar3 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 3, depth.increase = 2, break.by = "category"))
+    print("plotted k=3")
     rar5 <- suppressWarnings(plot.rarefaction(rarefact, sample = 1, k = 5, depth.increase = 2, break.by = "category"))
+    print("plotted k=5")
   }
 }
 

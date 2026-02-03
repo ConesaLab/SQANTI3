@@ -25,7 +25,7 @@ def fill_design_table(args):
     if df.shape[1] < 2:
         reads_logger.error(f"ERROR: {args.inDESIGN} is incorrectly formatted, is it not separated by commas?")
         sys.exit(-1)
-    
+
     # Create the new columns
     # We always overwrite these columns to ensure they match the current run arguments
     # regardless of what might be in the input CSV (which could have stale paths).
@@ -46,7 +46,7 @@ def fill_design_table(args):
     return(df)
 
 def get_method_runSQANTI3(args, df):
-    
+
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -147,7 +147,7 @@ def get_method_runSQANTI3(args, df):
                 reads_logger.debug(cmd_sqanti)
                 subprocess.call(cmd_sqanti, shell = True)
                 continue
-        
+
         # If none of the conditions are met, raise an error
         reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
@@ -204,19 +204,19 @@ def make_UJC_hash(args, df):
         except subprocess.CalledProcessError:
             reads_logger.error(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread")
             sys.exit(-1)
-            
+
         ## Take the corrected GTF
         # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
         introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {output_gtf} | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {output_gtf}"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
-            
+
         if subprocess.check_call(introns_cmd, shell=True)!=0:
             reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing GTFTOOLS")
             sys.exit(-1)
-            
+
         if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
             os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
-            
+
         if subprocess.check_call(ujc_cmd, shell=True)!=0:
             reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing BEDTOOLS")
             sys.exit(-1)
@@ -231,19 +231,19 @@ def make_UJC_hash(args, df):
         clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
         clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
         ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
-        
+
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
         # Fill missing values in UJC column using the transcript ID
         merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
-        
+
         merged_df['jxnHash'] = merged_df['jxn_string'].apply(
                     lambda x: hashlib.sha256(x.encode('utf-8')).hexdigest())
-        
+
         merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
         
         cmd_paste = f"""bash -c 'paste <(cat {input_classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
         subprocess.call(cmd_paste, shell = True)
-        
+
         os.remove(f"{outputPathPrefix}tmp_UJC.txt")
         os.remove(f"{outputPathPrefix}_temp.txt")
 
@@ -322,4 +322,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

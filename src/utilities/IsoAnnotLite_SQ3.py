@@ -17,10 +17,10 @@ INTRONIC = True
 STATS = False
 SAVE_PROB_TRANSCRIPTS = False
 
-version = "2.7.3"
-CLASS_COLUMN_USED = [0,1,2,3,5,6,7,30,32,33]
+version = "2.7.4"
+CLASS_COLUMN_USED = [0,1,4,5,7,11,12,33,35,36]
 CLASS_COLUMN_NAME = ["isoform", "chrom", "strand", "length", "structural_category", "associated_gene", 
-                     "associated_transcript", "ORF_length","CDS_start", "CDS_end"]
+                     "associated_transcript", "CDS_length","CDS_start", "CDS_end"]
 
 LST_TRANSCRIPTFEATURES_NOTIN_CDS = ["uORF", "miRNA_Binding", "PAS", "3UTRmotif", "5UTRmotif"]
 LST_TRANSCRIPTSOURCES_INTRONIC = ["PAR-clip"]
@@ -72,7 +72,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
     sq_structural_category = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("structural_category")]
     sq_associated_gene = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("associated_gene")]
     sq_associated_transcript = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("associated_transcript")]
-    sq_ORF_length = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("ORF_length")]
+    sq_ORF_length = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("CDS_length")]
     sq_CDS_start = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("CDS_start")]
     sq_CDS_end = CLASS_COLUMN_USED[CLASS_COLUMN_NAME.index("CDS_end")]
 
@@ -153,6 +153,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
         sourceAux = "TranscriptAttributes"
         lengthTranscript = fields[sq_length]
         if not CDSstart == "NA":
+            print(CDSstart)
             #3'UTR
             feature = "3UTR_Length"
             start = int(CDSend) + 1
@@ -179,7 +180,6 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
             res.write("\t".join([transcript, sourceAux, feature, str(start), str(end), aux, strand, aux, desc]))
 
     f.close()
-
     f = open(file_exons)
     dc_exons = {}
     dc_geneID2geneName = {}
@@ -190,7 +190,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
         if len(fields) == 9:
             transcript = fields[8].split('"')[1].strip()
             #source
-            feature = fields[sq_strand]
+            feature = fields[2]
             if(feature == "transcript"): #just want exons
                 split_length = len(fields[8].split('"'))
                 gID = fields[8].split('"')[3].strip()
@@ -215,12 +215,12 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
 
                 continue
 
-            start = int(fields[sq_length])
+            start = int(fields[3])
             end = int(fields[4])
             #aux
-            strand = fields[sq_associated_gene]
+            strand = fields[6]
             #desc = fields[8]
-            desc = "Chr=" + str(fields[sq_isoform]) + "\n"
+            desc = "Chr=" + str(fields[8]) + "\n"
 
             #Exons Dictionary
             if(not dc_exons.get(transcript)):
@@ -239,15 +239,15 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
     header = next(f)
     for line in f:
         fields = line.split("\t")
-        #Junctions file can have a dvierse number of columns, not only 19 but 0-14 are allways the same
-        transcript = fields[sq_isoform]
+        #Junctions file can have a diverse number of columns, not only 19 but 0-14 are always the same
+        transcript = fields[0]
         #source        
         feature = "splice_junction"
         start = fields[4]
-        end = fields[sq_structural_category]
+        end = fields[5]
         #aux
-        strand = fields[sq_strand]
-        desc = "ID="+fields[sq_length]+"_"+fields[14]+"; Chr="+fields[sq_chrom]+"\n"
+        strand = fields[2]
+        desc = "ID="+fields[3]+"_"+fields[14]+"; Chr="+fields[1]+"\n"
 
         res.write("\t".join([transcript, source, feature, start, end, aux, strand, aux, desc]))
     f.close()

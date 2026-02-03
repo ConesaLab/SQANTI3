@@ -132,10 +132,6 @@ dmypy.json
 /example
 /data
 
-# PyCharm
-.idea/
-.emacs.bak/
-
 # Hidden directories
 .pytest_cache
 .vscode

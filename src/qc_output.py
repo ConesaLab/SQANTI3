@@ -69,9 +69,9 @@ def generate_report(saturation,report, outputClassPath, outputJuncPath):
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
     run_command(cmd,qc_logger,logFile,"SQANTI3 report")
 
-def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
+def generate_tusco_report(tusco, outputClassPath, sample_gtf_file, reference_gtf_file):
     """
-    Generates the TUSCO benchmarking report using the provided classification file and transcript GTF.
+    Generates the TUSCO benchmarking report using the provided classification file, sample GTF, and reference GTF.
     """
     # Log to the configured handlers (StreamHandler defaults to stderr)
     qc_logger.info("Generating TUSCO report....")
@@ -92,7 +92,7 @@ def generate_tusco_report(tusco, outputClassPath, transcript_gtf_file):
     # RSCRIPT_TUSCO_REPORT already contains utilitiesPath; don't prefix again
     cmd = (
         f"{RSCRIPTPATH} {RSCRIPT_TUSCO_REPORT} "
-        f"{outputClassPath} {tusco_ref} {transcript_gtf_file} {utilitiesPath} {genome}"
+        f"{outputClassPath} {tusco_ref} {sample_gtf_file} {reference_gtf_file} {utilitiesPath} {genome}"
     )
     logFile = f"{os.path.dirname(outputClassPath)}/logs/tusco_report.log"
     # TUSCO is optional; if it fails (e.g., no matches), continue pipeline

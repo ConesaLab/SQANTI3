@@ -34,6 +34,7 @@ def reads_argparser():
     pv = parser.add_argument_group("Visualization options")
     pv.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
     pv.add_argument('-fl','--factor_level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
+    pv.add_argument('--skip_plots', dest="SKIPPLOTS", action='store_true', help='Skip the plotting step')
 
     pp = parser.add_argument_group("Performance options")
     pp.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. Default: 10')
