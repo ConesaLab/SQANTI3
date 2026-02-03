@@ -11,9 +11,10 @@ def reads_argparser():
     pr.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID and file_acc column.')
     
     pio = parser.add_argument_group("Input/Output options")
-    pio.add_argument('-i', '--input_dir', type=str, default = './', help = '\t\tPath to directory where fastq/GTF files are stored. Or path to parent directory with children directories of SQANTI3 runs. Default: Directory where the script was run.')
+    pio.add_argument('-i', '--raw_data_dir', type=str, dest='input_dir', default = './', help = '\t\tPath to directory where fastq/GTF files are stored (for running SQANTI3 from scratch). Default: Directory where the script was run.')
     pio.add_argument('-p','--prefix', type=str, dest="PREFIX", required=False, help='SQANTI-reads output filename prefix. Default: sqantiReads')
-    pio.add_argument('-d','--dir', type=str, help='\t\tDirectory for output sqanti_reads files. Default: Directory where the script was run.', default = "./", required=False)
+    pio.add_argument('-d', '--sqanti_dirs', type=str, dest='sqanti_dirs', help='\t\tDirectory containing existing SQANTI3 output folders. Use this to skip re-running QC and proceed directly to aggregation.', default = None, required=False)
+    pio.add_argument('-o','--output', type=str, dest="OUTPUT", help='\t\tDirectory for output sqanti_reads files (plots, tables, design file). Default: Directory where the script was run.', default = "./", required=False)
     pio.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
     pio.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and underannotated gene tables')
     pio.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
