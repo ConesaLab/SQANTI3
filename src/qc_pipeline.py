@@ -169,13 +169,13 @@ def run(args):
         
         ## Generating report
         if args.report != 'skip':
-            # Run TUSCO benchmarking report if requested
-            if hasattr(args, 'tusco') and args.tusco:
-                # Pass both sample GTF (corrected) and reference GTF for IGV-like plots
-                generate_tusco_report(args.tusco, outputClassPath, corrGTF, args.refGTF)
             # Main SQANTI3 report
             generate_report(args.saturation, args.report, outputClassPath, outputJuncPath)
-
+         # Run TUSCO benchmarking report if requested
+         
+        if hasattr(args, 'tusco') and args.tusco:
+            # Pass both sample GTF (corrected) and reference GTF for IGV-like plots
+            generate_tusco_report(args.tusco, outputClassPath, corrGTF, args.refGTF)
         cleanup(outputClassPath, outputJuncPath)
 
     stop3 = timeit.default_timer()
