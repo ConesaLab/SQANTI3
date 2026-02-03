@@ -1,0 +1,1202 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/6.0/Running-SQANTI%E2%80%90reads/">
+      
+      
+        <link rel="prev" href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/">
+      
+      
+        <link rel="next" href="../SQANTI3-memory-requeriments-and-paralellization/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Running SQANTI-reads - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#running-sqanti-reads" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running SQANTI-reads
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction-to-sqanti-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction to SQANTI-reads
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction to SQANTI-reads">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-reads-fast-mode-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads fast mode (RECOMMENDED).
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-reads-minimum-simple-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads (minimum) simple mode.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting ready
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-and-parameters-in-sqanti-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments and parameters in SQANTI-reads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti-reads-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI-reads output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modified-input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified input files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-default-csv-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results default .csv files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-optional-csv-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results optional .csv files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction-to-sqanti-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction to SQANTI-reads
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction to SQANTI-reads">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-reads-fast-mode-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads fast mode (RECOMMENDED).
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-reads-minimum-simple-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads (minimum) simple mode.
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-ready" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Getting ready
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-and-parameters-in-sqanti-reads" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments and parameters in SQANTI-reads
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti-reads-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI-reads output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI-reads output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modified-input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Modified input files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-default-csv-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results default .csv files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-optional-csv-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results optional .csv files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#results-plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Results plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="running-sqanti-reads">Running SQANTI-reads</h1>
+<p>You can find out more about SQANTI-reads here: Keil N, Monzó C, McIntyre L, Conesa A (2025). Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads. Genome Res. DOI: 10.1101/gr.280021.124</p>
+<p>SQANTI-reads leverages SQANTI3, a tool for the analysis of the quality of transcript models, to develop a quality control protocol for replicated long-read RNA-seq experiments. The number/distribution of reads, as well as the number/distribution of unique junction chains (transcript splicing patterns), in SQANTI3 structural categories are compiled. Multi-sample visualizations of QC metrics can also be separated by experimental design factors. We introduce new metrics for 1) the identification of potentially under-annotated genes and putative novel transcripts and 2) variation in junction donors and acceptors.</p>
+<h2 id="introduction-to-sqanti-reads">Introduction to SQANTI-reads</h2>
+<p>SQANTI-reads has two modes of running: <em>fast</em> and <em>simple</em>.  </p>
+<h3 id="sqanti-reads-fast-mode-recommended">SQANTI-reads <em>fast</em> mode (RECOMMENDED).</h3>
+<p>In the <em>fast</em> mode, SQANTI-reads takes as (minimum) input i) a design CSV file with a column <strong>sampleID</strong> that includes the names of the samples (as we want them to be represented in the output plots), and a column <strong>file_acc</strong> with the name of the directory where the output SQANTI3 is stored. And ii) the reference annotation.gtf file.</p>
+<p>An example design file is:</p>
+<table>
+<thead>
+<tr>
+<th>sampleID</th>
+<th>file_acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wtc11_PBcDNA</td>
+<td>ENCFF003QZT</td>
+</tr>
+<tr>
+<td>wtc11_PBCapTrap</td>
+<td>ENCFF023EXJ</td>
+</tr>
+<tr>
+<td>wtc11_ONTR2C2</td>
+<td>ENCFF063ASB</td>
+</tr>
+<tr>
+<td>wtc11_ONTdRNA</td>
+<td>ENCFF104BNW</td>
+</tr>
+<tr>
+<td>wtc11_cDNA</td>
+<td>ENCFF105WIJ</td>
+</tr>
+</tbody>
+</table>
+<p>To run SQANTI-reads in <em>fast</em> mode, you must first, run SQANTI3-QC on all your samples individually (great opportunity for you to parallelize this using your system's slurm, gnu parallel or your favourite parallelization method). Using the parameter <code>--input_dir</code>, you can give sqanti3_reads.py the path to the parent directory where all the SQANTI3-QC output directories are stored.</p>
+<p>We recommend using <em>fast</em> mode, this ensures you can easily parallelize your work and have more control over mapping parameters. The usual reads pre-processing pipelines for ONT and PacBio to run SQANTI-reads include:<br />
+- For ONT: Running pychopper to strand the reads, remove primers and polyA tails.<br />
+- For PacBio: Running lima and refine from IsoSeq pipeline, and <code>bamtools convert -format fastq -in fl.bam</code> to transform PacBio FL bams into fastq files for mapping.<br />
+- Common next steps: mapping with minimap2, transforming to gtf using spliced_bam2gff and running SQANTI3-QC.</p>
+<p>Directories with SQANTI3-QC output are named as {file_acc} (e.g. ./ENCFF003QZT/) and SQANTI3-QC output files are named as {sampleID} (e.g. ./ENCFF003QZT/wtc11_PBcDNA_classification.txt)</p>
+<p>Example run starting after running spliced_bam2gff:</p>
+<pre><code>python sqanti3_qc.py ENCFF003QZT.gff --annotation hg38.ensGene.gtf --genome hg38.fa --skipORF --min_ref_len 0 --aligner_choice minimap2 -t 8 -d ./ENCFF003QZT -o wtc11_PBcDNA
+python sqanti3_reads.py --design design.csv --annotation hg38.ensGene.gtf
+</code></pre>
+<h3 id="sqanti-reads-minimum-simple-mode">SQANTI-reads (minimum) <em>simple</em> mode.</h3>
+<p>In the <em>simple</em> mode, SQANTI-reads takes as (minimum) input a design CSV file with a column <strong>sampleID</strong> that includes the names of the samples (as we want them to be represented in the output), and a column <strong>file_acc</strong> with the name of the FASTQ or GTF/GFF files. It also requires the reference genome fasta, and reference annotation gtf.</p>
+<p>When running in <em>simple</em> mode, it will call SQANTI3-QC pipeline sequentially for each sample to:<br />
+- If FASTQ files were inputted, call SQANTI3-QC and first map using minimap2 (by default, but can be changed to uLTRA), and second transform to GTF for isoform classification.<br />
+- If GTF files were inputted, it will call SQANTI3-QC directly for isoform classification.  </p>
+<p>Once the SQANTI3-QC pipeline is run within SQANTI-reads, it will automatically fill two columns in the design CSV file, <strong>classification_file</strong> and <strong>junction_file</strong>. These columns will include the names of the files generated for each <strong>sampleID</strong>. Each of these generated classification and junction files, will be stored within one sub-directory per sample, named as the <strong>file_acc</strong>. Next, it will calculate all the SQANTI-reads metrics. Finally, it will generate the plots and tables summarizing the metrics results.</p>
+<p>Where design.csv is:</p>
+<table>
+<thead>
+<tr>
+<th>sampleID</th>
+<th>file_acc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>wtc11_PBcDNA</td>
+<td>ENCFF003QZT</td>
+</tr>
+<tr>
+<td>wtc11_PBCapTrap</td>
+<td>ENCFF023EXJ</td>
+</tr>
+<tr>
+<td>wtc11_ONTR2C2</td>
+<td>ENCFF063ASB</td>
+</tr>
+<tr>
+<td>wtc11_ONTdRNA</td>
+<td>ENCFF104BNW</td>
+</tr>
+<tr>
+<td>wtc11_cDNA</td>
+<td>ENCFF105WIJ</td>
+</tr>
+</tbody>
+</table>
+<p>Example run:</p>
+<pre><code>python sqanti3_reads.py --design design.csv --annotation hg38.ensGene.gtf --genome hg38.fa
+</code></pre>
+<p>Fastq files are named {file_acc}*.fastq (e.g. ENCFF003QZT_PB.fastq) and are stored in the current directory.</p>
+<h2 id="getting-ready">Getting ready</h2>
+<p>Before running SQANTI-reads, you will need to:</p>
+<p><strong>Activate the SQANTI3 conda environment:</strong></p>
+<pre><code>(base)-bash-4.1$ conda activate SQANTI3.env
+(SQANTI3.env)-bash-4.1$
+</code></pre>
+<h2 id="arguments-and-parameters-in-sqanti-reads">Arguments and parameters in SQANTI-reads</h2>
+<p>The SQANTI-reads script accepts the following arguments:</p>
+<pre><code>usage: sqanti3_reads.py [-h] [--genome GENOME] --annotation ANNOTATION -de INDESIGN [-i INPUT_DIR] [-f INFACTOR]
+                       [-p PREFIX] [-d DIR] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
+                       [--aligner_choice {minimap2,uLTRA}] [-t CPUS] [-n CHUNKS] [-s SITES] [-ge ANNOTEXP]
+                       [-je JXNEXP] [-pc PERCCOV] [-pj PERCMAXJXN] [-fl FACTORLVL] [--all_tables] [--report {pdf,html,both}] [--pca_tables]
+                       [--skip_hash] [--verbose] [-v]
+
+Structural and Quality Annotation of Novel Transcript Isoforms
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --genome GENOME       Reference genome (Fasta format).
+  --annotation ANNOTATION
+                        Reference annotation file (GTF format).
+  -de INDESIGN, --design INDESIGN
+                        Path to design file, must have sampleID and file_acc column.
+  -i INPUT_DIR, --input_dir INPUT_DIR
+                        Path to directory where fastq/GTF files are stored. Or path to parent directory with
+                        children directories of SQANTI3 runs. Default: Directory where the script was run.
+  -f INFACTOR, --factor INFACTOR
+                        This is the column name that plots are to be faceted by. Default: None
+  -p PREFIX, --prefix PREFIX
+                        SQANTI-reads output filename prefix. Default: sqantiReads
+  -d DIR, --dir DIR     Directory for output sqanti_reads files. Default: Directory where the script was run.
+  --min_ref_len MIN_REF_LEN
+                        Minimum reference transcript length. Default: 0 bp
+  --force_id_ignore     Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)
+  --aligner_choice {minimap2,uLTRA}
+                        Default: minimap2
+  -t CPUS, --cpus CPUS  Number of threads used during alignment by aligners. Default: 10
+  -n CHUNKS, --chunks CHUNKS
+                        Number of chunks to split SQANTI3 analysis in for speed up. Default: 1
+  -s SITES, --sites SITES
+                        Set of splice sites to be considered as canonical (comma-separated list of splice sites).
+                        Default: GTAG,GCAG,ATAC.
+  -ge ANNOTEXP, --gene_expression ANNOTEXP
+                        Expression cut off level for determining underannotated genes. Default = 100
+  -je JXNEXP, --jxn_expression JXNEXP
+                        Coverage threshold for detected reference donors and acceptor. Default = 10
+  -pc PERCCOV, --perc_coverage PERCCOV
+                        Percent gene coverage of UJC for determining well-covered unannotated transcripts.
+                        Default = 20
+  -pj PERCMAXJXN, --perc_junctions PERCMAXJXN
+                        Percent of the max junctions in gene for determining near full-length putative novel
+                        transcripts. Default = 80
+  -fl FACTORLVL, --factor_level FACTORLVL
+                        Factor level to evaluate for underannotation
+  --all_tables          Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv
+                        and and underannotated gene tables
+  --pca_tables          Export table for making PCA plots  
+  --skip_hash           Skip the hashing step
+  --report {pdf,html,both}
+                        Default: pdf
+  --verbose             If verbose is run, it will print all steps, by default it is FALSE
+  -v, --version         Display program version number.
+</code></pre>
+<h2 id="sqanti-reads-output">SQANTI-reads output</h2>
+<p>The sqanti-reads output is written to the path specified in <code>--dir</code> or <code>-d</code> argument, also appending the prefix provided via the <code>--prefix</code> or -p argument.</p>
+<p>The following output files are generated after running it:</p>
+<h3 id="modified-input-files">Modified input files</h3>
+<p>New reads_classification.txt files will be generated, including all columns from the original files plus two additional columns:
+- jxn_string: includes the unique junction chain string as <code>chromosome_strand_junction1_junction2_junctionN</code>. Monoexons are coded as <code>chromosome_strand_monoexon_readID</code>.
+- jxnHash: includes the hashing of the jxn_string for easier work in next steps.</p>
+<p>The design file will be modified to include all initial columns (e.g. sampleID, file_acc, platform, age, sex) and two additional columns:</p>
+<ul>
+<li>classification_file: will include the full paths to the reads_classification.txt files (output of SQANTI-reads).</li>
+<li>junction_file: will include the full paths to the junctions.txt files (output of SQANTI3).</li>
+</ul>
+<h3 id="results-default-csv-files">Results default .csv files</h3>
+<ul>
+<li>sqantiReads_cv.csv: Provides metrics on the coefficient of variation of reference junctions, per sample.</li>
+<li>sqantiReads_gene_counts.csv: Provides the number of reads in each structural category, per gene, per sample.</li>
+<li>sqantiReads_length_summary.csv: Provides the number and percentage of reads in length categories per sample.</li>
+<li>sqantiReads_ujc_counts.csv: Provides a list of junction strings in each sample and the number of reads in each sample associated with each junction string.</li>
+<li>sqantiReads_gene_classification.csv: For genes with coverage meeting a user defined threshold (-ge), provides the annotation category of each gene.</li>
+<li>sqantiReads_putative_novel_transcripts.csv: Provides metrics on NIC and NNC UJCs and flags putative novel transcripts.</li>
+</ul>
+<h3 id="results-optional-csv-files">Results optional .csv files</h3>
+<ul>
+<li>sqantiReads_cv_acc/don_counts.csv: Provides the number of detected annotated donors and acceptors in each junction variation category.</li>
+<li>sqantiReads_cv_acc/don_counts.csv: Provides the number of detected annotated donors and acceptors in each junction variation category.</li>
+<li>sqantiReads_FSM/ISM/NIC_NNC_counts.csv: Provides the number of reads in each subcategory for FSMs, ISMs, NICs and NNCs.</li>
+<li>sqantiReads_err_counts.csv: Provides the number and percentage of reads with evidence of intrapriming, RT-switching and non-canonical junctions per sample.</li>
+<li>sqantiReads_pca_loadings.csv: Gives loadings of PC1 and PC2 for the PCA analysis.</li>
+<li>sqantiReads_pca_variance.csv: Gives the proportion variance explained by each PC.</li>
+</ul>
+<h3 id="results-plots">Results plots</h3>
+<ul>
+<li>sqantiReads_plots.pdf: Pdf file with one output plot visualizing QC metrics per page.</li>
+<li>sqantiReads_annotation_plots.pdf: Pdf file with one output plot visualizing underannotation metrics per page.</li>
+</ul>
+<h1 id="running-example-sqanti-reads">Running example SQANTI-reads</h1>
+<p>There is an example dataset with three small samples on the SQANTI3/example/sqanti_reads_test/ directory. If you run it from the main SQANTI3 directory, you can run it in simple mode with the following command:</p>
+<pre><code>python sqanti3_reads.py --design ./example/sqanti_reads_test/sqR_design_file.csv -i ./example/sqanti_reads_test/ -p SQ_R --annotation ./example/gencode.v38.basic_chr22.gtf --genome ./example/GRCh38.p13_chr22.fasta --dir ./example/sqanti_reads_test/ --report both
+</code></pre>
+<h2 id="citing-sqanti-reads">Citing SQANTI-reads</h2>
+<p>If you are using SQANTI-reads, please cite:<br />
+Keil N, Monzó C, McIntyre L, Conesa A (2025). Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads. Genome Research, 35 (4), 987. DOI: 10.1101/gr.280021.124</p>
+<p>SQANTI-reads is based, and uses SQANTI3, please also cite:<br />
+Pardo-Palacios FJ, Arzalluz-Luque A, Kondratova L, Salguero P, Mestre-Tomás J, Amorín R, Estevan-Morió E, Liu T, Nanni A, McIntyre L, Tseng E, Conesa A (2024). SQANTI3: curation of long-read transcriptomes for accurate identification of known and novel isoforms. Nature Methods, 21, 793-797. DOI: 10.1038/s41592-024-02229-2</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1565 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/6.0/Running-SQANTI3-rescue/">
+      
+      
+        <link rel="prev" href="../Running-SQANTI3-filter/">
+      
+      
+        <link rel="next" href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Running SQANTI3 rescue - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-of-contents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running SQANTI3 rescue
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-rescue-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 rescue strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 rescue strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1a-automatic-rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.a Automatic rescue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1b-selection-of-rescue-candidate-and-target-transcripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.b Selection of rescue candidate and target transcripts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-mapping-of-candidates-to-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Mapping of candidates to targets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-application-of-sq3-filter-to-the-reference-transcriptome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Application of SQ3 filter to the reference transcriptome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-rescue-by-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Rescue-by-mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-requantification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Requantification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-sq3-rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running SQ3 rescue
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running SQ3 rescue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-files-and-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files and arguments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Input files and arguments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rules-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-learning-rescue-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning rescue arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rescue-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rescue output files
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rescue output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mapping-rescue-specific-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping rescue specific files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules-specific-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules-specific output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-learning-specific-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning-specific output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requantification-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requantification output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-rescue-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 rescue strategy
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 rescue strategy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1a-automatic-rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.a Automatic rescue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#1b-selection-of-rescue-candidate-and-target-transcripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.b Selection of rescue candidate and target transcripts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-mapping-of-candidates-to-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Mapping of candidates to targets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-application-of-sq3-filter-to-the-reference-transcriptome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Application of SQ3 filter to the reference transcriptome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-rescue-by-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Rescue-by-mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-requantification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Requantification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-sq3-rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running SQ3 rescue
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running SQ3 rescue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-files-and-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files and arguments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Input files and arguments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rules-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-learning-rescue-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning rescue arguments
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rescue-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rescue output files
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rescue output files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mapping-rescue-specific-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mapping rescue specific files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules-specific-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules-specific output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#machine-learning-specific-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning-specific output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#requantification-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Requantification output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Running SQANTI3 rescue</h1>
+
+<h3 id="table-of-contents">Table of contents:</h3>
+<ul>
+<li>
+<p><a href="#intro">Introduction </p>
+<ul>
+<li><a href="#motivation">Motivation</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#strategy">Rescue strategy</a></p>
+</li>
+<li>
+<p><a href="#running">Running SQ3 rescue</a></p>
+<ul>
+<li>
+<p><a href="#args">Input files and arguments</p>
+</li>
+<li>
+<p><a href="#rules">Rules rescue arguments</p>
+</li>
+<li>
+<p><a href="#ml">Machine learning rescue arguments</p>
+</li>
+</ul>
+</li>
+<li>
+<p><a href="#out">Rescue output</p>
+<ul>
+<li>
+<p><a href="#out_common">Common rescue output files</p>
+</li>
+<li>
+<p><a href="#rules_out">Rules-specific output</p>
+</li>
+<li>
+<p><a href="#ml_out">Machine learning-specific output</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr />
+<p><a name="intro"></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>As of SQANTI3 v5.1, a new module has been added to the SQANTI3 workflow for transcriptome characterization and quality control: <strong>SQANTI3 rescue</strong>. </p>
+<p><strong>Warning</strong>: SQANTI3 rescue has undergone significant changes as of release 6.0. The main changes have been in the logic of the rescue by mapping logic. In this wiki, only this new logic is explained. For information about the previous version of SQANTI3 rescue (v5.1 to v5.2.x), please refer to the <a href="../Running-SQANTI3-rescue-v5.1/">archived wiki</a>.</p>
+<p>The SQANTI3 rescue algorithm is designed to be run <strong>after transcriptome filtering</strong> and uses the long read-based evidence provided by discarded isoforms (i.e. artifacts) to recover transcripts in the associated reference transcriptome. 
+The idea behind this strategy is to avoid losing transcripts/genes that are detected as expressed by long read sequencing, but whose start/end/junctions could not be confidently validated using orthogonal data, resulting in the removal of those genes/transcripts from the transcriptome. More details about this can be found in the <a href="#motivation">Motivation</a> section below.</p>
+<p>In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an <strong>expanded transcriptome GTF</strong> including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Optionally, requantification can be performed to reassign expression values to the rescued isoforms.</p>
+<p>A new functionality of the rescue module is the requantification of the curated transcriptome. In this final step, the expression values of the transcripts that were not affected by filtering or rescue are kept intact, while the expression values of the rescued transcripts are transferred from their corresponding long read-defined artifact(s). More details about this can be found in the <a href="">Requantification</a> section below.</p>
+<p><a name="motivation"></a></p>
+<h3 id="motivation">Motivation</h3>
+<p>The SQANTI3 rescue module was developed to mitigate the loss of biological diversity that occurs when stringent filtering removes long-read isoforms. Often, transcripts are discarded as "artifacts" because their start or end sites cannot be validated by orthogonal data, even though they contain high-confidence splice junctions that match the reference. By recovering these reference transcripts, the module ensures that legitimate genes and isoforms—detected by long-read sequencing but failing strict QC—are not permanently lost from the final curated transcriptome.</p>
+<p>Beyond simple recovery, the module employs a rescue-by-mapping strategy to maintain a high-quality, non-redundant dataset. It matches discarded candidates (ISM, NIC, or NNC artifacts) to their best-matching reference targets and subjects them to the same quality filters used for the original transcriptome. This process also enables accurate requantification, allowing expression values from discarded artifacts to be transferred to rescued transcripts, ensuring that the final abundance levels reflect the true complexity of the sample.</p>
+<p><a name="strategy"></a></p>
+<h2 id="sqanti3-rescue-strategy">SQANTI3 rescue strategy</h2>
+<p>Here is a summary of the SQ3 rescue workflow:</p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue.png" width = "827" height = "591"></p>
+<p>The SQANTI3 rescue algorithm consists in the following steps:</p>
+<h4 id="1a-automatic-rescue">1.a Automatic rescue</h4>
+<p>As explained above, the rescue strategy in SQ3 was conceived to recover transcriptome diversity lost during filtering. This, among other things, means verifying that none of the <strong>reference-supported junction chains</strong> that were initially detected by long-reads are lost due to stringent artifact removal.</p>
+<p>To achieve this during <strong>automatic rescue</strong>, all reference transcripts that were represented by at least one FSM in the original post-QC transcriptome are first retrieved -note that this information is available in the <code>associated_transcript</code> column of the <code>*_classification.txt</code> file. Then, those <strong>reference transcripts for which all FSM representatives were removed by the filter</strong> are rescued.</p>
+<p>The previous analytic decision is justified because, in practice, any case where all FSMs with the same <code>associated_transcript</code> are removed can be interpreted as follows: <strong>1)</strong> the TSS and/or TTS of the long read-defined transcript is different from that of the matching  reference transcript, however, it could not be validated by SQ3 QC-supplied orthogonal data; and <strong>2)</strong> the junctions are identical to those found in the reference, which can be interpreted as evidence that this isoform is real. As a result, SQ3 will not reintroduce any of the discarded FSMs, but the <code>associated_transcript</code> from the reference.</p>
+<p>By default, SQANTI3 Rescue runs under <code>--mode automatic</code>. As a result, this is the only rescue step that SQANTI3 Rescue performs. The complete algorithm can be run by the <code>--mode full</code> argument.</p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_01-automatic.png" width = "650" height = "650"></p>
+<h4 id="1b-selection-of-rescue-candidate-and-target-transcripts">1.b Selection of rescue candidate and target transcripts</h4>
+<p>In spite of its potential to achieve the goals that we set for the rescue, the previous strategy does not consider ISM, NIC or NNC artifacts. These will be included in the <strong>rescue candidate</strong> group, i.e. transcripts classified as artifacts for which SQANTI3 will try to find a matching reference transcript to include in the final, curated transcriptome.</p>
+<ul>
+<li>
+<p>For <strong>ISM artifact</strong> transcripts, there are two possible situations:</p>
+</li>
+<li>
+<p>There will be cases where the same discarded reference transcript is supported by FSM and ISM. <strong>ISM artifacts with an FSM artifact counterpart</strong> will therefore be "collapsed" into the rescued reference transcript during the automatic rescue step.</p>
+</li>
+<li>
+<p>Conversely, there will be <code>associated_transcript</code> references that are only supported by one or more ISM. Those <strong>ISM artifacts that constituted evidence of a non-FSM supported reference</strong> will therefore be included in the rescue candidate list.</p>
+</li>
+<li>
+<p>For <strong>novel transcripts</strong> from the NIC and NNC categories, since there is no associated transcript information, all transcripts classified as artifacts will be included in the rescue candidate list.</p>
+</li>
+</ul>
+<p>As a result, we consider all reference or long read-defined transcripts from genes that have at least one rescue candidate to be <strong>rescue targets</strong>.</p>
+<h4 id="2-mapping-of-candidates-to-targets">2. Mapping of candidates to targets</h4>
+<p>SQ3 rescue next tries to find <strong>matches between each rescue target and its same-gene candidates</strong> based on sequence similarity. To achieve this, we perform an internal mapping step using <a href="https://github.com/lh3/minimap2">minimap2</a>. In it, rescue candidates are considered to be "reads" and rescue targets are used as a "reference genome" in which each transcript sequence constitutes a different "chromosome". </p>
+<p>To map candidates, we use the <code>map-hifi</code> option in minimap2 and the <code>-a -x</code> parameters:</p>
+<pre><code>minimap2 --secondary=yes -ax map-hifi rescue_targets.fasta rescue_candidates.fasta &gt; mapped_rescue.sam
+</code></pre>
+<p>Finally, all candidate-target pairs obtained during mapping -referred to as <strong>mapping hits</strong>- are obtained from the output SAM file regardless of whether they are primary or secondary alignments. From the SAM file, we extract the alignment score of each hit, which is the number of match scores minus penalties for mismatches, gap opens and gap extensions (for more info, check <a href="https://github.com/lh3/minimap2">minimap2 Github</a>).</p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_02-mapping.png" height = "565" width = "412"></p>
+<h4 id="3-application-of-sq3-filter-to-the-reference-transcriptome">3. Application of SQ3 filter to the reference transcriptome</h4>
+<p>Validation of transcripts using <a href="../Running-SQANTI3-Quality-Control/#optional">orthogonal sources of data</a> is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a <strong>validation step for all reference rescue targets</strong> before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).</p>
+<p>This requires users to <a href="../Running-SQANTI3-Quality-Control/">run SQANTI3 quality control</a> on the reference transcriptome and supply the output <code>*_classification.txt</code> file to SQANTI3 rescue using the <code>--refClassif</code> (<code>-k</code>) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets. The only orthogona data that might be excluded is the count matrix, as it is specific to the long read-defined transcriptome.</p>
+<p>Using the supplied reference classification file, SQ3 rescue will next <strong>apply SQ3 filter to the reference transcriptome</strong>. The filter to be applied will be specified by the <code>rules</code> or <code>ml</code> flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the <code>ml</code> option (and the same is true for the rules filter).</p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = "216" width = "763"></p>
+<h4 id="4-rescue-by-mapping">4. Rescue-by-mapping</h4>
+<p>In the final rescue step, hereby referred to as rescue-by-mapping, mapping hits (i.e. candidate-target pairs obtained during mapping) and reference transcriptome filter results are combined to generate a final list of reference transcripts to be rescued and reintroduced into the long read-defined transcriptome.</p>
+<p>This part of the rescue can be divided into the following tasks/criteria:</p>
+<ul>
+<li>
+<p><strong>SQ3 filtering of targets</strong>: first, candidate-target pairs are removed if the rescue target did not pass the filter (ML or rules).
+ If the user is working with the <strong>rules filter</strong>, this will mean that the reference (or long-read) target transcript did not pass the rules defined in the JSON file. If the user is working with the <strong>ML filter</strong>, this will mean that the target transcript did not pass the specified ML probability threshold. In the case of the ML filter, however, only the target transcript(s) with maximum ML probability are selected to continue in the rescue.</p>
+</li>
+<li>
+<p><strong>Selection of the best match</strong>: for each rescue candidate, only the mapping hit with the highest score is retained. The score is obtained from multiplying the alignment score (obtained from minimap2) by the ML_POS_prob of the target transcript (if working with the ML filter) or by 1 (if working with the rules filter). In the case of ties, long-reads defined transcripts will be prioritized over reference transcripts as best matches. If there is still a tie, all of the tied targets will be retained as best matches.</p>
+</li>
+<li>
+<p><strong>Reintroduction of targets</strong>: finally, the best matching target transcripts that belong to the long-reads defined transcriptome are not reintroduced, since they are already present, to avoid redundancy. Conversely, the best matching target transcripts that belong to the reference transcriptome are added to the final list of rescued transcripts to be included in the curated transcriptome, if they were not already included during automatic rescue. In the case of a reference transcript being represented already by an FSM, it will still be reintroduced, as it is considered to be more similar to the long read-defined artifact than the FSM.</p>
+</li>
+</ul>
+<p>After performing this last filter of the rescue target list, SQ3 rescue outputs a list of rescued reference transcripts, which are then added to the long-read transcriptome GTF.</p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_04-rescue.png" height = "497" width = "798"></p>
+<p>A new classification </p>
+<p><a name="running"></a></p>
+<h4 id="5-requantification">5. Requantification</h4>
+<p>The requantification is applied to each transcript following one of the four scenarios:</p>
+<p>1) A transcript was not impacted by either filtering or the rescue step; the expression level of such a transcript is intact. </p>
+<p>2) A transcript was flagged by the filter as an artifact and was not rescued; the expression level is given to the transcript divergence of the associated gene (if any) or to the general transcript divergence pool.</p>
+<p>3) A transcript was initially discarded and later rescued by the reference transcript; the initial expression level is transferred to the reference transcript.</p>
+<p>4) One of the qualifying transcripts did not pass the redundancy test and was not included in the final rescue isoforms list, meaning that the transcript is already represented by a transcript model that was not affected by the filtering step; the expression levels from artifacts are summed up with the expression levels of the unaffected transcript.</p>
+<h2 id="running-sq3-rescue">Running SQ3 rescue</h2>
+<p>Similarly to the <a href="../Running-SQANTI3-filter/">SQANTI3 filter</a>, the SQANTI3 rescue is designed as a 
+dual implementation, depending on whether the rules or the machine learning filter was previously run. Therefore, the <code>sqanti3_rescue.py</code>
+script requires a flag to be provided to activate either the <code>ml</code> or <code>rules</code> specific rescue.</p>
+<pre><code>usage: sqanti3_rescue.py [-h] {ml,rules} ...
+
+Rescue artifacts discarded by the SQANTI3 filter, i.e. find closest match for
+the artifacts in the reference transcriptome and add them to the
+transcriptome.
+
+positional arguments:
+  {ml,rules}  
+
+optional arguments:
+  -h, --help  show this help message and exit
+</code></pre>
+<p><a name="args"></a></p>
+<h3 id="input-files-and-arguments">Input files and arguments</h3>
+<p>All in all, these are the arguments accepted by <code>sqanti3_rescue.py rules</code>:</p>
+<pre><code class="language-bash">usage: sqanti3_rescue.py [-h] --filter_class FILTER_CLASS -rg REFGTF -rf REFFASTA [--corrected_isoforms_fasta CORRECTED_ISOFORMS_FASTA] [--filtered_isoforms_gtf FILTERED_ISOFORMS_GTF] [-k REFCLASSIF] [--counts COUNTS]
+                         [-e {all,fsm,none}] [--mode {automatic,full}] [-q] [-s {rules,ml}] [-j JSON_FILTER] [-r RANDOM_FOREST] [-t THRESHOLD] [-o OUTPUT] [-d DIR] [-c CPUS] [-v] [-l {ERROR,WARNING,INFO,DEBUG}]
+
+</code></pre>
+<details>
+<summary>Arguments explanation</summary>
+
+
+<pre><code class="language-bash">Rescue artifacts discarded by the SQANTI3 filter, i.e. find closest match for the artifacts in the reference transcriptome and add them to the transcriptome. Choose between the filter applied: using rules or the
+Machine-Learning approach.
+
+options:
+  -h, --help            show this help message and exit
+
+Required arguments:
+  --filter_class FILTER_CLASS
+                        SQANTI filter (ML or rules) output classification file.
+  -rg REFGTF, --refGTF REFGTF
+                        Full path to reference transcriptome GTF used when running SQANTI3 QC.
+  -rf REFFASTA, --refFasta REFFASTA
+                        Full path to reference genome FASTA used when running SQANTI3 QC.
+
+Input options:
+  --corrected_isoforms_fasta CORRECTED_ISOFORMS_FASTA
+                        FASTA file output by SQANTI3 QC (*_corrected.fasta), i.e. the full long read transcriptome.
+  --filtered_isoforms_gtf FILTERED_ISOFORMS_GTF
+                        GTF file output by SQANTI3 filter (*.filtered.gtf).
+  -k REFCLASSIF, --refClassif REFCLASSIF
+                        Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome. Mandatory when running the rescue on full mode
+  --counts COUNTS       Isoforms abundance values: &quot;Isoform&quot; &quot;Count&quot;. Column names may differ
+
+Customization options:
+  -e {all,fsm,none}, --rescue_mono_exonic {all,fsm,none}
+                        Whether or not to include mono-exonic artifacts in the rescue. Default: all
+  --mode {automatic,full}
+                        If 'automatic' (default), only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.
+  -q, --requant         Run requantification of the rescued isoforms.
+  -s {rules,ml}, --strategy {rules,ml}
+                        Filter strategy used. Default: rules
+
+Rules specific options:
+  -j JSON_FILTER, --json_filter JSON_FILTER
+                        Full path to the JSON file including the rules used when running the SQANTI3 rules filter. Default: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+
+Machine Learning specific options:
+  -r RANDOM_FOREST, --random_forest RANDOM_FOREST
+                        Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.
+  -t THRESHOLD, --threshold THRESHOLD
+                        Machine learning probability threshold to filter eligible rescue targets (mapping hits). Default: 0.7
+
+Output options:
+  -o OUTPUT, --output OUTPUT
+                        Prefix for output files.
+  -d DIR, --dir DIR     Directory for output files. Default: Directory where the script was run.
+
+Extra options:
+  -c CPUS, --cpus CPUS  Number of CPUs to use. Default: 4
+  -v, --version         Display program version number.
+  -l {ERROR,WARNING,INFO,DEBUG}, --log_level {ERROR,WARNING,INFO,DEBUG}
+                        Set the logging level INFO
+</code></pre>
+
+</details>
+<p><br></p>
+<p>Regardless of the rescue mode that is selected, SQ3 has the following <strong>common arguments</strong>, all of which are mandatory:</p>
+<ul>
+<li>
+<p><strong>SQANTI filter classification</strong>: The SQANTI3 classification file of the isoforms after the filter step, which has the new columns that indicate which isoforms are artifacts and which are true isoforms.</p>
+</li>
+<li>
+<p><strong>Long read-defined isoforms</strong>: should be the FASTA file generated by SQANTI3 QC (<code>*_corrected.fasta</code>). The isoform sequences will be used to extract rescue candidates and targets for mapping, and must be supplied via the <code>--rescue_isoforms</code> argument.</p>
+</li>
+<li>
+<p><strong>Long read-defined transcriptome annotation (filtered)</strong>: should be the GTF file output by SQANTI3 filter (<code>*.filtered.gtf</code>). Rescued transcripts will be appended to this GTF file to generate the final curated transcriptome. This file must be supplied via the <code>--rescue_gtf</code> argument.</p>
+</li>
+<li>
+<p><strong>Reference transcriptome annotation</strong>: reference GTF used to run SQANTI3 QC. This file will be used to extract rescue targets for mapping, and must be supplied via the <code>--refGTF</code> (or <code>-g</code>) argument.</p>
+</li>
+<li>
+<p><strong>Reference transcriptome classification file</strong> generated after running SQANTI3 QC on the reference transcriptome, which must be done previously to running the rescue and using the same orthogonal data as for long read-defined transcriptome QC. This file must be supplied via the <code>--refClassif</code> (or <code>-k</code>) argument and will be used to evaluate reference rescue target support (<a href="#4-application-of-sq3-filter-to-the-reference-transcriptome">see details above</a>).</p>
+</li>
+<li>
+<p><strong>Counts</strong> file containing expression values of transcript models before SQANTI3 filtering and rescue. This file is required if the <code>--requant</code> (<code>-q</code>) module is used. It must include two columns: the first for the isoform ID and the second for the corresponding expression value. Column headers can vary. Provide this file using the <code>--counts</code> (or <code>-c</code>) argument; it will be used to re-evaluate the expression values of the filtered and rescued transcript models.</p>
+</li>
+</ul>
+<p>Additionally, the following <strong>parameters</strong> can be set to modify the behavior of the rescue algorithm:</p>
+<ul>
+<li>
+<p><strong>Rescue mode</strong>: the <code>--mode</code> argument can be used to extend the rescue algorithm to non-FSM artifacts by
+supplying <code>--mode full</code>. By default (<code>--mode automatic</code>), only the automatic rescue step is performed, enabling the rescue of high-confidence
+reference isoforms.</p>
+</li>
+<li>
+<p><strong>Filter strategy</strong>: the user must specify which filter was used to filter the long read-defined transcriptome by providing either the <code>rules</code> or <code>ml</code> flag when running the rescue. This will determine how reference rescue targets are evaluated during the rescue.</p>
+</li>
+<li>
+<p><strong>Define rescue for mono-exon transcripts</strong>: the <code>-e</code> flag (<code>--rescue_mono_exonic</code>) can be used to determine whether (and how) to perform the rescue on mono-exonic transcripts. The following options can be supplied:</p>
+</li>
+<li><code>all</code> (default): all mono-exon transcripts classified as artifacts will be considered as rescue candidates, regardless of the category that they are classified into.</li>
+<li><code>fsm</code>: mono-exonic transcripts will only be considered for the rescue if they belong to the full-splice match (FSM) category. In this case, mono-exons will be rescued via the <a href="#1-automatic-rescue">automatic rescue</a> strategy.</li>
+<li>
+<p><code>none</code>: do not consider mono-exonic transcripts for the rescue (all mono-exons classified as artifacts will be discarded and no reference representatives included in the final transcriptome).</p>
+</li>
+<li>
+<p><strong>Output directory and outfile prefix</strong>: the output directory can be set via the <code>-d</code> flag (default: current directory). Output files will be named using the prefix provided using the <code>-o</code> argument (default: SQANTI3).</p>
+</li>
+</ul>
+<p><a name="rules"></a></p>
+<h4 id="rules-arguments">Rules arguments</h4>
+<p>In addition to the common arguments, the rules rescue requires the following <strong>specific files</strong>:</p>
+<ul>
+<li><strong>Rules JSON file</strong>: using the <code>-j</code> flag, the user must provide the JSON file used for running SQANTI3 rules filter on the long read-defined transcriptome. This same set of rules will be <a href="#4-application-of-sq3-filter-to-the-reference-transcriptome">applied to the reference transcriptome</a> to evaluate the reliability of reference rescue targets. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the <code>--refClassif</code> argument.</li>
+</ul>
+<p><a name="ml"></a></p>
+<h4 id="machine-learning-rescue-arguments">Machine learning rescue arguments</h4>
+<p>In addition to the common arguments, the machine learning rescue requires the following <strong>specific files</strong>:</p>
+<ul>
+<li>
+<p><strong>Pre-trained random forest classifier</strong>: using the <code>-r</code> flag, users must provide the <code>randomforest.RData</code> object that was obtained when running the machine learning filter on the long read-defined transcriptome. This classifier will be used to <a href="#4-application-of-sq3-filter-to-the-reference-transcriptome">run the ML filter on reference transcriptome isoforms</a>, i.e. obtain an ML probability value for reference rescue targets and evaluate their likelihood to be a true isoform based on orthogonal data supplied to SQANTI3 QC. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the <code>--refClassif</code> argument.</p>
+</li>
+<li>
+<p><strong>ML probability threshold</strong>: minimum probability value that is required in order to consider a transcript to be a true isoform. It should be set using the <code>-j</code> flag (default: 0.7). We recommend setting the same threshold that was used when running SQANTI3 filter.</p>
+</li>
+</ul>
+<p><a name="out"></a></p>
+<h2 id="rescue-output-files">Rescue output files</h2>
+<p>The final result of SQANTI3 rescue is a <strong>transcriptome GTF file and FASTA files</strong> - named <code>*_rescued.gtf</code> and <code>*_rescued.fasta</code> - including all the transcripts that were classified as isoforms by either the rules or the ML filter (already included in the supplied <code>*prefix*.filtered.gtf</code> file) and the rescued transcript isoforms that were reintroduced from the reference transcriptome (see <a href="#strategy">rescue strategy</a> section above).</p>
+<p>Independently of running only rescue on <code>automatic</code> or <code>full</code> mode, two main files will be present:</p>
+<ul>
+<li><code>*_rescue_inclusion_list.tsv</code>: A single-column file including the IDs of all the reference transcripts that have been reintroduced into the transcriptome during the rescue.</li>
+<li><code>*_recue_table.tsv</code>: A table summarizing the rescue results, with the same columns for both modes. All the columns are self-explanatory (origin refers to where the assigned transcript came from, i.e. reference or long read-defined transcriptome).</li>
+</ul>
+<p><a name="out_fill"></a></p>
+<h3 id="mapping-rescue-specific-files">Mapping rescue specific files</h3>
+<p>In the case of the user running the rescue in <code>full</code> mode, additional output files will be generated, as explained below.</p>
+<ul>
+<li>
+<p><strong>Rescue candidate files</strong> (for <code>--mode full</code>): Briefly, <a href="#2-selection-of-rescue-candidate-and-target-transcripts">rescue candidates</a> are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:</p>
+</li>
+<li>
+<p>A rescue candidate ID list, named <code>*_rescue_candidates.tsv</code>.</p>
+</li>
+<li>
+<p>A rescue candidate FASTA file named <code>*_rescue_candidates.fasta</code> containing the sequences of rescue candidates for mapping.</p>
+</li>
+<li>
+<p><strong>Rescue target files</strong> (for <code>--mode full</code>). As explained above, <a href="#2-selection-of-rescue-candidate-and-target-transcripts">rescue targets</a> are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, <a href="#3-mapping-of-candidates-to-targets">candidates are mapped to targets</a> using minimap2. Similarly to rescue candidates, two rescue target files are generated:</p>
+</li>
+<li>
+<p>ID list: <code>*_rescue_targets.tsv</code>.</p>
+</li>
+<li>
+<p>FASTA file: <code>*_rescue_targets.fasta</code>.</p>
+</li>
+<li>
+<p><strong>Mapping results</strong> (for <code>--mode full</code>): as a result of mapping with minimap2, two files are generated by SQ3 rescue:</p>
+</li>
+<li>
+<p>Minimap2 SAM file containing the mapping results, named <code>*_mapped_rescue.sam</code>.</p>
+</li>
+<li>
+<p>A four-column table in which the mapping results are summarized, named <code>*_rescue_mapping_hits.tsv</code>. This table has the following columns:</p>
+<ul>
+<li>Column 1 (<code>rescue_candidate</code>): rescue candidate ID.</li>
+<li>Column 2 (<code>mapping_hit</code>): ID of the rescue target that the candidate was successfully mapped to.</li>
+<li>Column 3 (<code>alignment_type</code>): SAM flag indicating the type of alignment.</li>
+<li>Column 4 (<code>alignment_score</code>): alignment score obtained from minimap2 for the candidate-target pair.</li>
+</ul>
+</li>
+</ul>
+<p><a name="rules_out"></a></p>
+<h3 id="rules-specific-output">Rules-specific output</h3>
+<p>In addition to the common output files, when running <code>--mode full</code>, the rules rescue will create a new folder within the designated output directory to save <a href="../Running-SQANTI3-filter/#rulesout">rules filter output files</a>, i.e. the results of running the rules filer on the reference transcriptome. This folder is named <code>reference_rules_filter</code> in all cases, while all files within it will have <code>reference_</code> as prefix. The <code>reference_RulesFilter_classification.txt</code> file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.</p>
+<p><a name="ml_out"></a></p>
+<h3 id="machine-learning-specific-output">Machine learning-specific output</h3>
+<p>In addition to the common output files listed above, when running <code>--mode full</code>, the ML rescue will also output a table including the result obtained after running the pre-trained ML classifier on the reference transcriptome. This file, named <code>*_reference_isoform_predict.tsv</code>, will contain reference transcript IDs in the first column and random forest classifier-generated probability values on the second. This probability can be interpreted as the extent to which the transcript is supported by SQANTI3 QC orthogonal data (short-reads, CAGE/polyA peaks, etc.). An example of this output is represented below:</p>
+<pre><code class="language-txt">isoform POS_MLprob
+DQ459430    0.25
+DQ516784    0.262
+DQ516752    0.27
+DQ668364    0.262
+DQ883670    0.804
+EF011062    0.512
+DQ875385    0.758
+</code></pre>
+<h3 id="requantification-output">Requantification output</h3>
+<p>If the <code>--requant</code> (<code>-q</code>) flag is used when running SQANTI3 rescue, two additional output files will be generated:</p>
+<ul>
+<li><code>*_requantified_counts.tsv</code>: a two-column table including the isoform IDs and their corresponding expression values after requantification.</li>
+<li><code>*_requantified_extended.tsv</code>: an extended version of the previous table, with one extra column per sample with the counts of the isoform before requantification. In this table, the artifact isoforms are included.</li>
+</ul>
+<p>Moreover, requantification will update the classification table FL columns, so the values reflect the new counts each isoform has after the whole pipeline. Note that the Transcript Divergence values will not be present in the classification table, only in the counts matrix.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

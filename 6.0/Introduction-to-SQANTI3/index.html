@@ -1,0 +1,1239 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/6.0/Introduction-to-SQANTI3/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../Dependencies-and-installation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Introduction to SQANTI3 - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-of-contents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Introduction to SQANTI3
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqanti3-and-the-functional-isotranscriptomics-fit-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#before-running-sqanti3-recommended-long-read-processing-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before running SQANTI3: recommended long read processing workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-sqanti3-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How does SQANTI3 work?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#utilities-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utilities folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utilities folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rescue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gmst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMST
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-and-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data and examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sqanti3-and-the-functional-isotranscriptomics-fit-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#before-running-sqanti3-recommended-long-read-processing-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Before running SQANTI3: recommended long read processing workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-does-sqanti3-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How does SQANTI3 work?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#utilities-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Utilities folder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Utilities folder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rescue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rescue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reports" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reports
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gmst" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GMST
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-and-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data and examples
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-folder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test folder
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Introduction to SQANTI3</h1>
+
+<h3 id="table-of-contents">Table of contents:</h3>
+<ul>
+<li>
+<p><a href="#intro">Introduction</a></p>
+<ul>
+<li><a href="#fit">SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline</a></li>
+<li><a href="#workflow">Before running SQANTI3: recommended long read processing workflow</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#sqanti">How does SQANTI3 work?</a></p>
+</li>
+<li>
+<p><a href="#structure">SQANTI3 structure</a></p>
+<ul>
+<li><a href="#source">Source folder</li>
+<li><a href="#utilities">Utilities folder</a></li>
+<li><a href="#data">Data and examples</a></li>
+<li><a href="#tests">Tests folder</a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<p><a name="intro"/></a></p>
+<h2 id="introduction">Introduction</h2>
+<p>SQANTI3 is the newest version of the <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/">SQANTI tool</a>. 
+SQANTI3 combines features from the original <a href="https://github.com/ConesaLab/SQANTI">SQANTI</a> and from
+<a href="https://github.com/Magdoll/SQANTI2">SQANTI2</a>, as well as newly implemented functionalities and 
+transcript features.</p>
+<p><strong>Disclaimer:</strong> please note that, although still available, both SQANTI and SQANTI2 are deprecated and will no longer be 
+maintained/updated. All development efforts will continue in SQANTI3, aiming to providing the most
+comprehensive characterization of long read-defined transcriptomes for the community.</p>
+<p><a name="fit"/></a></p>
+<h3 id="sqanti3-and-the-functional-isotranscriptomics-fit-pipeline">SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline</h3>
+<p>SQANTI3 constitutes the first module of the <a href="https://tappas.org/">Functional IsoTranscriptomics (FIT)</a> 
+pipeline, which is an end-to-end strategy to perform isoform-level bioinformatics analyses. 
+The SQANTI3 tool is designed to enable <strong>quality control and filtering</strong> of long read-defined transcriptomes, which are often rich in artifacts and false-positive isoforms. Therefore, a good curation of the transcriptome is indispensable to proceed with FIT analysis and produce valid, biologically sound conclusions/hypothesis. </p>
+<p>After generating a high-quality transcriptome with SQANTI3, downstream steps include:</p>
+<ul>
+<li><strong>Functional annotation</strong> of isoform models, including positionally-defined functional features such as motifs,
+domains, etc. IsoAnnot, a tool for <em>de novo</em> annotation of isoforms, is currently under development, however,
+users can run <a href="../IsoAnnotLite/">IsoAnnotLite</a> within or outside of SQANTI3 to impute functional features from other already-annotated
+transcriptomes.</li>
+<li><strong>Expression-based functional analysis</strong> using <a href="https://app.tappas.org/">tappAS</a>. tappAS is a Java GUI application 
+that leverages both expression and domain/motif annotation information to gain insight into the functional implications 
+of alternative isoform expression.</li>
+</ul>
+<p><a name="workflow"/></a></p>
+<h3 id="before-running-sqanti3-recommended-long-read-processing-workflow">Before running SQANTI3: recommended long read processing workflow</h3>
+<p>Here is our recommended workflow, including the best way to generate the SQANTI3 inputs and how to proceed after QC and filtering:</p>
+<ol>
+<li><strong>Sample pooling</strong>: while we are aware that some users may have long read data from several replicates and/or samples,
+we recommend pooling all long read samples to build a single transcriptome per experiment.</li>
+<li><strong>Long read data processing</strong> using your preferred transcriptome-building tool. We do not recommend using SQANTI3 on 
+raw long reads, as it is NOT designed as a tool for long read data QC. If you wish to still perform QC on raw long reads, please use <a href="../Running-SQANTI%E2%80%90reads/">SQANTI-reads</a>.</li>
+<li><strong>Collapse of isoform models</strong>. Typically, long read data processing pipelines generate a large number of highly redundant
+isoform models. We recommend collapsing these using tools such as <a href="https://github.com/Magdoll/cDNA_Cupcake">cDNA_Cupcake</a> or 
+<a href="https://github.com/GenomeRIK/tama/wiki/Tama-Collapse">TAMACollapse</a> to reduce the number of isoforms and create unique isoform models prior to running SQANTI3.</li>
+<li><strong>Quantification</strong> of the filtered transcriptome using short/long reads and your preferred tool. We do not recommend using the
+expression estimates input into SQANTI3 for downstream analysis: these are used for quality control purposes only. Once all artifacts
+are removed from the transcriptome, the reads can be used to obtain a more accurate quantification. SQANTI3 rescue module will produce a curated transcriptome and count matrix that can be used for this purpose.</li>
+</ol>
+<p><a name="sqanti"/></a></p>
+<h2 id="how-does-sqanti3-work">How does SQANTI3 work?</h2>
+<p>SQANTI3 is a tool for in-depth characterization of isoforms obtained by full-length transcript sequencing, 
+which are commonly returned in a FASTA or GTF file format. SQANTI3 combines the long read-defined transcripts with the <strong>reference annotation</strong> as well as with other <strong>orthogonal data</strong> to provide a wide range of descriptors of transcript quality. SQ3 generates a comprehensive report to facilitate quality control and filtering of the isoform models.</p>
+<p>SQANTI3 is mainly designed to perform two 
+different tasks, both of them equally important:</p>
+<ol>
+<li><strong>Isoform classification and quality control</strong> (<a href="../Running-SQANTI3-Quality-Control/">SQANTI3 QC</a>) for long read-defined transcriptomes. The SQ3 <a href="SQANTI3-isoform-classification:-categories-and-subcategories.md">categories and subcategories</a>, 
+together with a long list of transcript-level attributes and descriptors, allow users to carefully inspect the properties of their isoform models, as well as identify potential problems generated during library preparation and raw data processing.</li>
+<li><strong>Artifact filtering</strong> (<a href="../Running-SQANTI3-filter/">SQANTI3 filter</a>) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.</li>
+</ol>
+<p>To gain insight into these two steps, we encourage reading the original <a href="https://genome.cshlp.org/content/early/2018/02/09/gr.222976.117">SQANTI publication</a>. Recently, however, we have implemented a final step in the SQANTI3 workflow:</p>
+<ol>
+<li>
+<p><strong>Reference transcript rescue</strong> (<a href="../Running-SQANTI3-rescue/">SQANTI3 rescue</a>) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.</p>
+</li>
+<li>
+<p><strong>Curated transcriptome requantification</strong> (final step of <a href="../Running-SQANTI3-rescue/">SQANTI3 rescue</a>) to generate an updated count matrix including the rescued reference transcripts. After the rescue step, the transcriptome is expanded with the rescued reference transcripts, and the original quantification matrix is updated to include counts for these transcripts. This updated count matrix can be used for downstream analyses. As well, artifacts that are pontentilaly divergent from the true isoforms, also have their counts redistributed. </p>
+</li>
+</ol>
+<p><img alt="Sqanti3 workflow" src="https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png" /></p>
+<p><a name="structure"/></a></p>
+<h2 id="sqanti3-structure">SQANTI3 structure</h2>
+<p>At the moment, the SQANTI3 tool is directly called using the wrapper <code>sqanti3</code>. This main wrapper orchestrates the execution of the <strong>three primary modules</strong>. Each module is designed to perform a specific function within the SQANTI3 workflow, implemented as separate Python scripts:</p>
+<ul>
+<li><code>sqanti3_qc.py</code> for quality control.</li>
+<li><code>sqanti3_filter.py</code> for transcriptome filtering/curation.</li>
+<li><code>sqanti3_rescue.py</code> to replace artifacts by their closest matching transcript from either the reference or long-read defined transcriptome.</li>
+</ul>
+<p>To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the <code>src</code> (source) directory. </p>
+<p><a name="source"/></a></p>
+<h3 id="source-folder">Source folder</h3>
+<p>The <code>src</code> directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.</p>
+<p><a name="utilities"/></a></p>
+<h4 id="utilities-folder">Utilities folder</h4>
+<p>The <code>utilities</code> folder contains all the auxiliary scripts and functions required to run <code>sqanti3_qc.py</code> and <code>sqanti3_filter.py</code>.
+Under the main directory, you will find:</p>
+<ul>
+<li><code>IsoAnnotLite_SQ3.py</code>: <a href="https://isoannot.tappas.org/isoannot-lite/">IsoAnnotLite</a> script. Used to generate functional annotations and tappAS-compatible outputs.</li>
+<li>gtfToGenePred: UCSC conversion tool, obtained (see details <a href="https://bioconda.github.io/recipes/ucsc-gtftogenepred/README.html">here</a>).
+Used during QC.</li>
+<li><code>indels_annot.py</code>: when a fasta file is provided as input, corrects indels in transcripts (note that SQANTI3 QC requires a GTF by default, so this function is rarely used).</li>
+<li><code>rt_switching.py</code>: function to check splice junctions for potential RT switching.</li>
+<li><code>short_reads.py</code>: used to process raw short-read data when supplied to <code>sqanti3_qc.py</code>.</li>
+</ul>
+<h5 id="filter">Filter</h5>
+<p>The <code>filter</code> subfolder contains two R scripts, each for one of the <a href="../Running-SQANTI3-filter/">filters available in SQANTI3</a> (i.e. rules and machine learning-based). 
+In addition, a JSON file containing the default set of rules for the rules filter (which are equivalent to running the old RulesFilter in SQANTI2 and SQANTI3 for versions &lt; 5.0).</p>
+<h5 id="rescue">Rescue</h5>
+<p>The <code>rescue</code> subfolder contains a series of R scripts implementing the different <a href="../Running-SQANTI3-rescue/">rescue steps</a>. These are run internally by the rescue wrapper (<code>sqanti3_rescue.py</code>) to perform the rescue.</p>
+<h5 id="reports">Reports</h5>
+<ul>
+<li>The <code>report_qc</code> folder contains the main R script and auxiliary plotting functions/scripts used to generate the <strong>SQANTI3 QC report</strong>.</li>
+<li>The <code>report_filter</code> folder contains the main R script and auxiliary plotting functions used to generate the <strong>SQANTI3 filter report</strong>.</li>
+</ul>
+<h5 id="gmst">GMST</h5>
+<p>GeneMarkST tool. Used internally during QC for ORF prediction.</p>
+<p><a name="data"/></a></p>
+<h3 id="data-and-examples">Data and examples</h3>
+<p>This directories have been moved to their own repository, with the idea not to make the SQANTI3 repository too heavy. You can find them at <a href="https://github.com/ConesaLab/SQANTI_examples">SQANTI3 examples</a></p>
+<p><a name="tests"/></a></p>
+<h3 id="test-folder">Test folder</h3>
+<p>Newly implemented, and in constant development, test suite for SQANTI3. This test suite is being developed as SQANTI3 is being modularized, with the aim to keep SQANTI3 as stable as possible in future releases. If you find any issue with the test suite, add it as an issue and it will be updated as soon as possible.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1158 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/6.0/Understanding-the-output-of-SQANTI3-QC/">
+      
+      
+        <link rel="prev" href="../Running-SQANTI3-Quality-Control/">
+      
+      
+        <link rel="next" href="../IsoAnnotLite/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Understanding the output of SQANTI3 QC - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-of-contents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Understanding the output of SQANTI3 QC
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-qc-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 QC output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 QC output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#main-output-classification-and-junctions-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main output: classification and junctions files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transcriptome-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transcriptome files
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transcriptome files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-indel-correction-and-gtffasta-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Note on indel correction and GTF/FASTA output files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-qc-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI QC report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supplementary-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supplementary output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary-of-classification-file-columns-classificationtxt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary of classification file columns (classification.txt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary-of-junctions-file-columns-junctionstxt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary of junctions file columns (junctions.txt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti3-qc-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI3 QC output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI3 QC output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#main-output-classification-and-junctions-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Main output: classification and junctions files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transcriptome-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transcriptome files
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transcriptome files">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#note-on-indel-correction-and-gtffasta-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Note on indel correction and GTF/FASTA output files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqanti-qc-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI QC report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#supplementary-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supplementary output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary-of-classification-file-columns-classificationtxt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary of classification file columns (classification.txt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary-of-junctions-file-columns-junctionstxt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glossary of junctions file columns (junctions.txt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Understanding the output of SQANTI3 QC</h1>
+
+<h2 id="table-of-contents">Table of contents:</h2>
+<ul>
+<li>
+<p><a href="#output">SQANTI3 QC output</a></p>
+<ul>
+<li>
+<p><a href="#main">Main output</a></p>
+</li>
+<li>
+<p><a href="#transcriptome">Transcriptome files</a></p>
+</li>
+<li>
+<p><a href="#report">Report</a></p>
+</li>
+<li>
+<p><a href="#supplementary">Supplementary output</a></p>
+</li>
+</ul>
+</li>
+<li>
+<p><a href="#classifcols">Glossary of classification file columns </a></p>
+</li>
+<li>
+<p><a href="#junctioncols">Glossary of junction file columns </a></p>
+</li>
+</ul>
+<hr />
+<p><a name="output"></a></p>
+<h2 id="sqanti3-qc-output">SQANTI3 QC output</h2>
+<p>As a result of <a href="../Running-SQANTI3-Quality-Control/">running SQANTI3 QC</a>, the tool will create a series of output files in the specified directory (<code>--dir</code> or <code>-d</code> flag in the QC script), all of which will be named using the supplied prefix (<code>--output</code> or <code>-o</code> flag in the QC script). Given that SQANTI3 also runs several other tools internally (e.g. STAR, kallisto, TD2...), a series of subfolders will also appear in the output directory. </p>
+<p>The <a href="https://github.com/ConesaLab/SQANTI3/tree/master/example/SQANTI3_QC_output">example/SQANTI3_QC_output</a> subfolder in the SQANTI3 main directory contains an updated example of what the output of SQ3 QC looks like:</p>
+<p><img alt="SQANTI3 QC Output Example" src="https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/example_output_SQ3-QC.png" /></p>
+<p>This is the result of <a href="Tutorial:-running-SQANTI3-on-an-example-dataset.md">running SQANTI3 QC on example data</a>, i.e. a subset of the UHR dataset. A more detailed explanation of the different output files included below.</p>
+<p><a name="main"></a></p>
+<h3 id="main-output-classification-and-junctions-files">Main output: classification and junctions files</h3>
+<p>SQANTI3 characterizes the input transcriptome by computing a series of attributes by transcript, which are written to the classification file, and a series of attributes by junction, which are written to the junctions file.</p>
+<ul>
+<li>
+<p><strong>Classification file</strong>: a tab-separated file where transcripts are rows and QC attributes computed by SQANTI3 are columns. Isoforms are identified by their ID in the input long-read GTF file. For a full glossary of columns and their meaning, <a href="#classifcols">see below</a>.</p>
+</li>
+<li>
+<p><strong>Junctions file</strong>: a tab-separated file containing each junction for every PB isoform as rows. Rows are identified by the isoform ID and the junction number (shown in order, i.e. the 1st, 2nd, 3rd... ith junction), which are included in the two first columns. Take into account that the same junction may appear multiple times if they are shared by multiple PB isoforms, for instance, when several FSM and ISM transcripts associated to the same reference isoform are found. For a full glossary of columns and their meaning, <a href="#glossary-of-junction-file-columns-junctionstxt">see below</a></p>
+</li>
+</ul>
+<p><a name="transcriptome"></a></p>
+<h3 id="transcriptome-files">Transcriptome files</h3>
+<ul>
+<li>
+<p><strong>GTF file</strong>: the <code>_corrected.gtf</code> file constitutes the <strong>main transcriptome output of SQANTI3</strong>. It contains the annotation for all transcripts supplied to SQANTI3. This file may be used for downstream analyses such as quantification, however, we recommend filtering your transcriptome using the QC attributes in SQANTI3 before proceeding with your analyses. For this purpose, you may apply one of the <a href="../Running-SQANTI3-filter/">two filters available in SQANTI3</a> or, alternatively, define your own filtering criteria.</p>
+</li>
+<li>
+<p><strong>FASTA file</strong>: the <code>_corrected.fasta</code> file contains the genomic sequences of transcripts supplied to SQANTI3 QC, obtained using the <code>_corrected.gtf</code> file and the provided reference genome.</p>
+</li>
+<li>
+<p><strong>FAA file</strong>: the <code>_corrected.faa</code> file contains FASTA-formatted protein sequences derived from transcript sequences. These sequences are obtained by running the <strong>TransDecoder2 (TD2) ORF prediction</strong> algorithm and will only be output if the <code>--include_ORF</code> flag is supplied.</p>
+</li>
+<li>
+<p><strong>CDS GFF file</strong>: the <code>_corrected.cds.gff3</code> file is generated by expanding the GTF file to include <strong>coding sequence (CDS)</strong> information (obtained from TD2 ORF predictions). This means that, in addition to exons and transcripts, CDS will also be included as a feature in the 3rd GFF column.</p>
+</li>
+<li>
+<p><strong>tappAS GFF3 file</strong> (optional): if the <code>--isoAnnotLite</code> argument is used, <strong>IsoAnnotLite</strong> will be run internally and a tappAS-formatted GFF3 file containing all isoforms in the input transcriptome will be generated in the output folder. This allows direct usage of a SQANTI3-processed transcriptome in tappAS. Of note, if a pre-annotated tappAS GFF3 file is supplied to SQANTI3 QC via the <code>--gff3</code> flag, the tappAS GFF3 annotation will also contain functional feature transferred by position (see details on how IsoAnnotLite works <a href="../IsoAnnotLite/">here</a>).</p>
+</li>
+</ul>
+<h4 id="note-on-indel-correction-and-gtffasta-output-files">Note on indel correction and GTF/FASTA output files</h4>
+<p>SQ3 currently accepts both GTF (default) and FASTA transcriptome files as input. If a <strong>FASTA input file</strong> is supplied, sequences are mapped to the genome to generate the <code>_corrected.gtf</code> file. Using this GTF and the reference genome, SQ3 performs <strong>indel correction</strong> and generates the <code>_corrected.fasta</code> file. Please note that this type of reference-based correction <strong>will remove SNPs</strong>, therefore, users who are interested in this kind of information should refrain from using a FASTA file as input. Alternatively, if users supply a <strong>GTF input file</strong>, SQ3 will NOT perform indel correction, just extract transcript sequences using the reference genome and the transcriptome GTF file, which will be equivalent to the <code>_corrected.gtf</code> file.</p>
+<p><a name="report"></a></p>
+<h3 id="sqanti-qc-report">SQANTI QC report</h3>
+<p>The SQANTI QC report is generated by the <a href="https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R">SQANTI3_report.R</a> script, which takes the <strong>classification</strong> (e.g. <code>UHR_chr22_classification.txt</code>) and <strong>junctions</strong> (e.g. <code>UHR_chr22_junctions.txt</code>) files. </p>
+<p>The report includes over 150 plots, therefore, in order to ease interpretation, we recently implemented the <code>--report</code> argument with four options: <code>pdf</code>, <code>html</code>, <code>both</code> and <code>skip</code>. This means that the report can be created as an <strong>interactive HTML document</strong> as well as (or alternatively to) a <strong>PDF report</strong> -or skipped entirely if the user does not wish to see a report for the QC run.</p>
+<p>Users who are proficient in R are welcome to modify the R script to add new figures -we will be constantly adding new figures as well.</p>
+<p><a name="supplementary"></a></p>
+<h3 id="supplementary-output">Supplementary output</h3>
+<ul>
+<li>
+<p><strong>Parameter file</strong> (<code>_params.txt</code>): plain text file including the full paths of all files supplied to SQANTI3, as well as any additional parameters included in the call to <code>sqanti3_qc.py</code>. Here is an example of the fields included in the parameter file for a full SQ3 QC run starting from raw short-read data.</p>
+</li>
+<li>
+<p><strong>STAR folders</strong> contain the different outputs of the <a href="https://github.com/alexdobin/STAR">STAR aligner</a>, which is <a href="../Running-SQANTI3-Quality-Control/#providing-short-reads">run internally using provided short-reads</a> during QC.</p>
+</li>
+<li>
+<p><strong>STAR_index</strong>: STAR index for the supplied reference genome. If you wish to supply a pre-computed index to SQ3 QC, see the shortcut described in <a href="https://github.com/ConesaLab/SQANTI3/issues/130">issue #130</a>.</p>
+</li>
+<li>
+<p><strong>STAR_mapping</strong>: STAR mapping files. SQANTI3 uses short-read coverage information (<code>_SJ.out.tab</code> file) and mapping BAM files (<code>_Aligned.sortedByCoord.bam</code>) to compute short-read coverage, isoform expression (see kallisto output below) and the TSS ratio metric.</p>
+</li>
+<li>
+<p><strong>Kallisto output folder</strong>: this folder will contain the results of running <a href="https://pachterlab.github.io/kallisto/">kallisto</a> to compute isoform expression estimates using the different short-read replicates supplied. In it, users will find one subfolder per replicate, in which kallisto abundance files (i.e. quantification matrices) are stored.</p>
+</li>
+<li>
+<p><strong>RT-switching (RTS) folder</strong>: output files generated by the RT-switching prediction script (<code>utilities/rt_switching.py</code>).</p>
+</li>
+<li>
+<p><strong>GMST folder</strong>: output files generated after running GeneMarkST (<code>utilities/gmst</code>) for ORF prediction.</p>
+</li>
+<li>
+<p><strong>genePred files</strong>: reference annotation and long-read transcriptome GTF files are converted to genePred format during isoform classification. The two <code>.genePred</code> files found in the output folder constitute the intermediate files that are generated in this process.</p>
+</li>
+</ul>
+<p><a name="classifcols"></a></p>
+<h2 id="glossary-of-classification-file-columns-classificationtxt">Glossary of classification file columns (<code>classification.txt</code>)</h2>
+<p>The output <code>_classification.txt</code> has the following fields:</p>
+<ol>
+<li><code>isoform</code>: the isoform ID. Usually in <code>PB.X.Y</code> format.</li>
+<li><code>chrom</code>: chromosome.</li>
+<li><code>start</code>: isoform start position.</li>
+<li><code>end</code>: isoform end position.</li>
+<li><code>strand</code>: strand.</li>
+<li><code>length</code>: isoform length.</li>
+<li><code>exons</code>: number of exons.</li>
+<li><code>structural_category</code>: one of the categories ["full-splice_match", "incomplete-splice_match", "novel_in_catalog", "novel_not_in_catalog", "genic", "antisense", "fusion", "intergenic", "genic_intron"]</li>
+<li><code>subcategory</code>: one of the possible subcategories for each category (see <a href="SQANTI3-isoform-classification:-categories-and-subcategories.md">isoform categories and subcategories</a>)</li>
+<li><code>FSM_class</code>: This feature classifies the transcript according to the expression of other isoforms in the gene to which the transcript belongs. Transcripts belonging to genes that only express one isoform are classified as A. Transcripts belonging to genes that express more than one isoform but none is a FSM are classified as B. Transcripts belonging to genes which express more than one isoform and other isoforms and at least one is a FSM are classified as C.</li>
+<li><code>associated_gene</code>: the reference gene name.</li>
+<li><code>associated_transcript</code>: the reference transcript name.</li>
+<li><code>ref_length</code>: matched reference transcript length. For transcripts in the <code>novel_in_catalog</code> and <code>novel_not_in_catalog</code> categories, the best matching reference transcript is chosen based on the highest number of shared splice junctions and the smallest difference in exon count.</li>
+<li><code>ref_exons</code>: reference transcript number of exons.</li>
+<li><code>diff_to_TSS</code>: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript.</li>
+<li><code>diff_to_TTS</code>: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript.</li>
+<li><code>diff_to_gene_TSS</code>: distance of query isoform 5' start to the closest start end of <em>any</em> transcripts of the matching gene. This field is different from <code>diff_to_TSS</code> since it's looking at all annotated starts of a gene. Negative value means query starts downstream of TSS.</li>
+<li><code>diff_to_gene_TTS</code>: distance of query isoform 3' end to the closest end of <em>any</em> transcripts of the matching gene. Negative value means query ends upstream of TTS. </li>
+<li><code>RTS_stage</code>: TRUE if one of the junctions could be a RT switching artifact.</li>
+<li><code>all_canonical</code>: TRUE if all junctions have canonical splice sites.</li>
+<li><code>min_sample_cov</code>: sample with minimum coverage.</li>
+<li><code>min_cov</code>: minimum junction coverage based on short read STAR junction output file. NA if no short read given.</li>
+<li><code>min_cov_pos</code>: the junction that had the fewest coverage. NA if no short read data given.</li>
+<li><code>sd_cov</code>: standard deviation of junction coverage counts from short read data. NA if no short read data given.</li>
+<li><code>FL</code> or <code>FL.&lt;sample&gt;</code>: FL count associated with this isoform per sample if <code>--fl_count</code> is provided, otherwise NA.</li>
+<li><code>n_indels</code>: total number of indels based on alignment.</li>
+<li><code>n_indels_junc</code>: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).</li>
+<li><code>bite</code>: TRUE if contains at least one "bite" positive SJ.</li>
+<li><code>iso_exp</code>: short read expression for this isoform if <code>--expression</code> is provided, otherwise NA.</li>
+<li><code>gene_exp</code>: short read expression for the gene associated with this isoform (summing over all isoforms) if <code>--expression</code> is provided, otherwise NA.</li>
+<li><code>ratio_exp</code>: ratio of <code>iso_exp</code> to <code>gene_exp</code> if <code>--expression</code> is provided, otherwise NA.</li>
+<li><code>coding</code>: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"</li>
+<li><code>ORF_length</code>: predicted ORF length (including introns) in nucleotides.</li>
+<li><code>CDS_length</code>: predicted CDS length in nucleotides.</li>
+<li><code>protein_length</code>: predicted protein length in aminoacids. </li>
+<li><code>CDS_start</code>: CDS start.</li>
+<li><code>CDS_end</code>: CDS end.</li>
+<li><code>CDS_genomic_start</code>: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.</li>
+<li><code>CDS_genomic_end</code>: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.</li>
+<li><code>psauron_score</code>: Value between 0 and 1 indicating the coding potential of the transcript according to the psauron algorithm. Higher values indicate higher coding potential.</li>
+<li><code>CDS_type</code>: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"</li>
+<li><code>predicted_NMD</code>: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.</li>
+<li><code>perc_A_downstream_TTS</code>: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say &gt; 0.8), the 3' end site of this isoform is probably not reliable.</li>
+<li><code>seq_A_downstream_TTS</code>: sequence of the downstream 20 bp window.</li>
+<li><code>dist_to_CAGE_peak</code>: distance to closest TSS based on CAGE Peak data. Negative means the middle of the cage peak is upstream of the isoform TSS and positive means downstream of the isoform TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be <code>NA</code> if none are found within 10000 bp.</li>
+<li><code>within_CAGE_peak</code>: TRUE if the transcript start site is within a CAGE Peak. </li>
+<li><code>dist_to_polyA_site</code>: distance to the closest polyA site, based on polyA site data (e.g. Quant-seq).</li>
+<li><code>within_polyA_site</code>: TRUE if the transcript start site is within a polyA site, retrieved from polyA site data (e.g. Quant-seq).</li>
+<li><code>polyA_motif</code>: if <code>--polyA_motif_list</code> is given, shows the top ranking polyA motif found within 50 bp upstream of end.</li>
+<li><code>polyA_dist</code>: if <code>--polyA_motif_list</code> is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. </li>
+<li><code>polyA_motif_found</code>: TRUE if a polyA motif given via <code>--polyA_motif_list</code> is detected in the 3'end of the transcript.  </li>
+<li><code>ratio_TSS</code>: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio <em>coverage inside isoform + 0.01/ coverage outside isoform + 0.01</em>. If several SR samples are provided, <code>ratio_TSS</code> will represent the maximum value of the ratios across the samples. This means that if an isoform has a <code>ratio_TSS</code> greater than 1 it is more likely that its TSS is true. Meanwhile, if the <code>ratio_TSS</code> is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.</li>
+</ol>
+<p><a name="junctioncols"></a></p>
+<h2 id="glossary-of-junctions-file-columns-junctionstxt">Glossary of junctions file columns (<code>junctions.txt</code>)</h2>
+<p>The <code>_junctions.txt</code> file contains the following columns:</p>
+<ol>
+<li><code>isoform</code>: Isoform ID.</li>
+<li><code>junction_number</code>: The i-th junction of the isoform.</li>
+<li><code>chrom</code>: Chromosome.</li>
+<li><code>strand</code>: Strand.</li>
+<li><code>genomic_start_coord</code>: Start of the junction (1-based), note that if on - strand, this would be the junction acceptor site instead.</li>
+<li><code>genomic_end_coord</code>: End of the junction (1-based), note that if on - strand, this would be the junction donor site instead.</li>
+<li><code>transcript_coord</code>: Currently not implemented. Ignore.</li>
+<li><code>junction_category</code>: <code>known</code> if the (donor-acceptor) combination is annotated in the GTF file, <code>novel</code> otherwise. Note that it is possible to have a <code>novel</code> junction even though both the donor and acceptor site are known, since the combination might be novel.</li>
+<li><code>start_site_category</code>: <code>known</code> if the junction start site is annotated. If on - strand, this is actually the donor site.</li>
+<li><code>end_site_category</code>: <code>known</code> if the junction end site is annotated. If on - strand, this is actually the acceptor site.</li>
+<li><code>diff_to_Ref_start_site</code>: distance to closest annotated junction start site. If on - strand, this is actually the donor site.</li>
+<li><code>diff_to_Ref_end_site</code>: distance to closest annotated junction end site. If on - strand, this is actually the acceptor site.</li>
+<li><code>bite_junction</code>: Applies only to novel splice junctions. If the novel intron partially overlaps annotated exons the bite value is TRUE, otherwise it is FALSE.</li>
+<li><code>splice_site</code>: Splice motif.</li>
+<li><code>RTS_junction</code>: TRUE if junction is predicted to be a template switching artifact.</li>
+<li><code>indel_near_junct</code>: TRUE if there is alignment indel error near the junction site, indicating potential junction incorrectness.</li>
+<li><code>sample_with_cov</code>: If <code>--coverage</code> (short read junction coverage info) is provided, shows the number of samples (cov files) that have uniquely mapped short reads that support this junction.</li>
+<li><code>total_coverage_unique/multi</code>: Total number of uniquely or multi-mapped short read support from all samples that cover this junction.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

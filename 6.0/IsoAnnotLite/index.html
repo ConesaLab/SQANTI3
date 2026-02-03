@@ -1,0 +1,1599 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/6.0/IsoAnnotLite/">
+      
+      
+        <link rel="prev" href="../Understanding-the-output-of-SQANTI3-QC/">
+      
+      
+        <link rel="next" href="../Running-SQANTI3-filter/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>IsoAnnotLite - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-of-contents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              IsoAnnotLite
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-and-parameters-in-isoannotlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments and parameters in IsoAnnotLite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Arguments and parameters in IsoAnnotLite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isoannotlite-integration-within-sqanti3-qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IsoAnnotLite integration within SQANTI3 QC
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-how-does-isoannotlite-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix: how does IsoAnnotLite work?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix: how does IsoAnnotLite work?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-reading-reference-annotation-file-and-creating-data-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Reading reference annotation file and creating data variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-reading-sqanti3-files-and-creating-an-auxiliar-gff3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Reading SQANTI3 files and creating an auxiliar GFF3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-transforming-cds-local-positions-to-genomic-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Transforming CDS local positions to genomic position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-transforming-feature-local-positions-to-genomic-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Transforming feature local positions to genomic position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-generating-transcript-level-information-per-gene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Generating transcript-level information per gene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-mapping-transcript-features-between-gff3s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Mapping transcript features between GFF3s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-adding-extra-information-to-the-gff3-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Adding extra information to the GFF3 columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-reading-and-sorting-the-gff3-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Reading and sorting the GFF3 file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-updating-gene-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Updating gene descriptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-ii-isoannotlite-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix II: IsoAnnotLite statistics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-iii-tappas-gff3-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix III: tappAS GFF3 file format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-and-parameters-in-isoannotlite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Arguments and parameters in IsoAnnotLite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Arguments and parameters in IsoAnnotLite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input files:
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parameters:
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#isoannotlite-integration-within-sqanti3-qc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IsoAnnotLite integration within SQANTI3 QC
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-how-does-isoannotlite-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix: how does IsoAnnotLite work?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendix: how does IsoAnnotLite work?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-reading-reference-annotation-file-and-creating-data-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Reading reference annotation file and creating data variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-reading-sqanti3-files-and-creating-an-auxiliar-gff3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Reading SQANTI3 files and creating an auxiliar GFF3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-transforming-cds-local-positions-to-genomic-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Transforming CDS local positions to genomic position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-transforming-feature-local-positions-to-genomic-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Transforming feature local positions to genomic position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-generating-transcript-level-information-per-gene" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Generating transcript-level information per gene
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-mapping-transcript-features-between-gff3s" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Mapping transcript features between GFF3s
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-adding-extra-information-to-the-gff3-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Adding extra information to the GFF3 columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-reading-and-sorting-the-gff3-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Reading and sorting the GFF3 file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-updating-gene-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Updating gene descriptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-ii-isoannotlite-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix II: IsoAnnotLite statistics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-iii-tappas-gff3-file-format" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix III: tappAS GFF3 file format
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>IsoAnnotLite</h1>
+
+<h3 id="table-of-contents">Table of contents:</h3>
+<ul>
+<li>
+<p><a href="#summary">Summary</a></p>
+</li>
+<li>
+<p><a href="#args">Arguments and parameters in IsoAnnotLite</a></p>
+</li>
+<li>
+<p><a href="#runSQ3">IsoAnnotLite integration within SQANTI3 QC</a></p>
+</li>
+<li>
+<p><a href="#algorithm">Appendix I: how does IsoAnnotLite work?</a></p>
+</li>
+<li>
+<p><a href="#stats">Appendix II: IsoAnnotLite statistics</a></p>
+</li>
+<li>
+<p><a href="#gff3">Appendix III: tappAS GFF3 file format</a></p>
+</li>
+</ul>
+<hr />
+<p><a name="summary"/></p>
+<h2 id="summary">Summary</h2>
+<p><a href="https://isoannot.tappas.org/">IsoAnnotLite</a> is a python script that allows you to <strong>transfer isoform-level functional feature annotations</strong> from an existing tappAS-like GFF3 file to the SQANTI3 output (i.e. a set of long read-defined transcripts). The resulting file has the proper structure to be loaded into tappAS for isoform-level functional analysis. If the reference GFF3 annotation file is not provided, only structural information will be included in the IsoAnnotLite-generated GFF3 file. The transference is done at the genomic positon level for transcript and protein annotations, while all gene-level annotations (e.g. Gene Ontology terms) are automatically transferred by gene ID.</p>
+<p><img alt="isoannotlite" src="https://github.com/FJPardoPalacios/public_figures/blob/master/isoannotlite_logo.png" /></p>
+<p><a name="args"/></p>
+<h2 id="arguments-and-parameters-in-isoannotlite">Arguments and parameters in IsoAnnotLite</h2>
+<h3 id="input-files">Input files:</h3>
+<p><strong>Mandatory</strong>: the basic input required to run IsoAnnotLite are three of the <a href="../Understanding-the-output-of-SQANTI3-QC/">output files</a> generated by <a href="../Running-SQANTI3-Quality-Control/">SQANTI3 QC</a>:
+- <strong>GTF file:</strong> output as <code>*_corrected.gtf</code>. In order for IsoAnnot Lite to work propperly, the reference annotation used in SQANTI3 has to contain the same gene names as the ones in the functional annotation. Contains the long read-defined transcript sequences in GTF format.
+- <strong>Classification file:</strong> output as <code>*_classification.txt</code>. Tab-delimited file containing one entry per transcript and a large number of columns containing SQANTI3 attributes.
+- <strong>Junction file</strong>: output as <code>*_junctions.txt</code>. Tab-delimited file containing junction-level information for all the transcripts included in the classification file.</p>
+<p><strong>Optional</strong>: the <code>-gff3</code> argument can be used tu supply an already-annotated GFF3 file containing transcript-level functional features. When this argument is not used, a tappAS-compatible GFF3 will still generated for the user to load into tappAS, however, it will only contain structural information (transcript length, exons, UTR, etc.). <strong>Pre-computed tappAS annotation files</strong> for human, mouse, Drosophila, Arabidopsis and maize are available <a href="http://app.tappas.org/resources/downloads/gffs/">here</a>.</p>
+<h3 id="parameters">Parameters:</h3>
+<p>All of the following parameters are <strong>optional</strong>:</p>
+<ul>
+<li><code>-o</code>: name for the resulting GFF3 file.</li>
+<li><code>-stdout</code>: name for the statistics results file. Only when GFF3 it is used. If not used, no file will be generated.</li>
+<li><code>novel</code>: if it is used, all the transcripts will be treated as novel trasncripts, meaning that each transcript will be annotated using functional information from all the transcripts that belong to the same gene in the reference GFF3, instead of transferring annotations from transcripts with matching IDs (default).</li>
+<li><code>nointronic</code>: if provided, intronic features will not be annotated (e.g. RBPs).</li>
+<li><code>statistics</code>: deprecated (now IsoAnnotLite always shows the statistic results).</li>
+<li><code>saveTranscriptIDs</code>: when supplied to IsoAnnotLite, five additional output files will be created to report the IDs of the transcripts that generated problems during the feature transfer process:</li>
+<li>Transcripts with a reference <code>associated_transcript</code> not annotated by positional transference: <code>file_trans_not_annot_by_PF.txt</code>.</li>
+<li>Novel transcripts not annotated by positional transference: <code>file_novel_not_annot_by_by_PF.txt</code>.</li>
+<li>SQ3 reference gene was not found in the GFF3 annotation <code>file_reference_gene_not_annot.txt</code>.</li>
+<li>Transcripts not annotated because no features in the GFF3 annotation could be matched by position: <code>file_reference_transcript_not_annot.txt</code>.</li>
+<li>SQ reference gene (<code>associated_gene</code>) field was empty: <code>file_transcript_wo_gene_ID.txt</code>.</li>
+</ul>
+<p><a name="runSQ3"/></p>
+<h2 id="isoannotlite-integration-within-sqanti3-qc">IsoAnnotLite integration within SQANTI3 QC</h2>
+<p>As described in the <a href="../Running-SQANTI3-Quality-Control/#gff3">SQANTI3 QC documentation</a>, IsoAnnotLite is run internally by SQANTI3 QC if the <code>--isoAnnotLite</code> flag is supplied. In addition, users may add a tappAS reference GFF3 file via the <code>--gff3</code> argument to perform functional feature transfer. Within SQANTI3, IsoAnnotLite is run with the following parameters by default:</p>
+<pre><code>python path_to_utilities/IsoAnnotLite_SQ3.py 
+             \  *_corrected.gtf *_classification.txt *_junctions.txt 
+             \  -gff3 *.gff3 
+             \  -o out_prefix -novel -stdout out_dir
+</code></pre>
+<p>Note that this behavior cannot be modified when running SQANTI3: instead, if you wish for IsoAnnotLite to behave differently (i.e. supply flags other than -novel, which is activated by default in the SQANTI3 QC run), you will need to run in independently after obtaining the output of SQANTI3 QC.</p>
+<p>The <code>IsoAnnotLite_SQ3.py</code> script included in SQ3's <code>utilities</code> folder is consistently updated as new versions of IsoAnnotLite are released. If you are running IsoAnnotLite independently, please <strong>make sure you use the latest version</strong>. To download the <strong>current version</strong> of IsoAnnotLite (v2.7.3), click <a href="https://isoannot.tappas.org/resources/downloads/IsoAnnotLite.zip">here</a>.</p>
+<p><a id="algorithm"></a></p>
+<h2 id="appendix-how-does-isoannotlite-work">Appendix: how does IsoAnnotLite work?</h2>
+<h3 id="1-reading-reference-annotation-file-and-creating-data-variables">1. Reading reference annotation file and creating data variables</h3>
+<p>If used, the reference annotation file (GFF3) is read. The function creates different Python dictionaries to save all the relevant transcript-level information.</p>
+<h3 id="2-reading-sqanti3-files-and-creating-an-auxiliar-gff3">2. Reading SQANTI3 files and creating an auxiliar GFF3</h3>
+<p>IsoAnnotLite next reads the three input files generated by SQ3 and creates an auxiliar GFF3 (to prevent memory overload). This auxiliar GFF3 will later be used to create the final GFF3 file.</p>
+<h3 id="3-transforming-cds-local-positions-to-genomic-position">3. Transforming CDS local positions to genomic position</h3>
+<p>Using the SQ3 input files and GFF3 information, IsoAnnotLite transforms all CDS local positions to genome positions using exon information.</p>
+<h3 id="4-transforming-feature-local-positions-to-genomic-position">4. Transforming feature local positions to genomic position</h3>
+<p>Using the reference GFF3 file, transcript-level functional feature positions are transformed to genomic position by the same methodology.</p>
+<h3 id="5-generating-transcript-level-information-per-gene">5. Generating transcript-level information per gene</h3>
+<p>Create a dictionary where gene, feature and genomic positions are stored.</p>
+<h3 id="6-mapping-transcript-features-between-gff3s">6. Mapping transcript features between GFF3s</h3>
+<p>Features are transferred by matching genomic positions: features that are positionally defined within a long read-defined transcript in the SQ3 output will be annotated as belonging to that transcript.</p>
+<p>In the process of transferring features between the GFF3 and the SQ3 transcripts, IsoAnnotLite behaves differently depending on the type of feature that is being handled:
+- Transfer a feature located in the 3/5 UTR region.
+- Transfer a feature located in the CDS.
+- Transfer protein features.
+- Transfer gene-level characteristics.</p>
+<p>In addition, <strong>two different feature transfer methodologies</strong> are implemented depending on whether the SQ3 transcript has a match in the GFF3 file (this will be the case for FSM and ISM transcripts) or needs to be treated as a novel transcript (i.e. NIC and NNC).<br />
+- In case a <strong>matching reference transcript</strong> is found (and the <code>-novel</code> flag is not used), only the matching reference transcript will be used to transfer features at all the levels mentioned above. 
+- For <strong>novel transcripts</strong> (or for all transcripts if the <code>-novel</code> flag is used), IsoAnnotLite will iterate all the same-gene transcripts found in the GFF3 (using the <code>associated_gene</code> column in the SQANTI3 classification file) to retrieve positionally-defined features. The procedure will be the same, but it is running as many times as the number of transcripts the gene has.</p>
+<p>To transfer <strong>UTR features</strong>, its genomic feature position must be inside the transcript exons but outside CDS region.</p>
+<p>For <strong>CDS transcript features</strong>, two requirements must be met: 1) the feature must be contained within the transcript's exons as well as inside the CDS region; and 2) if a feature has start and end positions situated in different exons, the end and the start of the exons for both transcripts must be the same in order for IsoAnnotLite to transfer the feature.</p>
+<p>Furthermore, for <strong>protein features</strong>, we check both transcripts are coding and have similar CDS. If all CDS exons are the same for both transcripts, all protein features are transferred. In the other case, at least one CDS exon should be a partial match. At least one CDS genomic region overlaps between both transcripts. In that case, IsoAnnotLite checks if any protein feature can be transferred by genomic position.</p>
+<p>For <strong>gene-level characteristics</strong> (such as GOTerms), we decided to always transfer the information across matching gene IDs.
+Novel transcript procedure is equivalent, but annotations can come from multiple transcripts. Duplicated annotations are then removed.</p>
+<h3 id="7-adding-extra-information-to-the-gff3-columns">7. Adding extra information to the GFF3 columns</h3>
+<p>During this step, a <strong>feature type flag</strong> is added to the GFF3 columns. This flag is required in some of tappAS' analysis and indicates if the annotation is defined at the transcript, protein or gene level.</p>
+<p>Currently, this method is a hand-written methodology and cannot automatically detect feature type -this means that we have pre-defined the feature type for a long list of functional feature categories that we generally work with in the tappAS framework. Therefore, if you are working with a different kind of functional feature, IsoAnnotLite will display a warning. In this case, we recommend manually editing the <code>updateGTF()</code> function inside IsoAnnotLite to add your new feature, following the same structure as in the code. </p>
+<p>The feature types supported by tappAS are: 
+- T for transcript-level features.
+- P for protein-level features.
+- N for gene-level features.</p>
+<h3 id="8-reading-and-sorting-the-gff3-file">8. Reading and sorting the GFF3 file</h3>
+<p>Sorting the GFF3 by transcript ID, that is, all entries corresponding to the same transcripts need to be together in the same chunk of the GFF3.</p>
+<h3 id="9-updating-gene-descriptions">9. Updating gene descriptions</h3>
+<p>If missing from the SQANTI3 GTF, gene descriptions are updated using the information in the reference GFF3 file. After this step, the final GFF3 is ready.</p>
+<p><a name="stats"/></p>
+<h2 id="appendix-ii-isoannotlite-statistics">Appendix II: IsoAnnotLite statistics</h2>
+<p>Statistics are divided into three main sections:</p>
+<ol>
+<li><strong>Transcript-level summary</strong>. This section will display several entries with the number of transcripts that have been successfully annotated or not, and the reason. The information is shown independently for FSM/ISM and novel transcripts. Users will also see: </li>
+<li>No. of total transcripts that have been annotated by genomic positional feature transference. </li>
+<li>No. of transcripts not annotated because the reference transcript has no annotations to transfer. </li>
+<li>No. of transcripts that were not annotated because no features matched by positional transference. </li>
+<li>
+<p>No. of transcripts that were not annotated because the gene that they are assigned to by the <code>associated_gene</code> SQ3 column was not found in the reference GFF3. </p>
+</li>
+<li>
+<p><strong>Feature transfer summary</strong>. For each of the functional feature categories included in the reference GFF3, this section will show how many transcripts have been annotated with at least one feature from that category.</p>
+</li>
+<li>
+<p><strong>Feature-level summary</strong>. This section contains the same information as in (2), but in this case, the information is displayed by number of features instead of my number of transcripts. This summarizes how may features have been transferred from the reference GFF3 into the new GFF3 annotation file.</p>
+</li>
+</ol>
+<p>At the end of the statistics file, a summary line is shown including the percentage (%) of features have been transferred in total. However, keep in mind that this count is only exact when no novel transcripts are annotated: otherwise, since a novel transcript can receive annotations from multiple reference transcripts (all of which are counted, even if they are collapsed afterwards to remove redundancies), annotated features can be counted several times. Therefore, the result will correspond to the total number of features that have been annotated against the total number of feature transfer "events" that have been tried by IsoAnnotLite.</p>
+<p><a name="gff3"/></p>
+<h2 id="appendix-iii-tappas-gff3-file-format">Appendix III: tappAS GFF3 file format</h2>
+<p>The tappAS functional annotation GFF3 file follows the basic <a href="https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md">Generic Feature Format 3 (GFF3)</a>. However, it has been slightly modified to suit the application: the “score” and “phase” columns are not used and some of the attributes may not fully abide by the formal specifications. The file consists of a set of annotation features for each transcript. </p>
+<p>The file is divided into blocks, each corresponding to a transcript. Within each block, the set of features is divided into sections as follows:</p>
+<ul>
+<li>Transcript 1</li>
+<li>Transcript Level Feature Annotations – basic transcript information, UTR motifs, microRNAs, etc.</li>
+<li>Genomic Level Feature Annotations – exons, splice junctions, etc.</li>
+<li>Protein Level Feature Annotations – gene ontology features, domains, phosphorylation sites, etc.</li>
+<li>Transcript 2</li>
+<li>...</li>
+<li>Transcript 3</li>
+<li>…</li>
+</ul>
+<p>The annotation features must be named as expected by tappAS:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Feature</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>tappAS</td>
+<td>transcript</td>
+<td>Start of transcript features</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>gene</td>
+<td>Gene information</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>CDS</td>
+<td>CDS information</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>genomic</td>
+<td>Start of genomic features</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>exon</td>
+<td>Exon</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>splice_junction</td>
+<td>Splice junction</td>
+</tr>
+<tr>
+<td>tappAS</td>
+<td>protein</td>
+<td>Start of protein features</td>
+</tr>
+</tbody>
+</table>
+<p>In addition, the remaining attributes must be named as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ID</td>
+<td>Feature ID</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>Feature name</td>
+</tr>
+<tr>
+<td>Desc</td>
+<td>Feature description</td>
+</tr>
+<tr>
+<td>Chr</td>
+<td>Feature chromosome</td>
+</tr>
+</tbody>
+</table>
+<p>For reference, here is a snippet of a tappAS-formatted GFF3 file (header should <strong>NOT</strong> be included):</p>
+<table>
+<thead>
+<tr>
+<th>SeqName</th>
+<th>Source</th>
+<th>Feature</th>
+<th>Start</th>
+<th>End</th>
+<th>Score</th>
+<th>Strand</th>
+<th>Phase</th>
+<th>Attributes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>transcript</td>
+<td>1</td>
+<td>1399</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=XM_006524897.1; primary_class=full_splice_match; PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>gene</td>
+<td>1</td>
+<td>1399</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=Qpct; Name=Qpct; Desc=glutaminyl-peptide cyclotransferase (glutaminyl cyclase); PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>CDS</td>
+<td>10</td>
+<td>951</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=XP_006524960.1; PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>UTRsite</td>
+<td>3’UTRmotif</td>
+<td>1288</td>
+<td>1295</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=U0023; Name=K-BOX; Desc=K-Box; PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>UTRsite</td>
+<td>PAS</td>
+<td>1380</td>
+<td>1399</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=U0043; Name=PAS; Desc=Polyadenylation Signal; PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>mirWalk</td>
+<td>miRNA</td>
+<td>986</td>
+<td>993</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=mmu-miR-495-5p; Name=mmu-miR-495-5p; Desc=UTR3; PosType=T</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>genomic</td>
+<td>1</td>
+<td>1</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79052257</td>
+<td>79052388</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79070673</td>
+<td>79070951</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79077482</td>
+<td>79077658</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79079467</td>
+<td>79079566</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79081747</td>
+<td>79081863</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>exon</td>
+<td>79089623</td>
+<td>79090216</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>splice_junction</td>
+<td>79052388</td>
+<td>79070673</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=known_canonical; Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>splice_junction</td>
+<td>79070951</td>
+<td>79077482</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=known_canonical; Chr=chr17; PosType=G</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>splice_junction</td>
+<td>79077658</td>
+<td>79079467</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=known_canonical; Chr=chr1; PosType=G</td>
+</tr>
+<tr>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+<tr>
+<td>PB.3189.4</td>
+<td>tappAS</td>
+<td>protein</td>
+<td>1</td>
+<td>313</td>
+<td>.</td>
+<td>+</td>
+<td>.</td>
+<td>ID=NP_001303658.1; PosType=P</td>
+</tr>
+</tbody>
+</table>
+<p>Note that generating an annotation file is not a trivial task and it’s not recommended unless you have a good programming background and knowledge of annotation features. IsoAnnotLite has been specifically developed to assist with the file formatting and functional feature transference task.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
