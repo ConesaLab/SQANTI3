@@ -20,7 +20,7 @@
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
@@ -50,8 +50,6 @@
         <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
       
     
-    
-      <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -100,8 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -224,8 +221,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     SQANTI3 Documentation
@@ -1182,7 +1178,7 @@
 </li>
 </ul>
 <hr />
-<p><a name="intro"/></p>
+<p><a id="intro"></a></p>
 <h2 id="introduction">Introduction</h2>
 <p></a></p>
 <p>As of SQANTI3 v5.1, a new module has been added to the SQANTI3 workflow for transcriptome characterization and quality control: <strong>SQANTI3 rescue</strong>. </p>
@@ -1190,11 +1186,11 @@
 provided by discarded isoforms (i.e. artifacts) to recover transcripts in the associated reference transcriptome. 
 The idea behind this strategy is to avoid losing transcripts/genes that are detected as expressed by long read sequencing, but whose start/end/junctions could not be confidently validated using orthogonal data, resulting in the removal of those genes/transcripts from the transriptome. More details about this can be found in the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#motivation">Motivation</a> section below.</p>
 <p>In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an <strong>expanded transcriptome GTF</strong> including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Optionally, requantification can be performed to reassign expression values to the rescued isoforms.</p>
-<p><a name="motivation"/></p>
+<p><a id="motivation"></a></p>
 <h3 id="motivation">Motivation</h3>
 <p></a>
 ⚠️To be completed⚠️</p>
-<p><a name="strategy"/></p>
+<p><a id="strategy"></a></p>
 <h2 id="sqanti3-rescue-strategy">SQANTI3 rescue strategy</h2>
 <p></a>
 Here is a summary of the SQ3 rescue workflow:</p>
@@ -1231,8 +1227,8 @@ Here is a summary of the SQ3 rescue workflow:</p>
 <p>Finally, all candidate-target pairs obtained during mapping -referred to as <strong>mapping hits</strong>- are obtained from the output SAM file regardless of whether they are primary or secondary alignments.</p>
 <p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_02-mapping.png" height = 565 width = 412></p>
 <h4 id="3-application-of-sq3-filter-to-the-reference-transcriptome">3. Application of SQ3 filter to the reference transcriptome</h4>
-<p>Validation of transcripts using <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#optional">orthogonal sources of data</a> is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a <strong>validation step for all reference rescue targets</strong> before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).</p>
-<p>This requires users to <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control">run SQANTI3 quality control</a> on the reference transcriptome and supply the output <code>*_classification.txt</code> file to SQANTI3 rescue using the <code>--refClassif</code> (<code>-k</code>) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets.</p>
+<p>Validation of transcripts using <a href="../Running-SQANTI3-Quality-Control/#optional">orthogonal sources of data</a> is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a <strong>validation step for all reference rescue targets</strong> before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).</p>
+<p>This requires users to <a href="../Running-SQANTI3-Quality-Control/">run SQANTI3 quality control</a> on the reference transcriptome and supply the output <code>*_classification.txt</code> file to SQANTI3 rescue using the <code>--refClassif</code> (<code>-k</code>) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets.</p>
 <p>⚠️ <strong>Disclaimer</strong>: note that this is a temporary solution -we are currently working on implementing an option to run this step internally as a part of the rescue-, however, we are aware that the same reference may be used for multiple transcriptomes, therefore, this option will remain active to save runtime and resources. ⚠️</p>
 <p>Using the supplied reference classification file, SQ3 rescue will next <strong>apply SQ3 filter to the reference transcriptome</strong>. The filter to be applied will be specified by the <code>rules</code> or <code>ml</code> flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the <code>ml</code> option (and the same is true for the rules filter).</p>
 <p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = 216 width = 763></p>
@@ -1253,7 +1249,7 @@ Here is a summary of the SQ3 rescue workflow:</p>
 </ul>
 <p>After performing this last filter of the rescue target list, SQ3 rescue outputs a list of rescued reference transcripts, which are then added to the long-read transcriptome GTF.</p>
 <p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798></p>
-<p><a name="running"/></p>
+<p><a id="running"></a></p>
 <h4 id="5-requantification">5. Requantification</h4>
 <p>The requantification is applied to each transcript following one of the four scenarios:</p>
 <p>1) A transcript was not impacted by either filtering or the rescue step; the expression level of such a transcript is intact. </p>
@@ -1276,7 +1272,7 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 </code></pre>
-<p><a name="args"/></p>
+<p><a id="args"></a></p>
 <h3 id="input-files-and-arguments">Input files and arguments</h3>
 <p></a>
 Regardless of the rescue mode that is selected, SQ3 has the following <strong>common arguments</strong>, all of which are mandatory:
@@ -1313,7 +1309,7 @@ reference isoforms.</li>
 <p><strong>Output directory and outfile prefix</strong>: the output directory can be set via the <code>-d</code> flag (default: current directory). Output files will be named using the prefix provided using the <code>-o</code> argument (default: SQANTI3).</p>
 </li>
 </ul>
-<p><a name="rules"/></p>
+<p><a id="rules"></a></p>
 <h3 id="rules-rescue-arguments">Rules rescue arguments</h3>
 <p></a>
 In addition to the common arguments, the rules rescue requires the following <strong>specific files</strong>:</p>
@@ -1380,7 +1376,7 @@ Rules specific options:
 
 </details>
 <p><br></p>
-<p><a name="ml"/></p>
+<p><a id="ml"></a></p>
 <h3 id="machine-learning-rescue-arguments">Machine learning rescue arguments</h3>
 <p></a>
 In addition to the common arguments, the machine learning rescue requires the following <strong>specific files</strong>:</p>
@@ -1449,18 +1445,18 @@ Machine Learning specific options:
 
 </details>
 <p><br></p>
-<p><a name="out"/></p>
+<p><a id="out"></a></p>
 <h2 id="rescue-output-files">Rescue output files</h2>
 <p></a>
-The final result of SQANTI3 rescue is a <strong>transcriptome GTF file</strong> - named <code>prefix_rescued.gtf</code> - including all the transcripts that were classified as isoforms by either the rules or the ML filter (already included in the supplied <code>prefix.filtered.gtf</code> file) and the rescued transcript isoforms that were selected from the reference transcriptome (see <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#strategy">rescue strategy</a> section above).</p>
+The final result of SQANTI3 rescue is a <strong>transcriptome GTF file</strong> - named <code>prefix_rescued.gtf</code> - including all the transcripts that were classified as isoforms by either the rules or the ML filter (already included in the supplied <code>prefix.filtered.gtf</code> file) and the rescued transcript isoforms that were selected from the reference transcriptome (see <a href="#strategy">rescue strategy</a> section above).</p>
 <p>Other additional output files that are generated in the rescue process will be explained below.</p>
-<p><a name="out_common"/></p>
+<p><a id="out_common"></a></p>
 <h3 id="common-rescue-output-files">Common rescue output files</h3>
 <p></a>
 - <strong>Automatic rescue result</strong> (both <code>--mode</code> options): a single-column file named <code>prefix_automatic_rescued_list.tsv</code> containing the IDs of reference transcripts that were selected during automatic rescue.</p>
 <ul>
 <li>
-<p><strong>Rescue candidate files</strong> (for <code>--mode full</code>): Briefly, <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#2-selection-of-rescue-candidate-and-target-transcripts">rescue candidates</a> are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:</p>
+<p><strong>Rescue candidate files</strong> (for <code>--mode full</code>): Briefly, <a href="#1b-selection-of-rescue-candidate-and-target-transcripts">rescue candidates</a> are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:</p>
 </li>
 <li>
 <p>A rescue candidate ID list, named <code>prefix_rescue_candidates.tsv</code>.</p>
@@ -1469,7 +1465,7 @@ The final result of SQANTI3 rescue is a <strong>transcriptome GTF file</strong> 
 <p>A rescue candidate FASTA file named <code>prefix_rescue_candidates.fasta</code> containing the sequences of rescue candidates for mapping.</p>
 </li>
 <li>
-<p><strong>Rescue target files</strong> (for <code>--mode full</code>). As explained above, <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#2-selection-of-rescue-candidate-and-target-transcripts">rescue targets</a> are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#3-mapping-of-candidates-to-targets">candidates are mapped to targets</a> using minimap2. Similarly to rescue candidates, two rescue target files are generated:</p>
+<p><strong>Rescue target files</strong> (for <code>--mode full</code>). As explained above, <a href="#1b-selection-of-rescue-candidate-and-target-transcripts">rescue targets</a> are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, <a href="#2-mapping-of-candidates-to-targets">candidates are mapped to targets</a> using minimap2. Similarly to rescue candidates, two rescue target files are generated:</p>
 </li>
 <li>
 <p>ID list: <code>prefix_rescue_targets.tsv</code>.</p>
@@ -1560,11 +1556,11 @@ PB.1.4  0   PB.7707.5   0.754   novel_not_in_catalog    not_rescued long_read_tr
 <ul>
 <li><strong>Rescue inclusion list</strong> (<code>--mode full</code>): a single-column file containing the IDs of all rescued transcripts, named <code>prefix_rescue_inclusion-list.tsv</code>. In this list, both the IDs of rescued transcripts obtained via automatic rescue and via rescue-by-mapping are combined into a single inclusion list. This list is used to generate the final rescued transcriptome GTF, i.e. <code>prefix_rescued.gtf</code>.</li>
 </ul>
-<p><a name="rules_out"/></p>
+<p><a id="rules_out"></a></p>
 <h3 id="rules-specific-output">Rules-specific output</h3>
 <p></a>
-In addition to the common output files, when running <code>--mode full</code>, the rules rescue will create a new folder within the designated output directory to save <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#rulesout">rules filter output files</a>, i.e. the results of running the rules filer on the reference transcriptome. This folder is named <code>reference_rules_filter</code> in all cases, while all files within it will have <code>reference_</code> as prefix. The <code>reference_RulesFilter_result_classification.txt</code> file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.</p>
-<p><a name="ml_out"/></p>
+In addition to the common output files, when running <code>--mode full</code>, the rules rescue will create a new folder within the designated output directory to save <a href="../Running-SQANTI3-filter/#rulesout">rules filter output files</a>, i.e. the results of running the rules filer on the reference transcriptome. This folder is named <code>reference_rules_filter</code> in all cases, while all files within it will have <code>reference_</code> as prefix. The <code>reference_RulesFilter_result_classification.txt</code> file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.</p>
+<p><a id="ml_out"></a></p>
 <h3 id="machine-learning-specific-output">Machine learning-specific output</h3>
 <p></a>
 In addition to the common output files listed above, when running <code>--mode full</code>, the ML rescue will also output a table including the result obtained after running the pre-trained ML classifier on the reference transcriptome. This file, named <code>prefix_reference_isoform_predict.tsv</code>, will contain reference transcript IDs in the first column and random forest classifier-generated probability values on the second. This probability can be interpreted as the extent to which the transcript is supported by SQANTI3 QC orthogonal data (short-reads, CAGE/polyA peaks, etc.). An example of this output is represented below:</p>
@@ -1597,6 +1593,12 @@ DQ875385    0.758
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
       </main>
       
         <footer class="md-footer">
@@ -1626,7 +1628,7 @@ DQ875385    0.758
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>

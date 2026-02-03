@@ -20,7 +20,7 @@
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
@@ -50,8 +50,6 @@
         <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
       
     
-    
-      <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -100,8 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -224,8 +221,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     SQANTI3 Documentation
@@ -1335,12 +1331,12 @@
 </li>
 </ul>
 <hr />
-<p><a name="rules"/></p>
+<p><a id="rules"></a></p>
 <h2 id="rules-filter-removing-artifacts-using-the-sqanti3-output-and-user-defined-rules">Rules filter: removing artifacts using the SQANTI3 output and user-defined rules</h2>
 <p></a>
 SQANTI3 filter has been reshaped to allow users to supply their own set of rules. These will be used to accept or discard an isoform based on the attributes obtained through <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control">SQANTI3 QC</a>. To define those rules, the user will need to create a <strong>JSON file</strong> specifying which SQ3 attributes and thresholds are to be used for filtering and, therefore, the properties of the transcripts that are to be included in the final transcriptome. </p>
 <p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977"></p>
-<p><a name="running_rules"/></p>
+<p><a id="running_rules"></a></p>
 <h3 id="running-the-rules-filter">Running the rules filter</h3>
 <p></a>
 The rules filter only needs a SQANTI3 classification file to work. To run it, just execute <code>sqanti3_filter.py</code> providing the <code>rules</code> argument followed by the path to the SQANTI3 <code>*_classification.txt</code> file:</p>
@@ -1400,7 +1396,7 @@ Rules specific options:
 
 </details>
 <p><br></p>
-<p><a name="default_filter"/></p>
+<p><a id="default_filter"></a></p>
 <h3 id="default-filter">Default filter</h3>
 <p></a></p>
 <p>Following the same criteria as in previous versions of SQANTI3, we hereby provide a default set of rules for the filter. These are equivalent to running the old <code>sqanti3_RulesFilter.py</code> script. However, we strongly advise users to closely inspect the properties of their transcriptome and define their own filter based on the results obtained during QC. Keep in mind as well that any isoform that has a missing value in any of the conditions of a rule will be considered an artifact. This means that <code>NA</code> the likes will be treated as fails. </p>
@@ -1438,7 +1434,7 @@ Rules specific options:
      ]
 }
 </code></pre>
-<p><a name="build_json"/> </p>
+<p><a id="build_json"></a> </p>
 <h3 id="making-your-own-filter">Making your own filter</h3>
 <p></a>
 As of SQANTI3 version 5.0, it is possible to supply a user-defined filter including as many rules as desired. To do it, the user needs to create a JSON file defining which characteristics make an isoform reliable. </p>
@@ -1532,7 +1528,7 @@ As of SQANTI3 version 5.0, it is possible to supply a user-defined filter includ
 }
 
 </code></pre>
-<p><a name="rulesout"/></p>
+<p><a id="rulesout"></a></p>
 <h2 id="rules-filter-output">Rules filter output</h2>
 <p></a>
 The main SQANTI rules filter output files are:</p>
@@ -1547,7 +1543,7 @@ The main SQANTI rules filter output files are:</p>
 </li>
 <li><code>*_SQANTI3_filter_report.pdf</code>: A PDF report with some plots describing the performance of the filtering.</li>
 </ul>
-<p><a name="ml"/></p>
+<p><a id="ml"></a></p>
 <h2 id="machine-learning-filter-removing-artifacts-using-a-random-forest-classifier">Machine learning filter: removing artifacts using a random forest classifier</h2>
 <p></a>
 SQANTI3 incorporates an automated filter based on a <strong>random forest classifier</strong>, 
@@ -1564,7 +1560,7 @@ description of its parameters. While we have included recommendations on how to 
 them to obtain optimal results, users are encouraged to try several configurations of 
 the filter to find the best way to run it for their particular dataset. ⚠️</p>
 <p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904"></p>
-<p><a name="runml"/></p>
+<p><a id="runml"></a></p>
 <h3 id="running-the-machine-learning-filter">Running the machine learning filter</h3>
 <p></a>
 Similarly to the rules filter, the machine learning filter (ML filter) can be 
@@ -1648,7 +1644,7 @@ Machine Learning specific options:
 <p><br></p>
 <p>We next provide a detailed description of each of the ML filter parameters in order
 to help users understand how to best apply it to their own data.</p>
-<p><a name="sets"/></p>
+<p><a id="sets"></a></p>
 <h3 id="true-positive-tp-and-true-negative-tn-sets">True Positive (TP) and True Negative (TN) sets</h3>
 <p></a>
 As stated above, the random forest classifier model needs to be trained on a subset
@@ -1683,7 +1679,7 @@ given this random sampling step, <strong>TP and TN lists will be written out as 
 number of isoforms to include in the TP and TN sets. By default, TP and TN lists
 will be <strong>downsized to 3000 transcripts</strong> if they are larger than this, 
 no matter if they were user-defined or generated internally.</p>
-<p><a name="partition"/></p>
+<p><a id="partition"></a></p>
 <h3 id="partitioning-of-the-training-data-model-trainingtesting">Partitioning of the training data (model training/testing)</h3>
 <p></a>
 TP and TN isoform sets need to be split into <em>training</em> and <em>test</em> data to correctly
@@ -1709,7 +1705,7 @@ will detect that a model already exists, skipping the training step and
 <strong>applying the extant model</strong> to perform the Isoform/Artifact classification on the input data. 
 This is useful on occasions where a user wants to apply an already-generated 
 model to a different transcriptome; however, if you wish to train a new model, you will need to <em>delete/move/rename the previous model object</em>.</p>
-<p><a name="prob"/></p>
+<p><a id="prob"></a></p>
 <h3 id="probability-threshold-to-define-isoformsartifacts">Probability threshold to define Isoforms/Artifacts</h3>
 <p></a>
 Ultimately, flagging transcripts as Isoforms or Artifacts is based on the 
@@ -1730,7 +1726,7 @@ isoforms when <code>POS_MLprob</code> is larger than 0.7</strong>. </p>
 counter-intuitive). Of course, in this scenario, the filter will exclude more 
 transcripts than when using the usual <code>POS_MLprob &gt; NEG_MLprob</code> approach. 
 However, users may reproduce this lenient filter by lowering the threshold to 0.5.</p>
-<p><a name="cols"/></p>
+<p><a id="cols"></a></p>
 <h3 id="classification-file-columns-excluded-from-the-ml-filter">Classification file columns excluded from the ML filter</h3>
 <p></a>
 Due to their lack of importance for artifact definition (or to prevent them from
@@ -1751,7 +1747,7 @@ the ML filter, instead of supplied by the user:
 or NNC transcripts being used as a TN set.
 - Redundant distance to TSS/TTS information (all <code>dist_*</code> columns in the classification
 file) to prevent bias towards reference-similar isoforms when RM are used as a TP set.</p>
-<p><a name="colrem"/></p>
+<p><a id="colrem"></a></p>
 <h3 id="excluding-additional-data-columns-from-the-filter">Excluding additional data columns from the filter</h3>
 <p></a>
 The SQANTI ML filter incorporates the option to exclude columns from the 
@@ -1766,7 +1762,7 @@ in turn, excluded from the ML filter to prevent them from gaining too much
 importance during Isoform/Artifact classification. </p>
 <p><em>Warning: we always encourage testing several ML filter configurations and TP/TN sets 
 before making a final decision on which are the artifacts in your transcriptome.</em></p>
-<p><a name="intraprim"/></p>
+<p><a id="intraprim"></a></p>
 <h3 id="intra-priming-filter">Intra-priming filter</h3>
 <p></a>
 The ML filter script in SQANTI3 includes a simple <strong>threshold-based filter</strong> to prevent
@@ -1780,7 +1776,7 @@ transcript (i.e. the TTS). This can be provided via the <code>--intrapriming</co
 argument, resulting in <code>perc_A_downstream_TTS &gt; i</code> isoforms being flagged as 
 intra-priming artifacts. By default, transcripts containing more than 60% A's at the genomic
 3' end will be flagged.</p>
-<p><a name="retain"/></p>
+<p><a id="retain"></a></p>
 <h3 id="forcing-the-removalretention-of-specific-isoform-groups">Forcing the removal/retention of specific isoform groups</h3>
 <p></a>
 1. <strong>Full-splice match (FSM) transcripts</strong> can be excluded from the ML filter and
@@ -1792,7 +1788,7 @@ structural categories.</p>
 <code>--filter_mono_exonic</code> or <code>-e</code> parameter. Note that mono-exon transcripts will not
 be evaluated by the ML filter (only by the intra-priming filter).</li>
 </ol>
-<p><a name="except"/></p>
+<p><a id="except"></a></p>
 <h3 id="exceptions-to-running-the-sqanti3-ml-filter">Exceptions to running the SQANTI3 ML filter</h3>
 <p></a>
 The random forest classifier <strong>cannot/will not</strong> be run in any of the following
@@ -1806,7 +1802,7 @@ This applies when no user-defined TP and TN sets are provided.</li>
 </ul>
 <p>However, even in scenarios where no ML-based filtering can be applied, the
 <strong>intra-primming filter</strong> will still be applied to all input transcripts.</p>
-<p><a name="mlout"/></p>
+<p><a id="mlout"></a></p>
 <h2 id="sqanti-ml-filter-output">SQANTI ML filter output</h2>
 <p></a></p>
 <p>The SQANTI ML filter output files are written to the path specified using the
@@ -1815,7 +1811,7 @@ or <code>-o</code> argument.</p>
 <p>An example of the ML filter output can be found under the <code>example/MLfilter_output</code> folder, which is included in
 the main SQANTI3 directory (see our <a href="https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset">example dataset tutorial</a> for details).</p>
 <p>The following output files are generated after running the filter:</p>
-<p><a name="input"/></p>
+<p><a id="input"></a></p>
 <h3 id="input-related-files">Input-related files</h3>
 <p></a>
 - <code>params.txt</code>: two-column file including the name of the argument and the
@@ -1824,7 +1820,7 @@ value that was used to run the filter.
 IDs of the isoforms used as TP and TN (generated only when no user-defined sets
 were provided).</p>
 <p>The supplied prefix will be appended to the filenames above.</p>
-<p><a name="model"/></p>
+<p><a id="model"></a></p>
 <h3 id="model-related-files">Model-related files</h3>
 <p></a>
 - <code>randomforest.RData</code>: R object containing the trained random forest model.
@@ -1836,7 +1832,7 @@ ML filter performs a series of modifications of the classification table to
 enable running of the training/test steps. These include handling of <code>NAs</code>, value
 formatting, column removal, etc. This file will only be output if the <code>--intermediate_files</code>
 argument is supplied. Note that this file is <strong>NOT intented for downstream anaylsis</strong>.</p>
-<p><a name="test"/></p>
+<p><a id="test"></a></p>
 <h3 id="test-set-files">Test set files</h3>
 <p></a>
 All include the <code>testSet_</code> prefix:</p>
@@ -1848,7 +1844,7 @@ on the test set.</li>
 <li><code>summary.txt</code>: summary statistics of the model testing, namely sensitivity,
 specificity and AUROC.</li>
 </ul>
-<p><a name="reportml"/></p>
+<p><a id="reportml"></a></p>
 <h3 id="filter-report">Filter report</h3>
 <p></a>
 The ML filter automatically returns a PDF report. This includes filter summary tables and plots as well as 
@@ -1856,7 +1852,7 @@ one diagnostic plot per variable used by the random forest classifier. This allo
 transcripts flagged as isoforms and artifacts in the light of each of the variables that were considered 
 relevant to discriminate both.</p>
 <p>Supplying the <code>--skip_report</code> flag will deactivate the report.</p>
-<p><a name="classifml"/></p>
+<p><a id="classifml"></a></p>
 <h3 id="classification-file">Classification file</h3>
 <p></a>
 The <code>MLresult_classification.txt</code> constitutes a modified classification file 
@@ -1876,7 +1872,7 @@ ML and intra-priming filters. </li>
 will be enough to be considered an isoform, as long as they are not removed using 
 the <code>-e</code> argument. Similarly, all FSM transcripts will be flagged as true isoforms if
 the <code>-f</code> option is provided.</p>
-<p><a name="inclusionml"/></p>
+<p><a id="inclusionml"></a></p>
 <h3 id="inclusion-list-and-filtering-of-sqanti-qc-output-files">Inclusion list and filtering of SQANTI QC output files</h3>
 <p></a>
 Finally, <code>inclusion-list.txt</code> is a single-column file including the IDs of the transcripts 
@@ -1903,6 +1899,12 @@ each of the files you wish to obtain filtered.</p>
           
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -1933,7 +1935,7 @@ each of the files you wish to obtain filtered.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>

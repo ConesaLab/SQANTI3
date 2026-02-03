@@ -20,7 +20,7 @@
         
       
       
-      <link rel="icon" href="../assets/images/favicon.png">
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
@@ -50,8 +50,6 @@
         <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
       
     
-    
-      <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -100,8 +98,7 @@
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -224,8 +221,7 @@
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
-  
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
 
     </a>
     SQANTI3 Documentation
@@ -1098,7 +1094,7 @@
 </li>
 </ul>
 <hr />
-<p><a name="intro"/></p>
+<p><a id="intro"></a></p>
 <h2 id="introduction">Introduction</h2>
 <p>SQANTI3 is the newest version of the <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/">SQANTI tool</a>. 
 SQANTI3 combines features from the original <a href="https://github.com/ConesaLab/SQANTI">SQANTI</a> and from
@@ -1107,7 +1103,7 @@ transcript features.</p>
 <p><strong>Disclaimer:</strong> please note that, although still available, both SQANTI and SQANTI2 are deprecated and will no longer be 
 maintained/updated. All development efforts will continue in SQANTI3, aiming to providing the most
 comprehensive characterization of long read-defined transcriptomes for the community.</p>
-<p><a name="fit"/></p>
+<p><a id="fit"></a></p>
 <h3 id="sqanti3-and-the-functional-isotranscriptomics-fit-pipeline">SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline</h3>
 <p>SQANTI3 constitutes the first module of the <a href="https://tappas.org/">Functional IsoTranscriptomics (FIT)</a> 
 pipeline, which is an end-to-end strategy to perform isoform-level bioinformatics analyses. 
@@ -1116,13 +1112,13 @@ The SQANTI3 tool is designed to enable <strong>quality control and filtering</st
 <ul>
 <li><strong>Functional annotation</strong> of isoform models, including positionally-defined functional features such as motifs,
 domains, etc. IsoAnnot, a tool for <em>de novo</em> annotation of isoforms, is currently under development, however,
-users can run <a href="https://github.com/ConesaLab/SQANTI3/wiki/IsoAnnotLite">IsoAnnotLite</a> within or outside of SQANTI3 to impute functional features from other already-annotated
+users can run <a href="../IsoAnnotLite/">IsoAnnotLite</a> within or outside of SQANTI3 to impute functional features from other already-annotated
 transcriptomes.</li>
 <li><strong>Expression-based functional analysis</strong> using <a href="https://app.tappas.org/">tappAS</a>. tappAS is a Java GUI application 
 that leverages both expression and domain/motif annotation information to gain insight into the functional implications 
 of alternative isoform expression.</li>
 </ul>
-<p><a name="workflow"/></p>
+<p><a id="workflow"></a></p>
 <h3 id="before-running-sqanti3-recommended-long-read-processing-workflow">Before running SQANTI3: recommended long read processing workflow</h3>
 <p>Here is our recommended workflow, including the best way to generate the SQANTI3 inputs and how to proceed after QC and filtering:</p>
 <ol>
@@ -1140,23 +1136,23 @@ in long read-generated transcriptomes.</li>
 expression estimates input into SQANTI3 for downstream analysis: these are used for quality control purposes only. Once all artifacts
 are removed from the transcriptome, the reads can be used to obtain a more accurate quantification.</li>
 </ol>
-<p><a name="sqanti"/></p>
+<p><a id="sqanti"></a></p>
 <h2 id="how-does-sqanti3-work">How does SQANTI3 work?</h2>
 <p>SQANTI3 is a tool for in-depth characterization of isoforms obtained by full-length transcript sequencing, 
 which are commonly returned in a fasta or GTF file format. SQANTI3 combines the long read-defined transcripts with the <strong>reference annotation</strong> as well as with other <strong>orthogonal data</strong> to provide a wide range of descriptors of transcript quality. SQ3 generates a comprehensive report to facilitate quality control and filtering of the isoform models.</p>
 <p>SQANTI3 is mainly designed to perform two 
 different tasks, both of them equally important:</p>
 <ol>
-<li><strong>Isoform classification and quality control</strong> (<a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control">SQANTI3 QC</a>) for long read-defined transcriptomes. The SQ3 <a href="https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories">categories and subcategories</a>, 
+<li><strong>Isoform classification and quality control</strong> (<a href="../Running-SQANTI3-Quality-Control/">SQANTI3 QC</a>) for long read-defined transcriptomes. The SQ3 <a href="SQANTI3-isoform-classification:-categories-and-subcategories.md">categories and subcategories</a>, 
 together with a long list of transcript-level attributes and descriptors, allow users to carefully inspect the properties of their isoform models, as well as identify potential problems generated during library preparation and raw data processing.</li>
-<li><strong>Artifact filtering</strong> (<a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter">SQANTI3 filter</a>) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.</li>
+<li><strong>Artifact filtering</strong> (<a href="../Running-SQANTI3-filter/">SQANTI3 filter</a>) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.</li>
 </ol>
 <p>To gain insight into these two steps, we encourage reading the original <a href="https://genome.cshlp.org/content/early/2018/02/09/gr.222976.117">SQANTI publication</a>. Recently, however, we have implemented a final step in the SQANTI3 workflow:</p>
 <ol>
-<li><strong>Reference transcript rescue</strong> (<a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue">SQANTI3 rescue</a>) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.</li>
+<li><strong>Reference transcript rescue</strong> (<a href="../Running-SQANTI3-rescue/">SQANTI3 rescue</a>) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.</li>
 </ol>
 <p><img alt="Sqanti3 workflow" src="https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png" /></p>
-<p><a name="structure"/></p>
+<p><a id="structure"></a></p>
 <h2 id="sqanti3-structure">SQANTI3 structure</h2>
 <p>At the moment, the SQANTI3 tool is directly called using the wrapper <code>sqanti3</code>. This main wrapper orchestrates the execution of the <strong>three primary modules</strong>. Each module is designed to perform a specific function within the SQANTI3 workflow, implemented as separate Python scripts:</p>
 <ul>
@@ -1165,10 +1161,10 @@ together with a long list of transcript-level attributes and descriptors, allow 
 <li><code>sqanti3_rescue.py</code> to replace artifacts by their closest matching reference transcript.</li>
 </ul>
 <p>To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the <code>src</code> (source) directory. <em>As of the <a href="https://github.com/ConesaLab/SQANTI3/releases/latest">latest release</a>, only sqanti3_qc.py has been fully modularized.</em></p>
-<p><a name="source"/></p>
+<p><a id="source"></a></p>
 <h3 id="source-folder">Source folder</h3>
 <p>The <code>src</code> directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.</p>
-<p><a name="utilities"/></p>
+<p><a id="utilities"></a></p>
 <h4 id="utilities-folder">Utilities folder</h4>
 <p>The <code>utilities</code> folder contains all the auxiliary scripts and functions required to run <code>sqanti3_qc.py</code> and <code>sqanti3_filter.py</code>.
 Under the main directory, you will find:</p>
@@ -1192,14 +1188,14 @@ In addition, a JSON file containing the default set of rules for the rules filte
 </ul>
 <h5 id="gmst">GMST</h5>
 <p>GeneMarkST tool. Used internally during QC for ORF prediction.</p>
-<p><a name="data"/></p>
+<p><a id="data"></a></p>
 <h3 id="data-folder">Data folder</h3>
 <p>The <code>data</code> folder contains pre-computed TSS/TTS orthogonal data that is ready to be used to run SQANTI3 QC (see <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#minimal">additional inputs</a> section), avoiding the need for users to download them from reference databases.</p>
 <ul>
 <li><code>ref_TSS_annotation</code> subfolder: human and mouse CAGE data from the <a href="http://reftss.clst.riken.jp/reftss/Main_Page">refTSS database</a>.</li>
 <li><code>polyA_motif</code> subfolder: contains a list of human and mouse canonical polyadenylation motifs. </li>
 </ul>
-<p><a name="example"/></p>
+<p><a id="example"></a></p>
 <h3 id="example-folder">Example folder</h3>
 <p>This folder contains all the necessary inputs to run SQANTI3 on an example dataset. This data was obtained from <strong>public PacBio data</strong>, in particular, it consists in a set of transcripts generated using long reads from the <strong>Universal Human Reference RNA (UHR)</strong> (see dataset details <a href="https://github.com/Magdoll/cDNA_Cupcake/wiki/Iso-Seq-Public-Datasets#4-universal-human-reference-rna-uhrr-2021-release">here</a>). For convenience, we have only selected those in chromosome 22. 
 This small dataset can be used to test SQANTI3 and/or to follow the 
@@ -1226,6 +1222,12 @@ This small dataset can be used to test SQANTI3 and/or to follow the
           
 <script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
         
       </main>
       
@@ -1256,7 +1258,7 @@ This small dataset can be used to test SQANTI3 and/or to follow the
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
