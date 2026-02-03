@@ -24,7 +24,7 @@ def test_kallisto():
     result = run_command_test(command)
     assert result.returncode != 127, f"Kallisto command not found: {result.stderr}"
     assert result.returncode == 0, f"Kallisto failed to execute properly: {result.stderr}"
-    expected_version = "0.48.0"  # Modify this as per your required version
+    expected_version = "0.51.1"  # Modify this as per your required version
     if expected_version not in result.stdout:
         warnings.warn(f"Expected Kallisto version {expected_version}, but got: {result.stdout}")
 

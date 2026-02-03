@@ -14,7 +14,7 @@ from src.qc_computations import classify_fsm, full_length_quantification, proces
 from src.qc_pipeline import run
 from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes 
 from src.qc_output import (
-    cleanup, generate_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
+    cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
 
 # TODO: Create a special logging for the parallelization, to handle the individual logs of the splits into  their own files
@@ -225,3 +225,8 @@ def combine_split_runs(args, split_dirs):
 
     if args.report != 'skip':
         generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
+        
+# Run TUSCO benchmarking report if requested
+    if hasattr(args, 'tusco') and args.tusco:
+        # Pass both sample GTF (corrected) and reference GTF for IGV-like plots
+        generate_tusco_report(args.tusco, outputClassPath, corrGTF, args.refGTF)
