@@ -1,0 +1,2366 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/5.5/Running-SQANTI3-filter/">
+      
+      
+        <link rel="prev" href="../Running-SQANTI3-Quality-Control/">
+      
+      
+        <link rel="next" href="../Running-SQANTI3-from-the-wrapper/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Running SQANTI3 filter - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#table-of-contents" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Running SQANTI3 filter
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Dependencies-and-installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dependencies and installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Home/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction to SQANTI3
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../IsoAnnotLite/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  IsoAnnotLite
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI BUGSI
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 Quality Control
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 filter
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 from the wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 rescue
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI-reads
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 isoform classification: categories and subcategories
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 memory requeriments and paralellization
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Sqanti3-wrapper-script/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sqanti3 wrapper script
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Video tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Understanding the output of SQANTI3 QC
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Version-history/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../_Sidebar/" class="md-tabs__link">
+        
+  
+  
+    
+  
+   Sidebar
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Home/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI BUGSI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-filter-removing-artifacts-using-the-sqanti3-output-and-user-defined-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules filter: removing artifacts using the SQANTI3 output and user-defined rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules filter: removing artifacts using the SQANTI3 output and user-defined rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-the-rules-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the rules filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#making-your-own-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Making your own filter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Making your own filter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-rules-and-requisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defining rules and requisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-defined-rules-json-file-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User-defined rules (JSON file) example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-filter-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules filter output
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-learning-filter-removing-artifacts-using-a-random-forest-classifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning filter: removing artifacts using a random forest classifier
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Machine learning filter: removing artifacts using a random forest classifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-the-machine-learning-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the machine learning filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#true-positive-tp-and-true-negative-tn-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        True Positive (TP) and True Negative (TN) sets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#partitioning-of-the-training-data-model-trainingtesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partitioning of the training data (model training/testing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#probability-threshold-to-define-isoformsartifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probability threshold to define Isoforms/Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-file-columns-excluded-from-the-ml-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification file columns excluded from the ML filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excluding-additional-data-columns-from-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Excluding additional data columns from the filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intra-priming-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intra-priming filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#forcing-the-removalretention-of-specific-isoform-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forcing the removal/retention of specific isoform groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions-to-running-the-sqanti3-ml-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions to running the SQANTI3 ML filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti-ml-filter-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI ML filter output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI ML filter output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-related-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input-related files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-related-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model-related files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-set-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test set files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inclusion-list-and-filtering-of-sqanti-qc-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inclusion list and filtering of SQANTI QC output files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 isoform classification: categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 memory requeriments and paralellization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Sqanti3-wrapper-script/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sqanti3 wrapper script
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../_Sidebar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+     Sidebar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of contents:
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-filter-removing-artifacts-using-the-sqanti3-output-and-user-defined-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules filter: removing artifacts using the SQANTI3 output and user-defined rules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rules filter: removing artifacts using the SQANTI3 output and user-defined rules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-the-rules-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the rules filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#making-your-own-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Making your own filter
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Making your own filter">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#defining-rules-and-requisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Defining rules and requisites
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-defined-rules-json-file-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User-defined rules (JSON file) example
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rules-filter-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules filter output
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#machine-learning-filter-removing-artifacts-using-a-random-forest-classifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Machine learning filter: removing artifacts using a random forest classifier
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Machine learning filter: removing artifacts using a random forest classifier">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-the-machine-learning-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running the machine learning filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#true-positive-tp-and-true-negative-tn-sets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        True Positive (TP) and True Negative (TN) sets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#partitioning-of-the-training-data-model-trainingtesting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Partitioning of the training data (model training/testing)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#probability-threshold-to-define-isoformsartifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Probability threshold to define Isoforms/Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-file-columns-excluded-from-the-ml-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification file columns excluded from the ML filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excluding-additional-data-columns-from-the-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Excluding additional data columns from the filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#intra-priming-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intra-priming filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#forcing-the-removalretention-of-specific-isoform-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Forcing the removal/retention of specific isoform groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions-to-running-the-sqanti3-ml-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exceptions to running the SQANTI3 ML filter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sqanti-ml-filter-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQANTI ML filter output
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SQANTI ML filter output">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input-related-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input-related files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-related-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model-related files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test-set-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test set files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filter-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filter report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification file
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inclusion-list-and-filtering-of-sqanti-qc-output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inclusion list and filtering of SQANTI QC output files
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>Running SQANTI3 filter</h1>
+
+<h3 id="table-of-contents">Table of contents:</h3>
+<ul>
+<li>
+<p><a href="#rules">Rules filter: removing artifacts using the SQANTI3 output and user-defined rules</a></p>
+<ul>
+<li><a href="#running_rules">Running the rules filter</a></li>
+<li><a href="#default_filter">Default filter</a></li>
+<li><a href="#build_json">Making your own filter</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#rulesout">Rules filter output</a></p>
+</li>
+<li>
+<p><a href="#ml">Machine learning filter: removing artifacts using a random forest classifier</a></p>
+<ul>
+<li><a href="#runml">Running the machine learning filter</a></li>
+<li><a href="#sets">True Positive (TP) and True Negative (TN) sets</a></li>
+<li><a href="#partition">Partitioning of the training data (model training/testing)</a></li>
+<li><a href="#prob">Probability threshold to define Isoforms/Artifacts</a></li>
+<li><a href="#cols">Classification file columns excluded from the ML filter</a></li>
+<li><a href="#colrem">Excluding additional data columns from the filter</a></li>
+<li><a href="#intraprim">Intra-priming filter</a></li>
+<li><a href="#retain">Forcing the removal/retention of specific isoform groups</a></li>
+<li><a href="#except">Exceptions to running the SQANTI3 ML filter</a></li>
+</ul>
+</li>
+<li>
+<p><a href="#mlout">Machine learning filter output</a></p>
+<ul>
+<li><a href="#input">Input-related files</a></li>
+<li><a href="#model">Model-related files</a></li>
+<li><a href="#test">Test set files</a></li>
+<li><a href="#reportml">Filter report</a></li>
+<li><a href="#classifml">Classification file</a></li>
+<li><a href="#inclusionml">Inclusion list and filtering of SQANTI QC output files</a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<p><a name="rules"/></p>
+<h2 id="rules-filter-removing-artifacts-using-the-sqanti3-output-and-user-defined-rules">Rules filter: removing artifacts using the SQANTI3 output and user-defined rules</h2>
+<p></a>
+SQANTI3 filter has been reshaped to allow users to supply their own set of rules. These will be used to accept or discard an isoform based on the attributes obtained through <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control">SQANTI3 QC</a>. To define those rules, the user will need to create a <strong>JSON file</strong> specifying which SQ3 attributes and thresholds are to be used for filtering and, therefore, the properties of the transcripts that are to be included in the final transcriptome. </p>
+<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977"></p>
+<p><a name="running_rules"/></p>
+<h3 id="running-the-rules-filter">Running the rules filter</h3>
+<p></a>
+The rules filter only needs a SQANTI3 classification file to work. To run it, just execute <code>sqanti3_filter.py</code> providing the <code>rules</code> argument followed by the path to the SQANTI3 <code>*_classification.txt</code> file:</p>
+<pre><code>python sqanti3_filter.py rules --sqanti_class path/to/classification.txt 
+</code></pre>
+<p>Using the optional arguments, the script can be set up to filter several file formats (such as <strong>FASTA</strong>, <strong>GTF</strong> and <strong>BAM</strong>) and remove the isoforms that were catalogued as artifacts based on these user-defined rules. This option is designed to make it easy for users filter the files from the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC">SQANTI3 QC output</a>, enabling quick transcriptome curation.</p>
+<p>These are the arguments accepted by <code>sqanti3_filter.py rules</code>:</p>
+<pre><code>usage: sqanti3_filter.py rules [-h] --sqanti_class SQANTI_CLASS [--isoAnnotGFF3 ISOANNOTGFF3] [--filter_isoforms FILTER_ISOFORMS] [--filter_gtf FILTER_GTF] [--filter_sam FILTER_SAM]
+                               [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER]
+</code></pre>
+<details><summary> Arguments description</summary>
+
+
+<pre><code>Rules filter selected
+
+options:
+  -h, --help            show this help message and exit
+
+Required arguments:
+  --sqanti_class SQANTI_CLASS
+                        SQANTI3 QC classification file.
+
+Input options:
+  --isoAnnotGFF3 ISOANNOTGFF3
+                        isoAnnotLite GFF3 file to be filtered
+  --filter_isoforms FILTER_ISOFORMS
+                        fasta/fastq isoform file to be filtered
+  --filter_gtf FILTER_GTF
+                        GTF file to be filtered
+  --filter_sam FILTER_SAM
+                        SAM alignment of the input fasta/fastq
+  --filter_faa FILTER_FAA
+                        ORF prediction faa file to be filtered by SQANTI3
+
+Output options:
+  -o OUTPUT, --output OUTPUT
+                        Prefix for output files.
+  -d DIR, --dir DIR     Directory for output files. Default: ./sqanti3_results
+  --skip_report         Skip creation of a report about the filtering
+
+Filtering options:
+  -e, --filter_mono_exonic
+                        All mono-exonic transcripts are automatically filtered
+
+Extra options:
+  -v, --version         Display program version number.
+  -c CPUS, --cpus CPUS  Number of CPUs to use. Default: 4
+  -l {ERROR,WARNING,INFO,DEBUG}, --log_level {ERROR,WARNING,INFO,DEBUG}
+                        Set the logging level.
+                        Default: INFO
+
+Rules specific options:
+  -j JSON_FILTER, --json_filter JSON_FILTER
+                        JSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept.
+                        Default: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+</code></pre>
+
+</details>
+<p><br></p>
+<p><a name="default_filter"/></p>
+<h3 id="default-filter">Default filter</h3>
+<p></a></p>
+<p>Following the same criteria as in previous versions of SQANTI3, we hereby provide a default set of rules for the filter. These are equivalent to running the old <code>sqanti3_RulesFilter.py</code> script. However, we strongly advise users to closely inspect the properties of their transcriptome and define their own filter based on the results obtained during QC. Keep in mind as well that any isoform that has a missing value in any of the conditions of a rule will be considered an artifact. This means that <code>NA</code> the likes will be treated as fails. </p>
+<p>When no JSON file is provided to the rules filter, this is the set of filtering rules used by default:</p>
+<ul>
+<li>If a transcript is a <strong>FSM</strong>, it is kept unless the 3' end is unreliable because of a possible intrapriming event. <ul>
+<li>We consider that an isoform is likely to be an artifact of intrapriming if in the 20bp downstream the annotated Transcription Terminating Site (TTS) there are 12 or more adenines at the genomic level. That means that following the TTS there is a stretch of nucleotides with at least a 60% A's. </li>
+</ul>
+</li>
+<li>If a transcript is <strong>not a FSM</strong>, it is kept only if all of the criteria below are met: <ul>
+<li>(1) 3' end is not an intrapriming artifact.</li>
+<li>(2) does not have a junction that is labeled as RT-Switching.</li>
+<li>(3) all junctions are either canonical or have short read coverage above the <code>-c</code> threshold.</li>
+</ul>
+</li>
+</ul>
+<p>This filter is supplied in the <code>utilities/filter/filter_default.json</code> file:</p>
+<pre><code class="language-json">{
+    &quot;full-splice_match&quot;: [
+        {
+            &quot;perc_A_downstream_TTS&quot;:[0,59]
+        }
+    ],
+    &quot;rest&quot;: [
+        {
+            &quot;perc_A_downstream_TTS&quot;:[0,59],
+            &quot;RTS_stage&quot;:&quot;FALSE&quot;,
+            &quot;all_canonical&quot;:&quot;canonical&quot;
+        },
+        {   
+            &quot;perc_A_downstream_TTS&quot;:[0,59],
+            &quot;RTS_stage&quot;:&quot;FALSE&quot;,
+            &quot;min_cov&quot;:3
+        }
+     ]
+}
+</code></pre>
+<p><a name="build_json"/> </p>
+<h3 id="making-your-own-filter">Making your own filter</h3>
+<p></a>
+As of SQANTI3 version 5.0, it is possible to supply a user-defined filter including as many rules as desired. To do it, the user needs to create a JSON file defining which characteristics make an isoform reliable. </p>
+<h4 id="defining-rules-and-requisites">Defining rules and requisites</h4>
+<p>Specifically, for each structural category, the user should build an array of objects (or rules). A <strong>rule</strong> is made of one or more <strong>requisites</strong>, all of which must be fulfilled for an entry to be considered a true <strong>Isoform</strong> (they will be evaluated as AND in terms of logical operators). If different rules (i.e. sets of requisites) are defined for the same structural category, they will be treated independently of one another. In that case, to pass the filter, transcripts will need to pass at least one of these independent rules (they will be evaluated as OR in terms of logical operators). </p>
+<p>Of note, it is also possible to set rules for the rest of structural categories, i.e. those rules will be applied to any structural category for which there isn't a rule established. In that case, users will need to define the rule using the category name <code>rest</code>.</p>
+<p>Here is a basic scheme of how to define rules and the list of requisites that make up a rule in a JSON file:</p>
+<pre><code class="language-json">{
+    &quot;structural_category&quot;: [
+        {
+            &quot;numeric_column_name&quot;:[0,100]
+            &quot;character_column_name&quot;: [&quot;accepted_value1&quot;, &quot;accepted_value2&quot;]
+        }
+     ]
+}
+</code></pre>
+<p>Rules can be set for any numeric or character column in the classification file:
+- <strong>Numeric values</strong>: in this case, it is possible to define an interval (<code>[X,Y]</code>) or set just the lower limit (<code>X</code>). Please, take into account that the <strong>limit values will be included</strong>. 
+- <strong>Character and logical columns</strong>: such as <code>subcategory</code>, <code>RTS_stage</code> or <code>all_canonical</code>. In this case, users can simply establish which terms will be accepted. Of note, users may want to accept several of the values in the column (for instance, several subcategories). If so, the requisite can be defined as an array, and the filter will keep the entries if any of those values are present in the specified column.</p>
+<h4 id="user-defined-rules-json-file-example">User-defined rules (JSON file) example</h4>
+<p>As an example, let's say that we want to define a custom filter that will keep only isoforms that pass these rules:</p>
+<ul>
+<li><strong>FSM</strong>: Keep if the isoform is:<ul>
+<li>NOT a potential intrapriming product (less than 60% in the <code>perc_A_downstream_TTS</code> column).</li>
+</ul>
+</li>
+<li><strong>ISM</strong>: Keep if:<ul>
+<li>It is larger than 2kb and shorter than 15kb <strong>AND</strong></li>
+<li>It is catalogued within the "3prime_fragment", "5prime_fragment" or "internal_fragment" subcategories.</li>
+</ul>
+</li>
+<li><strong>NIC</strong>: Keep if:<ul>
+<li>All the splice junctions are canonical OR covered at least by 10 short reads.</li>
+</ul>
+</li>
+<li><strong>NNC</strong>: Keep if:<ul>
+<li>All the splice junctions are canonical OR covered at least by 10 short reads <strong>AND</strong></li>
+<li>The absolute distance to the closest annotated TSS and TTS is 50bp or less.</li>
+</ul>
+</li>
+<li><strong>Rest of the categories</strong>: Keep if :<ul>
+<li>All the splice junctions are canonical and they are not suspicious of being an RT-Switching (RTS) artifact.</li>
+<li>It is a coding transcript.</li>
+<li>It is not an intrapriming product.</li>
+<li>It is not a mono-exon transcript.</li>
+</ul>
+</li>
+</ul>
+<p>The JSON file for that precise filter will look like this:</p>
+<pre><code class="language-json">{
+    &quot;full-splice_match&quot;: [
+        {
+            &quot;perc_A_downstream_TTS&quot;:[0,59]
+        }
+    ],
+    &quot;incomplete-splice_match&quot;:[
+        {
+            &quot;length&quot;:[2001,14999],
+            &quot;subcategory&quot;: [&quot;3prime_fragment&quot;, &quot;5prime_fragment&quot;, &quot;internal_fragment&quot;]
+        }
+    ],
+    &quot;novel_in_catalog&quot;:[
+        {
+            &quot;all_canonical&quot;: &quot;canonical&quot;
+        },
+        {
+            &quot;min_cov&quot;: 10
+        }
+    ],
+    &quot;novel_not_in_catalog&quot;:[
+        {
+            &quot;all_canonical&quot;: &quot;canonical&quot;,
+            &quot;diff_to_gene_TSS&quot;:[-50,50],
+            &quot;diff_to_gene_TTS&quot;: [-50,50]            
+        },
+        {
+            &quot;min_cov&quot;: 10,
+            &quot;diff_to_gene_TSS&quot;:[-50,50],
+            &quot;diff_to_gene_TTS&quot;: [-50,50] 
+        }
+    ],
+    &quot;rest&quot;: [
+        {
+            &quot;RTS_stage&quot;:&quot;FALSE&quot;,
+            &quot;all_canonical&quot;:&quot;canonical&quot;,
+            &quot;coding&quot;: &quot;coding&quot;,
+            &quot;perc_A_downstream_TTS&quot;:[0,59],
+            &quot;exons&quot;: 2
+        }
+     ]
+}
+
+</code></pre>
+<p><a name="rulesout"/></p>
+<h2 id="rules-filter-output">Rules filter output</h2>
+<p></a>
+The main SQANTI rules filter output files are:</p>
+<ul>
+<li><code>*_RulesFilter_result_classification.txt</code>: New classification file with an extra column called "filter_result" that will classify all the entries as <em>Isoform</em> or <em>Artifact</em>.</li>
+<li><code>*_inclusion-list.txt</code>: Text file with the IDs of the isoforms that passed the filter.</li>
+<li><code>*_filtering_reasons.txt</code>: TSV file with 3 columns:<ul>
+<li>(1) Isoform ID of the isoform that was. filtered out</li>
+<li>(2) Structural Category</li>
+<li>(3) Reason why the isoform was discarded as an artifact. If an isoform is catalogued as <em>Artifact</em> because it doesn't fulfill several rules, there will be multiple lines in this file regarding that isoform.</li>
+</ul>
+</li>
+<li><code>*_SQANTI3_filter_report.pdf</code>: A PDF report with some plots describing the performance of the filtering.</li>
+</ul>
+<p><a name="ml"/></p>
+<h2 id="machine-learning-filter-removing-artifacts-using-a-random-forest-classifier">Machine learning filter: removing artifacts using a random forest classifier</h2>
+<p></a>
+SQANTI3 incorporates an automated filter based on a <strong>random forest classifier</strong>, 
+which is designed to discriminate potential artifacts from true isoforms
+without the need for user-defined rules or manually-set thresholds. </p>
+<p>Briefly, this classifier learns high and low quality attributes from a True 
+Positive (TP) and True Negative (TN) transcript set, building a model that 
+discriminates artifacts and isoforms based on TN and TP properties. 
+The filter returns a modified  version of the <code>*_classification.txt</code> file (named <code>*_MLresult_classification.txt</code>). The new table will include a <code>filter_result</code> 
+column with the label <code>Isoform</code> or <code>Artifact</code>, which will be the result of the 
+random forest classifier.</p>
+<p>⚠️ <strong>Disclaimer:</strong> we hereby provide instructions to run the filter and a comprehensive 
+description of its parameters. While we have included recommendations on how to best tune 
+them to obtain optimal results, users are encouraged to try several configurations of 
+the filter to find the best way to run it for their particular dataset. ⚠️</p>
+<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904"></p>
+<p><a name="runml"/></p>
+<h3 id="running-the-machine-learning-filter">Running the machine learning filter</h3>
+<p></a>
+Similarly to the rules filter, the machine learning filter (ML filter) can be 
+run using the <code>sqanti3_filter.py</code> script by providing the <code>ML</code> argument followed by
+the path to the SQANTI <code>*_classification.txt</code> file (output by <code>sqanti3_qc.py</code>):</p>
+<pre><code>python sqanti3_filter.py ml path/to/classification.txt 
+
+</code></pre>
+<p>A brief <strong>tutorial</strong> on how to run the SQANTI3 ML filter for an example dataset can 
+be found <a href="https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset">here</a>.</p>
+<p>These are the parameters and arguments accepted by <code>sqanti3_filter.py ML</code>:</p>
+<pre><code class="language-bash">usage: sqanti3_filter.py ml [-h] --sqanti_class SQANTI_CLASS [--isoAnnotGFF3 ISOANNOTGFF3]
+                            [--filter_isoforms FILTER_ISOFORMS] [--filter_gtf FILTER_GTF]
+                            [--filter_sam FILTER_SAM] [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR]
+                            [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}]
+                            [-t PERCENT_TRAINING] [-p TP] [-n TN] [-j THRESHOLD] [-f] [--intermediate_files]
+                            [-r REMOVE_COLUMNS] [-z MAX_CLASS_SIZE] [-i INTRAPRIMING]
+</code></pre>
+<details><summary> Arguments description</summary>
+
+
+<pre><code class="language-bash">ML filter selected
+
+options:
+  -h, --help            show this help message and exit
+
+Required arguments:
+  --sqanti_class SQANTI_CLASS
+                        SQANTI3 QC classification file.
+
+Input options:
+  --isoAnnotGFF3 ISOANNOTGFF3
+                        isoAnnotLite GFF3 file to be filtered
+  --filter_isoforms FILTER_ISOFORMS
+                        fasta/fastq isoform file to be filtered
+  --filter_gtf FILTER_GTF
+                        GTF file to be filtered
+  --filter_sam FILTER_SAM
+                        SAM alignment of the input fasta/fastq
+  --filter_faa FILTER_FAA
+                        ORF prediction faa file to be filtered by SQANTI3
+
+Output options:
+  -o OUTPUT, --output OUTPUT
+                        Prefix for output files.
+  -d DIR, --dir DIR     Directory for output files. Default: ./sqanti3_results
+  --skip_report         Skip creation of a report about the filtering
+
+Filtering options:
+  -e, --filter_mono_exonic
+                        All mono-exonic transcripts are automatically filtered
+
+Extra options:
+  -v, --version         Display program version number.
+  -c CPUS, --cpus CPUS  Number of CPUs to use. Default: 4
+  -l {ERROR,WARNING,INFO,DEBUG}, --log_level {ERROR,WARNING,INFO,DEBUG}
+                        Set the logging level.
+                        Default: INFO
+
+Machine Learning specific options:
+  -t PERCENT_TRAINING, --percent_training PERCENT_TRAINING
+                        Proportion of the data that goes to training (parameter p of the function createDataPartition).                     
+                        Default: 0.8
+  -p TP, --TP TP        Path to file containing the list of the TP transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.
+  -n TN, --TN TN        Path to file containing the list of the TN transcripts, one ID by line, no header (optional). If not supplied, it will be generated from input data.
+  -j THRESHOLD, --threshold THRESHOLD
+                        Machine Learning probability threshold to classify transcripts as positive isoforms.         
+                        Default: 0.7
+  -f, --force_fsm_in    Forces retaining FMS transcripts regardless of ML filter result (FSM are threfore automatically classified as isoforms).
+  --intermediate_files  Outputs ML filter intermediate files.
+  -r REMOVE_COLUMNS, --remove_columns REMOVE_COLUMNS
+                        Path to single-column file (no header) containing the names of the columns in SQ3's classification.txt file that are to be excluded during random forest training (optional).
+  -z MAX_CLASS_SIZE, --max_class_size MAX_CLASS_SIZE
+                        Maximum number of isoforms to include in True Positive and True Negative sets. TP and TN sets will be downsized to this value if they are larger.
+                        Default: 3000
+  -i INTRAPRIMING, --intrapriming INTRAPRIMING
+                        Adenine percentage at genomic 3' end to flag an isoform as intra-priming. Default: 60
+</code></pre>
+
+</details>
+<p><br></p>
+<p>We next provide a detailed description of each of the ML filter parameters in order
+to help users understand how to best apply it to their own data.</p>
+<p><a name="sets"/></p>
+<h3 id="true-positive-tp-and-true-negative-tn-sets">True Positive (TP) and True Negative (TN) sets</h3>
+<p></a>
+As stated above, the random forest classifier model needs to be trained on a subset
+of isoforms from the transcriptome. This will include a set of <strong>True Positive isoforms</strong>
+-that is, isoforms that are reliable enough for the classifier to learn the properties 
+of a <em>real isoform</em>- and a set of <strong>True Negative isoforms</strong> -that is, isoforms that
+can be considered low-quality or false, from which the classifier will learn what
+constitutes an <em>artifact</em> or false-positive isoform-.</p>
+<p>Although the ML filter includes built-in selection of training data from specific 
+SQANTI categories, it also accepts <strong>user-defined TN and TP sets</strong> (<code>--TN [-n]</code> 
+and <code>--TP [-p]</code> parameters, respectively). These should be provided as 
+single-column files (with no header) containing the IDs of the selected isoforms, 
+and will be used to train and test the random forest classifier.</p>
+<p>If not provided, the SQANTI ML filter will use the following as 
+<strong>built-in TP and TN sets</strong> by default:</p>
+<ul>
+<li><strong>TP:</strong> all <strong>Reference Match (RM)</strong> isoforms in the transcriptome (multi-exon only). 
+RM are an FSM subcategory in which the TSS and TTS of the isoform are within +/-50bp
+of the TSS/TTS of the reference associated transcript (see the category description page
+for details). If there are less than 250 RM isoforms, all FSMs will be taken as TP.</li>
+<li><strong>TN:</strong> all <strong>Novel Not in Catalog (NNC)</strong> isoforms that have at least one non-canonical
+junction (multi-exon only). If there are less than 250 isoforms in this group (normally
+because there are not enough non-canonical junctions in the transcriptome), all NNC 
+isoforms will be taken as TN.</li>
+</ul>
+<p>Note that both user-defined and built-in training data will be subset if the number of
+isoforms in the TP or TN isoform sets is larger than the other. By default, 
+SQANTI3 will <strong>downsize the larger set</strong> to match the smaller of the two sizes.
+Downsizing is performed by random sampling. When using the built-in option, and
+given this random sampling step, <strong>TP and TN lists will be written out as part of the SQANTI ML filter output</strong>.</p>
+<p>Users may change the <code>--max_class_size [-z]</code> parameter to set a maximum
+number of isoforms to include in the TP and TN sets. By default, TP and TN lists
+will be <strong>downsized to 3000 transcripts</strong> if they are larger than this, 
+no matter if they were user-defined or generated internally.</p>
+<p><a name="partition"/></p>
+<h3 id="partitioning-of-the-training-data-model-trainingtesting">Partitioning of the training data (model training/testing)</h3>
+<p></a>
+TP and TN isoform sets need to be split into <em>training</em> and <em>test</em> data to correctly
+generate the random forest model. Using the <code>--percent_training</code> or <code>-t</code> parameter,
+users can specify the proportion of the data that is used for training. By default,
+<strong>80% of the isoforms will be used for training</strong> (which is equivalent to supplying 
+<code>-t 0.8</code>). The remaining 20% will be used to test the model.</p>
+<p>The ML filter uses functions from the <code>caret</code> R package to build and test the random
+forest classifier. Briefly, the model training/test includes the following internal 
+steps:</p>
+<ol>
+<li>Data partitioning via the <code>createDataPartition()</code> function.</li>
+<li>Cross-validation (10x) using the <code>trainControl()</code> function.</li>
+<li>Model training using the <code>train()</code> function.</li>
+<li>Testing of the model using the <code>predict()</code> function from the <code>stats</code> package 
+in base R.</li>
+<li>Output model statistics using several other functions from the <code>caret</code> package 
+(see the ML filter output section for details).</li>
+</ol>
+<p><strong>Warning:</strong> after training, the model will be stored as an <code>.RData</code> object in 
+the specified output folder. If the filter is re-run on the same directory, SQANTI
+will detect that a model already exists, skipping the training step and
+<strong>applying the extant model</strong> to perform the Isoform/Artifact classification on the input data. 
+This is useful on occasions where a user wants to apply an already-generated 
+model to a different transcriptome; however, if you wish to train a new model, you will need to <em>delete/move/rename the previous model object</em>.</p>
+<p><a name="prob"/></p>
+<h3 id="probability-threshold-to-define-isoformsartifacts">Probability threshold to define Isoforms/Artifacts</h3>
+<p></a>
+Ultimately, flagging transcripts as Isoforms or Artifacts is based on the 
+random forest <strong>probability</strong> to correctly classify a transcript into either
+group. These probabilities are included in the <code>POS_MLprob</code> and <code>NEG_MLprob</code> 
+columns of the output <code>_MLresult_classification.txt</code> file. Intuitively:</p>
+<ul>
+<li><code>POS_MLprob</code> is the probability of classifying the transcript as an Isoform.</li>
+<li><code>NEG_MLprob</code> is the probability of classifying the transcript as an Artifact, and
+is equivalent to <code>1 - POS_MLprob</code>.</li>
+</ul>
+<p>The SQANTI ML filter will assign the Artifact and Isoform labels based on a 
+<strong>probability threshold parameter</strong> supplied via the <code>--threshold</code> or <code>-j</code>
+argument. By default, the filter is more stringent on the Isoform condition than
+it is on the Artifact condition, that is: by default, <strong>transcripts will be considered 
+isoforms when <code>POS_MLprob</code> is larger than 0.7</strong>. </p>
+<p>This results in some artifacts having <code>POS_MLprob &gt; 0.5</code> (which can be 
+counter-intuitive). Of course, in this scenario, the filter will exclude more 
+transcripts than when using the usual <code>POS_MLprob &gt; NEG_MLprob</code> approach. 
+However, users may reproduce this lenient filter by lowering the threshold to 0.5.</p>
+<p><a name="cols"/></p>
+<h3 id="classification-file-columns-excluded-from-the-ml-filter">Classification file columns excluded from the ML filter</h3>
+<p></a>
+Due to their lack of importance for artifact definition (or to prevent them from
+having unwanted effects on the filtering), the following columns are removed 
+from the classification table prior to running the SQANTI ML filter:</p>
+<ul>
+<li>Chromosome and strand info (<code>chrom</code>, <code>strand</code>)</li>
+<li>Reference gene/transcript info (<code>associated_gene</code>, <code>associated_transcript</code>)</li>
+<li>Structural information about the reference or the transcript (<code>ref_length</code>,
+<code>ref_exons</code>, <code>ORF_length</code>, <code>CDS_length</code>, <code>CDS_start</code>, <code>CDS_end</code>, <code>CDS_genomic_start</code>,
+<code>CDS_genomic_end</code>).</li>
+<li>Sequence information (<code>seq_A_downstream_TTS</code>, <code>ORF_seq</code>).</li>
+<li>SQANTI category (<code>structural_category</code>, <code>subcategory</code>).</li>
+</ul>
+<p>Moreover, the following columns are excluded when TP and TN sets are built by
+the ML filter, instead of supplied by the user:
+- Redundant junction information (<code>all_canonical</code>) to prevent overfitting due to NNC non-canonical
+or NNC transcripts being used as a TN set.
+- Redundant distance to TSS/TTS information (all <code>dist_*</code> columns in the classification
+file) to prevent bias towards reference-similar isoforms when RM are used as a TP set.</p>
+<p><a name="colrem"/></p>
+<h3 id="excluding-additional-data-columns-from-the-filter">Excluding additional data columns from the filter</h3>
+<p></a>
+The SQANTI ML filter incorporates the option to exclude columns from the 
+<em>_classification.txt</em> file from model training to prevent filtering based on 
+them. These should be provided as a single-column file including the column names
+exactly as they are named in the classification file. A path to this file should
+then be supplied via the <code>--remove_columns</code> or <code>-r</code> argument.</p>
+<p>This is particularly useful to prevent <strong>overfitting</strong> during model training. 
+In particular, there may be situations in which users wish to define TP and TN 
+sets based on the values of specific SQ3 columns. We recommend that these are, 
+in turn, excluded from the ML filter to prevent them from gaining too much 
+importance during Isoform/Artifact classification. </p>
+<p><em>Warning: we always encourage testing several ML filter configurations and TP/TN sets 
+before making a final decision on which are the artifacts in your transcriptome.</em></p>
+<p><a name="intraprim"/></p>
+<h3 id="intra-priming-filter">Intra-priming filter</h3>
+<p></a>
+The ML filter script in SQANTI3 includes a simple <strong>threshold-based filter</strong> to prevent
+potential <strong>intra-priming artifacts</strong> from remaining in the transcriptome, which is
+not specifically considered by the ML filter. Still, note that the <code>perc_A_downstream_TTS</code>
+column, which is used to flag transcripts as potentially resulting from intra-priming,
+is considered during random forest training.</p>
+<p>To apply it, users may supply the <strong>maximum percentage of adenines</strong> ("A" nucleotides)
+that is to be allowed in the genome sequence region immediately following the end of the
+transcript (i.e. the TTS). This can be provided via the <code>--intrapriming</code> or <code>-i</code> 
+argument, resulting in <code>perc_A_downstream_TTS &gt; i</code> isoforms being flagged as 
+intra-priming artifacts. By default, transcripts containing more than 60% A's at the genomic
+3' end will be flagged.</p>
+<p><a name="retain"/></p>
+<h3 id="forcing-the-removalretention-of-specific-isoform-groups">Forcing the removal/retention of specific isoform groups</h3>
+<p></a>
+1. <strong>Full-splice match (FSM) transcripts</strong> can be excluded from the ML filter and
+therefore retained by providing the <code>--force_fsm_in</code> or <code>-f</code> argument. By default,
+FSM will be run through the filter along with the isoforms from the rest of the 
+structural categories.</p>
+<ol>
+<li>All <strong>mono-exonic transcripts</strong> can be automatically removed by providing the 
+<code>--filter_mono_exonic</code> or <code>-e</code> parameter. Note that mono-exon transcripts will not
+be evaluated by the ML filter (only by the intra-priming filter).</li>
+</ol>
+<p><a name="except"/></p>
+<h3 id="exceptions-to-running-the-sqanti3-ml-filter">Exceptions to running the SQANTI3 ML filter</h3>
+<p></a>
+The random forest classifier <strong>cannot/will not</strong> be run in any of the following
+scenarios:</p>
+<ul>
+<li>All transcripts in the long read-defined transcriptome are classified as
+mono-exon. The ML filter can only be applied to multi-exon transcripts.</li>
+<li>One (or both) of the user-defined TP and TN sets have less than 40 isoforms.</li>
+<li>One of the default TP and TN categories has less than 40 isoforms. 
+This applies when no user-defined TP and TN sets are provided.</li>
+</ul>
+<p>However, even in scenarios where no ML-based filtering can be applied, the
+<strong>intra-primming filter</strong> will still be applied to all input transcripts.</p>
+<p><a name="mlout"/></p>
+<h2 id="sqanti-ml-filter-output">SQANTI ML filter output</h2>
+<p></a></p>
+<p>The SQANTI ML filter output files are written to the path specified using the
+<code>--dir</code> or <code>-d</code> argument, also appending the prefix provided via the <code>--output</code> 
+or <code>-o</code> argument.</p>
+<p>An example of the ML filter output can be found under the <code>example/MLfilter_output</code> folder, which is included in
+the main SQANTI3 directory (see our <a href="https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset">example dataset tutorial</a> for details).</p>
+<p>The following output files are generated after running the filter:</p>
+<p><a name="input"/></p>
+<h3 id="input-related-files">Input-related files</h3>
+<p></a>
+- <code>params.txt</code>: two-column file including the name of the argument and the
+value that was used to run the filter.
+- <code>TP_list.txt</code> and <code>TN_list.txt</code>: a single-column text file including the 
+IDs of the isoforms used as TP and TN (generated only when no user-defined sets
+were provided).</p>
+<p>The supplied prefix will be appended to the filenames above.</p>
+<p><a name="model"/></p>
+<h3 id="model-related-files">Model-related files</h3>
+<p></a>
+- <code>randomforest.RData</code>: R object containing the trained random forest model.
+- <code>classifier_variagble-importance_table.txt</code>: two-column text file including the
+names of the variables that were used for classification and a numeric value indicating
+their importance in the random forest classifier.
+- <code>intermediate_*_MLinput_table.txt</code>: training-ready classification table. SQANTI
+ML filter performs a series of modifications of the classification table to 
+enable running of the training/test steps. These include handling of <code>NAs</code>, value
+formatting, column removal, etc. This file will only be output if the <code>--intermediate_files</code>
+argument is supplied. Note that this file is <strong>NOT intented for downstream anaylsis</strong>.</p>
+<p><a name="test"/></p>
+<h3 id="test-set-files">Test set files</h3>
+<p></a>
+All include the <code>testSet_</code> prefix:</p>
+<ul>
+<li><code>stats.txt</code>: all statistics for the model testing.</li>
+<li><code>ROC_curve.pdf</code>.</li>
+<li><code>confusionMatrix.txt</code>: confusion matrix obtained after running the trained model
+on the test set.</li>
+<li><code>summary.txt</code>: summary statistics of the model testing, namely sensitivity,
+specificity and AUROC.</li>
+</ul>
+<p><a name="reportml"/></p>
+<h3 id="filter-report">Filter report</h3>
+<p></a>
+The ML filter automatically returns a PDF report. This includes filter summary tables and plots as well as 
+one diagnostic plot per variable used by the random forest classifier. This allows an evaluation of the behaviour of 
+transcripts flagged as isoforms and artifacts in the light of each of the variables that were considered 
+relevant to discriminate both.</p>
+<p>Supplying the <code>--skip_report</code> flag will deactivate the report.</p>
+<p><a name="classifml"/></p>
+<h3 id="classification-file">Classification file</h3>
+<p></a>
+The <code>MLresult_classification.txt</code> constitutes a modified classification file 
+including the results of the ML and intra-priming filters. The following
+columns are added:</p>
+<ul>
+<li><code>POS_MLprob</code> and <code>NEG_MLprob</code>, described above (see probability threshold section). </li>
+<li><code>ML_classifier</code> column, in which <code>ML_classifier == Positive</code> corresponds to transcripts
+in which <code>POS_MLprob &gt; t</code> (therefore flagged as Isoforms by the ML filter).</li>
+<li><code>intra_priming</code> column, in which <code>intrapriming == TRUE</code> corresponds to transcripts
+flagged as intra-priming atrifacts.</li>
+<li><code>filter_result</code> column, including the combined result for the ML and intra-priming
+filters. An isoform will be <code>filter_result == Isoform</code> if it passed both the
+ML and intra-priming filters. </li>
+</ul>
+<p>In the specific case of mono-exonic transcripts, passing the intra-priming filter 
+will be enough to be considered an isoform, as long as they are not removed using 
+the <code>-e</code> argument. Similarly, all FSM transcripts will be flagged as true isoforms if
+the <code>-f</code> option is provided.</p>
+<p><a name="inclusionml"/></p>
+<h3 id="inclusion-list-and-filtering-of-sqanti-qc-output-files">Inclusion list and filtering of SQANTI QC output files</h3>
+<p></a>
+Finally, <code>inclusion-list.txt</code> is a single-column file including the IDs of the transcripts 
+classified as true isoforms (i.e. flagged as <code>Isoform</code> in the <code>filter_result</code> column).
+This list will be used to provide filtered versions of supplied SQANTI QC output files. 
+Use the <code>--isoAnnotGFF3</code>, <code>--isoforms</code>, <code>--gtf</code>, <code>--faa</code> and <code>--sam</code> arguments to provide 
+each of the files you wish to obtain filtered.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

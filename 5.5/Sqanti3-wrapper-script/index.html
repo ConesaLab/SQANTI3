@@ -1,0 +1,1282 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/5.5/Sqanti3-wrapper-script/">
+      
+      
+        <link rel="prev" href="../SQANTI3-memory-requeriments-and-paralellization/">
+      
+      
+        <link rel="next" href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Sqanti3 wrapper script - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#sqanti3-filter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Sqanti3 wrapper script
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Dependencies-and-installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dependencies and installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Home/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction to SQANTI3
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../IsoAnnotLite/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  IsoAnnotLite
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI BUGSI
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 Quality Control
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-filter/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 filter
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 from the wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 rescue
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI-reads
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 isoform classification: categories and subcategories
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 memory requeriments and paralellization
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sqanti3 wrapper script
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Video tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Understanding the output of SQANTI3 QC
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Version-history/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../_Sidebar/" class="md-tabs__link">
+        
+  
+  
+    
+  
+   Sidebar
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Home/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI BUGSI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 isoform classification: categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 memory requeriments and paralellization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sqanti3 wrapper script
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../_Sidebar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+     Sidebar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<p>Sqanti3 wrapper is a tool written in bash to run a QC, filter, rescue pipeline of SQANTI3 from an automated script with a reusable config file</p>
+<p>To execute Sqanti3_wrapper, the conf file must be provided with all the paths and parameters needed to execute either QC, filter, rescue or a combination of them. Most of the parameters have a default argument: In most cases, because they point to a file that is, or will be, automatically generated by a previous step; and by default, it will execute the example provided in the repository.</p>
+<p>The arguments are classified into:
+- General arguments for two or more steps of sqanti
+- Flow control, to skip steps at will
+- Sqanti QC parameters
+- Sqanti filter parameters
+- Sqanti rescue parameters
+- Custom values for particular executions. They are usually not needed to change, but present for particular executions (such as using docker or singularity).</p>
+<ul>
+<li>General arguments</li>
+</ul>
+<p>Here you can specify the references used in the analysis, the number of cores to use, and the main parameters for the rules and ml methods of filter and rescue. By default, these values are common to the different steps in which they are available</p>
+<pre><code>reference_gtf=&quot;example/gencode.v38.basic_chr22.gtf&quot;
+reference_fasta=&quot;example/GRCh38.p13_chr22.fasta&quot;
+cpus=&quot;4&quot;
+json_for_rules=&quot;utilities/filter/filter_default.json&quot; # json file with rules for filter and rescue rules
+threshold=&quot;0.7&quot; 
+</code></pre>
+<ul>
+<li>Flow control</li>
+</ul>
+<p>QC, filter and rescue can be skiped if they have already been computed, or if not interested in filter and/or rescue, by changing the corresponding varible to true. If not skiped, filter and rescue can be used in mode rules, ml or both</p>
+<pre><code>skip_qc=&quot;false&quot; #true to skip the QC
+skip_filter=&quot;true&quot; # true to skip the filter
+filter_mode=&quot;both&quot; # rules, ml or both
+skip_rescue=&quot;false&quot; # true to skip the rescue
+rescue_mode=&quot;both&quot; # rules, ml or both
+</code></pre>
+<ul>
+<li>Sqanti QC:</li>
+</ul>
+<p>Sqanti3 has many parameters, but only 3 of them are mandatory: input GTF, reference GTF and reference fasta. The references are defined in the general parameters section, so only the former on is present in this section. All other parameters are optional, but by default they are targeted to the example available, because they are the most common ones. Others have a default option in the script, or different posibilities to  be used. For a detailed infography of the different parameters, how they affect the pipeline, and how to use them effectively, please check the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control">SQANTI3 QC running tutorial</a> or print the help with <code>sqanti3_qc.py -h</code></p>
+<pre><code>QC_input=&quot;example/UHR_chr22.gtf&quot; # Input data
+QC_output_prefix=&quot;UHR_chr22&quot;
+QC_destination_folder=&quot;/tmp/sqanti3_wrapper/QC/&quot;
+
+QC_min_ref_length=&quot;&quot; # minimum reference transcript length. Default 0 bp
+QC_force_id_ignore=&quot;&quot; 
+QC_cage_peak_bed_file=&quot;data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed&quot;
+QC_aligner_choice=&quot;&quot; # minimap2, deSALT, gmap or uLTRA
+QC_polyA_motif_list=&quot;data/polyA_motifs/mouse_and_human.polyA_motif.txt&quot;
+QC_polyA_peak=&quot;&quot;
+QC_phylobed=&quot;&quot;
+QC_skipORF=&quot;true&quot;
+QC_is_fusion=&quot;false&quot;
+QC_orf_input=&quot;&quot;
+QC_is_fastq=&quot;false&quot; # Requiered to be true if QC_input is a fastq file.
+QC_expression_matrix=&quot;&quot;
+QC_gmap_index=&quot;&quot;
+QC_chunks=1 # (int) chunks &gt; 1 activates parallelization
+QC_coverage=&quot;&quot; # Junctions coverage file
+QC_sites=&quot;&quot;
+QC_window=&quot;&quot;
+QC_genename=&quot;&quot; # Column name from GTF to define gene names
+QC_full_length_pacbio_abundance_tsv=&quot;example/UHR_abundance.tsv&quot;
+QC_saturation=&quot;true&quot;
+QC_report_file=&quot;both&quot; # pdf, html or both
+QC_isoAnnotLite=&quot;&quot;
+QC_gff3=&quot;&quot;
+QC_short_reads_fofn=&quot;example/UHR_chr22_short_reads.fofn&quot;
+QC_SR_bam=&quot;&quot;
+QC_isoform_hits=&quot;&quot;
+QC_ratio_TSS_metric=&quot;&quot; # Which metric should be reported in the ratio_TSS column
+</code></pre>
+<h1 id="sqanti3-filter">SQANTI3 filter</h1>
+<p>SQANTI3 filter parameters are classified in 3 categories: common arguments, rules specific arguments, and ml specific arguments. For the general parameters, the only mandatory argument is the input classification file. The default paths allow to execute the whole pipeline using
+the generated files in the QC step, but you can change it at will if you consider so. For a detailed infogram on how these parameters affect the pipeline, please check the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter">SQANTI3 filter running tutorial</a></p>
+<pre><code># Common elements for filter rules and ml
+filter_input_classification=&quot;${QC_destination_folder}/${QC_output_prefix}_classification.txt&quot; 
+
+filter_skip_report=&quot;false&quot; # true to skip the report
+filter_corrected_gtf=&quot;${QC_destination_folder}/${QC_output_prefix}_corrected.gtf&quot;
+filter_isoforms=&quot;GMST/GMST_tmp.faa&quot;
+filter_isoannotgff3=&quot;example/SQANTI3_QC_output/UHR_chr22.gff3&quot;
+filter_sam=&quot;&quot;
+filter_faa=&quot;${QC_destination_folder}/${QC_output_prefix}_corrected.faa&quot;
+filter_monoexonic=&quot;true&quot;
+filter_skip_report=&quot;&quot;
+</code></pre>
+<p>SQANTI3 filter rules only need 2 extra optional arguments: Output folder and prefix for the generated files. If not present, the default ones may be used and may overwrite some files. They are strongly recommended</p>
+<pre><code>filter_rules_ouput_folder=&quot;/tmp/sqanti3_wrapper/sqanti3_filter_rules&quot;
+filter_rules_prefix=&quot;${QC_output_prefix}&quot;
+</code></pre>
+<p>Sqanti3 filter ml provides a few more parameters for tunning its execution, beyond the saving folder and preffix: </p>
+<pre><code>filter_ml_ouput_folder=&quot;/tmp/sqanti3_wrapper/sqanti3_filter_ml&quot;
+filter_ml_prefix=&quot;${QC_output_prefix}&quot;
+
+filter_ml_percent_training=&quot;0.8&quot;
+filter_ml_TP=&quot;&quot; # Path to the file that contains TP. If empty, will be calculated
+filter_ml_TN=&quot;&quot; # Path to the file that contains TN. If empty, will be calculated
+filter_ml_threshold=${threshold}
+filter_ml_remove_columns=&quot;&quot;
+filter_ml_intermediate_files=&quot;&quot;
+filter_ml_max_class_size=&quot;&quot;
+filter_ml_intrapriming=&quot;&quot;
+</code></pre>
+<h1 id="sqanti3-rescue">SQANTI3 rescue</h1>
+<p>Rescue parameters are fully divided into rules and ml, as each used the output of their corresponding filter method.</p>
+<p>Rescue rules parameters include some parameters already used by QC and filter. For a complete infography of Rescue's parameters, please check or ask the script for help with </p>
+<pre><code>rescue_rules_output_prefix=&quot;${QC_output_prefix}&quot;
+rescue_rules_output_folder=&quot;/tmp/sqanti3_wrapper/sqanti3_rescue_rules&quot;
+
+rescue_rules_filtered_classification=&quot;${filter_rules_ouput_folder}/${filter_rules_prefix}_RulesFilter_result_classification.txt&quot; # Output classification from filter step
+rescue_rules_reference_classification=&quot;${QC_destination_folder}/${QC_output_prefix}_classification.txt&quot; # The output classification from QC step
+rescue_rules_isoforms=&quot;${QC_destination_folder}/${QC_output_prefix}_corrected.fasta&quot; # Corrected isoforms from QC step
+rescue_rules_gtf=&quot;${filter_rules_ouput_folder}/${filter_rules_prefix}.filtered.gtf&quot; # Filtered GTF from filter step
+rescue_rules_monoexons=&quot;all&quot; # Keep monoexons
+rescue_rules_mode=&quot;full&quot;
+</code></pre>
+<p>Conviniently, rescue ml also needs files generated by QC and Filter. The only extra parameter needed (optional) is the randomforest.Rdata generated by filter ml</p>
+<pre><code>rescue_ml_output_prefix=&quot;${QC_output_prefix}&quot;
+rescue_ml_output_folder=&quot;/tmp/sqanti3_wrapper/sqanti3_rescue_ml&quot;
+
+rescue_ml_filtered_classification=&quot;${filter_ml_ouput_folder}/${filter_ml_prefix}_MLresult_classification.txt&quot;
+rescue_ml_reference_classification=&quot;${QC_destination_folder}/${QC_output_prefix}_classification.txt&quot;
+rescue_ml_isoforms=&quot;${QC_destination_folder}/${QC_output_prefix}_corrected.fasta&quot;
+rescue_ml_gtf=&quot;${filter_ml_ouput_folder}/${filter_ml_prefix}.filtered.gtf&quot;
+rescue_ml_monoexons=&quot;all&quot;
+rescue_ml_mode=&quot;full&quot;
+rescue_ml_randomforest_rdata=&quot;${filter_ml_ouput_folder}/randomforest.RData&quot;
+</code></pre>
+<h1 id="custom-values-for-particular-executions-warning-zone">Custom values for particular executions (Warning zone)</h1>
+<p>These values have been adjusted to allow execution of the whole pipeline and sharing references and common elements between the different steps, and specify the sqanti3 version you want to use. </p>
+<p>Select the sqanti you prefer. If you wish it, you can use the docker image (or equivalent singularity image) by changing the python3 statement to a docker run command.</p>
+<pre><code>sqanti3_qc=&quot;python3 sqanti3_qc.py&quot;
+sqanti3_filter=&quot;python3 sqanti3_filter.py&quot;
+sqanti3_rescue=&quot;python3 sqanti3_rescue.py&quot;
+``
+
+In case you need or want to execute QC, filter or rescue with different references or files, which is not recommended to keep consistency of the execution, you can change these values. Creating a new config is recommended for this cases instead of customizing these values.
+
+</code></pre>
+<p>QC_reference_gtf=${reference_gtf}
+QC_reference_fasta=${reference_fasta}
+QC_cpus=${cpus}</p>
+<p>filter_rules_json_file=${json_for_rules}</p>
+<p>rescue_rules_reference_genome=${reference_fasta}
+rescue_rules_reference_gtf=${reference_gtf}
+rescue_rules_json_file="${json_for_rules}"</p>
+<p>rescue_ml_reference_genome=${reference_fasta}
+rescue_ml_reference_gtf=${reference_gtf}
+rescue_ml_threshold=${threshold}
+```</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

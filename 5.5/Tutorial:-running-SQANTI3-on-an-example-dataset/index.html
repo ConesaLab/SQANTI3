@@ -1,0 +1,1692 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/5.5/Tutorial%3A-running-SQANTI3-on-an-example-dataset/">
+      
+      
+        <link rel="prev" href="../Sqanti3-wrapper-script/">
+      
+      
+        <link rel="next" href="../Understanding-the-output-of-SQANTI3-QC/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Video tutorial - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#video-tutorial" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Video tutorial
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Dependencies-and-installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Dependencies and installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Home/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction to SQANTI3
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../IsoAnnotLite/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  IsoAnnotLite
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI BUGSI
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 Quality Control
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-filter/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 filter
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 from the wrapper
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI3 rescue
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Running SQANTI-reads
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 isoform classification: categories and subcategories
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  SQANTI3 memory requeriments and paralellization
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Sqanti3-wrapper-script/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Sqanti3 wrapper script
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Video tutorial
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Understanding the output of SQANTI3 QC
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../Version-history/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Introduction
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../_Sidebar/" class="md-tabs__link">
+        
+  
+  
+    
+  
+   Sidebar
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Home/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-BUGSI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI BUGSI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI-with-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 isoform classification: categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SQANTI3 memory requeriments and paralellization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Sqanti3-wrapper-script/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sqanti3 wrapper script
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../_Sidebar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+     Sidebar
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="video-tutorial">Video tutorial</h1>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=TTjDAwuhB68">Watch Tutorial Video on YouTube</a></li>
+</ul>
+<h1 id="step-by-step-tutorial">Step-by-Step tutorial</h1>
+<p>The document is structured to guide users through various aspects of the SQANTI3 tool.
+1.  <strong>SQANTI3 Installation:</strong> This section will guide users on how to install the SQANTI3 tool. It may include prerequisites, dependencies, and step-by-step instructions for a successful installation.
+2.  <strong>Example Dataset Overview:</strong> Before diving into the execution of SQANTI3, users will be introduced to a sample dataset. This dataset includes directories and files that encompass the output from various phases of the SQANTI3 pipeline and the necessary input files to operate the software. Organized under directories and files, users will find outputs from machine learning filters, quality control, and rules-based filtering processes. In addition to the genomic and annotation files for chromosome 22, there are paired-end sequencing read files for two replicates of the Universal Human Reference (UHR) sample and scripts demonstrating how to run different SQANTI3 modules on the provided data. This comprehensive example dataset ensures users have a foundational understanding of the expected data structure and the processes involved in SQANTI3 operations.
+3.  <strong>Executing and Understanding SQANTI3 QC:</strong> Here, users will learn how to run the quality control (QC) component of SQANTI3 which focuses on characterizing transcriptomes generated from lrRNA-Seq data, comparing them to reference annotations, and leveraging various datasets including short-read sequencing, CAGE, and Quant-Seq for a comprehensive evaluation. The guide will delve into the details of FSM and ISM subcategories, the integration of TSS and TTS evidence, and the internal handling of short-read data using tools like STAR and Kallisto.
+4.  <strong>Executing and Understanding SQANTI3 Filter:</strong> This segment introduces the filtering capabilities of SQANTI3. Users will be guided on how to utilize both the machine learning-based and rules-based methods to efficiently differentiate between genuine isoforms and potential artifacts, ensuring a high-quality transcriptome tailored to their research needs.
+5.  <strong>Executing and Understanding SQANTI3 Rescue:</strong> This final section will focus on the 'rescue' functionality of SQANTI3. Users will learn the process of executing this feature and, just as importantly, understand the results and the rationale behind 'rescuing'. The SQANTI3 rescue algorithm aims to retrieve potentially discarded transcripts during long-read data processing by identifying appropriate reference transcripts, ensuring they meet quality criteria and are non-redundant, and then incorporating them into the final transcriptome.</p>
+<h2 id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#installation">1. SQANTI3 Installation</a></li>
+<li><a href="#Example-Dataset-Overview">2. Example Dataset Overview</a></li>
+<li><a href="#Executing-and-Understanding-SQANTI3-QC">3. Executing and Understanding SQANTI3 QC</a></li>
+<li><a href="#Executing-and-Understanding-SQANTI3-Filter">4. Executing and Understanding SQANTI3 Filter</a></li>
+<li><a href="#Executing-and-Understanding-SQANTI3-Rescue">5. Executing and Understanding SQANTI3 Rescue</a></li>
+</ul>
+<h2 id="1-installation">1. Installation <a name="installation"></a></h2>
+<h4 id="11-dependencies">1.1 Dependencies</h4>
+<ul>
+<li>General: Perl, Minimap2, Python (3.7), R (&gt;= 3.4.0), kallisto, samtools, STAR, uLTRA, deSALT, pip</li>
+<li>Python Libraries: bx-python, BioPython, BCBioGFF, cython, NumPy, pysam, pybedtools, psutil, pandas, scipy</li>
+<li>R Libraries: R packages for <code>sqanti3_qc.py</code> and <code>sqanti3_filter.py</code> (installed with conda environment)</li>
+</ul>
+<h4 id="12-installation">1.2 Installation</h4>
+<p>1.2.1. <strong>Anaconda</strong>: Install/update <a href="http://docs.continuum.io/anaconda/install/#linux-install">Anaconda</a>. Add to PATH and update if needed:</p>
+<pre><code class="language-bash">export PATH=$HOME/anacondaPy37/bin:$PATH
+conda -V
+conda update conda
+</code></pre>
+<p>1.2.2 <strong>SQANTI3</strong>: Download <a href="https://github.com/ConesaLab/SQANTI3/releases/tag/v5.4">SQANTI3 v5.4</a> and extract:</p>
+<pre><code class="language-bash">wget https://github.com/ConesaLab/SQANTI3/archive/refs/tags/v5.4.tar.gz
+tar -xvf v5.4.tar.gz
+cd SQANTI3-5.4
+</code></pre>
+<p>1.2.3 <strong>Conda Environment</strong>: Create and activate environment:</p>
+<pre><code class="language-bash">conda env create -f SQANTI3.conda_env.yml
+source activate sqanti3
+</code></pre>
+<h2 id="2-example-dataset-overview">2. Example Dataset Overview  <a name="Example-Dataset-Overview"></a></h2>
+<p>This section provides a brief overview of the example dataset to be utilized throughout this <a href="https://github.com/ConesaLab/SQANTI3/tree/master/example">folder</a>. The dataset consists of various files and directories that represent the output from different stages of the SQANTI3 pipeline. The requisite input files for running SQANTI3 are stored within this <a href="https://github.com/ConesaLab/SQANTI3/tree/master/data">directory</a>.</p>
+<h3 id="21-output-directories">2.1 Output directories</h3>
+<ul>
+<li><strong>SQANTI3_QC_output</strong>: Contains output files generated by the SQANTI3 Quality Control (QC) process.</li>
+<li><strong>ml_filter_output</strong>: This directory contains output files from the machine learning filter process in SQANTI3.</li>
+<li><strong>rules_filter_output</strong>: Houses output files from the rules-based filtering process in SQANTI3.</li>
+<li><strong>rescue_automatic</strong>: This directory contains the output files generated from running SQANTI3 rescue in automatic mode.</li>
+<li><strong>rescue_rules</strong>: In this directory, rescue has been run in full mode using the results from the rules filter.</li>
+<li><strong>rescue_ml</strong>: This directory contains the output files generated from running SQANTI3 rescue in machine learning mode. It used the same random forest model that was generated during the machine learning filter process.</li>
+</ul>
+<h3 id="22-input-files">2.2 Input files</h3>
+<ul>
+<li>
+<p><strong>Genome and Annotation Files</strong>: They are stored in the <em>reference</em> directory.</p>
+<ul>
+<li><code>GRCh38.p13_chr22.fasta</code>: A FASTA file containing the sequence of chromosome 22 from the GRCh38.p13 version of the human genome.</li>
+<li><code>GRCh38.p13_chr22.fasta.fai</code>: Index file for the FASTA file, facilitating quick access to different regions within the file.</li>
+<li><code>Homo_sapiens_GRCh38_Ensembl_86.chr22.gff3</code>: A GFF3 file containing an annotation for chromosome 22 from the Ensembl 86 release of the human genome.</li>
+<li><code>gencode.v38.basic_chr22.gtf</code>: A GTF file containing GENCODE basic gene annotation for chromosome 22 from the GENCODE v38 release.</li>
+</ul>
+</li>
+<li>
+<p><strong>Sample Data</strong>:</p>
+<ul>
+<li><code>UHR_chr22.gtf</code>: A GTF file containing transcript annotations for the UHR sample, focused on chromosome 22.</li>
+<li><code>UHR_abundance.tsv</code>: A tab-separated file containing transcript abundance estimates for the UHR sample.</li>
+<li><code>UHR_chr22_short_reads.fofn</code>: A file of file names (FOFN) listing short-read data files related to the UHR sample on chromosome 22.<ul>
+<li><code>UHR_Rep1_chr22.R1.fastq.gz</code> and <code>UHR_Rep1_chr22.R2.fastq.gz</code>: Paired-end sequencing read files for replicate 1 of a Universal Human Reference (UHR) sample, focused on chromosome 22.</li>
+<li><code>UHR_Rep2_chr22.R1.fastq.gz</code> and <code>UHR_Rep2_chr22.R2.fastq.gz</code>: Paired-end sequencing read files for replicate 2 of a UHR sample, focused on chromosome 22.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="23-example-scripts-and-config-files">2.3 Example scripts and config files:</h3>
+<ul>
+<li>
+<p><strong>Scripts</strong>:</p>
+<ul>
+<li><code>run_SQANTI3_QC.sh</code>: A shell script demonstrating how to run the SQANTI3 Quality Control (QC) process on the example data.</li>
+<li><code>run_SQANTI3_MLfilter.sh</code>: A shell script demonstrating how to run the SQANTI3 machine learning filter.</li>
+<li><code>run_SQANTI3_rules_filter.sh</code>: A shell script demonstrating how to run the SQANTI3 rules-based filtering process on the example data.</li>
+</ul>
+</li>
+<li>
+<p><strong>Config files:</strong> They can be found under <code>examples/config_files</code> directory, in YAML format, to be used with the wrapper.</p>
+</li>
+</ul>
+<h2 id="3-executing-and-understanding-sqanti3-qc-video-for-this-part">3. Executing and Understanding SQANTI3 QC <a name="Executing-and-Understanding-SQANTI3-QC"></a> (<a href="https://youtu.be/TTjDAwuhB68?si=sJSjScp26ovd44T1&amp;t=483">Video for this part</a>)</h2>
+<p>SQANTI3 is the updated iteration of the SQANTI tool designed for quality control and characterization of transcriptomes built from lrRNA-Seq data. Central to SQANTI3 is its Quality Control (QC) module, which evaluates the de novo transcriptome against a reference annotation and outputs a classification file. This classification not only delves deep into transcript variations like Full Splice Matches (FSM) and Incomplete Splice Matches (ISM) but also introduces new subcategories for them. Additionally, SQANTI3 QC integrates evidence from both short and long-read data, even accepting orthogonal data types like CAGE and Quant-Seq, to support and validate transcript start and end sites. The software has also been enhanced to handle short-read data internally, incorporating tools like STAR and Kallisto for mapping and quantification.</p>
+<h3 id="31-running-sqanti3-qc-with-example-command">3.1 Running SQANTI3 QC with example command:</h3>
+<p>The provided command runs the <code>sqanti3_qc.py</code> script which is designed for structural and quality annotation of novel transcript isoforms.</p>
+<h4 id="311-example-script">3.1.1 Example script</h4>
+<pre><code class="language-bash">python sqanti3_qc.py --isoforms example/UHR_chr22.gtf \
+                     --refGTF example/gencode.v38.basic_chr22.gtf \
+                     --refFasta example/GRCh38.p13_chr22.fasta    \
+                     --CAGE_peak data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed    \
+                     --polyA_motif_list data/polyA_motifs/mouse_and_human.polyA_motif.txt    \
+                     -o UHR_chr22 -d example/SQANTI3_output -fl example/UHR_abundance.tsv    \
+                     --short_reads example/UHR_chr22_short_reads.fofn --cpus 4 --report both
+</code></pre>
+<h4 id="312-required-arguments">3.1.2 Required Arguments:</h4>
+<ol>
+<li><code>--isoforms example/UHR_chr22.gtf</code>:<ul>
+<li>Input isoforms file in GTF format. This could be given in FASTA format as well.</li>
+</ul>
+</li>
+<li><code>--refGTF example/gencode.v38.basic_chr22.gtf</code>:<ul>
+<li>Reference annotation file in GTF format.</li>
+</ul>
+</li>
+<li><code>--refFasta example/GRCh38.p13_chr22.fasta</code>:<ul>
+<li>Reference genome file in FASTA format.</li>
+</ul>
+</li>
+</ol>
+<h4 id="313-optional-arguments">3.1.3 Optional Arguments:</h4>
+<ul>
+<li><code>--CAGE_peak data/ref_TSS_annotation/human.refTSS_v3.1.hg38.bed</code>:<ul>
+<li>Specifies a BED format file with FANTOM5 CAGE Peak data for annotating transcription start sites (TSS).</li>
+</ul>
+</li>
+<li><code>--polyA_motif_list data/polyA_motifs/mouse_and_human.polyA_motif.txt</code>:<ul>
+<li>Provides a ranked list of polyA motifs that are sequences often found near polyadenylation sites.</li>
+</ul>
+</li>
+<li><code>-o UHR_chr22</code>:<ul>
+<li>Sets the prefix for the output files to <code>UHR_chr22</code>.</li>
+</ul>
+</li>
+<li><code>-d example/SQANTI3_output</code>:<ul>
+<li>Designates the directory where output files will be saved: <code>example/SQANTI3_output</code>.</li>
+</ul>
+</li>
+<li><code>-fl example/UHR_abundance.tsv</code>:<ul>
+<li>Specifies a file containing full-length PacBio abundance data.</li>
+</ul>
+</li>
+<li><code>--short_reads example/UHR_chr22_short_reads.fofn</code>:<ul>
+<li>Provides a File Of File Names (fofn) with paths to FASTA or FASTQ files from short-read RNA-Seq.</li>
+</ul>
+</li>
+<li><code>--cpus 4</code>:<ul>
+<li>Sets the number of threads (or CPU cores) to be used during alignment by aligners to 4.</li>
+</ul>
+</li>
+<li><code>--report both</code>:<ul>
+<li>Specifies the report format, producing outputs in both HTML and PDF formats.</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>Note: The backslashes (<code>\</code>) at the end of lines in the command are used to split a lengthy command into multiple readable lines. Each backslash indicates the continuation of the command on the next line.</p>
+</blockquote>
+<h3 id="32-understanding-sqanti3-qc">3.2 Understanding SQANTI3 QC:</h3>
+<p>SQANTI3 QC produces a series of output files following its execution, using flags like <code>--dir</code> or <code>-d</code> and <code>--output</code> or <code>-o</code> to specify the directory and file prefix, respectively. This tool also relies on other software, including STAR, kallisto, and GMST, which means there will be subfolders in the output directory. For an example output, refer to the <code>example/SQANTI3_QC_output</code> subfolder in the main SQANTI3 directory.</p>
+<h4 id="321-sqanti3-transcriptome-classification-video-link-for-this-part">3.2.1 SQANTI3 transcriptome classification (<a href="https://youtu.be/TTjDAwuhB68?si=pL4hhn5aFuC-HaF6&amp;t=941">Video link for this part</a>)</h4>
+<p>SQANTI3 sorts each isoform by comparing it to a known reference transcript. Here's how it categorizes them:</p>
+<h5 id="fsm-full-splice-match-subcategories">FSM (Full Splice Match) Subcategories:</h5>
+<blockquote>
+<p>The reference and query isoform both have the same exon count, with each internal junction aligning to the reference. However, the exact start (5') and end (3') can vary within the first and last exons.</p>
+</blockquote>
+<ul>
+<li><strong>Reference Match:</strong> The query isoform matches the reference isoform exactly (less than 50bp), including both internal junctions and exact 5' start and 3' end.</li>
+<li><strong>5' Mismatch:</strong> The internal junctions match, but the 5' start is different (difference higher than 50bp).</li>
+<li><strong>3' Mismatch:</strong> The internal junctions match, but the 3' end is different (difference higher than 50bp).</li>
+<li><strong>5' and 3' Mismatch:</strong> The internal junctions match, but both the 5' and 3' ends are different (difference higher than 50bp).
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-01.png" /></li>
+</ul>
+<h5 id="ism-incomplete-splice-match">ISM (Incomplete Splice Match)</h5>
+<blockquote>
+<p>The query isoform has fewer outer exons compared to the reference, but all internal junctions align with the reference's positions. The exact start (5') and end (3') can vary within the initial/final exons.
+* <strong>5' fragments:</strong> The query isoform is missing some 5' exons compared to the reference.
+* <strong>3' fragments:</strong> The query isoform is missing some 3' exons compared to the reference.
+* <strong>Internal fragments:</strong> Missing some start and end exons but retains the internal exons.
+* <strong>intron retention:</strong> Contains an intron that is usually spliced out in the reference.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-02-01.png" /></p>
+</blockquote>
+<h5 id="nic-novel-in-catalog-subcategories-nnc-novel-not-in-catalog-subcategories">NIC (Novel In Catalog) Subcategories &amp; NNC (Novel Not in Catalog) Subcategories:</h5>
+<blockquote>
+<p>NIC (Novel In Catalog): The term "Novel In Catalog" (NIC) refers to a subtype of novel isoforms that are characterized by their utilization of known splice junctions. While the junctions, which are pairs of donor-acceptor sites, are previously identified and cataloged, the specific combinations in which these junctions are assembled in the isoform are novel. Essentially, NIC represents isoforms that employ previously recognized junctions in a unique or previously undocumented manner.</p>
+<p>NNC (Novel Not in Catalog): The "Novel Not in Catalog" (NNC) denotes a subtype of novel isoforms where at least one of the splice sites, either donor or acceptor, is entirely novel and has not been cataloged previously. Even if the other splice sites involved are known, the presence of a novel splice site means that the isoform falls under the NNC category. This subtype signifies isoforms that introduce new splicing patterns to the catalog due to the presence of previously unidentified splice sites.</p>
+</blockquote>
+<ul>
+<li>
+<p><strong>NIC Combination of known SJ:</strong> In this category, the query isoform is formed by combining known splice junctions. In essence, even though the particular arrangement of splice junctions in the isoform is novel, all the individual splice junctions themselves have been previously cataloged.</p>
+</li>
+<li>
+<p><strong>NIC Combination of known splice site:</strong> This refers to a query isoform composed of known splice sites. Splice sites are specific nucleotide sequences at the ends of introns that signal the splicing machinery. A splice site can be either a donor (at the start of an intron) or an acceptor (at the end of an intron). Even if the precise configuration or combination in the isoform hasn't been seen before, the individual splice sites have been documented previously.</p>
+</li>
+<li>
+<p><strong>NIC Intron Retention:</strong> This scenario involves a query NIC isoform that retains an intron that is usually spliced out in other known isoforms.</p>
+</li>
+<li>
+<p><strong>NIC Mono-exon:</strong> This scenario involves a NIC isoform that consists of a single exon without any introns.</p>
+</li>
+</ul>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-03-01.png" /></p>
+<h4 id="322-tss-transcription-start-site-evaluation-in-sqanti3-video-link-for-this-part">3.2.2 TSS (Transcription Start Site) Evaluation in SQANTI3 (<a href="https://youtu.be/TTjDAwuhB68?si=yK4BFUAVZEqYRqXb&amp;t=1188">Video link for this part</a>)</h4>
+<p>The accurate identification of Transcription Start Sites (TSS) stands as a cornerstone in the realm of molecular biology and genomics. TSSs are the specific locations on the DNA where transcription of a particular gene commences. Recognizing these sites with precision is pivotal.</p>
+<h5 id="distance-from-the-reference-tss">Distance from the Reference TSS:</h5>
+<ul>
+<li>First, it assesses how far a detected TSS falls from the reference TSS.</li>
+<li>The proximity of your TSS to the reference can indicate its accuracy. If it's too far off, it may be a sign of an inaccurate TSS detection.</li>
+</ul>
+<h5 id="using-cage-peaks-data">Using CAGE Peaks Data:</h5>
+<ul>
+<li>Cap Analysis Gene Expression (CAGE) is a technique to identify the TSS of genes. SQANTI uses CAGE peaks data to help distinguish between true TSS and potential false positives. If the detected TSS aligns with a CAGE peak, it's more likely to be a true TSS. In contrast, if it doesn't align with any CAGE peaks, it might be a false detection.</li>
+<li>The <strong>TSS ratio</strong> is computed for each transcript by determining the ratio between short-read coverage downstream and upstream of the TSS. A true TSS is expected to have much lower upstream coverage, resulting in a TSS ratio greater than one. On the other hand, 5’ end-degraded transcripts are expected to have uniform coverage on both sides of the TSS, leading to a TSS ratio approximately equal to one
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-01.png" /></li>
+</ul>
+<h4 id="323-sqanti3-transcriptional-termination-site-quality-control-video-link-for-this-part">3.2.3 SQANTI3 Transcriptional termination site quality control (<a href="https://youtu.be/TTjDAwuhB68?si=U8nP73DAvd2x4Mke&amp;t=1289">Video link for this part</a>)</h4>
+<p>SQANTI3 uses three quality control metrics for evaluating transcription termination sites (TTS) in transcriptome:
+1.  <strong>Distance to Annotated TTS:</strong> Measures the gap between a transcript's TTS and the nearest known TTS from reference databases to spot novel or existing termination sites.
+2.  <strong>Polyadenylation (polyA) Motif Detection:</strong> Scans for a specific sequence near the 3' end of transcripts that signals for polyadenylation, serving as a biological marker for genuine TTS.
+3.  <strong>Quant-seq Data Support:</strong> If available, this data provides additional validation for the 3' ends, enhancing confidence in the identified TTS.</p>
+<h5 id="check-different-tts">Check different TTS:</h5>
+<p>Distance to Annotated TTS:
+* <em>What:</em> SQANTI3 calculates the physical distance between the TTS of the newly sequenced transcript and the closest annotated TTS belonging to the same gene in reference databases.
+* <em>Why:</em> By doing this, SQANTI3 can evaluate if a transcript's TTS is novel or if it matches (or is proximate to) a previously known termination site. If a transcript's TTS is very distant from any annotated TTS, it may be a novel site or an artifact, and further validation may be needed.
+Polyadenylation (polyA) Motif Detection:
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-02-01.png" /></p>
+<p><strong>Polyadenylation (polyA) Motif Detection:</strong>
+* <em>What:</em> Transcripts typically have a sequence motif near their 3' end that signals for polyadenylation (addition of a polyA tail). SQANTI3 scans the transcript sequence to detect this motif.
+* <em>Why:</em> The presence of a polyA motif can indicate a genuine TTS, as the motif is a biological marker for transcript termination and subsequent addition of a polyA tail. These detected motifs are commonly found 16-18 base pairs from the end of the transcript, consistent with known experimental evidence. This adds an extra layer of validation. Absence or unusual positioning of this motif might suggest the 3' end of the transcript was inaccurately determined or that alternative polyadenylation sites exist.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-01.png" /></p>
+<p><strong>Quant-seq Data Support (polyA site data):</strong>
+* <em>What:</em> Quant-seq is a method to sequence the 3' ends of RNAs and is used to validate the 3' ends obtained from other sequencing methods. If Quant-seq data is available, SQANTI3 considers it as orthogonal evidence to validate the TTS of a transcript.
+* <em>Why:</em> Quant-seq specifically targets the 3' end of transcripts, making it a reliable method to validate TTS. If both long-read sequencing (like from PacBio) and Quant-seq point to the same TTS, confidence in that TTS's accuracy increases. 
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-02-02-01.png" /></p>
+<h4 id="323-sqanti3-splicing-junction-classification-video-link-for-this-part">3.2.3 SQANTI3 Splicing junction classification (<a href="https://youtu.be/TTjDAwuhB68?si=ac8uTFlKdvqMlkq8&amp;t=1388">Video link for this part</a>)</h4>
+<p>When it comes to splice junctions, here's how SQANTI approaches the task:</p>
+<h5 id="transcript-classification-based-on-splice-junctions">Transcript Classification Based on Splice Junctions:</h5>
+<p>SQANTI classifies transcripts by comparing their splice junctions to those in a provided reference transcriptome.
+* <strong>Full Splice Match (FSM):</strong> Transcripts that match a reference transcript at all splice junctions.
+* <strong>Incomplete Splice Match (ISM):</strong> Transcripts that match consecutive, but not all, splice junctions of the reference transcripts. Those matching mostly the UTR3 sequence of their reference are labeled UTR3 Fragment.
+* <strong>Novel Transcripts:</strong> Transcripts introducing new splice patterns are divided into:
+   * <em>Novel in Catalog (NIC):</em> Contains either new combinations of already annotated splice junctions or novel ones formed from previously annotated donors and acceptors.
+   * <em>Novel Not in Catalog (NNC):</em> Utilizes novel donors and/or acceptors.</p>
+<h5 id="canonical-vs-noncanonical-splicing">Canonical vs Noncanonical Splicing:</h5>
+<p>Splice junctions are categorized into canonical and noncanonical based on the dinucleotide pairs at their start and end.
+* Canonical splicing includes the combinations GT-AG, GC-AG, and AT-AC, found in over 99.9% of human introns.
+* All other combinations are considered noncanonical splicing.
+* Users can also supply their own definitions of canonical junctions.</p>
+<h5 id="splice-junction-coverage-with-short-reads">Splice Junction Coverage with Short Reads:</h5>
+<p>SQANTI3 incorporates short-read data by internally running STAR and Kallisto for mapping and quantification of splice junction. The combination of both long and short reads provides a dual layer of evidence. If a novel splice junction is detected by both read types, there's increased confidence in its authenticity. Unlike SQANTI, SQANTI3 can process raw FASTQ files from Illumina directly, producing short read-related metrics. Here are the details of how SQANTI3 processes short reads data:</p>
+<ol>
+<li>A genome index is prepared and short reads are mapped using STAR.</li>
+<li>The mapping does not use a reference annotation, ensuring that SJ identification is not influenced by previous annotations.</li>
+<li>STAR's parameters follow the ENCODE-DCC RNA-seq protocol. To enhance novel SJ detection, the <code>--twopassMode</code> option is turned on.</li>
+<li>Post STAR execution, two files are generated per replicate: <code>SJ.out.tab</code>, which provides quantification of long-read-defined SJs by short reads, and a BAM file, utilized for the novel TSS ratio metric computation.</li>
+</ol>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-03.png" /></p>
+<h4 id="324-sqanti3-intra-priming-video-link-for-this-part">3.2.4 SQANTI3 Intra-priming (<a href="https://youtu.be/TTjDAwuhB68?si=7l8Jnbbjww_kQHmK&amp;t=1453">Video link for this part</a>)</h4>
+<p>Researchers use specific oligos, anywhere between 20-35 bases long, called primers, to initiate the copying or amplifying process of DNA. Typically, an 'oligodT' primer is custom-designed to match the target sequence at the end of a transcript, which often has a long string of 'A's known as the polyA tail. However, given that there are also A-rich regions within the transcripts (not just at the end), the oligodT primer might inadvertently begin amplification from these internal regions instead. If these transcripts don't have a typical ending (consensus poly Adenilation site), SQANTI thinks they might be mistakes from internal priming and flags them. This transcripts can be eliminated using </p>
+<h5 id="mechanisms-intra-priming">Mechanisms Intra-priming:</h5>
+<ul>
+<li>Imagine your DNA is a long string of letters, with 'A' being one of them. Sometimes, there's a region in the DNA that has lots of 'A's, either 6 of them in a row or 12 out of a group of 20 letters.</li>
+<li>When a small piece of DNA (or a primer) finds this A-rich area, it can stick to it and start copying the DNA from there. </li>
+<li>This is called "internal priming" because it's happening inside the DNA sequence and not where it's supposed to be.</li>
+</ul>
+<p>SQANTI3 checks for this by looking at transcripts and seeing if there's a very A-rich region (&gt;= 80% A's in the last 20 letters) at their end.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/intra-priming/intra-priming_new-01.png" /></p>
+<h4 id="325-sqanti3-rt-switching-video-link-for-this-part">3.2.5 SQANTI3 RT-switching (<a href="https://youtu.be/TTjDAwuhB68?si=dSnT-Dlq85JSWi4Y&amp;t=1499">Video link for this part</a>)</h4>
+<p>RT-switching refers to the "jumping" or switching of the reverse transcriptase enzyme between repeated regions of an RNA molecule due to its secondary structure. This can lead to the formation of cDNA molecules that don't accurately represent the original RNA sequence and can introduce artifacts when analyzing RNA sequences or structures.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/rt-switching/rt_switching_new_0-01.png" /></p>
+<h5 id="heres-a-step-by-step-explanation-of-rt-switching">Here's a step-by-step explanation of RT-switching:</h5>
+<ol>
+<li><strong>Reverse Transcription Start:</strong> The process begins with the initiation of reverse transcription. This is where the reverse transcriptase enzyme (RT) starts transcribing RNA into complementary DNA (cDNA). The RNA molecule has a secondary structure and repeated regions which play a role in RT-switching.</li>
+<li><strong>RNA Secondary Structure and Repeated Regions:</strong> RNA molecules can form secondary structures due to complementary base pairing within the molecule itself. These structures may bring repeated regions into close proximity. When the RT enzyme encounters these structures, it might jump from one repeated region to another.</li>
+<li><strong>Formation of cDNA with Skipped Repeats:</strong> When the RT enzyme switches or "jumps" between repeated regions, the resulting cDNA molecule may not have all the repeated regions that were originally present in the RNA. Instead, the cDNA will possess only one copy of the direct repeats.</li>
+<li><strong>Novel Splice Junctions Appear:</strong> When the cDNA, which has undergone RT-switching, is sequenced or mapped, it might appear as though it has novel splice junctions. These are not true biological splice junctions but are artifacts caused by the RT-switching event.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/rt-switching/rt_switching_new-01.png" /></li>
+</ol>
+<p>SQANTI3 identifies these potential artifacts by checking for the presence of direct repeats in the sequence. This search is performed in a region of a user-defined number of bases around the splice junctions. If a matching patter is found within the exon and intron sequences, the junction is flagged as a RT-switching artifact, and all the isoforms containing this junction are classified as "RT-switching".</p>
+<h2 id="4-executing-and-understanding-sqanti3-filter-video-link-for-this-part">4. Executing and Understanding SQANTI3 Filter  <a name="Executing-and-Understanding-SQANTI3-Filter"></a> (<a href="https://youtu.be/TTjDAwuhB68?si=o0pNSzsqYWdkYs9F&amp;t=1926">Video link for this part</a>)</h2>
+<p>SQANTI3 has enhanced its filtering capabilities by improving its machine learning-based filter and introducing a flexible rules-based strategy, allowing users to discern between true isoforms and artifacts more accurately.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/outline.png" /></p>
+<h3 id="41-sqanti3-rules-filter-video-link-for-this-part">4.1 SQANTI3 rules filter (<a href="https://youtu.be/TTjDAwuhB68?si=0hyqIzRgPY1m6WSU&amp;t=1950">Video link for this part</a>)</h3>
+<p>SQANTI3 has a rules-based strategy for filtering, which is especially useful when defining TP and TN sets is challenging. Here, a JSON file is used to specify the characteristics of a reliable isoform. The file is comprised of rules, with each rule consisting of multiple requisites. All requisites of a rule must be met for a transcript to be deemed true. Multiple rules for the same category are evaluated independently, and a transcript only needs to pass one of these rules. SQANTI3 comes with a default JSON file that includes rules for a basic filter. However, users can create their own JSON files to define custom rules.</p>
+<details><summary> Default rules filter </summary>
+
+
+<pre><code class="language-json">{
+    &quot;full-splice_match&quot;: [
+        {
+            &quot;perc_A_downstream_TTS&quot;:[0,59]
+        }
+    ],
+    &quot;rest&quot;: [
+        {
+            &quot;perc_A_downstream_TTS&quot;:[0,59],
+            &quot;all_canonical&quot;:&quot;canonical&quot;,
+            &quot;RTS_stage&quot;:&quot;FALSE&quot;
+        },
+        {   
+            &quot;perc_A_downstream_TTS&quot;:[0,59],
+            &quot;RTS_stage&quot;:&quot;FALSE&quot;,
+            &quot;min_cov&quot;:3
+        }
+     ]
+}
+</code></pre>
+
+</details>
+<p><br></p>
+<h4 id="411-rules-filter-example">4.1.1 Rules filter example:</h4>
+<p>To filter a classification file and generate outputs with the prefix "filtered_results", you can use:</p>
+<pre><code class="language-bash">python sqanti3_filter.py rules --sqanti_class path/to/classification.txt -o filtered_results
+</code></pre>
+<blockquote>
+<p>Note: this will apply default filters and produce filtered files with the "filtered_results" prefix in the directory where the script is run.</p>
+</blockquote>
+<h5 id="required-arguments">Required Arguments:</h5>
+<ul>
+<li><code>--sqanti_class</code>: Path to the SQANTI3 QC classification file.</li>
+</ul>
+<h5 id="optional-arguments">Optional Arguments:</h5>
+<ul>
+<li><code>-h</code>, <code>--help</code>: Displays help message and exits.</li>
+<li><code>--isoAnnotGFF3 ISOANNOTGFF3</code>: Path to the isoAnnotLite GFF3 file that is to be filtered.</li>
+<li><code>--isoforms ISOFORMS</code>: Path to the fasta/fastq isoform file that is to be filtered.</li>
+<li><code>--gtf GTF</code>: Path to the GTF file that is to be filtered.</li>
+<li><code>--sam SAM</code>: Path to the SAM alignment of the input fasta/fastq.</li>
+<li><code>--faa FAA</code>: Path to the ORF prediction faa file to be filtered by SQANTI3.</li>
+<li><code>-o OUTPUT</code>, <code>--output OUTPUT</code>: Specifies the prefix for output files.</li>
+<li><code>-d DIR</code>, <code>--dir DIR</code>: Sets the directory for output files. Default is the directory where the script was run.</li>
+<li><code>-v</code>, <code>--version</code>: Displays the program version number.</li>
+<li><code>--skip_report</code>: When supplied, the filter will not generate a report.</li>
+<li><code>-j JSON_FILTER</code>, <code>--json_filter JSON_FILTER</code>: Specifies the JSON file where filtering rules are expressed. By default, the filter uses <code>utilities/filter/filter_default.json</code>.</li>
+</ul>
+<h4 id="414-understand-how-to-create-sqanti3-rules">4.1.4 Understand how to create SQANTI3 rules</h4>
+<h5 id="creating-custom-filters">Creating Custom Filters:</h5>
+<ul>
+<li>Starting with SQANTI3 version 5.0, users can specify any number of filtering rules in a JSON file.</li>
+<li>The structure involves defining rules for each structural category, with each rule made up of various requisites.<ul>
+<li>Rules for a category are treated as logical OR.</li>
+<li>Requisites within a rule are treated as logical AND.</li>
+</ul>
+</li>
+<li>The "rest" category can be used to specify rules for all other unspecified categories.</li>
+</ul>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/rules_filter_basic.png" /></p>
+<h5 id="rule-structure-in-json">Rule Structure in JSON:</h5>
+<ul>
+<li>Rules can be set for any numeric or character column in the classification file:<ul>
+<li><em>Numeric columns:</em> Define an interval ([X,Y]) or just the lower limit.</li>
+<li><em>Character/logical columns:</em> Define which terms or values are accepted. </li>
+</ul>
+</li>
+</ul>
+<h5 id="example-of-user-defined-filter-video-link-for-this-part">Example of User-defined Filter (<a href="https://youtu.be/TTjDAwuhB68?si=GLwRdaZIsxZ0P25o&amp;t=2042">Video link for this part</a>):</h5>
+<ol>
+<li>
+<p><strong>Full Splice Match category:</strong></p>
+<ul>
+<li>Isoforms must not be a potential intra-priming product. They should have less than 60 percent of genomic adenines in the downstream 20 BP window.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103609.jpg" /></li>
+</ul>
+</li>
+<li>
+<p><strong>Incomplete Splice Match category:</strong></p>
+<ul>
+<li>Isoform must be larger than two kilobases and shorter than 15 kilobases.</li>
+<li>Must be cataloged within the three prime fragments, five Prime fragments, or internal fragment subcategories.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_202310231036091.jpg" /></li>
+</ul>
+</li>
+<li>
+<p><strong>Novel In the Catalog category:</strong></p>
+<ul>
+<li>All splice junctions should be canonical or covered by at least 10 short reads.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103608.jpg" /></li>
+</ul>
+</li>
+<li>
+<p><strong>Novel Not in the Catalog category:</strong></p>
+<ul>
+<li>All splice junctions should be canonical.</li>
+<li>The absolute distance to the closest annotated transcriptional start sites and transcriptional termination sites must be 50 BP or less or covered by at least 10 short reads.
+<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103607.jpg" /></li>
+</ul>
+</li>
+<li>
+<p>Rest of the Categories:</p>
+<ul>
+<li>Transcripts will be kept if:<ul>
+<li>They are not suspected of being an RT switching artifact.</li>
+<li>All of their splice junctions are canonical.</li>
+<li>The transcript is coding.</li>
+<li>It is not an intra-priming product.</li>
+<li>It is not a mono exon transcript.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103605.jpg" /></p>
+<p>An example JSON filter is provided that defines rules for different isoform categories, including "full-splice_match", "incomplete-splice_match", "novel_in_catalog", "novel_not_in_catalog", and "rest". This filter specifies various conditions for keeping isoforms, such as avoiding potential intrapriming products, setting length thresholds, and requiring canonical splice junctions.</p>
+<p>In summary, SQANTI3 provides a flexible way for users to filter their transcriptomes based on specific criteria to curate high-quality transcript sets. This is facilitated through easy-to-define JSON-based rule sets.</p>
+<h3 id="42-sqanti3-machine-learning-filter-video-link-for-this-part">4.2 SQANTI3 Machine Learning Filter (<a href="https://youtu.be/TTjDAwuhB68?si=qWoE7_88BuT2Wiop&amp;t=2141">Video link for this part</a>)</h3>
+<p>SQANTI3 has enhanced its machine learning-based filter (ML filter) from its predecessors. The filter, rooted in a random forest classifier, discerns between true isoforms and artifacts. The training relies on SQANTI3's QC attributes and the selection of true positive (TP) and true negative (TN) isoform sets. Users can now define these sets or let the software automatically pick them based on SQANTI3's classifications. By default, the filter considers NNC non-canonical isoforms as TN and reference match (RM) subcategories as TP. There's a balance in set size for training, and a default threshold is set where the transcript's likelihood of being a genuine isoform must be ≥0.7. Users can adjust this threshold and specify which isoforms are included or excluded. The filter now benefits from new validation metrics and additional data like CAGE-seq peaks, the short read-based TSS ratio metric, polyA motif details, and Quant-seq peaks. This allows for better artifact detection. Rules for model training can be customized to avoid overfitting. The classifier's output modifies the original <code>*_classification.txt</code> file to produce a <code>*_ML_result_classification.txt</code> file.</p>
+<h4 id="421-example-command">4.2.1 Example command:</h4>
+<pre><code class="language-bash">python sqanti3_filter.py ml --sqanti_class path/to/classification.txt
+</code></pre>
+<h5 id="required-arguments_1">Required arguments:</h5>
+<ul>
+<li><code>--sqanti_class</code>: SQANTI3 QC classification file.</li>
+</ul>
+<h5 id="optional-arguments_1">Optional arguments:</h5>
+<ul>
+<li><code>--isoAnnotGFF3</code>: Specifies the isoAnnotLite GFF3 file to be filtered.</li>
+<li><code>--isoforms</code>: Designates the fasta/fastq isoform file for filtering.</li>
+<li><code>--gtf</code>: Indicates the GTF file for filtering.</li>
+<li><code>--sam</code>: Signifies the SAM alignment of the input fasta/fastq.</li>
+<li><code>--faa</code>: Represents the ORF prediction faa file for SQANTI3 filtering.</li>
+<li><code>-o, --output</code>: Prefix for output files.</li>
+<li><code>-d, --dir</code>: Output directory (default is the directory where the script was run).</li>
+<li><code>-e, --filter_mono_exonic</code>: Filters all mono-exonic transcripts by default.</li>
+<li><code>-v, --version</code>: Shows program version number.</li>
+<li><code>--skip_report</code>: Skips creating a filtering report.</li>
+<li><code>-t, --percent_training</code>: Data proportion for training (default is 0.8 or 80%).</li>
+<li><code>-p, --TP</code>: Path to file listing TP transcripts.</li>
+<li><code>-n, --TN</code>: Path to file listing TN transcripts.</li>
+<li><code>-j, --threshold</code>: Probability threshold to classify as positive isoforms (default is 0.7).</li>
+<li><code>-f, --force_fsm_in</code>: Forces the inclusion of FMS transcripts regardless of ML results.</li>
+<li><code>--intermediate_files</code>: Outputs intermediate files from ML filter.</li>
+<li><code>-r, --remove_columns</code>: Provides path to file with names of columns to be excluded during training.</li>
+<li><code>-z, --max_class_size</code>: Max number of isoforms for TP and TN sets (default is 3000).</li>
+<li><code>-i, --intrapriming</code>: Sets adenine percentage to flag an isoform as intra-priming (default is 60).</li>
+</ul>
+<p>For an in-depth understanding of each parameter, you can delve into the detailed descriptions in the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter">filter wiki page</a>. The ML filter allows users to define TP and TN sets or utilize the built-in sets. After defining the sets, you'll split them for model training/testing. The ML filter will utilize the probability threshold to label transcripts as Isoforms or Artifacts.</p>
+<p>Additionally, certain columns from the classification table are omitted before running the SQANTI3 ML filter. Users have the liberty to exclude more columns if needed. There's an intra-priming filter included in the script and options to enforce the removal or retention of specific isoform groups.</p>
+<h4 id="424-understand-how-the-machine-learning-filter-works">4.2.4 Understand how the machine learning filter works</h4>
+<p>In machine learning, especially for supervised learning tasks, training data is pivotal. The model's ability to accurately predict or classify unseen data depends largely on the quality and quantity of the training data. In the context of the SQANTI3's machine learning filter, let's delve deeper into the nuances of training data and the model.</p>
+<h5 id="1-true-positive-tp-and-true-negative-tn-sets">1. True Positive (TP) and True Negative (TN) Sets</h5>
+<p>Selection Criteria for TP and TN sets:</p>
+<ul>
+<li><strong>True Positive (TP):</strong> Reliable isoforms from which the model learns the features of a genuine isoform. The built-in selection includes Reference Match (RM) isoforms, and if there are insufficient RM isoforms, Full-Splice Match (FSM) isoforms are taken as TP.</li>
+<li><strong>True Negative (TN):</strong> These are isoforms considered as low-quality or artifacts. The built-in selection encompasses Novel Not in Catalog (NNC) isoforms with at least one non-canonical junction. If this group is small, all NNC isoforms are used as TN.</li>
+</ul>
+<p>Users can supply their own TP and TN sets, tailoring the training data to their specific requirements. If the user has prior knowledge about certain transcripts being genuine isoforms or artifacts, this functionality becomes valuable.</p>
+<p>SQANTI3 looks for a balance in the training sets. If there's a significant disparity between the sizes of the TP and TN sets, the larger set is downsized through random sampling to match the smaller set size. This ensures balanced training and avoids bias towards the over-represented class.</p>
+<h5 id="2-partitioning-the-training-data">2. Partitioning the Training Data</h5>
+<p>Before training the model, it’s important to divide the dataset into <strong>training and testing sets</strong>. Typically, 80% of the data is used for training, while the remaining 20% is set aside for testing. This approach allows the model to learn from the majority of the data while still being evaluated on data it hasn’t seen before, giving a clearer picture of how well it generalizes. To further strengthen the model’s reliability, SQANTI3 uses a 10-fold <strong>cross-validation</strong> technique during training. This means the training data is split into 10 equal parts—nine are used to train the model, and the remaining one is used for validation. This process repeats 10 times, cycling through each part. The goal is to reduce overfitting and ensure the model performs consistently across different subsets of data.</p>
+<h5 id="3-random-forest-classifier">3. Random Forest Classifier</h5>
+<p>The classification itself is handled by a Random Forest model, which is a popular ensemble learning method. It works by combining the predictions of multiple decision trees, offering a balance between flexibility and accuracy. Random Forests are particularly good at managing complex datasets with many features. In SQANTI3, the model is trained using the <code>caret</code> package in R, and it draws on a variety of transcript-derived features like transcript length, number of exons, and junction patterns. After training, the model doesn’t just spit out a yes or no—it assigns each transcript a probability score indicating how likely it is to be a true isoform. By default, transcripts scoring above 0.7 are considered genuine.</p>
+<p>To evaluate how well the model performs, the reserved 20% of testing data comes back into play. This separate data helps confirm whether the model's predictions hold up in practice. Once the model is trained and tested, it’s saved as an .RData file. If you run the filtering step again in the same directory, SQANTI3 will reuse this saved model to skip retraining. That’s useful when you want to apply a trained model to new data. However, if you want to train a fresh model instead, you'll need to move or delete the existing one first.</p>
+<h5 id="4-feature-importance-and-exclusion">4. Feature Importance and Exclusion</h5>
+<p>Not all features in a dataset are equally useful—some may have little impact on the model’s performance, while others might even introduce unwanted bias. To address this, SQANTI3 offers the flexibility to exclude specific features or columns from the training process. This allows users to fine-tune the model by focusing only on the most informative data, helping to reduce noise and improve overall accuracy.</p>
+<p>By leaving out certain columns, users can also guard against overfitting. If a model becomes too dependent on features that are only relevant within the training set, it may struggle to generalize to new data. Excluding such features ensures the model remains robust and applicable beyond the specific dataset it was trained on.</p>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/machine_learning_1.png" /></p>
+<blockquote>
+<p>Note The random forest classifier has specific scenarios where it might not run, so be mindful of exceptions.</p>
+</blockquote>
+<h2 id="5-executing-and-understanding-sqanti3-rescue-video-link-for-this-part">5. Executing and Understanding SQANTI3 Rescue <a name="Executing-and-Understanding-SQANTI3-Rescue"></a>(<a href="https://youtu.be/TTjDAwuhB68?si=oVd2xDOyaJ3xODJj&amp;t=2358">Video link for this part</a>)</h2>
+<p>The SQANTI3 rescue module is designed to prevent the loss of transcripts from long-read data that could not be accurately processed. It aims to identify valid transcript models for transcripts initially discarded due to potential artifacts after filtering using the SQ3 filter module. Full documentation can be found in the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue">rescue wiki page</a>.</p>
+<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/rescue/sqanti3_rescue.png" /></p>
+<p>SQANTI3 rescue offers two main modes of operation: <strong>automatic</strong> and <strong>full</strong>. The automatic mode, which is the default, focuses on recovering high-confidence reference isoforms by identifying reference transcripts for which all corresponding Full Splice Match (FSM) isoforms were removed during the filtering stage, under the assumption that their junction structures are likely correct. On the other hand, the full mode extends the rescue process to consider ISM, NIC, and NNC artifacts as rescue candidates. This mode involves a more comprehensive strategy, including mapping these candidate artifacts to potential target transcripts from both the reference and long-read datasets using minimap2, followed by applying the SQANTI3 filter to the reference targets and a final selection of rescued transcripts based on the mapping results and filter outcomes.</p>
+<h3 id="51-automatic-rescue">5.1 Automatic rescue:</h3>
+<p>The automatic rescue process in SQANTI3 identifies and restores isoforms that were classified as artifacts during filtering but are likely to be biologically relevant. The process focuses on rescuing the reference transcripts where all of the full-splice match (FSM) isoforms have been removed. It only rescues mono-exonic FSM isoforms if the user specifies this option (<code>--rescue_mono_exonic</code>). If a reference transcript has an associated FSM isoform that was determined as artifact, it is rescued if it is not already present in the final set. This approach ensures that potentially important transcripts, particularly those matching reference annotations, are not lost due to stringent filtering criteria.</p>
+<pre><code class="language-bash">sqanti3_rescue.py rules --filter_class  example/rules_filter_output/ \
+                        --refGTF data/reference/gencode.v38.basic_chr22.gtf \
+                        --refFasta data/reference/GRCh38.p13_chr22.fasta \
+                        --mode automatic \
+                        --dir pablo_tests/rescue_automatic --output UHR_chr22
+</code></pre>
+<p>This will generate a list with the reference transcripts that have been rescued (if any) and the updated GTF file with the final rescued transcriptome. This can be further expanded by using the <code>--mode full</code> option, which will include all the ISM, NIC and NNC artifacts as potential rescue candidates. </p>
+<blockquote>
+<p>Note: You will have to specify either <code>rules</code> or <code>ml</code> for the rescue mode, based on the filter strategy used and the corresponding classification file.</p>
+</blockquote>
+<h3 id="52-full-rescue">5.2 Full rescue:</h3>
+<p>The first step in the full rescue is to select the candidate isoforms and the target reference transcripts to rescue. </p>
+<ul>
+<li><strong>Candidate isoforms:</strong> These will be ISM, NIC and NNC isoforms that were classified as artifacts during the filtering step. </li>
+<li><strong>Target reference transcripts:</strong> In this group, we will include all of the isoforms that belong to the associated genes of the candidate isoforms. This includes the reference transcripts from those genes and the long-read isoforms that were classified as FSM. </li>
+</ul>
+<p>Once the candidate isoforms and the target reference transcripts are selected, we will map the candidate isoforms to the target reference transcripts using minimap2. This mapping will be used to identify the best matching target transcript for each candidate isoform.</p>
+<p>Before doing the final rescue, we need to treat the reference annotation as if it were a long-read dataset, in this case, the same one as our inupt. For that reason, you will have to run SQANTI3 QC with the same parameters and orthogonal data as you did with your long-read dataset. Once that is done, you will have to run rescue in either rules or ML mode, depending on the filter strategy you used.  </p>
+<h5 id="rules-based-rescue">Rules-based rescue</h5>
+<p>If the rules strategy was used, you will have to reuse the same JSON file that was used to filter the long-reads transcriptome. </p>
+<pre><code class="language-bash">sqanti3_rescue.py rules \
+    --filter_class example/rules_filter_output/UHR_chr22_RulesFilter_result_classification.txt \
+    --refGTF data/reference/gencode.v38.basic_chr22.gtf \
+    -refFasta data/reference/GRCh38.p13_chr22.fasta \
+    --rescue_isoforms example/SQANTI3_QC_output/UHR_chr22_corrected.fasta \
+    --rescue_gtf example/rules_filter_output/UHR_chr22.filtered.gtf \
+    --refClassif data/reference/gencode.v38.basic_chr22_classification.txt \
+    --mode full \
+    --json_filter src/utilities/filter/filter_default.json \
+    --dir example/rescue_full_rules --output UHR_chr22 
+</code></pre>
+<h5 id="machine-learning-based-rescue">Machine learning-based rescue</h5>
+<p>If the ML strategy was used, in this case you will have to directly give SQANTI3 the random forest model that was trained during the filtering step. The rest of the parameters should be the same as with the rules-based rescue. </p>
+<pre><code class="language-bash">sqanti3_rescue.py ml \
+    --filter_class example/rules_filter_output/UHR_chr22_ML_result_classification.txt \
+    --refGTF data/reference/gencode.v38.basic_chr22.gtf \
+    -refFasta data/reference/GRCh38.p13_chr22.fasta \
+    --rescue_isoforms example/SQANTI3_QC_output/UHR_chr22_corrected.fasta \
+    --rescue_gtf example/rules_filter_output/UHR_chr22.filtered.gtf \
+    --refClassif data/reference/gencode.v38.basic_chr22_classification.txt \
+    --mode full \
+    --random_forest example/ml_filter_output/randomforest.RData \
+    --dir example/rescue_full_rules --output UHR_chr22 
+</code></pre>
+<h4 id="522-rescued-isoforms-selection">5.2.2 Rescued isoforms selection</h4>
+<p>Once we have the mapping of the candidate isoforms to the targets and the reference annotation has been filtered as the long-reads dataset, the final step of rescue is to select the transcripts that will be rescued. The reintroduction of targets into the final transcriptome is done if they pass the following steps:</p>
+<ol>
+<li>Pass the applied SQANTI3 filter criteria (independently of being a reference transcript/gene or a long-read isoform).</li>
+<li>In the case of having two possible targets where one is a long-read isoform and the other is a reference transcript, the latter will be selected, since the best matching transcript is already part of the transcriptome.</li>
+<li>The target transcript will be rescued if it does not introduce redundancy into the final transcriptome. This means that if the target transcript is already present in the final transcriptome, it will not be rescued again.</li>
+</ol>
+<h4 id="52-the-main-principles-of-sqanti3-rescue">5.2 The Main Principles of SQANTI3 rescue:</h4>
+<ol>
+<li><strong>Consistent Quality:</strong> Rescued transcript models should satisfy the quality control (QC) standards set during the filtering phase.</li>
+<li><strong>Non-redundancy:</strong> If the replacement transcript (identified for an artifact) already exists in the filtered transcriptome, it isn't added again.</li>
+</ol>
+<h4 id="53-understand-the-process-of-sqanti3-rescue">5.3 Understand the Process of SQANTI3 rescue:</h4>
+<ol>
+<li>
+<p>Automatic Rescue:</p>
+<ul>
+<li>Targets FSM (Full Splice Match) artifacts arising when there's insufficient confidence in validating Transcription Start Sites (TSS) or Transcription Termination Sites (TTS).</li>
+<li>If a reference transcript relates to a removed FSM, it's automatically added to the transcriptome. However, if multiple FSMs point to the same reference but have varied TSS, the reference is added just once.</li>
+<li>Artifacts from ISM, NIC, and NNC categories are seen as potential rescue candidates. ISM artifacts are considered only if they don't have an associated FSM with the same reference transcript.</li>
+<li>
+<p>Rescue Target Identification:</p>
+</li>
+<li>
+<p>Defines a group of "rescue targets" or potential replacements for the rescue candidates. This encompasses both long read-defined and reference isoforms that have at least one same-gene rescue target.</p>
+</li>
+<li>Candidates are mapped to the targets in a "rescue-by-mapping" process. The tool used here is minimap2, set for long-read alignment.</li>
+<li>
+<p>Quality Control:</p>
+</li>
+<li>
+<p>Ensures the reference transcriptome targets used in the rescue adhere to the same QC standards as the long-read targets.</p>
+</li>
+<li>The SQANTI3 QC and Filter modules (machine learning or rules) are applied on the reference transcriptome, ensuring the same data and quality standards as were used for the long-read transcript models.</li>
+<li>
+<p>Final Selection:</p>
+</li>
+<li>
+<p>Filters out mapping hits if the rescue target didn't pass the established filters.</p>
+</li>
+<li>If multiple valid mapping hits exist per candidate, the one with the highest probability (from either long-read or reference) will be chosen. If more than one hit passes the rules filter, all targets are considered.</li>
+<li>If the best matching target is a long read-defined isoform already in the transcriptome, nothing changes since the artifact is already represented.</li>
+<li>The remaining reference targets are checked for redundancy and added only if they aren't present in the already curated transcriptome.</li>
+</ul>
+</li>
+</ol>
+<p>In essence, the SQANTI3 rescue module seeks to ensure no valuable transcript data is lost while maintaining stringent quality and non-redundancy principles.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
