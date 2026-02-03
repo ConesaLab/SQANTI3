@@ -1,0 +1,31 @@
+Welcome to the SQANTI3 Documentation!
+
+**Contents:**
+
+* [Introduction to SQANTI3](Introduction-to-SQANTI3.md)
+
+* [Dependencies and installation](Dependencies-and-installation.md)
+
+* [Version history](Version-history.md)
+
+* [Isoform classification: categories and subcategories](SQANTI3-isoform-classification:-categories-and-subcategories.md)
+
+* [Running SQANTI3 from the wrapper](Running-SQANTI3-from-the-wrapper.md)
+
+* [Running SQANTI3 quality control](Running-SQANTI3-Quality-Control.md)
+
+* [Understanding the output of SQANTI3 QC](Understanding-the-output-of-SQANTI3-QC.md)
+
+* [IsoAnnotLite](IsoAnnotLite.md)
+
+* [Running SQANTI3 filter](Running-SQANTI3-filter.md)
+
+* [Running SQANTI3 rescue](Running-SQANTI3-rescue.md)
+
+* [Tutorial: running SQANTI3 on an example dataset](Tutorial:-running-SQANTI3-on-an-example-dataset.md)
+  
+* [Running SQANTI-reads](Running-SQANTI‐reads.md)
+
+* [Memory requirements to use parallelization](SQANTI3-memory-requeriments-and-paralellization.md)
+
+
