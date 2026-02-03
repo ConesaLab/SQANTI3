@@ -18,7 +18,7 @@ SQANTI3 classifies each isoform by finding the best matching reference transcrip
 
 * **Intergenic**: the query isoform is in the intergenic region.
 
-![sqanti_explain](https://github.com/FJPardoPalacios/public_figures/blob/master/figuras_class_SQ3.png)
+![sqanti_explain](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/figuras_class_SQ3.png)
 
 ## Isoform subcategories
 
@@ -27,15 +27,15 @@ classification output). These will be explained in the sections below.
 
 ### FSM subcategories
 
-![FSM_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_fsm_subcat_SQ3.png)
+![FSM_subtype](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/figure_fsm_subcat_SQ3.png)
 
 ### ISM subcategories
 
-![ISM_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_ism_subcat_SQ3.png)
+![ISM_subtype](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/figure_ism_subcat_SQ3.png)
 
 ### Novel isoform subcategories (NIC and NNC)
 
 Novel isoforms are subtyped based on whether they use a combination of known junctions (junctions are pairs of donor-acceptor sites), a combination of known splice sites (the individual donor and acceptor sites are known, but at least combination is novel), or at least one splice site (donor or acceptor) is novel.
 
-![NIC_subtype](https://github.com/FJPardoPalacios/public_figures/blob/master/figure_nic_nnc_subcat_SQ3.png)
+![NIC_subtype](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/figure_nic_nnc_subcat_SQ3.png)
 

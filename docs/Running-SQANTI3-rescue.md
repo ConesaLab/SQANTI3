@@ -51,7 +51,7 @@ In particular, during the rescue, SQANTI3 will try to confidently assign each di
 </a>
 Here is a summary of the SQ3 rescue workflow:
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue.png" width = "827" height = "591">
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue.png" width = "827" height = "591">
 
 
 The SQANTI3 rescue algorithm consists in the following steps:
@@ -66,7 +66,7 @@ The previous analytic decision is justified because, in practice, any case where
 
 By default, SQANTI3 Rescue runs under `--mode automatic`. As a result, this is the only rescue step that SQANTI3 Rescue performs. The complete algorithm can be run by the `--mode full` argument.
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_01-automatic.png" width = 650 height = 650>
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_01-automatic.png" width = 650 height = 650>
 
 #### 1.b Selection of rescue candidate and target transcripts
 
@@ -96,7 +96,7 @@ minimap2 --secondary=yes -ax map-hifi rescue_targets.fasta rescue_candidates.fas
 Finally, all candidate-target pairs obtained during mapping -referred to as **mapping hits**- are obtained from the output SAM file regardless of whether they are primary or secondary alignments.
 
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_02-mapping.png" height = 565 width = 412>
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_02-mapping.png" height = 565 width = 412>
 
 
 #### 3. Application of SQ3 filter to the reference transcriptome
@@ -109,7 +109,7 @@ This requires users to [run SQANTI3 quality control](Running-SQANTI3-Quality-Con
 
 Using the supplied reference classification file, SQ3 rescue will next **apply SQ3 filter to the reference transcriptome**. The filter to be applied will be specified by the `rules` or `ml` flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the `ml` option (and the same is true for the rules filter).
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = 216 width = 763>
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = 216 width = 763>
 
 
 #### 4. Rescue-by-mapping
@@ -127,7 +127,7 @@ This part of the rescue can be divided into the following tasks/criteria:
 
 After performing this last filter of the rescue target list, SQ3 rescue outputs a list of rescued reference transcripts, which are then added to the long-read transcriptome GTF.
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798>
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798>
 
 
 <a id="running"></a>

@@ -23,7 +23,7 @@
 [IsoAnnotLite](https://isoannot.tappas.org/) is a python script that allows you to **transfer isoform-level functional feature annotations** from an existing tappAS-like GFF3 file to the SQANTI3 output (i.e. a set of long read-defined transcripts). The resulting file has the proper structure to be loaded into tappAS for isoform-level functional analysis. If the reference GFF3 annotation file is not provided, only structural information will be included in the IsoAnnotLite-generated GFF3 file. The transference is done at the genomic positon level for transcript and protein annotations, while all gene-level annotations (e.g. Gene Ontology terms) are automatically transferred by gene ID.
 
 
-![isoannotlite](https://github.com/FJPardoPalacios/public_figures/blob/master/isoannotlite_logo.png)
+![isoannotlite](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/isoannotlite_logo.png)
 
 
 <a id="args"></a>

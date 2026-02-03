@@ -35,7 +35,7 @@ __________________________________________
 </a>
 SQANTI3 filter has been reshaped to allow users to supply their own set of rules. These will be used to accept or discard an isoform based on the attributes obtained through [SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control). To define those rules, the user will need to create a **JSON file** specifying which SQ3 attributes and thresholds are to be used for filtering and, therefore, the properties of the transcripts that are to be included in the final transcriptome. 
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977">
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977">
 
 <a id="running_rules"></a>
 
@@ -277,7 +277,7 @@ description of its parameters. While we have included recommendations on how to 
 them to obtain optimal results, users are encouraged to try several configurations of 
 the filter to find the best way to run it for their particular dataset. ⚠️
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904">
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904">
 
 
 <a id="runml"></a>

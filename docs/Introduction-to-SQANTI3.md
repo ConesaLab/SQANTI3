@@ -89,7 +89,7 @@ To gain insight into these two steps, we encourage reading the original [SQANTI 
 
 3. **Reference transcript rescue** ([SQANTI3 rescue](Running-SQANTI3-rescue.md)) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.
 
-![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
+![Sqanti3 workflow](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/SQ3_qc.png)
 
 
 
