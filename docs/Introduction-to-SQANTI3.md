@@ -11,12 +11,12 @@
 
     * <a href="#source">Source folder
     * <a href="#utilities">Utilities folder</a>
-    * <a href="#data">Data folder</a>
-    * <a href="#example">Example folder</a>
+    * <a href="#data">Data and examples</a>
+    * <a href="#tests">Tests folder</a>
 
 __________________________________
 
-<a id="intro"></a>
+<a name="intro"/></a>
 
 ## Introduction
 
@@ -30,7 +30,7 @@ maintained/updated. All development efforts will continue in SQANTI3, aiming to 
 comprehensive characterization of long read-defined transcriptomes for the community.
 
 
-<a id="fit"></a>
+<a name="fit"/></a>
 
 ### SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline
 
@@ -49,7 +49,7 @@ that leverages both expression and domain/motif annotation information to gain i
 of alternative isoform expression.
 
 
-<a id="workflow"></a>
+<a name="workflow"/></a>
 
 ### Before running SQANTI3: recommended long read processing workflow
 
@@ -58,25 +58,21 @@ Here is our recommended workflow, including the best way to generate the SQANTI3
 1. **Sample pooling**: while we are aware that some users may have long read data from several replicates and/or samples,
 we recommend pooling all long read samples to build a single transcriptome per experiment.
 2. **Long read data processing** using your preferred transcriptome-building tool. We do not recommend using SQANTI3 on 
-raw long reads, as it is NOT designed as a tool for long read data QC.
+raw long reads, as it is NOT designed as a tool for long read data QC. If you wish to still perform QC on raw long reads, please use [SQANTI-reads](Running-SQANTI‐reads.md).
 3. **Collapse of isoform models**. Typically, long read data processing pipelines generate a large number of highly redundant
 isoform models. We recommend collapsing these using tools such as [cDNA_Cupcake](https://github.com/Magdoll/cDNA_Cupcake) or 
 [TAMACollapse](https://github.com/GenomeRIK/tama/wiki/Tama-Collapse) to reduce the number of isoforms and create unique isoform models prior to running SQANTI3.
-4. **Quality control and filtering**: we strongly encourage users to do as careful an inspection of their long read-defined
-transcriptomes as possible, including filtering their transcriptome to remove potential false positive isoforms, which are abundant
-in long read-generated transcriptomes.
-5. **Quantification** of the filtered transcriptome using short/long reads and your preferred tool. We do not recommend using the
+4. **Quantification** of the filtered transcriptome using short/long reads and your preferred tool. We do not recommend using the
 expression estimates input into SQANTI3 for downstream analysis: these are used for quality control purposes only. Once all artifacts
-are removed from the transcriptome, the reads can be used to obtain a more accurate quantification.
+are removed from the transcriptome, the reads can be used to obtain a more accurate quantification. SQANTI3 rescue module will produce a curated transcriptome and count matrix that can be used for this purpose.
 
 
-
-<a id="sqanti"></a>
+<a name="sqanti"/></a>
 
 ## How does SQANTI3 work?
 
 SQANTI3 is a tool for in-depth characterization of isoforms obtained by full-length transcript sequencing, 
-which are commonly returned in a fasta or GTF file format. SQANTI3 combines the long read-defined transcripts with the **reference annotation** as well as with other **orthogonal data** to provide a wide range of descriptors of transcript quality. SQ3 generates a comprehensive report to facilitate quality control and filtering of the isoform models.
+which are commonly returned in a FASTA or GTF file format. SQANTI3 combines the long read-defined transcripts with the **reference annotation** as well as with other **orthogonal data** to provide a wide range of descriptors of transcript quality. SQ3 generates a comprehensive report to facilitate quality control and filtering of the isoform models.
 
 SQANTI3 is mainly designed to perform two 
 different tasks, both of them equally important:
@@ -89,11 +85,13 @@ To gain insight into these two steps, we encourage reading the original [SQANTI 
 
 3. **Reference transcript rescue** ([SQANTI3 rescue](Running-SQANTI3-rescue.md)) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.
 
+4. **Curated transcriptome requantification** (final step of [SQANTI3 rescue](Running-SQANTI3-rescue.md)) to generate an updated count matrix including the rescued reference transcripts. After the rescue step, the transcriptome is expanded with the rescued reference transcripts, and the original quantification matrix is updated to include counts for these transcripts. This updated count matrix can be used for downstream analyses. As well, artifacts that are pontentilaly divergent from the true isoforms, also have their counts redistributed. 
+
 ![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
 
 
 
-<a id="structure"></a>
+<a name="structure"/></a>
 
 ## SQANTI3 structure
 
@@ -101,18 +99,18 @@ At the moment, the SQANTI3 tool is directly called using the wrapper `sqanti3`. 
 
 - `sqanti3_qc.py` for quality control.
 - `sqanti3_filter.py` for transcriptome filtering/curation.
-- `sqanti3_rescue.py` to replace artifacts by their closest matching reference transcript.
+- `sqanti3_rescue.py` to replace artifacts by their closest matching transcript from either the reference or long-read defined transcriptome.
 
-To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the `src` (source) directory. _As of the [latest release](https://github.com/ConesaLab/SQANTI3/releases/latest), only sqanti3_qc.py has been fully modularized._
+To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the `src` (source) directory. 
 
-<a id="source"></a>
+<a name="source"/></a>
 
 ### Source folder
 
 The `src` directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.
 
 
-<a id="utilities"></a>
+<a name="utilities"/></a>
 #### Utilities folder
 
 The `utilities` folder contains all the auxiliary scripts and functions required to run `sqanti3_qc.py` and `sqanti3_filter.py`.
@@ -127,12 +125,12 @@ Used during QC.
 
 ##### Filter
 
-The `filter` subfolder contains two R scripts, each for one of the [filters available in SQANTI3](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter) (i.e. rules and machine learning-based). 
+The `filter` subfolder contains two R scripts, each for one of the [filters available in SQANTI3](Running-SQANTI3-filter.md) (i.e. rules and machine learning-based). 
 In addition, a JSON file containing the default set of rules for the rules filter (which are equivalent to running the old RulesFilter in SQANTI2 and SQANTI3 for versions < 5.0).
 
 ##### Rescue 
 
-The `rescue` subfolder contains a series of R scripts implementing the different [rescue steps](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue). These are run internally by the rescue wrapper (`sqanti3_rescue.py`) to perform the rescue.
+The `rescue` subfolder contains a series of R scripts implementing the different [rescue steps](Running-SQANTI3-rescue.md). These are run internally by the rescue wrapper (`sqanti3_rescue.py`) to perform the rescue.
 
 ##### Reports
 
@@ -143,25 +141,14 @@ The `rescue` subfolder contains a series of R scripts implementing the different
 
 GeneMarkST tool. Used internally during QC for ORF prediction.
 
-<a id="data"></a>
+<a name="data"/></a>
 
-### Data folder
+### Data and examples
 
-The `data` folder contains pre-computed TSS/TTS orthogonal data that is ready to be used to run SQANTI3 QC (see [additional inputs](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#minimal) section), avoiding the need for users to download them from reference databases.
+This directories have been moved to their own repository, with the idea not to make the SQANTI3 repository too heavy. You can find them at [SQANTI3 examples](https://github.com/ConesaLab/SQANTI_examples)
 
-- `ref_TSS_annotation` subfolder: human and mouse CAGE data from the [refTSS database](http://reftss.clst.riken.jp/reftss/Main_Page).
-- `polyA_motif` subfolder: contains a list of human and mouse canonical polyadenylation motifs. 
-
-<a id="example"></a>
-
-### Example folder
-
-This folder contains all the necessary inputs to run SQANTI3 on an example dataset. This data was obtained from **public PacBio data**, in particular, it consists in a set of transcripts generated using long reads from the **Universal Human Reference RNA (UHR)** (see dataset details [here](https://github.com/Magdoll/cDNA_Cupcake/wiki/Iso-Seq-Public-Datasets#4-universal-human-reference-rna-uhrr-2021-release)). For convenience, we have only selected those in chromosome 22. 
-This small dataset can be used to test SQANTI3 and/or to follow the 
-[SQANTI3 example tutorial](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset) in the Wiki. 
-
-In addition, we provide the outputs generated after running QC and filters (both machine learning and rules) on the example dataset under the corresponding `*_output` subfolders.
+<a name="tests"/></a>
 
 ### Test folder
 
-Newly implemented, and in development, test suite for SQANTI3. This test suite is being developed as SQANTI3 is being modularized, with the aim to keep SQANTI3 as stable as possible in future releases. If you find any issue with the test suite, add it as an issue and it will be updated as soon as possible.
+Newly implemented, and in constant development, test suite for SQANTI3. This test suite is being developed as SQANTI3 is being modularized, with the aim to keep SQANTI3 as stable as possible in future releases. If you find any issue with the test suite, add it as an issue and it will be updated as soon as possible.

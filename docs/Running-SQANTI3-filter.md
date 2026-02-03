@@ -29,25 +29,23 @@
 
 __________________________________________
 
-<a id="rules"></a>
+<a name="rules"></a>
 
 ## Rules filter: removing artifacts using the SQANTI3 output and user-defined rules
-</a>
-SQANTI3 filter has been reshaped to allow users to supply their own set of rules. These will be used to accept or discard an isoform based on the attributes obtained through [SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control). To define those rules, the user will need to create a **JSON file** specifying which SQ3 attributes and thresholds are to be used for filtering and, therefore, the properties of the transcripts that are to be included in the final transcriptome. 
+SQANTI3 filter has been reshaped to allow users to supply their own set of rules. These will be used to accept or discard an isoform based on the attributes obtained through [SQANTI3 QC](Running-SQANTI3-Quality-Control.md). To define those rules, the user will need to create a **JSON file** specifying which SQ3 attributes and thresholds are to be used for filtering and, therefore, the properties of the transcripts that are to be included in the final transcriptome. 
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977">
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rules-filter.png" width = "626" height = "977">
 
-<a id="running_rules"></a>
+<a name="running_rules"></a>
 
 ### Running the rules filter
-</a>
 The rules filter only needs a SQANTI3 classification file to work. To run it, just execute `sqanti3_filter.py` providing the `rules` argument followed by the path to the SQANTI3 `*_classification.txt` file:
 
 ```
 python sqanti3_filter.py rules --sqanti_class path/to/classification.txt 
 ``` 
 
-Using the optional arguments, the script can be set up to filter several file formats (such as **FASTA**, **GTF** and **BAM**) and remove the isoforms that were catalogued as artifacts based on these user-defined rules. This option is designed to make it easy for users filter the files from the [SQANTI3 QC output](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC), enabling quick transcriptome curation.
+Using the optional arguments, the script can be set up to filter several file formats (such as **FASTA**, **GTF** and **BAM**) and remove the isoforms that were catalogued as artifacts based on these user-defined rules. This option is designed to make it easy for users filter the files from the [SQANTI3 QC output](Understanding-the-output-of-SQANTI3-QC.md), enabling quick transcriptome curation.
 
 These are the arguments accepted by `sqanti3_filter.py rules`:
 
@@ -100,14 +98,13 @@ Extra options:
 Rules specific options:
   -j JSON_FILTER, --json_filter JSON_FILTER
                         JSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept.
-                        Default: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+                        Default: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
 ```
 </details><br>
 
-<a id="default_filter"></a>
+<a name="default_filter"></a>
 
 ### Default filter
-</a>
 
 Following the same criteria as in previous versions of SQANTI3, we hereby provide a default set of rules for the filter. These are equivalent to running the old `sqanti3_RulesFilter.py` script. However, we strongly advise users to closely inspect the properties of their transcriptome and define their own filter based on the results obtained during QC. Keep in mind as well that any isoform that has a missing value in any of the conditions of a rule will be considered an artifact. This means that `NA` the likes will be treated as fails. 
 
@@ -145,10 +142,9 @@ This filter is supplied in the `utilities/filter/filter_default.json` file:
 ```
 
 
-<a id="build_json"></a> 
+<a name="build_json"></a>
 
 ### Making your own filter
-</a>
 As of SQANTI3 version 5.0, it is possible to supply a user-defined filter including as many rules as desired. To do it, the user needs to create a JSON file defining which characteristics make an isoform reliable. 
 
 #### Defining rules and requisites
@@ -243,24 +239,22 @@ The JSON file for that precise filter will look like this:
 ```
 
 
-<a id="rulesout"></a>
+<a name="rulesout"></a>
 
-## Rules filter output
-</a>
+### Rules filter output
 The main SQANTI rules filter output files are:
 
-* `*_RulesFilter_result_classification.txt`: New classification file with an extra column called "filter_result" that will classify all the entries as *Isoform* or *Artifact*.
-* `*_inclusion-list.txt`: Text file with the IDs of the isoforms that passed the filter.
+* `*_RulesFilter_classification.txt`: New classification file with an extra column called "filter_result" that will classify all the entries as *Isoform* or *Artifact*.
+* `*_pass_isoforms.txt`: Text file with the IDs of the isoforms that passed the filter.
 * `*_filtering_reasons.txt`: TSV file with 3 columns:
     * (1) Isoform ID of the isoform that was. filtered out
     * (2) Structural Category
     * (3) Reason why the isoform was discarded as an artifact. If an isoform is catalogued as *Artifact* because it doesn't fulfill several rules, there will be multiple lines in this file regarding that isoform.
 * `*_SQANTI3_filter_report.pdf`: A PDF report with some plots describing the performance of the filtering.
 
-<a id="ml"></a>
+<a name="ml"></a>
 
 ## Machine learning filter: removing artifacts using a random forest classifier
-</a>
 SQANTI3 incorporates an automated filter based on a **random forest classifier**, 
 which is designed to discriminate potential artifacts from true isoforms
 without the need for user-defined rules or manually-set thresholds. 
@@ -268,7 +262,7 @@ without the need for user-defined rules or manually-set thresholds.
 Briefly, this classifier learns high and low quality attributes from a True 
 Positive (TP) and True Negative (TN) transcript set, building a model that 
 discriminates artifacts and isoforms based on TN and TP properties. 
-The filter returns a modified  version of the `*_classification.txt` file (named `*_MLresult_classification.txt`). The new table will include a `filter_result` 
+The filter returns a modified  version of the `*_classification.txt` file (named `*_ML_classification.txt`). The new table will include a `filter_result` 
 column with the label `Isoform` or `Artifact`, which will be the result of the 
 random forest classifier.
 
@@ -277,13 +271,12 @@ description of its parameters. While we have included recommendations on how to 
 them to obtain optimal results, users are encouraged to try several configurations of 
 the filter to find the best way to run it for their particular dataset. ⚠️
 
-<img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904">
+<img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_MLfilter.png" width = "700" height = "904">
 
 
-<a id="runml"></a>
+<a name="runml"></a>
 
 ### Running the machine learning filter
-</a>
 Similarly to the rules filter, the machine learning filter (ML filter) can be 
 run using the `sqanti3_filter.py` script by providing the `ML` argument followed by
 the path to the SQANTI `*_classification.txt` file (output by `sqanti3_qc.py`):
@@ -294,7 +287,7 @@ python sqanti3_filter.py ml path/to/classification.txt
 ```
 
 A brief **tutorial** on how to run the SQANTI3 ML filter for an example dataset can 
-be found [here](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset).
+be found [here](Tutorial:-running-SQANTI3-on-an-example-dataset.md).
 
 These are the parameters and arguments accepted by `sqanti3_filter.py ML`:
 
@@ -373,10 +366,9 @@ We next provide a detailed description of each of the ML filter parameters in or
 to help users understand how to best apply it to their own data.
 
 
-<a id="sets"></a>
+<a name="sets"></a>
 
 ### True Positive (TP) and True Negative (TN) sets
-</a>
 As stated above, the random forest classifier model needs to be trained on a subset
 of isoforms from the transcriptome. This will include a set of **True Positive isoforms**
 -that is, isoforms that are reliable enough for the classifier to learn the properties 
@@ -414,10 +406,9 @@ will be **downsized to 3000 transcripts** if they are larger than this,
 no matter if they were user-defined or generated internally.
 
 
-<a id="partition"></a>
+<a name="partition"></a>
 
 ### Partitioning of the training data (model training/testing)
-</a>
 TP and TN isoform sets need to be split into *training* and *test* data to correctly
 generate the random forest model. Using the `--percent_training` or `-t` parameter,
 users can specify the proportion of the data that is used for training. By default,
@@ -445,14 +436,13 @@ model to a different transcriptome; however, if you wish to train a new model, y
 
 
 
-<a id="prob"></a>
+<a name="prob"></a>
 
 ### Probability threshold to define Isoforms/Artifacts
-</a>
 Ultimately, flagging transcripts as Isoforms or Artifacts is based on the 
 random forest **probability** to correctly classify a transcript into either
 group. These probabilities are included in the `POS_MLprob` and `NEG_MLprob` 
-columns of the output `_MLresult_classification.txt` file. Intuitively:
+columns of the output `_ML_classification.txt` file. Intuitively:
 
 - `POS_MLprob` is the probability of classifying the transcript as an Isoform.
 - `NEG_MLprob` is the probability of classifying the transcript as an Artifact, and
@@ -471,10 +461,9 @@ However, users may reproduce this lenient filter by lowering the threshold to 0.
 
 
 
-<a id="cols"></a>
+<a name="cols"></a>
 
 ### Classification file columns excluded from the ML filter
-</a>
 Due to their lack of importance for artifact definition (or to prevent them from
 having unwanted effects on the filtering), the following columns are removed 
 from the classification table prior to running the SQANTI ML filter:
@@ -495,10 +484,9 @@ or NNC transcripts being used as a TN set.
 file) to prevent bias towards reference-similar isoforms when RM are used as a TP set.
 
 
-<a id="colrem"></a>
+<a name="colrem"></a>
 
-### Excluding additional data columns from the filter
-</a>
+#### Excluding additional data columns from the filter
 The SQANTI ML filter incorporates the option to exclude columns from the 
 *_classification.txt* file from model training to prevent filtering based on 
 them. These should be provided as a single-column file including the column names
@@ -515,10 +503,9 @@ importance during Isoform/Artifact classification.
 before making a final decision on which are the artifacts in your transcriptome.*
 
 
-<a id="intraprim"></a>
+<a name="intraprim"></a>
 
 ### Intra-priming filter
-</a>
 The ML filter script in SQANTI3 includes a simple **threshold-based filter** to prevent
 potential **intra-priming artifacts** from remaining in the transcriptome, which is
 not specifically considered by the ML filter. Still, note that the `perc_A_downstream_TTS`
@@ -533,10 +520,9 @@ intra-priming artifacts. By default, transcripts containing more than 60% A's at
 3' end will be flagged.
 
 
-<a id="retain"></a>
+<a name="retain"></a>
 
 ### Forcing the removal/retention of specific isoform groups
-</a>
 1. **Full-splice match (FSM) transcripts** can be excluded from the ML filter and
 therefore retained by providing the `--force_fsm_in` or `-f` argument. By default,
 FSM will be run through the filter along with the isoforms from the rest of the 
@@ -547,10 +533,9 @@ structural categories.
 be evaluated by the ML filter (only by the intra-priming filter).
 
 
-<a id="except"></a>
+<a name="except"></a>
 
 ### Exceptions to running the SQANTI3 ML filter
-</a>
 The random forest classifier **cannot/will not** be run in any of the following
 scenarios:
 
@@ -564,25 +549,23 @@ However, even in scenarios where no ML-based filtering can be applied, the
 **intra-primming filter** will still be applied to all input transcripts.
 
 
-<a id="mlout"></a>
+<a name="mlout"></a>
 
-## SQANTI ML filter output
-</a>
+### SQANTI ML filter output
 
 The SQANTI ML filter output files are written to the path specified using the
 `--dir` or `-d` argument, also appending the prefix provided via the `--output` 
 or `-o` argument.
 
 An example of the ML filter output can be found under the `example/MLfilter_output` folder, which is included in
-the main SQANTI3 directory (see our [example dataset tutorial](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset) for details).
+the [SQANTI3 data repository]() (see our [example dataset tutorial](Tutorial:-running-SQANTI3-on-an-example-dataset.md) for details).
 
 The following output files are generated after running the filter:
 
 
-<a id="input"></a>
+<a name="input"></a>
 
-### Input-related files
-</a>
+#### Input-related files
 - `params.txt`: two-column file including the name of the argument and the
 value that was used to run the filter.
 - `TP_list.txt` and `TN_list.txt`: a single-column text file including the 
@@ -592,12 +575,11 @@ were provided).
 The supplied prefix will be appended to the filenames above.
 
 
-<a id="model"></a>
+<a name="model"></a>
 
 ### Model-related files
-</a>
 - `randomforest.RData`: R object containing the trained random forest model.
-- `classifier_variagble-importance_table.txt`: two-column text file including the
+- `classifier_variable-importance_table.txt`: two-column text file including the
 names of the variables that were used for classification and a numeric value indicating
 their importance in the random forest classifier.
 - `intermediate_*_MLinput_table.txt`: training-ready classification table. SQANTI
@@ -607,10 +589,9 @@ formatting, column removal, etc. This file will only be output if the `--interme
 argument is supplied. Note that this file is **NOT intented for downstream anaylsis**.
 
 
-<a id="test"></a>
+<a name="test"></a>
 
 ### Test set files
-</a>
 All include the `testSet_` prefix:
 
 - `stats.txt`: all statistics for the model testing.
@@ -621,10 +602,9 @@ on the test set.
 specificity and AUROC.
 
 
-<a id="reportml"></a>
+<a name="reportml"></a>
 
 ### Filter report
-</a>
 The ML filter automatically returns a PDF report. This includes filter summary tables and plots as well as 
 one diagnostic plot per variable used by the random forest classifier. This allows an evaluation of the behaviour of 
 transcripts flagged as isoforms and artifacts in the light of each of the variables that were considered 
@@ -633,19 +613,18 @@ relevant to discriminate both.
 Supplying the `--skip_report` flag will deactivate the report.
 
 
-<a id="classifml"></a>
+<a name="classifml"></a>
 
 ### Classification file
-</a>
-The `MLresult_classification.txt` constitutes a modified classification file 
+The `ML_classification.txt` constitutes a modified classification file 
 including the results of the ML and intra-priming filters. The following
 columns are added:
 
 - `POS_MLprob` and `NEG_MLprob`, described above (see probability threshold section). 
 - `ML_classifier` column, in which `ML_classifier == Positive` corresponds to transcripts
 in which `POS_MLprob > t` (therefore flagged as Isoforms by the ML filter).
-- `intra_priming` column, in which `intrapriming == TRUE` corresponds to transcripts
-flagged as intra-priming atrifacts.
+- `intra_priming` column, in which `intra_priming == TRUE` corresponds to transcripts
+flagged as intra-priming artifacts.
 - `filter_result` column, including the combined result for the ML and intra-priming
 filters. An isoform will be `filter_result == Isoform` if it passed both the
 ML and intra-priming filters. 
@@ -656,11 +635,10 @@ the `-e` argument. Similarly, all FSM transcripts will be flagged as true isofor
 the `-f` option is provided.
 
 
-<a id="inclusionml"></a>
+<a name="inclusionml"></a>
 
-### Inclusion list and filtering of SQANTI QC output files
-</a>
-Finally, `inclusion-list.txt` is a single-column file including the IDs of the transcripts 
+## Good isoforms and filtering of SQANTI QC output files
+Finally, `*_pass_filter.txt` is a single-column file including the IDs of the transcripts 
 classified as true isoforms (i.e. flagged as `Isoform` in the `filter_result` column).
 This list will be used to provide filtered versions of supplied SQANTI QC output files. 
 Use the `--isoAnnotGFF3`, `--isoforms`, `--gtf`, `--faa` and `--sam` arguments to provide 

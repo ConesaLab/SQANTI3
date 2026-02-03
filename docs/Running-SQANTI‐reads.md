@@ -153,7 +153,7 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 
 ### Results default .csv files
 
-- sqantiReads_cv.csv: Provides metrics on the coefficient of variance of reference junctions, per sample.
+- sqantiReads_cv.csv: Provides metrics on the coefficient of variation of reference junctions, per sample.
 - sqantiReads_gene_counts.csv: Provides the number of reads in each structural category, per gene, per sample.
 - sqantiReads_length_summary.csv: Provides the number and percentage of reads in length categories per sample.
 - sqantiReads_ujc_counts.csv: Provides a list of junction strings in each sample and the number of reads in each sample associated with each junction string.
@@ -165,8 +165,8 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 - sqantiReads_cv_acc/don_counts.csv: Provides the number of detected annotated donors and acceptors in each junction variation category.
 - sqantiReads_cv_acc/don_counts.csv: Provides the number of detected annotated donors and acceptors in each junction variation category.
 - sqantiReads_FSM/ISM/NIC_NNC_counts.csv: Provides the number of reads in each subcategory for FSMs, ISMs, NICs and NNCs.
-- sqantiReads_err_counts.csv: Provides the number and percentage of reads with. evidence of intrapriming, RT-switching and non-canonical junctions per samples.
-- sqantiReads_pca_loadings.csv: Gives loadings of PC1 and PC2 for the PCA analaysis.
+- sqantiReads_err_counts.csv: Provides the number and percentage of reads with evidence of intrapriming, RT-switching and non-canonical junctions per sample.
+- sqantiReads_pca_loadings.csv: Gives loadings of PC1 and PC2 for the PCA analysis.
 - sqantiReads_pca_variance.csv: Gives the proportion variance explained by each PC.
 
 ### Results plots
