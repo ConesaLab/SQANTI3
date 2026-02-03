@@ -1194,14 +1194,14 @@ The idea behind this strategy is to avoid losing transcripts/genes that are dete
 <h2 id="sqanti3-rescue-strategy">SQANTI3 rescue strategy</h2>
 <p></a>
 Here is a summary of the SQ3 rescue workflow:</p>
-<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue.png" width = "827" height = "591"></p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue.png" width = "827" height = "591"></p>
 <p>The SQANTI3 rescue algorithm consists in the following steps:</p>
 <h4 id="1a-automatic-rescue">1.a Automatic rescue</h4>
 <p>As explained above, the rescue strategy in SQ3 was conceived to recover transcriptome diversity lost during filtering. This, among other things, means verifying that mone of the <strong>reference-supported junction chains</strong> that were initially detected by long-reads are lost due to stringent artifact removal.</p>
 <p>To achieve this during <strong>automatic rescue</strong>, all reference transcripts that were represented by at least one FSM in the original post-QC transcriptome are first retrieved -note that this information is available in the <code>associated_transcript</code> column of the <code>*_classification.txt</code> file. Then, those <strong>reference transcripts for which all FSM representatives were removed by the filter</strong> are rescued.</p>
 <p>The previous analytic decision is justified because, in practice, any case where all FSMs with the same <code>associated_transcript</code> are removed can be interpreted as follows: <strong>1)</strong> the TSS and/or TTS of the long read-defined transcript is different from that of the matching  reference transcript, however, it could not be validated by SQ3 QC-supplied orthogonal data; and <strong>2)</strong> the junctions are identical to those found in the reference, which can be interpreted as evidence that this isoform is real. As a result, SQ3 will not rescue any of the discarded FSMs, but the <code>associated_transcript</code> from the reference.</p>
 <p>By default, SQANTI3 Rescue runs under <code>--mode automatic</code>. As a result, this is the only rescue step that SQANTI3 Rescue performs. The complete algorithm can be run by the <code>--mode full</code> argument.</p>
-<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_01-automatic.png" width = 650 height = 650></p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_01-automatic.png" width = 650 height = 650></p>
 <h4 id="1b-selection-of-rescue-candidate-and-target-transcripts">1.b Selection of rescue candidate and target transcripts</h4>
 <p>In spite of its potential to achieve the goals that we set for the rescue, the previous strategy does not consider ISM, NIC or NNC artifacts. These will be included in the <strong>rescue candidate</strong> group, i.e. transcripts classified as artifacts for which SQANTI3 will try to find a matching reference transcript to include in the final, curated transcriptome.</p>
 <ul>
@@ -1225,13 +1225,13 @@ Here is a summary of the SQ3 rescue workflow:</p>
 <pre><code>minimap2 --secondary=yes -ax map-hifi rescue_targets.fasta rescue_candidates.fasta &gt; mapped_rescue.sam
 </code></pre>
 <p>Finally, all candidate-target pairs obtained during mapping -referred to as <strong>mapping hits</strong>- are obtained from the output SAM file regardless of whether they are primary or secondary alignments.</p>
-<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_02-mapping.png" height = 565 width = 412></p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_02-mapping.png" height = 565 width = 412></p>
 <h4 id="3-application-of-sq3-filter-to-the-reference-transcriptome">3. Application of SQ3 filter to the reference transcriptome</h4>
 <p>Validation of transcripts using <a href="../Running-SQANTI3-Quality-Control/#optional">orthogonal sources of data</a> is an important part of the SQANTI3 philosophy. In consequence, the rescue strategy in SQ3 includes a <strong>validation step for all reference rescue targets</strong> before considering them for inclusion in the transcriptome, since no QC information is available for them (in contrast to long read-defined targets).</p>
 <p>This requires users to <a href="../Running-SQANTI3-Quality-Control/">run SQANTI3 quality control</a> on the reference transcriptome and supply the output <code>*_classification.txt</code> file to SQANTI3 rescue using the <code>--refClassif</code> (<code>-k</code>) flag. This must be done using the same orthogonal data files that were used when running SQANTI3 QC for the long read-transcriptome, since the rescue is based on the assumption that the same evidence is required to validate all rescue targets.</p>
 <p>⚠️ <strong>Disclaimer</strong>: note that this is a temporary solution -we are currently working on implementing an option to run this step internally as a part of the rescue-, however, we are aware that the same reference may be used for multiple transcriptomes, therefore, this option will remain active to save runtime and resources. ⚠️</p>
 <p>Using the supplied reference classification file, SQ3 rescue will next <strong>apply SQ3 filter to the reference transcriptome</strong>. The filter to be applied will be specified by the <code>rules</code> or <code>ml</code> flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the <code>ml</code> option (and the same is true for the rules filter).</p>
-<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = 216 width = 763></p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = 216 width = 763></p>
 <h4 id="4-rescue-by-mapping">4. Rescue-by-mapping</h4>
 <p>In the final rescue step, hereby referred to as rescue-by-mapping, mapping hits (i.e. candidate-target pairs obtained during mapping) and reference transcriptome filter results are combined to generate a final list of reference transcripts to be rescued.  </p>
 <p>This part of the rescue can be divided into the following tasks/criteria:</p>
@@ -1248,7 +1248,7 @@ Here is a summary of the SQ3 rescue workflow:</p>
 </li>
 </ul>
 <p>After performing this last filter of the rescue target list, SQ3 rescue outputs a list of rescued reference transcripts, which are then added to the long-read transcriptome GTF.</p>
-<p><img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798></p>
+<p><img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798></p>
 <p><a id="running"></a></p>
 <h4 id="5-requantification">5. Requantification</h4>
 <p>The requantification is applied to each transcript following one of the four scenarios:</p>

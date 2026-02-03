@@ -821,7 +821,7 @@ source activate sqanti3
 <li><strong>5' Mismatch:</strong> The internal junctions match, but the 5' start is different (difference higher than 50bp).</li>
 <li><strong>3' Mismatch:</strong> The internal junctions match, but the 3' end is different (difference higher than 50bp).</li>
 <li><strong>5' and 3' Mismatch:</strong> The internal junctions match, but both the 5' and 3' ends are different (difference higher than 50bp).
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-01.png" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/classification/sqanti_category-01.png" /></li>
 </ul>
 <h5 id="ism-incomplete-splice-match">ISM (Incomplete Splice Match)</h5>
 <blockquote>
@@ -830,7 +830,7 @@ source activate sqanti3
 * <strong>3' fragments:</strong> The query isoform is missing some 3' exons compared to the reference.
 * <strong>Internal fragments:</strong> Missing some start and end exons but retains the internal exons.
 * <strong>intron retention:</strong> Contains an intron that is usually spliced out in the reference.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-02-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/classification/sqanti_category-02-01.png" /></p>
 </blockquote>
 <h5 id="nic-novel-in-catalog-subcategories-nnc-novel-not-in-catalog-subcategories">NIC (Novel In Catalog) Subcategories &amp; NNC (Novel Not in Catalog) Subcategories:</h5>
 <blockquote>
@@ -851,7 +851,7 @@ source activate sqanti3
 <p><strong>NIC Mono-exon:</strong> This scenario involves a NIC isoform that consists of a single exon without any introns.</p>
 </li>
 </ul>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/classification/sqanti_category-03-01.png" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/classification/sqanti_category-03-01.png" /></p>
 <h4 id="322-tss-transcription-start-site-evaluation-in-sqanti3-video-link-for-this-part">3.2.2 TSS (Transcription Start Site) Evaluation in SQANTI3 (<a href="https://youtu.be/TTjDAwuhB68?si=yK4BFUAVZEqYRqXb&amp;t=1188">Video link for this part</a>)</h4>
 <p>The accurate identification of Transcription Start Sites (TSS) stands as a cornerstone in the realm of molecular biology and genomics. TSSs are the specific locations on the DNA where transcription of a particular gene commences. Recognizing these sites with precision is pivotal.</p>
 <h5 id="distance-from-the-reference-tss">Distance from the Reference TSS:</h5>
@@ -863,7 +863,7 @@ source activate sqanti3
 <ul>
 <li>Cap Analysis Gene Expression (CAGE) is a technique to identify the TSS of genes. SQANTI uses CAGE peaks data to help distinguish between true TSS and potential false positives. If the detected TSS aligns with a CAGE peak, it's more likely to be a true TSS. In contrast, if it doesn't align with any CAGE peaks, it might be a false detection.</li>
 <li>The <strong>TSS ratio</strong> is computed for each transcript by determining the ratio between short-read coverage downstream and upstream of the TSS. A true TSS is expected to have much lower upstream coverage, resulting in a TSS ratio greater than one. On the other hand, 5’ end-degraded transcripts are expected to have uniform coverage on both sides of the TSS, leading to a TSS ratio approximately equal to one
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-01.png" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/common/sqanti_qc_common-01.png" /></li>
 </ul>
 <h4 id="323-sqanti3-transcriptional-termination-site-quality-control-video-link-for-this-part">3.2.3 SQANTI3 Transcriptional termination site quality control (<a href="https://youtu.be/TTjDAwuhB68?si=U8nP73DAvd2x4Mke&amp;t=1289">Video link for this part</a>)</h4>
 <p>SQANTI3 uses three quality control metrics for evaluating transcription termination sites (TTS) in transcriptome:
@@ -875,15 +875,15 @@ source activate sqanti3
 * <em>What:</em> SQANTI3 calculates the physical distance between the TTS of the newly sequenced transcript and the closest annotated TTS belonging to the same gene in reference databases.
 * <em>Why:</em> By doing this, SQANTI3 can evaluate if a transcript's TTS is novel or if it matches (or is proximate to) a previously known termination site. If a transcript's TTS is very distant from any annotated TTS, it may be a novel site or an artifact, and further validation may be needed.
 Polyadenylation (polyA) Motif Detection:
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-02-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/common/sqanti_qc_common-02-02-02-01.png" /></p>
 <p><strong>Polyadenylation (polyA) Motif Detection:</strong>
 * <em>What:</em> Transcripts typically have a sequence motif near their 3' end that signals for polyadenylation (addition of a polyA tail). SQANTI3 scans the transcript sequence to detect this motif.
 * <em>Why:</em> The presence of a polyA motif can indicate a genuine TTS, as the motif is a biological marker for transcript termination and subsequent addition of a polyA tail. These detected motifs are commonly found 16-18 base pairs from the end of the transcript, consistent with known experimental evidence. This adds an extra layer of validation. Absence or unusual positioning of this motif might suggest the 3' end of the transcript was inaccurately determined or that alternative polyadenylation sites exist.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/common/sqanti_qc_common-02-02-01.png" /></p>
 <p><strong>Quant-seq Data Support (polyA site data):</strong>
 * <em>What:</em> Quant-seq is a method to sequence the 3' ends of RNAs and is used to validate the 3' ends obtained from other sequencing methods. If Quant-seq data is available, SQANTI3 considers it as orthogonal evidence to validate the TTS of a transcript.
 * <em>Why:</em> Quant-seq specifically targets the 3' end of transcripts, making it a reliable method to validate TTS. If both long-read sequencing (like from PacBio) and Quant-seq point to the same TTS, confidence in that TTS's accuracy increases. 
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-02-02-02-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/common/sqanti_qc_common-02-02-02-02-01.png" /></p>
 <h4 id="323-sqanti3-splicing-junction-classification-video-link-for-this-part">3.2.3 SQANTI3 Splicing junction classification (<a href="https://youtu.be/TTjDAwuhB68?si=ac8uTFlKdvqMlkq8&amp;t=1388">Video link for this part</a>)</h4>
 <p>When it comes to splice junctions, here's how SQANTI approaches the task:</p>
 <h5 id="transcript-classification-based-on-splice-junctions">Transcript Classification Based on Splice Junctions:</h5>
@@ -906,7 +906,7 @@ Polyadenylation (polyA) Motif Detection:
 <li>STAR's parameters follow the ENCODE-DCC RNA-seq protocol. To enhance novel SJ detection, the <code>--twopassMode</code> option is turned on.</li>
 <li>Post STAR execution, two files are generated per replicate: <code>SJ.out.tab</code>, which provides quantification of long-read-defined SJs by short reads, and a BAM file, utilized for the novel TSS ratio metric computation.</li>
 </ol>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/common/sqanti_qc_common-02-03.png" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/common/sqanti_qc_common-02-03.png" /></p>
 <h4 id="324-sqanti3-intra-priming-video-link-for-this-part">3.2.4 SQANTI3 Intra-priming (<a href="https://youtu.be/TTjDAwuhB68?si=7l8Jnbbjww_kQHmK&amp;t=1453">Video link for this part</a>)</h4>
 <p>Researchers use specific oligos, anywhere between 20-35 bases long, called primers, to initiate the copying or amplifying process of DNA. Typically, an 'oligodT' primer is custom-designed to match the target sequence at the end of a transcript, which often has a long string of 'A's known as the polyA tail. However, given that there are also A-rich regions within the transcripts (not just at the end), the oligodT primer might inadvertently begin amplification from these internal regions instead. If these transcripts don't have a typical ending (consensus poly Adenilation site), SQANTI thinks they might be mistakes from internal priming and flags them. This transcripts can be eliminated using </p>
 <h5 id="mechanisms-intra-priming">Mechanisms Intra-priming:</h5>
@@ -916,22 +916,22 @@ Polyadenylation (polyA) Motif Detection:
 <li>This is called "internal priming" because it's happening inside the DNA sequence and not where it's supposed to be.</li>
 </ul>
 <p>SQANTI3 checks for this by looking at transcripts and seeing if there's a very A-rich region (&gt;= 80% A's in the last 20 letters) at their end.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/intra-priming/intra-priming_new-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/intra-priming/intra-priming_new-01.png" /></p>
 <h4 id="325-sqanti3-rt-switching-video-link-for-this-part">3.2.5 SQANTI3 RT-switching (<a href="https://youtu.be/TTjDAwuhB68?si=dSnT-Dlq85JSWi4Y&amp;t=1499">Video link for this part</a>)</h4>
 <p>RT-switching refers to the "jumping" or switching of the reverse transcriptase enzyme between repeated regions of an RNA molecule due to its secondary structure. This can lead to the formation of cDNA molecules that don't accurately represent the original RNA sequence and can introduce artifacts when analyzing RNA sequences or structures.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/rt-switching/rt_switching_new_0-01.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/rt-switching/rt_switching_new_0-01.png" /></p>
 <h5 id="heres-a-step-by-step-explanation-of-rt-switching">Here's a step-by-step explanation of RT-switching:</h5>
 <ol>
 <li><strong>Reverse Transcription Start:</strong> The process begins with the initiation of reverse transcription. This is where the reverse transcriptase enzyme (RT) starts transcribing RNA into complementary DNA (cDNA). The RNA molecule has a secondary structure and repeated regions which play a role in RT-switching.</li>
 <li><strong>RNA Secondary Structure and Repeated Regions:</strong> RNA molecules can form secondary structures due to complementary base pairing within the molecule itself. These structures may bring repeated regions into close proximity. When the RT enzyme encounters these structures, it might jump from one repeated region to another.</li>
 <li><strong>Formation of cDNA with Skipped Repeats:</strong> When the RT enzyme switches or "jumps" between repeated regions, the resulting cDNA molecule may not have all the repeated regions that were originally present in the RNA. Instead, the cDNA will possess only one copy of the direct repeats.</li>
 <li><strong>Novel Splice Junctions Appear:</strong> When the cDNA, which has undergone RT-switching, is sequenced or mapped, it might appear as though it has novel splice junctions. These are not true biological splice junctions but are artifacts caused by the RT-switching event.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/qc/rt-switching/rt_switching_new-01.png" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/qc/rt-switching/rt_switching_new-01.png" /></li>
 </ol>
 <p>SQANTI3 identifies these potential artifacts by checking for the presence of direct repeats in the sequence. This search is performed in a region of a user-defined number of bases around the splice junctions. If a matching patter is found within the exon and intron sequences, the junction is flagged as a RT-switching artifact, and all the isoforms containing this junction are classified as "RT-switching".</p>
 <h2 id="4-executing-and-understanding-sqanti3-filter-video-link-for-this-part">4. Executing and Understanding SQANTI3 Filter  <a name="Executing-and-Understanding-SQANTI3-Filter"></a> (<a href="https://youtu.be/TTjDAwuhB68?si=o0pNSzsqYWdkYs9F&amp;t=1926">Video link for this part</a>)</h2>
 <p>SQANTI3 has enhanced its filtering capabilities by improving its machine learning-based filter and introducing a flexible rules-based strategy, allowing users to discern between true isoforms and artifacts more accurately.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/outline.png" /></p>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/outline.png" /></p>
 <h3 id="41-sqanti3-rules-filter-video-link-for-this-part">4.1 SQANTI3 rules filter (<a href="https://youtu.be/TTjDAwuhB68?si=0hyqIzRgPY1m6WSU&amp;t=1950">Video link for this part</a>)</h3>
 <p>SQANTI3 has a rules-based strategy for filtering, which is especially useful when defining TP and TN sets is challenging. Here, a JSON file is used to specify the characteristics of a reliable isoform. The file is comprised of rules, with each rule consisting of multiple requisites. All requisites of a rule must be met for a transcript to be deemed true. Multiple rules for the same category are evaluated independently, and a transcript only needs to pass one of these rules. SQANTI3 comes with a default JSON file that includes rules for a basic filter. However, users can create their own JSON files to define custom rules.</p>
 <details><summary> Default rules filter </summary>
@@ -996,7 +996,7 @@ Polyadenylation (polyA) Motif Detection:
 </li>
 <li>The "rest" category can be used to specify rules for all other unspecified categories.</li>
 </ul>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/rules_filter_basic.png" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/rules_filter_basic.png" /></p>
 <h5 id="rule-structure-in-json">Rule Structure in JSON:</h5>
 <ul>
 <li>Rules can be set for any numeric or character column in the classification file:<ul>
@@ -1011,7 +1011,7 @@ Polyadenylation (polyA) Motif Detection:
 <p><strong>Full Splice Match category:</strong></p>
 <ul>
 <li>Isoforms must not be a potential intra-priming product. They should have less than 60 percent of genomic adenines in the downstream 20 BP window.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103609.jpg" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/Weixin%20Image_20231023103609.jpg" /></li>
 </ul>
 </li>
 <li>
@@ -1019,14 +1019,14 @@ Polyadenylation (polyA) Motif Detection:
 <ul>
 <li>Isoform must be larger than two kilobases and shorter than 15 kilobases.</li>
 <li>Must be cataloged within the three prime fragments, five Prime fragments, or internal fragment subcategories.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_202310231036091.jpg" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/Weixin%20Image_202310231036091.jpg" /></li>
 </ul>
 </li>
 <li>
 <p><strong>Novel In the Catalog category:</strong></p>
 <ul>
 <li>All splice junctions should be canonical or covered by at least 10 short reads.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103608.jpg" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/Weixin%20Image_20231023103608.jpg" /></li>
 </ul>
 </li>
 <li>
@@ -1034,7 +1034,7 @@ Polyadenylation (polyA) Motif Detection:
 <ul>
 <li>All splice junctions should be canonical.</li>
 <li>The absolute distance to the closest annotated transcriptional start sites and transcriptional termination sites must be 50 BP or less or covered by at least 10 short reads.
-<img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103607.jpg" /></li>
+<img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/Weixin%20Image_20231023103607.jpg" /></li>
 </ul>
 </li>
 <li>
@@ -1051,7 +1051,7 @@ Polyadenylation (polyA) Motif Detection:
 </ul>
 </li>
 </ol>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/Weixin%20Image_20231023103605.jpg" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/Weixin%20Image_20231023103605.jpg" /></p>
 <p>An example JSON filter is provided that defines rules for different isoform categories, including "full-splice_match", "incomplete-splice_match", "novel_in_catalog", "novel_not_in_catalog", and "rest". This filter specifies various conditions for keeping isoforms, such as avoiding potential intrapriming products, setting length thresholds, and requiring canonical splice junctions.</p>
 <p>In summary, SQANTI3 provides a flexible way for users to filter their transcriptomes based on specific criteria to curate high-quality transcript sets. This is facilitated through easy-to-define JSON-based rule sets.</p>
 <h3 id="42-sqanti3-machine-learning-filter-video-link-for-this-part">4.2 SQANTI3 Machine Learning Filter (<a href="https://youtu.be/TTjDAwuhB68?si=qWoE7_88BuT2Wiop&amp;t=2141">Video link for this part</a>)</h3>
@@ -1105,13 +1105,13 @@ Polyadenylation (polyA) Motif Detection:
 <h5 id="4-feature-importance-and-exclusion">4. Feature Importance and Exclusion</h5>
 <p>Not all features in a dataset are equally useful—some may have little impact on the model’s performance, while others might even introduce unwanted bias. To address this, SQANTI3 offers the flexibility to exclude specific features or columns from the training process. This allows users to fine-tune the model by focusing only on the most informative data, helping to reduce noise and improve overall accuracy.</p>
 <p>By leaving out certain columns, users can also guard against overfitting. If a model becomes too dependent on features that are only relevant within the training set, it may struggle to generalize to new data. Excluding such features ensures the model remains robust and applicable beyond the specific dataset it was trained on.</p>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/filter/machine_learning_1.png" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/filter/machine_learning_1.png" /></p>
 <blockquote>
 <p>Note The random forest classifier has specific scenarios where it might not run, so be mindful of exceptions.</p>
 </blockquote>
 <h2 id="5-executing-and-understanding-sqanti3-rescue-video-link-for-this-part">5. Executing and Understanding SQANTI3 Rescue <a name="Executing-and-Understanding-SQANTI3-Rescue"></a>(<a href="https://youtu.be/TTjDAwuhB68?si=oVd2xDOyaJ3xODJj&amp;t=2358">Video link for this part</a>)</h2>
 <p>The SQANTI3 rescue module is designed to prevent the loss of transcripts from long-read data that could not be accurately processed. It aims to identify valid transcript models for transcripts initially discarded due to potential artifacts after filtering using the SQ3 filter module. Full documentation can be found in the <a href="https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue">rescue wiki page</a>.</p>
-<p><img alt="" src="https://github.com/TianYuan-Liu/SQANTI_tutorial/blob/main/rescue/sqanti3_rescue.png" /></p>
+<p><img alt="" src="https://raw.githubusercontent.com/TianYuan-Liu/SQANTI_tutorial/main/rescue/sqanti3_rescue.png" /></p>
 <p>SQANTI3 rescue offers two main modes of operation: <strong>automatic</strong> and <strong>full</strong>. The automatic mode, which is the default, focuses on recovering high-confidence reference isoforms by identifying reference transcripts for which all corresponding Full Splice Match (FSM) isoforms were removed during the filtering stage, under the assumption that their junction structures are likely correct. On the other hand, the full mode extends the rescue process to consider ISM, NIC, and NNC artifacts as rescue candidates. This mode involves a more comprehensive strategy, including mapping these candidate artifacts to potential target transcripts from both the reference and long-read datasets using minimap2, followed by applying the SQANTI3 filter to the reference targets and a final selection of rescued transcripts based on the mapping results and filter outcomes.</p>
 <h3 id="51-automatic-rescue">5.1 Automatic rescue:</h3>
 <p>The automatic rescue process in SQANTI3 identifies and restores isoforms that were classified as artifacts during filtering but are likely to be biologically relevant. The process focuses on rescuing the reference transcripts where all of the full-splice match (FSM) isoforms have been removed. It only rescues mono-exonic FSM isoforms if the user specifies this option (<code>--rescue_mono_exonic</code>). If a reference transcript has an associated FSM isoform that was determined as artifact, it is rescued if it is not already present in the final set. This approach ensures that potentially important transcripts, particularly those matching reference annotations, are not lost due to stringent filtering criteria.</p>

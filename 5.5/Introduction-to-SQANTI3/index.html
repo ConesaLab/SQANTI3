@@ -1151,7 +1151,7 @@ together with a long list of transcript-level attributes and descriptors, allow 
 <ol>
 <li><strong>Reference transcript rescue</strong> (<a href="../Running-SQANTI3-rescue/">SQANTI3 rescue</a>) to find matching reference transcript for discarded artifacts. This module intends to keep the diversity in the transcriptome, i.e. preventing loss of transcripts with (mostly) valid junction chains for which a long-read defined isoform could not be validated or even the removal of genes for which all isoforms were catalogued as artifacts by the filter, in spite of having long read-based evidence of expression. By running the rescue, SQANTI3 will select a set of reference transcripts that the discarded artifacts can be confidently assigned to, and add them to expand the filtered transcriptome.</li>
 </ol>
-<p><img alt="Sqanti3 workflow" src="https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png" /></p>
+<p><img alt="Sqanti3 workflow" src="https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/SQ3_qc.png" /></p>
 <p><a id="structure"></a></p>
 <h2 id="sqanti3-structure">SQANTI3 structure</h2>
 <p>At the moment, the SQANTI3 tool is directly called using the wrapper <code>sqanti3</code>. This main wrapper orchestrates the execution of the <strong>three primary modules</strong>. Each module is designed to perform a specific function within the SQANTI3 workflow, implemented as separate Python scripts:</p>
