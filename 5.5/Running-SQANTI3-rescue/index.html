@@ -11,10 +11,10 @@
         <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/5.5/Running-SQANTI3-rescue/">
       
       
-        <link rel="prev" href="../Running-SQANTI3-from-the-wrapper/">
+        <link rel="prev" href="../Running-SQANTI3-filter/">
       
       
-        <link rel="next" href="../Running-SQANTI%E2%80%90reads/">
+        <link rel="next" href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/">
       
       
         
@@ -31,6 +31,9 @@
     
       <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
       
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
       
 
 
@@ -43,10 +46,12 @@
         
         
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
-        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
       
     
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
     <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
@@ -57,7 +62,14 @@
   </head>
   
   
-    <body dir="ltr">
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -82,7 +94,9 @@
     
       
 
-<header class="md-header" data-md-component="header">
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
@@ -110,6 +124,32 @@
         </div>
       </div>
     </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
     
     
       <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
@@ -166,359 +206,6 @@
       
         
           
-            
-<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
-  <div class="md-grid">
-    <ul class="md-tabs__list">
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Dependencies-and-installation/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Dependencies and installation
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Home/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Home
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Introduction-to-SQANTI3/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Introduction to SQANTI3
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../IsoAnnotLite/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  IsoAnnotLite
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI-BUGSI/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI BUGSI
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI-with-the-wrapper/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  SQANTI3 wrapper
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI3-Quality-Control/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI3 Quality Control
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI3-filter/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI3 filter
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI3 from the wrapper
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-    
-  
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI3 rescue
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Running-SQANTI%E2%80%90reads/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Running SQANTI-reads
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  SQANTI3 isoform classification: categories and subcategories
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  SQANTI3 memory requeriments and paralellization
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Sqanti3-wrapper-script/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Sqanti3 wrapper script
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Video tutorial
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Understanding the output of SQANTI3 QC
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../Version-history/" class="md-tabs__link">
-        
-  
-  
-    
-  
-  Introduction
-
-      </a>
-    </li>
-  
-
-      
-        
-  
-  
-  
-  
-    <li class="md-tabs__item">
-      <a href="../_Sidebar/" class="md-tabs__link">
-        
-  
-  
-    
-  
-   Sidebar
-
-      </a>
-    </li>
-  
-
-      
-    </ul>
-  </div>
-</nav>
-          
         
       
       <main class="md-main" data-md-component="main">
@@ -532,10 +219,8 @@
                     
 
 
-  
 
-
-<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
       
@@ -555,34 +240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../Dependencies-and-installation/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Dependencies and installation
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Home/" class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   
@@ -636,14 +294,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../IsoAnnotLite/" class="md-nav__link">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    IsoAnnotLite
+    Dependencies and installation
   
 
     
@@ -663,14 +321,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../Running-SQANTI-BUGSI/" class="md-nav__link">
+      <a href="../Version-history/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Running SQANTI BUGSI
+    Version history
   
 
     
@@ -690,14 +348,41 @@
   
   
     <li class="md-nav__item">
-      <a href="../Running-SQANTI-with-the-wrapper/" class="md-nav__link">
+      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    SQANTI3 wrapper
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
   
 
     
@@ -744,14 +429,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Running SQANTI3 filter
+    Understanding the output of SQANTI3 QC
   
 
     
@@ -771,14 +456,41 @@
   
   
     <li class="md-nav__item">
-      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Running SQANTI3 from the wrapper
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
   
 
     
@@ -1090,6 +802,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
         
   
@@ -1117,33 +856,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SQANTI3 isoform classification: categories and subcategories
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
         
   
@@ -1151,142 +863,7 @@
   <span class="md-ellipsis">
     
   
-    SQANTI3 memory requeriments and paralellization
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Sqanti3-wrapper-script/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Sqanti3 wrapper script
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Video tutorial
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Understanding the output of SQANTI3 QC
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../Version-history/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Introduction
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../_Sidebar/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-     Sidebar
+    Memory requirements and parallelization
   
 
     
@@ -2049,7 +1626,7 @@ DQ875385    0.758
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
