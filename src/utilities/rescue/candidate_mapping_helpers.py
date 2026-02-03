@@ -28,15 +28,13 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
         sys.exit(1)
     return ref_trans_Fasta
 
-def filter_transcriptome(input_fasta, target_ids, exclude_ids=None):
+def filter_transcriptome(input_fasta, target_ids):
     target_records = []
-    seen_ids = exclude_ids if exclude_ids is not None else set()
     # Filter and write sequences
     for record in SeqIO.parse(input_fasta, 'fasta'):
-        if record.id in target_ids and record.id not in seen_ids:
+        if record.id in target_ids:
             target_records.append(record)
-            seen_ids.add(record.id)
-    return target_records, seen_ids
+    return target_records
 
 def save_fasta(records, output_fasta):
     with open(output_fasta, 'w') as output_handle:

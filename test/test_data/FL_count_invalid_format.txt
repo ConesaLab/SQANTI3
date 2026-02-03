@@ -1,3 +1,0 @@
-invalid_header	wrong_column
-PB.1.1	10
-PB.2.1	25
