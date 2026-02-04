@@ -8,7 +8,7 @@ Welcome to the SQANTI3 Documentation!
 
 * [Version history](Version-history.md)
 
-* [Isoform classification: categories and subcategories](SQANTI3-isoform-classification:-categories-and-subcategories.md)
+* [Isoform classification: categories and subcategories](SQANTI3_isoform_classification.md)
 
 * [Running SQANTI3 from the wrapper](Running-SQANTI3-from-the-wrapper.md)
 
