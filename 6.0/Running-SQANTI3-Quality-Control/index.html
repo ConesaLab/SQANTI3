@@ -344,7 +344,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../SQANTI3-isoform-classification%3A-categories-and-subcategories/" class="md-nav__link">
+      <a href="../SQANTI3_isoform_classification/" class="md-nav__link">
         
   
   
@@ -1708,7 +1708,7 @@ The filtering for this output file is controlled by the <code>--outSJfilter</cod
 <h2 id="supplying-single-or-multi-sample-full-length-fl-counts-fl_count">Supplying single or multi-sample full-length (FL) counts (<code>--fl_count</code>)</h2>
 <p>SQANTI3 QC supports single or multi-sample FL counts in a stadarized format. These files must be in either tab-delimited (tsv) or comma-delimited (csv) format. The first column must contain the isoform identifiers matching those in the input long read-defined transcriptome. The rest of the columns must contain the FL counts for each sample/replicate. </p>
 <p>The name of the first column can be anything, and the rest of the columns name will be used as sample/replicate identifiers. These will show up in the final classification file as <code>FL.&lt;sample&gt;</code> columns, where <code>&lt;sample&gt;</code> is the name of the corresponding column in the input FL count file. The sum of all the FL reads across the samples associated to one transcript will be recorded in the <code>FL</code> column of the <code>*_classification.txt</code> output file.</p>
-<p>When plotted, the script <a href="ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R">SQANTI3_report.R</a> will convert the FL counts to TPM using the formula:</p>
+<p>When plotted, the script <a href="https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R">SQANTI3_report.R</a> will convert the FL counts to TPM using the formula:</p>
 <pre><code>                           raw FL count for PB.X.Y in sample1
 FL_TPM(PB.X.Y,sample1) = ------------------------------------- x 10^6
                                total FL count in sample1
