@@ -44,7 +44,7 @@ nav:
   - Introduction to SQANTI3: Introduction-to-SQANTI3.md
   - Dependencies and installation: Dependencies-and-installation.md
   - Version history: Version-history.md
-  - Isoform classification - categories and subcategories: SQANTI3-isoform-classification:-categories-and-subcategories.md
+  - Isoform classification - categories and subcategories: SQANTI3_isoform_classification.md
   - Running SQANTI3 from the wrapper: Running-SQANTI3-from-the-wrapper.md
   - Running SQANTI3 Quality Control: Running-SQANTI3-Quality-Control.md
   - Understanding the output of SQANTI3 QC: Understanding-the-output-of-SQANTI3-QC.md

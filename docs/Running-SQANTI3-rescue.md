@@ -248,7 +248,7 @@ Regardless of the rescue mode that is selected, SQ3 has the following **common a
 
 - **Reference transcriptome annotation**: reference GTF used to run SQANTI3 QC. This file will be used to extract rescue targets for mapping, and must be supplied via the `--refGTF` (or `-g`) argument.
 
-- **Reference transcriptome classification file** generated after running SQANTI3 QC on the reference transcriptome, which must be done previously to running the rescue and using the same orthogonal data as for long read-defined transcriptome QC. This file must be supplied via the `--refClassif` (or `-k`) argument and will be used to evaluate reference rescue target support ([see details above](#4-application-of-sq3-filter-to-the-reference-transcriptome)).
+- **Reference transcriptome classification file** generated after running SQANTI3 QC on the reference transcriptome, which must be done previously to running the rescue and using the same orthogonal data as for long read-defined transcriptome QC. This file must be supplied via the `--refClassif` (or `-k`) argument and will be used to evaluate reference rescue target support ([see details above](#3-application-of-sq3-filter-to-the-reference-transcriptome)).
 
 - **Counts** file containing expression values of transcript models before SQANTI3 filtering and rescue. This file is required if the `--requant` (`-q`) module is used. It must include two columns: the first for the isoform ID and the second for the corresponding expression value. Column headers can vary. Provide this file using the `--counts` (or `-c`) argument; it will be used to re-evaluate the expression values of the filtered and rescued transcript models.
 
@@ -263,7 +263,7 @@ reference isoforms.
 
 - **Define rescue for mono-exon transcripts**: the `-e` flag (`--rescue_mono_exonic`) can be used to determine whether (and how) to perform the rescue on mono-exonic transcripts. The following options can be supplied:
   - `all` (default): all mono-exon transcripts classified as artifacts will be considered as rescue candidates, regardless of the category that they are classified into.
-  - `fsm`: mono-exonic transcripts will only be considered for the rescue if they belong to the full-splice match (FSM) category. In this case, mono-exons will be rescued via the [automatic rescue](#1-automatic-rescue) strategy.
+  - `fsm`: mono-exonic transcripts will only be considered for the rescue if they belong to the full-splice match (FSM) category. In this case, mono-exons will be rescued via the [automatic rescue](#1a-automatic-rescue) strategy.
   - `none`: do not consider mono-exonic transcripts for the rescue (all mono-exons classified as artifacts will be discarded and no reference representatives included in the final transcriptome).
 
 - **Output directory and outfile prefix**: the output directory can be set via the `-d` flag (default: current directory). Output files will be named using the prefix provided using the `-o` argument (default: SQANTI3).
@@ -274,14 +274,14 @@ reference isoforms.
 #### Rules arguments
 In addition to the common arguments, the rules rescue requires the following **specific files**:
 
-- **Rules JSON file**: using the `-j` flag, the user must provide the JSON file used for running SQANTI3 rules filter on the long read-defined transcriptome. This same set of rules will be [applied to the reference transcriptome](#4-application-of-sq3-filter-to-the-reference-transcriptome) to evaluate the reliability of reference rescue targets. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the `--refClassif` argument.
+- **Rules JSON file**: using the `-j` flag, the user must provide the JSON file used for running SQANTI3 rules filter on the long read-defined transcriptome. This same set of rules will be [applied to the reference transcriptome](#3-application-of-sq3-filter-to-the-reference-transcriptome) to evaluate the reliability of reference rescue targets. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the `--refClassif` argument.
 
 <a name="ml"></a>
 
 #### Machine learning rescue arguments
 In addition to the common arguments, the machine learning rescue requires the following **specific files**:
 
-- **Pre-trained random forest classifier**: using the `-r` flag, users must provide the `randomforest.RData` object that was obtained when running the machine learning filter on the long read-defined transcriptome. This classifier will be used to [run the ML filter on reference transcriptome isoforms](#4-application-of-sq3-filter-to-the-reference-transcriptome), i.e. obtain an ML probability value for reference rescue targets and evaluate their likelihood to be a true isoform based on orthogonal data supplied to SQANTI3 QC. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the `--refClassif` argument.
+- **Pre-trained random forest classifier**: using the `-r` flag, users must provide the `randomforest.RData` object that was obtained when running the machine learning filter on the long read-defined transcriptome. This classifier will be used to [run the ML filter on reference transcriptome isoforms](#3-application-of-sq3-filter-to-the-reference-transcriptome), i.e. obtain an ML probability value for reference rescue targets and evaluate their likelihood to be a true isoform based on orthogonal data supplied to SQANTI3 QC. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the `--refClassif` argument.
 
 - **ML probability threshold**: minimum probability value that is required in order to consider a transcript to be a true isoform. It should be set using the `-j` flag (default: 0.7). We recommend setting the same threshold that was used when running SQANTI3 filter.
 
@@ -301,12 +301,12 @@ Independently of running only rescue on `automatic` or `full` mode, two main fil
 
 In the case of the user running the rescue in `full` mode, additional output files will be generated, as explained below.
 
-- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](#2-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:
+- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](#1b-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:
 
   - A rescue candidate ID list, named `*_rescue_candidates.tsv`.
   - A rescue candidate FASTA file named `*_rescue_candidates.fasta` containing the sequences of rescue candidates for mapping.
 
-- **Rescue target files** (for `--mode full`). As explained above, [rescue targets](#2-selection-of-rescue-candidate-and-target-transcripts) are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, [candidates are mapped to targets](#3-mapping-of-candidates-to-targets) using minimap2. Similarly to rescue candidates, two rescue target files are generated:
+- **Rescue target files** (for `--mode full`). As explained above, [rescue targets](#1b-selection-of-rescue-candidate-and-target-transcripts) are those reference and long read-defined transcripts for which there is a same-gene rescue candidate counterpart. During the rescue, [candidates are mapped to targets](#2-mapping-of-candidates-to-targets) using minimap2. Similarly to rescue candidates, two rescue target files are generated:
 
   - ID list: `*_rescue_targets.tsv`.
   - FASTA file: `*_rescue_targets.fasta`.

@@ -77,7 +77,7 @@ which are commonly returned in a FASTA or GTF file format. SQANTI3 combines the 
 SQANTI3 is mainly designed to perform two 
 different tasks, both of them equally important:
 
-1. **Isoform classification and quality control** ([SQANTI3 QC](Running-SQANTI3-Quality-Control.md)) for long read-defined transcriptomes. The SQ3 [categories and subcategories](SQANTI3-isoform-classification:-categories-and-subcategories.md), 
+1. **Isoform classification and quality control** ([SQANTI3 QC](Running-SQANTI3-Quality-Control.md)) for long read-defined transcriptomes. The SQ3 [categories and subcategories](SQANTI3_isoform_classification.md), 
 together with a long list of transcript-level attributes and descriptors, allow users to carefully inspect the properties of their isoform models, as well as identify potential problems generated during library preparation and raw data processing.
 2. **Artifact filtering** ([SQANTI3 filter](Running-SQANTI3-filter.md)) for long read-defined transcriptomes. Using the large number of descriptors calculated by SQANTI3, users can make informed decisions to remove potential false positive isoforms from their transcriptomes. This is particularly relevant considering the biases and pitfalls of current long read sequencing protocols.
 

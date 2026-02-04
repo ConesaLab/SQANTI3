@@ -36,7 +36,7 @@ SQANTI3 characterizes the input transcriptome by computing a series of attribute
 
 - **Classification file**: a tab-separated file where transcripts are rows and QC attributes computed by SQANTI3 are columns. Isoforms are identified by their ID in the input long-read GTF file. For a full glossary of columns and their meaning, [see below](#classifcols).
 
-- **Junctions file**: a tab-separated file containing each junction for every PB isoform as rows. Rows are identified by the isoform ID and the junction number (shown in order, i.e. the 1st, 2nd, 3rd... ith junction), which are included in the two first columns. Take into account that the same junction may appear multiple times if they are shared by multiple PB isoforms, for instance, when several FSM and ISM transcripts associated to the same reference isoform are found. For a full glossary of columns and their meaning, [see below](#glossary-of-junction-file-columns-junctionstxt)
+- **Junctions file**: a tab-separated file containing each junction for every PB isoform as rows. Rows are identified by the isoform ID and the junction number (shown in order, i.e. the 1st, 2nd, 3rd... ith junction), which are included in the two first columns. Take into account that the same junction may appear multiple times if they are shared by multiple PB isoforms, for instance, when several FSM and ISM transcripts associated to the same reference isoform are found. For a full glossary of columns and their meaning, [see below](#glossary-of-junctions-file-columns-junctionstxt)
 
 
 <a name="transcriptome"></a>

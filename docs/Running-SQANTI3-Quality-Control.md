@@ -392,7 +392,7 @@ SQANTI3 QC supports single or multi-sample FL counts in a stadarized format. The
 
 The name of the first column can be anything, and the rest of the columns name will be used as sample/replicate identifiers. These will show up in the final classification file as `FL.<sample>` columns, where `<sample>` is the name of the corresponding column in the input FL count file. The sum of all the FL reads across the samples associated to one transcript will be recorded in the `FL` column of the `*_classification.txt` output file.
 
-When plotted, the script [SQANTI3_report.R](ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
+When plotted, the script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 
 ```
                            raw FL count for PB.X.Y in sample1
