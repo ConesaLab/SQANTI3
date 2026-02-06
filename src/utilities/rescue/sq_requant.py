@@ -51,6 +51,8 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
     prefix = f"{output_dir}/{output_prefix}"
     #TODO: Make this take the variables from python directly
     counts_df = parse_counts(counts_file)
+    # Keep only counts present in the original classification
+    counts_df = counts_df[counts_df['isoform'].isin(original_class['isoform'])]
     rescue_logger.info("Counts file parsed.")
     requant_df = requantify(counts_df, rescue_df, original_class, prefix)
     rescue_logger.info("Requantification of counts completed.")

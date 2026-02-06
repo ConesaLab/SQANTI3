@@ -296,9 +296,9 @@ def parse_counts(count_file):
             except csv.Error:
                 sep = '\t' if '\t' in line else ','
 
-        # 2. Read with Pandas (Fast Engine)
+        # 2. Read with Pandas
         # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1
-        df = pd.read_csv(count_file, sep=sep, comment='#', dtype={0: str})
+        df = pd.read_csv(count_file, sep=sep, dtype={0: str})
 
         # 3. Dynamic Column Validation
         # Rename first column to standard 'isoform' for easier merging later

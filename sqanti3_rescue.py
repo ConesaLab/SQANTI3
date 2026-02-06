@@ -12,7 +12,6 @@ import os
 
 import pandas as pd
 
-from src.parsers import parse_counts
 from src.rescue_argparse import rescue_argparse
 from src.module_logging import rescue_logger, message, update_logger
 from src.logging_config import rescue_art, art_logger
