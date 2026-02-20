@@ -52,7 +52,7 @@ filter:
     rules:
       enabled: true
       options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+        json_filter: src/utilities/filter/filter_default.json
     ml:
       enabled: false
       options:
@@ -80,7 +80,7 @@ rescue:
     rules:
       enabled: true
       options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+        json_filter: src/utilities/filter/filter_default.json
     ml:
       enabled: false
       options:
