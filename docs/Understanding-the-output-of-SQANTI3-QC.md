@@ -153,7 +153,7 @@ The output `_classification.txt` has the following fields:
 22. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
 23. `n_indels`: total number of indels based on alignment.
 24. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
-25. `bite`: TRUE if contains at least one "bite" positive SJ.
+25. `bite`: TRUE if any junction in the isoform is "bite" positive (i.e., the novel intron extends past the nearest annotated splice sites on both ends, overlapping adjacent annotated exons). This is calculated from the `bite_junction` field in the junction output file: if any junction has `bite_junction == TRUE`, the isoform `bite` is TRUE. Isoforms with no junctions (mono-exonic) retain the default value of NA. See also the `bite_junction` field in the junction file glossary below.
 26. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
 27. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
 28. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
@@ -197,7 +197,7 @@ The `_junctions.txt` file contains the following columns:
 10. `end_site_category`: `known` if the junction end site is annotated. If on - strand, this is actually the acceptor site.
 11. `diff_to_Ref_start_site`: distance to closest annotated junction start site. If on - strand, this is actually the donor site.
 12. `diff_to_Ref_end_site`: distance to closest annotated junction end site. If on - strand, this is actually the acceptor site.
-13. `bite_junction`: Applies only to novel splice junctions. If the novel intron partially overlaps annotated exons the bite value is TRUE, otherwise it is FALSE.
+13. `bite_junction`: TRUE if the novel junction's intron extends past the annotated splice sites on both ends (i.e., the novel donor is at or upstream of the closest reference donor AND the novel acceptor is at or downstream of the closest reference acceptor, with at least one being strictly past the reference position). This indicates that the novel intron "bites into" the adjacent annotated exons. Calculated from `diff_to_Ref_start_site` ≤ 0 and `diff_to_Ref_end_site` ≤ 0 with at least one being strictly negative. Known junctions (where `junction_category` is `known`) always have `bite_junction = FALSE`.
 14. `splice_site`: Splice motif.
 15. `RTS_junction`: TRUE if junction is predicted to a template switching artifact.
 16. `indel_near_junct`: TRUE if there is alignment indel error near the junction site, indicating potential junction incorrectness.

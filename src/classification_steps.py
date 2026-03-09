@@ -143,8 +143,10 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
                 min_diff_s = min_diff_e = 0
             else:
                 # Find the closest junction start site
+                # min_diff_s = d - closest_donor: negative if query donor is upstream of (inside) the adjacent exon
                 min_diff_s = -find_closest_in_list(junctions_by_chr[trec.chrom]['donors'], d)
-                # find the closest junction end site
+                # Find the closest junction end site
+                # min_diff_e = closest_acceptor - a: negative if query acceptor is downstream of (inside) the adjacent exon
                 min_diff_e = find_closest_in_list(junctions_by_chr[trec.chrom]['acceptors'], a)
             
         else:
@@ -184,6 +186,11 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
               "end_site_category": "known" if min_diff_e==0 else "novel",
               "diff_to_Ref_start_site": min_diff_s if min_diff_s==min_diff_s else "NA", # check if min_diff is actually nan
               "diff_to_Ref_end_site": min_diff_e if min_diff_e==min_diff_e else "NA",   # check if min_diff is actually nan
+              # min_diff_s = d - closest_donor: negative means query donor is upstream of (inside) the reference exon
+              # min_diff_e = closest_acceptor - a: negative means query acceptor is downstream of (inside) the reference exon
+              # bite_junction is TRUE when the novel intron extends past the reference junction on both ends
+              # (i.e., min_diff_s <= 0 AND min_diff_e <= 0, with at least one being strictly negative),
+              # meaning the novel intron "bites into" the adjacent annotated exons.
               "bite_junction": "TRUE" if ((min_diff_s<0 or min_diff_e<0) and not(min_diff_s>0 or min_diff_e>0)) else "FALSE",
               "splice_site": splice_site,
               "canonical": "canonical" if splice_site in accepted_canonical_sites else "non_canonical",

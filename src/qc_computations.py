@@ -141,6 +141,8 @@ def isoforms_junctions(isoforms_info, reader):
             (r['canonical'] == 'non_canonical'):
             isoforms_info[r['isoform']].canonical = r['canonical']
 
+        # bite: isoform is TRUE if any junction has bite_junction == TRUE
+        # Once set to TRUE it stays TRUE; if still 'NA' (first junction), set to whatever bite_junction is
         if (isoforms_info[r['isoform']].bite == 'NA') or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
 
