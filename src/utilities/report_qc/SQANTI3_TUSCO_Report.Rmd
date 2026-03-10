@@ -59,7 +59,7 @@ redundant_precision <- params$redundant_precision
 positive_detection_rate <- params$positive_detection_rate
 false_discovery_rate <- params$false_discovery_rate
 redundancy <- params$redundancy
-output_directory <- params$output_directory
+output_directory <- normalizePath(params$output_directory, mustWork = FALSE)
 genome_assembly <- params$genome_assembly
 sample_gtf_df$gene_id <- sub("\\.\\d+$", "", sample_gtf_df$gene_id)
 
@@ -254,8 +254,79 @@ interactive_radar_plot <- plot_ly(
     text = paste(metrics_labels, ':', round(metrics_values, 2), '%')
   )
 
-# Display the plot
+# Display the radar plot
 interactive_radar_plot
+```
+
+### Dumbbell Plot
+
+```{r echo=FALSE, message=FALSE}
+# Use the original (non-closed) metric values and labels
+dumbbell_values <- c(
+  non_redundant_sensitivity * 100,
+  non_redundant_precision * 100,
+  1 / redundancy * 100,
+  100 - false_discovery_rate * 100,
+  positive_detection_rate * 100,
+  redundant_precision * 100
+)
+dumbbell_values[is.na(dumbbell_values) | is.infinite(dumbbell_values)] <- 0
+dumbbell_labels <- c("Sensitivity", "NR Precision", "1/Redundancy", "1 - FDR", "PDR", "R Precision")
+
+# Order labels from top to bottom (reversed for plotly's y-axis)
+dumbbell_df <- data.frame(
+  metric = factor(dumbbell_labels, levels = rev(dumbbell_labels)),
+  value = dumbbell_values,
+  stringsAsFactors = FALSE
+)
+
+plot_ly() %>%
+  # Connecting lines (0 to value)
+  add_segments(
+    data = dumbbell_df,
+    x = 0, xend = ~value,
+    y = ~metric, yend = ~metric,
+    line = list(color = 'rgba(31, 119, 180, 0.4)', width = 3),
+    showlegend = FALSE,
+    hoverinfo = 'skip'
+  ) %>%
+  # Value dots
+  add_markers(
+    data = dumbbell_df,
+    x = ~value, y = ~metric,
+    marker = list(color = '#1f77b4', size = 12,
+                  line = list(color = '#105399', width = 1.5)),
+    showlegend = FALSE,
+    hoverinfo = 'text',
+    text = ~paste(metric, ':', round(value, 2), '%')
+  ) %>%
+  layout(
+    xaxis = list(
+      title = list(text = 'Score (%)', font = list(size = 13)),
+      range = c(-2, 105),
+      tickvals = seq(0, 100, 25),
+      tickfont = list(size = 12),
+      gridcolor = 'rgba(0, 0, 0, 0.07)',
+      zeroline = FALSE
+    ),
+    yaxis = list(
+      title = '',
+      tickfont = list(size = 13),
+      gridcolor = 'rgba(0, 0, 0, 0.05)'
+    ),
+    margin = list(l = 110, r = 20, b = 80, t = 20),
+    paper_bgcolor = 'rgba(255, 255, 255, 0)',
+    plot_bgcolor = 'rgba(255, 255, 255, 0)',
+    annotations = list(
+      list(
+        x = 0.5, y = -0.15,
+        text = "<span style='font-style:italic; color:grey;'>Figure 2: Dumbbell plot comparing each metric score against the baseline.</span>",
+        showarrow = FALSE, xref = "paper", yref = "paper",
+        xanchor = "center", yanchor = "top",
+        font = list(color = "grey", size = 12)
+      )
+    )
+  )
 ```
 
 ### Structural Category
@@ -322,6 +393,9 @@ TP_modals_html <- sapply(TP_genes_with_plots, function(gene) {
   )
 }) %>% paste(collapse = "\n")
 
+# Drop columns that are entirely NA
+TP <- TP[, colSums(!is.na(TP)) > 0, drop = FALSE]
+
 # Display the table with the Plot column
 datatable(
   data = TP,
@@ -377,6 +451,9 @@ PTP_modals_html <- sapply(PTP_genes_with_plots, function(gene) {
     </div>'
   )
 }) %>% paste(collapse = "\n")
+
+# Drop columns that are entirely NA
+PTP <- PTP[, colSums(!is.na(PTP)) > 0, drop = FALSE]
 
 # Display the table with the Plot column
 datatable(
@@ -458,6 +535,9 @@ FP_modals_html <- sapply(FP_genes_with_plots, function(gene) {
     </div>'
   )
 }) %>% paste(collapse = "\n")
+
+# Drop columns that are entirely NA
+FP <- FP[, colSums(!is.na(FP)) > 0, drop = FALSE]
 
 # Display the table with the Plot column
 datatable(

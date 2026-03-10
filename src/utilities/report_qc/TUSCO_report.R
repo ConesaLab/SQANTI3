@@ -22,7 +22,7 @@ genome.assembly <- args[6]
 # utilities.path <- '/media/tian/ubuntu/GitHub/SQANTI3/utilities'
 
 report.prefix <- strsplit(class.file, "_classification.txt")[[1]][1]
-output_directory <- dirname(class.file)
+output_directory <- normalizePath(dirname(class.file), mustWork = TRUE)
 output_name <- basename(report.prefix)
 html.report.file <- paste0(output_name, "_TUSCO_report.html")
 
