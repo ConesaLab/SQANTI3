@@ -125,10 +125,10 @@ classification_data_cleaned <- classification_data %>%
   arrange(isoform) %>%
   mutate(
     id_type = case_when(
+      is.na(associated_gene) | associated_gene == "" ~ "unknown",
       str_detect(associated_gene, patterns$ensembl)   ~ "ensembl",
       str_detect(associated_gene, patterns$refseq)    ~ "refseq",
-      str_detect(associated_gene, patterns$gene_name) ~ "gene_name",
-      TRUE ~ "unknown"
+      TRUE ~ "gene_name"
     )
   )
 
@@ -145,6 +145,34 @@ if (nrow(id_summary) > 0) {
   message("The id_type with the highest count is: ", top_id_type, " with ", top_id_n, " entries.")
 } else {
   message("No id_type classifications were made.")
+}
+
+# Validate top_id_type by checking actual overlap with annotation_data
+if (top_id_type != "unknown") {
+  test_genes <- unique(classification_data_cleaned$associated_gene)
+  best_col <- top_id_type
+  best_count <- sum(test_genes %in% annotation_data[[top_id_type]])
+
+  for (col in c("ensembl", "refseq", "gene_name")) {
+    col_count <- sum(test_genes %in% annotation_data[[col]])
+    if (col_count > best_count) {
+      best_count <- col_count
+      best_col <- col
+    }
+  }
+
+  if (best_col != top_id_type) {
+    message("Overriding top_id_type from '", top_id_type, "' to '", best_col,
+            "' based on direct matching (", best_count, " matches found).")
+    top_id_type <- best_col
+  }
+}
+
+if (top_id_type == "unknown") {
+  stop("Could not determine identifier type for associated_gene values. ",
+       "None matched Ensembl, RefSeq, or gene name patterns, and no overlap was found ",
+       "with the TUSCO reference data. Please verify that your reference GTF uses ",
+       "standard gene identifiers (Ensembl IDs, RefSeq IDs, or gene symbols).")
 }
 
 # Normalize IDs: strip version suffixes from relevant fields
