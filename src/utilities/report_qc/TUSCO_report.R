@@ -102,8 +102,7 @@ message("tusco_df columns: ", paste(colnames(tusco_df), collapse = ", "))
 message("Defining regex patterns for ID classification...")
 patterns <- list(
   ensembl   = "^(ENSG|ENSMUSG)\\d{11}(\\.\\d+)?$",
-  refseq    = "^(NM_|NR_|NP_)\\d{6,}$",
-  gene_name = "^[A-Z0-9]+$"
+  refseq    = "^(NM_|NR_|NP_)\\d{6,}$"
 )
 
 ## Defer summary printing until id_summary is computed
@@ -147,6 +146,14 @@ if (nrow(id_summary) > 0) {
   message("No id_type classifications were made.")
 }
 
+# Normalize annotation IDs to remove version suffixes (before validation)
+if ("ensembl" %in% names(annotation_data)) {
+  annotation_data$ensembl <- sub("\\..*", "", as.character(annotation_data$ensembl))
+}
+if ("refseq" %in% names(annotation_data)) {
+  annotation_data$refseq <- sub("\\..*", "", as.character(annotation_data$refseq))
+}
+
 # Validate top_id_type by checking actual overlap with annotation_data
 if (top_id_type != "unknown") {
   test_genes <- unique(classification_data_cleaned$associated_gene)
@@ -183,14 +190,6 @@ if (top_id_type == "ensembl" && "gene_id" %in% names(transcript_gtf_df)) {
 if (top_id_type == "ensembl" && "gene_id" %in% names(reference_gtf_df)) {
   # Directly modify the 'gene_id' column for reference GTF
   reference_gtf_df$gene_id <- sub("\\..*", "", reference_gtf_df$gene_id)
-}
-
-# Also normalize annotation IDs to remove version suffixes
-if ("ensembl" %in% names(annotation_data)) {
-  annotation_data$ensembl <- sub("\\..*", "", as.character(annotation_data$ensembl))
-}
-if ("refseq" %in% names(annotation_data)) {
-  annotation_data$refseq <- sub("\\..*", "", as.character(annotation_data$refseq))
 }
 
 # Extract TUSCO genes from reference GTF based on top_id_type
