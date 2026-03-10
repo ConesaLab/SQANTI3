@@ -34,6 +34,7 @@ def write_qc_parameters(args):
         f.write("PostTTSWindow\t" + str(args.window) + "\n")
         f.write("GeneName\t" + str(args.genename) + "\n")
         f.write("ReportType\t" + str(args.report) + "\n")
+        f.write("ReportJSON\t" + str(args.report_json) + "\n")
         f.write("RunIsoAnnotLite\t" + str(args.isoAnnotLite) + "\n")
         f.write("isoAnnotGFF3\t" + (os.path.abspath(args.gff3) if args.gff3 is not None else "NA") + "\n")
         f.write("ShortReads\t" + (os.path.abspath(args.short_reads) if args.short_reads is not None else "NA") + "\n")
