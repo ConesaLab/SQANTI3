@@ -37,8 +37,16 @@ suppressPackageStartupMessages({
   library(stringr)
   library(rtracklayer)
   library(GenomicRanges)
-  library(Gviz)
 })
+
+# Gviz is optional — only needed for IGV-like genome browser plots
+gviz_available <- requireNamespace("Gviz", quietly = TRUE)
+if (gviz_available) {
+  suppressPackageStartupMessages(library(Gviz))
+} else {
+  warning("Package 'Gviz' is not installed. IGV-like genome browser plots will be skipped. ",
+          "Install Gviz with: BiocManager::install('Gviz')")
+}
 
 # Helper function to read TSV files with error handling
 read_tsv_safe <- function(file_path, col_names = TRUE, ...) {
@@ -529,6 +537,10 @@ params <- list(
 # Generate IGV plots for each gene
 ########################################################
 
+if (!gviz_available) {
+  message("Skipping IGV plot generation (Gviz package not available).")
+} else {
+
 message("Generating IGV plots for each gene...")
 
 # Create a directory to save the plots
@@ -944,6 +956,8 @@ for (gene in genes_to_plot) {
 # Close progress bar
 close(pb)
 message("Total IGV plots created: ", plots_created)
+
+} # end if (gviz_available)
 
 # Render the HTML report
 message("Rendering the HTML report...")

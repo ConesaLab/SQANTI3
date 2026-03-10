@@ -45,7 +45,7 @@ suppressPackageStartupMessages({
   library(dplyr)
   library(plotly)
   library(DT)
-  library(Gviz)
+  if (requireNamespace("Gviz", quietly = TRUE)) library(Gviz)
   library(htmltools)
 })
 metrics <- params$metrics
