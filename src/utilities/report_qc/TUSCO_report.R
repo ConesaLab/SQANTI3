@@ -99,16 +99,6 @@ message("reference_gtf_df columns: ", paste(colnames(reference_gtf_df), collapse
 
 message("tusco_df columns: ", paste(colnames(tusco_df), collapse = ", "))
 
-message("Defining regex patterns for ID classification...")
-patterns <- list(
-  ensembl   = "^(ENSG|ENSMUSG)\\d{11}(\\.\\d+)?$",
-  refseq    = "^(NM_|NR_|NP_)\\d{6,}$"
-)
-
-## Defer summary printing until id_summary is computed
-
-message("Cleaning the classification data...")
-# Clean the classification data (split fusions, strip versions), then classify id_type
 message("Cleaning the classification data...")
 classification_data_cleaned <- classification_data %>%
   filter(structural_category != "fusion") %>%
@@ -121,32 +111,9 @@ classification_data_cleaned <- classification_data %>%
     associated_gene = str_remove(associated_gene, "\\.\\d+$")
   ) %>%
   distinct(isoform, associated_gene, .keep_all = TRUE) %>%
-  arrange(isoform) %>%
-  mutate(
-    id_type = case_when(
-      is.na(associated_gene) | associated_gene == "" ~ "unknown",
-      str_detect(associated_gene, patterns$ensembl)   ~ "ensembl",
-      str_detect(associated_gene, patterns$refseq)    ~ "refseq",
-      TRUE ~ "gene_name"
-    )
-  )
+  arrange(isoform)
 
-## Generate and display summary of id_type counts from cleaned data
-id_summary <- dplyr::count(classification_data_cleaned, id_type, sort = TRUE)
-message("Summary of id_type counts:")
-print(id_summary)
-
-# Identify and display the id_type with the highest count
-if (nrow(id_summary) > 0) {
-  top_id_row <- id_summary %>% dplyr::slice_max(n, n = 1)
-  top_id_type <- top_id_row$id_type
-  top_id_n <- top_id_row$n
-  message("The id_type with the highest count is: ", top_id_type, " with ", top_id_n, " entries.")
-} else {
-  message("No id_type classifications were made.")
-}
-
-# Normalize annotation IDs to remove version suffixes (before validation)
+# Normalize annotation IDs to remove version suffixes
 if ("ensembl" %in% names(annotation_data)) {
   annotation_data$ensembl <- sub("\\..*", "", as.character(annotation_data$ensembl))
 }
@@ -154,33 +121,30 @@ if ("refseq" %in% names(annotation_data)) {
   annotation_data$refseq <- sub("\\..*", "", as.character(annotation_data$refseq))
 }
 
-# Validate top_id_type by checking actual overlap with annotation_data
-if (top_id_type != "unknown") {
-  test_genes <- unique(classification_data_cleaned$associated_gene)
-  best_col <- top_id_type
-  best_count <- sum(test_genes %in% annotation_data[[top_id_type]])
+# Detect ID type by direct column matching (no regex needed)
+assoc_genes <- unique(classification_data_cleaned$associated_gene)
+assoc_genes_stripped <- sub("\\.\\d+$", "", assoc_genes)
 
-  for (col in c("ensembl", "refseq", "gene_name")) {
-    col_count <- sum(test_genes %in% annotation_data[[col]])
-    if (col_count > best_count) {
-      best_count <- col_count
-      best_col <- col
-    }
-  }
+matches <- c(
+  ensembl   = sum(sub("\\.\\d+$", "", annotation_data$ensembl) %in% assoc_genes_stripped),
+  refseq    = sum(sub("\\.\\d+$", "", annotation_data$refseq)  %in% assoc_genes_stripped),
+  gene_name = sum(annotation_data$gene_name %in% assoc_genes)
+)
 
-  if (best_col != top_id_type) {
-    message("Overriding top_id_type from '", top_id_type, "' to '", best_col,
-            "' based on direct matching (", best_count, " matches found).")
-    top_id_type <- best_col
-  }
+message("ID column match counts: ",
+        paste(names(matches), matches, sep = "=", collapse = ", "))
+
+if (max(matches) > 0) {
+  top_id_type <- names(which.max(matches))
+} else {
+  warning("No TUSCO gene IDs matched classification data. ",
+          "Reference GTF may use non-standard identifiers. ",
+          "Falling back to 'gene_name' matching.")
+  top_id_type <- "gene_name"
 }
 
-if (top_id_type == "unknown") {
-  stop("Could not determine identifier type for associated_gene values. ",
-       "None matched Ensembl, RefSeq, or gene name patterns, and no overlap was found ",
-       "with the TUSCO reference data. Please verify that your reference GTF uses ",
-       "standard gene identifiers (Ensembl IDs, RefSeq IDs, or gene symbols).")
-}
+message("Detected ID type: ", top_id_type, " (",
+        matches[top_id_type], "/", nrow(annotation_data), " genes matched)")
 
 # Normalize IDs: strip version suffixes from relevant fields
 if (top_id_type == "ensembl" && "gene_id" %in% names(transcript_gtf_df)) {
@@ -246,8 +210,13 @@ PTP <- TUSCO_transcripts %>%
   filter(structural_category %in% c("full-splice_match", "incomplete-splice_match") & !associated_gene %in% TP$associated_gene)
 
 # Define False Negatives (FN): TUSCO genes with no SQANTI3 transcript in any category
-FN <- annotation_data %>%
-  filter(!(!!sym(top_id_type) %in% TUSCO_transcripts$associated_gene))
+if (top_id_type %in% names(annotation_data)) {
+  FN <- annotation_data %>%
+    filter(!(!!sym(top_id_type) %in% TUSCO_transcripts$associated_gene))
+} else {
+  FN <- annotation_data[0, ]
+  warning("Cannot compute FN: column '", top_id_type, "' not in annotation_data.")
+}
 
 # Define False Positives (FP): Transcripts in NIC, NNC, genic, or fusion categories within TUSCO_transcripts
 FP <- TUSCO_transcripts %>%
@@ -258,9 +227,9 @@ fsm_ism_count <- TUSCO_transcripts %>%
   nrow()
 
 # Remove only unneeded columns; keep schema even if empty
-TP <- TP %>% select(-associated_transcript, -id_type)
-PTP <- PTP %>% select(-associated_transcript, -id_type)
-FP <- FP %>% select(-associated_transcript, -id_type)
+TP <- TP %>% select(-associated_transcript)
+PTP <- PTP %>% select(-associated_transcript)
+FP <- FP %>% select(-associated_transcript)
 
 # Calculate metrics
 message("Calculating evaluation metrics...")
