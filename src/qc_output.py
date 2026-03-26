@@ -15,7 +15,7 @@ from src.helpers import get_isoform_hits_name, get_omitted_name
 from src.module_logging import qc_logger
 from src.utils import find_closest_in_list
 
-def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, fields_class_cur):
+def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion):
     if min_ref_len > 0 and not is_fusion:
         omitted_name = get_omitted_name(outdir,prefix)
         omitted_iso = {key: isoforms_info[key] for key in isoforms_info 
@@ -27,14 +27,15 @@ def write_omitted_isoforms(isoforms_info, outdir,prefix,min_ref_len,is_fusion, f
         omitted_keys = sorted(omitted_iso.keys(), key=lambda x: (omitted_iso[x].chrom, omitted_iso[x].id))
         
         with open(omitted_name, 'w') as h:
-            fout_omitted = DictWriter(h, fieldnames=fields_class_cur, delimiter='\t')
+            header = next(iter(omitted_iso.values())).as_dict().keys()
+            fout_omitted = DictWriter(h, fieldnames=list(header), delimiter='\t')
             fout_omitted.writeheader()
             for key in omitted_keys:
                 fout_omitted.writerow(omitted_iso[key].as_dict())
     
     return isoforms_info
 
-def write_classification_output(isoforms_info, outputClassPath, fields_class_cur):
+def write_classification_output(isoforms_info, outputClassPath):
     with open(outputClassPath, 'w') as h:
         header = next(iter(isoforms_info.values())).as_dict().keys() 
         fout_class = DictWriter(h, fieldnames=list(header), delimiter='\t')

@@ -17,6 +17,32 @@ def calc_exon_overlap(query_exons, ref_exons):
     query_ranges = set(b for e in query_exons for b in range(e.start, e.end))
     return sum(1 for e in ref_exons for b in range(e.start, e.end) if b in query_ranges)
 
+def _exonic_len_between(exons, a, b):
+    """
+    Calculate the actual (spliced) length between two genomic coordinates
+    using the provided exon structure.
+    """
+    if a == b:
+        return 0
+    lo, hi = sorted([a, b])
+    return sum(max(0, min(e.end, hi) - max(e.start, lo)) for e in exons)
+
+def _signed_spliced_delta(signed_genomic_delta, query_exons, ref_exons, q_coord, r_coord):
+    """
+    Calculate the spliced delta between transcript coordinates.
+    Uses the exon structure of the extending transcript to measure real distance.
+    Maintains the sign logic: positive = elongation, negative = shortening.
+    """
+    if signed_genomic_delta == 0:
+        return 0
+    
+    # if delta > 0, the query extends past reference, so we measure along the query's exons.
+    # if delta < 0, the reference extends past query, so we measure along the reference's exons.
+    exons = query_exons if signed_genomic_delta > 0 else ref_exons
+    dist = _exonic_len_between(exons, q_coord, r_coord)
+    
+    return dist if signed_genomic_delta > 0 else -dist
+
 def get_diff_tss_tts(trec, ref):
     """
     Calculate the differences between the Transcript Start Site (TSS) and 
@@ -38,16 +64,25 @@ def get_diff_tss_tts(trec, ref):
     - ref: The reference transcript object.
 
     Returns:
-    - diff_tss (int): Difference in the transcript start sites (positive for elongation, negative for shortening).
-    - diff_tts (int): Difference in the transcript termination sites (positive for elongation, negative for shortening).
+    - diff_tss: Spliced difference in start sites (positive=elongation, negative=shortening)
+    - diff_tts: Spliced difference in termination sites (positive=elongation, negative=shortening)
+    - diff_tss_genomic: Genomic difference in start sites
+    - diff_tts_genomic: Genomic difference in termination sites
     """
     if trec.strand == '+':
-        diff_tss = ref.txStart - trec.txStart
-        diff_tts = trec.txEnd  - ref.txEnd
+        diff_tss_genomic = ref.txStart - trec.txStart
+        diff_tts_genomic = trec.txEnd  - ref.txEnd
+        
+        diff_tss = _signed_spliced_delta(diff_tss_genomic, trec.exons, ref.exons, trec.txStart, ref.txStart)
+        diff_tts = _signed_spliced_delta(diff_tts_genomic, trec.exons, ref.exons, trec.txEnd, ref.txEnd)
     else:
-        diff_tts = ref.txStart - trec.txStart
-        diff_tss = trec.txEnd  - ref.txEnd
-    return diff_tss, diff_tts
+        diff_tts_genomic = ref.txStart - trec.txStart
+        diff_tss_genomic = trec.txEnd  - ref.txEnd
+        
+        diff_tts = _signed_spliced_delta(diff_tts_genomic, trec.exons, ref.exons, trec.txStart, ref.txStart)
+        diff_tss = _signed_spliced_delta(diff_tss_genomic, trec.exons, ref.exons, trec.txEnd, ref.txEnd)
+        
+    return diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic
 
 
 def get_gene_diff_tss_tts(isoform_hit,trec,start_ends_by_gene):

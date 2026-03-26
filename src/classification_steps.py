@@ -3,7 +3,7 @@ from bx.intervals import Interval
 from collections import defaultdict
 from src.classification_utils import add_coding_info
 from src.qc_classes import myQueryProteins
-from src.utils import find_closest_in_list, find_polyA_motif
+from src.utils import find_polyA_motif
 from src.config import seqid_fusion
 from src.classification_classifiers import (
     transcriptsKnownSpliceSites, novelIsoformsKnownGenes, associationOverlapping
@@ -21,6 +21,11 @@ def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr
         elif isoform_hit.structural_category in ("", "antisense","geneOverlap"):
             # possibly NNC, genic, genic intron, anti-sense, or intergenic
             isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
+
+        if isoform_hit.structural_category not in ("full-splice_match", "incomplete-splice_match"):
+            isoform_hit.ref_length = None
+            isoform_hit.ref_num_exons = None
+
 
         return isoform_hit
 

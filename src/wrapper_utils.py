@@ -31,6 +31,7 @@ def create_config(config_path,options,level):
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
         "rescue": get_parser_specific_args_simple(rescue_argparse(),main_args)
     } 
+    print("hello")
     if options is not None:
         user_options = get_user_options(options,list(flatten_dict(config).keys()))
         replace_value(config,user_options)
@@ -83,7 +84,12 @@ def replace_value(default_dict, user_config):
             replace_value(value, user_config)
         else:
             if key in user_config:
-                default_dict[key] = user_config[key]
+                main_logger.debug(f"Replacing default value of {key} ({default_dict[key]}) with user value ({user_config[key]})")
+
+                if user_config[key] == "False":
+                    default_dict[key] = ''
+                else:
+                    default_dict[key] = user_config[key]
     return default_dict
 
 def generate_default_path(config, filename):
@@ -179,9 +185,7 @@ def validate_user_options(user_options, valid_keys):
 
 def modify_options(options,user_options):
     user_options = get_user_options(user_options, list(options.keys()))
-    for key, _ in options.items():
-        if key in user_options:
-            options[key] = user_options[key]
+    replace_value(options, user_options)
     return options
 
 def run_step(step,config,dry_run, user_options):

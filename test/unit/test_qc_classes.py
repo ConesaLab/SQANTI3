@@ -143,7 +143,6 @@ def test_genePredRecord_get_splice_site():
     genome_dict = {
         "chr1": SeqRecord.SeqRecord(seq="AGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGC")
     }
-    print(genome_dict)
     record = genePredRecord(
         id="gene1",
         chrom="chr1",
