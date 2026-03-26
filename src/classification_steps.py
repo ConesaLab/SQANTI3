@@ -22,6 +22,11 @@ def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr
             # possibly NNC, genic, genic intron, anti-sense, or intergenic
             isoform_hit = associationOverlapping(isoform_hit, rec, junctions_by_chr)
 
+        if isoform_hit.structural_category not in ("full-splice_match", "incomplete-splice_match"):
+            isoform_hit.ref_length = None
+            isoform_hit.ref_num_exons = None
+            
+
         return isoform_hit
 
 def process_cage_peak_info(isoform_hit,rec, cage_peak_obj):
