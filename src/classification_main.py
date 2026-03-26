@@ -8,7 +8,6 @@ from src.classification_steps import (
 ) # type: ignore
 from src.qc_output import write_junction_info
 from src.utils import alphanum_key
-from src.config import  FIELDS_CLASS
 from src.module_logging import qc_logger
 
 # TODO: Check why there is a temporary classification output

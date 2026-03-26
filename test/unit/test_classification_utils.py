@@ -46,22 +46,29 @@ def test_calc_exon_overlap():
 
 ## get_diff_tss_tts ##
 
-
-TranscriptRecord = namedtuple('TranscriptRecord', ['txStart', 'txEnd', 'strand'])
+class TranscriptRecord:
+    def __init__(self, txStart, txEnd, strand):
+        self.txStart = txStart
+        self.txEnd = txEnd
+        self.strand = strand
+        self.exons = [Exon(txStart, txStart+100), Exon(txStart+200, txEnd)] if txEnd-txStart > 300 else [Exon(txStart, txEnd)]
+        self.exonCount = len(self.exons)
 
 def test_get_diff_tss_tts_positive_strand():
     trec = TranscriptRecord(txStart=1000, txEnd=2000, strand='+')
     ref = TranscriptRecord(txStart=900, txEnd=2100, strand='+')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == -100
     assert diff_tts == -100
+    assert diff_tss_genomic == -100
+    assert diff_tts_genomic == -100
 
 def test_get_diff_tss_tts_negative_strand():
     trec = TranscriptRecord(txStart=1000, txEnd=2000, strand='-')
     ref = TranscriptRecord(txStart=900, txEnd=2100, strand='-')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == -100
     assert diff_tts == -100
 
@@ -69,7 +76,7 @@ def test_get_diff_tss_tts_zero_diff_positive_strand():
     trec = TranscriptRecord(txStart=1000, txEnd=2000, strand='+')
     ref = TranscriptRecord(txStart=1000, txEnd=2000, strand='+')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == 0
     assert diff_tts == 0
 
@@ -77,7 +84,7 @@ def test_get_diff_tss_tts_zero_diff_negative_strand():
     trec = TranscriptRecord(txStart=1000, txEnd=2000, strand='-')
     ref = TranscriptRecord(txStart=1000, txEnd=2000, strand='-')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == 0
     assert diff_tts == 0
 
@@ -85,7 +92,7 @@ def test_get_diff_tss_tts_positive_diff_positive_strand():
     trec = TranscriptRecord(txStart=1100, txEnd=2000, strand='+')
     ref = TranscriptRecord(txStart=1000, txEnd=1900, strand='+')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == -100
     assert diff_tts == 100
 
@@ -93,9 +100,40 @@ def test_get_diff_tss_tts_positive_diff_negative_strand():
     trec = TranscriptRecord(txStart=1100, txEnd=2000, strand='-')
     ref = TranscriptRecord(txStart=1000, txEnd=1900, strand='-')
 
-    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
     assert diff_tss == 100
     assert diff_tts == -100
+
+
+# New test: spliced and genomic distances differ
+def test_get_diff_tss_tts_spliced_vs_genomic():
+    # trec: two exons, ref: two exons, but with a gap in the middle
+    class CustomTranscript:
+        def __init__(self, txStart, txEnd, strand, exons):
+            self.txStart = txStart
+            self.txEnd = txEnd
+            self.strand = strand
+            self.exons = exons
+            self.exonCount = len(exons)
+
+    # Genomic: trec starts at 1000, ref at 900, so genomic diff_tss = -100
+    # But exons are arranged so that the spliced distance is different
+    trec_exons = [Exon(1000, 1100), Exon(1200, 1300)]
+    ref_exons = [Exon(900, 950), Exon(1000,1100), Exon(1200, 1300)]
+    trec = CustomTranscript(1000, 1300, '+', trec_exons)
+    ref = CustomTranscript(900, 1300, '+', ref_exons)
+
+    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
+    # Genomic TSS: 900-1000 = -100
+    # Spliced TSS: measure along ref exons from 900 to 1000 (since diff_tss_genomic < 0)
+    # Only the first ref exon covers 900-950, so spliced = -(1000-900-(1000-950)) = -50
+    # But our _exonic_len_between sums overlap: min(950,1000)-max(900,900)=50 (900-950), min(1300,1000)-max(1200,1000)=0
+    # So spliced = -50
+    assert diff_tss_genomic == -100
+    assert diff_tss == -50
+    # TTS: trec ends at 1300, ref at 1300, so both are 0
+    assert diff_tts_genomic == 0
+    assert diff_tts == 0
 
 ## get_gene_diff_tss_tts ##
 
