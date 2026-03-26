@@ -154,14 +154,14 @@ def run(args):
             write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
 
         # Write final classification
-        write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
+        write_classification_output(isoforms_info, outputClassPath)
 
         # Now that RTS info is obtained, we can write the final junctions.txt
         write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
 
         #write omitted isoforms if requested minimum reference length is more than 0
         isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
-                                            args.min_ref_len, args.is_fusion, fields_class_cur)
+                                            args.min_ref_len, args.is_fusion)
         
         #isoform hits to file if requested
         if args.isoform_hits:

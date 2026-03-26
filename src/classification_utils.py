@@ -69,7 +69,6 @@ def get_diff_tss_tts(trec, ref):
     - diff_tss_genomic: Genomic difference in start sites
     - diff_tts_genomic: Genomic difference in termination sites
     """
-    print(trec.exonCount, ref.exonCount)
     if trec.strand == '+':
         diff_tss_genomic = ref.txStart - trec.txStart
         diff_tts_genomic = trec.txEnd  - ref.txEnd

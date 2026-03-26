@@ -305,7 +305,7 @@ def parse_counts(count_file):
         df.rename(columns={df.columns[0]: 'isoform'}, inplace=True)
         
         if df.shape[1] < 2:
-             print(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
+             qc_logger.error(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
              sys.exit(1)
 
         # 4. Handle NAs and dtypes
@@ -316,7 +316,7 @@ def parse_counts(count_file):
         return df
 
     except Exception as e:
-        print(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
+        qc_logger.error(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
         sys.exit(1)
 
 def parse_td2_to_dict(td2_faa):
