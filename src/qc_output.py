@@ -61,11 +61,12 @@ def write_isoform_hits(outdir,prefix, isoforms_info):
             fout_hits.writerow(r)
     os.remove(isoform_hits_name+'_tmp')
 
-def generate_report(saturation,report, outputClassPath, outputJuncPath):
+def generate_report(saturation, report, outputClassPath, outputJuncPath, report_json=False):
     qc_logger.info("**** Generating SQANTI3 report.")
-    cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report}"
+    json_flag = "True" if report_json else "False"
+    cmd = f"{RSCRIPTPATH} {RSCRIPT_QC_REPORT} {outputClassPath} {outputJuncPath} {utilitiesPath} {saturation} {report} {json_flag}"
     logFile = f"{os.path.dirname(outputClassPath)}/logs/final_report.log"
-    run_command(cmd,qc_logger,logFile,"SQANTI3 report")
+    run_command(cmd, qc_logger, logFile, "SQANTI3 report")
 
 def generate_tusco_report(tusco, outputClassPath, sample_gtf_file, reference_gtf_file):
     """

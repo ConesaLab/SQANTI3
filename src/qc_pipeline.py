@@ -169,9 +169,9 @@ def run(args):
             write_isoform_hits(args.dir, args.output, isoforms_info)
         
         ## Generating report
-        if args.report != 'skip':
-            # Main SQANTI3 report
-            generate_report(args.saturation, args.report, outputClassPath, outputJuncPath)
+        if args.report != 'skip' or args.report_json:
+            report_format = args.report if args.report != 'skip' else 'skip'
+            generate_report(args.saturation, report_format, outputClassPath, outputJuncPath, args.report_json)
          # Run TUSCO benchmarking report if requested
          
         if hasattr(args, 'tusco') and args.tusco:

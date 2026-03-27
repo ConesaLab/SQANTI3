@@ -54,6 +54,8 @@ def qc_argparse():
     apout.add_argument('-d','--dir',  default='./sqanti3_results', help='Directory for output files. (Default: Directory where the script was run.)')
     apout.add_argument("--saturation", action="store_true", default=False, help='Include saturation curves into report')
     apout.add_argument("--report", choices=['html', 'pdf', 'both', 'skip'], default='html', help=f"Select report format: {', '.join(['html', 'pdf', 'both', 'skip'])} (default: %(default)s)")
+    apout.add_argument("--report_json", action="store_true", default=False,
+                       help="Export report tables as a JSON file ({prefix}_report_tables.json)")
     apout.add_argument('--isoform_hits' , action='store_true', help=' Report all FSM/ISM isoform hits in a separate file')
     apout.add_argument('--ratio_TSS_metric' , choices=['max', 'mean', 'median', '3quartile'], default='max', help=' Define which statistic metric should be reported in the ratio_TSS column (default: %(default)s)')
 

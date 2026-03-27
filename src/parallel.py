@@ -223,8 +223,9 @@ def combine_split_runs(args, split_dirs):
         f_faa.close()
     cleanup(outputClassPath, outputJuncPath)
 
-    if args.report != 'skip':
-        generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
+    if args.report != 'skip' or args.report_json:
+        report_format = args.report if args.report != 'skip' else 'skip'
+        generate_report(args.saturation, report_format, outputClassPath, outputJuncPath, args.report_json)
         
 # Run TUSCO benchmarking report if requested
     if hasattr(args, 'tusco') and args.tusco:

@@ -17,6 +17,7 @@ junc.file <- args[2]
 utilities.path <- args[3]
 saturation.curves <- args[4]
 report.format <- args[5]
+export.json <- ifelse(length(args) >= 6 && args[6] == "True", TRUE, FALSE)
 
 if (length(args) < 5) {
   stop("Incorrect number of arguments! Script usage is: [classification file] [junction file] [utilities directory path] [True/False for saturation curves] [pdf|html|both]. Abort!")
@@ -26,8 +27,8 @@ if (!(saturation.curves %in% c('True', 'False'))) {
   stop("Saturation curve argument needs to be 'True' or 'False'. Abort!")
 }
 
-if (!(report.format %in% c("pdf", "html", "both"))) {
-  stop("Report format needs to be: pdf, html, or both. Abort!")
+if (!(report.format %in% c("pdf", "html", "both", "skip"))) {
+  stop("Report format needs to be: pdf, html, both, or skip. Abort!")
 }
 
 source(paste(utilities.path, "/report_qc/generatePDFreport.R", sep = "/"))
@@ -60,6 +61,7 @@ library(DT)
 library(plyr)
 library(plotly)
 library(dplyr)
+library(jsonlite)
 
 # ***********************
 # ***********************
@@ -3014,20 +3016,128 @@ if (!all(is.na(data.class$dist_to_CAGE_peak))){
                                                    .groups = 'keep'))
 }
 
+###** JSON export of report tables
+
+export_tables_to_json <- function() {
+  json_output_file <- paste0(report.prefix, "_report_tables.json")
+
+  # Metadata
+  metadata <- list(
+    sqanti3_version = tryCatch(packageVersion("SQANTI3"), error = function(e) "unknown"),
+    generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S"),
+    classification_file = class.file,
+    junction_file = junc.file
+  )
+
+  # Summary: isoform and gene counts
+  unique_genes <- length(unique(data.class$associated_gene))
+  unique_isoforms <- nrow(data.class)
+
+  iso_class <- as.data.frame(table(data.class$structural_category))
+  colnames(iso_class) <- c("category", "n_isoforms")
+
+  gene_class_raw <- aggregate(associated_gene ~ structural_category, data = data.class,
+                              FUN = function(x) length(unique(x)))
+  colnames(gene_class_raw) <- c("category", "n_genes")
+
+  sj_class <- NULL
+  if (exists("data.junction") && nrow(data.junction) > 0) {
+    sj_raw <- as.data.frame(table(data.junction$canonical_known))
+    colnames(sj_raw) <- c("category", "n_sjs")
+    sj_raw$percent <- round(sj_raw$n_sjs / sum(sj_raw$n_sjs) * 100, 1)
+    sj_class <- sj_raw
+  }
+
+  summary_section <- list(
+    unique_genes = unique_genes,
+    unique_isoforms = unique_isoforms,
+    isoform_classification = iso_class,
+    gene_classification = gene_class_raw
+  )
+  if (!is.null(sj_class)) {
+    summary_section$splice_junction_classification <- sj_class
+  }
+
+  # PolyA tables
+  polya_section <- NULL
+  if (exists("df.polyA")) {
+    polya_section <- list()
+    polya_section$by_category <- df.polyA
+    if (exists("df.polyA_freq")) polya_section$motif_frequency <- df.polyA_freq
+    if (exists("df.polyA_subcat")) polya_section$by_subcategory <- df.polyA_subcat
+  }
+
+  # CAGE tables
+  cage_section <- NULL
+  if (exists("df.cage")) {
+    cage_section <- list()
+    cage_section$by_category <- df.cage
+    if (exists("df.cage_subc")) cage_section$by_subcategory <- df.cage_subc
+  }
+
+  # Quality metrics
+  quality_metrics <- list()
+
+  if (exists("t3.RTS") && nrow(t3.RTS) > 0) {
+    rts <- t3.RTS[, c("structural_category", "count.x", "count.y", "perc")]
+    colnames(rts) <- c("structural_category", "count", "total", "percent")
+    quality_metrics$rt_switching <- rts
+  }
+
+  if (exists("t3.SJ") && nrow(t3.SJ) > 0) {
+    sj <- t3.SJ[, c("structural_category", "count.x", "count.y", "perc")]
+    colnames(sj) <- c("structural_category", "count", "total", "percent")
+    quality_metrics$noncanonical_sj <- sj
+  }
+
+  if (exists("t3.NMD") && nrow(t3.NMD) > 0) {
+    nmd <- t3.NMD[, c("structural_category", "count.x", "count.y", "perc")]
+    colnames(nmd) <- c("structural_category", "count", "total", "percent")
+    quality_metrics$nmd_prediction <- nmd
+  }
+
+  if (exists("t3.Cov") && nrow(t3.Cov) > 0) {
+    cov <- t3.Cov[, c("structural_category", "count.x", "count.y", "perc")]
+    colnames(cov) <- c("structural_category", "count", "total", "percent")
+    quality_metrics$sj_coverage <- cov
+  }
+
+  # Build the full output list
+  output <- list(
+    metadata = metadata,
+    summary = summary_section
+  )
+
+  if (!is.null(polya_section)) output$polya <- polya_section
+  if (!is.null(cage_section)) output$cage <- cage_section
+  if (length(quality_metrics) > 0) output$quality_metrics <- quality_metrics
+
+  # Write JSON
+  json_text <- toJSON(output, pretty = TRUE, auto_unbox = TRUE)
+  writeLines(json_text, json_output_file)
+  cat(paste0("JSON report tables written to: ", json_output_file, "\n"))
+}
+
+###** JSON export of report tables (if requested)
+
+if (export.json) {
+  export_tables_to_json()
+}
+
 ###** Output plots
 
 if (report.format == 'both') {
   invisible(generatePDFreport())
-  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), 
-                    intermediates_dir = output_directory, 
-                    output_dir =  output_directory, 
-                    output_file=html.report.file)
-} else if (args[5] == 'pdf' & args[5] != 'html'){
-  invisible(generatePDFreport())
-} else {
-  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"), 
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"),
                     intermediates_dir = output_directory,
-                    output_dir =  output_directory, 
+                    output_dir =  output_directory,
+                    output_file=html.report.file)
+} else if (report.format == 'pdf'){
+  invisible(generatePDFreport())
+} else if (report.format == 'html') {
+  rmarkdown::render(input = paste(utilities.path, "/report_qc/SQANTI3_report.Rmd", sep = "/"),
+                    intermediates_dir = output_directory,
+                    output_dir =  output_directory,
                     output_file=html.report.file)
 }
 
