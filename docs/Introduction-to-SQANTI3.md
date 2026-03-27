@@ -87,7 +87,7 @@ To gain insight into these two steps, we encourage reading the original [SQANTI 
 
 4. **Curated transcriptome requantification** (final step of [SQANTI3 rescue](Running-SQANTI3-rescue.md)) to generate an updated count matrix including the rescued reference transcripts. After the rescue step, the transcriptome is expanded with the rescued reference transcripts, and the original quantification matrix is updated to include counts for these transcripts. This updated count matrix can be used for downstream analyses. As well, artifacts that are pontentilaly divergent from the true isoforms, also have their counts redistributed. 
 
-![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
+![Sqanti3 workflow](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/SQ3_qc.png)
 
 
 
