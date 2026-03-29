@@ -14,6 +14,12 @@ import os
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+plt.rcParams.update({
+    'figure.figsize': (12, 8),
+    'axes.titlesize': 22,
+    'axes.labelsize': 16,
+    'font.weight': 'bold'
+})
 import matplotlib
 import textwrap
 from matplotlib.backends.backend_pdf import PdfPages
