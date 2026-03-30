@@ -13,7 +13,7 @@ def get_unrescued_artifacts(classif_df, rescue_df):
     # Assign transcript divergency for unrescued artifacts
     # If the associated gene is not novel, use gene_TD; else, use general_TD
     not_rescued["assigned_transcript"] = not_rescued["associated_gene"].apply(
-        lambda gene: f"{gene}_TD" if not str(gene).startswith('novel') else "general_TD"
+        lambda gene: f"{gene}_residual" if not str(gene).startswith('novel') else "general_residual"
     )
     # remove the associated_gene column as it's no longer needed
     not_rescued.drop(columns=["associated_gene"], inplace=True)
@@ -120,7 +120,7 @@ def export_counts(old_counts_df, new_counts_df, prefix):
     2. Extended table for ALL isoforms (with old and new counts for each sample)
        - Good isoforms (kept their counts)
        - Artifacts (lost their counts: old > 0, new = 0)
-       - Rescued/TD isoforms (gained counts: old = 0, new > 0)
+       - Rescued/residual isoforms (gained counts: old = 0, new > 0)
     
     Handles multiple sample columns.
     """

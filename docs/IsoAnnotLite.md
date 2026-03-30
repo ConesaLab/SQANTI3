@@ -46,7 +46,7 @@ All of the following parameters are **optional**:
 
 - `-o`: name for the resulting GFF3 file.
 - `-stdout`: name for the statistics results file. Only when GFF3 it is used. If not used, no file will be generated.
-- `novel`: if it is used, all the transcripts will be treated as novel trasncripts, meaning that each transcript will be annotated using functional information from all the transcripts that belong to the same gene in the reference GFF3, instead of transferring annotations from transcripts with matching IDs (default).
+- `novel`: if it is used, all the transcripts will be treated as novel trasnsripts, meaning that each transcript will be annotated using functional information from all the transcripts that belong to the same gene in the reference GFF3, instead of transferring annotations from transcripts with matching IDs (default).
 - `nointronic`: if provided, intronic features will not be annotated (e.g. RBPs).
 - `statistics`: deprecated (now IsoAnnotLite always shows the statistic results).
 - `saveTranscriptIDs`: when supplied to IsoAnnotLite, five additional output files will be created to report the IDs of the transcripts that generated problems during the feature transfer process:
