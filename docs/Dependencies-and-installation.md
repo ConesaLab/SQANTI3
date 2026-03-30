@@ -14,7 +14,7 @@
   
 ____________________________________________________
 
-<a name="dependencies"/></a>
+<a name="dependencies"></a>
 
 ## Dependencies
 
@@ -56,7 +56,7 @@ Non-comprehensive list of the main dependencies for SQANTI3:
 * We have downloaded gtfToGenePred from [UCSC utilities](https://hgdownload.soe.ucsc.edu/admin/exe/) and gave execution permissions, so it is no longer necessary to do it after downloading SQANTI3.
 
 
-<a name="install"/></a>
+<a name="install"></a>
 
 ## Getting ready to use SQANTI3
 
@@ -67,7 +67,7 @@ The installation will be done just once and it usually takes less than 10 minute
 you just need to activate the conda environment of SQANTI3 and run it!
 
 
-<a name="install0"/></a>
+<a name="install0"></a>
 
 ### 0. Installing and updating Anaconda
 
@@ -144,7 +144,7 @@ For both **Linux** and **MacOS** users, the right version of gtfToGenePred is al
 
 
 
-<a name="docker"/></a>
+<a name="docker"></a>
 
 ## Using SQANTI3 docker container
 

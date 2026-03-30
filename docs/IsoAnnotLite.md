@@ -16,7 +16,7 @@
 ***
 
 
-<a name="summary"/>
+<a name="summary"></a>
 
 ## Summary
 
@@ -26,7 +26,7 @@
 ![isoannotlite](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/isoannotlite_logo.png)
 
 
-<a name="args"/>
+<a name="args"></a>
 
 ## Arguments and parameters in IsoAnnotLite
 
@@ -57,7 +57,7 @@ All of the following parameters are **optional**:
   - SQ reference gene (`associated_gene`) field was empty: `file_transcript_wo_gene_ID.txt`.
 
 
-<a name="runSQ3"/>
+<a name="runSQ3"></a>
 
 ## IsoAnnotLite integration within SQANTI3 QC
 
@@ -136,7 +136,7 @@ Sorting the GFF3 by transcript ID, that is, all entries corresponding to the sam
 If missing from the SQANTI3 GTF, gene descriptions are updated using the information in the reference GFF3 file. After this step, the final GFF3 is ready.
 
 
-<a name="stats"/>
+<a name="stats"></a>
 
 ## Appendix II: IsoAnnotLite statistics
 
@@ -154,7 +154,7 @@ Statistics are divided into three main sections:
 
 At the end of the statistics file, a summary line is shown including the percentage (%) of features have been transferred in total. However, keep in mind that this count is only exact when no novel transcripts are annotated: otherwise, since a novel transcript can receive annotations from multiple reference transcripts (all of which are counted, even if they are collapsed afterwards to remove redundancies), annotated features can be counted several times. Therefore, the result will correspond to the total number of features that have been annotated against the total number of feature transfer "events" that have been tried by IsoAnnotLite.
 
-<a name="gff3"/>
+<a name="gff3"></a>
 
 ## Appendix III: tappAS GFF3 file format
 
