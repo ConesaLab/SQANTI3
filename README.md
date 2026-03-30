@@ -25,7 +25,7 @@ For information about previous releases and features introduced in them, see the
 
 **⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.** Release 5.5.1 updated the python version to 3.11.13, as on the previous version freezes might happen in some datasets.
 
-**⚠️WARNING:** v6.0 has fully changed the way that the rescue module operates. Now, the transcript recovery and reintroduction is much more strict. As well, there have been changes to the classificaiton table and report, specially when it comes to the CDS predictions. Please, check the release notes and the wiki for the updated situation of SQANTI3.
+**⚠️WARNING:** v6.0 has fully changed the way that the rescue module operates. Now, the transcript recovery and reintroduction is much more strict. As well, there have been changes to the classification table and report, specially when it comes to the CDS predictions. Please, check the release notes and the wiki for the updated situation of SQANTI3.
 
 ## Documentation
 

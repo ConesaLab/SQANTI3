@@ -108,44 +108,46 @@ The output `_classification.txt` has the following fields:
 12. `associated_transcript`: the reference transcript name.
 13. `ref_length`: matched reference transcript length. For transcripts in the `novel_in_catalog` and `novel_not_in_catalog` categories, the best matching reference transcript is chosen based on the highest number of shared splice junctions and the smallest difference in exon count.
 14. `ref_exons`: reference transcript number of exons.
-15. `diff_to_TSS`: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript.
-16. `diff_to_TTS`: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript.
-17. `diff_to_gene_TSS`: distance of query isoform 5' start to the closest start end of *any* transcripts of the matching gene. This field is different from `diff_to_TSS` since it's looking at all annotated starts of a gene. Negative value means query starts downstream of TSS.
-18. `diff_to_gene_TTS`: distance of query isoform 3' end to the closest end of *any* transcripts of the matching gene. Negative value means query ends upstream of TTS. 
-19. `RTS_stage`: TRUE if one of the junctions could be a RT switching artifact.
-20. `all_canonical`: TRUE if all junctions have canonical splice sites.
-21. `min_sample_cov`: sample with minimum coverage.
-22. `min_cov`: minimum junction coverage based on short read STAR junction output file. NA if no short read given.
-23. `min_cov_pos`: the junction that had the fewest coverage. NA if no short read data given.
-24. `sd_cov`: standard deviation of junction coverage counts from short read data. NA if no short read data given.
-25. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
-26. `n_indels`: total number of indels based on alignment.
-27. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
-28. `bite`: TRUE if contains at least one "bite" positive SJ.
-29. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
-30. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
-31. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
-32. `coding`: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"
-33. `ORF_length`: predicted ORF length (including introns) in nucleotides.
-34. `CDS_length`: predicted CDS length in nucleotides.
-35. `protein_length`: predicted protein length in aminoacids. 
-36. `CDS_start`: CDS start.
-37. `CDS_end`: CDS end.
-38. `CDS_genomic_start`: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.
-39. `CDS_genomic_end`: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.
-40. `psauron_score`: Value between 0 and 1 indicating the coding potential of the transcript according to the psauron algorithm. Higher values indicate higher coding potential.
-41. `CDS_type`: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"
-42. `predicted_NMD`: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.
-43. `perc_A_downstream_TTS`: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say > 0.8), the 3' end site of this isoform is probably not reliable.
-44. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
-45. `dist_to_CAGE_peak`: distance to closest TSS based on CAGE Peak data. Negative means the middle of the cage peak is upstream of the isoform TSS and positive means downstream of the isoform TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
-46. `within_CAGE_peak`: TRUE if the transcript start site is within a CAGE Peak. 
-47. `dist_to_polyA_site`: distance to the closest polyA site, based on polyA site data (e.g. Quant-seq).
-48. `within_polyA_site`: TRUE if the transcript start site is within a polyA site, retrieved from polyA site data (e.g. Quant-seq).
-49. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
-50. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
-51. `polyA_motif_found`: TRUE if a polyA motif given via `--polyA_motif_list` is detected in the 3'end of the transcript.  
-52. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform has a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
+15. `diff_to_TSS`: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript. This distance is relative to the spliced transcript (not taking into account introns).
+16. `diff_to_TTS`: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript. This distance is relative to the spliced transcript (not taking into account introns).
+17. `diff_to_TSS_genomic`: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript. This distance is relative to the genomic coordinates (taking into account introns).
+18. `diff_to_TTS_genomic`: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript. This distance is relative to the genomic coordinates (taking into account introns).
+19. `diff_to_gene_TSS`: distance of query isoform 5' start to the closest start end of *any* transcripts of the matching gene. This field is different from `diff_to_TSS` since it's looking at all annotated starts of a gene. Negative value means query starts downstream of TSS.
+20. `diff_to_gene_TTS`: distance of query isoform 3' end to the closest end of *any* transcripts of the matching gene. Negative value means query ends upstream of TTS. 
+21. `RTS_stage`: TRUE if one of the junctions could be a RT switching artifact.
+22. `all_canonical`: TRUE if all junctions have canonical splice sites.
+23. `min_sample_cov`: sample with minimum coverage.
+24. `min_cov`: minimum junction coverage based on short read STAR junction output file. NA if no short read given.
+25. `min_cov_pos`: the junction that had the fewest coverage. NA if no short read data given.
+26. `sd_cov`: standard deviation of junction coverage counts from short read data. NA if no short read data given.
+27. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
+28. `n_indels`: total number of indels based on alignment.
+29. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
+30. `bite`: TRUE if contains at least one "bite" positive SJ.
+31. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
+32. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
+33. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
+34. `coding`: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"
+35. `ORF_length`: predicted ORF length (including introns) in nucleotides.
+36. `CDS_length`: predicted CDS length in nucleotides.
+37. `protein_length`: predicted protein length in amino acids. 
+38. `CDS_start`: CDS start.
+39. `CDS_end`: CDS end.
+40. `CDS_genomic_start`: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.
+41. `CDS_genomic_end`: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.
+42. `psauron_score`: Value between 0 and 1 indicating the coding potential of the transcript according to the PSAURON algorithm. Higher values indicate higher coding potential.
+43. `CDS_type`: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"
+44. `predicted_NMD`: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.
+45. `perc_A_downstream_TTS`: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say > 0.8), the 3' end site of this isoform is probably not reliable.
+46. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
+47. `dist_to_CAGE_peak`: distance to closest TSS based on CAGE Peak data. Negative means the middle of the cage peak is upstream of the isoform TSS and positive means downstream of the isoform TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
+48. `within_CAGE_peak`: TRUE if the transcript start site is within a CAGE Peak. 
+49. `dist_to_polyA_site`: distance to the closest polyA site, based on polyA site data (e.g. Quant-seq).
+50. `within_polyA_site`: TRUE if the transcript start site is within a polyA site, retrieved from polyA site data (e.g. Quant-seq).
+51. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
+52. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
+53. `polyA_motif_found`: TRUE if a polyA motif given via `--polyA_motif_list` is detected in the 3'end of the transcript.  
+54. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform has a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
 
 
 <a name="junctioncols"></a>

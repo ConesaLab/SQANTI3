@@ -24,7 +24,7 @@
 
 ***
 
-<a name="intro"/>
+<a name="intro"></a>
 
 ## Introduction
 </a>
@@ -38,14 +38,14 @@ The idea behind this strategy is to avoid losing transcripts/genes that are dete
 In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Optionally, requantification can be performed to reassign expression values to the rescued isoforms.
 
 
-<a name="motivation"/>
+<a name="motivation"></a>
 
 ### Motivation
 </a>
 ⚠️To be completed⚠️
 
 
-<a name="strategy"/>
+<a name="strategy"></a>
 
 ## SQANTI3 rescue strategy
 </a>
@@ -130,7 +130,7 @@ After performing this last filter of the rescue target list, SQ3 rescue outputs 
 <img src = "https://github.com/aarzalluz/figures_public/blob/master/SQANTI3/SQ3_rescue_04-rescue.png" height = 497 width = 798>
 
 
-<a name="running"/>
+<a name="running"></a>
 
 #### 5. Requantification
 
@@ -164,7 +164,7 @@ optional arguments:
   -h, --help  show this help message and exit
 ```
 
-<a name="args"/>
+<a name="args"></a>
 
 ### Input files and arguments
 </a>
@@ -196,7 +196,7 @@ reference isoforms.
 - **Output directory and outfile prefix**: the output directory can be set via the `-d` flag (default: current directory). Output files will be named using the prefix provided using the `-o` argument (default: SQANTI3).
 
 
-<a name="rules"/>
+<a name="rules"></a>
 
 ### Rules rescue arguments
 </a>
@@ -266,7 +266,7 @@ Rules specific options:
 ```
 </details><br>
 
-<a name="ml"/>
+<a name="ml"></a>
 
 ### Machine learning rescue arguments
 </a>
@@ -336,7 +336,7 @@ Machine Learning specific options:
 </details><br>
 
 
-<a name="out"/>
+<a name="out"></a>
 
 ## Rescue output files
 </a>
@@ -344,7 +344,7 @@ The final result of SQANTI3 rescue is a **transcriptome GTF file** - named `pref
 
 Other additional output files that are generated in the rescue process will be explained below.
 
-<a name="out_common"/>
+<a name="out_common"></a>
 
 ### Common rescue output files
 </a>
@@ -432,14 +432,14 @@ PB.1.4	0	PB.7707.5	0.754	novel_not_in_catalog	not_rescued	long_read_transcript	r
 
 - **Rescue inclusion list** (`--mode full`): a single-column file containing the IDs of all rescued transcripts, named `prefix_rescue_inclusion-list.tsv`. In this list, both the IDs of rescued transcripts obtained via automatic rescue and via rescue-by-mapping are combined into a single inclusion list. This list is used to generate the final rescued transcriptome GTF, i.e. `prefix_rescued.gtf`.
 
-<a name="rules_out"/>
+<a name="rules_out"></a>
 
 ### Rules-specific output
 </a>
 In addition to the common output files, when running `--mode full`, the rules rescue will create a new folder within the designated output directory to save [rules filter output files](Running-SQANTI3-filter.md#rulesout), i.e. the results of running the rules filer on the reference transcriptome. This folder is named `reference_rules_filter` in all cases, while all files within it will have `reference_` as prefix. The `reference_RulesFilter_result_classification.txt` file will be used by SQANTI3 rescue to get the rules filter result for reference transcripts.
 
 
-<a name="ml_out"/>
+<a name="ml_out"></a>
 
 ### Machine learning-specific output
 </a>
