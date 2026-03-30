@@ -29,8 +29,9 @@ def create_config(config_path,options,level):
         "main" : main_args,
         "qc": get_parser_specific_args_simple(qc_argparse(),main_args),
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
-        "rescue": get_parser_specific_args_complex(rescue_argparse(),main_args)
+        "rescue": get_parser_specific_args_simple(rescue_argparse(),main_args)
     } 
+    print("hello")
     if options is not None:
         user_options = get_user_options(options,list(flatten_dict(config).keys()))
         replace_value(config,user_options)
@@ -83,7 +84,12 @@ def replace_value(default_dict, user_config):
             replace_value(value, user_config)
         else:
             if key in user_config:
-                default_dict[key] = user_config[key]
+                main_logger.debug(f"Replacing default value of {key} ({default_dict[key]}) with user value ({user_config[key]})")
+
+                if user_config[key] == "False":
+                    default_dict[key] = ''
+                else:
+                    default_dict[key] = user_config[key]
     return default_dict
 
 def generate_default_path(config, filename):
@@ -100,24 +106,24 @@ def set_default_values(config,user_options):
             'filter_faa': '_corrected.faa'
         },
         'rescue': {
-            'filter_class': '_RulesFilter_result_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_result_classification.txt',
-            'rescue_isoforms': '_corrected.fasta',
-            'rescue_gtf': '.filtered.gtf',
-            'random_forest': '_randomforest.RData'
+            'filter_class': '_RulesFilter_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_classification.txt',
+            'corrected_isoforms_fasta': '_corrected.fasta',
+            'filtered_isoforms_gtf': '.filtered.gtf',
+            'random_forest': 'randomforest.RData'
         }
     }
 
     for section, options in default_values.items():
         for key, default_filename in options.items():
             if key not in user_options:
-                if section != 'qc':
+                if section == 'filter':
                    # Avoids including the protein sequences if the user has set skipORF
-                   if key == 'filter_faa' and config['qc']['options']['skipORF']:
-                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
-                   else:
-                       config[section]['options']['common'][key] = generate_default_path(config, default_filename)
+                    if key == 'filter_faa' and not config['qc']['options']['include_ORF']:
+                        continue
+                    else:
+                        config[section]['options']['common'][key] = generate_default_path(config, default_filename)
                 else:
-                     config[section]['options'][key] = generate_default_path(config, default_filename)
+                    config[section]['options'][key] = generate_default_path(config, default_filename)
     return config
 
 def get_parser_specific_args_simple(parser,shared_args):
@@ -179,19 +185,17 @@ def validate_user_options(user_options, valid_keys):
 
 def modify_options(options,user_options):
     user_options = get_user_options(user_options, list(options.keys()))
-    for key, _ in options.items():
-        if key in user_options:
-            options[key] = user_options[key]
+    replace_value(options, user_options)
     return options
 
 def run_step(step,config,dry_run, user_options):
     commands = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} {{options}}",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} {{options}}",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} {{options}}"
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{options}}"
     }
     main_opt = config.get("main", {})
-    if step == "qc":
+    if step != "filter":
         options = main_opt | config[step].get("options", "")
         if user_options is not None:
             modify_options(options,user_options)
@@ -236,9 +240,9 @@ def run_step_help(step):
     help = {
         "qc": f"{sys.executable} {sqanti_path('sqanti3_qc.py')} -h",
         "filter": f"{sys.executable} {sqanti_path('sqanti3_filter.py')} {{type}} -h",
-        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} {{type}} -h"
+        "rescue": f"{sys.executable} {sqanti_path('sqanti3_rescue.py')} -h"
     }
-    if step != "qc":
+    if step == "filter":
         filter_type = input(f"Which {step} option do you want to see the help from (rules/ml)? ")
         if filter_type != "rules" and filter_type != "ml":
             main_logger.error("Invalid option")

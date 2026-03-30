@@ -1,8 +1,8 @@
 import os, re
 
-#__author__  = "etseng@pacb.com"
-__author__ = "pablo.atienza@csic.es"
-__version__ = '5.5.4'  # Python 3.7
+__author__  = "pablo.atienza@csic.es"
+__version__ = '6.0'  # Python 3.7
+__reads_version__ = '1.0.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
@@ -14,9 +14,11 @@ FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_c
                    'RTS_junction', 'indel_near_junct',
                    'phyloP_start', 'phyloP_end', 'sample_with_cov', "total_coverage_unique", "total_coverage_multi"] #+coverage_header
 
-FIELDS_CLASS = ['isoform', 'chrom', 'strand', 'length',  'exons',  'structural_category',
+#TODO: Add the new fields relative to the CDS and the protein information
+FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',  'structural_category',
                 'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
-                'diff_to_TSS', 'diff_to_TTS', 'diff_to_gene_TSS', 'diff_to_gene_TTS',
+                'diff_to_TSS', 'diff_to_TTS', 'diff_to_TSS_genomic', 'diff_to_TTS_genomic',
+                'diff_to_gene_TSS', 'diff_to_gene_TTS',
                 'subcategory', 'RTS_stage', 'all_canonical',
                 'min_sample_cov', 'min_cov', 'min_cov_pos',  'sd_cov', 'FL', 'n_indels',
                 'n_indels_junc',  'bite',  'iso_exp', 'gene_exp',  'ratio_exp',

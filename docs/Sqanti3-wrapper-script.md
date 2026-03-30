@@ -35,7 +35,7 @@ rescue_mode="both" # rules, ml or both
 
 * Sqanti QC:
 
-Sqanti3 has many parameters, but only 3 of them are mandatory: input GTF, reference GTF and reference fasta. The references are defined in the general parameters section, so only the former on is present in this section. All other parameters are optional, but by default they are targeted to the example available, because they are the most common ones. Others have a default option in the script, or different posibilities to  be used. For a detailed infography of the different parameters, how they affect the pipeline, and how to use them effectively, please check the [SQANTI3 QC running tutorial](Running-SQANTI3-Quality-Control.md) or print the help with `sqanti3_qc.py -h`
+Squanti3 has many parameters, but only 3 of them are mandatory: input GTF, reference GTF and reference fasta. The references are defined in the general parameters section, so only the former on is present in this section. All other parameters are optional, but by default they are targeted to the example available, because they are the most common ones. Others have a default option in the script, or different posibilities to  be used. For a detailed infography of the different parameters, how they affect the pipeline, and how to use them effectively, please check the [SQANTI3 QC running tutorial](Running-SQANTI3-Quality-Control.md) or print the help with `sqanti3_qc.py -h`
 ```
 QC_input="example/UHR_chr22.gtf" # Input data
 QC_output_prefix="UHR_chr22"

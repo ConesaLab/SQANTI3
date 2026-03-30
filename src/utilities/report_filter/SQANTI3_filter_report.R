@@ -74,7 +74,7 @@ if(opt$filter_type == "ml"){
   # Detect path and load ML output classification
   message("\nReading ML result classification table...")
   
-  which_classif <- stringr::str_detect(paths, "ML_result_classification")
+  which_classif <- stringr::str_detect(paths, "ML_classification")
   path_classif <- paths[which_classif]
   classif <- readr::read_tsv(path_classif, 
                              col_types = readr::cols(exons = readr::col_integer(),
@@ -117,7 +117,7 @@ if(opt$filter_type == "ml"){
   # Detect path and load ML output classification
   message("\nReading Rules result classification table...")
   
-  which_classif <- stringr::str_detect(paths, "RulesFilter_result_classification")
+  which_classif <- stringr::str_detect(paths, "RulesFilter_classification")
   path_classif <- paths[which_classif]
   classif <- readr::read_tsv(path_classif, 
                              col_types = readr::cols(exons = readr::col_integer(),
@@ -393,8 +393,8 @@ ref_complexity <- ggplot(fsm_plots.df) +
             stat = "identity", vjust = -1) +
   scale_y_continuous(breaks = scales::pretty_breaks(6),
                      expand = expansion(mult = c(0, 0.1))) +
-  RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
-                                 continuous = FALSE, reverse = FALSE) +
+  # RColorConesa::scale_fill_conesa("FSM per \nreference ID", palette = "nature",
+  #                                continuous = FALSE, reverse = FALSE) +
   theme(plot.subtitle = element_text(hjust = 0.5, size = 12,
                                      face = "italic")) +
   xlab("Filter") +

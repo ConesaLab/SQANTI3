@@ -4,9 +4,11 @@ This page contains a detailed time-aware (DD/MM/YYYY) account of **SQANTI3 relea
 
 Please be aware that v5.0 represented a major release of the SQANTI3 software. Versions of SQANTI3 >= 5.0 do not have backward compatibility with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will herefore need to re-run SQANTI3 QC.
 
-See the dedicated site for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+See the dedicated site for [installation instructions](Dependencies-and-installation.md).
 
 | [See all SQANTI3 releases](https://github.com/ConesaLab/SQANTI3/tags)
+
+
 
 ## SQANTI3 v5.2 [LATEST, 04/10/2023]
 
@@ -34,7 +36,7 @@ See the dedicated site for [installation instructions](https://github.com/Conesa
 - Minor bugs/typos.
 
 
-> [Download release](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation#1-downloading-sqanti3)
+> [Download release](Dependencies-and-installation.md#1-downloading-sqanti3)
 
 _______
 
@@ -63,7 +65,7 @@ _______
 ## SQANTI3 v5.1 (22/07/2022)
 
 #### Major changes:
-* Implemented new **rescue strategy** to recover transcriptome diversity lost after filtering (see details at the [SQ rescue wiki](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)).
+* Implemented new **rescue strategy** to recover transcriptome diversity lost after filtering (see details at the [SQ rescue wiki](Running-SQANTI3-rescue.md)).
 * Updated **conda environment** to include rescue dependencies. We recommend creating the environment again in order for SQANTI3 to run without error.
 * Fixed behavior of **mono-exon transcripts** during **ML filter**:
   - FSM now undergo intra-primming evaluation if they are mono-exons.
@@ -86,7 +88,7 @@ ___________
 #### Major changes:
 * Implemented new **machine learning-based filter**.
 * Updated **rules filter**: users can now define their own set of rules using a JSON file. By default, the rules filter applies the same set of rules that were implemented in the old `sqanti3_RulesFilter.py` script.
- * The `sqanti3_RulesFilter.py` script is now deprecated and has been replaced by `sqanti3_filter.py`, which works a wrapper for both filters (see details in the [documentation](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)).
+ * The `sqanti3_RulesFilter.py` script is now deprecated and has been replaced by `sqanti3_filter.py`, which works a wrapper for both filters (see details in the [documentation](Running-SQANTI3-filter.md)).
  * IsoAnnotLite updated to version 2.7.3.
  * Substantial modification of the SQANTI3 directory structure, with `utilities` folder now being divided into subfolders that group the scripts by their function.
  * Added a column in the classification file to indicate whether a polyA motif was found, which adds to the existing column detailing the detected motif (details [here](https://github.com/ConesaLab/SQANTI3/issues/138)).

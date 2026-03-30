@@ -1,18 +1,18 @@
 import os, sys
+import pysam
+import pandas as pd
 
 from Bio import SeqIO
 
 from src.module_logging import rescue_logger
 from src.commands import run_command
 
-
-
 def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     rescue_logger.info("Creating reference transcriptome FASTA from provided GTF (--refGTF).")
 
     # make FASTA file name
     pre, _ = os.path.splitext(os.path.basename(ref_gtf))
-    ref_trans_Fasta = os.path.join(outdir,f"{pre}.fasta")
+    ref_trans_Fasta = os.path.join(outdir,f"{pre}.isoforms.fasta")
 
     # build gffread command
     ref_cmd = f"gffread -w {ref_trans_Fasta} -g {ref_fasta} {ref_gtf}"
@@ -28,36 +28,32 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
         sys.exit(1)
     return ref_trans_Fasta
 
-def filter_transcriptome(input_fasta, target_ids, exclude_ids=None):
+def filter_transcriptome(input_fasta, target_ids):
     target_records = []
-    seen_ids = exclude_ids if exclude_ids is not None else set()
     # Filter and write sequences
     for record in SeqIO.parse(input_fasta, 'fasta'):
-        if record.id in target_ids and record.id not in seen_ids:
+        if record.id in target_ids:
             target_records.append(record)
-            seen_ids.add(record.id)
-    return target_records, seen_ids
+    return target_records
 
 def save_fasta(records, output_fasta):
     with open(output_fasta, 'w') as output_handle:
         SeqIO.write(records, output_handle, 'fasta')
 
-import pysam
-import pandas as pd
+def tags_to_dict(tags):
+    """Convert a list of (tag, value) tuples to a dictionary."""
+    return {tag: value for tag, value in tags}
 
-def process_sam_file(sam_file, output_dir, output_prefix):
-    # Define file paths
-    hits_file = f"{output_dir}/{output_prefix}_rescue_mapping_hits.tsv"
+def process_sam_file(sam_file):
 
     # Open the SAM file and process it
     with pysam.AlignmentFile(sam_file, "r") as sam:
         # Extract candidate-target pairs and alignment type
         data = []
         for read in sam.fetch(until_eof=True):  # Skip header automatically
-            data.append([read.query_name, read.reference_name, read.flag])
+            try:
+                data.append([read.query_name, read.reference_name, read.flag,tags_to_dict(read.tags)['AS']])
+            except KeyError:
+                data.append([read.query_name, read.reference_name, read.flag,0])
 
-    # Convert to DataFrame and save as TSV
-    hits_df = pd.DataFrame(data, columns=["candidate", "target", "alignment_type"])
-    hits_df.to_csv(hits_file, sep="\t", index=False, header=False)
-
-    rescue_logger.info(f"Mapping hit table was saved to {hits_file}")
+    return pd.DataFrame(data, columns=["rescue_candidate", "mapping_hit", "alignment_type","alignment_score"])

@@ -11,6 +11,13 @@
 # Last updated: 2/September/2021
 #
 #-------------------------------------------------------------------------------
+# Install RColorConesa if not available
+pkg <- installed.packages() %>% rownames
+
+if(!("RColorConesa" %in% pkg)){
+  options(repos = c(CRAN = "https://cran.rstudio.com/"))
+  suppressMessages(install.packages("RColorConesa"))
+}
 
 compare_MLvariables <- function(classification, variable, importance){
   
@@ -64,8 +71,8 @@ compare_MLvariables <- function(classification, variable, importance){
                width = 0.8, color = "black", position = "dodge") +
       labs(x = "Filter result", y = "Transcript no.") +
       theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-      RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
-                                      continuous = FALSE, reverse = FALSE) +
+      # RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
+      #                                 continuous = FALSE, reverse = FALSE) +
       facet_grid(~structural_category, scales = "free")
       
   } else{
@@ -89,8 +96,8 @@ compare_MLvariables <- function(classification, variable, importance){
       geom_text(aes(x = filter_result, y = 1.03, label = category_count),
                 size = 3.5, check_overlap = TRUE)+
       scale_y_continuous(labels=scales::label_percent())+
-      RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
-                                      continuous = FALSE, reverse = FALSE) +
+      # RColorConesa::scale_fill_conesa(paste0(var_name), palette = "complete",
+      #                                 continuous = FALSE, reverse = FALSE) +
       facet_grid(~structural_category, scales = "free")
     
     return(p)

@@ -1,0 +1,12 @@
+chr1	test_source	transcript	1000	2000	.	+	.	gene_id "GENE1"; transcript_id "REF1"; gene_name "TestGene1";
+chr1	test_source	exon	1000	1200	.	+	.	gene_id "GENE1"; transcript_id "REF1";
+chr1	test_source	exon	1800	2000	.	+	.	gene_id "GENE1"; transcript_id "REF1";
+chr1	test_source	transcript	1000	2000	.	+	.	gene_id "GENE1"; transcript_id "REF1b"; gene_name "TestGene1";
+chr1	test_source	exon	1000	1300	.	+	.	gene_id "GENE1"; transcript_id "REF1b";
+chr1	test_source	exon	1800	2000	.	+	.	gene_id "GENE1"; transcript_id "REF1b";
+chr2	test_source	transcript	5000	8000	.	-	.	gene_id "GENE2"; transcript_id "REF2"; gene_name "TestGene2";
+chr2	test_source	exon	5000	5500	.	-	.	gene_id "GENE2"; transcript_id "REF2";
+chr2	test_source	exon	6000	6500	.	-	.	gene_id "GENE2"; transcript_id "REF2";
+chr2	test_source	exon	7500	8000	.	-	.	gene_id "GENE2"; transcript_id "REF2";
+chr2	test_source	transcript	10000	12000	.	+	.	gene_id "GENE3"; transcript_id "REF3"; gene_name "TestGene3";
+chr2	test_source	exon	10000	12000	.	+	.	gene_id "GENE3"; transcript_id "REF3";

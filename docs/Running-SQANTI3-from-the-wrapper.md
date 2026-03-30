@@ -14,6 +14,9 @@ To ensure a smooth experience with SQANTI3, follow these recommendations:
 - **Use a configuration file per experiment:**  
   Maintain one YAML configuration file per experiment. This allows you to tweak parameters directly from the command line for each run.
 
+- **Version control your configuration files:**  
+  Keep your configuration files under version control (e.g., git) to track parameter changes across different runs and experiments.
+
 <details>
     <summary>Adding SQANTI3 to the PATH in Ubuntu</summary>
 
@@ -44,9 +47,9 @@ The configuration file is written in YAML (⚠️ must use the `.yaml` extension
 **Creating a Configuration Template:**
 Generate a template with default parameters using:
 ```bash
-sqanti3 init -c 
+sqanti3 init -c sqanti3_config.yaml
 ```
-If no filename is provided, it defaults to `sqanti3_config.yaml`.
+If you omit the filename (`sqanti3 init -c`), it defaults to `sqanti3_config.yaml`.
 
 **Overriding Parameters:**
 You can override configuration values directly from the command line using the `-a` flag:
@@ -57,6 +60,9 @@ The `-a` flag can also be used when running SQANTI3 to temporarily override conf
 
 **View Available Arguments:**
 Use the `-h` flag after a module name to list all available arguments and their default values.
+
+**Path Handling:**
+Paths in the configuration file can be absolute or relative. Relative paths are resolved from the directory where you execute the `sqanti3` command.
 
 <details>
     <summary>❓Example Configuration File</summary>
@@ -77,30 +83,32 @@ qc:
     force_id_ignore: false
     fasta: false
     genename: false
-    short_reads: ''
-    SR_bam: ''
     novel_gene_prefix: ''
+    sites: ATAC,GCAG,GTAG
+    window: 20
     aligner_choice: minimap2
     gmap_index: ''
-    sites: ATAC,GCAG,GTAG
-    skipORF: false
+    include_ORF: false
     orf_input: ''
+    psauron_threshold: 0.5
+    short_reads: ''
+    SR_bam: ''
     CAGE_peak: ''
     polyA_motif_list: ''
     polyA_peak: ''
     phyloP_bed: ''
+    expression: ''
+    coverage: ''
+    fl_count: ''
+    isoAnnotLite: false
+    gff3: ''
     saturation: false
     report: html
     isoform_hits: false
     ratio_TSS_metric: max
     chunks: 1
     is_fusion: false
-    expression: ''
-    coverage: ''
-    window: 20
-    fl_count: ''
-    isoAnnotLite: false
-    gff3: ''
+    tusco: ''
 filter:
   enabled: true
   options:
@@ -110,13 +118,13 @@ filter:
       filter_isoforms: sqanti3_results/isoforms_corrected.fasta
       filter_gtf: sqanti3_results/isoforms_corrected.gtf
       filter_sam: ''
-      filter_faa: sqanti3_results/isoforms_corrected.faa
+      filter_faa: ''
       skip_report: false
       filter_mono_exonic: false
     rules:
       enabled: true
       options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+        json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
     ml:
       enabled: false
       options:
@@ -132,24 +140,42 @@ filter:
 rescue:
   enabled: true
   options:
-    common:
-      filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
-      rescue_isoforms: sqanti3_results/isoforms_corrected.fasta
-      rescue_gtf: sqanti3_results/isoforms.filtered.gtf
-      refClassif: ''
-      rescue_mono_exonic: all
-      mode: automatic
-    rules:
-      enabled: true
-      options:
-        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
-    ml:
-      enabled: false
-      options:
-        random_forest: ''
-        threshold: 0.7
+    filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
+    corrected_isoforms_fasta: sqanti3_results/isoforms_corrected.fasta
+    filtered_isoforms_gtf: sqanti3_results/isoforms.filtered.gtf
+    refClassif: ''
+    counts: ''
+    rescue_mono_exonic: all
+    mode: automatic
+    requant: false
+    strategy: rules
+    json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+    random_forest: sqanti3_results/isoformsrandomforest.RData
+    threshold: 0.7
+
 ```
 </details><br>
+
+---
+
+## **Best Practices**
+
+- **Test your configuration with `--dry-run`:**  
+  Before running the full pipeline, use the `--dry-run` flag to preview the commands that will be executed without actually running them.
+  ```bash
+  sqanti3 all -c sqanti3_config.yaml --dry-run
+  ```
+
+- **Get module-specific help:**  
+  View detailed help for each module with:
+  ```bash
+  sqanti3 qc -h
+  sqanti3 filter -h
+  sqanti3 rescue -h
+  ```
+
+- **Keep configuration files organized:**  
+  Use descriptive names for your config files (e.g., `experiment1_config.yaml`, `sample_A_config.yaml`) to easily identify different runs.
 
 ---
 
@@ -179,7 +205,7 @@ This command temporarily changes the short reads file and output directory for t
     <summary>❓Help message</summary>
 
 ```bash
-usage: sqanti3 [-c CONFIG] [--dry-run] [-a ARGUMENTS [ARGUMENTS ...]] [-h] [-l {ERROR,WARNING,INFO,DEBUG}] {all,qc,filter,rescue,init}
+usage: sqanti3 {all,qc,filter,rescue,init} [-c CONFIG] [--dry-run] [-a ARGUMENTS [ARGUMENTS ...]] [-h] [-l {ERROR,WARNING,INFO,DEBUG}]
 
 Python wrapper for SQANTI3 pipeline.
 
@@ -188,12 +214,12 @@ positional arguments:
 
 options:
   -c CONFIG, --config CONFIG   Path to the configuration file (default: sqanti3_config.yaml)
-  --dry-run                   Print the commands that would be executed
+  --dry-run                    Print the commands that would be executed
   -a ARGUMENTS [ARGUMENTS ...], --arguments ARGUMENTS [ARGUMENTS ...]
-                              Non-default arguments to pass to the SQANTI3 modules
-  -h, --help                  Show the help message and exit
+                               Non-default arguments to pass to the SQANTI3 modules
+  -h, --help                   Show the help message and exit
   -l {ERROR,WARNING,INFO,DEBUG}, --log_level {ERROR,WARNING,INFO,DEBUG}
-                              Set the logging level (default: INFO)
+                               Set the logging level (default: INFO)
 ```
 </details><br>
 

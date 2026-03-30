@@ -768,11 +768,11 @@ if(opt$force_multi_exon == TRUE){
 
 # write new classification table
 write.table(d_out, file = paste0(opt$dir, "/", opt$output, 
-                           "_ML_result_classification.txt"),
+                           "_ML_classification.txt"),
             quote = FALSE, col.names = TRUE, sep ='\t', row.names = FALSE)
 
 cat(paste0("\n\tWrote filter results (ML and intra-priming) to new classification table:\n", 
-              "\t", opt$output, "_ML_result_classification.txt file."))
+              "\t", opt$output, "_ML_classification.txt file."))
 
 
 
@@ -780,11 +780,11 @@ cat(paste0("\n\tWrote filter results (ML and intra-priming) to new classificatio
 inclusion_list <- data.frame(Isoforms = rownames(d_out[which(d_out$filter_result == "Isoform"),]))
 
 write.table(inclusion_list, file = paste0(opt$dir, "/", opt$output,
-                                    "_inclusion-list.txt"),
+                                    "_pass_isoforms.txt"),
             quote = FALSE, col.names = FALSE, sep ='\t', row.names = FALSE)
 
 cat(paste0("\n\tWrote isoform list (classified as non-artifacts by both ML and intra-priming", 
-               "\n\t", "filters) to ", opt$output, "_inclusion-list.txt file"))
+               "\n\t", "filters) to ", opt$output, "_pass_isoforms.txt file"))
 
 
 

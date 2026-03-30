@@ -1,0 +1,12 @@
+isoform	structural_category	exons	filter_result	associated_transcript	associated_gene
+PB.1.1	full-splice_match	3	Isoform	REF1	GENE1
+PB.1.2	full-splice_match	2	Isoform	REF2	GENE2
+PB.2.1	novel_in_catalog	2	Artifact	REF3	GENE3
+PB.2.2	novel_not_in_catalog	3	Artifact	REF4	GENE4
+PB.3.1	incomplete-splice_match	2	Artifact	REF5	GENE5
+PB.3.2	incomplete-splice_match	2	Artifact	REF2	GENE2
+PB.4.1	incomplete-splice_match	1	Artifact	REF6	GENE6
+PB.5.1	novel_in_catalog	2	Isoform	REF7	GENE7
+PB.6.1	novel_not_in_catalog	3	Isoform	REF8	GENE8
+PB.7.1	novel_in_catalog	1	Artifact	REF9	GENE9
+PB.8.1	incomplete-splice_match	4	Artifact	REF10	GENE10

@@ -2,29 +2,29 @@ Welcome to the SQANTI3 wiki!
 
 **Wiki contents:**
 
-* [Introduction to SQANTI3](https://github.com/ConesaLab/SQANTI3/wiki/Introduction-to-SQANTI3)
+* [Introduction to SQANTI3](Introduction-to-SQANTI3.md)
 
-* [Dependencies and installation](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation)
+* [Dependencies and installation](Dependencies-and-installation.md)
 
-* [Version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history)
+* [Version history](Version-history.md)
 
-* [Isoform classification: categories and subcategories](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories)
+* [Isoform classification: categories and subcategories](SQANTI3-isoform-classification:-categories-and-subcategories.md)
 
-* [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
+* [Running SQANTI3 from the wrapper](Running-SQANTI3-from-the-wrapper.md)
 
-* [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
+* [Running SQANTI3 quality control](Running-SQANTI3-Quality-Control.md)
 
-* [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
+* [Understanding the output of SQANTI3 QC](Understanding-the-output-of-SQANTI3-QC.md)
 
-* [IsoAnnotLite](https://github.com/ConesaLab/SQANTI3/wiki/IsoAnnotLite)
+* [IsoAnnotLite](IsoAnnotLite.md)
 
-* [Running SQANTI3 filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)
+* [Running SQANTI3 filter](Running-SQANTI3-filter.md)
 
-* [Running SQANTI3 rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)
+* [Running SQANTI3 rescue](Running-SQANTI3-rescue.md)
 
-* [Tutorial: running SQANTI3 on an example dataset](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset)
+* [Tutorial: running SQANTI3 on an example dataset](Tutorial:-running-SQANTI3-on-an-example-dataset.md)
   
-* [Running SQANTI-reads](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI%E2%80%90reads)
+* [Running SQANTI-reads](Running-SQANTI‐reads.md)
 
-* [Memory requirements to use parallelization](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-memory-requeriments-and-paralellization)
+* [Memory requirements to use parallelization](SQANTI3-memory-requeriments-and-paralellization.md)
 

@@ -1,4 +1,4 @@
-import argparse, os
+import argparse
 from src.config import __version__,__author__, default_json
 
 def filter_argparse():

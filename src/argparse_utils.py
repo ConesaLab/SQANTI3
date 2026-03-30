@@ -76,11 +76,10 @@ def valid_matrix(filename,logger):
         logger.error(f"File {filename} is not a TSV file. Abort!")
         sys.exit(1)
 
-#TODO: Get a condition to see if it is a pacbio file
-def valid_PacBio_abund(filename,logger):
+def valid_abundance_file(filename,logger):
     valid_file(filename,logger)
-    if not filename.endswith('abundance.tsv'):
-        logger.error(f"File {filename} is not a PacBio abundance file. Abort!")
+    if not filename.endswith('.tsv') and not filename.endswith('.csv'):
+        logger.error(f"File {filename} is not a TSV/CSV file. Abort!")
         sys.exit(1)
     return filename
 
@@ -142,11 +141,6 @@ def qc_args_validation(args):
                 qc_logger.error(f"deSALT index {args.gmap_index} doesn't exist! Abort.")
                 sys.exit()
 
-        qc_logger.info("Cleaning up isoform IDs...")
-        from src.helpers import rename_isoform_seqids
-        args.isoforms = rename_isoform_seqids(args.isoforms, args.force_id_ignore)
-        qc_logger.info(f"Cleaned up isoform fasta file written to: {args.isoforms}")
-    
     # ORF prediction checks
     if args.orf_input is not None:
         valid_fasta(args.orf_input,qc_logger)
@@ -179,7 +173,6 @@ def qc_args_validation(args):
             qc_logger.error(f"Please include the 'gene_name' tag in the GTF, or omit the {option} option.")
             sys.exit(1)
 
-
     # Fusion isoforms checks
     if args.is_fusion:
         if args.orf_input is None:
@@ -195,23 +188,14 @@ def qc_args_validation(args):
         else:
             for f in args.expression.split(','):
                 valid_matrix(f,qc_logger)
+    # FL count file check
+    if args.fl_count is not None:
+        valid_abundance_file(args.fl_count,qc_logger)
     # Output prefix checks
     if args.output is None:
         args.output = os.path.splitext(os.path.basename(args.isoforms))[0]
     
     return args
-## This sense argument is no longer present
-   #if args.aligner_choice == "gmap":
-    #    args.sense = "sense_force" if args.sense else "auto"
-    #elif args.aligner_choice == "minimap2":
-    #    args.sense = "f" if args.sense else "b"
-    ## (Liz) turned off option for --sense, always TRUE
-    # if args.aligner_choice == "gmap":
-    #     args.sense = "sense_force"
-    # elif args.aligner_choice == "minimap2":
-    #     args.sense = "f"
-    #elif args.aligner_choice == "deSALT":  #deSALT does not support this yet
-    #    args.sense = "--trans-strand"
 
 def filter_args_validation(args):
     # Mandatory + possible inputs
@@ -253,8 +237,8 @@ def rescue_args_validation(args):
     valid_dir(args.dir,rescue_logger)
     valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
-    if args.rescue_gtf is not None:
-        valid_gtf(args.rescue_gtf,rescue_logger)
+    if args.filtered_isoforms_gtf is not None:
+        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)
@@ -262,14 +246,16 @@ def rescue_args_validation(args):
             rescue_logger.error("When running the rescue in full mode, the reference classification file is mandatory.")
             sys.exit(1)
         try:
-            valid_fasta(args.rescue_isoforms,rescue_logger)
+            valid_fasta(args.corrected_isoforms_fasta,rescue_logger)
         except:
             rescue_logger.error("When running the rescue in full mode, the corrected isoforms FASTA file is mandatory.")
             sys.exit(1)
-        if args.subcommand == 'rules':
+        if args.strategy == 'rules':
             valid_file(args.json_filter, rescue_logger)
-        if args.subcommand == "ml":
+        if args.strategy == "ml":
             if args.threshold < 0 or args.threshold > 1.:
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
+    if args.requant:
+        valid_file(args.counts,rescue_logger)

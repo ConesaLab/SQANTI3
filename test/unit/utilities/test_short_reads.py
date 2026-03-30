@@ -236,13 +236,13 @@ def test_get_bam_header_invalid_bam(tmp_path):
 
 @pytest.fixture
 def test_files():
-    chr_order = os.path.join(main_path, "test/test_data/chr_order.txt")
-    inside_bed, outside_bed = get_TSS_bed(os.path.join(main_path,"test/test_data/test_isoforms.gtf"),
+    chr_order = os.path.join(main_path, "test/test_data/other/chr_order.txt")
+    inside_bed, outside_bed = get_TSS_bed(os.path.join(main_path,"test/test_data/isoforms/test_isoforms.gtf"),
                                           chr_order)
     return {
         "bam_files": [
-            os.path.join(main_path, "test/test_data/Rep1_test.bam"),
-            os.path.join(main_path, "test/test_data/Rep2_test.bam")
+            os.path.join(main_path, "test/test_data/bam/Rep1_test.bam"),
+            os.path.join(main_path, "test/test_data/bam/Rep2_test.bam")
         ],
         "inside_bed": inside_bed,
         "outside_bed": outside_bed,

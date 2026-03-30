@@ -11,7 +11,7 @@ from src.utilities.rt_switching import (
 
 @pytest.fixture
 def junctions_file():
-    return os.path.join(main_path, "test/test_data/junctions_test.txt")
+    return os.path.join(main_path, "test/test_data/junctions/junctions_test.txt")
 
 
 @pytest.fixture
@@ -210,7 +210,7 @@ def mock_sj_relations_dict(loaded_data):
 
 @pytest.fixture
 def mock_genome_dict():
-    genome_path = os.path.join(main_path, "test/test_data/genome_test.fasta")
+    genome_path = os.path.join(main_path, "test/test_data/genome/genome_test.fasta")
     return dict((r.id, r) for r in SeqIO.parse(open(genome_path), 'fasta'))
 
 # Tests

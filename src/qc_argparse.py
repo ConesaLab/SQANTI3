@@ -13,7 +13,6 @@ def qc_argparse():
     # Customization and filtering args
     apc = ap.add_argument_group("Customization and filtering")
     apc.add_argument("--min_ref_len", type=int, default=0, help="Minimum reference transcript length (default: 0 bp)")
-    apc.add_argument("--force_id_ignore", action="store_true", help=" Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
     apc.add_argument('--fasta', action='store_true', help='Use when running SQANTI by using as input a FASTA/FASTQ with the sequences of isoforms')
     apc.add_argument('--genename', action='store_true' ,help='Use gene_name tag from GTF to define genes. Default: gene_id used to define genes',)
     apc.add_argument('--novel_gene_prefix', default=None, help='Prefix for novel isoforms (default: None)')
@@ -22,15 +21,15 @@ def qc_argparse():
 
     # Aligner and mapping options
     apa = ap.add_argument_group("Aligner and mapping options")
-    #TODO: set a default aligner
     apa.add_argument("--aligner_choice", choices=['minimap2', 'deSALT', 'gmap', "uLTRA"], default='minimap2', help="Select your aligner of choice: minimap2, deSALT, gmap, uLTRA (default: %(default)s)")
     apa.add_argument('-x','--gmap_index', help='Path and prefix of the reference index created by gmap_build. Mandatory if using GMAP .')
 
     # ORF prediction
     apo = ap.add_argument_group("ORF prediction")
-    apo.add_argument("--skipORF", action="store_true", help="Skip ORF prediction (to save time)")
+    apo.add_argument("--include_ORF", action="store_true", help="Include ORF prediction.")
     apo.add_argument("--orf_input",  help="Input fasta to run ORF on. By default, ORF is run on genome-corrected fasta - this overrides it. If input is fusion (--is_fusion), this must be provided for ORF prediction.")
-
+    apo.add_argument("--psauron_threshold", type=float, default=0.5, help="Threshold for P-Sauron ORF prediction (default: %(default)s)..")
+    
     # Orthogonal data inputs
     apod = ap.add_argument_group("Orthogonal data inputs")
     apod.add_argument('--short_reads',  help='File Of File Names (fofn, space separated) with paths to FASTA or FASTQ from Short-Read RNA-Seq. If expression or coverage files are not provided, Kallisto (just for pair-end data) and STAR, respectively, will be run to calculate them.')

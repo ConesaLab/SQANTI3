@@ -1,139 +1,180 @@
 import pandas as pd
-import argparse
-import os
-from collections import defaultdict
-import sys
+import numpy as np
 import warnings
-warnings.filterwarnings("ignore")
 
-def parse_files(args):
-    #Check if the rescued GTF file was generated
-    gtf_path="{0}/{1}_rescued.gtf".format(args.dir, args.output)
-    if not os.path.isfile(gtf_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(gtf_path), file=sys.stderr)
-    else:
-        col_names = [
-            "Chromosome", "Source", "Feature", "Start", "End", "Score", "Strand", "Frame", "Attribute"
-        ]
-        rescue_gtf = pd.read_csv(
-            gtf_path,
-            sep="\t",
-            comment="#",
-            names=col_names,
-            dtype={"Chromosome": str, "Start": int, "End": int},
-            low_memory=False
-        )
-        rescue_gtf["transcript_id"] = rescue_gtf["Attribute"].str.extract(r'transcript_id "([^"]+)"')
+from src.parsers import parse_counts
+warnings.filterwarnings("ignore") #TODO: See why pandas raises the warning on copying
 
-    #check if inclusion list was generated
-    inclusion_list_path = args.dir + "/" + args.output + "_rescue_inclusion-list.tsv"
-    if not os.path.isfile(inclusion_list_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(inclusion_list_path), file=sys.stderr)
-        sys.exit(-1)
-    else:
-        inclusion_list = pd.read_csv(inclusion_list_path, sep = '\t')
+from collections import defaultdict
 
-    #cheeck if counts file exists
-    if not os.path.isfile(args.counts):
-        print("ERROR: {0} doesn't exist. Abort!".format(args.counts), file=sys.stderr)
-    else:
-        counts = pd.read_csv(args.counts, sep = '\t', comment = '#')
-        counts.columns = ['transcript_id', 'count']
+from src.module_logging import rescue_logger
+from src.utilities.rescue.requant_helpers import (
+    calculate_distribution_fractions, distribute_integer_counts, 
+    export_counts, get_unrescued_artifacts, prepare_count_matrices, 
+    calculate_tpm
+)
 
-    #check if rescued table exists
-    rescued_path="{0}/{1}_rescue_table.tsv".format(args.dir, args.output)
-    if not os.path.isfile(rescued_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(rescued_path), file=sys.stderr)
-    else:
-        rescued = pd.read_csv(rescued_path, sep = '\t')
-    return(rescue_gtf, inclusion_list, counts, rescued)
+def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df, original_class, rescue_class):
+    """
+    Executes the requantification pipeline for transcript abundance estimation.
 
-def run_requant(rescue_gtf, inclusion_list, counts, rescued, out, output):
-    def select_hit(isoform, rescued, new_counts, old_counts):
-        group = rescued[rescued["mapping_hit"] == isoform]
-        group['counts'] = group.apply(lambda x: old_counts.get(x['rescue_candidate'], 0), axis = 1)
-        new_counts[isoform] = group['counts'].sum()
-        return new_counts
+    This function processes count data and rescue information to reassign transcript
+    counts, calculate TPM values, and save the results to output files.
 
-    def reassign_counts(isoform, old_counts, new_counts, list_of_changed):
-        if isoform in new_counts.keys():
-            count = new_counts[isoform]
-            list_of_changed.append(isoform)
-        else:
-            try:
-                count = old_counts[isoform]
-            except KeyError:
-                count = 0
-        return(count)
+    Parameters
+    ----------
+    output_dir : str
+        Directory path where output files will be saved.
+    output_prefix : str
+        Prefix string to use for naming output files.
+    counts_file : str
+        Path to the input counts file to be parsed.
+    rescue_df : pandas.DataFrame
+        DataFrame containing rescued transcript information.
+    rescue_class : object
+        Class or object containing rescue classification data and methods.
 
-    def fill_old_counts(isoform, old_counts):
-        try:
-            count = old_counts[isoform]
-        except KeyError:
-            count = 0
-        return(count)
-    #select list of isoforms that were rescued by SQANTI3 rescue
-    rescued_iso = rescued[rescued['rescue_result'] != 'not_rescued']
-    additional_isoforms = rescued[rescued['exclusion_reason'] == 'reference_already_present']
-    rescued = pd.concat([rescued_iso, additional_isoforms])
-    #rescued = rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])
-    rescued = rescued.drop_duplicates(['rescue_candidate', 'mapping_hit'])      
-    #create dictionaries of old and new counts
-    old_counts = counts.set_index('transcript_id')['count'].to_dict()
-    new_counts = defaultdict(int)
-    #reassign counts to surviving isoforms
-    rescued = rescued[rescued['rescue_candidate'].isin(old_counts.keys())]
-    inclusion_list.apply(lambda x: select_hit(x.iloc[0], rescued, new_counts, old_counts), axis = 1)
-    #combine old and new counts
-    counts_df = pd.DataFrame(rescue_gtf['transcript_id'].unique(), columns = ['transcript_id'])
-    counts_df['old_count'] = counts_df['transcript_id'].apply(lambda x: fill_old_counts(x, old_counts))
-    list_of_changed = []
-    counts_df['new_count'] = counts_df['transcript_id'].apply(lambda x: reassign_counts(x, old_counts, new_counts, list_of_changed))
-    changed = pd.DataFrame()
-    changed['changed_count'] = list_of_changed
+    Returns
+    -------
+    None
+        The function writes results to files but does not return a value.
 
-    counts_df.to_csv("{}/{}_reassigned_counts_extended.tsv".format(out, output), header = True, index = False, sep = '\t')
-    changed.to_csv("{}/{}_changed_counts.tsv".format(out, output), header = True, index = False, sep = '\t')
+    Notes
+    -----
+    - Parses the counts file and logs the completion
+    - Runs requantification on counts using rescue data
+    - Saves reassigned counts to {output_prefix}_reassigned_counts.tsv
+    - Converts counts to TPM (Transcripts Per Million) values
+    - Multi-transcript and artifact counts are lost during TPM calculation
+      as they lack length information required for TPM computation
+    """
+    prefix = f"{output_dir}/{output_prefix}"
+    #TODO: Make this take the variables from python directly
+    counts_df = parse_counts(counts_file)
+    # Keep only counts present in the original classification
+    counts_df = counts_df[counts_df['isoform'].isin(original_class['isoform'])]
+    rescue_logger.info("Counts file parsed.")
+    requant_df = requantify(counts_df, rescue_df, original_class, prefix)
+    rescue_logger.info("Requantification of counts completed.")
+    rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
+    update_classification(requant_df, rescue_class, prefix)
+    # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
+    #to_tpm(requant_df,rescue_class, prefix)
+    rescue_logger.info("Requantification finished!")
+    return
 
-    counts_df_short = counts_df[['transcript_id', 'new_count']]
-    counts_df_short.to_csv("{}/{}_reassigned_counts.tsv".format(out, output), header = True, index = False, sep = '\t')
-
-def to_tpm(rescue_gtf, out, output):
-    def calculate_tpm(counts, lengths):
-        # Convert lengths to kilobases
-        lengths_kb = lengths / 1000
-        # Calculate RPK
-        rpk = counts / lengths_kb
-        # Calculate Total RPK
-        total_rpk = rpk.sum()
-        # Calculate TPM
-        tpm = (rpk / total_rpk) * 1e6
-        return tpm
-    #check if requantification file was generated
-    counts_df_path="{}/{}_reassigned_counts.tsv".format(out, output)
-    if not os.path.isfile(counts_df_path):
-        print("ERROR: {0} doesn't exist. Abort!".format(counts_df_path), file=sys.stderr)
-    else:
-        counts_df = pd.read_csv(counts_df_path, sep = '\t')
-
-    #calculate transcripts length
-    exons = rescue_gtf[rescue_gtf['Feature'] == 'exon']
-    # Calculate exon lengths
-    exons['exon_length'] = exons['End'] - exons['Start'] + 1
-    # Sum exon lengths for each transcript to get the total transcript length
-    transcript_lengths = exons.groupby('transcript_id')['exon_length'].sum().reset_index()
-    transcript_lengths.columns = ['Transcript_ID', 'Length']
-    lengths_d = transcript_lengths.set_index('Transcript_ID')['Length'].to_dict()
+def requantify(counts, rescue_df, classif_df, prefix):
+    """
+    Redistribute counts from artifacts to rescued isoforms.
+    Handles multiple sample columns.
     
-    rescue_gtf = rescue_gtf[rescue_gtf.Feature == 'transcript']
-    rescue_gtf['t_length'] = rescue_gtf['transcript_id'].apply(lambda x: lengths_d[x])
+    Args:
+        counts: DataFrame with 'isoform' column and one or more count columns
+        rescue_df: DataFrame with rescue results (artifact -> assigned_transcript mappings)
+        classif_df: DataFrame with SQANTI3 classification (Isoform vs Artifact)
+        prefix: Output file prefix
+    
+    Returns:
+        DataFrame with reassigned counts (artifacts removed, counts redistributed)
+    """
+    # Creation of a table with all artifacts (rescued and not rescued)
+    artifacts_df = build_artifact_table(rescue_df[["artifact","assigned_transcript"]], classif_df)
+
+    # Redistribute counts based on the rescue results
+    new_counts = redistribute_counts_vectorized(artifacts_df, classif_df, counts)
+    
+    return export_counts(counts, new_counts, prefix)
+
+def build_artifact_table(rescue_df, classif_df):
+    """Combine rescued and non-rescued artifacts into one table."""
+    not_rescued = get_unrescued_artifacts(classif_df, rescue_df)
+    return pd.concat([rescue_df, not_rescued], ignore_index=True).rename(columns={'artifact': 'isoform'})
+
+def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
+    """
+    Main pipeline to reassign artifact counts.
+    Now accepts the RAW (un-collapsed) rescue_df.
+    """
+    # 1. Setup
+    if 'isoform' in old_counts.columns:
+        temp_df = old_counts.set_index('isoform')
+    else:
+        temp_df = old_counts
+    sample_cols = temp_df.select_dtypes(include=[np.number]).columns
+
+    # 2. Prepare Matrices (Base vs Source)
+    base_df, source_df = prepare_count_matrices(old_counts, classid_df)
+
+    # 3. Calculate Weights
+    fractions = calculate_distribution_fractions(rescue_df, base_df, sample_cols)
+  
+    fractions = fractions.fillna(0)
+    # 4. Distribute & Conserve Integers
+    final_additions = distribute_integer_counts(source_df, rescue_df, fractions, sample_cols)
+
+    # 5. Merge Result
+    final_counts = base_df.add(final_additions, fill_value=0).astype(int)
+
+    return final_counts.reset_index().rename(columns={'index': 'isoform'})
+
+def update_classification(requant_df, rescue_class, prefix):
+    """
+    Update the FL count columns in the rescue classification based on reassigned counts.
+    - Safe: Only updates isoforms present in BOTH files.
+    - Prevents creation of 'ghost' rows (NaNs) if requant_df has extra IDs.
+    """
+    # 1. Set Indices
+    req_df = requant_df.set_index('isoform')
+    class_df = rescue_class.set_index('isoform').copy()
+    
+    # 2. Safety Filter: Intersection of indices
+    # We only want to update rows that actually exist in the classification file.
+    common_ids = req_df.index.intersection(class_df.index)
+    
+    # If no matches found, warn and return early
+    if common_ids.empty:
+        print("Warning: No matching isoforms found between requantification and classification files.")
+        return class_df.reset_index()
+
+    # Create a subset of the source data ensuring alignment
+    req_subset = req_df.loc[common_ids]
+    sample_cols = req_df.columns
+
+    # 3. Update Individual Sample Columns
+    for sample in sample_cols:
+        target_col = f"FL.{sample}"
+        
+        # Initialize column if it doesn't exist (important to avoid NaNs for rows we don't update)
+        if target_col not in class_df.columns:
+            class_df[target_col] = 0
+        
+        # Update ONLY the common rows
+        class_df.loc[common_ids, target_col] = req_subset[sample]
+
+    # 4. Update Total 'FL' Column
+    # Calculate sum only for the subset
+    new_totals = req_subset.sum(axis=1)
+    
+    # Update 'FL', initializing it if needed
+    if 'FL' not in class_df.columns:
+        class_df['FL'] = 0
+    class_df.loc[common_ids, 'FL'] = new_totals
+
+    # 5. Save
+    output_file = f"{prefix}_rescued_classification.txt"
+    class_df.reset_index().to_csv(output_file, sep='\t', index=False)
+
+def to_tpm(counts_df, class_df, prefix):
+
+    class_df = class_df.rename(columns={'isoform': 'transcript_id'})
+    class_df = class_df[["transcript_id","length"]].copy()
     
     counts_d = defaultdict(int)
-    counts_df.apply(lambda x: counts_d.update({x.iloc[0] : x.iloc[1]}), axis = 1)
-    rescue_gtf['counts'] = rescue_gtf['transcript_id'].apply(lambda x: counts_d[x])
+    counts_df.apply(lambda x: counts_d.update({x.iloc[0] : x.iloc[1]}), axis = 1) 
+    class_df['counts'] = class_df['transcript_id'].apply(lambda x: counts_d[x])
     #remove zero values
-    rescue_gtf = rescue_gtf[rescue_gtf['counts'] != 0]
+    class_df = class_df[class_df['counts'] != 0]
     # Calculate TPM
-    rescue_gtf['TPM'] = calculate_tpm(rescue_gtf['counts'], rescue_gtf['t_length'])
-    final = rescue_gtf[['transcript_id', 'TPM']]
-    final.to_csv("{}/{}_reassigned_counts_TPM.tsv".format(out, output), header = True, sep='\t', index=False)
+    class_df['TPM'] = calculate_tpm(class_df['counts'], class_df['length'])
+    final = class_df[['transcript_id', 'TPM']]
+    final.to_csv(f"{prefix}_reassigned_counts_TPM.tsv", header = True, sep='\t', index=False)

@@ -5,7 +5,6 @@ import pytest
 import subprocess
 import os
 import tempfile
-import shutil
 import sys
 
 # Add the parent directory to the path for imports
@@ -26,13 +25,13 @@ class TestTUSCOIntegration:
             # Construct the command
             cmd = [
                 "python", "sqanti3_qc.py",
-                "--isoforms", "data/UHR_chr22.gtf",
+                "--isoforms", "test/test_data/test_isoforms.gtf",
                 "--refGTF", "data/reference/gencode.v38.basic_chr22.gtf",
                 "--refFasta", "data/reference/GRCh38.p13_chr22.fasta",
                 "--tusco", "human",
                 "-o", "TUSCO_human_test",
                 "-d", tmpdir,
-                "--skipORF"  # Skip ORF prediction to speed up the test
+                ""  # Skip ORF prediction to speed up the test
             ]
 
             # Run the command

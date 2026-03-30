@@ -2,13 +2,15 @@ import os
 import sys
 import glob
 import re
+import csv
+
+import numpy as np
+import pandas as pd
 
 from collections import defaultdict
-from csv import DictReader
 from bx.intervals.intersection import IntervalTree
 from statistics import mean
 from Bio import SeqIO
-import numpy as np
 
 from src.utilities.cupcake.sequence.STAR import STARJunctionReader
 from src.utilities.cupcake.io.GFF import collapseGFFReader
@@ -179,7 +181,7 @@ def expression_parser(expressionFile):
     exp_all = {}
     ismatrix = False
     for exp_file in exp_paths:
-        reader = DictReader(open(exp_file), delimiter='\t')
+        reader = csv.DictReader(open(exp_file), delimiter='\t')
         # Finds the file format based on the header
         if all(k in reader.fieldnames for k in EXP_KALLISTO_HEADERS):
                 qc_logger.info("Detected Kallisto expression format. Using 'target_id' and 'tpm' field.")
@@ -252,186 +254,160 @@ def get_fusion_component(fusion_gtf):
     return result
 
 
-
-# TODO: make it less specific
-def FLcount_parser(fl_count_filename):
+    """Helper to convert strings to numbers, handling NA or missing values as 0"""
+    if value == 'NA':
+        return 0
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            return 0
+        
+        
+def parse_counts(count_file):
     """
-    :param fl_count_filename: could be a single sample or multi-sample (chained or demux) count file
-    :return: list of samples, <dict>
-
-    If single sample, returns True, dict of {pbid} -> {count}
-    If multiple sample, returns False, dict of {pbid} -> {sample} -> {count}
-
-    For multi-sample, acceptable formats are:
-    //demux-based
-    id,JL3N,FL1N,CL1N,FL3N,CL3N,JL1N
-    PB.2.1,0,0,1,0,0,1
-    PB.3.3,33,14,47,24,15,38
-    PB.3.2,2,1,0,0,0,1
-
-    //chain-based
-    superPBID<tab>sample1<tab>sample2
+    Parses a count file into a Pandas DataFrame.
+    Optimized for multi-sample requantification pipelines.
+    
+    Features:
+    - Auto-detects delimiter (CSV/TSV).
+    - Preserves all sample columns dynamically.
+    - Handles 'NA' by converting to 0.
+    - Returns a dense matrix ready for groupby operations.
     """
-    fl_count_dict = {}
-    samples = ['NA']
-    flag_single_sample = True
-
-    f = open(fl_count_filename)
-    while True:
-        cur_pos = f.tell()
-        line = f.readline()
-        if not line.startswith('#'):
-            # if it first thing is superPBID or id or pbid
-            if line.startswith('pbid'):
-                type = 'SINGLE_SAMPLE'
-                sep  = '\t'
-            elif line.startswith('superPBID'):
-                type = 'MULTI_CHAIN'
-                sep = '\t'
-            elif line.startswith('id'):
-                type = 'MULTI_DEMUX'
-                sep = ','
-            else:
-                raise Exception("Unexpected count file format! Abort!")
-            f.seek(cur_pos)
-            break
-
-
-    reader = DictReader(f, delimiter=sep)
-    count_header = reader.fieldnames
-    if type=='SINGLE_SAMPLE':
-        if 'count_fl' not in count_header:
-            qc_logger.error(f"Expected `count_fl` field in count file {fl_count_filename}. Abort!")
-            sys.exit(1)
-        d = dict((r['pbid'], r) for r in reader)
-    elif type=='MULTI_CHAIN':
-        d = dict((r['superPBID'], r) for r in reader)
-        flag_single_sample = False
-    elif type=='MULTI_DEMUX':
-        d = dict((r['id'], r) for r in reader)
-        flag_single_sample = False
-    else:
-        qc_logger.error(f"Expected pbid or superPBID as a column in count file {fl_count_filename}. Abort!")
-        sys.exit(1)
-    f.close()
-
-
-    if flag_single_sample: # single sample
-        for k,v in d.items():
+    try:
+        # 1. Sniff the delimiter 
+        with open(count_file, 'r') as f:
+            # Skip comments to find header
+            pos = f.tell()
+            line = f.readline()
+            while line and line.startswith('#'):
+                pos = f.tell()
+                line = f.readline()
+            
+            # Sniff 
+            f.seek(pos)
+            chunk = f.read(2048)
             try:
-                fl_count_dict[k] = int(v['count_fl'])
-            except ValueError:
-                fl_count_dict[k] = float(v['count_fl'])
-    else: # multi-sample
-        for k,v in d.items():
-            fl_count_dict[k] = {}
-            samples = list(v.keys())
-            for sample,count in v.items():
-                if sample not in ('superPBID', 'id'):
-                    if count=='NA':
-                        fl_count_dict[k][sample] = 0
-                    else:
-                        try:
-                            fl_count_dict[k][sample] = int(count)
-                        except ValueError:
-                            fl_count_dict[k][sample] = float(count)
+                dialect = csv.Sniffer().sniff(chunk)
+                sep = dialect.delimiter
+            except csv.Error:
+                sep = '\t' if '\t' in line else ','
 
-    samples.sort()
+        # 2. Read with Pandas
+        # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1
+        df = pd.read_csv(count_file, sep=sep, dtype={0: str},comment='#')
 
-    if type=='MULTI_CHAIN':
-        samples.remove('superPBID')
-    elif type=='MULTI_DEMUX':
-        samples.remove('id')
+        # 3. Dynamic Column Validation
+        # Rename first column to standard 'isoform' for easier merging later
+        df.rename(columns={df.columns[0]: 'isoform'}, inplace=True)
+        
+        if df.shape[1] < 2:
+             qc_logger.error(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
+             sys.exit(1)
 
-    return samples, fl_count_dict
+        # 4. Handle NAs and dtypes
+        # Fills NA with 0 and ensures counts are integers (common requirement for counts)
+        sample_cols = df.columns[1:]
+        df[sample_cols] = df[sample_cols].fillna(0).astype(int)
 
+        return df
 
-def parse_corrORF(corrORF):
-    orfDict = {}
-    for r in SeqIO.parse(open(corrORF), 'fasta'):
-        # now process ORFs into myQueryProtein objects
-        pattern = re.compile(r'^\S+\s+(\S+)\|(\d+)_aa\|([+-])\|(\d+)\|(\d+)$')
-        m = pattern.match(r.description)
-        if m is None:
-            qc_logger.error(f"Expected the CDS IDs to be of format '<pbid> cds_name|<size>_aa|<strand>|<cds_start>|<cds_end>' but instead saw: {r.description}! Abort!")
-            sys.exit(1)
-        orf_length = int(m.group(2))
-        cds_start = int(m.group(4))
-        cds_end = int(m.group(5))
-        orfDict[r.id] = myQueryProteins(cds_start, cds_end, orf_length, str(r.seq), proteinID=r.id)
-    return orfDict
+    except Exception as e:
+        qc_logger.error(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
+        sys.exit(1)
 
 def parse_td2_to_dict(td2_faa):
     """
-    Parses the TD2 FASTA file to extract ORF information.
+    Parses the TD2 FASTA file to extract cds information.
 
     Returns:
-        orfDict (dict): Keys are ORF IDs, values are myQueryProteins objects.
-        records (list): List of dicts with keys: record, id_pre, orf_length, orf_strand, cds_start, cds_end
+        cdsDict (dict): Keys are CDS IDs, values are myQueryProteins objects.
+        records (list): List of dicts with keys: record, id_pre, protein_length, cds_start, cds_end
     """
-    orfDict = {}
+    cdsDict = {}
     records = []
 
     for r in SeqIO.parse(open(td2_faa), 'fasta'):
         info = extract_variables(r.description)
         id_pre = info['id_pre']
-
-        orfDict[id_pre] = myQueryProteins(
-            info['cds_start'],
-            info['cds_end'],
-            info['orf_length'],
-            str(r.seq),
-            proteinID=id_pre
-        )
-
+        try:
+            cdsDict[id_pre] = myQueryProteins(
+                info['cds_start'],
+                info['cds_end'],
+                info['protein_length'],
+                protein_seq = str(r.seq),
+                proteinID=id_pre,
+                psauron_score=info['psauron_score'],
+                cds_type=info['cds_type']
+            )
+        except TypeError as e:
+            qc_logger.error(f"Error parsing record {r.id}: {e}")
+            qc_logger.error(info['cds_type'],type(info['cds_type']))
+            sys.exit(1)
         # Include the record object along with extracted info
         records.append({
             'record': r,
             **info
         })
 
-    return orfDict, records
+    return cdsDict, records
 
-def write_corr_orf(corrORF, records):
+def write_corr_cds(corrORF, records):
     """
-    Writes reformatted ORF information to a file.
+    Writes reformatted CDS information to a file.
     """
     with open(corrORF, "w") as f:
         for entry in records:
             r = entry['record']
-            newid = f"{entry['id_pre']}\t{r.id}|{entry['orf_length']}_aa|{entry['orf_strand']}|{entry['cds_start']}|{entry['cds_end']}"
+            newid = f"{entry['id_pre']}\t{r.id}|{entry['protein_length']}_aa|{entry['psauron_score']}|{entry['cds_type']}|{entry['cds_start']}|{entry['cds_end']}"
             f.write(f">{newid}\n{str(r.seq)}\n")
 
+def parse_corrORF(corrORF):
+    orfDict = {}
+    for r in SeqIO.parse(open(corrORF), 'fasta'):
+        # now process ORFs into myQueryProtein objects
+        pattern = re.compile(r'^.*\|(?P<prot_len>\d+)_aa\|(?P<psauron_score>\S+)\|(?P<cds_type>\S+)\|(?P<start>\d+)\|(?P<end>\d+)$')
+        m = pattern.match(r.description)
+        if m is None:
+            qc_logger.error(f"Expected the CDS IDs to be of format '<protein_id> cds_name|<size>_aa|<psauron_score>|<orf_type>|<cds_start>|<cds_end>' but instead saw: {r.description} Abort!")
+            sys.exit(1)
+        orfDict[r.id] = myQueryProteins(
+            int(m.group('start')),
+            int(m.group('end')),
+            int(m.group('prot_len')),
+            protein_seq=str(r.seq),
+            proteinID=r.id,
+            psauron_score=float(m.group('psauron_score')),
+            cds_type=m.group('cds_type')
+        )
+    return orfDict
 
 def parse_TD2(corrORF, td2_faa):
     """
     Parses the TD2 output and writes corrected FASTA entries to a file.
 
     Returns:
-        orfDict (dict): Dictionary with ORF metadata.
+        cdsDict (dict): Dictionary with CDS metadata.
     """
-    orfDict, records = parse_td2_to_dict(td2_faa)
-    write_corr_orf(corrORF, records)
-    return orfDict
-    
+    cdsDict, records = parse_td2_to_dict(td2_faa)
+    write_corr_cds(corrORF, records)
+    return cdsDict
+
 def extract_variables(s):
     # Extract the ID prefix and CDS coordinates with strand
-    match = re.search(r'([^\s:]+):(\d+)-(\d+)\(([\+\-])\)', s)
+    match = re.search(r'ORF type:(?P<cds_type>[^\s:]+)\ .*?psauron_score=(?P<psauron_score>[0-9.]+).*?len:(?P<protein_length>\d+).*?(?P<id>[^\s:]+):(?P<start>\d+)-(?P<end>\d+)\([+-]\)', s)
     if not match:
-        qc_logger.error(f"Failed to parse coordinates and strand from: {s}")
+        qc_logger.error(f"Failed to parse information from: {s}")
         sys.exit(1)
-
-    id_pre = match.group(1)
-    cds_start = int(match.group(2))
-    cds_end = int(match.group(3))  # Add 1 as requested
-    orf_strand = match.group(4)
-    orf_length = abs(cds_end - cds_start +1) // 3  # Calculate ORF length in amino acids
-
     return {
-        'id_pre': id_pre,
-        'cds_start': cds_start,
-        'cds_end': cds_end,
-        'orf_strand': orf_strand,
-        'orf_length': orf_length
-        }   
-    
+        'id_pre': match.group('id'),
+        'cds_start': int(match.group('start')),
+        'cds_end': int(match.group('end')),
+        'protein_length': int(match.group('protein_length')),
+        'psauron_score': float(match.group('psauron_score')),
+        'cds_type': match.group('cds_type')
+    }
+

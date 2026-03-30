@@ -550,7 +550,15 @@ print_plot
   if (!all(is.na(data.ratio$ratio_TSS))){
     print(p28.a.ratio.pdf)
   }
-  
+  s <- textGrob("TransDecoder2 CDS prediction statistics", gp=gpar(fontface="italic", fontsize=17), vjust = 0)
+  grid.arrange(s)
+  if (!all(is.na(data.class$CDS_type))){
+    print(p33)
+    print(p34)
+    print(p35)
+    print(p36)
+  }
+
   dev.off()
   
   print("SQANTI3 report successfully generated!")
