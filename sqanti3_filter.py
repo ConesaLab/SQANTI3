@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 __author__  = "francisco.pardo.palacios@gmail.com"
 
 # New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
