@@ -43,8 +43,8 @@ For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/C
 * [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
 
 * [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
-* [TUSCO quick start (SQANTI3 QC)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-quick-start-(SQANTI3-QC))
-* [TUSCO-novel (Novel Isoform Stress Test)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO%E2%80%90novel-(Novel-Isoform-Stress-Test))
+* [TUSCO quick start (SQANTI3 QC)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-quick-start-%28SQANTI3-QC%29)
+* [TUSCO-novel (Novel Isoform Stress Test)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-novel)
 
 * [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
 
