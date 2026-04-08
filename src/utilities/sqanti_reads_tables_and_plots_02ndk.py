@@ -141,6 +141,13 @@ def merge_three_dfs(df1, df2, df3, col1, col2, col3):
     
     return final_merged_df
 
+def fix_sample_order(df, design):
+
+    if design is not None and 'sampleID' in df.columns:
+        sample_order = design['sampleID'].unique().tolist()
+        df['sampleID'] = pd.Categorical(df['sampleID'], categories=sample_order, ordered=True)
+    return df
+
 def categorize_by_readcount(read_count):
     if read_count == 1:
         return '1 read'
