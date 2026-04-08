@@ -188,7 +188,15 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
         logger.error(f"GTF chromosome {chrom} not found in genome reference file.")
         raise ValueError()
 
-    if feature_type in ('transcript', 'exon'):
+    if feature_type in ('transcript', 'mRNA', 'exon', 'CDS', 'match', 'match_part', 'cDNA_match'):
+        # Convert GFF3 alignment types and mRNA to standard GTF transcript/exon
+        if feature_type in ('mRNA', 'match', 'cDNA_match'):
+            fields[2] = 'transcript'
+        elif feature_type == 'match_part':
+            fields[2] = 'exon'
+            
+        line = "\t".join(fields) + "\n"
+        
         if strand not in ['-', '+']:
             logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
             discard_gtf.write(line)
