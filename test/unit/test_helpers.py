@@ -303,11 +303,16 @@ class TestProcessGtfLine:
 
     def test_unknown_strand(self, genome_dict, mock_corrGTF_out, mock_discard_gtf, caplog, tester_logger):
         """Test that lines with unknown strand are written to discard GTF."""
+        if os.path.exists(mock_discard_gtf):
+            os.remove(mock_discard_gtf)
+        if os.path.exists(mock_corrGTF_out):
+            os.remove(mock_corrGTF_out)
+
         line = "chr1\tEnsembl\texon\t1\t1000\t.\t.\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
         with open(mock_discard_gtf, "w") as f:
             process_gtf_line(line, genome_dict, mock_corrGTF_out, f, logger=tester_logger)
-        f.close()
-        assert "Discarding unknown strand transcript" in caplog.text
+            
+        assert "Discarding unknown strand feature" in caplog.text
         assert not os.path.exists(mock_corrGTF_out)
         with open(mock_discard_gtf, "r") as f:
             assert f.read() == line
@@ -315,6 +320,11 @@ class TestProcessGtfLine:
 
     def test_non_transcript_exon_line(self, genome_dict, mock_corrGTF_out, mock_discard_gtf):
         """Test that non-transcript/exon lines are ignored."""
+        if os.path.exists(mock_discard_gtf):
+            os.remove(mock_discard_gtf)
+        if os.path.exists(mock_corrGTF_out):
+            os.remove(mock_corrGTF_out)
+
         line = "chr1\tEnsembl\tgene\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\";\n"
         process_gtf_line(line, genome_dict, mock_corrGTF_out, mock_discard_gtf)
         assert not os.path.exists(mock_corrGTF_out)
