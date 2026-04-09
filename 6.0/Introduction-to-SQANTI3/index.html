@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -1072,7 +1072,7 @@
 </li>
 </ul>
 <hr />
-<p><a name="intro"/></a></p>
+<p><a name="intro"></a></p>
 <h2 id="introduction">Introduction</h2>
 <p>SQANTI3 is the newest version of the <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5848618/">SQANTI tool</a>. 
 SQANTI3 combines features from the original <a href="https://github.com/ConesaLab/SQANTI">SQANTI</a> and from
@@ -1081,7 +1081,7 @@ transcript features.</p>
 <p><strong>Disclaimer:</strong> please note that, although still available, both SQANTI and SQANTI2 are deprecated and will no longer be 
 maintained/updated. All development efforts will continue in SQANTI3, aiming to providing the most
 comprehensive characterization of long read-defined transcriptomes for the community.</p>
-<p><a name="fit"/></a></p>
+<p><a name="fit"></a></p>
 <h3 id="sqanti3-and-the-functional-isotranscriptomics-fit-pipeline">SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline</h3>
 <p>SQANTI3 constitutes the first module of the <a href="https://tappas.org/">Functional IsoTranscriptomics (FIT)</a> 
 pipeline, which is an end-to-end strategy to perform isoform-level bioinformatics analyses. 
@@ -1096,7 +1096,7 @@ transcriptomes.</li>
 that leverages both expression and domain/motif annotation information to gain insight into the functional implications 
 of alternative isoform expression.</li>
 </ul>
-<p><a name="workflow"/></a></p>
+<p><a name="workflow"></a></p>
 <h3 id="before-running-sqanti3-recommended-long-read-processing-workflow">Before running SQANTI3: recommended long read processing workflow</h3>
 <p>Here is our recommended workflow, including the best way to generate the SQANTI3 inputs and how to proceed after QC and filtering:</p>
 <ol>
@@ -1111,7 +1111,7 @@ isoform models. We recommend collapsing these using tools such as <a href="https
 expression estimates input into SQANTI3 for downstream analysis: these are used for quality control purposes only. Once all artifacts
 are removed from the transcriptome, the reads can be used to obtain a more accurate quantification. SQANTI3 rescue module will produce a curated transcriptome and count matrix that can be used for this purpose.</li>
 </ol>
-<p><a name="sqanti"/></a></p>
+<p><a name="sqanti"></a></p>
 <h2 id="how-does-sqanti3-work">How does SQANTI3 work?</h2>
 <p>SQANTI3 is a tool for in-depth characterization of isoforms obtained by full-length transcript sequencing, 
 which are commonly returned in a FASTA or GTF file format. SQANTI3 combines the long read-defined transcripts with the <strong>reference annotation</strong> as well as with other <strong>orthogonal data</strong> to provide a wide range of descriptors of transcript quality. SQ3 generates a comprehensive report to facilitate quality control and filtering of the isoform models.</p>
@@ -1131,8 +1131,8 @@ together with a long list of transcript-level attributes and descriptors, allow 
 <p><strong>Curated transcriptome requantification</strong> (final step of <a href="../Running-SQANTI3-rescue/">SQANTI3 rescue</a>) to generate an updated count matrix including the rescued reference transcripts. After the rescue step, the transcriptome is expanded with the rescued reference transcripts, and the original quantification matrix is updated to include counts for these transcripts. This updated count matrix can be used for downstream analyses. As well, artifacts that are pontentilaly divergent from the true isoforms, also have their counts redistributed. </p>
 </li>
 </ol>
-<p><img alt="Sqanti3 workflow" src="https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png" /></p>
-<p><a name="structure"/></a></p>
+<p><img alt="Sqanti3 workflow" src="https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/SQ3_qc.png" /></p>
+<p><a name="structure"></a></p>
 <h2 id="sqanti3-structure">SQANTI3 structure</h2>
 <p>At the moment, the SQANTI3 tool is directly called using the wrapper <code>sqanti3</code>. This main wrapper orchestrates the execution of the <strong>three primary modules</strong>. Each module is designed to perform a specific function within the SQANTI3 workflow, implemented as separate Python scripts:</p>
 <ul>
@@ -1141,10 +1141,10 @@ together with a long list of transcript-level attributes and descriptors, allow 
 <li><code>sqanti3_rescue.py</code> to replace artifacts by their closest matching transcript from either the reference or long-read defined transcriptome.</li>
 </ul>
 <p>To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the <code>src</code> (source) directory. </p>
-<p><a name="source"/></a></p>
+<p><a name="source"></a></p>
 <h3 id="source-folder">Source folder</h3>
 <p>The <code>src</code> directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.</p>
-<p><a name="utilities"/></a></p>
+<p><a name="utilities"></a></p>
 <h4 id="utilities-folder">Utilities folder</h4>
 <p>The <code>utilities</code> folder contains all the auxiliary scripts and functions required to run <code>sqanti3_qc.py</code> and <code>sqanti3_filter.py</code>.
 Under the main directory, you will find:</p>
@@ -1168,10 +1168,10 @@ In addition, a JSON file containing the default set of rules for the rules filte
 </ul>
 <h5 id="gmst">GMST</h5>
 <p>GeneMarkST tool. Used internally during QC for ORF prediction.</p>
-<p><a name="data"/></a></p>
+<p><a name="data"></a></p>
 <h3 id="data-and-examples">Data and examples</h3>
 <p>This directories have been moved to their own repository, with the idea not to make the SQANTI3 repository too heavy. You can find them at <a href="https://github.com/ConesaLab/SQANTI_examples">SQANTI3 examples</a></p>
-<p><a name="tests"/></a></p>
+<p><a name="tests"></a></p>
 <h3 id="test-folder">Test folder</h3>
 <p>Newly implemented, and in constant development, test suite for SQANTI3. This test suite is being developed as SQANTI3 is being modularized, with the aim to keep SQANTI3 as stable as possible in future releases. If you find any issue with the test suite, add it as an issue and it will be updated as soon as possible.</p>
 

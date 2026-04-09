@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -1031,8 +1031,10 @@
 <li><code>associated_transcript</code>: the reference transcript name.</li>
 <li><code>ref_length</code>: matched reference transcript length. For transcripts in the <code>novel_in_catalog</code> and <code>novel_not_in_catalog</code> categories, the best matching reference transcript is chosen based on the highest number of shared splice junctions and the smallest difference in exon count.</li>
 <li><code>ref_exons</code>: reference transcript number of exons.</li>
-<li><code>diff_to_TSS</code>: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript.</li>
-<li><code>diff_to_TTS</code>: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript.</li>
+<li><code>diff_to_TSS</code>: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript. This distance is relative to the spliced transcript (not taking into account introns).</li>
+<li><code>diff_to_TTS</code>: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript. This distance is relative to the spliced transcript (not taking into account introns).</li>
+<li><code>diff_to_TSS_genomic</code>: distance of query isoform 5' start to reference transcript start end. Negative value means query starts downstream of the reference TSS, so the transcript is shorter than reference transcript. This distance is relative to the genomic coordinates (taking into account introns).</li>
+<li><code>diff_to_TTS_genomic</code>: distance of query isoform 3' end to reference annotated end site. Negative value means query ends upstream of TTS, so the transcript is shorter than reference transcript. This distance is relative to the genomic coordinates (taking into account introns).</li>
 <li><code>diff_to_gene_TSS</code>: distance of query isoform 5' start to the closest start end of <em>any</em> transcripts of the matching gene. This field is different from <code>diff_to_TSS</code> since it's looking at all annotated starts of a gene. Negative value means query starts downstream of TSS.</li>
 <li><code>diff_to_gene_TTS</code>: distance of query isoform 3' end to the closest end of <em>any</em> transcripts of the matching gene. Negative value means query ends upstream of TTS. </li>
 <li><code>RTS_stage</code>: TRUE if one of the junctions could be a RT switching artifact.</li>
@@ -1051,12 +1053,12 @@
 <li><code>coding</code>: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"</li>
 <li><code>ORF_length</code>: predicted ORF length (including introns) in nucleotides.</li>
 <li><code>CDS_length</code>: predicted CDS length in nucleotides.</li>
-<li><code>protein_length</code>: predicted protein length in aminoacids. </li>
+<li><code>protein_length</code>: predicted protein length in amino acids. </li>
 <li><code>CDS_start</code>: CDS start.</li>
 <li><code>CDS_end</code>: CDS end.</li>
 <li><code>CDS_genomic_start</code>: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.</li>
 <li><code>CDS_genomic_end</code>: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.</li>
-<li><code>psauron_score</code>: Value between 0 and 1 indicating the coding potential of the transcript according to the psauron algorithm. Higher values indicate higher coding potential.</li>
+<li><code>psauron_score</code>: Value between 0 and 1 indicating the coding potential of the transcript according to the PSAURON algorithm. Higher values indicate higher coding potential.</li>
 <li><code>CDS_type</code>: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"</li>
 <li><code>predicted_NMD</code>: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.</li>
 <li><code>perc_A_downstream_TTS</code>: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say &gt; 0.8), the 3' end site of this isoform is probably not reliable.</li>
