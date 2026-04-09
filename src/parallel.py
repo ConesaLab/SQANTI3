@@ -1,7 +1,6 @@
 import pickle
 import shutil
-import os,sys,copy
-import re
+import os,copy
 import re
 
 from multiprocessing import Process
@@ -34,16 +33,12 @@ def split_input_run(args, outdir):
         os.makedirs(SPLIT_ROOT_DIR)
 
     if not args.fasta:
-        def count_lines(filepath):
-            with open(filepath, 'r') as f:
-                return sum(1 for _ in f)
-
-        total_lines = count_lines(args.isoforms)
-        target_chunk_size = max(1, total_lines // args.chunks + (1 if total_lines % args.chunks else 0))
+        file_size = os.path.getsize(args.isoforms)
+        target_chunk_bytes = max(1, file_size // args.chunks + (1 if file_size % args.chunks else 0))
 
         split_outs = []
         chunk_index = 0
-        current_chunk_lines = 0
+        current_chunk_bytes = 0
         
         d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
         os.makedirs(d, exist_ok=True)
@@ -63,10 +58,10 @@ def split_input_run(args, outdir):
                 
                 # If we've reached the target chunk size, we only split AT a boundary
                 # so we don't sever a transcript from its downstream exons
-                if current_chunk_lines >= target_chunk_size and is_boundary:
+                if current_chunk_bytes >= target_chunk_bytes and is_boundary:
                     current_f.close()
                     chunk_index += 1
-                    current_chunk_lines = 0
+                    current_chunk_bytes = 0
                     
                     d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
                     os.makedirs(d, exist_ok=True)
@@ -74,7 +69,7 @@ def split_input_run(args, outdir):
                     split_outs.append((os.path.abspath(d), current_f.name))
 
                 current_f.write(line)
-                current_chunk_lines += 1
+                current_chunk_bytes += len(line.encode('utf-8'))
 
         current_f.close()
 
