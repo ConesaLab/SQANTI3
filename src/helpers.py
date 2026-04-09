@@ -170,7 +170,7 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
     Notes:
         - Lines starting with '#' are ignored.
         - Lines with fewer than 7 fields are considered malformed and skipped with a warning.
-        - Lines with 'transcript' or 'exon' feature types are further processed:
+        - Lines with 'transcript/exon/mRNA/match/cDNA_match/match_part/CDS' feature types are further processed:
             - If the strand is unknown ('-' or '+'), the line is written to the discard_gtf file with a warning.
             - Otherwise, the line is written to the corrGTF_out file.
     """
@@ -198,7 +198,7 @@ def process_gtf_line(line: str, genome_dict: Dict[str, str], corrGTF_out: str, d
         line = "\t".join(fields) + "\n"
         
         if strand not in ['-', '+']:
-            logger.warning(f"Discarding unknown strand transcript: {line.strip()}")
+            logger.warning(f"Discarding unknown strand feature: {line.strip()}")
             discard_gtf.write(line)
         else:
             corrGTF_out.write(line)

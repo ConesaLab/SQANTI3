@@ -320,6 +320,34 @@ class TestProcessGtfLine:
         assert not os.path.exists(mock_corrGTF_out)
         assert not os.path.exists(mock_discard_gtf)
 
+    @pytest.mark.parametrize("original_feature,expected_feature", [
+        ("mRNA", "transcript"),
+        ("match", "transcript"),
+        ("cDNA_match", "transcript"),
+        ("match_part", "exon"),
+        ("CDS", "CDS")
+    ])
+    def test_gff3_feature_type_conversions(self, genome_dict, mock_corrGTF_out, mock_discard_gtf, original_feature, expected_feature):
+        """Test that GFF3 specific feature types are properly converted to GTF standard types."""
+        if os.path.exists(mock_discard_gtf):
+            os.remove(mock_discard_gtf)
+        if os.path.exists(mock_corrGTF_out):
+            os.remove(mock_corrGTF_out)
+
+        line = f"chr1\tEnsembl\t{original_feature}\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+        expected_line = f"chr1\tEnsembl\t{expected_feature}\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"
+        
+        with open(mock_corrGTF_out, "w") as f, open(mock_discard_gtf, "w") as f_discard:
+            process_gtf_line(line, genome_dict, f, f_discard)
+            
+        with open(mock_corrGTF_out, "r") as f:
+            assert f.read() == expected_line
+            
+        with open(mock_discard_gtf, "r") as f_discard:
+            assert f_discard.read() == ""
+        os.remove(mock_corrGTF_out)
+        os.remove(mock_discard_gtf)
+
     def test_adding_lines_to_file(self, genome_dict, mock_corrGTF_out, mock_discard_gtf):
         """Test that multiple valid lines are correctly written."""
         line1 = "chr1\tEnsembl\ttranscript\t1\t1000\t.\t+\t.\tgene_id \"ENSG00000223972\"; transcript_id \"ENST00000456328\";\n"

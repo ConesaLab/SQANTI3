@@ -39,6 +39,8 @@ def split_input_run(args, outdir):
         split_outs = []
         chunk_index = 0
         current_chunk_bytes = 0
+        has_primary_feature = False
+        has_non_comment_record = False
         
         d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
         os.makedirs(d, exist_ok=True)
@@ -47,31 +49,44 @@ def split_input_run(args, outdir):
 
         primary_features = ('\ttranscript\t', '\tmRNA\t', '\tmatch\t', '\tcDNA_match\t')
 
-        with open(args.isoforms, 'r') as f_in:
-            for line in f_in:
-                if line.startswith('#'):
-                    current_f.write(line)
-                    continue
-                
-                # Check for boundary (a primary transcript line)
-                is_boundary = any(feat in line for feat in primary_features)
-                
-                # If we've reached the target chunk size, we only split AT a boundary
-                # so we don't sever a transcript from its downstream exons
-                if current_chunk_bytes >= target_chunk_bytes and is_boundary:
-                    current_f.close()
-                    chunk_index += 1
-                    current_chunk_bytes = 0
+        try:
+            with open(args.isoforms, 'r') as f_in:
+                for line in f_in:
+                    if line.startswith('#'):
+                        current_f.write(line)
+                        continue
                     
-                    d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
-                    os.makedirs(d, exist_ok=True)
-                    current_f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
-                    split_outs.append((os.path.abspath(d), current_f.name))
+                    has_non_comment_record = True
+                    
+                    # Check for boundary (a primary transcript line)
+                    is_boundary = any(feat in line for feat in primary_features)
+                    if is_boundary:
+                        has_primary_feature = True
+                    
+                    # If we've reached the target chunk size, we only split AT a boundary
+                    # so we don't sever a transcript from its downstream exons
+                    if current_chunk_bytes >= target_chunk_bytes and is_boundary:
+                        current_f.close()
+                        chunk_index += 1
+                        current_chunk_bytes = 0
+                        
+                        d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
+                        os.makedirs(d, exist_ok=True)
+                        current_f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
+                        split_outs.append((os.path.abspath(d), current_f.name))
 
-                current_f.write(line)
-                current_chunk_bytes += len(line.encode('utf-8'))
-
-        current_f.close()
+                    current_f.write(line)
+                    current_chunk_bytes += len(line.encode('utf-8'))
+        finally:
+            if not current_f.closed:
+                current_f.close()
+        
+        if not has_non_comment_record:
+            qc_logger.error(f"Input file '{args.isoforms}' contains only comments or is empty.")
+            raise ValueError(f"Input file '{args.isoforms}' contains only comments or is empty.")
+            
+        if not has_primary_feature:
+            qc_logger.warning(f"No primary features (e.g., transcript, mRNA) detected in '{args.isoforms}'. SQANTI3 might fail to process this file correctly.")
 
     else:
         # FASTA file handling remains unchanged
