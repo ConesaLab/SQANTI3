@@ -1,5 +1,5 @@
 import pandas as pd
-from src.utilities.filter.rules_filter_functions import apply_rules, get_reasons, junction_related_columns
+from src.utilities.filter.sqanti3_rules_filter import apply_rules, get_reasons, junction_related_columns
 
 class MockRulesList:
     def __init__(self, elements):
