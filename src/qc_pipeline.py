@@ -109,9 +109,9 @@ def run(args):
         qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
         
         ## FL count file
-        fields_class_cur = FIELDS_CLASS
+    
         if args.fl_count:
-            isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+            isoforms_info = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
         else:
             qc_logger.info("Full-length read abundance files not provided.")
 

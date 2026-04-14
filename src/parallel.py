@@ -2,6 +2,8 @@ import pickle
 import shutil
 import os,copy
 import re
+import time
+import psutil
 
 from multiprocessing import Process
 from Bio import SeqIO
@@ -106,16 +108,49 @@ def split_input_run(args, outdir):
             split_outs.append((os.path.abspath(d), f.name))
 
     pools = []
-    for i,(d,x) in enumerate(split_outs):
-        qc_logger.info(f"Launching worker on {x}....")
-        args2 = copy.deepcopy(args)
-        args2.isoforms = x
-        args2.novel_gene_prefix = str(i)
-        args2.dir = d
-        args2.report = 'skip'
-        p = Process(target=run, args=(args2,))
-        p.start()
-        pools.append(p)
+    
+    max_concurrent = psutil.cpu_count(logical=True) or 1
+    cpus_per_worker = args.cpus if hasattr(args, 'cpus') and args.cpus > 0 else 1
+
+    pending_tasks = list(enumerate(split_outs))
+    active_processes = []
+
+    while pending_tasks or active_processes:
+        # Keep only alive processes
+        active_processes = [p for p in active_processes if p.is_alive()]
+        
+        # Check system memory. We need to reserve some overhead (e.g., >15% free memory)
+        # to process the reference genome for each chunk
+        mem_info = psutil.virtual_memory()
+        can_launch_mem = mem_info.percent < 85
+        
+        current_used_cpus = len(active_processes) * cpus_per_worker
+        # Always allow at least 1 process if active_processes is 0, to prevent deadlocks
+        can_launch_cpu = (current_used_cpus + cpus_per_worker) <= max_concurrent or len(active_processes) == 0
+
+        # Launch next chunk if resources are safe
+        if pending_tasks and can_launch_cpu and can_launch_mem:
+            i, (d, x) = pending_tasks.pop(0)
+            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_info.percent}%)")
+            
+            args2 = copy.deepcopy(args)
+            args2.isoforms = x
+            args2.novel_gene_prefix = str(i)
+            args2.dir = d
+            args2.report = 'skip'
+            args2.cpus = cpus_per_worker # Allocate a fair share of CPUs per worker
+            
+            p = Process(target=run, args=(args2,))
+            p.start()
+            
+            active_processes.append(p)
+            pools.append(p)
+            
+            # Brief pause to let memory initialize before spawning another chunk
+            time.sleep(2)
+        else:
+            # Wait for resources to free up
+            time.sleep(1)
 
     for p in pools:
         p.join()
@@ -178,9 +213,8 @@ def combine_split_runs(args, split_dirs):
     # Process expression data natively across all processed chunks
     isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)
     ## FL count file
-    fields_class_cur = FIELDS_CLASS
     if args.fl_count:
-        isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+        isoforms_info, _ = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
     isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
