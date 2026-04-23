@@ -10,6 +10,7 @@ version = "0.1.0"
 
 [dependencies]
 python = ">=3.11,<3.12"
+pyyaml = "==6.0.3"
 numpy = ">=1.26,<2.0"
 scipy = ">=1.11,<1.12"
 pandas = ">=2.2,<2.3"
