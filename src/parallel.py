@@ -1,18 +1,18 @@
 import pickle
 import shutil
-import os,sys,copy,csv
-import pandas as pd #type: ignore
+import os,copy
 import re
+import time
+import psutil
 
 from multiprocessing import Process
 from Bio import SeqIO
 
-from src.utilities.cupcake.io.GFF import collapseGFFReader, write_collapseGFF_format
 
 from src.config import FIELDS_CLASS
-from src.qc_computations import classify_fsm, full_length_quantification, process_rts #type: ignore
+from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes 
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -34,84 +34,61 @@ def split_input_run(args, outdir):
     else:
         os.makedirs(SPLIT_ROOT_DIR)
 
-    # TODO: Check here the effect of the strand when ussing collapseGFFReader
     if not args.fasta:
-        try:
-            recs = [r for r in collapseGFFReader(args.isoforms)]
-            # Group records by gene_id
-            gene_groups = {}
-            for rec in recs:
-                gene_id = rec.gene_id  # Assuming gene_id is an attribute of the record
-                if gene_id not in gene_groups:
-                    gene_groups[gene_id] = []
-                gene_groups[gene_id].append(rec)
-        except Exception as e:
-            recs_df = pd.read_csv(args.isoforms, sep='\t', comment='#', header=None)
-            for i, value in enumerate(recs_df.iloc[:, 8]):
-                parts = value.split('; ')
-                for part in parts:
-                    if 'gene_id' in part:
-                        gene_id = part.split('"')[1]
-                        recs_df.at[i, 'gene_id'] = gene_id
-                        break
-            gene_groups = {gene_id: group.iloc[:, :-1] for gene_id, group in recs_df.groupby('gene_id')}
-
-        n = len(gene_groups)
-        if n == 0:
-            qc_logger.error("The input file is not in the correct format, please check the file contains gene_id in "
-                  "column 9 and try again")
-            sys.exit(1)
-
-        gene_ids = sorted(gene_groups.keys(), key=natural_sort_key)
-        target_chunk_size = n // args.chunks + (1 if n % args.chunks else 0)
+        file_size = os.path.getsize(args.isoforms)
+        target_chunk_bytes = max(1, file_size // args.chunks + (1 if file_size % args.chunks else 0))
 
         split_outs = []
-        current_chunk = []
-        current_chunk_size = 0
         chunk_index = 0
-        prev_gene_id = None
+        current_chunk_bytes = 0
+        has_primary_feature = False
+        has_non_comment_record = False
+        
+        d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
+        os.makedirs(d, exist_ok=True)
+        current_f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
+        split_outs.append((os.path.abspath(d), current_f.name))
 
-        for gene_id in gene_ids:
-            if current_chunk_size >= target_chunk_size and gene_id != prev_gene_id:
-                # Write the current chunk
-                d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
-                os.makedirs(d, exist_ok=True)
-                f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
-                
-                for gid in current_chunk:
-                    if isinstance(gene_groups[gid], pd.DataFrame):
-                        gene_groups[gid].to_csv(f, sep='\t', index=False, header=False, quoting=csv.QUOTE_NONE, escapechar='\\')
-                    else:
-                        for rec in gene_groups[gid]:
-                            write_collapseGFF_format(f, rec)
-                
-                f.close()
-                split_outs.append((os.path.abspath(d), f.name))
-                
-                # Reset for the next chunk
-                current_chunk = []
-                current_chunk_size = 0
-                chunk_index += 1
+        primary_features = ('\ttranscript\t', '\tmRNA\t', '\tmatch\t', '\tcDNA_match\t')
 
-            current_chunk.append(gene_id)
-            current_chunk_size += 1
-            prev_gene_id = gene_id
+        try:
+            with open(args.isoforms, 'r') as f_in:
+                for line in f_in:
+                    if line.startswith('#'):
+                        current_f.write(line)
+                        continue
+                    
+                    has_non_comment_record = True
+                    
+                    # Check for boundary (a primary transcript line)
+                    is_boundary = any(feat in line for feat in primary_features)
+                    if is_boundary:
+                        has_primary_feature = True
+                    
+                    # If we've reached the target chunk size, we only split AT a boundary
+                    # so we don't sever a transcript from its downstream exons
+                    if current_chunk_bytes >= target_chunk_bytes and is_boundary:
+                        current_f.close()
+                        chunk_index += 1
+                        current_chunk_bytes = 0
+                        
+                        d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
+                        os.makedirs(d, exist_ok=True)
+                        current_f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
+                        split_outs.append((os.path.abspath(d), current_f.name))
 
-        # Write the last chunk if it's not empty
-        if current_chunk:
-            d = os.path.join(SPLIT_ROOT_DIR, str(chunk_index))
-            os.makedirs(d, exist_ok=True)
-            f = open(os.path.join(d, os.path.basename(args.isoforms) + '.split' + str(chunk_index)), 'w')
+                    current_f.write(line)
+                    current_chunk_bytes += len(line.encode('utf-8'))
+        finally:
+            if not current_f.closed:
+                current_f.close()
+        
+        if not has_non_comment_record:
+            qc_logger.error(f"Input file '{args.isoforms}' contains only comments or is empty.")
+            raise ValueError(f"Input file '{args.isoforms}' contains only comments or is empty.")
             
-            for gid in current_chunk:
-                if isinstance(gene_groups[gid], pd.DataFrame):
-                    gene_groups[gid].to_csv(f, sep='\t', index=False, header=False, quoting=csv.QUOTE_NONE, escapechar='\\')
-                else:
-                    for rec in gene_groups[gid]:
-                        write_collapseGFF_format(f, rec)
-            
-            f.close()
-            split_outs.append((os.path.abspath(d), f.name))
+        if not has_primary_feature:
+            qc_logger.warning(f"No primary features (e.g., transcript, mRNA) detected in '{args.isoforms}'. SQANTI3 might fail to process this file correctly.")
 
     else:
         # FASTA file handling remains unchanged
@@ -131,16 +108,49 @@ def split_input_run(args, outdir):
             split_outs.append((os.path.abspath(d), f.name))
 
     pools = []
-    for i,(d,x) in enumerate(split_outs):
-        qc_logger.info(f"Launching worker on {x}....")
-        args2 = copy.deepcopy(args)
-        args2.isoforms = x
-        args2.novel_gene_prefix = str(i)
-        args2.dir = d
-        args2.report = 'skip'
-        p = Process(target=run, args=(args2,))
-        p.start()
-        pools.append(p)
+    
+    max_concurrent = psutil.cpu_count(logical=True) or 1
+    cpus_per_worker = args.cpus if hasattr(args, 'cpus') and args.cpus > 0 else 1
+
+    pending_tasks = list(enumerate(split_outs))
+    active_processes = []
+
+    while pending_tasks or active_processes:
+        # Keep only alive processes
+        active_processes = [p for p in active_processes if p.is_alive()]
+        
+        # Check system memory. We need to reserve some overhead (e.g., >15% free memory)
+        # to process the reference genome for each chunk
+        mem_info = psutil.virtual_memory()
+        can_launch_mem = mem_info.percent < 85
+        
+        current_used_cpus = len(active_processes) * cpus_per_worker
+        # Always allow at least 1 process if active_processes is 0, to prevent deadlocks
+        can_launch_cpu = (current_used_cpus + cpus_per_worker) <= max_concurrent or len(active_processes) == 0
+
+        # Launch next chunk if resources are safe
+        if pending_tasks and can_launch_cpu and can_launch_mem:
+            i, (d, x) = pending_tasks.pop(0)
+            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_info.percent}%)")
+            
+            args2 = copy.deepcopy(args)
+            args2.isoforms = x
+            args2.novel_gene_prefix = str(i)
+            args2.dir = d
+            args2.report = 'skip'
+            args2.cpus = cpus_per_worker # Allocate a fair share of CPUs per worker
+            
+            p = Process(target=run, args=(args2,))
+            p.start()
+            
+            active_processes.append(p)
+            pools.append(p)
+            
+            # Brief pause to let memory initialize before spawning another chunk
+            time.sleep(2)
+        else:
+            # Wait for resources to free up
+            time.sleep(1)
 
     for p in pools:
         p.join()
@@ -153,15 +163,15 @@ def combine_split_runs(args, split_dirs):
     """
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
     outputClassPath, outputJuncPath = get_class_junc_filenames(args.dir,args.output)
-    
+
     if args.isoform_hits:
         isoform_hits = open(get_isoform_hits_name(args.dir, args.output)+'_tmp', 'w')
-    if args.include_ORFS:
+    if args.include_ORF:
         f_faa = open(corrORF, 'w')
     f_fasta = open(corrFASTA, 'w')
     f_gtf = open(corrGTF, 'w')
     f_junc_temp = open(outputJuncPath+"_tmp", "w")
-    
+
     isoforms_info = {}
     headers = []
     for i,split_d in enumerate(split_dirs):
@@ -191,28 +201,38 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-        shutil.move(os.path.join(split_d,"TD2"),os.path.join(args.dir,"TD2",f"TD2_{i}"))
+        if args.include_ORF:
+            src_dir = os.path.join(split_d, "TD2")
+            dst_dir = os.path.join(args.dir, "TD2", f"TD2_{i}")
+            # If the directory is not removed, further runs will create nested directories if moving directly
+            if os.path.exists(dst_dir):
+                shutil.rmtree(dst_dir)
+
+            # Now move the directory.
+            shutil.move(src_dir, dst_dir)
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
-    
+
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
+    
+    # Process expression data natively across all processed chunks
+    isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)
     ## FL count file
-    fields_class_cur = FIELDS_CLASS
     if args.fl_count:
-        isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+        isoforms_info, _ = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
     isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
     if args.include_ORF:
         write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
-    write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
+    write_classification_output(isoforms_info, outputClassPath)
     write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
     #write omitted isoforms if requested minimum reference length is more than 0
-    isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
-                                            args.min_ref_len, args.is_fusion, fields_class_cur)
+    isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output,
+                                            args.min_ref_len, args.is_fusion)
     #isoform hits to file if requested
     if args.isoform_hits:
         write_isoform_hits(args.dir, args.output, isoforms_info)
@@ -224,7 +244,7 @@ def combine_split_runs(args, split_dirs):
 
     if args.report != 'skip':
         generate_report(args.saturation,args.report, outputClassPath, outputJuncPath)
-        
+
 # Run TUSCO benchmarking report if requested
     if hasattr(args, 'tusco') and args.tusco:
         # Pass both sample GTF (corrected) and reference GTF for IGV-like plots

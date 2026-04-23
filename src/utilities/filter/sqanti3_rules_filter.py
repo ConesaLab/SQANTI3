@@ -2,6 +2,16 @@ import os, sys, json
 import pandas as pd
 from src.module_logging import message,filter_logger
 
+junction_related_columns = [
+    "RTS_stage",
+    "all_canonical",
+    "min_cov",
+    "min_cov_pos",
+    "sd_cov",
+    "n_indels_junc",
+    "bite",
+    "predicted_NMD"
+]
 
 def read_json_rules(json_file):
     """Parse JSON rules file into structured DataFrame format for filtering.
@@ -106,6 +116,10 @@ def apply_rules(row, force_multiexon, rules_dict):
             column = rule['column']
             rule_type = rule['type']
             rule_value = rule['rule']
+            
+            if float(row['exons']) == 1 and column in junction_related_columns:
+                continue
+
             # check if it is nan
             try:
                 if pd.isna(row[column]):
@@ -171,6 +185,13 @@ def get_reasons(row, force_multiexon, rules_dict):
             rule_type = rule['type']
             rule_value = rule['rule']
 
+            if float(row['exons']) == 1 and column in junction_related_columns:
+                continue
+
+            if pd.isna(row[column]):
+                reasons.add(f"NA value in {column}")
+                continue
+
             if rule_type == 'Category':
                 if isinstance(rule_value, list):
                     if str(row[column]).lower() not in rule_value:
@@ -212,7 +233,7 @@ def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
     """
     message("Reading SQANTI3 classification file",logger)
     
-    classif = pd.read_csv(sqanti_class, sep="\t")
+    classif = pd.read_csv(sqanti_class, sep="\t", dtype={'chrom': str})
 
     message("Reading JSON rules",logger)
     

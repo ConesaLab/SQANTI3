@@ -117,8 +117,9 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
     LR_targets = filter_transcriptome(corrected_isoforms,targets_list)
 
-    ## join both FASTA files and remove duplicates
-    all_targets = ref_targets + LR_targets
+    ## join both FASTA files and remove duplicates in LR targets (some tools like Bambu have the same ids for reference and long read transcripts, so we need to remove duplicates in the long read targets to avoid issues with minimap2)
+    tr_ids = {record.id for record in LR_targets}
+    all_targets = LR_targets + [record for record in ref_targets if record.id not in tr_ids]
 
     save_fasta(all_targets,targets_fasta)
 
