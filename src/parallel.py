@@ -201,7 +201,15 @@ def combine_split_runs(args, split_dirs):
         with open(_info, 'rb') as h:
             isoforms_info.update(pickle.load(h))
             headers.append(pickle.load(h))
-        shutil.move(os.path.join(split_d,"TD2"),os.path.join(args.dir,"TD2",f"TD2_{i}"))
+        if args.include_ORF:
+            src_dir = os.path.join(split_d, "TD2")
+            dst_dir = os.path.join(args.dir, "TD2", f"TD2_{i}")
+            # If the directory is not removed, further runs will create nested directories if moving directly
+            if os.path.exists(dst_dir):
+                shutil.rmtree(dst_dir)
+
+            # Now move the directory.
+            shutil.move(src_dir, dst_dir)
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
