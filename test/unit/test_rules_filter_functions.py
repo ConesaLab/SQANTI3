@@ -1,4 +1,4 @@
-import sys,os,pytest
+import sys, os, pytest
 import json
 import pandas as pd
 from unittest.mock import mock_open, patch
@@ -6,13 +6,12 @@ from typing import Any
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.utilities.filter.sqanti3_rules_filter import read_json_rules
-
+from src.utilities.filter.sqanti3_rules_filter import read_json_rules, apply_rules, get_reasons, junction_related_columns
 
 ## Reading JSON rules
 @pytest.fixture
-def json_default():    return os.path.join(main_path, "test","test_data","other","filter_rules.json")
-
+def json_default():    
+    return os.path.join(main_path, "test","test_data","other","filter_rules.json")
 
 def test_read_json_rules(json_default: str):
     res_list = read_json_rules(json_default)
@@ -20,7 +19,6 @@ def test_read_json_rules(json_default: str):
     assert list(res_list.keys()) == ['full-splice_match','rest']
     assert len(res_list['full-splice_match']) == 1
     assert len(res_list['rest']) == 3
-
 
 @pytest.fixture
 def sample_json_data_good():
@@ -61,7 +59,6 @@ def test_read_json_rules_invalid_structure(sample_json_data_bad):
             read_json_rules("dummy_path.json")
             mock_exit.assert_called_once_with(1)
     
-
 def test_read_json_rules_dataframe_columns(sample_json_data_good):
     with patch("builtins.open", mock_open(read_data=json.dumps(sample_json_data_good))):
         result = read_json_rules("dummy_path.json")
@@ -109,9 +106,7 @@ def test_read_json_rules_single_string():
     assert df.shape == (1, 3)
     assert df.iloc[0].tolist() == ["col", "Category", "value"]
 
-## Applying rules
-from src.utilities.filter.sqanti3_rules_filter import apply_rules
-
+## Applying rules & reasons
 @pytest.fixture
 def classification_df():
     file = os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms_classification.tsv")
@@ -121,10 +116,57 @@ def classification_df():
 def rules_dict(json_default: str):
     return read_json_rules(json_default)
 
+def test_monoexon_junction_failsafe_ignored():
+    row = pd.Series({
+        "isoform": "PB.1.1",
+        "exons": 1,
+        "structural_category": "rest",
+        "min_cov": 0,
+        "bite": "False"
+    })
+
+    rules_df = pd.DataFrame({
+        "column": ["min_cov", "bite"],
+        "type": ["Min_Threshold", "Category"],
+        "rule": [10, "true"]
+    })
+
+    rules_dict = {"rest": [rules_df]}
+
+    assert apply_rules(row, False, rules_dict) == "Isoform"
+    
+    reasons_series = get_reasons(row, False, rules_dict)
+    assert reasons_series['filter_reason'] == ""
+
+def test_multiexon_junction_failsafe_enforced():
+    row = pd.Series({
+        "isoform": "PB.1.2",
+        "exons": 2,
+        "structural_category": "rest",
+        "min_cov": 0,
+        "bite": "False"
+    })
+
+    rules_df = pd.DataFrame({
+        "column": ["min_cov", "bite"],
+        "type": ["Min_Threshold", "Category"],
+        "rule": [10, "true"]
+    })
+
+    rules_dict = {"rest": [rules_df]}
+
+    assert apply_rules(row, False, rules_dict) == "Artifact"
+    
+    reasons_series = get_reasons(row, False, rules_dict)
+    reasons = set(reasons_series["filter_reason"].split("; "))
+    assert len(reasons) == 2
+    assert reasons == {"min_cov: 0 < 10", "bite: False"}
+
 def test_apply_rules_isoform_rest(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[1]
     result = apply_rules(row, False, rules_dict)
     assert result == "Isoform"
+
 def test_apply_rules_isoform_monoexon(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[0]
     result = apply_rules(row, False, rules_dict)
@@ -142,7 +184,6 @@ def test_apply_rules_isoform_fsm_monoexon(classification_df: pd.DataFrame, rules
 
 def test_apply_rules_artifact_rest(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[21]
-    print(row['isoform'])
     result = apply_rules(row, False, rules_dict)
     assert result == "Artifact"
 
@@ -152,20 +193,18 @@ def test_apply_rules_artifact_fsm(classification_df: pd.DataFrame, rules_dict: d
     assert result == "Artifact"
 
 def test_apply_rules_force_monoexon(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
-    #REST
     row = classification_df.iloc[0]
     result = apply_rules(row, False, rules_dict)
     assert result == "Isoform"
-    #FSM
     row = classification_df.iloc[15]
     result = apply_rules(row, True, rules_dict)
     assert result == "Artifact"
-    
-# Reasons for filtering
-from src.utilities.filter.sqanti3_rules_filter import get_reasons
 
 def test_get_reasons_isoform_passes(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
-    row = classification_df.iloc[1]  # Should be an Isoform
+    row = classification_df.iloc[1].copy() # Should be an Isoform
+    # Since min_cov is a junction-related column checked in the rules, but row has it as NaN:
+    # Ensure it's given a mocked valid value for the "passes" test!
+    row['min_cov'] = 10
     result = get_reasons(row, False, rules_dict)
     
     assert result["isoform"] == row["isoform"]
@@ -173,25 +212,26 @@ def test_get_reasons_isoform_passes(classification_df: pd.DataFrame, rules_dict:
     assert result["filter_reason"] == ""
 
 def test_get_reasons_artifact_due_to_monoexon(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
-    row = classification_df.iloc[0]  # 1-exon FSM or rest
+    row = classification_df.iloc[0] 
     result = get_reasons(row, True, rules_dict)
     
     assert "Mono-exonic" in result["filter_reason"]
     assert result["isoform"] == row["isoform"]
 
 def test_get_reasons_threshold_violation(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
-    row = classification_df.iloc[39]  # Should be an Artifact by threshold
+    row = classification_df.iloc[39]
     result = get_reasons(row, False, rules_dict)
 
     assert result["isoform"] == row["isoform"]
-    assert result["filter_reason"] != ""  # At least one reason should be present
-    assert any(x in result["filter_reason"] for x in ["<", ">"])  # Threshold message present
+    assert result["filter_reason"] != ""
+    assert any(x in result["filter_reason"] for x in ["<", ">"])
 
 def test_get_reasons_categorical_mismatch():
     row = pd.Series({
         "isoform": "fake_iso",
         "structural_category": "category",
-        "col": "Mismatch"
+        "col": "Mismatch",
+        "exons": 2
     })
     rules_dict = {
         "category": [pd.DataFrame([["col", "Category", "expected"]], columns=["column", "type", "rule"])],
@@ -205,9 +245,10 @@ def test_get_reasons_multiple_failures():
     row = pd.Series({
         "isoform": "fake_iso",
         "structural_category": "category",
-        "col1": 3,      # should fail min
-        "col2": 20,     # should fail max
-        "col3": "bad"   # should fail category
+        "col1": 3,
+        "col2": 20,
+        "col3": "bad",
+        "exons": 2
     })
     rules_df = pd.DataFrame([
         ["col1", "Min_Threshold", 5],
@@ -224,3 +265,4 @@ def test_get_reasons_multiple_failures():
     assert "col2: 20 > 10" in result["filter_reason"]
     assert "col3: bad" in result["filter_reason"]
     assert result["isoform"] == "fake_iso"
+

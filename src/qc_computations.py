@@ -65,7 +65,7 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             isoforms_info[iso].ratio_TSS = None
     return isoforms_info
 
-def full_length_quantification(fl_count, isoforms_info, fields_class_cur):
+def full_length_quantification(fl_count, isoforms_info):
     qc_logger.info("**** Reading Full-length read abundance files.")
 
     # 1. Parse and set the ID as the index for easy lookup
@@ -99,10 +99,7 @@ def full_length_quantification(fl_count, isoforms_info, fields_class_cur):
     else:
         # --- Multi-Sample Case ---
         qc_logger.info("Multi-sample FL count format detected.")
-        
-        # Extend the fields list
-        fields_class_cur.extend(f"FL.{s}" for s in fl_samples)
-        
+                
         # Optimization: Convert to nested dict
         # Result: {'transcript_1': {'SampleA': 10, 'SampleB': 5}, ...}
         fl_count_lookup = df.to_dict('index')
@@ -119,7 +116,7 @@ def full_length_quantification(fl_count, isoforms_info, fields_class_cur):
     if n > 0:
         qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")
 
-    return isoforms_info, fields_class_cur
+    return isoforms_info
 
 def isoform_expression_info(isoforms_info,expression,short_reads,outdir,corrFASTA,cpus):
     if expression:

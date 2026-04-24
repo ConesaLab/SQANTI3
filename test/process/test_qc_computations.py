@@ -138,12 +138,11 @@ class TestClassifyFsm:
 class TestFullLengthQuantification:
     """Tests for full_length_quantification function."""
     
-    def test_fl_count_single_sample(self, sample_isoforms_info, fl_count_file_single, fields_class_cur):
+    def test_fl_count_single_sample(self, sample_isoforms_info, fl_count_file_single):
         """Test FL count parsing for single-sample format."""
-        result_info, result_fields = full_length_quantification(
+        result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info,
-            fields_class_cur.copy()
+            sample_isoforms_info
         )
         
         # Check that FL counts were assigned
@@ -152,16 +151,12 @@ class TestFullLengthQuantification:
         assert result_info["PB.103724.1"].FL == 50
         assert result_info["PB.103781.1"].FL == 300
         assert result_info["PB.23068.2"].FL == 25
-        
-        # Fields should not change for single sample
-        assert len(result_fields) == len(fields_class_cur)
 
-    def test_fl_count_multi_sample(self, sample_isoforms_info, fl_count_file_multi, fields_class_cur):
+    def test_fl_count_multi_sample(self, sample_isoforms_info, fl_count_file_multi):
         """Test FL count parsing for multi-sample format."""
-        result_info, result_fields = full_length_quantification(
+        result_info = full_length_quantification(
             fl_count_file_multi,
-            sample_isoforms_info,
-            fields_class_cur.copy()
+            sample_isoforms_info
         )
         
         # Check that FL_dict was populated for multi-sample
@@ -172,36 +167,29 @@ class TestFullLengthQuantification:
         assert result_info["PB.103714.1"].FL_dict["sample1"] == 200
         assert result_info["PB.103714.1"].FL_dict["sample2"] == 220
         assert result_info["PB.103714.1"].FL_dict["sample3"] == 190
-        
-        # Fields should be extended with sample names
-        assert "FL.sample1" in result_fields
-        assert "FL.sample2" in result_fields
-        assert "FL.sample3" in result_fields
 
-    def test_fl_count_missing_isoforms(self, sample_isoforms_info, fl_count_file_single, fields_class_cur):
+    def test_fl_count_missing_isoforms(self, sample_isoforms_info, fl_count_file_single):
         """Test that missing isoforms get FL count of 0."""
         # Add an isoform not in the FL count file
         sample_isoforms_info["PB.MISSING.1"] = sample_isoforms_info["PB.124830.1"]
         sample_isoforms_info["PB.MISSING.1"].isoform = "PB.MISSING.1"
         
-        result_info, _ = full_length_quantification(
+        result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info,
-            fields_class_cur.copy()
+            sample_isoforms_info
         )
         
         # Missing isoform should get FL = 0
         assert result_info["PB.MISSING.1"].FL == 0
 
-    def test_fl_count_preserves_other_attributes(self, sample_isoforms_info, fl_count_file_single, fields_class_cur):
+    def test_fl_count_preserves_other_attributes(self, sample_isoforms_info, fl_count_file_single):
         """Test that FL quantification doesn't modify other isoform attributes."""
         original_category = sample_isoforms_info["PB.124830.1"].structural_category
         original_length = sample_isoforms_info["PB.124830.1"].length
         
-        result_info, _ = full_length_quantification(
+        result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info,
-            fields_class_cur.copy()
+            sample_isoforms_info
         )
         
         # Other attributes should remain unchanged
