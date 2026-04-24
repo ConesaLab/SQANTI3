@@ -122,7 +122,7 @@ def split_input_run(args, outdir):
         # Check system memory. We need to reserve some overhead (e.g., >15% free memory)
         # to process the reference genome for each chunk
         mem_info = psutil.virtual_memory()
-        can_launch_mem = mem_info.percent < 85
+        can_launch_mem = mem_info.percent < 85  or len(active_processes) == 0
         
         current_used_cpus = len(active_processes) * cpus_per_worker
         # Always allow at least 1 process if active_processes is 0, to prevent deadlocks
