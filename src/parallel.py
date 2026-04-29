@@ -9,7 +9,6 @@ from multiprocessing import Process
 from Bio import SeqIO
 
 
-from src.config import FIELDS_CLASS
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
 from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
@@ -222,7 +221,7 @@ def combine_split_runs(args, split_dirs):
     isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)
     ## FL count file
     if args.fl_count:
-        isoforms_info, _ = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+        isoforms_info = full_length_quantification(args.fl_count, isoforms_info)
     isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]
