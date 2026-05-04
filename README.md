@@ -29,7 +29,7 @@ For information about previous releases and features introduced in them, see the
 
 ## Documentation
 
-For detailed documentation, please visit [the SQANTI3 wiki](https://github.com/ConesaLab/SQANTI3/wiki).
+For detailed documentation, please visit [the SQANTI3 wiki](https://conesalab.github.io/SQANTI3/latest/).
 
 ### Wiki contents:
 * [Introduction to SQANTI3](https://github.com/ConesaLab/SQANTI3/wiki/Introduction-to-SQANTI3)
