@@ -107,7 +107,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                             "subcategory": "mono-exon",
                                             "genes": [ref.gene],
                                             "transcripts": [ref.id],
-                                            "ref_length": ref.length,
                                             "ref_exons": ref.exonCount,
                                             "ref_start": ref.txStart,
                                             "ref_end": ref.txEnd,
@@ -120,7 +119,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     if match_type not in ('exact', 'subset', 'partial', 'concordant', 'super', 'nomatch'):
                         qc_logger.error(f"Unknown match category {match_type} for isoform {trec.id} against reference {ref.id}!")
                         sys.exit(1)
-                    diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+                    diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
 
                     # #############################
                     # SQANTI's full-splice_match
@@ -152,6 +151,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_strand": ref.strand,
                                                 "diff_to_TSS": diff_tss,
                                                 "diff_to_TTS": diff_tts,
+                                                "diff_to_TSS_genomic": diff_tss_genomic,
+                                                "diff_to_TTS_genomic": diff_tts_genomic,
                                                 "q_splicesite_hit": splicesite_hit,
                                                 "q_exon_overlap": exon_overlap})
 
@@ -181,6 +182,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "ref_strand":ref.strand,
                                                 "diff_to_TSS": diff_tss,
                                                 "diff_to_TTS": diff_tts,
+                                                "diff_to_TSS_genomic": diff_tss_genomic,
+                                                "diff_to_TTS_genomic": diff_tts_genomic,
                                                 "q_splicesite_hit": splicesite_hit,
                                                 "q_exon_overlap": exon_overlap})
                             
@@ -200,7 +203,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "subcategory": "no_subcategory",
                                                 "genes": [ref.gene],
                                                 "transcripts": ["novel"],
-                                                "ref_length": ref.length,
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
@@ -217,7 +219,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "subcategory": "no_subcategory",
                                                 "genes": [ref.gene],
                                                 "transcripts": ["novel"],
-                                                "ref_length": ref.length,
                                                 "ref_exons": ref.exonCount,
                                                 "ref_start": ref.txStart,
                                                 "ref_end": ref.txEnd,
@@ -231,7 +232,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                     "subcategory": "no_subcategory",
                                                     "genes": [ref.gene],
                                                     "transcripts": ["novel"],
-                                                    "ref_length": ref.length,
                                                     "ref_exons": ref.exonCount,
                                                     "ref_start": ref.txStart,
                                                     "ref_end": ref.txEnd,
@@ -275,7 +275,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     isoform_hit.AS_genes.add(ref.gene)
                     isoform_hit.genes = [ref.gene]
                     continue
-                diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+                diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
 
                 # see if there's already an existing match AND if so, if this one is better
                 if isoform_hit.structural_category in "": # no match so far
@@ -287,6 +287,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
+                                        "diff_to_TSS_genomic": diff_tss_genomic,
+                                        "diff_to_TTS_genomic": diff_tts_genomic,
                                         "AS_genes":set()})
                     
                 elif abs(diff_tss)+abs(diff_tts) < isoform_hit.get_total_diff():
@@ -296,6 +298,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                         "ref_exons": ref.exonCount,
                                         "diff_to_TSS": diff_tss,
                                         "diff_to_TTS": diff_tts,
+                                        "diff_to_TSS_genomic": diff_tss_genomic,
+                                        "diff_to_TTS_genomic": diff_tts_genomic,
                                         "ref_exons": ref.exonCount,
                                         "AS_genes":set()})
                     
@@ -314,7 +318,7 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                     isoform_hit.add_gene(ref.gene)
                     continue
 
-                diff_tss, diff_tts = get_diff_tss_tts(trec, ref)
+                diff_tss, diff_tts, diff_tss_genomic, diff_tts_genomic = get_diff_tss_tts(trec, ref)
                 flag = False
                 
                 for e in ref.exons:
@@ -327,6 +331,8 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                             "ref_exons": ref.exonCount,
                                             "diff_to_TSS": diff_tss,
                                             "diff_to_TTS": diff_tts,
+                                            "diff_to_TSS_genomic": diff_tss_genomic,
+                                            "diff_to_TTS_genomic": diff_tts_genomic,
                                             "q_exon_overlap": exon_overlap})
                       
                         # this is as good a match as it gets, we can stop the search here
@@ -345,7 +351,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
                                                 "subcategory": "mono-exon_by_intron_retention",
                                                 "genes": [ref.gene],
                                                 "transcripts": ["novel"],
-                                                "ref_length": ref.length,
                                                 "ref_exons": ref.exonCount,
                                                 "q_exon_overlap": exon_overlap
                                                 })

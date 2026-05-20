@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 __author__  = "angeles.arzalluz@gmail.com"
 
 ###################################################

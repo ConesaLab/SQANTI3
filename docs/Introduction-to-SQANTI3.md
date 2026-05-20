@@ -16,7 +16,7 @@
 
 __________________________________
 
-<a name="intro"/></a>
+<a name="intro"></a>
 
 ## Introduction
 
@@ -30,7 +30,7 @@ maintained/updated. All development efforts will continue in SQANTI3, aiming to 
 comprehensive characterization of long read-defined transcriptomes for the community.
 
 
-<a name="fit"/></a>
+<a name="fit"></a>
 
 ### SQANTI3 and the Functional IsoTranscriptomics (FIT) pipeline
 
@@ -49,7 +49,7 @@ that leverages both expression and domain/motif annotation information to gain i
 of alternative isoform expression.
 
 
-<a name="workflow"/></a>
+<a name="workflow"></a>
 
 ### Before running SQANTI3: recommended long read processing workflow
 
@@ -67,7 +67,7 @@ expression estimates input into SQANTI3 for downstream analysis: these are used 
 are removed from the transcriptome, the reads can be used to obtain a more accurate quantification. SQANTI3 rescue module will produce a curated transcriptome and count matrix that can be used for this purpose.
 
 
-<a name="sqanti"/></a>
+<a name="sqanti"></a>
 
 ## How does SQANTI3 work?
 
@@ -87,11 +87,11 @@ To gain insight into these two steps, we encourage reading the original [SQANTI 
 
 4. **Curated transcriptome requantification** (final step of [SQANTI3 rescue](Running-SQANTI3-rescue.md)) to generate an updated count matrix including the rescued reference transcripts. After the rescue step, the transcriptome is expanded with the rescued reference transcripts, and the original quantification matrix is updated to include counts for these transcripts. This updated count matrix can be used for downstream analyses. As well, artifacts that are pontentilaly divergent from the true isoforms, also have their counts redistributed. 
 
-![Sqanti3 workflow](https://github.com/FJPardoPalacios/public_figures/blob/master/SQ3_qc.png)
+![Sqanti3 workflow](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/SQ3_qc.png)
 
 
 
-<a name="structure"/></a>
+<a name="structure"></a>
 
 ## SQANTI3 structure
 
@@ -103,14 +103,14 @@ At the moment, the SQANTI3 tool is directly called using the wrapper `sqanti3`. 
 
 To maintain a clean and organized codebase, the detailed implementation for each core module and the auxiliary tools used in the workflow are housed within the `src` (source) directory. 
 
-<a name="source"/></a>
+<a name="source"></a>
 
 ### Source folder
 
 The `src` directory contains all the minor modules that each one of the sqanti blocks and the parser use to function properly. Each script has functions or classes according to their function within SQANTI3: classification, utilities, parsers, QC classes, etc.
 
 
-<a name="utilities"/></a>
+<a name="utilities"></a>
 #### Utilities folder
 
 The `utilities` folder contains all the auxiliary scripts and functions required to run `sqanti3_qc.py` and `sqanti3_filter.py`.
@@ -141,13 +141,13 @@ The `rescue` subfolder contains a series of R scripts implementing the different
 
 GeneMarkST tool. Used internally during QC for ORF prediction.
 
-<a name="data"/></a>
+<a name="data"></a>
 
 ### Data and examples
 
 This directories have been moved to their own repository, with the idea not to make the SQANTI3 repository too heavy. You can find them at [SQANTI3 examples](https://github.com/ConesaLab/SQANTI_examples)
 
-<a name="tests"/></a>
+<a name="tests"></a>
 
 ### Test folder
 

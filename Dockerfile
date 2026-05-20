@@ -11,7 +11,7 @@ FROM ubuntu:22.04
 SHELL ["/bin/bash", "--login" ,"-c"]
 
 # Set the SQANTI3 version to install 
-# Taken from src/config.py
+# Taken from sqanti3/config.py
 ARG SQANTI3_VERSION
 ENV SQANTI3_VERSION=${SQANTI3_VERSION}
 
@@ -117,7 +117,8 @@ RUN mkdir -p /conda/miniconda3 && \
     bash /conda/miniconda3/miniconda.sh -b -u -p /conda/miniconda3 && \
     rm /conda/miniconda3/miniconda.sh && \
     CI=true CONDA_PLUGINS_AUTO_ACCEPT_TOS=true /conda/miniconda3/bin/conda env create -f SQANTI3.conda_env.yml && \
-    /conda/miniconda3/bin/conda clean -a
+    /conda/miniconda3/bin/conda clean -a && \
+    /conda/miniconda3/bin/conda run -n sqanti3 Rscript -e "install.packages('RColorConesa', repos='https://cran.rstudio.com/')"
 
 
 ################ POST #################

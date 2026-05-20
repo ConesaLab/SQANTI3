@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 __author__  = "francisco.pardo.palacios@gmail.com"
 
 # New SQANTI3 filter. It will serve as a wrapper for "rules" filter and "Machine-Learning" filter.
@@ -23,7 +23,7 @@ import os
 from src.filter_argparse import filter_argparse
 from src.module_logging import filter_logger, update_logger
 from src.config import __version__
-from src.logging_config import art_logger,filter_art, get_logger_info
+from src.logging_config import art_logger,filter_art
 from src.filter_steps import filter_files, run_ML, run_rules
 from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters

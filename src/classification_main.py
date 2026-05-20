@@ -1,4 +1,3 @@
-import sys
 from csv import DictWriter
 
 from src.classification_steps import (
@@ -8,7 +7,6 @@ from src.classification_steps import (
 ) # type: ignore
 from src.qc_output import write_junction_info
 from src.utils import alphanum_key
-from src.config import  FIELDS_CLASS
 from src.module_logging import qc_logger
 
 # TODO: Check why there is a temporary classification output
@@ -24,8 +22,6 @@ def isoform_classification_pipeline(
 
     accepted_canonical_sites = list(sites.split(","))
     # Creates a temporary file to write the junction results
-
-
     handle_junc = open(outputJuncPath+"_tmp", "w")
     fout_junc = DictWriter(handle_junc, fieldnames=fields_junc_cur, delimiter='\t')
     fout_junc.writeheader()
@@ -70,5 +66,4 @@ def isoform_classification_pipeline(
                                                            alphanum_key(isoforms_info[x].isoform)))
     isoforms_info = {key: isoforms_info[key] for key in iso_keys}
     
-
     return (isoforms_info, ratio_TSS_dict)

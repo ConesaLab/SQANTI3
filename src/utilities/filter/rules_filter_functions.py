@@ -1,5 +1,16 @@
 import pandas as pd
 
+junction_related_columns = [
+    "RTS_stage",
+    "all_canonical",
+    "min_cov",
+    "min_cov_pos",
+    "sd_cov",
+    "n_indels_junc",
+    "bite",
+    "predicted_NMD"
+]
+
 def apply_rules(isoform_info, force_multiexon, json_df, rules_list):
     if force_multiexon and float(isoform_info["exons"]) == 1:
         final_is_isoform = False
@@ -14,6 +25,10 @@ def apply_rules(isoform_info, force_multiexon, json_df, rules_list):
                 rules = rules_list[p]
                 for i in range(len(rules['rule'])):
                     parameter = rules.loc[i, "column"]
+                    
+                    if float(isoform_info["exons"]) == 1 and parameter in junction_related_columns:
+                        continue
+
                     if pd.notna(isoform_info[parameter]):
                         if rules.loc[i, "type"] == "Min_Threshold":
                             if float(isoform_info[parameter]) < float(rules.loc[i, "rule"]):
@@ -39,6 +54,10 @@ def apply_rules(isoform_info, force_multiexon, json_df, rules_list):
                 rules = rules_list[p]
                 for i in range(len(rules['rule'])):
                     parameter = rules.loc[i, "column"]
+                    
+                    if float(isoform_info["exons"]) == 1 and parameter in junction_related_columns:
+                        continue
+
                     if pd.notna(isoform_info[parameter]):
                         if rules.loc[i, "type"] == "Min_Threshold":
                             if float(isoform_info[parameter]) < float(rules.loc[i, "rule"]):
@@ -72,6 +91,10 @@ def get_reasons(isoform_info, force_multiexon, json_df, rules_list):
                 rules = rules_list[p]
                 for i in range(len(rules['rule'])):
                     parameter = rules.loc[i, "column"]
+                    
+                    if float(isoform_info["exons"]) == 1 and parameter in junction_related_columns:
+                        continue
+                        
                     if pd.notna(isoform_info[parameter]):
                         if rules.loc[i, "type"] == "Min_Threshold":
                             if float(isoform_info[parameter]) < float(rules.loc[i, "rule"]):
@@ -90,6 +113,10 @@ def get_reasons(isoform_info, force_multiexon, json_df, rules_list):
                 rules = rules_list[p]
                 for i in range(len(rules['rule'])):
                     parameter = rules.loc[i, "column"]
+
+                    if float(isoform_info["exons"]) == 1 and parameter in junction_related_columns:
+                        continue
+                        
                     if pd.notna(isoform_info[parameter]):
                         if rules.loc[i, "type"] == "Min_Threshold":
                             if float(isoform_info[parameter]) < float(rules.loc[i, "rule"]):

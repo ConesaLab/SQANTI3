@@ -298,14 +298,14 @@ def parse_counts(count_file):
 
         # 2. Read with Pandas
         # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1
-        df = pd.read_csv(count_file, sep=sep, dtype={0: str})
+        df = pd.read_csv(count_file, sep=sep, dtype={0: str},comment='#')
 
         # 3. Dynamic Column Validation
         # Rename first column to standard 'isoform' for easier merging later
         df.rename(columns={df.columns[0]: 'isoform'}, inplace=True)
         
         if df.shape[1] < 2:
-             print(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
+             qc_logger.error(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
              sys.exit(1)
 
         # 4. Handle NAs and dtypes
@@ -316,7 +316,7 @@ def parse_counts(count_file):
         return df
 
     except Exception as e:
-        print(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
+        qc_logger.error(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
         sys.exit(1)
 
 def parse_td2_to_dict(td2_faa):

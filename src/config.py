@@ -1,7 +1,7 @@
 import os, re
 
 __author__  = "pablo.atienza@csic.es"
-__version__ = '6.0'  # Python 3.7
+__version__ = '6.0.1'  # Python 3.7
 __reads_version__ = '1.0.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
@@ -17,7 +17,8 @@ FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_c
 #TODO: Add the new fields relative to the CDS and the protein information
 FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',  'structural_category',
                 'associated_gene', 'associated_transcript',  'ref_length', 'ref_exons',
-                'diff_to_TSS', 'diff_to_TTS', 'diff_to_gene_TSS', 'diff_to_gene_TTS',
+                'diff_to_TSS', 'diff_to_TTS', 'diff_to_TSS_genomic', 'diff_to_TTS_genomic',
+                'diff_to_gene_TSS', 'diff_to_gene_TTS',
                 'subcategory', 'RTS_stage', 'all_canonical',
                 'min_sample_cov', 'min_cov', 'min_cov_pos',  'sd_cov', 'FL', 'n_indels',
                 'n_indels_junc',  'bite',  'iso_exp', 'gene_exp',  'ratio_exp',

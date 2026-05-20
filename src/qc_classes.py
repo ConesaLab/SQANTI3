@@ -198,6 +198,8 @@ class myQueryTranscripts:
 
     diff_to_TSS: Optional[int] = None
     diff_to_TTS: Optional[int] = None
+    diff_to_TSS_genomic: Optional[int] = None
+    diff_to_TTS_genomic: Optional[int] = None
     diff_to_gene_TSS: Optional[float] = None
     diff_to_gene_TTS: Optional[float] = None
 

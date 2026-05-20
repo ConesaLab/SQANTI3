@@ -109,9 +109,9 @@ def run(args):
         qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
         
         ## FL count file
-        fields_class_cur = FIELDS_CLASS
+    
         if args.fl_count:
-            isoforms_info, fields_class_cur = full_length_quantification(args.fl_count, isoforms_info, FIELDS_CLASS)
+            isoforms_info = full_length_quantification(args.fl_count, isoforms_info)
         else:
             qc_logger.info("Full-length read abundance files not provided.")
 
@@ -127,8 +127,9 @@ def run(args):
         isoforms_info = ratio_TSS_dict_reading(isoforms_info, ratio_TSS_dict)
 
     ## Isoform expression information
-    isoforms_info = isoform_expression_info(isoforms_info,args.expression,args.short_reads,
-                                           args.dir,corrFASTA,args.cpus)
+    if args.chunks == 1:
+        isoforms_info = isoform_expression_info(isoforms_info,args.expression,args.short_reads,
+                                               args.dir,corrFASTA,args.cpus)
 
     if indelsTotal is not None:
         for iso in isoforms_info:
@@ -154,14 +155,14 @@ def run(args):
             write_collapsed_GFF_with_CDS(isoforms_info, corrGTF, corrCDS_GTF_GFF)
 
         # Write final classification
-        write_classification_output(isoforms_info, outputClassPath, fields_class_cur)
+        write_classification_output(isoforms_info, outputClassPath)
 
         # Now that RTS info is obtained, we can write the final junctions.txt
         write_junction_output(outputJuncPath, RTS_info, fields_junc_cur)
 
         #write omitted isoforms if requested minimum reference length is more than 0
         isoforms_info = write_omitted_isoforms(isoforms_info, args.dir, args.output, 
-                                            args.min_ref_len, args.is_fusion, fields_class_cur)
+                                            args.min_ref_len, args.is_fusion)
         
         #isoform hits to file if requested
         if args.isoform_hits:

@@ -45,9 +45,9 @@ class TestGetUnrescuedArtifacts:
         assert len(result) == 2
         assert set(result['artifact']) == {'PB.3.1', 'PB.4.1'}
         
-        # Check TD assignments
-        assert result[result['artifact'] == 'PB.3.1']['assigned_transcript'].values[0] == 'GENE2_TD'
-        assert result[result['artifact'] == 'PB.4.1']['assigned_transcript'].values[0] == 'general_TD'
+        # Check residual assignments
+        assert result[result['artifact'] == 'PB.3.1']['assigned_transcript'].values[0] == 'GENE2_residual'
+        assert result[result['artifact'] == 'PB.4.1']['assigned_transcript'].values[0] == 'general_residual'
     
     def test_all_rescued(self):
         """Test when all artifacts are rescued."""
@@ -107,9 +107,9 @@ class TestBuildArtifactTable:
         assert 'isoform' in result.columns
         assert 'assigned_transcript' in result.columns
         
-        # Check that PB.4.1 was assigned to GENE2_TD
+        # Check that PB.4.1 was assigned to GENE2_residual
         unrescued_row = result[result['isoform'] == 'PB.4.1']
-        assert unrescued_row['assigned_transcript'].values[0] == 'GENE2_TD'
+        assert unrescued_row['assigned_transcript'].values[0] == 'GENE2_residual'
 
 
 class TestPrepareCountMatrices:
@@ -290,7 +290,7 @@ class TestExportCounts:
         })
         
         new_counts_df = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.2.1', 'GENE1_TD'],
+            'isoform': ['PB.1.1', 'PB.2.1', 'GENE1_residual'],
             'sample1': [100, 75, 0],
             'sample2': [200, 105, 0]
         })
@@ -306,7 +306,7 @@ class TestExportCounts:
         # Check result dataframe
         assert len(result) == 3
         assert 'isoform' in result.columns
-        assert set(result['isoform']) == {'PB.1.1', 'PB.2.1', 'GENE1_TD'}
+        assert set(result['isoform']) == {'PB.1.1', 'PB.2.1', 'GENE1_residual'}
     
     def test_extended_table_contains_all_isoforms(self, tmp_path):
         """Test that extended table contains all isoforms with old and new counts."""
@@ -316,7 +316,7 @@ class TestExportCounts:
         })
         
         new_counts_df = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.2.1', 'GENE1_TD'],
+            'isoform': ['PB.1.1', 'PB.2.1', 'GENE1_residual'],
             'sample1': [100, 75, 0]
         })
         
@@ -329,7 +329,7 @@ class TestExportCounts:
         
         # Should have all 4 unique isoforms
         assert len(extended_df) == 4
-        assert set(extended_df['isoform']) == {'PB.1.1', 'PB.2.1', 'PB.3.1', 'GENE1_TD'}
+        assert set(extended_df['isoform']) == {'PB.1.1', 'PB.2.1', 'PB.3.1', 'GENE1_residual'}
         
         # Check column structure
         assert 'old_sample1' in extended_df.columns
@@ -340,9 +340,9 @@ class TestExportCounts:
         assert pb31_row['old_sample1'] == 25
         assert pb31_row['new_sample1'] == 0  # Artifact lost its counts
         
-        gene1_td_row = extended_df[extended_df['isoform'] == 'GENE1_TD'].iloc[0]
-        assert gene1_td_row['old_sample1'] == 0  # New isoform
-        assert gene1_td_row['new_sample1'] == 0
+        gene1_residual_row = extended_df[extended_df['isoform'] == 'GENE1_residual'].iloc[0]
+        assert gene1_residual_row['old_sample1'] == 0  # New isoform
+        assert gene1_residual_row['new_sample1'] == 0
 
 
 class TestCalculateTPM:

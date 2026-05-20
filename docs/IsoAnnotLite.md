@@ -16,17 +16,17 @@
 ***
 
 
-<a name="summary"/>
+<a name="summary"></a>
 
 ## Summary
 
 [IsoAnnotLite](https://isoannot.tappas.org/) is a python script that allows you to **transfer isoform-level functional feature annotations** from an existing tappAS-like GFF3 file to the SQANTI3 output (i.e. a set of long read-defined transcripts). The resulting file has the proper structure to be loaded into tappAS for isoform-level functional analysis. If the reference GFF3 annotation file is not provided, only structural information will be included in the IsoAnnotLite-generated GFF3 file. The transference is done at the genomic positon level for transcript and protein annotations, while all gene-level annotations (e.g. Gene Ontology terms) are automatically transferred by gene ID.
 
 
-![isoannotlite](https://github.com/FJPardoPalacios/public_figures/blob/master/isoannotlite_logo.png)
+![isoannotlite](https://raw.githubusercontent.com/FJPardoPalacios/public_figures/master/isoannotlite_logo.png)
 
 
-<a name="args"/>
+<a name="args"></a>
 
 ## Arguments and parameters in IsoAnnotLite
 
@@ -46,7 +46,7 @@ All of the following parameters are **optional**:
 
 - `-o`: name for the resulting GFF3 file.
 - `-stdout`: name for the statistics results file. Only when GFF3 it is used. If not used, no file will be generated.
-- `novel`: if it is used, all the transcripts will be treated as novel trasncripts, meaning that each transcript will be annotated using functional information from all the transcripts that belong to the same gene in the reference GFF3, instead of transferring annotations from transcripts with matching IDs (default).
+- `novel`: if it is used, all the transcripts will be treated as novel trasnsripts, meaning that each transcript will be annotated using functional information from all the transcripts that belong to the same gene in the reference GFF3, instead of transferring annotations from transcripts with matching IDs (default).
 - `nointronic`: if provided, intronic features will not be annotated (e.g. RBPs).
 - `statistics`: deprecated (now IsoAnnotLite always shows the statistic results).
 - `saveTranscriptIDs`: when supplied to IsoAnnotLite, five additional output files will be created to report the IDs of the transcripts that generated problems during the feature transfer process:
@@ -57,7 +57,7 @@ All of the following parameters are **optional**:
   - SQ reference gene (`associated_gene`) field was empty: `file_transcript_wo_gene_ID.txt`.
 
 
-<a name="runSQ3"/>
+<a name="runSQ3"></a>
 
 ## IsoAnnotLite integration within SQANTI3 QC
 
@@ -136,7 +136,7 @@ Sorting the GFF3 by transcript ID, that is, all entries corresponding to the sam
 If missing from the SQANTI3 GTF, gene descriptions are updated using the information in the reference GFF3 file. After this step, the final GFF3 is ready.
 
 
-<a name="stats"/>
+<a name="stats"></a>
 
 ## Appendix II: IsoAnnotLite statistics
 
@@ -154,7 +154,7 @@ Statistics are divided into three main sections:
 
 At the end of the statistics file, a summary line is shown including the percentage (%) of features have been transferred in total. However, keep in mind that this count is only exact when no novel transcripts are annotated: otherwise, since a novel transcript can receive annotations from multiple reference transcripts (all of which are counted, even if they are collapsed afterwards to remove redundancies), annotated features can be counted several times. Therefore, the result will correspond to the total number of features that have been annotated against the total number of feature transfer "events" that have been tried by IsoAnnotLite.
 
-<a name="gff3"/>
+<a name="gff3"></a>
 
 ## Appendix III: tappAS GFF3 file format
 
