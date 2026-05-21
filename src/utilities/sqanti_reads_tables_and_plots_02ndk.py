@@ -277,7 +277,7 @@ def flag_ref_monoexon(inRef):
                 gene_id = item.split('gene_id')[1].strip().strip('\"')
             elif 'transcript_id' in item:
                 transcript_id = item.split('transcript_id')[-1].strip().strip('\"')
-        if transcript_id == np.nan and refexon.at[i, 'feature'] != "gene" :
+        if pd.isna(transcript_id) and refexon.at[i, 'feature'] != "gene" :
             reads_logger.warning("transcript_id not found in {}".format(refexon[i]))
         refexon.at[i, 'gene_id'] = str(gene_id)
         refexon.at[i, 'transcript_id'] = str(transcript_id)
@@ -313,7 +313,7 @@ def proc_samples(design_file, ref):
     length_Dct ={}
     
     
-    if args.inFACTOR == None:
+    if args.inFACTOR is None:
         exp_factor = 'temp_factor'
     else:
         exp_factor = args.inFACTOR
@@ -324,7 +324,7 @@ def proc_samples(design_file, ref):
     
     ## CREATE SUMMARY FILES TO MAKE PLOTS FROM
     jxn_cols = ['isoform','chrom','strand','junction_number','genomic_start_coord','genomic_end_coord','junction_category',
-                'diff_to_Ref_start_site','diff_to_Ref_end_site','canonical','junction_category']
+                'diff_to_Ref_start_site','diff_to_Ref_end_site','canonical']
     
     jxn_dtypes = {'isoform':'string', 'chrom': 'string', 'strand': 'string', 'junction_number': 'string',
                   'genomic_start_coord':'Int64', 'genomic_end_coord': 'Int64', 'junction_category':'string',
@@ -571,7 +571,7 @@ def proc_samples(design_file, ref):
 
 def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
     
-    if args.inFACTOR == None:
+    if args.inFACTOR is None:
         exp_factor = 'temp_factor'
     else:
         exp_factor = args.inFACTOR
@@ -621,7 +621,7 @@ def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
         
     ##Export tables
     
-    if args.inFACTOR == None:
+    if args.inFACTOR is None:
         
         gene_count_DF_drop = gene_count_DF.drop(columns=[exp_factor])
         gene_count_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_counts.csv'), index=False)
@@ -733,7 +733,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     # Calculate total_jxns for each row
     ujc_count_DF['total_jxns'] = ujc_count_DF[['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']].sum(axis=1)
     
-    if factor_level != None and args.inFACTOR != None:
+    if factor_level is not None and args.inFACTOR is not None:
         ujc_DF = ujc_count_DF[ujc_count_DF[exp_factor] == factor_level]
     else:
         ujc_DF = ujc_count_DF
@@ -784,15 +784,9 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     
     ## Categorize genes based on gene categories
     if merged_df.empty:
-        reads_logger.error("The filtering was too strict and no genes were found that meet the criteria.")
-        sys.exit(1)
+        raise ValueError("The filtering was too strict and no genes were found that meet the criteria.")
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
-    
-    # if merged_df is an empty dataframe, raise an error
-    if merged_df.empty:
-        reads_logger.error("The filtering was too strict and no genes were found that meet the criteria.")
-        sys.exit(1)
     # Apply the categorization function to each group
     gene_categories = grouped.apply(categorize_gene,include_groups=False)
 
@@ -806,7 +800,7 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     merged_df = merged_df[(merged_df['flag_putative_novel_transcript'] == 1) | (merged_df['flag_FSM_in_gene'] == 0)]
     merged_df = pd.merge(merged_df, summary_df[['associated_gene', 'gene_category']], on='associated_gene', how='left')
     
-    if factor_level != None and args.inFACTOR != None:
+    if factor_level is not None and args.inFACTOR is not None:
         merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_' + factor_level +'_putative_underannotated_transcripts.csv'), index=False)
         summary_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_' + factor_level +'_gene_classfication.csv'), index=False)
     else:
@@ -910,7 +904,7 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
     "intergenic": "INTER"
     }
     
-    if args.inFACTOR == None:
+    if args.inFACTOR is None:
         exp_factor = 'temp_factor'
     else:
         exp_factor= args.inFACTOR
@@ -970,7 +964,7 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
     annot_gene_percs_DF = pd.DataFrame(annot_gene_percs)
     annot_gene_percs_DF.reset_index(inplace=True)
     
-    annot_gene_percs_DF.columns = ['sampleID'] + [abbr_mapping[cat] for cat in annot_categories if category in annotated_gene_DF.columns] 
+    annot_gene_percs_DF.columns = ['sampleID'] + [abbr_mapping[cat] for cat in annot_categories if cat in annotated_gene_DF.columns] 
     
     #prep data for Plot 2 - Vertical scatter plot %reads in annotated genes by structural category
     
@@ -2766,7 +2760,7 @@ def main():
     
     dfs_for_plotting = prep_data_4_plots( gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
     
-    if args.inFACTOR == None:
+    if args.inFACTOR is None:
             
         plot_pdf(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
     else:
