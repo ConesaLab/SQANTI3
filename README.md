@@ -12,7 +12,7 @@ SQANTI3 is the newest version of the [SQANTI tool](https://www.ncbi.nlm.nih.gov/
 
 SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https://tappas.org/) framework, which also includes [IsoAnnot](https://github.com/ConesaLab/IsoAnnot) and [tappAS](https://github.com/ConesaLab/tappAS).
 
-SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see preprint https://doi.org/10.1101/2025.08.23.671926.
+SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see https://doi.org/10.1038/s41467-026-72089-1.
 
 ## Installation
 The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0.1) (24/04/2026) is **version 6.0.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
@@ -70,4 +70,4 @@ If you are using SQANTI3 in your research, please cite the following paper in ad
 
 - Keil, N., Monzó, C., McIntyre, L., Conesa, A. **Quality assessment of long read data in multisample lrRNA-seq experiments with SQANTI-reads**. *Genome Res* (2025). https://doi.org/10.1101/gr.280021.124
 
-- Liu, T., Paniagua, A., Jetzinger, F., Ferrández-Peral, L., Frankish, A., Conesa, A. **Transcriptome Universal Single-isoform COntrol: A Framework for Evaluating Transcriptome reconstruction Quality**. *bioRxiv* (2025). https://doi.org/10.1101/2025.08.23.671926
+- Liu, T., Paniagua, A., Jetzinger, F., Ferrández-Peral, L., Frankish, A., Conesa, A. **TUSCO: benchmarking transcriptome reconstruction with endogenous single-isoform controls**. *Nature Communications* (2026). https://doi.org/10.1038/s41467-026-72089-1
