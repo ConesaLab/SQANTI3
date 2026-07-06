@@ -81,7 +81,8 @@ def star(genome, SR_fofn, output_dir, cpus):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
             qc_logger.info('** Running indexing.')
-            cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
+            cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir,
+             '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             logFile = f"{output_dir}/logs/STAR_index.log"
             run_command(cmd,qc_logger,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')

@@ -122,6 +122,7 @@ def sequence_correction(
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
+            qc_logger.debug(f"The corrected fasta file has been written to: {corrFASTA}")
             # convert SAM to GFF --> GTF
             convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
         else:

@@ -74,8 +74,8 @@ def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
 def convert_sam_to_gff3(sam_filename, output_gff3, source, q_dict=None):
     qid_index_dict = Counter()
     with open(output_gff3, 'w') as f:
-        recs = [convert_sam_rec_to_gff3_rec(r0, source,qid_index_dict) for r0 in GMAPSAMReader(sam_filename, True, query_len_dict=q_dict)]
-        BCBio_GFF.write([x for x in recs if x is not None], f)
+        recs = (convert_sam_rec_to_gff3_rec(r0, source, qid_index_dict) for r0 in GMAPSAMReader(sam_filename, True, query_len_dict=q_dict))
+        BCBio_GFF.write((x for x in recs if x is not None), f)
 
 def main():
     from argparse import ArgumentParser
@@ -99,8 +99,8 @@ def main():
         q_dict = dict((r.id, len(r.seq)) for r in SeqIO.parse(open(args.input_fasta), 'fasta'))
 
     with open(output_gff3, 'w') as f:
-        recs = [convert_sam_rec_to_gff3_rec(r0, args.source) for r0 in GMAPSAMReader(args.sam_filename, True, query_len_dict=q_dict)]
-        BCBio_GFF.write([x for x in recs if x is not None], f)
+        recs = (convert_sam_rec_to_gff3_rec(r0, args.source) for r0 in GMAPSAMReader(args.sam_filename, True, query_len_dict=q_dict))
+        BCBio_GFF.write((x for x in recs if x is not None), f)
 
 
     print("Output written to {0}.".format(output_gff3), file=sys.stderr)
