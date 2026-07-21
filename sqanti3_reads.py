@@ -232,17 +232,36 @@ def make_UJC_hash(args, df):
              reads_logger.error(f"Input classification file not found: {input_classfile}")
              sys.exit(-1)
              
-        clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
-        clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
+        # Classification columns: 0=isoform, 1=chrom, 2=start, 3=end, 4=strand,
+        # 7=structural_category, 11=associated_transcript. (Earlier code mislabeled
+        # col 2=start as "strand" and col 7=structural_category as "associated_transcript",
+        # which corrupted the monoexon UJC — every monoexon got a unique, unshareable hash.)
+        clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 3, 4, 7, 11], dtype = "str")
+        clas_df.columns = ["isoform", "chr", "start", "end", "strand", "structural_category", "associated_transcript"]
         ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
 
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
-        # Fill missing values in UJC column using the transcript ID
-        merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
+
+        def _monoexon_ujc(row):
+            # Monoexons have no junction chain, so key them (hybrid):
+            #  - annotated (real associated_transcript) -> by reference transcript, so
+            #    the same monoexonic transcript is one shared UJC across samples;
+            #  - novel (no reference transcript) -> by genomic span (start_end), so
+            #    distinct loci stay distinct instead of collapsing to one novel UJC.
+            at = row["associated_transcript"]
+            if pd.isna(at) or at in ("novel", ""):
+                return f'{row["chr"]}_{row["strand"]}_{row["start"]}_{row["end"]}_monoexon_{row["structural_category"]}'
+            return f'{row["chr"]}_{row["strand"]}_monoexon_{at}_{row["structural_category"]}'
+
+        # Only fill monoexons (multi-exon isoforms already have a junction-chain jxn_string).
+        merged_df["jxn_string"] = merged_df.apply(
+            lambda row: _monoexon_ujc(row) if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
 
         merged_df['jxnHash'] = merged_df['jxn_string'].apply(
                     lambda x: hashlib.sha256(x.encode('utf-8')).hexdigest())
 
+        # Keep jxn_string/jxnHash at columns 5/6 so the `cut -f 5,6` paste below is unchanged.
+        merged_df = merged_df[["isoform", "chr", "strand", "associated_transcript", "jxn_string", "jxnHash"]]
         merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
         
         cmd_paste = f"""bash -c 'paste <(cat {input_classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
@@ -311,6 +330,8 @@ def main():
     prefix = args.PREFIX if args.PREFIX else "sqantiReads"
 
     from src.utilities.sqanti_reads_plots import run_reads_plots
+    from src.utilities.sqanti_reads_config import load_config
+    config = load_config(args.CONFIG)
     run_reads_plots(
         ref_gtf=args.refGTF,
         design_file=args.inDESIGN,
@@ -324,7 +345,8 @@ def main():
         factor_level=args.FACTORLVL,
         all_tables=args.ALLTABLES,
         pca_tables=args.PCATABLES,
-        report=args.report
+        report=args.report,
+        config=config,
     )
 
 

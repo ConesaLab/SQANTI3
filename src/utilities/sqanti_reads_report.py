@@ -30,6 +30,7 @@ from src.utilities.sqanti_reads_plots import (
     readcount_palette,
     length_palette,
     sample_seq,
+    compute_upset_intersections,
 )
 
 # Fallback qualitative colors for series that have no entry in an explicit palette.
@@ -196,16 +197,85 @@ def _scatter_xy(df, x_col, y_col, label_col, title, xtitle, ytitle, facet_col=No
     return fig
 
 
-def _heatmap(matrix_df, title, xtitle, ytitle):
+def _heatmap(matrix_df, title, xtitle, ytitle, colorscale="RdBu", zmid=0,
+             zmin=None, zmax=None, colorbar_title="value", value_fmt=".2f",
+             annotate=False):
     """Heatmap from a DataFrame (rows=y labels, columns=x labels)."""
     fig = go.Figure(go.Heatmap(
         z=matrix_df.values, x=[str(c) for c in matrix_df.columns],
-        y=[str(i) for i in matrix_df.index], colorscale="RdBu", zmid=0,
-        colorbar=dict(title="loading"),
-        hovertemplate="%{y}<br>%{x}: %{z:.2f}<extra></extra>"))
+        y=[str(i) for i in matrix_df.index], colorscale=colorscale, zmid=zmid,
+        zmin=zmin, zmax=zmax, colorbar=dict(title=colorbar_title),
+        hovertemplate="%{y}<br>%{x}: %{z:" + value_fmt + "}<extra></extra>"))
+    if annotate:
+        for yi, idx in enumerate(matrix_df.index):
+            for xi, col in enumerate(matrix_df.columns):
+                fig.add_annotation(x=str(col), y=str(idx),
+                                   text=format(matrix_df.values[yi, xi], value_fmt),
+                                   showarrow=False, font=dict(size=11, color="#222"))
     _base_layout(fig, title, xtitle, ytitle)
     fig.update_layout(barmode="group",
-                      height=max(460, 18 * len(matrix_df.index) + 120))
+                      height=max(460, 26 * len(matrix_df.index) + 160))
+    return fig
+
+
+def _upset_figure(upset_data, samples):
+    """Plotly UpSet mirroring the PDF: intersection bars (top-right, stacked by
+    structural category), per-sample set-size bars (bottom-left, also stacked by
+    SC), and a membership-dot matrix (bottom-right)."""
+    inter = upset_data["intersections"]
+    set_sizes = upset_data["set_sizes"]
+    sc_order = upset_data["sc_order"]
+    n = len(inter)
+    ns = len(samples)
+    x = list(range(n))
+    fig = make_subplots(rows=2, cols=2, row_heights=[0.7, 0.3],
+                        column_widths=[0.22, 0.78],
+                        shared_xaxes=True, shared_yaxes=True,
+                        horizontal_spacing=0.015, vertical_spacing=0.05,
+                        specs=[[None, {}], [{}, {}]])
+    for c in sc_order:
+        color = category_color_palette.get(c, "#969696")
+        # intersection bars (top-right)
+        fig.add_trace(go.Bar(x=x, y=[d["sc_counts"].get(c, 0) for d in inter],
+                             name=str(c), marker_color=color, legendgroup=str(c),
+                             hovertemplate=f"{c}: %{{y}}<extra></extra>"), row=1, col=2)
+        # set-size bars (bottom-left), horizontal, stacked by SC
+        fig.add_trace(go.Bar(y=list(range(ns)),
+                             x=[set_sizes.get(s, {}).get(c, 0) for s in samples],
+                             orientation="h", marker_color=color, legendgroup=str(c),
+                             showlegend=False,
+                             hovertemplate=f"{c}: %{{x}}<extra></extra>"), row=2, col=1)
+    # membership dot matrix (bottom-right)
+    idx = {s: i for i, s in enumerate(samples)}
+    grey_x, grey_y, dark_x, dark_y = [], [], [], []
+    for j, d in enumerate(inter):
+        members = set(d["combo"])
+        for s in samples:
+            (dark_x if s in members else grey_x).append(j)
+            (dark_y if s in members else grey_y).append(idx[s])
+        present = sorted(idx[s] for s in members)
+        if len(present) > 1:
+            fig.add_trace(go.Scatter(x=[j, j], y=[present[0], present[-1]],
+                                     mode="lines", line=dict(color="#333", width=3),
+                                     showlegend=False, hoverinfo="skip"), row=2, col=2)
+    fig.add_trace(go.Scatter(x=grey_x, y=grey_y, mode="markers",
+                             marker=dict(color="#dddddd", size=14), showlegend=False,
+                             hoverinfo="skip"), row=2, col=2)
+    fig.add_trace(go.Scatter(x=dark_x, y=dark_y, mode="markers",
+                             marker=dict(color="#333333", size=14), showlegend=False,
+                             hoverinfo="skip"), row=2, col=2)
+    fig.update_yaxes(title_text="# UJCs", row=1, col=2)
+    # samples on the shared row-2 y-axis; labels on the left (set-size) panel
+    fig.update_yaxes(tickmode="array", tickvals=list(range(ns)), ticktext=samples,
+                     autorange="reversed", row=2, col=1)
+    fig.update_xaxes(title_text="Set size", autorange="reversed", row=2, col=1)
+    fig.update_xaxes(showticklabels=False, row=1, col=2)
+    fig.update_xaxes(showticklabels=False, row=2, col=2)
+    fig.update_layout(barmode="stack", template="plotly_white", height=560,
+                      plot_bgcolor=_PLOT_BG, paper_bgcolor=_PLOT_BG,
+                      margin=dict(l=90, r=30, t=40, b=40),
+                      legend=dict(title="Structural category", orientation="v",
+                                  x=1.02, y=1))
     return fig
 
 
@@ -223,7 +293,8 @@ def _section(title, fig, interpretation, div_id):
     """
 
 
-def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args):
+def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
+                     thresholds=QC_THRESHOLDS):
     """Per-sample metrics + flags. Returns (summary_dict, samples_in_order)."""
     exp_factor = _factor_col(args)
     samples = length_DF["sampleID"].astype(str).tolist()
@@ -248,7 +319,7 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
             "perc_reads_RTS": float(err_idx.at[s, "perc_reads_RTS"]),
             "perc_reads_non-canonical": float(err_idx.at[s, "perc_reads_non-canonical"]),
         }
-        flags = {m: _flag_for(metrics.get(m), spec) for m, spec in QC_THRESHOLDS.items()}
+        flags = {m: _flag_for(metrics.get(m), spec) for m, spec in thresholds.items()}
         metrics["flags"] = flags
         metrics["overall_flag"] = ("fail" if "fail" in flags.values()
                                     else "warn" if "warn" in flags.values() else "pass")
@@ -256,9 +327,9 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
     return per_sample, samples
 
 
-def _summary_html(per_sample, samples):
+def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
     """Summary metric table + QC flag panel."""
-    metric_labels = {spec["label"]: m for m, spec in QC_THRESHOLDS.items()}
+    metric_labels = {spec["label"]: m for m, spec in thresholds.items()}
     # Metrics table
     head_cols = ["Sample", "Reads", "Genes", "Median len", "% &gt;1kb", "% FSM",
                  "% intra-prim", "% RTS", "% non-canon", "Overall"]
@@ -288,7 +359,7 @@ def _summary_html(per_sample, samples):
               + "; ".join(f"{spec['label']} warn≥{spec['warn']}/fail≥{spec['fail']}"
                           if spec["worse"] == "high" else
                           f"{spec['label']} warn≤{spec['warn']}/fail≤{spec['fail']}"
-                          for spec in QC_THRESHOLDS.values())
+                          for spec in thresholds.values())
               + "</div>")
     return f"<section class='card'><h2>Summary &amp; QC flags</h2>{table}{legend}</section>"
 
@@ -361,7 +432,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 </body></html>"""
 
 
-def build_html_report(out_path, dfs_for_plotting, args):
+def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -385,10 +456,13 @@ def build_html_report(out_path, dfs_for_plotting, args):
     drop = {"sampleID", exp_factor}
     facet = getattr(args, "inFACTOR", None)  # None -> single (non-faceted) plots
 
-    per_sample, samples = _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF,
-                                           gene_agg_DF, args)
+    # QC flag thresholds come from the (optionally user-supplied) config.
+    qc_flags = args.cfg().get("qc_flags", QC_THRESHOLDS) if hasattr(args, "cfg") else QC_THRESHOLDS
 
-    sections = [_summary_html(per_sample, samples)]
+    per_sample, samples = _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF,
+                                           gene_agg_DF, args, thresholds=qc_flags)
+
+    sections = [_summary_html(per_sample, samples, thresholds=qc_flags)]
 
     subcat_order = list(subcat_color_palette.keys())
     readcount_order = ["100+ reads", "50-100 reads", "11-50 reads", "2-10 reads", "1 read"]
@@ -636,6 +710,81 @@ def build_html_report(out_path, dfs_for_plotting, args):
                 "How much each QC metric contributes to PC1/PC2. Metrics with the largest "
                 "absolute loadings explain why samples separate along each axis.", "fig-pca-load"))
 
+    # 9c. UJC-level metrics: saturation, replicate concordance, UpSet
+    if ujc_metrics:
+        m_samples = ujc_metrics["samples"]
+
+        sat = ujc_metrics["saturation"]
+        fig = go.Figure()
+        for i, s in enumerate(m_samples):
+            d = sat[sat["sampleID"] == s]
+            fig.add_trace(go.Scatter(x=d["depth"], y=d["unique_ujcs"],
+                                     mode="lines+markers", name=str(s),
+                                     marker=dict(size=4),
+                                     line=dict(color=sample_seq[i % len(sample_seq)])))
+        _base_layout(fig, "UJC saturation (rarefaction)", "Reads sampled",
+                     "Expected unique UJCs")
+        fig.update_layout(barmode="group")
+        sections.append(_section(
+            "UJC saturation", fig,
+            "Rarefaction: expected distinct junction chains as reads are subsampled. "
+            "A curve that plateaus means the library is saturated (more depth finds few "
+            "new isoforms); a still-rising curve means deeper sequencing would help.",
+            "fig-saturation"))
+
+        # Saturation per structural category (same total-depth x-axis)
+        sat_c = ujc_metrics.get("saturation_by_category")
+        if sat_c is not None and not sat_c.empty:
+            present = set(sat_c["structural_category"])
+            cats = [c for c in cat_order if c in present]
+            cats += [c for c in sorted(present) if c not in cats]
+            ncols = min(3, len(cats))
+            nrows = (len(cats) + ncols - 1) // ncols
+            cfig = make_subplots(rows=nrows, cols=ncols, subplot_titles=cats,
+                                 shared_xaxes=False, vertical_spacing=0.10,
+                                 horizontal_spacing=0.06)
+            for k, cat in enumerate(cats):
+                r, cc = k // ncols + 1, k % ncols + 1
+                cd = sat_c[sat_c["structural_category"] == cat]
+                for i, s in enumerate(m_samples):
+                    d = cd[cd["sampleID"] == s]
+                    cfig.add_trace(go.Scatter(
+                        x=d["depth"], y=d["unique_ujcs"], mode="lines", name=str(s),
+                        legendgroup=str(s), showlegend=(k == 0),
+                        line=dict(color=sample_seq[i % len(sample_seq)])), row=r, col=cc)
+            cfig.update_layout(template="plotly_white", plot_bgcolor=_PLOT_BG,
+                               paper_bgcolor=_PLOT_BG, height=260 * nrows + 80,
+                               margin=dict(l=60, r=30, t=50, b=50),
+                               legend=dict(title="Sample", x=1.02, y=1))
+            cfig.update_xaxes(title_text="Reads sampled")
+            cfig.update_yaxes(title_text="Unique UJCs")
+            sections.append(_section(
+                "UJC saturation by structural category", cfig,
+                "The overall saturation split by structural category (same total-depth "
+                "x-axis, so the panels decompose the curve above). Known categories (FSM) "
+                "typically plateau early; novel ones (NIC/NNC) often keep rising, i.e. more "
+                "depth is still discovering novel junction chains.", "fig-saturation-cat"))
+
+        conc = ujc_metrics["concordance"]
+        sections.append(_section(
+            "Replicate concordance",
+            _heatmap(conc, "Replicate concordance (per-UJC read counts)", "Sample",
+                     "Sample", colorscale="Viridis", zmid=None, zmin=0, zmax=1,
+                     colorbar_title="Pearson r", annotate=True),
+            "Pearson correlation of per-UJC read counts between samples. Replicates of the "
+            "same condition should correlate highly; a low value flags an outlier or a "
+            "swapped/mismatched sample.", "fig-concordance"))
+
+        up_data = compute_upset_intersections(ujc_metrics["upset"], m_samples)
+        if up_data:
+            sections.append(_section(
+                "Shared UJCs across samples (UpSet)",
+                _upset_figure(up_data, m_samples),
+                "Which junction chains are shared across samples. Each column is a "
+                "combination of samples (filled dots = members); the bar shows how many "
+                "UJCs fall in that combination, stacked by structural category. Large "
+                "sample-specific bars indicate low overlap between samples.", "fig-upset"))
+
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
 
@@ -658,7 +807,7 @@ def build_html_report(out_path, dfs_for_plotting, args):
         "prefix": args.PREFIX,
         "n_samples": len(samples),
         "factor": getattr(args, "inFACTOR", None),
-        "thresholds": QC_THRESHOLDS,
+        "thresholds": qc_flags,
         "samples": per_sample,
     }
     with open(json_path, "w") as fh:

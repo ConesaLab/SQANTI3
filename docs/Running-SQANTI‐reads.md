@@ -130,6 +130,7 @@ optional arguments:
   --skip_hash           Skip the hashing step
   --report {pdf,html,both}
                         Default: pdf
+  --config CONFIG       YAML file overriding QC-flag thresholds and other cut-offs. Defaults reproduce the standard behaviour.
   --verbose             If verbose is run, it will print all steps, by default it is FALSE
   -v, --version         Display program version number.
 ```
@@ -178,6 +179,23 @@ The report format is controlled by `--report {pdf,html,both}` (default `pdf`):
 - **`both`** — writes both `sqantiReads_report.pdf` and `sqantiReads_report.html`.
 
 When an HTML report is produced (`html` or `both`), a machine-readable **`sqantiReads_qc_summary.json`** is also written, with per-sample metrics and QC flags for pipeline integration.
+
+Both reports also include UJC-level views: a **saturation / rarefaction** curve (expected unique junction chains vs. sequencing depth — a plateau indicates a saturated library), a **replicate-concordance** heatmap (per-UJC read-count correlation between samples), and an **UpSet** plot of UJCs shared across samples, with intersection and set-size bars stacked by structural category.
+
+### Configurable thresholds
+
+`--config my_config.yaml` overrides the built-in cut-offs; any omitted value keeps its default, so a run without `--config` is unchanged. Overridable keys include the per-sample **QC-flag thresholds** (`qc_flags`, driving the pass/warn/fail panel and `qc_summary.json`), the **intra-priming** `%A`-downstream cut-off (`intrapriming_perc_A_cutoff`, default 60), and the **PCA** cumulative-variance cut-off (`pca_cumulative_variance`, default 0.85). Example:
+
+```yaml
+qc_flags:
+  perc_reads_intrapriming:
+    warn: 25.0
+    fail: 45.0
+    worse: high
+    label: "Intra-priming reads (%)"
+intrapriming_perc_A_cutoff: 60
+pca_cumulative_variance: 0.85
+```
 
 # Running example SQANTI-reads
 

@@ -43,7 +43,7 @@ EXPECTED_CSVS = [
 EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # Page-count snapshots for the fixture at -ge 10, guarding against a merge that
 # silently drops pages. Update these if plots are intentionally added/removed.
-EXPECTED_REPORT_PAGES = {"design.csv": 40, "design_with_factor.csv": 42}
+EXPECTED_REPORT_PAGES = {"design.csv": 44, "design_with_factor.csv": 46}
 
 REQUIRED_TOOLS = ["gffread", "gtftools", "bedtools"]
 _missing = [t for t in REQUIRED_TOOLS if shutil.which(t) is None]
@@ -53,7 +53,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _run_reads(out_dir, design, factor=None, report="pdf"):
+def _run_reads(out_dir, design, factor=None, report="pdf", config=None):
     cmd = [
         sys.executable,
         os.path.join(REPO_ROOT, "sqanti3_reads.py"),
@@ -68,6 +68,8 @@ def _run_reads(out_dir, design, factor=None, report="pdf"):
     ]
     if factor:
         cmd += ["--factor", factor]
+    if config:
+        cmd += ["--config", config]
     return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
 
 
@@ -181,6 +183,10 @@ HTML_SECTIONS = [
     "Splice-acceptor detection variation",
     "Sample similarity (PCA)",
     "PCA loadings",
+    "UJC saturation",
+    "UJC saturation by structural category",
+    "Replicate concordance",
+    "Shared UJCs across samples (UpSet)",
     "Under-annotation analysis",
 ]
 
@@ -234,3 +240,28 @@ def test_html_report_faceted(tmp_path):
 
     summary = json.load(open(os.path.join(out_dir, "sqantiReads_qc_summary.json")))
     assert summary["factor"] == "group"
+
+
+def test_config_overrides_qc_thresholds(tmp_path):
+    """A --config YAML overrides the QC-flag thresholds in the report + JSON."""
+    import json
+
+    cfg = tmp_path / "cfg.yaml"
+    cfg.write_text(
+        "qc_flags:\n"
+        "  perc_reads_intrapriming:\n"
+        "    warn: 5.0\n"
+        "    fail: 10.0\n"
+        "    worse: high\n"
+        "    label: \"Intra-priming reads (%)\"\n"
+    )
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design.csv", report="html", config=str(cfg))
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+
+    summary = json.load(open(os.path.join(out_dir, "sqantiReads_qc_summary.json")))
+    spec = summary["thresholds"]["perc_reads_intrapriming"]
+    assert spec["warn"] == 5.0 and spec["fail"] == 10.0, "config threshold not applied"
+    # Fixture intra-priming is ~19-20%, so every sample now fails that metric.
+    for s, m in summary["samples"].items():
+        assert m["flags"]["perc_reads_intrapriming"] == "fail", f"{s} not flagged"

@@ -69,6 +69,14 @@ class ReadsPlotArgs:
     ALLTABLES: bool = False
     PCATABLES: bool = False
     report: str = 'pdf'
+    config: Optional[dict] = None
+
+    def cfg(self):
+        """Return the config dict, loading defaults lazily if none was set."""
+        if self.config is None:
+            from src.utilities.sqanti_reads_config import load_config
+            self.config = load_config()
+        return self.config
 
 
 # Global args variable for backward compatibility
@@ -149,6 +157,15 @@ sample_seq = [
     '#6C7C32', '#778AAE', '#862A16', '#A777F1', '#620042', '#1616A7', '#DA60CA',
     '#6C4516', '#0D2A63', '#AF0038',
 ]
+
+# Full SQANTI3 structural-category names -> the abbreviations used by
+# category_color_palette (for UpSet stacked bars, etc.).
+SC_ABBR = {
+    'full-splice_match': 'FSM', 'incomplete-splice_match': 'ISM',
+    'novel_in_catalog': 'NIC', 'novel_not_in_catalog': 'NNC',
+    'genic': 'GENIC', 'antisense': 'AS', 'fusion': 'FUS',
+    'intergenic': 'INTER', 'genic_intron': 'GI',
+}
 # ------------------------------------------------------------------------------
 
 def _palette_colors(columns, palette, default="#999999"):
@@ -187,6 +204,256 @@ def _scatter_labeled(df, x_col, y_col, label_col, title, xlabel, ylabel,
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+
+
+def compute_ujc_metrics(ujc_count_DF, factor_col=None, n_depths=25):
+    """Derive UJC-level QC metrics shared by the PDF and HTML reports.
+
+    Returns a dict with:
+      - 'samples': sample order
+      - 'sample_factor': {sampleID: factor level} (None-safe)
+      - 'saturation': long DataFrame [sampleID, depth, unique_ujcs] (rarefaction)
+      - 'concordance': square DataFrame of per-sample UJC read-count correlations
+      - 'upset': DataFrame indexed by jxnHash with one boolean column per sample
+                 plus a 'structural_category' column (for the UpSet plot)
+    """
+    from scipy.special import gammaln
+
+    fac = factor_col if (factor_col and factor_col in ujc_count_DF.columns) else None
+    df = ujc_count_DF[["jxnHash", "read_count", "structural_category", "sampleID"]].copy()
+    samples = list(pd.unique(df["sampleID"]))
+    if fac:
+        sample_factor = (ujc_count_DF.drop_duplicates("sampleID")
+                         .set_index("sampleID")[fac].astype(str).to_dict())
+    else:
+        sample_factor = {s: None for s in samples}
+
+    # --- Saturation / rarefaction: expected unique UJCs vs subsampling depth ---
+    # `counts` is the read-count vector of the UJCs of interest; `total` is the
+    # sample's TOTAL read count. For a category subset, summing over that subset
+    # with the sample total gives the category's contribution to the overall
+    # curve, on the same (total-depth) x-axis — so the categories decompose it.
+    def _rarefy(counts, depths, total):
+        counts = np.asarray(counts, dtype=float)
+        S = len(counts)
+        if total <= 0 or S == 0:
+            return [0.0] * len(depths)
+        out = []
+        for n in depths:
+            if n <= 0:
+                out.append(0.0)
+            elif n >= total:
+                out.append(float(S))
+            else:
+                log_c_N_n = gammaln(total + 1) - gammaln(n + 1) - gammaln(total - n + 1)
+                nc = total - counts
+                ratio = np.zeros(S)
+                ok = nc >= n
+                ratio[ok] = np.exp((gammaln(nc[ok] + 1) - gammaln(n + 1)
+                                    - gammaln(nc[ok] - n + 1)) - log_c_N_n)
+                out.append(float((1.0 - ratio).sum()))
+        return out
+
+    sat_rows = []
+    sat_cat_rows = []
+    for s in samples:
+        sdf = df[df["sampleID"] == s]
+        counts = sdf["read_count"].values
+        total = int(counts.sum())
+        depths = np.unique(np.linspace(0, total, n_depths).astype(int))
+        for d, r in zip(depths, _rarefy(counts, depths, total)):
+            sat_rows.append({"sampleID": s, "depth": int(d), "unique_ujcs": r})
+        # per-structural-category saturation (same total-depth x-axis)
+        for cat, cdf in sdf.groupby("structural_category"):
+            abbr = SC_ABBR.get(cat, str(cat))
+            cc = cdf["read_count"].values
+            for d, r in zip(depths, _rarefy(cc, depths, total)):
+                sat_cat_rows.append({"sampleID": s, "structural_category": abbr,
+                                     "depth": int(d), "unique_ujcs": r})
+    saturation = pd.DataFrame(sat_rows)
+    saturation_by_category = pd.DataFrame(sat_cat_rows)
+
+    # --- Per-sample UJC read-count matrix (jxnHash x sample) ---
+    mat = df.pivot_table(index="jxnHash", columns="sampleID", values="read_count",
+                         aggfunc="sum", fill_value=0).reindex(columns=samples)
+
+    # --- Replicate concordance: Pearson correlation of the count vectors ---
+    concordance = mat.corr(method="pearson")
+
+    # --- UpSet membership matrix + structural category per UJC ---
+    upset = (mat > 0)
+    sc = df.groupby("jxnHash")["structural_category"].agg(
+        lambda x: x.value_counts().index[0])
+    upset = upset.assign(structural_category=sc.reindex(upset.index))
+
+    return {"samples": samples, "sample_factor": sample_factor,
+            "saturation": saturation, "saturation_by_category": saturation_by_category,
+            "concordance": concordance, "upset": upset}
+
+
+def compute_upset_intersections(upset_DF, samples, max_intersections=20):
+    """Compute UpSet intersections of shared UJCs, broken down by structural category.
+
+    Returns {'intersections': [{'combo': (samples...), 'total': n,
+                                'sc_counts': {SC: n}} ...] sorted by size,
+             'set_sizes': {sample: {SC: n}},
+             'sc_order': [SC ...]}  — shared by the PDF and HTML renderers.
+    """
+    if upset_DF is None or upset_DF.empty or len(samples) < 2:
+        return None
+    df = upset_DF.copy()
+    df["SC"] = df["structural_category"].map(lambda x: SC_ABBR.get(x, "other")).fillna("other")
+    memb = df[list(samples)].astype(bool)
+    df["_combo"] = memb.apply(lambda r: tuple(s for s in samples if r[s]), axis=1)
+    df = df[df["_combo"].map(len) > 0]
+    if df.empty:
+        return None
+    inter = [{"combo": combo, "total": int(len(g)),
+              "sc_counts": g["SC"].value_counts().to_dict()}
+             for combo, g in df.groupby("_combo")]
+    inter.sort(key=lambda d: -d["total"])
+    inter = inter[:max_intersections]
+    set_sizes = {s: df[df["_combo"].map(lambda c: s in c)]["SC"].value_counts().to_dict()
+                 for s in samples}
+    present = set()
+    for d in inter:
+        present |= set(d["sc_counts"])
+    sc_order = [c for c in cat_order if c in present] + sorted(present - set(cat_order))
+    return {"intersections": inter, "set_sizes": set_sizes, "sc_order": sc_order}
+
+
+def _plot_upset_pdf(pdf, upset_DF, samples):
+    """Append a (custom) UpSet plot of shared UJCs, stacked by structural category."""
+    import matplotlib.gridspec as gridspec
+    up = compute_upset_intersections(upset_DF, samples)
+    if not up:
+        return
+    inter, set_sizes, sc_order = up["intersections"], up["set_sizes"], up["sc_order"]
+    colors = {c: category_color_palette.get(c, "#969696") for c in sc_order}
+    n = len(inter)
+    ns = len(samples)
+
+    fig = plt.figure(figsize=(max(11, n * 0.7 + 4), 9))
+    gs = gridspec.GridSpec(2, 2, width_ratios=[2.2, 10], height_ratios=[3, 1.6],
+                           hspace=0.06, wspace=0.06)
+    ax_bar = fig.add_subplot(gs[0, 1])
+    ax_mat = fig.add_subplot(gs[1, 1], sharex=ax_bar)
+    ax_set = fig.add_subplot(gs[1, 0])
+
+    x = np.arange(n)
+    # Intersection bars, stacked by structural category
+    bottom = np.zeros(n)
+    for c in sc_order:
+        vals = np.array([d["sc_counts"].get(c, 0) for d in inter], dtype=float)
+        ax_bar.bar(x, vals, bottom=bottom, color=colors[c], label=c, width=0.8)
+        bottom += vals
+    for xi, d in enumerate(inter):
+        ax_bar.text(xi, d["total"], str(d["total"]), ha="center", va="bottom", fontsize=8)
+    ax_bar.set_ylabel("# UJCs")
+    ax_bar.set_title("Shared UJCs across samples (stacked by structural category)")
+    ax_bar.legend(title="Structural category", bbox_to_anchor=(1.01, 1),
+                  loc="upper left", fontsize=8)
+    plt.setp(ax_bar.get_xticklabels(), visible=False)
+
+    # Membership matrix (dots + connecting line)
+    idx = {s: i for i, s in enumerate(samples)}
+    for j, d in enumerate(inter):
+        for si in range(ns):
+            ax_mat.plot(j, si, "o", color="#dddddd", markersize=13, zorder=1)
+        present = sorted(idx[s] for s in d["combo"])
+        for si in present:
+            ax_mat.plot(j, si, "o", color="#333333", markersize=13, zorder=3)
+        if len(present) > 1:
+            ax_mat.plot([j, j], [present[0], present[-1]], color="#333333", lw=2, zorder=2)
+    ax_mat.set_xticks([])
+    ax_mat.set_yticks(range(ns))
+    ax_mat.set_yticklabels(samples)
+    ax_mat.set_ylim(ns - 0.5, -0.5)  # sample 0 at top (no invert_yaxis)
+
+    # Set-size bars (per sample), stacked by structural category
+    for i, s in enumerate(samples):
+        left = 0.0
+        for c in sc_order:
+            v = set_sizes.get(s, {}).get(c, 0)
+            ax_set.barh(i, v, left=left, color=colors[c], height=0.6)
+            left += v
+    ax_set.set_xlabel("Set size")
+    ax_set.set_ylim(ns - 0.5, -0.5)
+    ax_set.set_yticks(range(ns))
+    ax_set.set_yticklabels(samples)
+    ax_set.invert_xaxis()
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=None):
+    """Append the UJC saturation, replicate-concordance and UpSet pages to `pdf`."""
+    if not ujc_metrics:
+        return
+    samples = ujc_metrics["samples"]
+    sample_palette = {s: sample_seq[i % len(sample_seq)] for i, s in enumerate(samples)}
+
+    # 1. Saturation / rarefaction curves
+    sat = ujc_metrics["saturation"]
+    plt.figure(figsize=(14, 10))
+    for s in samples:
+        d = sat[sat["sampleID"] == s]
+        plt.plot(d["depth"], d["unique_ujcs"], marker="o", markersize=3,
+                 label=s, color=sample_palette[s])
+    plt.title("UJC saturation (rarefaction)")
+    plt.xlabel("Reads sampled")
+    plt.ylabel("Expected unique UJCs")
+    plt.legend(title="Sample", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.tight_layout()
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    pdf.savefig()
+    plt.close()
+
+    # 1b. Saturation per structural category (same total-depth x-axis)
+    sat_c = ujc_metrics.get("saturation_by_category")
+    if sat_c is not None and not sat_c.empty:
+        cats = [c for c in cat_order if c in set(sat_c["structural_category"])]
+        cats += [c for c in sorted(set(sat_c["structural_category"])) if c not in cats]
+        ncols = min(3, len(cats))
+        nrows = int(np.ceil(len(cats) / ncols))
+        fig, axes = plt.subplots(nrows, ncols, figsize=(6 * ncols, 4.5 * nrows),
+                                 squeeze=False, sharex=True)
+        for i, cat in enumerate(cats):
+            ax = axes[i // ncols][i % ncols]
+            cd = sat_c[sat_c["structural_category"] == cat]
+            for s in samples:
+                d = cd[cd["sampleID"] == s]
+                ax.plot(d["depth"], d["unique_ujcs"], marker="o", markersize=2,
+                        label=s, color=sample_palette[s])
+            ax.set_title(cat)
+            ax.set_xlabel("Reads sampled")
+            ax.set_ylabel("Expected unique UJCs")
+        # blank any unused axes
+        for j in range(len(cats), nrows * ncols):
+            axes[j // ncols][j % ncols].axis("off")
+        handles, labels = axes[0][0].get_legend_handles_labels()
+        fig.legend(handles, labels, title="Sample", loc="upper right")
+        fig.suptitle("UJC saturation by structural category", y=1.0, fontsize=16)
+        plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
+
+    # 2. Replicate concordance heatmap
+    conc = ujc_metrics["concordance"]
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(conc, annot=True, fmt=".2f", cmap="viridis", vmin=0, vmax=1,
+                square=True, cbar_kws={"label": "Pearson r"})
+    plt.title("Replicate concordance (per-UJC read counts)")
+    plt.tight_layout()
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    pdf.savefig()
+    plt.close()
+
+    # 3. UpSet plot of shared UJCs, stacked by structural category
+    _plot_upset_pdf(pdf, ujc_metrics["upset"], samples)
 
 
 # CLI arguments are defined once in src/reads_argparse.py; this module is driven
@@ -609,8 +876,9 @@ def proc_samples(design_file, ref):
         ##Err DFs
         # Count RTS, intrapriming and reads with noncan jxns
         # Calculate counts
+        _ip_cutoff = args.cfg().get('intrapriming_perc_A_cutoff', 60)
         num_reads_RTS = (class_DF['RTS_stage'] == True).sum()
-        num_reads_intrapriming = (class_DF['perc_A_downstream_TTS'] > 60).sum()
+        num_reads_intrapriming = (class_DF['perc_A_downstream_TTS'] > _ip_cutoff).sum()
         num_reads_non_can = (class_DF['all_canonical'] == 'non_canonical').sum()
     
         # Calculate percentages
@@ -1400,7 +1668,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None):
     
     plt.rcParams.update({'font.size': 13})
     plt.rcParams['pdf.fonttype'] = 42
@@ -1913,7 +2181,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         # Calculate the cumulative variance and determine the number of components to use
         cumulative_variance = np.cumsum(variance_ratio)
-        n_components = np.argmax(cumulative_variance >= 0.85) + 1
+        n_components = np.argmax(cumulative_variance >= args.cfg().get('pca_cumulative_variance', 0.85)) + 1
         
          # Create the plots
         fig, ax = plt.subplots(2, 2, figsize=(20, 20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
@@ -2053,12 +2321,15 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         plt.subplots_adjust(top=0.85, right=0.8)
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
         plt.close()
-        
+
+        # UJC saturation, replicate concordance and UpSet plots
+        plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
+
 def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None):
     
     
     plt.rcParams.update({'font.size': 13})
@@ -2454,7 +2725,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
 
         ##Screeplot and Loadings heatmap
         cumulative_variance = np.cumsum(variance_ratio)
-        n_components = np.argmax(cumulative_variance >= 0.85) + 1
+        n_components = np.argmax(cumulative_variance >= args.cfg().get('pca_cumulative_variance', 0.85)) + 1
         
         # Create the plots
         fig, ax = plt.subplots(2, 2, figsize=(20,20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
@@ -2580,7 +2851,10 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
         plt.close()
-        
+
+        # UJC saturation, replicate concordance and UpSet plots
+        plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
+
 def run_reads_plots(
     ref_gtf: str,
     design_file: str,
@@ -2594,7 +2868,8 @@ def run_reads_plots(
     factor_level: Optional[str] = None,
     all_tables: bool = False,
     pca_tables: bool = False,
-    report: str = 'pdf'
+    report: str = 'pdf',
+    config: Optional[dict] = None
 ):
     """
     Run the reads plotting pipeline.
@@ -2646,9 +2921,10 @@ def run_reads_plots(
         FACTORLVL=factor_level,
         ALLTABLES=all_tables,
         PCATABLES=pca_tables,
-        report=report
+        report=report,
+        config=config
     )
-    
+
     reads_logger.info("Starting SQANTI-reads tables and plots generation...")
     
     # Run the main pipeline
@@ -2664,6 +2940,10 @@ def main():
                                                                                                                             fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct)
     dfs_for_plotting = prep_data_4_plots( gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
+    # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
+    # renderers. Computed before identify_cand_underannot mutates ujc_count_DF.
+    ujc_metrics = compute_ujc_metrics(ujc_count_DF, factor_col=args.inFACTOR)
+
     need_pdf = args.report in ("pdf", "both")
     need_html = args.report in ("html", "both")
 
@@ -2677,7 +2957,7 @@ def main():
         identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
         from src.utilities.sqanti_reads_report import build_html_report
         report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
-        build_html_report(report_html, dfs_for_plotting, args)
+        build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -2685,9 +2965,9 @@ def main():
     if need_pdf:
         with PdfPages(report_pdf) as pdf:
             if args.inFACTOR is None:
-                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf)
+                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics)
             else:
-                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf)
+                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics)
             identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

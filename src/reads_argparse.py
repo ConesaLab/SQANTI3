@@ -19,6 +19,7 @@ def reads_argparser():
     pio.add_argument('-d', '--sqanti_dirs', type=str, dest='sqanti_dirs', help='\t\tDirectory containing existing SQANTI3 output folders. Use this to skip re-running QC and proceed directly to aggregation.', default = None, required=False)
     pio.add_argument('-o','--output', type=str, dest="OUTPUT", help='\t\tDirectory for output sqanti_reads files (plots, tables, design file). Default: Directory where the script was run.', default = "./", required=False)
     pio.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
+    pio.add_argument('--config', type=str, dest="CONFIG", default=None, required=False, help='\t\tYAML file overriding QC-flag thresholds and other cut-offs (intra-priming %%A, PCA variance, length bins). Defaults reproduce the standard behaviour.')
     pio.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and underannotated gene tables')
     pio.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
 
