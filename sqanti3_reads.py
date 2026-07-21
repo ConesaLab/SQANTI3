@@ -19,6 +19,25 @@ utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/u
 sys.path.insert(0, utilitiesPath)
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
 
+
+def _run_parallel(func, items, jobs):
+    """Run func(item) over items, in parallel with a thread pool when jobs>1.
+
+    A thread pool is used (not processes) because the per-sample work is
+    dominated by external subprocesses / file I/O, which release the GIL — so
+    this gives real parallelism without pickling. Exceptions propagate.
+    """
+    jobs = max(1, int(jobs or 1))
+    items = list(items)
+    if jobs <= 1 or len(items) <= 1:
+        for it in items:
+            func(it)
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(jobs, len(items))) as ex:
+        # list() forces evaluation so any worker exception is re-raised here.
+        list(ex.map(func, items))
+
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
     # If number of columns is less than 2, probably wrongly formatted
@@ -45,8 +64,13 @@ def fill_design_table(args):
         
     return(df)
 
+def _run_qc_cmd(cmd):
+    subprocess.call(cmd, shell=True)
+
+
 def get_method_runSQANTI3(args, df):
 
+    qc_cmds = []
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -108,7 +132,7 @@ def get_method_runSQANTI3(args, df):
                     f"-s {args.sites}"
                 )
 
-                subprocess.call(cmd_sqanti, shell = True)
+                qc_cmds.append(cmd_sqanti)
                 continue
 
         # Check for .fastq files
@@ -145,16 +169,24 @@ def get_method_runSQANTI3(args, df):
                 )
 
                 reads_logger.debug(cmd_sqanti)
-                subprocess.call(cmd_sqanti, shell = True)
+                qc_cmds.append(cmd_sqanti)
                 continue
 
         # If none of the conditions are met, raise an error
         reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
 
+    # Run the per-sample SQANTI3-QC commands (simple mode), in parallel if --jobs>1.
+    if qc_cmds:
+        reads_logger.info(f"Running SQANTI3-QC for {len(qc_cmds)} sample(s) with jobs={getattr(args, 'jobs', 1)}")
+        _run_parallel(_run_qc_cmd, qc_cmds, getattr(args, 'jobs', 1))
+
 def make_UJC_hash(args, df):
 
-    for index, row in df.iterrows():
+    # Per-sample UJC hashing (gffread/gtftools/bedtools + pandas). Each sample
+    # writes only into its own output dir, so samples are independent and run in
+    # parallel when --jobs>1 (thread pool: the work is subprocess/I/O dominated).
+    def _one(row):
         file_acc = row['file_acc']
         sampleID = row['sampleID']
         
@@ -270,6 +302,8 @@ def make_UJC_hash(args, df):
         os.remove(f"{outputPathPrefix}tmp_UJC.txt")
         os.remove(f"{outputPathPrefix}_temp.txt")
 
+    _run_parallel(_one, [row for _, row in df.iterrows()], getattr(args, 'jobs', 1))
+
 def main():
     global utilitiesPath
     global sqantiqcPath
@@ -347,6 +381,7 @@ def main():
         pca_tables=args.PCATABLES,
         report=args.report,
         config=config,
+        jobs=args.jobs,
     )
 
 

@@ -70,6 +70,7 @@ class ReadsPlotArgs:
     PCATABLES: bool = False
     report: str = 'pdf'
     config: Optional[dict] = None
+    jobs: int = 1
 
     def cfg(self):
         """Return the config dict, loading defaults lazily if none was set."""
@@ -648,6 +649,24 @@ def flag_ref_monoexon(inRef):
     )
     return refgene
 
+def _run_parallel(func, items, jobs):
+    """Run func(item) over items, in parallel with a thread pool when jobs>1.
+
+    Threads (not processes) because the per-sample work is dominated by file I/O
+    (pandas read_csv releases the GIL during parsing); each sample writes only
+    its own dict keys, which is thread-safe in CPython.
+    """
+    jobs = max(1, int(jobs or 1))
+    items = list(items)
+    if jobs <= 1 or len(items) <= 1:
+        for it in items:
+            func(it)
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(jobs, len(items))) as ex:
+        list(ex.map(func, items))
+
+
 def proc_samples(design_file, ref):
     # Read design file
     design_DF = pd.read_csv(design_file, sep=",")
@@ -691,7 +710,9 @@ def proc_samples(design_file, ref):
                     'structural_category': 'string', 'subcategory': 'string','length': 'Int64', 'RTS_stage': 'boolean', 'perc_A_downstream_TTS': float, 
                     'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string', 'jxn_string':'string', "jxnHash":'string'}
     
-    for index, row in design_DF.iterrows():
+    # Per-sample processing is independent (each writes only its own dict keys),
+    # so it runs in parallel when --jobs>1 (thread pool; file loading dominates).
+    def _one(row):
         # gtf = row['gtf_file']
         sampleID = row['sampleID']
         class_file = row['classification_file']
@@ -920,8 +941,19 @@ def proc_samples(design_file, ref):
         del(cv_DF)
         del(class_DF)
         del(jxn_DF)
-        reads_logger.debug("Memory cleared for next sample")  
-        
+        reads_logger.debug("Memory cleared for next sample")
+
+    _run_parallel(_one, [row for _, row in design_DF.iterrows()], getattr(args, 'jobs', 1))
+
+    # Restore design order: under --jobs>1 the dicts are filled in completion
+    # order, so reorder them by the design so downstream output is deterministic.
+    _order = design_DF['sampleID'].tolist()
+    _reord = lambda d: {s: d[s] for s in _order if s in d}
+    gene_count_dfs, ujc_count_dfs, length_dfs = _reord(gene_count_dfs), _reord(ujc_count_dfs), _reord(length_dfs)
+    cv_dfs, err_dfs, fsm_dfs = _reord(cv_dfs), _reord(err_dfs), _reord(fsm_dfs)
+    ism_dfs, nic_nnc_dfs, nov_can_dfs = _reord(ism_dfs), _reord(nic_nnc_dfs), _reord(nov_can_dfs)
+    length_Dct = _reord(length_Dct)
+
     return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct )
 
 def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
@@ -2869,7 +2901,8 @@ def run_reads_plots(
     all_tables: bool = False,
     pca_tables: bool = False,
     report: str = 'pdf',
-    config: Optional[dict] = None
+    config: Optional[dict] = None,
+    jobs: int = 1
 ):
     """
     Run the reads plotting pipeline.
@@ -2922,7 +2955,8 @@ def run_reads_plots(
         ALLTABLES=all_tables,
         PCATABLES=pca_tables,
         report=report,
-        config=config
+        config=config,
+        jobs=jobs
     )
 
     reads_logger.info("Starting SQANTI-reads tables and plots generation...")

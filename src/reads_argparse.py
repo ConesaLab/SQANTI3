@@ -43,6 +43,7 @@ def reads_argparser():
     pp = parser.add_argument_group("Performance options")
     pp.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. Default: 10')
     pp.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up. Default: 1')
+    pp.add_argument('-j', '--jobs', default=1, type=int, help='\t\tNumber of samples to process in parallel (UJC hashing, and per-sample SQANTI3-QC in simple mode). Note: each parallel QC job still uses --cpus alignment threads, so peak cores ~= jobs*cpus. Default: 1 (serial)')
 
     # Check because this might not be needed
     parser.add_argument('--force_id_ignore', action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")

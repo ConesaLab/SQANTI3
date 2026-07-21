@@ -53,7 +53,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _run_reads(out_dir, design, factor=None, report="pdf", config=None):
+def _run_reads(out_dir, design, factor=None, report="pdf", config=None, jobs=None):
     cmd = [
         sys.executable,
         os.path.join(REPO_ROOT, "sqanti3_reads.py"),
@@ -70,6 +70,8 @@ def _run_reads(out_dir, design, factor=None, report="pdf", config=None):
         cmd += ["--factor", factor]
     if config:
         cmd += ["--config", config]
+    if jobs:
+        cmd += ["--jobs", str(jobs)]
     return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
 
 
@@ -240,6 +242,15 @@ def test_html_report_faceted(tmp_path):
 
     summary = json.load(open(os.path.join(out_dir, "sqantiReads_qc_summary.json")))
     assert summary["factor"] == "group"
+
+
+def test_parallel_jobs_match_serial(tmp_path):
+    """--jobs>1 (parallel per-sample processing) must give identical tables."""
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design.csv", jobs=3)
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+    _assert_outputs_present(out_dir)
+    _assert_matches_baseline(out_dir)  # same as the serial baseline
 
 
 def test_config_overrides_qc_thresholds(tmp_path):

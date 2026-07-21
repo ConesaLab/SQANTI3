@@ -109,6 +109,7 @@ optional arguments:
   -t CPUS, --cpus CPUS  Number of threads used during alignment by aligners. Default: 10
   -n CHUNKS, --chunks CHUNKS
                         Number of chunks to split SQANTI3 analysis in for speed up. Default: 1
+  -j JOBS, --jobs JOBS  Number of samples to process in parallel (UJC hashing, per-sample aggregation, and simple-mode SQANTI3-QC). Each parallel QC job still uses --cpus threads, so peak cores ~= jobs*cpus. Default: 1 (serial)
   -s SITES, --sites SITES
                         Set of splice sites to be considered as canonical (comma-separated list of splice sites).
                         Default: GTAG,GCAG,ATAC.
