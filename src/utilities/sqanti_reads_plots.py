@@ -80,8 +80,6 @@ class ReadsPlotArgs:
         return self.config
 
 
-# Global args variable for backward compatibility
-args = None
 
 # --- Shared plotting constants -------------------------------------------------
 # Colors/orders used by both plot_pdf and plot_pdf_by_factor (previously defined
@@ -667,7 +665,7 @@ def _run_parallel(func, items, jobs):
         list(ex.map(func, items))
 
 
-def proc_samples(design_file, ref):
+def proc_samples(args, design_file, ref):
     # Read design file
     design_DF = pd.read_csv(design_file, sep=",")
     
@@ -956,7 +954,7 @@ def proc_samples(design_file, ref):
 
     return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct )
 
-def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -1057,7 +1055,7 @@ def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
 
 
 
-def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path=None, plot=True):
+def identify_cand_underannot(args, ujc_count_DF, factor_level=None, pdf=None, out_path=None, plot=True):
     """Compute under-annotation tables (writes CSVs) and append the
     under-annotation plot section to the report.
 
@@ -1317,7 +1315,7 @@ def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path
             pdf.savefig()
             plt.close()
 
-def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct):
+def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct):
     
     abbr_mapping = {
     "full-splice_match": "FSM",
@@ -1700,7 +1698,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, args=None):
     
     plt.rcParams.update({'font.size': 13})
     plt.rcParams['pdf.fonttype'] = 42
@@ -2361,7 +2359,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, args=None):
     
     
     plt.rcParams.update({'font.size': 13})
@@ -2938,9 +2936,7 @@ def run_reads_plots(
     report : str, default='pdf'
         Report format: 'pdf', 'html', or 'both'.
     """
-    global args
-    
-    # Create args object
+    # Create args object (threaded explicitly through the pipeline)
     args = ReadsPlotArgs(
         inREF=ref_gtf,
         inDESIGN=design_file,
@@ -2960,19 +2956,19 @@ def run_reads_plots(
     )
 
     reads_logger.info("Starting SQANTI-reads tables and plots generation...")
-    
+
     # Run the main pipeline
-    main()
-    
+    main(args)
+
     reads_logger.info("SQANTI-reads tables and plots generation completed.")
 
 
-def main():
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct = proc_samples(args.inDESIGN, args.inREF)
-    
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct = prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+def main(args):
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct = proc_samples(args, args.inDESIGN, args.inREF)
+
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
                                                                                                                             fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct)
-    dfs_for_plotting = prep_data_4_plots( gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
+    dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
     # renderers. Computed before identify_cand_underannot mutates ujc_count_DF.
@@ -2988,7 +2984,7 @@ def main():
     # The under-annotation CSV tables are written first (plot=False) because the
     # HTML report reads them.
     if need_html:
-        identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
+        identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
         from src.utilities.sqanti_reads_report import build_html_report
         report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
         build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics)
@@ -2999,10 +2995,10 @@ def main():
     if need_pdf:
         with PdfPages(report_pdf) as pdf:
             if args.inFACTOR is None:
-                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics)
+                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
             else:
-                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics)
-            identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
+                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
+            identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory
     plt.close('all')
