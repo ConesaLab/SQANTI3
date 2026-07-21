@@ -39,7 +39,11 @@ EXPECTED_CSVS = [
     "sqantiReads_gene_classfication.csv",
     "sqantiReads_putative_underannotation.csv",
 ]
-EXPECTED_PDFS = ["sqantiReads_plots.pdf", "sqantiReads_annotation_plots.pdf"]
+# Single unified report (QC plots + under-annotation section merged).
+EXPECTED_PDFS = ["sqantiReads_report.pdf"]
+# Page-count snapshots for the fixture at -ge 10, guarding against a merge that
+# silently drops pages. Update these if plots are intentionally added/removed.
+EXPECTED_REPORT_PAGES = {"design.csv": 42, "design_with_factor.csv": 44}
 
 REQUIRED_TOOLS = ["gffread", "gtftools", "bedtools"]
 _missing = [t for t in REQUIRED_TOOLS if shutil.which(t) is None]
@@ -74,6 +78,39 @@ def _assert_outputs_present(out_dir):
         assert os.path.getsize(path) > 0, f"empty output: {name}"
 
 
+def _assert_single_merged_report(out_dir, design):
+    """The report is one PDF containing both QC and under-annotation sections."""
+    assert not os.path.exists(os.path.join(out_dir, "sqantiReads_annotation_plots.pdf")), \
+        "the separate annotation PDF should no longer be produced"
+    report = os.path.join(out_dir, "sqantiReads_report.pdf")
+    pypdf = pytest.importorskip("pypdf")
+    reader = pypdf.PdfReader(report)
+    n_pages = len(reader.pages)
+    assert n_pages == EXPECTED_REPORT_PAGES[design], \
+        f"{design}: expected {EXPECTED_REPORT_PAGES[design]} pages, got {n_pages}"
+    all_text = "\n".join((p.extract_text() or "") for p in reader.pages)
+    assert "Under-annotation analysis" in all_text, \
+        "merged report is missing the under-annotation section"
+    return all_text
+
+
+def _assert_titles_corrected(all_text):
+    """Lock in the Phase-1b plot-title fixes (mislabels / typos)."""
+    must_be_present = [
+        "Percentage of Detected Donors",             # was "Number of Donors > 3 reads"
+        "Percentage of FSM Reads in Each subcategory",  # was a duplicate count title
+        "Number of Detected Acceptors",              # ylabel typo "Detetced" fixed
+    ]
+    must_be_absent = [
+        "Number of Donors > 3 reads",
+        "Detetced",
+    ]
+    for s in must_be_present:
+        assert s in all_text, f"expected corrected title missing: {s!r}"
+    for s in must_be_absent:
+        assert s not in all_text, f"stale mislabeled title still present: {s!r}"
+
+
 def _assert_matches_baseline(out_dir):
     for name in EXPECTED_CSVS:
         produced = pd.read_csv(os.path.join(out_dir, name))
@@ -93,6 +130,8 @@ def test_fast_mode_no_factor(tmp_path):
     result = _run_reads(out_dir, "design.csv")
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
     _assert_outputs_present(out_dir)
+    all_text = _assert_single_merged_report(out_dir, "design.csv")
+    _assert_titles_corrected(all_text)
     _assert_matches_baseline(out_dir)
 
 
@@ -107,6 +146,7 @@ def test_fast_mode_with_factor(tmp_path):
     result = _run_reads(out_dir, "design_with_factor.csv", factor="group")
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
     _assert_outputs_present(out_dir)
+    _assert_single_merged_report(out_dir, "design_with_factor.csv")
     # Table CSVs are the same values as the no-factor run plus the factor column;
     # assert they at least match the baseline on shared columns.
     for name in EXPECTED_CSVS:

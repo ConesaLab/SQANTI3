@@ -27,6 +27,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
 from matplotlib.ticker import FixedLocator
+from contextlib import nullcontext
 # NOTE: pdf2image (and its poppler system dependency) is only needed for the
 # HTML report. Import it lazily inside makeHTML so `--report pdf` never requires
 # poppler to be installed.
@@ -76,27 +77,48 @@ class ReadsPlotArgs:
 # Global args variable for backward compatibility
 args = None
 
-## Update options
-def getOptions():
-    # Set up the argument parser
-    parser = argparse.ArgumentParser(description='Make sqanti reads summary tables and QC plots')
-    
-    parser.add_argument('-r','--ref', type=str, dest="inREF" ,required=True, help='Path to the reference gtf. This should be the same reference used for sqanti3 QC')
-    parser.add_argument('-d', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID column')
-    parser.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='Experimental factor column in design file to use for faceting plots')
-    parser.add_argument('-o','--out', type=str,  dest="OUT", required=True, help='Out directory for saving plots and tables')
-    parser.add_argument('-p','--prefix', type=str, dest="PREFIX", required=True, help='Output filename prefix')
-    parser.add_argument('-ge','--gene-expression', type=int, dest="ANNOTEXP", required=False, help='Expression cut off level for determining underannotated genes', default = 100)
-    parser.add_argument('-je','--jxn-expression', type=int, dest="JXNEXP", required=False, help='Coverage threshold for detected reference donors and acceptor', default = 10)
-    parser.add_argument('-pc','--perc-coverage', type=int, dest="PERCCOV", required=False, help='Percent gene coverage of UJC for determining well-covered transcripts', default = 20)
-    parser.add_argument('-pj','--perc-junctions', type=int, dest="PERCMAXJXN", required=False, help='Percent of the max junctions in gene for determining near full-length putative novel transcripts', default = 80)
-    parser.add_argument('-fl','--factor-level', type=str, dest="FACTORLVL", required=False, help='Factor level to evaluate for underannotation', default = None)
-    parser.add_argument('--all-tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and cand underannotated gene tables')
-    parser.add_argument('--pca-tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
-    parser.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
+# --- Shared plotting constants -------------------------------------------------
+# Colors/orders used by both plot_pdf and plot_pdf_by_factor (previously defined
+# identically inside each function). Kept as module-level names so both functions
+# resolve them from module scope.
+category_color_palette = {
+    "FSM": "#6BAED6",
+    "ISM": "#FC8D59",
+    "NIC": "#78C679",
+    "NNC": "#EE6A50",
+    "GENIC": "#969696",
+    "AS": "#66C2A4",
+    "FUS": "#ffc125",
+    "INTER": "#e9967a",
+    "GI": "#41B6C4",
+}
 
-    args = parser.parse_args()
-    return args
+subcat_color_palette = {
+    "alternative_5end": '#02314d',
+    "alternative_3end": '#0e5a87',
+    "alternative_3end5end": '#7ccdfc',
+    'reference_match': '#c4e1f2',
+    "3prime_fragment": '#c4531d',
+    "internal_fragment": '#e37744',
+    "5prime_fragment": '#e0936e',
+    "combination_of_known_junctions": '#014d02',
+    "combination_of_known_splicesites": '#379637',
+    "intron_retention": '#81eb82',
+    "at_least_one_novel_splicesite": '#6ec091',  ## Changed this from Not comb. of annot. junctions
+    "mono-exon_by_intron_retention": '#4aaa72',
+    "At least 1 annot. don./accept.": '#32734d',
+    "mono-exon": '#cec2d2',
+    "multi-exon": '#876a91',
+    "mono_in_multi": '#aec6cf',
+}
+
+cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
+cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
+# ------------------------------------------------------------------------------
+
+# CLI arguments are defined once in src/reads_argparse.py; this module is driven
+# via run_reads_plots(). (A previous standalone getOptions()/__main__ entry point
+# duplicated --report and the thresholds and has been removed.)
 
 def load_sqanti_file(file,col_Lst, dtype_Dct):
     return pd.read_csv(file, sep="\t", usecols=col_Lst, dtype=dtype_Dct, low_memory=True)
@@ -261,30 +283,20 @@ def flag_ref_monoexon(inRef):
     Returns:
     - Dataframe with all reference gene ids and flag if it has a monoexon transcript or not
     """
-    # Get exon counts from reference GTF
-    
-    refgtf = pd.read_csv(inRef,names=['chr','source','feature','start','end','score',
-                                        'strand','frame','attribute'], sep="\t",low_memory=False)
-    refexon = refgtf[refgtf["feature"]=="exon"].copy()
-#    print("Total lines in reference GTF= "+str(len(gtf)))
+    # Get exon counts from reference GTF (comment='#' skips GTF header lines)
+    refgtf = pd.read_csv(inRef, names=['chr','source','feature','start','end','score',
+                                       'strand','frame','attribute'], sep="\t",
+                         comment='#', low_memory=False)
+    refexon = refgtf[refgtf["feature"] == "exon"].copy()
 
-    # Get gene_id and transcript_id values from attributes column
-    for i in refexon.index:
-        raw_attrs = refexon.at[i, 'attribute']
-        attr_list = [x.strip() for x in raw_attrs.strip().split(';')]
-        g_t_attrs = [x for x in attr_list if 'transcript_id' in x or 'gene_id' in x]
-        gene_id, transcript_id = np.nan, np.nan
-        for item in g_t_attrs:
-            if 'gene_id' in item:
-                gene_id = item.split('gene_id')[1].strip().strip('\"')
-            elif 'transcript_id' in item:
-                transcript_id = item.split('transcript_id')[-1].strip().strip('\"')
-        if pd.isna(transcript_id) and refexon.at[i, 'feature'] != "gene" :
-            reads_logger.warning("transcript_id not found in {}".format(refexon[i]))
-        refexon.at[i, 'gene_id'] = str(gene_id)
-        refexon.at[i, 'transcript_id'] = str(transcript_id)
-#    print("Total transcripts in original GTF= "+str(refexon["transcript_id"].nunique()))
-#    print("Total genes in original GTF= "+str(refexon["gene_id"].nunique()))
+    # Vectorized extraction of gene_id / transcript_id from the GTF attribute
+    # column (format: key "value"; ...). Replaces a fragile per-row parser and
+    # yields the same unquoted IDs it produced.
+    refexon["gene_id"] = refexon["attribute"].str.extract(r'gene_id "([^"]+)"')
+    refexon["transcript_id"] = refexon["attribute"].str.extract(r'transcript_id "([^"]+)"')
+    missing = refexon["transcript_id"].isna()
+    if missing.any():
+        reads_logger.warning(f"transcript_id not found on {int(missing.sum())} exon line(s) of {inRef}")
 
     # Get min exons per transcript for each gene to flag genes with at least one monoexon transcript
     refxcrpt = refexon.groupby(["gene_id", "transcript_id"])["feature"].count().reset_index().rename(columns={"feature": "num_exon"})
@@ -672,7 +684,13 @@ def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
 
 
 
-def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
+def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path=None):
+    """Compute under-annotation tables (writes CSVs) and append the
+    under-annotation plot section to the report.
+
+    If ``pdf`` (an already-open ``PdfPages``) is given, pages are appended to
+    that shared report; otherwise a standalone PDF is written to ``out_path``.
+    """
 
     exp_factor = args.inFACTOR
     
@@ -788,8 +806,8 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     if merged_df.empty:
         # No gene passed the under-annotation filters (commonly because the
         # gene_expression cutoff is higher than any gene's coverage). Rather
-        # than aborting the whole report, warn, emit empty tables, drop a
-        # placeholder annotation page, and let the main QC plots proceed.
+        # than aborting the whole report, warn, emit empty tables, add a short
+        # note page to the report, and let the main QC plots proceed.
         reads_logger.warning(
             f"No genes met the under-annotation criteria (gene_expression={gene_cov_thresh}). "
             f"Skipping under-annotation plots and writing empty tables. "
@@ -804,7 +822,11 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
         else:
             merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_putative_underannotation.csv'), index=False)
             empty_summary.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_classfication.csv'), index=False)
-        with PdfPages(out_path) as pdf:
+        with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
+            divider = plt.figure(figsize=(14, 10))
+            divider.text(0.5, 0.5, "Under-annotation analysis", ha='center', va='center', fontsize=26)
+            pdf.savefig(divider)
+            plt.close(divider)
             fig = plt.figure(figsize=(14, 10))
             fig.text(0.5, 0.5, "No genes met the under-annotation criteria",
                      ha='center', va='center', fontsize=20)
@@ -836,11 +858,10 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     plt.rcParams.update({'font.size': 12})
     plt.rcParams['pdf.fonttype'] = 42
     
-    with PdfPages(out_path) as pdf:
-        #Cover page
-        # Create the title page
+    with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
+        # Section divider page for the under-annotation section of the report
         title_fig = plt.figure(figsize=(14, 10))
-        title_fig.text(0.5, 0.5, "SQANTI-reads annotation report", ha='center', va='center', fontsize=26)
+        title_fig.text(0.5, 0.5, "Under-annotation analysis", ha='center', va='center', fontsize=26)
         pdf.savefig(title_fig)
         plt.close(title_fig)
         
@@ -1295,11 +1316,11 @@ def prep_data_4_plots(gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM
     
     
     
-def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF, 
-             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF, 
-             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio, 
+def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
+             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
+             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None):
     
     plt.rcParams.update({'font.size': 13})
     plt.rcParams['pdf.fonttype'] = 42
@@ -1365,41 +1386,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     num_factors = all_gene_percs_long_DF[exp_factor].nunique()
     num_samples = all_gene_percs_long_DF['sampleID'].nunique()
     
-    #Define category color palette
-    
-    category_color_palette = {
-    "FSM": "#6BAED6",
-    "ISM": "#FC8D59",
-    "NIC": "#78C679",
-    "NNC": "#EE6A50",
-    "GENIC": "#969696",
-    "AS": "#66C2A4",
-    "FUS": "#ffc125",  
-    "INTER": "#e9967a",  
-    "GI": "#41B6C4"
-    }   
-    
-    subcat_color_palette = {
-    "alternative_5end": '#02314d',
-    "alternative_3end": '#0e5a87',
-    "alternative_3end5end": '#7ccdfc',
-    'reference_match': '#c4e1f2',
-    "3prime_fragment": '#c4531d',
-    "internal_fragment": '#e37744',
-    "5prime_fragment": '#e0936e',
-    "combination_of_known_junctions": '#014d02',
-    "combination_of_known_splicesites": '#379637',
-    "intron_retention": '#81eb82',
-    "at_least_one_novel_splicesite": '#6ec091', ## Changed this from Not comb. of annot. junctions
-    "mono-exon_by_intron_retention": '#4aaa72',
-    "At least 1 annot. don./accept.": '#32734d',
-    "mono-exon": '#cec2d2',
-    "multi-exon": '#876a91',
-    "mono_in_multi": '#aec6cf'
-    }
-    
-    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
-    
+    # category/subcat palettes and cat_order are module-level constants
+
     # Suppress warning about too many open figures
     plt.rcParams['figure.max_open_warning'] = 0
     
@@ -1409,7 +1397,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     sample_colors = plt.cm.rainbow(np.linspace(0, 1, num_samples))
     sample_color_palette = {sampleID: color for sampleID, color in zip(unique_sampleIDs, sample_colors)}
     
-    with PdfPages(out_path) as pdf:
+    with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
         #Cover page
         # Create the title page
         title_fig = plt.figure(figsize=(14, 10))
@@ -2067,11 +2055,11 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
         plt.close()
         
-def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF, 
-             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF, 
-             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio, 
+def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
+             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
+             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None):
     
     
     plt.rcParams.update({'font.size': 13})
@@ -2082,42 +2070,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     num_samples = all_gene_percs_long_DF['sampleID'].nunique()
     exp_factor = 'temp_factor'
     
- #Define category color palette
-    
-    category_color_palette = {
-    "FSM": "#6BAED6",
-    "ISM": "#FC8D59",
-    "NIC": "#78C679",
-    "NNC": "#EE6A50",
-    "GENIC": "#969696",
-    "AS": "#66C2A4",
-    "FUS": "#ffc125",  
-    "INTER": "#e9967a",  
-    "GI": "#41B6C4"
-    }   
-    
-    subcat_color_palette = {
-    "alternative_5end": '#02314d',
-    "alternative_3end": '#0e5a87',
-    "alternative_3end5end": '#7ccdfc',
-    'reference_match': '#c4e1f2',
-    "3prime_fragment": '#c4531d',
-    "internal_fragment": '#e37744',
-    "5prime_fragment": '#e0936e',
-    "combination_of_known_junctions": '#014d02',
-    "combination_of_known_splicesites": '#379637',
-    "intron_retention": '#81eb82',
-    "at_least_one_novel_splicesite": '#6ec091', ## Changed this from Not comb. of annot. junctions
-    "mono-exon_by_intron_retention": '#4aaa72',
-    "At least 1 annot. don./accept.": '#32734d',
-    "mono-exon": '#cec2d2',
-    "multi-exon": '#876a91',
-    "mono_in_multi": '#aec6cf'
-    }
-    
-    cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
-    cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
-    
+    # category/subcat palettes, cat_order and cat_order_stacked are module-level constants
+
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
@@ -2125,7 +2079,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     sample_color_palette = {sampleID: color for sampleID, color in zip(unique_sampleIDs, sample_colors)}
     
     
-    with PdfPages(out_path) as pdf:
+    with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
         #Cover page
         # Create the title page
         title_fig = plt.figure(figsize =(14, 10))
@@ -2225,7 +2179,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         categories =  [col for col in FSM_perc_DF.columns if col not in ['sampleID', exp_factor]] 
         palette = [subcat_color_palette[cat] for cat in categories]      
         FSM_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - FSM')
+        plt.title('Percentage of FSM Reads in Each subcategory')
         plt.xlabel('SampleID')
         plt.ylabel('Percentage')
         plt.xticks(rotation=90, ha='right')
@@ -2255,7 +2209,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         categories =  [col for col in ISM_perc_DF.columns if col not in ['sampleID', exp_factor]] 
         palette = [subcat_color_palette[cat] for cat in categories]      
         ISM_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - ISM')
+        plt.title('Percentage of ISM Reads in Each subcategory')
         plt.xlabel('SampleID')
         plt.ylabel('Percentage')
         plt.xticks(rotation=90, ha='right')
@@ -2286,7 +2240,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         categories =  [col for col in NIC_NNC_perc_DF.columns if col not in ['sampleID', exp_factor]] 
         palette = [subcat_color_palette[cat] for cat in categories]      
         NIC_NNC_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - NIC/NNC')
+        plt.title('Percentage of NIC/NNC Reads in Each subcategory')
         plt.xlabel('SampleID')
         plt.ylabel('Percentage')
         plt.xticks(rotation=90, ha='right')
@@ -2612,7 +2566,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.title('Number of Detected Acceptors')
         plt.xticks(ticks=np.arange(len(cv_acc_summary['sampleID'])), labels=cv_acc_summary['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
-        plt.ylabel('Number of Detetced Acceptors')
+        plt.ylabel('Number of Detected Acceptors')
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
@@ -2654,10 +2608,10 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         cv_don_percs  =  cv_don_percs.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
         cv_don_percs.plot(kind='bar', stacked=True, colormap='rainbow')
-        plt.title('Number of Donors > 3 reads')
+        plt.title('Percentage of Detected Donors')
         plt.xticks(ticks=np.arange(len(cv_don_percs['sampleID'])), labels=cv_don_percs['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
-        plt.ylabel('Number of Donors')
+        plt.ylabel('Percentage')
         plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
         plt.xticks(rotation=90, ha='right')
         plt.tight_layout()
@@ -2786,29 +2740,25 @@ def main():
     
     gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct = prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
                                                                                                                             fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct)
-    identify_cand_underannot(os.path.join(args.OUT, args.PREFIX + '_annotation_plots.pdf'),ujc_count_DF, factor_level=args.FACTORLVL)
-    
     dfs_for_plotting = prep_data_4_plots( gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
-    
-    if args.inFACTOR is None:
-            
-        plot_pdf(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
-    else:
-        plot_pdf_by_factor(os.path.join(args.OUT, args.PREFIX + '_plots.pdf'), *dfs_for_plotting)
-        
+
+    # Single unified report: QC plots followed by the under-annotation section,
+    # all written to one PDF. identify_cand_underannot still writes its CSV
+    # tables; passing the open `pdf` makes it append its pages here instead of
+    # emitting a separate file.
+    report_path = os.path.join(args.OUT, args.PREFIX + '_report.pdf')
+    with PdfPages(report_path) as pdf:
+        if args.inFACTOR is None:
+            plot_pdf(report_path, *dfs_for_plotting, pdf=pdf)
+        else:
+            plot_pdf_by_factor(report_path, *dfs_for_plotting, pdf=pdf)
+        identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
+
     if args.report in ("both", "html"):
-        makeHTML(f'{args.OUT}/', args.PREFIX,'_plots.pdf')
-        makeHTML(f'{args.OUT}/', args.PREFIX,'_annotation_plots.pdf')
-        
+        makeHTML(f'{args.OUT}/', args.PREFIX, '_report.pdf')
+
     if args.report == "html":
-        os.remove(os.path.join(args.OUT, f'{args.PREFIX}_plots.pdf'))
-        os.remove(os.path.join(args.OUT, f'{args.PREFIX}_annotation_plots.pdf'))
-    
+        os.remove(report_path)
+
     # Close all remaining figures to free memory
     plt.close('all')
-
-        
-if __name__ == '__main__':
-    #Parse command line arguments
-    args = getOptions()
-    main()

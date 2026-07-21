@@ -171,8 +171,7 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 
 ### Results plots
 
-- sqantiReads_plots.pdf: Pdf file with one output plot visualizing QC metrics per page.
-- sqantiReads_annotation_plots.pdf: Pdf file with one output plot visualizing underannotation metrics per page.
+- sqantiReads_report.pdf: Single report PDF with one plot per page. It contains the QC metrics plots followed by an "Under-annotation analysis" section (gene-category bar chart plus per-category scatterplots of gene coverage vs. junctions). With `--report html`/`both` the same content is written as `sqantiReads_report.html`.
 
 # Running example SQANTI-reads
 
