@@ -6,7 +6,10 @@ def reads_argparser():
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
 
     pr = parser.add_argument_group("Required arguments")
-    pr.add_argument('--refFasta',  required=True, help='Reference genome (Fasta format)')
+    # refFasta is only needed when SQANTI3-QC is run from scratch (fastq/GTF input).
+    # In fast mode (--sqanti_dirs with existing QC output) it is unused, so it is
+    # optional here and validated conditionally in sqanti3_reads.main().
+    pr.add_argument('--refFasta',  required=False, default=None, help='Reference genome (Fasta format). Required unless running in fast mode (--sqanti_dirs).')
     pr.add_argument('--refGTF',  required= True, help='Reference annotation file (GTF format)')
     pr.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID and file_acc column.')
     

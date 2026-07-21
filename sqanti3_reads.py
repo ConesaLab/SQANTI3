@@ -85,7 +85,7 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(gtf_files):
-                if os.path.isfile(args.refFasta) is False:
+                if not args.refFasta or os.path.isfile(args.refFasta) is False:
                     reads_logger.error(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
@@ -119,7 +119,7 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(fastq_files):
-                if os.path.isfile(args.refFasta) is False:
+                if not args.refFasta or os.path.isfile(args.refFasta) is False:
                     reads_logger.error(f'[ERROR] You inputted fastq files to map but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
@@ -210,15 +210,19 @@ def make_UJC_hash(args, df):
         introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {output_gtf} | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {output_gtf}"""
         ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
 
-        if subprocess.check_call(introns_cmd, shell=True)!=0:
-            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing GTFTOOLS")
+        try:
+            subprocess.check_call(introns_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing or failed GTFTOOLS")
             sys.exit(-1)
 
         if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
             os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
 
-        if subprocess.check_call(ujc_cmd, shell=True)!=0:
-            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing BEDTOOLS")
+        try:
+            subprocess.check_call(ujc_cmd, shell=True)
+        except subprocess.CalledProcessError:
+            reads_logger.error(f"ERROR running command: {ujc_cmd}\n Missing or failed BEDTOOLS")
             sys.exit(-1)
         os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
@@ -298,10 +302,14 @@ def main():
         make_UJC_hash(args, df)
 
     # Run plotting script directly as a function call
+    if args.SKIPPLOTS:
+        reads_logger.info("--skip_plots set: skipping SQANTI-reads tables and plots generation.")
+        return
+
     reads_logger.info("Running SQANTI-reads tables and plots generation...")
-    
+
     prefix = args.PREFIX if args.PREFIX else "sqantiReads"
-    
+
     from src.utilities.sqanti_reads_tables_and_plots_02ndk import run_reads_plots
     run_reads_plots(
         ref_gtf=args.refGTF,

@@ -27,7 +27,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
 from matplotlib.ticker import FixedLocator
-from pdf2image import convert_from_path
+# NOTE: pdf2image (and its poppler system dependency) is only needed for the
+# HTML report. Import it lazily inside makeHTML so `--report pdf` never requires
+# poppler to be installed.
 import base64
 from jinja2 import Template
 import io
@@ -784,7 +786,31 @@ def identify_cand_underannot(out_path,ujc_count_DF, factor_level = None):
     
     ## Categorize genes based on gene categories
     if merged_df.empty:
-        raise ValueError("The filtering was too strict and no genes were found that meet the criteria.")
+        # No gene passed the under-annotation filters (commonly because the
+        # gene_expression cutoff is higher than any gene's coverage). Rather
+        # than aborting the whole report, warn, emit empty tables, drop a
+        # placeholder annotation page, and let the main QC plots proceed.
+        reads_logger.warning(
+            f"No genes met the under-annotation criteria (gene_expression={gene_cov_thresh}). "
+            f"Skipping under-annotation plots and writing empty tables. "
+            f"Lower --gene_expression to include lower-coverage genes."
+        )
+        empty_summary = pd.DataFrame(columns=['associated_gene', 'gene_category'])
+        if 'gene_category' not in merged_df.columns:
+            merged_df['gene_category'] = pd.Series(dtype='object')
+        if factor_level is not None and args.inFACTOR is not None:
+            merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_' + factor_level + '_putative_underannotated_transcripts.csv'), index=False)
+            empty_summary.to_csv(os.path.join(args.OUT, args.PREFIX + '_' + factor_level + '_gene_classfication.csv'), index=False)
+        else:
+            merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_putative_underannotation.csv'), index=False)
+            empty_summary.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_classfication.csv'), index=False)
+        with PdfPages(out_path) as pdf:
+            fig = plt.figure(figsize=(14, 10))
+            fig.text(0.5, 0.5, "No genes met the under-annotation criteria",
+                     ha='center', va='center', fontsize=20)
+            pdf.savefig(fig)
+            plt.close(fig)
+        return
     # Group the original DataFrame by associated_gene
     grouped = merged_df.groupby('associated_gene')
     # Apply the categorization function to each group
@@ -1285,7 +1311,9 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         ax = plt.gca()
         bottom = np.zeros(len(data))
         for idx, category in enumerate(categories):
-            values = data[category].values
+            # A facet subset may not contain every category column; treat a
+            # missing category as all-zero so stacking order/colors stay stable.
+            values = data[category].values if category in data.columns else np.zeros(len(data))
             # Only add bars for non-zero values
             non_zero_indices = values != 0
             ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices], bottom=bottom[non_zero_indices], color=palette[idx], label=category)
@@ -1323,7 +1351,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         for idx, category in enumerate(categories):
             # Offset positions within each group for each category
             category_positions = positions + idx * bar_width
-            values = data[category].values
+            # Tolerate category columns absent from a facet subset (all-zero).
+            values = data[category].values if category in data.columns else np.zeros(len(data))
             # Filter out zero values to maintain visualization integrity
             non_zero_indices = values != 0
             ax.bar(category_positions[non_zero_indices], values[non_zero_indices], width=bar_width, color=palette[idx], label=category)
@@ -2637,6 +2666,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
 def makeHTML(drty, prefx, sufx):
+    from pdf2image import convert_from_path  # lazy: only HTML reports need poppler
     pages = convert_from_path(drty + prefx + sufx)
     # Encode each page as a base64 string
     encoded_images = []
