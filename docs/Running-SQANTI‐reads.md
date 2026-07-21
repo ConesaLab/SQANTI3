@@ -169,9 +169,15 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 - sqantiReads_pca_loadings.csv: Gives loadings of PC1 and PC2 for the PCA analysis.
 - sqantiReads_pca_variance.csv: Gives the proportion variance explained by each PC.
 
-### Results plots
+### Results plots and reports
 
-- sqantiReads_report.pdf: Single report PDF with one plot per page. It contains the QC metrics plots followed by an "Under-annotation analysis" section (gene-category bar chart plus per-category scatterplots of gene coverage vs. junctions). With `--report html`/`both` the same content is written as `sqantiReads_report.html`.
+The report format is controlled by `--report {pdf,html,both}` (default `pdf`):
+
+- **`pdf`** — `sqantiReads_report.pdf`: single static report, one plot per page. Contains the QC metrics plots followed by an "Under-annotation analysis" section (gene-category bar chart plus per-category scatterplots of gene coverage vs. junctions).
+- **`html`** — `sqantiReads_report.html`: a single **self-contained, interactive** report (Plotly, works offline — no browser plugins or internet needed). It opens with a **Summary & QC-flags** panel (per-sample metrics with pass/warn/fail badges) and then interactive versions of the QC figures (hover for values, zoom, toggle samples in the legend), ending with the under-annotation section. No PDF is written in this mode.
+- **`both`** — writes both `sqantiReads_report.pdf` and `sqantiReads_report.html`.
+
+When an HTML report is produced (`html` or `both`), a machine-readable **`sqantiReads_qc_summary.json`** is also written, with per-sample metrics and QC flags for pipeline integration.
 
 # Running example SQANTI-reads
 

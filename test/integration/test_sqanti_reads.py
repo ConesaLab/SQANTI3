@@ -43,7 +43,7 @@ EXPECTED_CSVS = [
 EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # Page-count snapshots for the fixture at -ge 10, guarding against a merge that
 # silently drops pages. Update these if plots are intentionally added/removed.
-EXPECTED_REPORT_PAGES = {"design.csv": 42, "design_with_factor.csv": 44}
+EXPECTED_REPORT_PAGES = {"design.csv": 40, "design_with_factor.csv": 42}
 
 REQUIRED_TOOLS = ["gffread", "gtftools", "bedtools"]
 _missing = [t for t in REQUIRED_TOOLS if shutil.which(t) is None]
@@ -53,7 +53,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _run_reads(out_dir, design, factor=None):
+def _run_reads(out_dir, design, factor=None, report="pdf"):
     cmd = [
         sys.executable,
         os.path.join(REPO_ROOT, "sqanti3_reads.py"),
@@ -64,7 +64,7 @@ def _run_reads(out_dir, design, factor=None):
         "--output", out_dir,
         "--prefix", "sqantiReads",
         "-ge", GENE_EXPRESSION,
-        "--report", "pdf",
+        "--report", report,
     ]
     if factor:
         cmd += ["--factor", factor]
@@ -161,3 +161,76 @@ def test_fast_mode_with_factor(tmp_path):
             rtol=1e-6,
             obj=name,
         )
+
+
+# Section headings expected in the interactive HTML report.
+HTML_SECTIONS = [
+    "Summary &amp; QC flags",
+    "Reads per structural category — all genes",
+    "Per-gene structural-category distribution",
+    "Genes detected, by read support",
+    "Unique junction chains, by structural category",
+    "UJCs, by read support",
+    "Read length distribution",
+    "Read length distribution (raw)",
+    "Sequencing depth vs read length",
+    "FSM reads by sub-category",
+    "Junction classification (%)",
+    "Potential artefacts",
+    "Splice-donor detection variation",
+    "Splice-acceptor detection variation",
+    "Sample similarity (PCA)",
+    "PCA loadings",
+    "Under-annotation analysis",
+]
+
+
+def test_html_report(tmp_path):
+    """--report html produces a single self-contained interactive report + JSON."""
+    import json
+
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design.csv", report="html")
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+
+    html = os.path.join(out_dir, "sqantiReads_report.html")
+    js_summary = os.path.join(out_dir, "sqantiReads_qc_summary.json")
+    assert os.path.getsize(html) > 0, "HTML report missing/empty"
+    assert os.path.getsize(js_summary) > 0, "qc_summary.json missing/empty"
+    # html-only: no PDF
+    assert not os.path.exists(os.path.join(out_dir, "sqantiReads_report.pdf"))
+
+    text = open(html, encoding="utf-8").read()
+    # Self-contained: plotly inlined, no external resource loads
+    assert "Plotly.newPlot" in text, "plotly figures not embedded"
+    import re
+    external = re.findall(r'<(?:script[^>]*src|link[^>]*href|img[^>]*src)="https?://', text)
+    assert not external, f"report loads external resources (not offline-safe): {external}"
+    for section in HTML_SECTIONS:
+        assert section in text, f"HTML report missing section: {section}"
+
+    summary = json.load(open(js_summary))
+    assert summary["n_samples"] == 3
+    assert set(summary["samples"]) == {"SQ_R1", "SQ_R2", "SQ_R3"}
+    for s, m in summary["samples"].items():
+        assert "flags" in m and "overall_flag" in m, f"{s} missing flags"
+        assert m["overall_flag"] in {"pass", "warn", "fail"}
+        assert m["total_reads"] > 0
+
+
+def test_html_report_faceted(tmp_path):
+    """--factor + --report html produces a faceted interactive report."""
+    import json
+
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design_with_factor.csv", factor="group", report="html")
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+
+    html = os.path.join(out_dir, "sqantiReads_report.html")
+    text = open(html, encoding="utf-8").read()
+    # Faceting splits each figure into one subplot per factor level.
+    assert "groupA" in text and "groupB" in text, "facet level labels not in report"
+    assert "Plotly.newPlot" in text
+
+    summary = json.load(open(os.path.join(out_dir, "sqantiReads_qc_summary.json")))
+    assert summary["factor"] == "group"

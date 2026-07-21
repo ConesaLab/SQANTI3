@@ -28,12 +28,9 @@ from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
 from matplotlib.ticker import FixedLocator
 from contextlib import nullcontext
-# NOTE: pdf2image (and its poppler system dependency) is only needed for the
-# HTML report. Import it lazily inside makeHTML so `--report pdf` never requires
-# poppler to be installed.
-import base64
-from jinja2 import Template
-import io
+# The interactive HTML report is built by src/utilities/sqanti_reads_report.py
+# (Plotly, imported lazily in main()); the old pdf2image/poppler rasterization
+# path has been retired.
 import logging
 from dataclasses import dataclass
 from typing import Optional
@@ -114,7 +111,83 @@ subcat_color_palette = {
 
 cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
 cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
+
+# Junction classification (known/novel × canonical/non-canonical).
+jxn_palette = {
+    "known_canonical": "#2c7fb8",
+    "known_non_canonical": "#7fcdbb",
+    "novel_canonical": "#f03b20",
+    "novel_non_canonical": "#feb24c",
+}
+
+# Three-series plots (green, orange, yellow) — artefacts (RTS/intra-priming/
+# non-canonical) and donor/acceptor CV (ref_match/cv_0/cv_gt_0). Applied to the
+# series in column order.
+three_series_palette = ["#2CA02C", "#FF7F0E", "#FFC20A"]
+
+# Read-count bins — explicit color per bin so it is stable across datasets and
+# identical in the PDF and HTML (values match the HTML default sequence order).
+readcount_palette = {
+    "100+ reads": "#2E91E5",
+    "50-100 reads": "#E15F99",
+    "11-50 reads": "#1CA71C",
+    "2-10 reads": "#FB0D0D",
+    "1 read": "#DA16FF",
+}
+
+# Read-length bins (both the count columns and their `_perc` variants).
+_length_bins = ["reads_lt_1kb", "reads_1kb_to_2kb", "reads_2kb_to_3kb", "reads_gt_3kb"]
+_length_colors = ["#2E91E5", "#E15F99", "#1CA71C", "#FB0D0D"]
+length_palette = {b: c for b, c in zip(_length_bins, _length_colors)}
+length_palette.update({b + "_perc": c for b, c in zip(_length_bins, _length_colors)})
+
+# Per-sample qualitative colors (Plotly "Dark24"), used for scatter/strip/violin
+# and PCA so samples are colored the same way in the PDF and HTML.
+sample_seq = [
+    '#2E91E5', '#E15F99', '#1CA71C', '#FB0D0D', '#DA16FF', '#222A2A', '#B68100',
+    '#750D86', '#EB663B', '#511CFB', '#00A08B', '#FB00D1', '#FC0080', '#B2828D',
+    '#6C7C32', '#778AAE', '#862A16', '#A777F1', '#620042', '#1616A7', '#DA60CA',
+    '#6C4516', '#0D2A63', '#AF0038',
+]
 # ------------------------------------------------------------------------------
+
+def _palette_colors(columns, palette, default="#999999"):
+    """Ordered colors for `columns` from a {name: hex} palette.
+
+    Skips columns absent from the palette (e.g. a leftover 'sampleID' column), so
+    the returned list matches the numeric series pandas actually plots.
+    """
+    return [palette[c] for c in columns if c in palette]
+
+
+def _scatter_labeled(df, x_col, y_col, label_col, title, xlabel, ylabel,
+                     factor_col=None, ax=None):
+    """Scatter with per-point text labels, matching the HTML report.
+
+    Points are a single color (no factor) or colored by factor level (with a
+    factor-only legend); each point is annotated with its `label_col` value.
+    This replaces seaborn scatterplots that keyed a busy hue+style legend to
+    per-sample color and factor shapes.
+    """
+    import matplotlib.pyplot as _plt
+    ax = ax or _plt.gca()
+    faceted = (factor_col and factor_col in df.columns
+               and factor_col != "temp_factor" and df[factor_col].nunique() > 1)
+    if faceted:
+        for i, lv in enumerate(pd.unique(df[factor_col])):
+            d = df[df[factor_col] == lv]
+            ax.scatter(d[x_col], d[y_col], s=120, color=sample_seq[i % len(sample_seq)],
+                       label=str(lv))
+        ax.legend(title=factor_col, bbox_to_anchor=(1.05, 1), loc='upper left')
+    else:
+        ax.scatter(df[x_col], df[y_col], s=120, color="#1f6feb")
+    for _, row in df.iterrows():
+        ax.annotate(str(row[label_col]), (row[x_col], row[y_col]),
+                    textcoords="offset points", xytext=(0, 9), ha="center", fontsize=9)
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+
 
 # CLI arguments are defined once in src/reads_argparse.py; this module is driven
 # via run_reads_plots(). (A previous standalone getOptions()/__main__ entry point
@@ -684,12 +757,14 @@ def prep_tables(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
 
 
 
-def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path=None):
+def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path=None, plot=True):
     """Compute under-annotation tables (writes CSVs) and append the
     under-annotation plot section to the report.
 
     If ``pdf`` (an already-open ``PdfPages``) is given, pages are appended to
     that shared report; otherwise a standalone PDF is written to ``out_path``.
+    When ``plot`` is False, only the CSV tables are written (no plotting) — used
+    for HTML-only runs that render the section interactively instead.
     """
 
     exp_factor = args.inFACTOR
@@ -822,6 +897,8 @@ def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path
         else:
             merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_putative_underannotation.csv'), index=False)
             empty_summary.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_classfication.csv'), index=False)
+        if not plot:
+            return
         with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
             divider = plt.figure(figsize=(14, 10))
             divider.text(0.5, 0.5, "Under-annotation analysis", ha='center', va='center', fontsize=26)
@@ -854,7 +931,10 @@ def identify_cand_underannot(ujc_count_DF, factor_level=None, pdf=None, out_path
     else:
         merged_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_putative_underannotation.csv'), index=False)
         summary_df.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_classfication.csv'), index=False)
-        
+
+    if not plot:
+        return
+
     plt.rcParams.update({'font.size': 12})
     plt.rcParams['pdf.fonttype'] = 42
     
@@ -1394,8 +1474,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
-    sample_colors = plt.cm.rainbow(np.linspace(0, 1, num_samples))
-    sample_color_palette = {sampleID: color for sampleID, color in zip(unique_sampleIDs, sample_colors)}
+    sample_color_palette = {sampleID: sample_seq[i % len(sample_seq)]
+                            for i, sampleID in enumerate(unique_sampleIDs)}
     
     with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
         #Cover page
@@ -1405,74 +1485,9 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         pdf.savefig(title_fig)
         plt.close(title_fig)
          
-        ### Vertical Scatterplot -Structural Category - All genes
-        
-        palette = sample_color_palette
-        g = sns.catplot(
-            data=all_gene_percs_long_DF,
-            x='Category',
-            y='Percentage',
-            hue='sampleID',
-            col=exp_factor,  
-            kind='strip',
-            col_wrap=num_factors, 
-            jitter=False,  
-            palette=palette,  
-            linewidth=0,
-            size=20,  
-            alpha=0.6, 
-            legend=True,
-            height=8, 
-            aspect=0.7,
-            order = cat_order
-        )
-        g.set_xticklabels(rotation=0)
-        g.set_axis_labels("Structural Category", "Percentages")
-        g.fig.suptitle("Percent Reads in Each Structural Category - All Genes", y=1.02, fontsize=20)
-        title = g.fig.suptitle("Percent Reads in Each Structural Category - All Genes", y=1.02, fontsize=20)
-        legend = g._legend
-        legend.set_frame_on(True)
-        legend.get_frame().set_facecolor((1, 1, 1, 0.5))
-        #handles, labels = g.fig.axes[0].get_legend_handles_labels()
-        #lgd = g.fig.legend(handles, labels, title='Sample ID', loc='upper left', bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure)
-        plt.subplots_adjust(right=0.8)
-        plt.tight_layout(pad=3)
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.close()
-        
-        ### Vertical Scatterplot -Structural Category - Annotated genes
-        g = sns.catplot(
-            data=annot_gene_percs_long_DF,
-            x='Category',
-            y='Percentage',
-            hue='sampleID',
-            col=exp_factor,  
-            kind='strip',
-            col_wrap=num_factors,  
-            jitter=False,
-            palette=palette,  
-            linewidth=0,
-            size=20, 
-            alpha=0.6, 
-            legend=True,
-            height=8, 
-            aspect=0.7,
-            order = cat_order
-        )
-        g.set_xticklabels(rotation=0)
-        g.set_axis_labels("Structural Category", "Percentages")
-        title = g.fig.suptitle("Percent Reads in Each Structural Category - Annotated Genes", y=1.02, fontsize=20)
-        #handles, labels = g.fig.axes[0].get_legend_handles_labels()
-        #lgd = g.fig.legend(handles, labels, title='Sample ID', loc='upper left', bbox_to_anchor=(1.05, 1), bbox_transform=plt.gcf().transFigure)
-        legend = g._legend
-        legend.set_frame_on(True)
-        legend.get_frame().set_facecolor((1, 1, 1, 0.5))
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.close()
-        
+        # Structural-category composition is shown as faceted stacked bars (below),
+        # matching the HTML report. The earlier per-sample stripplot views were removed.
+
         ##Barplot - structural category % - ALL genes
         
         all_gene_percs_pivot_DF=all_gene_percs_pivot_DF.sort_values(by=[exp_factor, 'sampleID']) 
@@ -1621,8 +1636,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         ##Barplot - Genes detected counts
         gene_agg_DF = gene_agg_DF.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
-        palette = sns.color_palette("rainbow", len(categories))
-        g = sns.FacetGrid(gene_agg_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)    
+        palette = [readcount_palette[c] for c in categories]
+        g = sns.FacetGrid(gene_agg_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
         g.map_dataframe(plot_stacked_bars)
         g.set_axis_labels("Sample ID", "Number of Genes")
         g.set_titles(exp_factor + " = {col_name}")
@@ -1671,7 +1686,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 
                 # Create a subplot for this exp_factor
                 plt.subplot(1, num_factors, i)
-                sns.boxplot(data=df_filtered, x='sampleID', y='percentage', palette=palette)
+                sns.violinplot(data=df_filtered, x='sampleID', y='percentage', palette=palette)
                 plt.title(exp_factor + f" = {exp_factor_val}")
                 plt.xticks(rotation=90)
             
@@ -1693,7 +1708,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 categories = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
                 lab = 'Read count'
                 
-                palette = sns.color_palette("rainbow", len(categories))
+                palette = [readcount_palette[c] for c in categories]
                 g = sns.FacetGrid(ujc_cnts_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
                 
                 #Barplot - number of UJCs per sample, colured by stackby
@@ -1768,15 +1783,10 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 
         ## Total Mapped reads vs % reads gt 1kb
     
-        palette = sample_color_palette
         plt.figure(figsize=(14, 10))
-        sns.scatterplot(data=length_DF, y='total_reads', x='perc_reads_gt_1kb', hue='sampleID', style=exp_factor,
-                        palette=palette, legend='full', s=100)
-        
-        plt.title('Total Reads vs Percentage of Reads > 1kb')
-        plt.xlabel('Percentage of Reads > 1kb')
-        plt.ylabel('Total Reads')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
+        _scatter_labeled(length_DF, 'perc_reads_gt_1kb', 'total_reads', 'sampleID',
+                         'Total Reads vs Percentage of Reads > 1kb',
+                         'Percentage of Reads > 1kb', 'Total Reads', factor_col=exp_factor)
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
@@ -1786,8 +1796,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         length_cnts_agg = length_cnts_agg.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['reads_lt_1kb','reads_1kb_to_2kb', 'reads_2kb_to_3kb','reads_gt_3kb' ]
     
-        palette = sns.color_palette("rainbow", len(categories))
-        g = sns.FacetGrid(length_cnts_agg, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)    
+        palette = [length_palette[c] for c in categories]
+        g = sns.FacetGrid(length_cnts_agg, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
         
         g.map_dataframe(plot_stacked_bars)
         for ax, (name, group) in zip(g.axes.flatten(), length_cnts_agg.groupby(exp_factor)):
@@ -1845,18 +1855,11 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
 
         ## Scatterplot % reads > 1kb vs % structural category
         categories =[cat for cat in ['FSM', 'ISM', 'NIC', 'NNC','GI','GENIC'] if cat in length_DF.columns]
-        
-        palette = sample_color_palette
         for category in categories:
             plt.figure(figsize=(14, 10))
-            sns.scatterplot(data=length_DF, y='perc_reads_gt_1kb', x=category, 
-                        hue='sampleID', style=exp_factor,
-                        palette=palette, legend='full', s=100)
-        
-            plt.title('Percentage of Reads > 1kb vs %' + category)
-            plt.xlabel('% ' + category)
-            plt.ylabel('Percentage of Reads > 1kb')
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
+            _scatter_labeled(length_DF, category, 'perc_reads_gt_1kb', 'sampleID',
+                             'Percentage of Reads > 1kb vs %' + category,
+                             '% ' + category, 'Percentage of Reads > 1kb', factor_col=exp_factor)
             plt.tight_layout()
             matplotlib.rcParams['pdf.fonttype'] = 42
             pdf.savefig()
@@ -1865,7 +1868,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         #Bar graph RTS/intra priming
         err_DF = err_DF.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['num_reads_RTS','num_reads_intrapriming', 'num_reads_non-canonical']
-        palette = sns.color_palette("rainbow", len(categories))
+        palette = list(three_series_palette)
         g = sns.FacetGrid(err_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)    
         g.map_dataframe(plot_side_by_side_bars)
         for ax, (name, group) in zip(g.axes.flatten(), err_DF.groupby(exp_factor)):
@@ -1883,7 +1886,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     
         
         categories = ['perc_reads_RTS','perc_reads_intrapriming', 'perc_reads_non-canonical']
-        palette = sns.color_palette("rainbow", len(categories))
+        palette = list(three_series_palette)
         g = sns.FacetGrid(err_DF, col=exp_factor, col_wrap=num_factors, height=8, aspect=0.7, sharex=False, sharey=True)    
         g.map_dataframe(plot_side_by_side_bars)
         for ax, (name, group) in zip(g.axes.flatten(), err_DF.groupby(exp_factor)):
@@ -1900,16 +1903,12 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         plt.close()
         
         
-        palette = sample_color_palette
         plt.figure(figsize=(14, 10))
-        sns.scatterplot(x=0, y=1, hue='sampleID', data=pca_DF, 
-                        style=exp_factor,palette=palette, s = 100)
-        title = plt.title('PCA Plot Based on QC metrics')
-        plt.xlabel('Principal Component 1')
-        plt.ylabel('Principal Component 2')
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', title='Legend')
+        _scatter_labeled(pca_DF, 0, 1, 'sampleID', 'PCA Plot Based on QC metrics',
+                         'Principal Component 1', 'Principal Component 2', factor_col=exp_factor)
+        title = plt.gca().title
         plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
+        pdf.savefig(bbox_inches='tight')
         plt.close()
         
         # Calculate the cumulative variance and determine the number of components to use
@@ -1953,8 +1952,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         nov_can_DF = nov_can_DF.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
-        palette = sns.color_palette("rainbow", len(categories))
-        g = sns.FacetGrid(nov_can_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)    
+        palette = [jxn_palette[c] for c in categories]
+        g = sns.FacetGrid(nov_can_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)
         g.map_dataframe(plot_stacked_bars)
         for ax, (name, group) in zip(g.axes.flatten(),nov_can_DF.groupby(exp_factor)):
             ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
@@ -1971,8 +1970,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         nov_can_perc_DF = nov_can_perc_DF.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
-        palette = sns.color_palette("rainbow", len(categories))
-        g = sns.FacetGrid(nov_can_perc_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)    
+        palette = [jxn_palette[c] for c in categories]
+        g = sns.FacetGrid(nov_can_perc_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)
         g.map_dataframe(plot_stacked_bars)
         for ax, (name, group) in zip(g.axes.flatten(),nov_can_perc_DF.groupby(exp_factor)):
             ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
@@ -1988,7 +1987,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         cv_acc_summary = cv_acc_summary.sort_values(by=[exp_factor, 'sampleID'])
         categories = ['ref_match','cv_0','cv_gt_0']
-        palette = sns.color_palette("rainbow", len(categories))
+        palette = list(three_series_palette)
         g = sns.FacetGrid(cv_acc_summary, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)    
         g.map_dataframe(plot_stacked_bars)
         for ax, (name, group) in zip(g.axes.flatten(),cv_acc_summary.groupby(exp_factor)):
@@ -2075,8 +2074,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
     #Define sample color palette
     
     unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
-    sample_colors = plt.cm.rainbow(np.linspace(0, 1, num_samples))
-    sample_color_palette = {sampleID: color for sampleID, color in zip(unique_sampleIDs, sample_colors)}
+    sample_color_palette = {sampleID: sample_seq[i % len(sample_seq)]
+                            for i, sampleID in enumerate(unique_sampleIDs)}
     
     
     with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
@@ -2087,33 +2086,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         pdf.savefig(title_fig)
         plt.close(title_fig)
         
-        ##Plot 2 - Vertical plot - reads in detcted genes by structural category
-        ### each dot is a sample
-        palette = sample_color_palette
-        plt.figure(figsize=(14, 10))
-        sns.stripplot(x='Category', y='Percentage', data=all_gene_percs_long_DF, jitter=0, 
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
-        plt.xticks(rotation=90)
-        plt.ylabel('Percentage')
-        plt.title(' Percent reads in each structural category - All Genes')
-        plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        plt.figure(figsize=(14, 10))
-        sns.stripplot(x='Category', y='Percentage', data=annot_gene_percs_long_DF, jitter=0, 
-                      alpha=0.6, hue='sampleID', dodge=False, **{'linewidth': 0, 's': 20}, palette = palette, order = cat_order)
-        plt.xticks(rotation=90)
-        plt.ylabel('Percentage')
-        plt.title(' Percent reads in each structural category - Annotated Genes')
-        plt.legend(title='SampleID', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
+        # Structural-category composition is shown as stacked bars (below), matching
+        # the HTML report. The earlier per-sample stripplot views were removed.
         categories = [col for col in all_gene_percs_pivot_DF.columns if col not in ['sampleID', exp_factor]]
         categories = [cat for cat in cat_order_stacked if cat in categories]
         
@@ -2259,10 +2233,9 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
                 gene_agg_DF[column] = 0
         gene_agg_DF = gene_agg_DF[cols]
         gene_agg_DF.set_index('sampleID', inplace=True)
-        palette = sns.color_palette("rainbow", len(categories))
-     
+
         plt.figure(figsize=(14, 10))
-        gene_agg_DF.plot(kind='bar', stacked=True, colormap='rainbow')
+        gene_agg_DF.plot(kind='bar', stacked=True, color=_palette_colors(gene_agg_DF.columns, readcount_palette))
         plt.title('Genes detected')
         plt.xlabel('SampleID')
         plt.ylabel('Number of Genes detected')
@@ -2280,7 +2253,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         gene_percs_unstacked = gene_percs_unstacked[cols]
         gene_percs_unstacked.set_index('sampleID', inplace=True)
         plt.figure(figsize=(14, 10))
-        gene_percs_unstacked.plot(kind='bar', stacked=True, colormap='rainbow')
+        gene_percs_unstacked.plot(kind='bar', stacked=True, color=_palette_colors(gene_percs_unstacked.columns, readcount_palette))
         plt.title('Genes detected')
         plt.xlabel('SampleID')
         plt.ylabel('Percentage of Genes detected')
@@ -2296,7 +2269,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
 
         for category in melted_annotated_gene_DF['category'].unique():
              plt.figure(figsize=(14, 10))
-             sns.boxplot(x='sampleID', y='percentage', hue='sampleID' ,data=melted_annotated_gene_DF[melted_annotated_gene_DF['category'] == category],
+             sns.violinplot(x='sampleID', y='percentage', hue='sampleID' ,data=melted_annotated_gene_DF[melted_annotated_gene_DF['category'] == category],
                     palette=sample_color_palette)
              plt.title(f'Gene distribution - {category}')
              plt.xticks(rotation=90)
@@ -2319,7 +2292,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
                 fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 6))  # Adjust figsize as needed
             
                 # Plot number of UJCs per sample on the first subplot
-                ujc_cnts_dct[stack_by].plot(kind='bar', stacked=True, colormap='rainbow', ax=axes[0])
+                ujc_cnts_dct[stack_by].plot(kind='bar', stacked=True, color=_palette_colors(ujc_cnts_dct[stack_by].columns, readcount_palette), ax=axes[0])
                 axes[0].set_title('Number of UJCs detected')
                 axes[0].set_xticks(np.arange(len(ujc_cnts_dct[stack_by]['sampleID'])))
                 axes[0].set_xticklabels(ujc_cnts_dct[stack_by]['sampleID'], rotation=90, ha='right')
@@ -2328,7 +2301,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
                 axes[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
                 
                 # Plot % UJCs per sample on the second subplot
-                ujc_percs_dct[stack_by].plot(kind='bar', stacked=True, colormap='rainbow', ax=axes[1])
+                ujc_percs_dct[stack_by].plot(kind='bar', stacked=True, color=_palette_colors(ujc_percs_dct[stack_by].columns, readcount_palette), ax=axes[1])
                 axes[1].set_title('Percentage of UJCs detected')
                 axes[1].set_xticks(np.arange(len(ujc_percs_dct[stack_by]['sampleID'])))
                 axes[1].set_xticklabels(ujc_percs_dct[stack_by]['sampleID'], rotation=90, ha='right')
@@ -2374,12 +2347,9 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         ##Plot 10 - num reads vs % reads gt 1kb
         
         plt.figure(figsize=(14, 10))
-        sns.scatterplot(data=length_DF, x='perc_reads_gt_1kb', y='total_reads', 
-                        hue='sampleID', palette=sample_color_palette, legend='full', s=100)
-        plt.title('Total Reads vs Percentage of Reads > 1kb')
-        plt.xlabel('Percentage of Reads > 1kb')
-        plt.ylabel('Total Reads')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        _scatter_labeled(length_DF, 'perc_reads_gt_1kb', 'total_reads', 'sampleID',
+                         'Total Reads vs Percentage of Reads > 1kb',
+                         'Percentage of Reads > 1kb', 'Total Reads')
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
@@ -2390,7 +2360,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         length_cnts_agg = length_cnts_agg.sort_values(by= 'sampleID')
         length_cnts_agg =  length_cnts_agg.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        length_cnts_agg.plot(kind='bar', stacked=True, colormap='rainbow')
+        length_cnts_agg.plot(kind='bar', stacked=True, color=_palette_colors(length_cnts_agg.columns, length_palette))
         plt.title('Number of reads')
         plt.xticks(ticks=np.arange(len(length_cnts_agg['sampleID'])), labels=length_cnts_agg['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2405,7 +2375,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         length_percs_agg = length_percs_agg.sort_values(by= 'sampleID')
         length_percs_agg =  length_percs_agg.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        length_percs_agg.plot(kind='bar', stacked=True, colormap='rainbow')
+        length_percs_agg.plot(kind='bar', stacked=True, color=_palette_colors(length_percs_agg.columns, length_palette))
         plt.title('Number of reads')
         plt.xticks(ticks=np.arange(len(length_percs_agg['sampleID'])), labels=length_percs_agg['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2427,15 +2397,11 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         
         ##Plot 13 -  % structural category vs %reads greater than 1kb
         categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC','GI','GENIC'] if cat in length_DF.columns]
-        palette = sample_color_palette
         for category in categories:
             plt.figure(figsize=(14, 10))
-            sns.scatterplot(data=length_DF,y='perc_reads_gt_1kb', x=category, 
-                            hue='sampleID', palette=palette, legend='full', s=100)
-            plt.title('Percentage of Reads > 1kb vs %' + category )
-            plt.ylabel('Percentage of Reads > 1kb')
-            plt.xlabel('%' + category)
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            _scatter_labeled(length_DF, category, 'perc_reads_gt_1kb', 'sampleID',
+                             'Percentage of Reads > 1kb vs %' + category,
+                             '%' + category, 'Percentage of Reads > 1kb')
             plt.tight_layout()
             matplotlib.rcParams['pdf.fonttype'] = 42
             pdf.savefig()
@@ -2451,11 +2417,8 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         err_cnt_DF.set_index('sampleID', inplace=True)
         err_perc_DF.set_index('sampleID', inplace=True)
         
-        palette = sns.color_palette("rainbow", 3)
-        
-        
         plt.figure(figsize=(14, 10))
-        err_cnt_DF.plot(kind='bar', stacked=False, colormap='rainbow')
+        err_cnt_DF.plot(kind='bar', stacked=False, color=three_series_palette)
         plt.title('Number of Artefact reads')
         plt.xlabel('SampleID')
         plt.ylabel('Number of Reads')
@@ -2467,7 +2430,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         plt.figure(figsize=(14, 10))
-        err_perc_DF.plot(kind='bar', stacked=False, colormap='rainbow')
+        err_perc_DF.plot(kind='bar', stacked=False, color=three_series_palette)
         plt.title('Percent Artefact reads')
         plt.xlabel('SampleID')
         plt.ylabel('Percentage')
@@ -2479,13 +2442,12 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         plt.close()
         
         
-        palette = sample_color_palette
         plt.figure(figsize=(14, 10))
-        sns.scatterplot(x=0, y=1, hue='sampleID', data=pca_DF, palette=sample_color_palette, s=50)
-        plt.title('PCA Plot Based on sampleID')
-        plt.xlabel('Principal Component 1')
-        plt.ylabel('Principal Component 2')
-        plt.legend()
+        _scatter_labeled(pca_DF, 0, 1, 'sampleID', 'PCA Plot Based on sampleID',
+                         'Principal Component 1', 'Principal Component 2',
+                         factor_col=exp_factor)
+        plt.tight_layout()
+        matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig()
         plt.close()
         
@@ -2531,7 +2493,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         nov_can_DF = nov_can_DF.sort_values(by= 'sampleID')
         nov_can_DF  =  nov_can_DF.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        nov_can_DF.plot(kind='bar', stacked=True, colormap='rainbow')
+        nov_can_DF.plot(kind='bar', stacked=True, color=_palette_colors(nov_can_DF.columns, jxn_palette))
         plt.title('Junctions by Category')
         plt.xticks(ticks=np.arange(len(nov_can_DF['sampleID'])), labels=nov_can_DF['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2546,7 +2508,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         nov_can_perc_DF = nov_can_perc_DF.sort_values(by= 'sampleID')
         nov_can_perc_DF  =  nov_can_perc_DF.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        nov_can_perc_DF.plot(kind='bar', stacked=True, colormap='rainbow')
+        nov_can_perc_DF.plot(kind='bar', stacked=True, color=_palette_colors(nov_can_perc_DF.columns, jxn_palette))
         plt.title('Junctions by Category')
         plt.xticks(ticks=np.arange(len(nov_can_perc_DF['sampleID'])), labels=nov_can_perc_DF['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2562,7 +2524,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         cv_acc_summary = cv_acc_summary.sort_values(by= 'sampleID')
         cv_acc_summary  =  cv_acc_summary.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        cv_acc_summary.plot(kind='bar', stacked=True, colormap='rainbow')
+        cv_acc_summary.plot(kind='bar', stacked=True, color=three_series_palette)
         plt.title('Number of Detected Acceptors')
         plt.xticks(ticks=np.arange(len(cv_acc_summary['sampleID'])), labels=cv_acc_summary['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2577,7 +2539,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         cv_don_summary = cv_don_summary.sort_values(by= 'sampleID')
         cv_don_summary  =  cv_don_summary.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        cv_don_summary.plot(kind='bar', stacked=True, colormap='rainbow')
+        cv_don_summary.plot(kind='bar', stacked=True, color=three_series_palette)
         plt.title('Number of Detected Donors')
         plt.xticks(ticks=np.arange(len(cv_don_summary['sampleID'])), labels=cv_don_summary['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2592,7 +2554,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         cv_acc_percs = cv_acc_percs.sort_values(by= 'sampleID')
         cv_acc_percs  =  cv_acc_percs.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        cv_acc_percs.plot(kind='bar', stacked=True, colormap='rainbow')
+        cv_acc_percs.plot(kind='bar', stacked=True, color=three_series_palette)
         plt.title('Percentage of Detected Acceptors')
         plt.xticks(ticks=np.arange(len(cv_acc_percs['sampleID'])), labels=cv_acc_percs['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2607,7 +2569,7 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         cv_don_percs = cv_don_percs.sort_values(by= 'sampleID')
         cv_don_percs  =  cv_don_percs.drop(columns=[exp_factor])
         plt.figure(figsize=(14, 10))
-        cv_don_percs.plot(kind='bar', stacked=True, colormap='rainbow')
+        cv_don_percs.plot(kind='bar', stacked=True, color=three_series_palette)
         plt.title('Percentage of Detected Donors')
         plt.xticks(ticks=np.arange(len(cv_don_percs['sampleID'])), labels=cv_don_percs['sampleID'], rotation=90, ha='right')
         plt.xlabel('SampleID')
@@ -2619,46 +2581,6 @@ def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gen
         pdf.savefig()
         plt.close()
         
-def makeHTML(drty, prefx, sufx):
-    from pdf2image import convert_from_path  # lazy: only HTML reports need poppler
-    pages = convert_from_path(drty + prefx + sufx)
-    # Encode each page as a base64 string
-    encoded_images = []
-    for page in pages:
-        buffer = io.BytesIO()
-        page.save(buffer, format="PNG")
-        buffer.seek(0)
-        encoded_images.append(base64.b64encode(buffer.read()).decode("utf-8"))
-
-    # HTML template for embedding images
-    html_template = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>PDF to HTML</title>
-    </head>
-    <body>
-        <h1>PDF Report</h1>
-        {% for img in images %}
-        <div>
-            <img src="data:image/png;base64,{{ img }}" style="width: 100%; height: auto;">
-        </div>
-        {% endfor %}
-    </body>
-    </html>
-    """
-
-    # Render HTML with images
-    template = Template(html_template)
-    html_content = template.render(images=encoded_images)
-
-    # Save to HTML file
-    with open(drty + prefx + sufx[:-4] + ".html", "w") as f:
-        f.write(html_content)
-
-    reads_logger.info(f"HTML report saved as {drty + prefx + sufx[:-4]}.html")
-
-
 def run_reads_plots(
     ref_gtf: str,
     design_file: str,
@@ -2742,23 +2664,31 @@ def main():
                                                                                                                             fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct)
     dfs_for_plotting = prep_data_4_plots( gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
-    # Single unified report: QC plots followed by the under-annotation section,
-    # all written to one PDF. identify_cand_underannot still writes its CSV
-    # tables; passing the open `pdf` makes it append its pages here instead of
-    # emitting a separate file.
-    report_path = os.path.join(args.OUT, args.PREFIX + '_report.pdf')
-    with PdfPages(report_path) as pdf:
-        if args.inFACTOR is None:
-            plot_pdf(report_path, *dfs_for_plotting, pdf=pdf)
-        else:
-            plot_pdf_by_factor(report_path, *dfs_for_plotting, pdf=pdf)
-        identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
+    need_pdf = args.report in ("pdf", "both")
+    need_html = args.report in ("html", "both")
 
-    if args.report in ("both", "html"):
-        makeHTML(f'{args.OUT}/', args.PREFIX, '_report.pdf')
+    report_pdf = os.path.join(args.OUT, args.PREFIX + '_report.pdf')
 
-    if args.report == "html":
-        os.remove(report_path)
+    # HTML is built FIRST: it needs the un-mutated plotting DataFrames, whereas
+    # plot_pdf mutates several of them in place (e.g. set_index('sampleID')).
+    # The under-annotation CSV tables are written first (plot=False) because the
+    # HTML report reads them.
+    if need_html:
+        identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
+        from src.utilities.sqanti_reads_report import build_html_report
+        report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
+        build_html_report(report_html, dfs_for_plotting, args)
+
+    # Single unified PDF report: QC plots followed by the under-annotation
+    # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
+    # passing the open `pdf` makes it append pages here.
+    if need_pdf:
+        with PdfPages(report_pdf) as pdf:
+            if args.inFACTOR is None:
+                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf)
+            else:
+                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf)
+            identify_cand_underannot(ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory
     plt.close('all')
