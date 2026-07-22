@@ -21,7 +21,7 @@ An example design file is:
 | wtc11_ONTdRNA | ENCFF104BNW |
 | wtc11_cDNA | ENCFF105WIJ |
 
-To run SQANTI-reads in _fast_ mode, you must first, run SQANTI3-QC on all your samples individually (great opportunity for you to parallelize this using your system's slurm, gnu parallel or your favourite parallelization method). Using the parameter ```--input_dir```, you can give sqanti3_reads.py the path to the parent directory where all the SQANTI3-QC output directories are stored.
+To run SQANTI-reads in _fast_ mode, you must first, run SQANTI3-QC on all your samples individually (great opportunity for you to parallelize this using your system's slurm, gnu parallel or your favourite parallelization method). Using the parameter ```-d/--sqanti_dirs```, you can give sqanti3_reads.py the path to the parent directory where all the SQANTI3-QC output directories are stored.
 
 We recommend using _fast_ mode, this ensures you can easily parallelize your work and have more control over mapping parameters. The usual reads pre-processing pipelines for ONT and PacBio to run SQANTI-reads include:  
 - For ONT: Running pychopper to strand the reads, remove primers and polyA tails.  
@@ -32,8 +32,8 @@ Directories with SQANTI3-QC output are named as {file_acc} (e.g. ./ENCFF003QZT/)
 
 Example run starting after running spliced_bam2gff:
 ```
-python sqanti3_qc.py ENCFF003QZT.gff --annotation hg38.ensGene.gtf --genome hg38.fa --skipORF --min_ref_len 0 --aligner_choice minimap2 -t 8 -d ./ENCFF003QZT -o wtc11_PBcDNA
-python sqanti3_reads.py --design design.csv --annotation hg38.ensGene.gtf
+python sqanti3_qc.py --isoforms ENCFF003QZT.gff --refGTF hg38.ensGene.gtf --refFasta hg38.fa --min_ref_len 0 --aligner_choice minimap2 -t 8 -d ./ENCFF003QZT -o wtc11_PBcDNA
+python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --sqanti_dirs ./
 ```
   
 ### SQANTI-reads (minimum) _simple_ mode.  
@@ -57,7 +57,7 @@ Where design.csv is:
 
 Example run:
 ```
-python sqanti3_reads.py --design design.csv --annotation hg38.ensGene.gtf --genome hg38.fa
+python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --refFasta hg38.fa
 ```
 
 Fastq files are named {file_acc}\*.fastq (e.g. ENCFF003QZT_PB.fastq) and are stored in the current directory.
@@ -78,67 +78,112 @@ Before running SQANTI-reads, you will need to:
 The SQANTI-reads script accepts the following arguments:
 
 ```
-usage: sqanti3_reads.py [-h] [--genome GENOME] --annotation ANNOTATION -de INDESIGN [-i INPUT_DIR] [-f INFACTOR]
-                       [-p PREFIX] [-d DIR] [--min_ref_len MIN_REF_LEN] [--force_id_ignore]
-                       [--aligner_choice {minimap2,uLTRA}] [-t CPUS] [-n CHUNKS] [-s SITES] [-ge ANNOTEXP]
-                       [-je JXNEXP] [-pc PERCCOV] [-pj PERCMAXJXN] [-fl FACTORLVL] [--all_tables] [--report {pdf,html,both}] [--pca_tables]
-                       [--skip_hash] [--verbose] [-v]
+usage: sqanti3_reads.py [-h] [--refFasta REFFASTA] --refGTF REFGTF -de
+                        INDESIGN [-i INPUT_DIR] [-p PREFIX] [-d SQANTI_DIRS]
+                        [-o OUTPUT] [--report {pdf,html,both}]
+                        [--config CONFIG] [--all_tables] [--pca_tables]
+                        [--min_ref_len MIN_REF_LEN] [-ge ANNOTEXP]
+                        [-je JXNEXP] [-pc PERCCOV] [-pj PERCMAXJXN]
+                        [--aligner_choice {minimap2,uLTRA}] [-s SITES]
+                        [--skip_hash] [-f INFACTOR] [-fl FACTORLVL]
+                        [--skip_plots] [-t CPUS] [-n CHUNKS] [-j JOBS]
+                        [--force_id_ignore] [--verbose] [-v]
 
 Structural and Quality Annotation of Novel Transcript Isoforms
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --genome GENOME       Reference genome (Fasta format).
-  --annotation ANNOTATION
-                        Reference annotation file (GTF format).
+  --force_id_ignore     Allow the usage of transcript IDs non related with
+                        PacBio's nomenclature (PB.X.Y)
+
+Required arguments:
+  --refFasta REFFASTA   Reference genome (Fasta format). Required unless
+                        running in fast mode (--sqanti_dirs).
+  --refGTF REFGTF       Reference annotation file (GTF format)
   -de INDESIGN, --design INDESIGN
-                        Path to design file, must have sampleID and file_acc column.
-  -i INPUT_DIR, --input_dir INPUT_DIR
-                        Path to directory where fastq/GTF files are stored. Or path to parent directory with
-                        children directories of SQANTI3 runs. Default: Directory where the script was run.
-  -f INFACTOR, --factor INFACTOR
-                        This is the column name that plots are to be faceted by. Default: None
+                        Path to design file, must have sampleID and file_acc
+                        column.
+
+Input/Output options:
+  -i INPUT_DIR, --raw_data_dir INPUT_DIR
+                        Path to directory where fastq/GTF files are stored
+                        (for running SQANTI3 from scratch). Default: Directory
+                        where the script was run.
   -p PREFIX, --prefix PREFIX
-                        SQANTI-reads output filename prefix. Default: sqantiReads
-  -d DIR, --dir DIR     Directory for output sqanti_reads files. Default: Directory where the script was run.
-  --min_ref_len MIN_REF_LEN
-                        Minimum reference transcript length. Default: 0 bp
-  --force_id_ignore     Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)
-  --aligner_choice {minimap2,uLTRA}
-                        Default: minimap2
-  -t CPUS, --cpus CPUS  Number of threads used during alignment by aligners. Default: 10
-  -n CHUNKS, --chunks CHUNKS
-                        Number of chunks to split SQANTI3 analysis in for speed up. Default: 1
-  -j JOBS, --jobs JOBS  Number of samples to process in parallel (UJC hashing, per-sample aggregation, and simple-mode SQANTI3-QC). Each parallel QC job still uses --cpus threads, so peak cores ~= jobs*cpus. Default: 1 (serial)
-  -s SITES, --sites SITES
-                        Set of splice sites to be considered as canonical (comma-separated list of splice sites).
-                        Default: GTAG,GCAG,ATAC.
-  -ge ANNOTEXP, --gene_expression ANNOTEXP
-                        Expression cut off level for determining underannotated genes. Default = 100
-  -je JXNEXP, --jxn_expression JXNEXP
-                        Coverage threshold for detected reference donors and acceptor. Default = 10
-  -pc PERCCOV, --perc_coverage PERCCOV
-                        Percent gene coverage of UJC for determining well-covered unannotated transcripts.
-                        Default = 20
-  -pj PERCMAXJXN, --perc_junctions PERCMAXJXN
-                        Percent of the max junctions in gene for determining near full-length putative novel
-                        transcripts. Default = 80
-  -fl FACTORLVL, --factor_level FACTORLVL
-                        Factor level to evaluate for underannotation
-  --all_tables          Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv
-                        and and underannotated gene tables
-  --pca_tables          Export table for making PCA plots  
-  --skip_hash           Skip the hashing step
+                        SQANTI-reads output filename prefix. Default:
+                        sqantiReads
+  -d SQANTI_DIRS, --sqanti_dirs SQANTI_DIRS
+                        Directory containing existing SQANTI3 output folders.
+                        Use this to skip re-running QC and proceed directly to
+                        aggregation.
+  -o OUTPUT, --output OUTPUT
+                        Directory for output sqanti_reads files (plots,
+                        tables, design file). Default: Directory where the
+                        script was run.
   --report {pdf,html,both}
                         Default: pdf
-  --config CONFIG       YAML file overriding QC-flag thresholds and other cut-offs. Defaults reproduce the standard behaviour.
-  --verbose             If verbose is run, it will print all steps, by default it is FALSE
+  --config CONFIG       YAML file overriding QC-flag thresholds and other cut-
+                        offs (intra-priming %A, PCA variance, length bins).
+                        Defaults reproduce the standard behaviour.
+  --all_tables          Export all output tables. Default tables are gene
+                        counts, ujc counts, length_summary, cv and
+                        underannotated gene tables
+  --pca_tables          Export table for making PCA plots
+
+Filtering options:
+  --min_ref_len MIN_REF_LEN
+                        Minimum reference transcript length. Default: 0 bp
+  -ge ANNOTEXP, --gene_expression ANNOTEXP
+                        Expression cut off level for determining
+                        underannotated genes. Default = 100
+  -je JXNEXP, --jxn_expression JXNEXP
+                        Coverage threshold for detected reference donors and
+                        acceptor. Default = 10
+  -pc PERCCOV, --perc_coverage PERCCOV
+                        Percent gene coverage of UJC for determining well-
+                        covered unannotated transcripts. Default = 20
+  -pj PERCMAXJXN, --perc_junctions PERCMAXJXN
+                        Percent of the max junctions in gene for determining
+                        near full-length putative novel transcripts. Default =
+                        80
+
+Analysis options:
+  --aligner_choice {minimap2,uLTRA}
+                        Default: minimap2
+  -s SITES, --sites SITES
+                        Set of splice sites to be considered as canonical
+                        (comma-separated list of splice sites). Default:
+                        GTAG,GCAG,ATAC.
+  --skip_hash           Skip the hashing step
+
+Visualization options:
+  -f INFACTOR, --factor INFACTOR
+                        This is the column name that plots are to be faceted
+                        by. Default: None
+  -fl FACTORLVL, --factor_level FACTORLVL
+                        Factor level to evaluate for underannotation
+  --skip_plots          Skip the plotting step
+
+Performance options:
+  -t CPUS, --cpus CPUS  Number of threads used during alignment by aligners.
+                        Default: 10
+  -n CHUNKS, --chunks CHUNKS
+                        Number of chunks to split SQANTI3 analysis in for
+                        speed up. Default: 1
+  -j JOBS, --jobs JOBS  Number of samples to process in parallel (UJC hashing,
+                        and per-sample SQANTI3-QC in simple mode). Note: each
+                        parallel QC job still uses --cpus alignment threads, so
+                        peak cores ~= jobs*cpus. Default: 1 (serial)
+
+Optional arguments:
+  --verbose             If verbose is run, it will print all steps, by default
+                        it is FALSE
   -v, --version         Display program version number.
 ```
 
 ## SQANTI-reads output
 
-The sqanti-reads output is written to the path specified in ```--dir``` or ```-d``` argument, also appending the prefix provided via the ```--prefix``` or -p argument.
+The sqanti-reads output is written to the path specified in ```--output``` or ```-o``` argument, also appending the prefix provided via the ```--prefix``` or -p argument.
 
 The following output files are generated after running it:
 
@@ -203,7 +248,7 @@ pca_cumulative_variance: 0.85
 There is an example dataset with three small samples on the SQANTI3/example/sqanti_reads_test/ directory. If you run it from the main SQANTI3 directory, you can run it in simple mode with the following command:
 
 ```
-python sqanti3_reads.py --design ./example/sqanti_reads_test/sqR_design_file.csv -i ./example/sqanti_reads_test/ -p SQ_R --annotation ./example/gencode.v38.basic_chr22.gtf --genome ./example/GRCh38.p13_chr22.fasta --dir ./example/sqanti_reads_test/ --report both
+python sqanti3_reads.py --design ./example/sqanti_reads_test/sqR_design_file.csv -i ./example/sqanti_reads_test/ -p SQ_R --refGTF ./example/gencode.v38.basic_chr22.gtf --refFasta ./example/GRCh38.p13_chr22.fasta --output ./example/sqanti_reads_test/ --report both
 ```
 
 ## Citing SQANTI-reads
