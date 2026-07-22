@@ -281,10 +281,13 @@ def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylab
     else:
         g.map_dataframe(_stacked_bars_indexed, categories=categories, palette=palette)
     for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
-        # Pin the tick locations before labelling them (avoids matplotlib's
-        # "FixedFormatter without FixedLocator" warning).
-        ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
+        # Pin tick positions to the sample count before labelling. Using the
+        # actual sample positions (not ax.get_xticks()) keeps labels aligned even
+        # when a panel drew no bars — e.g. an all-zero facet — which would
+        # otherwise mismatch the default auto-ticks and raise a FixedLocator error.
+        labels = list(group['sampleID'].unique())
+        ax.set_xticks(np.arange(len(labels)))
+        ax.set_xticklabels(labels, rotation=90)
     g.set_axis_labels(xlabel, ylabel)
     g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
     title_obj = g.fig.suptitle(title, y=1.02, fontsize=20)
@@ -1485,6 +1488,35 @@ def identify_cand_underannot(args, ujc_count_DF, factor_level=None, pdf=None, ou
             pdf.savefig()
             plt.close()
 
+def _cv_category_summary(cv_df, exp_factor, sample_factor_DF):
+    """Per-sample counts of reference-matching / zero-CV / positive-CV junctions.
+
+    Robust to an empty input (no donor/acceptor junctions pass the -je threshold,
+    or a dataset with only monoexons): returns one zero-filled numeric row per
+    sample so the counts/percentage columns always exist with the right dtype,
+    instead of KeyError-ing or breaking the downstream stacked-bar arithmetic.
+    """
+    cols = ['ref_match', 'cv_0', 'cv_gt_0']
+    if cv_df.empty:
+        base = sample_factor_DF[['sampleID', exp_factor]].drop_duplicates().reset_index(drop=True)
+        for col in cols:
+            base[col] = 0
+        return base
+    summary = cv_df.groupby(['sampleID', exp_factor]).apply(
+        lambda x: pd.Series({
+            'ref_match': (x['mean_abs_diff'] == 0).sum(),
+            'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
+            'cv_gt_0': (x['cv'] > 0).sum(),
+        }),
+        include_groups=False,
+    ).reset_index()
+    for col in cols:
+        if col not in summary.columns:
+            summary[col] = 0
+    summary.fillna(0, inplace=True)
+    return summary
+
+
 def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct):
     
     abbr_mapping = {
@@ -1699,36 +1731,22 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
         
     
     
-    cv_don_summary = cv_don_DF.groupby(['sampleID',exp_factor]).apply(
-            lambda x: pd.Series({
-                    'ref_match': (x['mean_abs_diff'] == 0).sum(),
-                    'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
-                    'cv_gt_0': (x['cv'] > 0).sum()
-                    }),
-                    include_groups=False,
-                    ).reset_index()
-    cv_don_summary.fillna(0, inplace=True)
-    
-    cv_acc_summary = cv_acc_DF.groupby(['sampleID',exp_factor]).apply(
-            lambda x: pd.Series({
-                    'ref_match': (x['mean_abs_diff'] == 0).sum(),
-                    'cv_0': ((x['cv'] == 0) & (x['mean_abs_diff'] != 0)).sum(),
-                    'cv_gt_0': (x['cv'] > 0).sum()
-                    }),
-                    include_groups=False,
-                    ).reset_index()
-    cv_acc_summary.fillna(0, inplace=True)
+    cv_don_summary = _cv_category_summary(cv_don_DF, exp_factor, exp_factor_DF)
+    cv_acc_summary = _cv_category_summary(cv_acc_DF, exp_factor, exp_factor_DF)
    
     
     cv_acc_percs = cv_acc_summary.copy()
     cv_acc_totals = cv_acc_summary[['ref_match', 'cv_0', 'cv_gt_0']].sum(axis=1)
-    cv_acc_percs[['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0']] = cv_acc_summary[['ref_match', 'cv_0', 'cv_gt_0']].div(cv_acc_totals, axis=0)*100
+    # fillna(0) covers samples with zero qualifying junctions (0/0 -> NaN otherwise).
+    cv_acc_percs[['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0']] = (
+        cv_acc_summary[['ref_match', 'cv_0', 'cv_gt_0']].div(cv_acc_totals, axis=0) * 100).fillna(0)
     cv_acc_percs.drop(columns=['ref_match', 'cv_0', 'cv_gt_0'], inplace=True)
-    
- 
+
+
     cv_don_percs = cv_don_summary.copy()
     cv_don_totals = cv_don_summary[['ref_match', 'cv_0', 'cv_gt_0']].sum(axis=1)
-    cv_don_percs[['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0']] = cv_don_summary[['ref_match', 'cv_0', 'cv_gt_0']].div(cv_don_totals, axis=0)*100
+    cv_don_percs[['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0']] = (
+        cv_don_summary[['ref_match', 'cv_0', 'cv_gt_0']].div(cv_don_totals, axis=0) * 100).fillna(0)
     cv_don_percs.drop(columns=['ref_match', 'cv_0', 'cv_gt_0'], inplace=True)
     
     for sampleID in exp_factor_DF['sampleID']:
