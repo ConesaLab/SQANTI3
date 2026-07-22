@@ -48,16 +48,16 @@ def test_artefact_pages_render_two_pages(tmp_path):
     out = tmp_path / "art.pdf"
     with PdfPages(str(out)) as pdf:
         plot_artefact_metric_pages(pdf, _err_df(), QC, scorecard=_scorecard())
-    import PyPDF2
-    assert len(PyPDF2.PdfReader(str(out)).pages) == 2
+    import pypdf
+    assert len(pypdf.PdfReader(str(out)).pages) == 2
 
 
 def test_artefact_pages_no_scorecard_still_renders(tmp_path):
     out = tmp_path / "art.pdf"
     with PdfPages(str(out)) as pdf:
         plot_artefact_metric_pages(pdf, _err_df(), QC, scorecard=None)
-    import PyPDF2
-    assert len(PyPDF2.PdfReader(str(out)).pages) == 2
+    import pypdf
+    assert len(pypdf.PdfReader(str(out)).pages) == 2
 
 
 def test_artefact_pages_noop_on_missing(tmp_path):
