@@ -252,7 +252,7 @@ def _stacked_bars_indexed(*args, categories, palette, **kwargs):
 
 def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylabel,
                         palette, categories=None, legend_title=None,
-                        height=8, aspect=1.3, sort=True, fixed_locator=True):
+                        height=8, aspect=1.3, sort=True):
     """Render one faceted stacked-bar page (one panel per ``exp_factor`` level).
 
     ``palette`` is either a {column: hex} dict (columns inferred + stacked in
@@ -267,9 +267,10 @@ def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylab
     else:
         g.map_dataframe(_stacked_bars_indexed, categories=categories, palette=palette)
     for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
+        # Pin the tick locations before labelling them (avoids matplotlib's
+        # "FixedFormatter without FixedLocator" warning).
+        ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
         ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-        if fixed_locator:
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
     g.set_axis_labels(xlabel, ylabel)
     g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
     title_obj = g.fig.suptitle(title, y=1.02, fontsize=20)
@@ -314,8 +315,8 @@ def _render_grouped_bar(pdf, df, *, exp_factor, num_factors, categories, palette
                       aspect=aspect, sharex=False, sharey=True)
     g.map_dataframe(_grouped_bars_indexed, categories=categories, palette=palette)
     for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
-        ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
         ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
+        ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
     g.set_axis_labels(xlabel, ylabel)
     g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
     title_obj = g.fig.suptitle(title, y=1.02, fontsize=20)
@@ -1925,7 +1926,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                 
                 # Create a subplot for this exp_factor
                 plt.subplot(1, num_factors, i)
-                sns.violinplot(data=df_filtered, x='sampleID', y='percentage', palette=palette)
+                sns.violinplot(data=df_filtered, x='sampleID', y='percentage',
+                               hue='sampleID', palette=palette, legend=False)
                 if exp_factor != 'temp_factor':
                     plt.title(exp_factor + f" = {exp_factor_val}")
                 plt.xticks(rotation=90)
@@ -2000,17 +2002,15 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         
         
         g = sns.FacetGrid(length_DF2, col=exp_factor, col_wrap=num_factors, height=8, aspect=0.7, sharex=False, sharey=True)
-        g.map_dataframe(sns.violinplot, x='sampleID', y='length', palette=sample_color_palette)
+        g.map_dataframe(sns.violinplot, x='sampleID', y='length', hue='sampleID',
+                        palette=sample_color_palette, legend=False)
         g.set_axis_labels("Sample ID", "Length")
         g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
         title = g.fig.suptitle("Read Length Distribution", y=1.02, fontsize=20)
-        #handles = [plt.Rectangle((0,0),1,1, color=sample_color_palette[sampleID]) for sampleID in unique_sampleIDs]
-        #labels = list(unique_sampleIDs)
-        #lgd = g.fig.legend(handles, labels, title='Sample ID', bbox_to_anchor=(1.05, 1), loc='upper left')
         for ax in g.axes.flatten():
-            # Set x-tick labels with sample IDs, rotating for better visibility
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+            # Pin tick locations before labelling (avoids the FixedFormatter warning).
             ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
@@ -2096,7 +2096,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                             categories=['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical'],
                             title='Junctions by Category',
                             xlabel='Sample ID', ylabel='Number of Junctions',
-                            height=9, fixed_locator=False)
+                            height=9)
         
         
         _render_stacked_bar(pdf, nov_can_perc_DF, exp_factor=exp_factor,
@@ -2104,7 +2104,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                             categories=['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical'],
                             title='Junctions by Category',
                             xlabel='Sample ID', ylabel='Percentage',
-                            height=9, fixed_locator=False)
+                            height=9)
         
         _render_stacked_bar(pdf, cv_acc_summary, exp_factor=exp_factor,
                             num_factors=num_factors, palette=list(three_series_palette),
