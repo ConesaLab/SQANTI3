@@ -287,7 +287,8 @@ def _section(title, fig, interpretation, div_id):
 
 
 def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
-                     thresholds=QC_THRESHOLDS, jxn_offset_metrics=None):
+                     thresholds=QC_THRESHOLDS, jxn_offset_metrics=None,
+                     completeness_metrics=None):
     """Per-sample metrics + flags. Returns (summary_dict, samples_in_order)."""
     exp_factor = _factor_col(args)
     samples = length_DF["sampleID"].astype(str).tolist()
@@ -307,6 +308,16 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
         if not ps.empty:
             imprecise = ps.set_index("sampleID")["perc_imprecise"].astype(float).to_dict()
 
+    # Per-sample 5'/3' completeness scalars (% of reads within the window),
+    # keyed by sampleID; None-safe when completeness could not be computed.
+    compl_5p, compl_3p = {}, {}
+    if completeness_metrics and not completeness_metrics.get("per_sample", None) is None:
+        cp = completeness_metrics["per_sample"]
+        if not cp.empty:
+            cpi = cp.set_index("sampleID")
+            compl_5p = cpi["perc_5p_within_window"].astype(float).to_dict()
+            compl_3p = cpi["perc_3p_within_window"].astype(float).to_dict()
+
     per_sample = {}
     for s in samples:
         metrics = {
@@ -320,6 +331,8 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
             "perc_reads_RTS": float(err_idx.at[s, "perc_reads_RTS"]),
             "perc_reads_non-canonical": float(err_idx.at[s, "perc_reads_non-canonical"]),
             "perc_sites_imprecise": float(imprecise[s]) if s in imprecise else None,
+            "perc_5p_within_window": float(compl_5p[s]) if s in compl_5p else None,
+            "perc_3p_within_window": float(compl_3p[s]) if s in compl_3p else None,
         }
         flags = {m: _flag_for(metrics.get(m), spec) for m, spec in thresholds.items()}
         metrics["flags"] = flags
@@ -334,7 +347,8 @@ def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
     metric_labels = {spec["label"]: m for m, spec in thresholds.items()}
     # Metrics table
     head_cols = ["Sample", "Reads", "Genes", "Median len", "% &gt;1kb", "% FSM",
-                 "% intra-prim", "% RTS", "% non-canon", "% fuzzy sites", "Overall"]
+                 "% intra-prim", "% RTS", "% non-canon", "% 5' compl", "% 3' compl",
+                 "% fuzzy sites", "Overall"]
     rows = []
     for s in samples:
         m = per_sample[s]
@@ -350,6 +364,10 @@ def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
             (f'{m["perc_reads_intrapriming"]:.1f}', "perc_reads_intrapriming"),
             (f'{m["perc_reads_RTS"]:.1f}', "perc_reads_RTS"),
             (f'{m["perc_reads_non-canonical"]:.1f}', "perc_reads_non-canonical"),
+            ((f'{m["perc_5p_within_window"]:.1f}' if m.get("perc_5p_within_window") is not None else "—"),
+             "perc_5p_within_window"),
+            ((f'{m["perc_3p_within_window"]:.1f}' if m.get("perc_3p_within_window") is not None else "—"),
+             "perc_3p_within_window"),
             ((f'{m["perc_sites_imprecise"]:.1f}' if m["perc_sites_imprecise"] is not None else "—"),
              "perc_sites_imprecise"),
         ]
@@ -503,8 +521,56 @@ def _jxn_offset_figures(m, samples):
     return sfig, pfig, cfig
 
 
+def _completeness_figure(m, samples):
+    """Return the 5'/3' read-end completeness profile Plotly figure (|distance|
+    ECDFs, one subplot per end), or None if no data."""
+    if not m or not m.get("samples"):
+        return None
+    palette = {s: _DEFAULT_SEQ[i % len(_DEFAULT_SEQ)] for i, s in enumerate(samples)}
+    window = m["window"]
+    prof = m["profile"]
+    fig = make_subplots(rows=1, cols=2,
+                        subplot_titles=("5' completeness", "3' completeness"),
+                        shared_yaxes=True)
+    for col, end in ((1, "5prime"), (2, "3prime")):
+        ed = prof[prof["end"] == end]
+        for s in samples:
+            d = ed[ed["sampleID"] == s].sort_values("k")
+            fig.add_trace(go.Scatter(x=d["k"], y=d["perc_within"], mode="lines+markers",
+                                     name=str(s), legendgroup=str(s),
+                                     showlegend=(col == 1), line=dict(color=palette[s]),
+                                     hovertemplate="within %{x} bp: %{y:.1f}%<extra></extra>"),
+                          row=1, col=col)
+        lbl = "5'" if end == "5prime" else "3'"
+        fig.update_xaxes(title_text=f"|distance to gene {lbl} end| (bp)", row=1, col=col)
+    fig.update_yaxes(title_text="Cumulative % of reads", row=1, col=1)
+    _base_layout(fig, "Read-end completeness profile", "", "")
+    return fig
+
+
+def _scorecard_figure(sc):
+    """Return the cohort-relative sample-outlier scorecard heatmap (signed robust
+    z; red = worse than cohort), or None when disabled."""
+    if not sc or not sc.get("enabled"):
+        return None
+    samples = sc["samples"]
+    metrics = sc["metrics"]
+    Z = [[sc["z"][s][mt] for mt in metrics] for s in samples]
+    labels = [mt.replace("perc_", "%").replace("_", " ") for mt in metrics]
+    text = [[f"{sc['z'][s][mt]:.1f}" for mt in metrics] for s in samples]
+    fig = go.Figure(data=go.Heatmap(
+        z=Z, x=labels, y=samples, text=text, texttemplate="%{text}",
+        zmid=0, colorscale="RdBu_r", zmin=-3.5, zmax=3.5,
+        colorbar=dict(title="robust z<br>(+ = worse)"),
+        hovertemplate="%{y} · %{x}: z=%{z:.2f}<extra></extra>"))
+    _base_layout(fig, "Sample-outlier scorecard (cohort-relative robust z)",
+                 "Metric", "Sample")
+    return fig
+
+
 def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
-                      jxn_offset_metrics=None):
+                      jxn_offset_metrics=None, completeness_metrics=None,
+                      scorecard=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -533,9 +599,26 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
 
     per_sample, samples = _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF,
                                            gene_agg_DF, args, thresholds=qc_flags,
-                                           jxn_offset_metrics=jxn_offset_metrics)
+                                           jxn_offset_metrics=jxn_offset_metrics,
+                                           completeness_metrics=completeness_metrics)
 
     sections = [_summary_html(per_sample, samples, thresholds=qc_flags)]
+
+    # 0. Cohort-relative sample-outlier scorecard, right below the summary table.
+    _scfig = _scorecard_figure(scorecard)
+    if _scfig is not None:
+        sections.append(_section(
+            "Sample-outlier scorecard", _scfig,
+            "Each read-QC metric is turned into a robust z-score against the cohort "
+            "(median/MAD across samples), oriented so a positive value (red) means "
+            "worse than peers. A sample is flagged only when it diverges on several "
+            "independent metrics at once — the score is relative, so it stays quiet "
+            "when all samples agree and needs no dataset-specific thresholds.",
+            "fig-scorecard"))
+    elif scorecard and scorecard.get("reason"):
+        sections.append(
+            f"<div class='section'><h2>Sample-outlier scorecard</h2>"
+            f"<p class='muted'>Not shown: {scorecard['reason']}.</p></div>")
 
     subcat_order = list(subcat_color_palette.keys())
     readcount_order = ["100+ reads", "50-100 reads", "11-50 reads", "2-10 reads", "1 read"]
@@ -885,6 +968,19 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "fuzzier; a high canonical fuzziness is unusual and worth inspecting.",
                 "fig-offset-byclass"))
 
+    # 9e. Read-end completeness profiles (5'/3' distance-to-gene-end ECDFs)
+    if completeness_metrics and completeness_metrics.get("samples"):
+        cmp_fig = _completeness_figure(completeness_metrics, completeness_metrics["samples"])
+        if cmp_fig is not None:
+            sections.append(_section(
+                "Read-end completeness profile", cmp_fig,
+                "Cumulative % of reads whose 5'/3' end lands within a given distance of "
+                "the annotated gene end. Steeper curves mean more reads reach the "
+                "annotated boundary; a sample whose 5' curve lags the others carries more "
+                "truncated/degraded transcripts. 3' ends are usually tight (polyA-anchored), "
+                "so 5' completeness is the more informative axis for comparing samples.",
+                "fig-completeness"))
+
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
 
@@ -910,6 +1006,20 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         "thresholds": qc_flags,
         "samples": per_sample,
     }
+    # Cohort-relative sample-outlier verdict (machine-readable), when computed.
+    if scorecard is not None:
+        if scorecard.get("enabled"):
+            summary["sample_scorecard"] = {
+                "enabled": True,
+                "metrics": scorecard["metrics"],
+                "z": scorecard["z"],
+                "cell_flags": scorecard["cell_flags"],
+                "n_flagged": scorecard["n_flagged"],
+                "overall": scorecard["overall"],
+            }
+        else:
+            summary["sample_scorecard"] = {"enabled": False,
+                                           "reason": scorecard.get("reason")}
     with open(json_path, "w") as fh:
         json.dump(summary, fh, indent=2)
     reads_logger.info(f"QC summary written to {json_path}")

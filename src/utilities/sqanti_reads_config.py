@@ -26,6 +26,14 @@ DEFAULT_CONFIG = {
         # off by >0 bp. Higher => noisier splice-site boundaries.
         "perc_sites_imprecise": {"warn": 10.0, "fail": 20.0, "worse": "high",
                                   "label": "Imprecise splice sites (%)"},
+        # 5'/3' completeness: % of reads whose end lands within completeness_window
+        # bp of the annotated gene's end. Lower => more truncation/degradation. These
+        # are absolute thresholds; the cohort-relative scorecard (below) is the
+        # primary, dataset-agnostic view — leave these lenient by default.
+        "perc_5p_within_window": {"warn": 40.0, "fail": 20.0, "worse": "low",
+                                   "label": "Reads with complete 5' end (%)"},
+        "perc_3p_within_window": {"warn": 40.0, "fail": 20.0, "worse": "low",
+                                   "label": "Reads with complete 3' end (%)"},
     },
     # A read is counted as intra-primed when %A downstream of its TTS exceeds this.
     "intrapriming_perc_A_cutoff": 60.0,
@@ -36,6 +44,44 @@ DEFAULT_CONFIG = {
     # an observation of a reference site (offsets beyond it are treated as novel,
     # not imprecise reference matches).
     "jxn_offset_window": 15,
+    # 5'/3' completeness: a read end is "complete" if it lands within this many bp
+    # of the annotated gene start (5') / end (3'). Used by the completeness-profile
+    # plots and the perc_5p/3p_within_window flags above.
+    "completeness_window": 50,
+    # Cohort-relative sample-outlier scorecard. Each metric is turned into a robust
+    # z-score against the COHORT's own distribution (median / MAD across samples),
+    # so a sample is flagged for diverging from its peers — not against any absolute
+    # baseline. This keeps the flag meaningful on any dataset (any organism,
+    # protocol, length regime), including the common case where all samples are
+    # clean (then every |z| is small and nothing is flagged). Needs >= min_samples
+    # samples to be meaningful; disabled below that.
+    "sample_scorecard": {
+        # |robust z| at/above which a sample-metric cell is warned / failed.
+        "z_warn": 2.5,
+        "z_fail": 3.5,
+        # A sample's OVERALL scorecard flag trips when at least this many of its
+        # metrics are individually warned/failed (concordance across independent
+        # axes is far more trustworthy than any single metric).
+        "min_metrics_warn": 2,
+        "min_metrics_fail": 2,
+        # Below this many samples, cohort-relative z-scores are noise; skip the
+        # scorecard entirely rather than emit misleading flags.
+        "min_samples": 4,
+        # Metrics entering the scorecard, each with the direction that is "worse".
+        # 'high' => a large positive z is bad; 'low' => a large negative z is bad.
+        # Any metric absent for a run (e.g. imprecision when hashing was skipped)
+        # is dropped automatically.
+        "metrics": {
+            "median_length": "low",
+            "perc_ISM": "high",
+            "perc_novel_junctions": "high",
+            "perc_5p_within_window": "low",
+            "perc_3p_within_window": "low",
+            "perc_reads_RTS": "high",
+            "perc_reads_intrapriming": "high",
+            "perc_sites_imprecise": "high",
+        },
+    },
 }
 
 

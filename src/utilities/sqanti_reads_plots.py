@@ -367,7 +367,9 @@ _SUMMARY_FLAG_COL = {
     'perc_reads_intrapriming': 6,
     'perc_reads_RTS': 7,
     'perc_reads_non-canonical': 8,
-    'perc_sites_imprecise': 9,
+    'perc_5p_within_window': 9,
+    'perc_3p_within_window': 10,
+    'perc_sites_imprecise': 11,
 }
 _FLAG_BG = {"warn": "#FFE0B2", "fail": "#FFCDD2"}
 _FLAG_FG = {"warn": "#B45309", "fail": "#B71C1C"}
@@ -380,7 +382,8 @@ def _render_summary_table_page(pdf, per_sample, samples, thresholds):
     Mirrors the HTML report's top table: cells that trigger a warn/fail flag are
     bold and tinted with the flag color, and the Overall cell is flag-colored."""
     headers = ["Sample", "Reads", "Genes", "Median len", "% >1kb", "% FSM",
-               "% intra-prim", "% RTS", "% non-canon", "% fuzzy sites", "Overall"]
+               "% intra-prim", "% RTS", "% non-canon", "% 5' compl", "% 3' compl",
+               "% fuzzy sites", "Overall"]
     rows = []
     for s in samples:
         m = per_sample[s]
@@ -391,6 +394,8 @@ def _render_summary_table_page(pdf, per_sample, samples, thresholds):
             f'{m["perc_reads_intrapriming"]:.1f}',
             f'{m["perc_reads_RTS"]:.1f}',
             f'{m["perc_reads_non-canonical"]:.1f}',
+            (f'{m["perc_5p_within_window"]:.1f}' if m.get("perc_5p_within_window") is not None else "—"),
+            (f'{m["perc_3p_within_window"]:.1f}' if m.get("perc_3p_within_window") is not None else "—"),
             (f'{m["perc_sites_imprecise"]:.1f}' if m.get("perc_sites_imprecise") is not None else "—"),
             m["overall_flag"].upper(),
         ])
@@ -696,6 +701,321 @@ def compute_jxn_offset_metrics(jxn_offset_DF, window=15):
 
     return {"samples": samples, "window": window, "spectrum": spectrum,
             "profile": profile, "per_sample": per_sample, "by_class": by_class}
+
+
+def compute_completeness_metrics(completeness_DF, window=50):
+    """Derive 5'/3' completeness views from the collapsed |distance| digest.
+
+    Input is the long [sampleID, end, abs_dist, count] frame from
+    ``_summarize_completeness``. Returns a dict shared by both renderers:
+
+      - 'samples'   : sample order
+      - 'window'    : the "complete within +/- window bp" cut used for scalars
+      - 'profile'   : [sampleID, end, k, perc_within] cumulative % of reads whose
+                      end lands within k bp, for a set of k values (the ECDF)
+      - 'per_sample': [sampleID, perc_5p_within_window, perc_3p_within_window,
+                       median_abs_5p, median_abs_3p]
+
+    Empty-safe: an empty input yields empty frames and an empty sample list, so
+    the plot/scorecard code no-ops (e.g. when diff_to_gene_* were not in the
+    SQANTI3 output).
+    """
+    empty = {"samples": [], "window": window,
+             "profile": pd.DataFrame(columns=["sampleID", "end", "k", "perc_within"]),
+             "per_sample": pd.DataFrame(columns=["sampleID", "perc_5p_within_window",
+                                                 "perc_3p_within_window",
+                                                 "median_abs_5p", "median_abs_3p"])}
+    if completeness_DF is None or completeness_DF.empty:
+        return empty
+
+    df = completeness_DF.copy()
+    df["abs_dist"] = df["abs_dist"].astype(int)
+    df["count"] = df["count"].astype(int)
+    samples = list(pd.unique(df["sampleID"]))
+
+    # k grid for the ECDF: dense near 0, sparser out to 10*window.
+    ceiling = int(10 * window)
+    ks = sorted(set(list(range(0, min(200, ceiling) + 1, 5)) + [window, ceiling]))
+
+    def _wmedian(sub):
+        tot = int(sub["count"].sum())
+        if not tot:
+            return float("nan")
+        s = sub.sort_values("abs_dist")
+        cum = s["count"].cumsum()
+        return float(s.loc[cum >= tot / 2, "abs_dist"].iloc[0])
+
+    prof_rows, ps_rows = [], []
+    end_key = {"5prime": "perc_5p_within_window", "3prime": "perc_3p_within_window"}
+    med_key = {"5prime": "median_abs_5p", "3prime": "median_abs_3p"}
+    for s in samples:
+        sd = df[df["sampleID"] == s]
+        row = {"sampleID": s}
+        for end in ("5prime", "3prime"):
+            ed = sd[sd["end"] == end]
+            tot = int(ed["count"].sum())
+            for k in ks:
+                within = int(ed.loc[ed["abs_dist"] <= k, "count"].sum())
+                prof_rows.append({"sampleID": s, "end": end, "k": k,
+                                  "perc_within": (within / tot * 100) if tot else 0.0})
+            within_w = int(ed.loc[ed["abs_dist"] <= window, "count"].sum())
+            row[end_key[end]] = (within_w / tot * 100) if tot else float("nan")
+            row[med_key[end]] = _wmedian(ed)
+        ps_rows.append(row)
+
+    return {"samples": samples, "window": window,
+            "profile": pd.DataFrame(prof_rows), "per_sample": pd.DataFrame(ps_rows)}
+
+
+def _robust_z(values):
+    """Robust z-scores of a 1-D sequence: (x - median) / (1.4826 * MAD).
+
+    1.4826 makes the MAD a consistent estimator of the SD under normality, so the
+    z threshold reads on a familiar scale. Falls back to the standard-deviation
+    z if MAD is 0 (all-but-one identical), and returns all-zeros if that is 0 too
+    (every value identical => no outliers). NaNs propagate as 0 contribution.
+    """
+    v = np.asarray(values, dtype=float)
+    med = np.nanmedian(v)
+    mad = np.nanmedian(np.abs(v - med))
+    if mad > 0:
+        z = (v - med) / (1.4826 * mad)
+    else:
+        sd = np.nanstd(v)
+        z = (v - med) / sd if sd > 0 else np.zeros_like(v)
+    return np.nan_to_num(z, nan=0.0)
+
+
+def compute_sample_scorecard(sample_metrics, cfg):
+    """Cohort-relative sample-outlier scorecard.
+
+    ``sample_metrics`` is a list of per-sample dicts (one per sample) carrying the
+    raw metric values named in cfg['sample_scorecard']['metrics']; missing keys
+    are simply not scored. Each metric is turned into a robust z-score across the
+    COHORT (median/MAD over samples), oriented so a positive ``signed_z`` always
+    means "worse" (large positive z for 'high'-is-worse metrics, sign-flipped for
+    'low'-is-worse). A sample-metric cell is flagged warn/fail on |z| thresholds;
+    a sample's overall flag trips when enough cells are flagged. This is
+    deliberately relative and threshold-free at the metric level, so it is
+    dataset-agnostic and stays quiet when all samples agree.
+
+    Returns a dict:
+      - 'enabled'   : bool (False if too few samples or no usable metrics)
+      - 'reason'    : str when disabled
+      - 'samples'   : sample order
+      - 'metrics'   : metric names actually scored
+      - 'z'         : {sampleID: {metric: signed_z}}
+      - 'raw'       : {sampleID: {metric: raw_value}}
+      - 'cell_flags': {sampleID: {metric: 'pass'|'warn'|'fail'}}
+      - 'n_flagged' : {sampleID: int}   (warn+fail cells)
+      - 'overall'   : {sampleID: 'pass'|'warn'|'fail'}
+    """
+    sc = (cfg or {}).get("sample_scorecard", {})
+    samples = [m["sampleID"] for m in sample_metrics]
+    metric_dirs = sc.get("metrics", {})
+    min_samples = sc.get("min_samples", 4)
+
+    result = {"enabled": False, "samples": samples, "metrics": [],
+              "z": {}, "raw": {}, "cell_flags": {}, "n_flagged": {}, "overall": {}}
+
+    if len(samples) < min_samples:
+        result["reason"] = (f"cohort has {len(samples)} sample(s); the relative "
+                            f"scorecard needs >= {min_samples} to be meaningful")
+        return result
+
+    # Keep only metrics present (non-NaN) for at least half the cohort.
+    usable = []
+    for metric in metric_dirs:
+        vals = [m.get(metric) for m in sample_metrics]
+        n_ok = sum(1 for v in vals if v is not None and not (isinstance(v, float) and np.isnan(v)))
+        if n_ok >= max(3, len(samples) // 2):
+            usable.append(metric)
+    if not usable:
+        result["reason"] = "no metric available for enough samples to score"
+        return result
+
+    z_warn, z_fail = sc.get("z_warn", 2.5), sc.get("z_fail", 3.5)
+    n_warn = sc.get("min_metrics_warn", 2)
+    n_fail = sc.get("min_metrics_fail", 2)
+
+    z_by_metric = {}
+    for metric in usable:
+        raw = np.array([(m.get(metric) if m.get(metric) is not None else np.nan)
+                        for m in sample_metrics], dtype=float)
+        z = _robust_z(raw)
+        if metric_dirs[metric] == "low":   # lower is worse -> flip so +z == worse
+            z = -z
+        z_by_metric[metric] = z
+
+    for i, s in enumerate(samples):
+        zrow, rawrow, cellrow = {}, {}, {}
+        warn_hits = fail_hits = 0
+        for metric in usable:
+            zz = float(z_by_metric[metric][i])
+            zrow[metric] = zz
+            rawrow[metric] = sample_metrics[i].get(metric)
+            # Only a "worse" deviation (positive signed z) is a flag; a sample far
+            # on the GOOD side is never penalised.
+            if zz >= z_fail:
+                cellrow[metric] = "fail"; fail_hits += 1
+            elif zz >= z_warn:
+                cellrow[metric] = "warn"; warn_hits += 1
+            else:
+                cellrow[metric] = "pass"
+        result["z"][s] = zrow
+        result["raw"][s] = rawrow
+        result["cell_flags"][s] = cellrow
+        result["n_flagged"][s] = warn_hits + fail_hits
+        if fail_hits >= n_fail:
+            result["overall"][s] = "fail"
+        elif (warn_hits + fail_hits) >= n_warn:
+            result["overall"][s] = "warn"
+        else:
+            result["overall"][s] = "pass"
+
+    result["enabled"] = True
+    result["metrics"] = usable
+    return result
+
+
+def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
+                               all_gene_percs_pivot_DF=None, nov_can_DF=None,
+                               completeness_metrics=None, jxn_offset_metrics=None):
+    """Gather the raw per-sample metric values the scorecard scores.
+
+    Pulls each metric from the table that already computed it (no recomputation),
+    returning a list of per-sample dicts keyed by sampleID + the scorecard metric
+    names. Any source missing simply leaves that metric out (the scorecard drops
+    metrics that aren't present for enough samples), so this is safe across runs
+    with different SQANTI3 feature sets.
+    """
+    def _idx(df, col):
+        if df is None or col not in getattr(df, "columns", []):
+            return {}
+        try:
+            return df.set_index("sampleID")[col].astype(float).to_dict()
+        except Exception:
+            return {}
+
+    med_len = _idx(length_DF, "median_length")
+    rts = _idx(err_DF, "perc_reads_RTS")
+    ip = _idx(err_DF, "perc_reads_intrapriming")
+    ism = _idx(all_gene_percs_pivot_DF, "ISM")
+
+    # % novel junctions from the known/novel × canonical junction counts.
+    novj = {}
+    if nov_can_DF is not None and "sampleID" in getattr(nov_can_DF, "columns", []):
+        four = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
+        if all(c in nov_can_DF.columns for c in four):
+            nj = nov_can_DF.set_index("sampleID")[four].astype(float)
+            tot = nj.sum(axis=1)
+            novj = ((nj['novel_canonical'] + nj['novel_non_canonical']) / tot * 100
+                    ).replace([np.inf, -np.inf], np.nan).to_dict()
+
+    comp = {}
+    if completeness_metrics and not completeness_metrics.get("per_sample", pd.DataFrame()).empty:
+        cp = completeness_metrics["per_sample"].set_index("sampleID")
+        comp = {"perc_5p_within_window": cp["perc_5p_within_window"].to_dict(),
+                "perc_3p_within_window": cp["perc_3p_within_window"].to_dict()}
+
+    impr = {}
+    if jxn_offset_metrics and not jxn_offset_metrics.get("per_sample", pd.DataFrame()).empty:
+        impr = jxn_offset_metrics["per_sample"].set_index("sampleID")["perc_imprecise"].to_dict()
+
+    out = []
+    for s in samples:
+        out.append({
+            "sampleID": s,
+            "median_length": med_len.get(s),
+            "perc_ISM": ism.get(s),
+            "perc_novel_junctions": novj.get(s),
+            "perc_5p_within_window": comp.get("perc_5p_within_window", {}).get(s),
+            "perc_3p_within_window": comp.get("perc_3p_within_window", {}).get(s),
+            "perc_reads_RTS": rts.get(s),
+            "perc_reads_intrapriming": ip.get(s),
+            "perc_sites_imprecise": impr.get(s),
+        })
+    return out
+
+
+def plot_completeness_pages(pdf, completeness_metrics):
+    """Append the 5'/3' completeness profile page (|distance|-to-gene-end ECDFs)."""
+    m = completeness_metrics
+    if not m or not m.get("samples"):
+        return
+    samples = m["samples"]
+    window = m["window"]
+    sample_palette = {s: sample_seq[i % len(sample_seq)] for i, s in enumerate(samples)}
+    matplotlib.rcParams['pdf.fonttype'] = 42
+
+    prof = m["profile"]
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+    for ax, end, title in zip(axes, ["5prime", "3prime"],
+                              ["5' completeness", "3' completeness"]):
+        ed = prof[prof["end"] == end]
+        for s in samples:
+            d = ed[ed["sampleID"] == s].sort_values("k")
+            if not d.empty:
+                ax.plot(d["k"], d["perc_within"], marker="o", markersize=2,
+                        color=sample_palette[s], label=s)
+        ax.axvline(window, color="#999999", lw=0.8, ls=":")
+        ax.set_title(title)
+        ax.set_xlabel(f"|distance to annotated gene {'5' if end=='5prime' else '3'}' end| (bp)")
+        ax.set_xlim(0, min(200, 10 * window))
+    axes[0].set_ylabel("Cumulative % of reads")
+    axes[1].legend(title="Sample", bbox_to_anchor=(1.05, 1), loc="upper left")
+    fig.suptitle("Read-end completeness profile", y=1.0, fontsize=16)
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_scorecard_page(pdf, scorecard):
+    """Append the cohort-relative sample-outlier scorecard as a heatmap page.
+
+    Cells are signed robust z-scores (red = worse than cohort, blue = better);
+    warn/fail cells are outlined. A sample's overall flag is shown as a colored
+    strip beside its row."""
+    sc = scorecard
+    if not sc or not sc.get("enabled"):
+        return
+    samples = sc["samples"]
+    metrics = sc["metrics"]
+    matplotlib.rcParams['pdf.fonttype'] = 42
+
+    Z = np.array([[sc["z"][s][mt] for mt in metrics] for s in samples], dtype=float)
+    fig, ax = plt.subplots(figsize=(max(8, 1.2 * len(metrics) + 3),
+                                    max(4, 0.6 * len(samples) + 2)))
+    vlim = max(3.5, float(np.abs(Z).max()) if Z.size else 3.5)
+    im = ax.imshow(Z, cmap="RdBu_r", vmin=-vlim, vmax=vlim, aspect="auto")
+    ax.set_xticks(range(len(metrics)))
+    ax.set_xticklabels([mt.replace("perc_", "%").replace("_", " ") for mt in metrics],
+                       rotation=40, ha="right", fontsize=8)
+    ax.set_yticks(range(len(samples)))
+    ax.set_yticklabels(samples, fontsize=8)
+    # annotate z + outline flagged cells
+    flag_edge = {"warn": "#FF9800", "fail": "#F44336"}
+    for i, s in enumerate(samples):
+        for j, mt in enumerate(metrics):
+            ax.text(j, i, f"{Z[i, j]:.1f}", ha="center", va="center", fontsize=7,
+                    color="white" if abs(Z[i, j]) > vlim * 0.6 else "black")
+            fl = sc["cell_flags"][s][mt]
+            if fl in flag_edge:
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, fill=False,
+                                           edgecolor=flag_edge[fl], lw=2.5))
+    # overall-flag strip on the right
+    overall_color = {"pass": "#4CAF50", "warn": "#FF9800", "fail": "#F44336"}
+    for i, s in enumerate(samples):
+        ax.add_patch(plt.Rectangle((len(metrics) - 0.4, i - 0.5), 0.5, 1,
+                                   transform=ax.transData, clip_on=False,
+                                   color=overall_color[sc["overall"][s]]))
+    ax.set_title("Sample-outlier scorecard (cohort-relative robust z; red = worse than peers)",
+                 fontsize=11)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.12)
+    cbar.set_label("robust z vs cohort (+ = worse)")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
@@ -1235,6 +1555,46 @@ def _summarize_jxn_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window=
     return out[cols]
 
 
+def _summarize_completeness(class_DF, sampleID, exp_factor, exp_factor_val, window=50):
+    """Per-sample 5'/3' completeness digest from read-to-gene end distances.
+
+    ``diff_to_gene_TSS``/``diff_to_gene_TTS`` give each read's signed distance to
+    the annotated gene 5'/3' end. We keep a compact digest sufficient to redraw a
+    cumulative completeness profile (|distance| ECDF) and to compute the
+    per-sample "% complete within +/- window bp" scalars — collapsed to a bounded
+    histogram of |distance| so memory does not scale with read count.
+
+    Returns [sampleID, exp_factor, end, abs_dist, count], where ``end`` is
+    '5prime' or '3prime' and ``abs_dist`` is clipped at a generous ceiling
+    (10*window) so a few extreme reads do not blow up the table; the ceiling bin
+    is the ">= ceiling" tail. Reads with no computable distance are dropped.
+    Robust to the columns being absent (older SQANTI3 output): returns an empty
+    typed frame, and the downstream metric/plot code no-ops.
+    """
+    cols = ["sampleID", exp_factor, "end", "abs_dist", "count"]
+    have = all(c in class_DF.columns for c in ("diff_to_gene_TSS", "diff_to_gene_TTS"))
+    if class_DF is None or class_DF.empty or not have:
+        return pd.DataFrame(columns=cols)
+
+    ceiling = int(10 * window)
+    parts = []
+    for end, col in (("5prime", "diff_to_gene_TSS"), ("3prime", "diff_to_gene_TTS")):
+        d = pd.to_numeric(class_DF[col], errors="coerce").abs().dropna()
+        if d.empty:
+            continue
+        d = d.clip(upper=ceiling).astype(int)
+        h = d.value_counts().reset_index()
+        h.columns = ["abs_dist", "count"]
+        h["end"] = end
+        parts.append(h)
+    if not parts:
+        return pd.DataFrame(columns=cols)
+    out = pd.concat(parts, ignore_index=True)
+    out["sampleID"] = sampleID
+    out[exp_factor] = exp_factor_val
+    return out[cols]
+
+
 def proc_samples(args, design_file, ref):
     # Read design file
     design_DF = pd.read_csv(design_file, sep=",")
@@ -1248,6 +1608,7 @@ def proc_samples(args, design_file, ref):
     err_dfs = {}
     cv_dfs = {}
     jxn_offset_dfs = {}
+    completeness_dfs = {}
     fsm_dfs = {}
     ism_dfs = {}
     nic_nnc_dfs = {}
@@ -1273,11 +1634,13 @@ def proc_samples(args, design_file, ref):
                   'diff_to_Ref_start_site': 'Int64', 'diff_to_Ref_end_site': 'Int64', 'canonical': 'string'}
     
     class_cols = ['isoform','chrom','strand','exons','associated_gene','associated_transcript','structural_category','subcategory',
-                    'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical', "jxn_string", "jxnHash"]
+                    'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical',
+                    'diff_to_gene_TSS','diff_to_gene_TTS', "jxn_string", "jxnHash"]
 
     class_dtypes = {'isoform': 'string', 'chrom': 'string', 'strand': 'string', 'exons': 'Int64', 'associated_gene': 'string','associated_transcript': 'string', 
                     'structural_category': 'string', 'subcategory': 'string','length': 'Int64', 'RTS_stage': 'boolean', 'perc_A_downstream_TTS': float, 
-                    'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string', 'jxn_string':'string', "jxnHash":'string'}
+                    'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string',
+                    'diff_to_gene_TSS': 'Int64', 'diff_to_gene_TTS': 'Int64', 'jxn_string':'string', "jxnHash":'string'}
     
     # Per-sample processing is independent (each writes only its own dict keys),
     # so it runs in parallel when --jobs>1 (thread pool; file loading dominates).
@@ -1337,12 +1700,18 @@ def proc_samples(args, design_file, ref):
             jxn_DF, sampleID, exp_factor, exp_factor_val,
             window=args.cfg().get('jxn_offset_window', 15))
 
+        ##5'/3' completeness digest for each sample
+        completeness_DF = _summarize_completeness(
+            class_DF, sampleID, exp_factor, exp_factor_val,
+            window=args.cfg().get('completeness_window', 50))
+
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
         ujc_count_dfs[sampleID] = ujc_count_DF
         length_dfs[sampleID] = length_summary_DF
         cv_dfs[sampleID] = cv_DF
         jxn_offset_dfs[sampleID] = jxn_offset_DF
+        completeness_dfs[sampleID] = completeness_DF
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
         ism_dfs[sampleID] = ISM_DF
@@ -1366,8 +1735,9 @@ def proc_samples(args, design_file, ref):
     ism_dfs, nic_nnc_dfs, nov_can_dfs = _reord(ism_dfs), _reord(nic_nnc_dfs), _reord(nov_can_dfs)
     length_Dct = _reord(length_Dct)
     jxn_offset_dfs = _reord(jxn_offset_dfs)
+    completeness_dfs = _reord(completeness_dfs)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -1386,7 +1756,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -1428,6 +1798,13 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
     else:
         jxn_offset_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'site', 'offset', 'canonical', 'count'])
 
+    ##Cat together all 5'/3' completeness DFs
+    _comp_frames = [d for d in completeness_dfs.values() if d is not None and not d.empty]
+    if _comp_frames:
+        completeness_DF = pd.concat(_comp_frames, sort=False, ignore_index=True)
+    else:
+        completeness_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'end', 'abs_dist', 'count'])
+
     #Cat subcategory DFs
     
     FSM_DF = pd.concat(fsm_dfs.values(), sort=False)
@@ -1452,6 +1829,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (length_DF, '_length_summary.csv'),
             (cv_DF, '_cv.csv'),
             (jxn_offset_DF, '_jxn_offsets.csv'),
+            (completeness_DF, '_completeness.csv'),
         ],
         alltables_tables=[
             (err_DF, '_err_counts.csv'),
@@ -1462,7 +1840,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF)
 
 
 
@@ -2120,7 +2498,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None, args=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
+             completeness_metrics=None, scorecard=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -2164,10 +2543,19 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
             from src.utilities.sqanti_reads_report import _compute_summary
             _per_sample, _samples = _compute_summary(
                 length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
-                thresholds=args.cfg()['qc_flags'], jxn_offset_metrics=jxn_offset_metrics)
+                thresholds=args.cfg()['qc_flags'], jxn_offset_metrics=jxn_offset_metrics,
+                completeness_metrics=completeness_metrics)
             _render_summary_table_page(pdf, _per_sample, _samples, args.cfg()['qc_flags'])
         except Exception as exc:  # a summary-table hiccup must not sink the report
             reads_logger.warning(f"Could not render the summary-table page: {exc}")
+
+        # Cohort-relative sample-outlier scorecard, right after the summary table
+        # (both are top-of-report, sample-level QC overviews). No-ops when disabled
+        # (too few samples / no scorable metric).
+        try:
+            plot_scorecard_page(pdf, scorecard)
+        except Exception as exc:
+            reads_logger.warning(f"Could not render the sample-outlier scorecard: {exc}")
 
         # Structural-category composition is shown as faceted stacked bars (below),
         # matching the HTML report. The earlier per-sample stripplot views were removed.
@@ -2472,6 +2860,9 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # Splice-site fuzziness: offset spectrum, precision profile, canonical split
         plot_jxn_offset_pages(pdf, jxn_offset_metrics)
 
+        # 5'/3' read-end completeness profiles
+        plot_completeness_pages(pdf, completeness_metrics)
+
 
 def run_reads_plots(
     ref_gtf: str,
@@ -2552,10 +2943,10 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs)
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs)
     dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
@@ -2566,6 +2957,24 @@ def main(args):
     # directionality, per-sample imprecision scalar) shared by both renderers.
     jxn_offset_metrics = compute_jxn_offset_metrics(
         jxn_offset_DF, window=args.cfg().get('jxn_offset_window', 15))
+
+    # 5'/3' completeness metrics (read-end ECDF profiles + per-sample within-window
+    # scalars) shared by both renderers.
+    completeness_metrics = compute_completeness_metrics(
+        completeness_DF, window=args.cfg().get('completeness_window', 50))
+
+    # Cohort-relative sample-outlier scorecard: robust z of each read-QC metric
+    # against the cohort, flagging samples that diverge from their peers. Uses the
+    # read-level structural composition (all_gene_percs_pivot_DF = dfs_for_plotting[2])
+    # and the junction-category counts already computed above.
+    scorecard = compute_sample_scorecard(
+        assemble_scorecard_metrics(
+            length_DF["sampleID"].astype(str).tolist(),
+            length_DF=length_DF, err_DF=err_DF,
+            all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
+            completeness_metrics=completeness_metrics,
+            jxn_offset_metrics=jxn_offset_metrics),
+        args.cfg())
 
     need_pdf = args.report in ("pdf", "both")
     need_html = args.report in ("html", "both")
@@ -2581,7 +2990,8 @@ def main(args):
         from src.utilities.sqanti_reads_report import build_html_report
         report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
         build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics,
-                          jxn_offset_metrics=jxn_offset_metrics)
+                          jxn_offset_metrics=jxn_offset_metrics,
+                          completeness_metrics=completeness_metrics, scorecard=scorecard)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -2589,7 +2999,8 @@ def main(args):
     if need_pdf:
         with PdfPages(report_pdf) as pdf:
             render_report_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics,
-                              jxn_offset_metrics=jxn_offset_metrics, args=args)
+                              jxn_offset_metrics=jxn_offset_metrics,
+                              completeness_metrics=completeness_metrics, scorecard=scorecard, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory
