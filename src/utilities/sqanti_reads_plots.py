@@ -119,34 +119,48 @@ subcat_color_palette = {
 cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
 cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
 
-# Junction classification (known/novel × canonical/non-canonical).
+# Aesthetic categorical palette (a green→magenta "good→bad" severity ramp).
+aes_palette = {
+    "green": "#15918A", "orange": "#F58A53", "yellow": "#FDC659",
+    "blue": "#74CDF0", "purple": "#9F7BB8", "pink": "#FDA3D1", "magenta": "#EE446F",
+}
+
+# Junction classification (known/novel × canonical/non-canonical). Colors match
+# SQANTI3's own canonical palette (myPalette[c(1,7,3,2)] in SQANTI3_report.R).
 jxn_palette = {
-    "known_canonical": "#2c7fb8",
-    "known_non_canonical": "#7fcdbb",
-    "novel_canonical": "#f03b20",
-    "novel_non_canonical": "#feb24c",
+    "known_canonical": "#6BAED6",       # SQANTI3 myPalette[1]
+    "known_non_canonical": "#FFC125",   # myPalette[7] (R goldenrod1)
+    "novel_canonical": "#78C679",       # myPalette[3]
+    "novel_non_canonical": "#FC8D59",   # myPalette[2]
 }
 
-# Three-series plots (green, orange, yellow) — artefacts (RTS/intra-priming/
-# non-canonical) and donor/acceptor CV (ref_match/cv_0/cv_gt_0). Applied to the
-# series in column order.
-three_series_palette = ["#2CA02C", "#FF7F0E", "#FFC20A"]
+# Three-series plots — artefacts (RTS/intra-priming/non-canonical) and
+# donor/acceptor CV (ref_match/cv_0/cv_gt_0), in column order (good→bad).
+three_series_palette = [aes_palette["green"], aes_palette["orange"], aes_palette["magenta"]]
 
-# Read-count bins — explicit color per bin so it is stable across datasets and
-# identical in the PDF and HTML (values match the HTML default sequence order).
+# Read-count bins, most support (best) → least support (worst).
 readcount_palette = {
-    "100+ reads": "#2E91E5",
-    "50-100 reads": "#E15F99",
-    "11-50 reads": "#1CA71C",
-    "2-10 reads": "#FB0D0D",
-    "1 read": "#DA16FF",
+    "100+ reads": aes_palette["green"],
+    "50-100 reads": aes_palette["blue"],
+    "11-50 reads": aes_palette["yellow"],
+    "2-10 reads": aes_palette["orange"],
+    "1 read": aes_palette["magenta"],
 }
 
-# Read-length bins (both the count columns and their `_perc` variants).
+# Read-length bins (count columns + their `_perc` variants), shortest→longest,
+# so longer reads (generally better) read green.
 _length_bins = ["reads_lt_1kb", "reads_1kb_to_2kb", "reads_2kb_to_3kb", "reads_gt_3kb"]
-_length_colors = ["#2E91E5", "#E15F99", "#1CA71C", "#FB0D0D"]
+_length_colors = [aes_palette["magenta"], aes_palette["orange"], aes_palette["yellow"], aes_palette["green"]]
 length_palette = {b: c for b, c in zip(_length_bins, _length_colors)}
 length_palette.update({b + "_perc": c for b, c in zip(_length_bins, _length_colors)})
+
+# Under-annotation gene categories (good→bad); shared by the PDF and HTML reports.
+underannot_palette = {
+    "annotated_with_well_covered_FSM": aes_palette["green"],
+    "annotated_with_low_coverage_FSM": aes_palette["blue"],
+    "underannotated_with_candidate_transcript": aes_palette["orange"],
+    "underannotated_no_candidate_transcripts": aes_palette["magenta"],
+}
 
 # Per-sample qualitative colors (Plotly "Dark24"), used for scatter/strip/violin
 # and PCA so samples are colored the same way in the PDF and HTML.
@@ -342,6 +356,68 @@ def _vectorize_colorbars(fig):
             coll.set_rasterized(False)
         for im in ax.images:
             im.set_rasterized(False)
+
+
+# Column index of each flaggable metric in the summary table below.
+_SUMMARY_FLAG_COL = {
+    'median_length': 3,
+    'perc_reads_intrapriming': 6,
+    'perc_reads_RTS': 7,
+    'perc_reads_non-canonical': 8,
+}
+_FLAG_BG = {"warn": "#FFE0B2", "fail": "#FFCDD2"}
+_FLAG_FG = {"warn": "#B45309", "fail": "#B71C1C"}
+_OVERALL_BG = {"pass": "#C8E6C9", "warn": "#FFE0B2", "fail": "#FFCDD2"}
+
+
+def _render_summary_table_page(pdf, per_sample, samples, thresholds):
+    """Render the per-sample summary-metrics + QC-flag table as one PDF page.
+
+    Mirrors the HTML report's top table: cells that trigger a warn/fail flag are
+    bold and tinted with the flag color, and the Overall cell is flag-colored."""
+    headers = ["Sample", "Reads", "Genes", "Median len", "% >1kb", "% FSM",
+               "% intra-prim", "% RTS", "% non-canon", "Overall"]
+    rows = []
+    for s in samples:
+        m = per_sample[s]
+        rows.append([
+            str(s), f'{m["total_reads"]:,}', f'{m["genes_detected"]}',
+            f'{m["median_length"]:.0f}', f'{m["perc_reads_gt_1kb"]:.1f}',
+            (f'{m["perc_FSM"]:.1f}' if m["perc_FSM"] is not None else "—"),
+            f'{m["perc_reads_intrapriming"]:.1f}',
+            f'{m["perc_reads_RTS"]:.1f}',
+            f'{m["perc_reads_non-canonical"]:.1f}',
+            m["overall_flag"].upper(),
+        ])
+
+    fig, ax = plt.subplots(figsize=(14, 10))
+    ax.axis('off')
+    ax.set_title("Summary metrics & QC flags", fontsize=20, pad=24)
+    tbl = ax.table(cellText=rows, colLabels=headers, cellLoc='center', loc='center')
+    tbl.auto_set_font_size(False)
+    tbl.set_fontsize(11)
+    tbl.scale(1, 1.8)
+
+    for j in range(len(headers)):  # header row
+        cell = tbl[0, j]
+        cell.set_text_props(weight='bold', color='white')
+        cell.set_facecolor(aes_palette["green"])
+
+    for i, s in enumerate(samples, start=1):
+        m = per_sample[s]
+        for metric, col in _SUMMARY_FLAG_COL.items():
+            fl = m["flags"].get(metric, "pass")
+            if fl in ("warn", "fail"):
+                cell = tbl[i, col]
+                cell.set_text_props(weight='bold', color=_FLAG_FG[fl])
+                cell.set_facecolor(_FLAG_BG[fl])
+        ov = tbl[i, len(headers) - 1]
+        ov.set_text_props(weight='bold')
+        ov.set_facecolor(_OVERALL_BG.get(m["overall_flag"], "#ffffff"))
+
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    pdf.savefig(fig, bbox_inches='tight')
+    plt.close(fig)
 
 
 def compute_ujc_metrics(ujc_count_DF, factor_col=None, n_depths=25):
@@ -1343,12 +1419,7 @@ def identify_cand_underannot(args, ujc_count_DF, factor_level=None, pdf=None, ou
         plt.close(title_fig)
         
         # Gene annotation plot
-        color_mapping = {
-            'annotated_with_well_covered_FSM': 'lightblue',
-            'annotated_with_low_coverage_FSM': 'purple',
-            'underannotated_with_candidate_transcript': 'darkorange',
-            'underannotated_no_candidate_transcripts': 'lightsalmon'
-        }
+        color_mapping = underannot_palette
 
         # Count the occurrences of each gene_category
         category_counts = summary_df['gene_category'].value_counts()
@@ -1835,7 +1906,17 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         title_fig.text(0.5, 0.5, "SQANTI-reads report", ha='center', va='center', fontsize=26)
         pdf.savefig(title_fig)
         plt.close(title_fig)
-         
+
+        # Summary metrics + QC-flag table (same data as the HTML report's top table).
+        try:
+            from src.utilities.sqanti_reads_report import _compute_summary
+            _per_sample, _samples = _compute_summary(
+                length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
+                thresholds=args.cfg()['qc_flags'])
+            _render_summary_table_page(pdf, _per_sample, _samples, args.cfg()['qc_flags'])
+        except Exception as exc:  # a summary-table hiccup must not sink the report
+            reads_logger.warning(f"Could not render the summary-table page: {exc}")
+
         # Structural-category composition is shown as faceted stacked bars (below),
         # matching the HTML report. The earlier per-sample stripplot views were removed.
 

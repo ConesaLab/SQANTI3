@@ -38,9 +38,9 @@ EXPECTED_CSVS = [
 EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # Page-count snapshots for the fixture at -ge 10, guarding against a merge that
 # silently drops pages. Update these if plots are intentionally added/removed.
-# Both designs now render through the single faceted path (render_report_pdf),
-# so the no-factor report matches the faceted page count.
-EXPECTED_REPORT_PAGES = {"design.csv": 46, "design_with_factor.csv": 46}
+# Both designs render through the single faceted path (render_report_pdf) and
+# carry a summary-metrics page after the title page, so the counts match.
+EXPECTED_REPORT_PAGES = {"design.csv": 47, "design_with_factor.csv": 47}
 
 pytestmark = requires_external_tools
 

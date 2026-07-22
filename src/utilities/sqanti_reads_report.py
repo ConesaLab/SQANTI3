@@ -30,6 +30,7 @@ from src.utilities.sqanti_reads_plots import (
     readcount_palette,
     length_palette,
     sample_seq,
+    underannot_palette,
     compute_upset_intersections,
 )
 from src.utilities.sqanti_reads_config import DEFAULT_CONFIG
@@ -329,16 +330,27 @@ def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
     for s in samples:
         m = per_sample[s]
         badge = f'<span class="badge {m["overall_flag"]}">{m["overall_flag"].upper()}</span>'
-        rows.append(
-            "<tr>" + "".join(f"<td>{v}</td>" for v in [
-                s, f'{m["total_reads"]:,}', m["genes_detected"],
-                f'{m["median_length"]:.0f}', f'{m["perc_reads_gt_1kb"]:.1f}',
-                (f'{m["perc_FSM"]:.1f}' if m["perc_FSM"] is not None else "—"),
-                f'{m["perc_reads_intrapriming"]:.1f}',
-                f'{m["perc_reads_RTS"]:.1f}',
-                f'{m["perc_reads_non-canonical"]:.1f}',
-            ]) + f"<td>{badge}</td></tr>"
-        )
+        # (value, flaggable-metric-name or None) per column.
+        cells = [
+            (s, None),
+            (f'{m["total_reads"]:,}', None),
+            (m["genes_detected"], None),
+            (f'{m["median_length"]:.0f}', "median_length"),
+            (f'{m["perc_reads_gt_1kb"]:.1f}', None),
+            ((f'{m["perc_FSM"]:.1f}' if m["perc_FSM"] is not None else "—"), None),
+            (f'{m["perc_reads_intrapriming"]:.1f}', "perc_reads_intrapriming"),
+            (f'{m["perc_reads_RTS"]:.1f}', "perc_reads_RTS"),
+            (f'{m["perc_reads_non-canonical"]:.1f}', "perc_reads_non-canonical"),
+        ]
+        tds = []
+        for val, metric in cells:
+            fl = m["flags"].get(metric) if metric else None
+            if fl in ("warn", "fail"):
+                # Bold + flag-tinted the cells that trigger a warn/fail.
+                tds.append(f'<td class="flag-{fl}"><strong>{val}</strong></td>')
+            else:
+                tds.append(f"<td>{val}</td>")
+        rows.append("<tr>" + "".join(tds) + f"<td>{badge}</td></tr>")
     table = ("<table class='summary'><thead><tr>"
              + "".join(f"<th>{c}</th>" for c in head_cols)
              + "</tr></thead><tbody>" + "".join(rows) + "</tbody></table>")
@@ -366,15 +378,9 @@ def _gene_classification_section(out_dir, prefix):
         return ("<section class='card'><h2>Under-annotation analysis</h2>"
                 "<p class='interp'>No genes met the under-annotation criteria.</p></section>")
     counts = df["gene_category"].value_counts()
-    colors = {
-        "annotated_with_well_covered_FSM": "#6BAED6",
-        "annotated_with_low_coverage_FSM": "#9E9AC8",
-        "underannotated_with_candidate_transcript": "#FD8D3C",
-        "underannotated_no_candidate_transcripts": "#FDBE85",
-    }
     fig = go.Figure(go.Bar(
         x=[c.replace("_", " ") for c in counts.index], y=counts.values,
-        marker_color=[colors.get(c, "#969696") for c in counts.index],
+        marker_color=[underannot_palette.get(c, "#969696") for c in counts.index],
         hovertemplate="%{x}<br>%{y} genes<extra></extra>"))
     _base_layout(fig, "Gene annotation categories", "Category", "Number of genes")
     fig.update_layout(showlegend=False, barmode="group")
@@ -392,7 +398,7 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 <style>
   body {{ font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
           margin: 0; background: #f4f6f8; color: #1a2027; }}
-  header {{ background: #1f3a5f; color: #fff; padding: 20px 28px; }}
+  header {{ background: #15918A; color: #fff; padding: 20px 28px; }}
   header h1 {{ margin: 0 0 4px; font-size: 22px; }}
   header .meta {{ opacity: .85; font-size: 13px; }}
   main {{ max-width: 1100px; margin: 0 auto; padding: 20px; }}
@@ -405,6 +411,8 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
            padding: 7px 9px; text-align: right; }}
   table.summary th:first-child, table.summary td:first-child {{ text-align: left; }}
   table.summary thead th {{ background: #f7f9fb; color: #3a4653; }}
+  table.summary td.flag-warn {{ background: #FFF3E0; color: #B45309; }}
+  table.summary td.flag-fail {{ background: #FFEBEE; color: #B71C1C; }}
   .badge {{ display: inline-block; padding: 2px 8px; border-radius: 10px;
             color: #fff; font-size: 11px; font-weight: 600; }}
   .badge.pass {{ background: {pass_c}; }} .badge.warn {{ background: {warn_c}; }}
