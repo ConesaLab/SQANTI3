@@ -8,3 +8,8 @@ collect_ignore = [
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
 ]
+
+[tool.pyright]
+extraPaths = [".", "/home/pabloati/miniforge3/envs/sqanti3/lib/python3.11/site-packages"]
+venvPath = "/home/pabloati/miniforge3/envs"
+venv = "sqanti3"
