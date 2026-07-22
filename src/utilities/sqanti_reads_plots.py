@@ -1018,6 +1018,90 @@ def plot_scorecard_page(pdf, scorecard):
     plt.close(fig)
 
 
+def _plot_metric_cohort_page(pdf, metric_DF, metric, *, title, ylabel,
+                             threshold=None, scorecard=None, color=None):
+    """One per-sample bar page that puts a single QC rate in cohort context.
+
+    Draws each sample's value for ``metric`` as a bar, overlays the cohort median
+    (dashed grey) and, when configured, the warn/fail threshold lines from the
+    config, and marks any sample the scorecard flagged *on this metric* with a
+    colored dot + border. This is the per-metric companion to the scorecard
+    heatmap: the heatmap says "which samples diverge and by how much"; this page
+    shows the actual rate behind that verdict and where the peers sit.
+
+    ``metric_DF`` needs a ``sampleID`` column and ``metric``; robust to a missing
+    metric (no page) and to no scorecard (bars + median only, no flag markers).
+    """
+    if metric_DF is None or metric not in getattr(metric_DF, "columns", []):
+        return
+    d = metric_DF[["sampleID", metric]].dropna()
+    if d.empty:
+        return
+    samples = d["sampleID"].astype(str).tolist()
+    vals = d[metric].astype(float).tolist()
+    color = color or aes_palette["blue"]
+    matplotlib.rcParams['pdf.fonttype'] = 42
+
+    fig, ax = plt.subplots(figsize=(max(7, 0.7 * len(samples) + 3), 6))
+    bars = ax.bar(samples, vals, color=color, edgecolor="none", zorder=2)
+
+    med = float(np.median(vals))
+    ax.axhline(med, color="#777777", ls="--", lw=1.2, zorder=1,
+               label=f"cohort median ({med:.1f})")
+
+    # Config warn/fail lines (absolute reference; the scorecard itself is relative).
+    if threshold:
+        for lvl, ls in (("warn", ":"), ("fail", "-.")):
+            if lvl in threshold:
+                ax.axhline(float(threshold[lvl]), color=_FLAG_FG.get(lvl, "#B71C1C"),
+                           ls=ls, lw=1.1, zorder=1,
+                           label=f"{lvl} threshold ({threshold[lvl]:.0f})")
+
+    # Mark samples the scorecard flagged on THIS metric.
+    flag_color = {"warn": "#FF9800", "fail": "#F44336"}
+    if scorecard and scorecard.get("enabled") and metric in scorecard.get("metrics", []):
+        for bar, s in zip(bars, samples):
+            fl = scorecard["cell_flags"].get(s, {}).get(metric, "pass")
+            if fl in flag_color:
+                bar.set_edgecolor(flag_color[fl])
+                bar.set_linewidth(2.5)
+                ax.plot(bar.get_x() + bar.get_width() / 2,
+                        bar.get_height(), marker="o", markersize=8,
+                        color=flag_color[fl], zorder=3)
+
+    ax.set_title(title, fontsize=14)
+    ax.set_xlabel("Sample ID")
+    ax.set_ylabel(ylabel)
+    ax.margins(y=0.15)
+    if len(samples) > 6:
+        plt.setp(ax.get_xticklabels(), rotation=40, ha="right")
+    ax.legend(fontsize=8, frameon=False)
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_artefact_metric_pages(pdf, err_DF, qc_flags, scorecard=None):
+    """Per-sample cohort-context pages for the read-artefact QC rates.
+
+    One page each for RT-switching and intra-priming (the two artefact rates that
+    feed the scorecard), each showing the per-sample percentage against the cohort
+    median, the config warn/fail thresholds, and the scorecard flag markers.
+    No-ops on missing columns."""
+    if err_DF is None:
+        return
+    specs = [
+        ("perc_reads_RTS", "RT-switching reads per sample",
+         "% reads with RT-switching evidence", aes_palette["orange"]),
+        ("perc_reads_intrapriming", "Intra-priming reads per sample",
+         "% reads with intra-priming evidence", aes_palette["magenta"]),
+    ]
+    for metric, title, ylabel, color in specs:
+        _plot_metric_cohort_page(
+            pdf, err_DF, metric, title=title, ylabel=ylabel,
+            threshold=(qc_flags or {}).get(metric), scorecard=scorecard, color=color)
+
+
 def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
     """Append the splice-site fuzziness pages (spectrum + precision profile +
     directionality + canonical split) to `pdf`."""
@@ -2762,6 +2846,15 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                             title="Percentage of Artefact Reads",
                             xlabel="Sample ID", ylabel="Percentage of Reads",
                             aspect=0.7)
+
+        # Per-sample cohort-context pages for the RT-switching and intra-priming
+        # rates (the artefact metrics that feed the outlier scorecard): each rate
+        # against the cohort median, config warn/fail lines, and scorecard flags.
+        try:
+            plot_artefact_metric_pages(pdf, err_DF, args.cfg().get('qc_flags', {}),
+                                       scorecard=scorecard)
+        except Exception as exc:
+            reads_logger.warning(f"Could not render artefact metric pages: {exc}")
         
         
         plt.figure(figsize=(14, 10))

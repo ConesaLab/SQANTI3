@@ -568,6 +568,53 @@ def _scorecard_figure(sc):
     return fig
 
 
+def _metric_cohort_figure(err_DF, metric, title, ytitle, scorecard=None,
+                          threshold=None, color="#F58A53"):
+    """Per-sample bar of one QC rate in cohort context (median + config warn/fail
+    lines + scorecard flag markers), or None if the metric is unavailable.
+
+    The scorecard heatmap answers "which samples diverge"; this per-metric figure
+    shows the raw rate behind the verdict and where the cohort sits."""
+    if err_DF is None or metric not in getattr(err_DF, "columns", []):
+        return None
+    d = err_DF[["sampleID", metric]].dropna()
+    if d.empty:
+        return None
+    samples = d["sampleID"].astype(str).tolist()
+    vals = d[metric].astype(float).tolist()
+
+    # Per-bar color: flag color when the scorecard flagged this sample on this
+    # metric, else the base color.
+    flag_color = {"warn": "#FF9800", "fail": "#F44336"}
+    bar_colors, line_widths = [], []
+    scored = bool(scorecard and scorecard.get("enabled")
+                  and metric in scorecard.get("metrics", []))
+    for s in samples:
+        fl = scorecard["cell_flags"].get(s, {}).get(metric, "pass") if scored else "pass"
+        bar_colors.append(flag_color.get(fl, color))
+        line_widths.append(2.5 if fl in flag_color else 0)
+
+    fig = go.Figure(go.Bar(
+        x=samples, y=vals, marker_color=bar_colors,
+        marker_line=dict(color="#333333", width=line_widths),
+        hovertemplate="%{x}: %{y:.2f}%<extra></extra>"))
+
+    med = float(np.median(vals))
+    fig.add_hline(y=med, line_dash="dash", line_color="#777777",
+                  annotation_text=f"cohort median ({med:.1f})",
+                  annotation_position="top left")
+    if threshold:
+        for lvl, dash in (("warn", "dot"), ("fail", "dashdot")):
+            if lvl in threshold:
+                fig.add_hline(y=float(threshold[lvl]), line_dash=dash,
+                              line_color=flag_color.get(lvl, "#F44336"),
+                              annotation_text=f"{lvl} ({threshold[lvl]:.0f})",
+                              annotation_position="top right")
+    _base_layout(fig, title, "Sample", ytitle)
+    fig.update_layout(barmode="group")
+    return fig
+
+
 def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
                       scorecard=None):
@@ -792,6 +839,30 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         "Percent of reads flagged for RT-switching, intra-priming (high genomic-A downstream) "
         "or non-canonical junctions. Consistently elevated values across samples may indicate "
         "a systematic library issue.", "fig-artefacts"))
+
+    # 7b. Per-sample cohort-context pages for the two artefact rates that feed the
+    # outlier scorecard: each rate against the cohort median, config warn/fail
+    # thresholds, and scorecard flag markers (bars outlined/colored when flagged).
+    _art_pages = [
+        ("perc_reads_RTS", "RT-switching reads per sample",
+         "% reads with RT-switching evidence", "#F58A53", "fig-rts",
+         "Per-sample RT-switching rate against the cohort median. Bars are outlined "
+         "and colored when the sample-outlier scorecard flags this metric. RT-switching "
+         "produces artefactual junctions, so a sample well above its peers here is a "
+         "candidate library problem rather than a biological signal."),
+        ("perc_reads_intrapriming", "Intra-priming reads per sample",
+         "% reads with intra-priming evidence", "#EE446F", "fig-intraprim",
+         "Per-sample intra-priming rate (reads with a genomic poly-A run downstream of "
+         "the TTS, likely primed off genomic A-stretches rather than the polyA tail) "
+         "against the cohort median, with scorecard flags. Elevated in one sample points "
+         "to a sample-specific priming issue."),
+    ]
+    for metric, title, ytitle, color, div_id, interp in _art_pages:
+        _mfig = _metric_cohort_figure(err_DF, metric, title, ytitle,
+                                      scorecard=scorecard,
+                                      threshold=qc_flags.get(metric), color=color)
+        if _mfig is not None:
+            sections.append(_section(title, _mfig, interp, div_id))
 
     # 8. Junction donor/acceptor CV summary (%)
     if cv_don_percs is not None and not cv_don_percs.empty:

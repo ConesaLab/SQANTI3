@@ -206,6 +206,8 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 - sqantiReads_ujc_counts.csv: Provides a list of junction strings in each sample and the number of reads in each sample associated with each junction string.
 - sqantiReads_gene_classification.csv: For genes with coverage meeting a user defined threshold (-ge), provides the annotation category of each gene.
 - sqantiReads_putative_novel_transcripts.csv: Provides metrics on NIC and NNC UJCs and flags putative novel transcripts.
+- sqantiReads_jxn_offsets.csv: Splice-site fuzziness table. For each sample, the count of donor/acceptor site observations at each signed offset (in bp) from the nearest reference site, within the `jxn_offset_window`, split by canonical vs non-canonical. Feeds the offset-spectrum, precision-profile and canonical-split plots and the `perc_sites_imprecise` QC flag.
+- sqantiReads_completeness.csv: 5'/3' read-end completeness table. For each sample and end (5prime/3prime), the count of reads at each absolute distance (in bp) from the annotated gene end. Feeds the completeness-profile plots and the `perc_5p_within_window` / `perc_3p_within_window` QC flags.
 
 ### Results optional .csv files
 
@@ -224,13 +226,13 @@ The report format is controlled by `--report {pdf,html,both}` (default `pdf`):
 - **`html`** — `sqantiReads_report.html`: a single **self-contained, interactive** report (Plotly, works offline — no browser plugins or internet needed). It opens with a **Summary & QC-flags** panel (per-sample metrics with pass/warn/fail badges) and then interactive versions of the QC figures (hover for values, zoom, toggle samples in the legend), ending with the under-annotation section. No PDF is written in this mode.
 - **`both`** — writes both `sqantiReads_report.pdf` and `sqantiReads_report.html`.
 
-When an HTML report is produced (`html` or `both`), a machine-readable **`sqantiReads_qc_summary.json`** is also written, with per-sample metrics and QC flags for pipeline integration.
+When an HTML report is produced (`html` or `both`), a machine-readable **`sqantiReads_qc_summary.json`** is also written, with per-sample metrics and QC flags for pipeline integration. When the cohort has enough samples (`sample_scorecard.min_samples`, default 4), it also carries a **cohort-relative sample-outlier scorecard**: each read-QC metric is turned into a robust z-score against the cohort (median / MAD across samples), and a sample is flagged when it diverges from its peers on several metrics at once. The scorecard is dataset-agnostic — it uses no absolute cut-offs, so it stays quiet when all samples agree and is skipped (with a stated reason) below `min_samples`. Both reports render it as a heatmap (positive / red = worse than peers).
 
 Both reports also include UJC-level views: a **saturation / rarefaction** curve (expected unique junction chains vs. sequencing depth — a plateau indicates a saturated library), a **replicate-concordance** heatmap (per-UJC read-count correlation between samples), and an **UpSet** plot of UJCs shared across samples, with intersection and set-size bars stacked by structural category.
 
 ### Configurable thresholds
 
-`--config my_config.yaml` overrides the built-in cut-offs; any omitted value keeps its default, so a run without `--config` is unchanged. Overridable keys include the per-sample **QC-flag thresholds** (`qc_flags`, driving the pass/warn/fail panel and `qc_summary.json`), the **intra-priming** `%A`-downstream cut-off (`intrapriming_perc_A_cutoff`, default 60), and the **PCA** cumulative-variance cut-off (`pca_cumulative_variance`, default 0.85). Example:
+`--config my_config.yaml` overrides the built-in cut-offs; any omitted value keeps its default, so a run without `--config` is unchanged. Overridable keys include the per-sample **QC-flag thresholds** (`qc_flags`, driving the pass/warn/fail panel and `qc_summary.json`), the **intra-priming** `%A`-downstream cut-off (`intrapriming_perc_A_cutoff`, default 60), and the **PCA** cumulative-variance cut-off (`pca_cumulative_variance`, default 0.85). The splice-site fuzziness and completeness analyses add the **`jxn_offset_window`** (bp half-width for the offset spectrum / precision profile, default 15) and **`completeness_window`** (bp within which a read end counts as complete, default 50). The cohort-relative outlier detector is configured under **`sample_scorecard`** — its z-score warn/fail thresholds (`z_warn` 2.5 / `z_fail` 3.5), how many divergent metrics trip the overall flag (`min_metrics_warn` / `min_metrics_fail`), the minimum cohort size (`min_samples`, default 4), and the `metrics` map (each metric plus whether high or low values are worse). Example:
 
 ```yaml
 qc_flags:
