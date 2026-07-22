@@ -32,6 +32,7 @@ from src.utilities.sqanti_reads_plots import (
     sample_seq,
     compute_upset_intersections,
 )
+from src.utilities.sqanti_reads_config import DEFAULT_CONFIG
 
 # Fallback qualitative colors for series that have no entry in an explicit palette.
 # Prefix with the shared per-sample sequence so sample colors match the PDF.
@@ -40,19 +41,10 @@ _DEFAULT_SEQ = list(sample_seq) + pcolors.qualitative.Light24
 _THREE_SEQ = three_series_palette
 
 # --- QC flag thresholds --------------------------------------------------------
-# Per-sample thresholds for the QC flag panel. "warn"/"fail" are lower bounds for
-# metrics where higher is worse, except read length where lower is worse.
-# NOTE: these defaults will move into the Phase-4 YAML config; edit here for now.
-QC_THRESHOLDS = {
-    "perc_reads_intrapriming": {"warn": 20.0, "fail": 40.0, "worse": "high",
-                                 "label": "Intra-priming reads (%)"},
-    "perc_reads_RTS": {"warn": 15.0, "fail": 30.0, "worse": "high",
-                        "label": "RT-switching reads (%)"},
-    "perc_reads_non-canonical": {"warn": 10.0, "fail": 20.0, "worse": "high",
-                                  "label": "Non-canonical reads (%)"},
-    "median_length": {"warn": 500.0, "fail": 250.0, "worse": "low",
-                       "label": "Median read length (bp)"},
-}
+# Single source of truth is DEFAULT_CONFIG["qc_flags"] in sqanti_reads_config.py;
+# used here as the fallback when a run supplies no --config. "warn"/"fail" are
+# lower bounds for metrics where higher is worse, upper bounds where lower is worse.
+QC_THRESHOLDS = DEFAULT_CONFIG["qc_flags"]
 
 _FLAG_COLORS = {"pass": "#4CAF50", "warn": "#FF9800", "fail": "#F44336"}
 _PLOT_BG = "#ffffff"

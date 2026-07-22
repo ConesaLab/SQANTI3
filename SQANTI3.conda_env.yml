@@ -84,7 +84,9 @@ dependencies:
   
   # Testing
   - pytest>=7.4,<8.0
-  
+  - pypdf>=4.0            # PDF page-count/text assertions in the reads tests
+  - pymupdf>=1.24         # rasterizes report pages for the image-regression harness
+
   # Pip packages - more flexible
   - pip:
     - argh>=0.31

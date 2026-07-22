@@ -82,9 +82,9 @@ class ReadsPlotArgs:
 
 
 # --- Shared plotting constants -------------------------------------------------
-# Colors/orders used by both plot_pdf and plot_pdf_by_factor (previously defined
-# identically inside each function). Kept as module-level names so both functions
-# resolve them from module scope.
+# Colors/orders for the PDF report (render_report_pdf) and the HTML report
+# (sqanti_reads_report.py), kept as module-level names so both resolve the same
+# palettes and category orders.
 category_color_palette = {
     "FSM": "#6BAED6",
     "ISM": "#FC8D59",
@@ -187,8 +187,7 @@ def _scatter_labeled(df, x_col, y_col, label_col, title, xlabel, ylabel,
     """
     import matplotlib.pyplot as _plt
     ax = ax or _plt.gca()
-    faceted = (factor_col and factor_col in df.columns
-               and factor_col != "temp_factor" and df[factor_col].nunique() > 1)
+    faceted = _is_faceted(df, factor_col)
     if faceted:
         for i, lv in enumerate(pd.unique(df[factor_col])):
             d = df[df[factor_col] == lv]
@@ -203,6 +202,132 @@ def _scatter_labeled(df, x_col, y_col, label_col, title, xlabel, ylabel,
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
+
+
+def _is_faceted(df, factor_col):
+    """True when a real (non-synthetic, multi-level) factor should split panels.
+
+    ``temp_factor`` is the single-level placeholder the pipeline adds when the
+    user gives no ``--factor``; it never faces.
+    """
+    return (bool(factor_col) and factor_col in df.columns
+            and factor_col != "temp_factor" and df[factor_col].nunique() > 1)
+
+
+def _stacked_bars_dict(*args, color_palette, exp_factor, **kwargs):
+    """FacetGrid ``map_dataframe`` callback: stack every non-id column, colored
+    by name from ``color_palette`` (a {column: hex} dict). Columns absent from
+    the palette are skipped with a warning; column order sets the stack order."""
+    data = kwargs.pop('data')
+    kwargs.pop('color', None)
+    ax = plt.gca()
+    bottom = np.zeros(len(data))
+    categories = [col for col in data.columns if col not in ['sampleID', exp_factor]]
+    for category in categories:
+        values = data[category].values
+        if category in color_palette:
+            non_zero_indices = values != 0
+            ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices],
+                   bottom=bottom[non_zero_indices], color=color_palette[category],
+                   label=category, **kwargs)
+            bottom += values
+        else:
+            reads_logger.warning(f"Color for {category} not found in palette.")
+
+
+def _stacked_bars_indexed(*args, categories, palette, **kwargs):
+    """FacetGrid ``map_dataframe`` callback: stack a fixed ``categories`` list in
+    order, colored by the aligned ``palette`` list. A category missing from a
+    facet subset is treated as all-zero so stack order/colors stay stable."""
+    data = kwargs.pop('data')
+    ax = plt.gca()
+    bottom = np.zeros(len(data))
+    for idx, category in enumerate(categories):
+        values = data[category].values if category in data.columns else np.zeros(len(data))
+        non_zero_indices = values != 0
+        ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices],
+               bottom=bottom[non_zero_indices], color=palette[idx], label=category)
+        bottom += values
+
+
+def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylabel,
+                        palette, categories=None, legend_title=None,
+                        height=8, aspect=1.3, sort=True, fixed_locator=True):
+    """Render one faceted stacked-bar page (one panel per ``exp_factor`` level).
+
+    ``palette`` is either a {column: hex} dict (columns inferred + stacked in
+    column order) or an ordered list aligned to ``categories`` (fixed stack).
+    With the synthetic single-level ``temp_factor`` this collapses to one panel.
+    """
+    plot_df = df.sort_values(by=[exp_factor, 'sampleID']) if sort else df
+    g = sns.FacetGrid(plot_df, col=exp_factor, col_wrap=num_factors, height=height,
+                      aspect=aspect, sharex=False, sharey=True)
+    if isinstance(palette, dict):
+        g.map_dataframe(_stacked_bars_dict, color_palette=palette, exp_factor=exp_factor)
+    else:
+        g.map_dataframe(_stacked_bars_indexed, categories=categories, palette=palette)
+    for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
+        ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
+        if fixed_locator:
+            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
+    g.set_axis_labels(xlabel, ylabel)
+    g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
+    title_obj = g.fig.suptitle(title, y=1.02, fontsize=20)
+    legend_kwargs = {'bbox_to_anchor': (1.05, 1), 'loc': 'upper left'}
+    if legend_title is not None:
+        legend_kwargs['title'] = legend_title
+    lgd = plt.legend(**legend_kwargs)
+    plt.tight_layout()
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    plt.subplots_adjust(top=0.85, right=0.8)
+    pdf.savefig(bbox_extra_artists=(lgd, title_obj), bbox_inches='tight')
+    plt.close()
+
+
+def _grouped_bars_indexed(*args, categories, palette, **kwargs):
+    """FacetGrid ``map_dataframe`` callback: side-by-side (grouped) bars, one
+    group of ``categories`` per sample, colored by the aligned ``palette`` list."""
+    data = kwargs.pop('data')
+    ax = plt.gca()
+    bar_width = 0.35
+    num_samples = len(data['sampleID'].unique())
+    gap_width = 0.1  # gap between per-sample groups
+    total_bar_width = (len(categories) * bar_width) + gap_width
+    positions = np.arange(num_samples) * total_bar_width
+    for idx, category in enumerate(categories):
+        category_positions = positions + idx * bar_width
+        values = data[category].values if category in data.columns else np.zeros(len(data))
+        non_zero_indices = values != 0
+        ax.bar(category_positions[non_zero_indices], values[non_zero_indices],
+               width=bar_width, color=palette[idx], label=category)
+    central_offset = bar_width * (len(categories) - 1) / 2
+    ax.set_xticks(positions + central_offset)
+    ax.set_xticklabels(data['sampleID'].unique(), rotation=90)
+
+
+def _render_grouped_bar(pdf, df, *, exp_factor, num_factors, categories, palette,
+                        title, xlabel, ylabel, legend_title=None,
+                        height=8, aspect=1.3, sort=True):
+    """Render one faceted grouped-bar page (one panel per ``exp_factor`` level)."""
+    plot_df = df.sort_values(by=[exp_factor, 'sampleID']) if sort else df
+    g = sns.FacetGrid(plot_df, col=exp_factor, col_wrap=num_factors, height=height,
+                      aspect=aspect, sharex=False, sharey=True)
+    g.map_dataframe(_grouped_bars_indexed, categories=categories, palette=palette)
+    for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
+        ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
+        ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
+    g.set_axis_labels(xlabel, ylabel)
+    g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
+    title_obj = g.fig.suptitle(title, y=1.02, fontsize=20)
+    legend_kwargs = {'bbox_to_anchor': (1.05, 1), 'loc': 'upper left'}
+    if legend_title is not None:
+        legend_kwargs['title'] = legend_title
+    lgd = plt.legend(**legend_kwargs)
+    plt.tight_layout()
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    plt.subplots_adjust(top=0.85, right=0.8)
+    pdf.savefig(bbox_extra_artists=(lgd, title_obj), bbox_inches='tight')
+    plt.close()
 
 
 def compute_ujc_metrics(ujc_count_DF, factor_col=None, n_depths=25):
@@ -895,7 +1020,7 @@ def proc_samples(args, design_file, ref):
         ##Err DFs
         # Count RTS, intrapriming and reads with noncan jxns
         # Calculate counts
-        _ip_cutoff = args.cfg().get('intrapriming_perc_A_cutoff', 60)
+        _ip_cutoff = args.cfg()['intrapriming_perc_A_cutoff']
         num_reads_RTS = (class_DF['RTS_stage'] == True).sum()
         num_reads_intrapriming = (class_DF['perc_A_downstream_TTS'] > _ip_cutoff).sum()
         num_reads_non_can = (class_DF['all_canonical'] == 'non_canonical').sum()
@@ -1694,73 +1819,27 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     
     
     
-def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
+def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, args=None):
-    
+    """Render the full SQANTI-reads PDF report.
+
+    One faceted code path serves both modes: with ``--factor`` each page shows
+    one panel per factor level; without it, the pipeline's single-level
+    ``temp_factor`` placeholder collapses every page to a single panel (and the
+    per-facet subtitles are suppressed).
+    """
+
     plt.rcParams.update({'font.size': 13})
     plt.rcParams['pdf.fonttype'] = 42
-    
-    exp_factor = args.inFACTOR
-    
-    def plot_stacked_bars(*args, **kwargs):
-        data = kwargs.pop('data')
-        ax = plt.gca()
-        bottom = np.zeros(len(data))
-        for idx, category in enumerate(categories):
-            # A facet subset may not contain every category column; treat a
-            # missing category as all-zero so stacking order/colors stay stable.
-            values = data[category].values if category in data.columns else np.zeros(len(data))
-            # Only add bars for non-zero values
-            non_zero_indices = values != 0
-            ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices], bottom=bottom[non_zero_indices], color=palette[idx], label=category)
-            # Update bottom only with non-zero values
-            bottom += values
 
-    def plot_stacked_bars_custom_palette(data, color_palette, *args, **kwargs):
-        ax = plt.gca()
-        bottom = np.zeros(len(data))
-        
-        kwargs.pop('color', None)
-        categories = [col for col in data.columns if col not in ['sampleID', exp_factor]]
-        for category in categories:
-            values = data[category].values
-            if category in color_palette:
-                # Only add bars for non-zero values
-                non_zero_indices = values != 0
-                ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices], bottom=bottom[non_zero_indices], color=color_palette[category], label=category, **kwargs)
-                # Update bottom only with non-zero values
-                bottom += values
-            else:
-                reads_logger.warning(f"Color for {category} not found in palette.")
+    exp_factor = args.inFACTOR if args.inFACTOR is not None else 'temp_factor'
 
-    def plot_side_by_side_bars(*args, **kwargs):
-        data = kwargs.pop('data')
-        ax = plt.gca()
-        bar_width = 0.35
-        num_samples = len(data['sampleID'].unique())
-        gap_width = 0.1  # Width of the gap between groups
-        total_bar_width = (len(categories) * bar_width) + gap_width
-    
-        # Calculate initial positions for each group, ensuring gaps between groups
-        positions = np.arange(num_samples) * total_bar_width
-    
-        for idx, category in enumerate(categories):
-            # Offset positions within each group for each category
-            category_positions = positions + idx * bar_width
-            # Tolerate category columns absent from a facet subset (all-zero).
-            values = data[category].values if category in data.columns else np.zeros(len(data))
-            # Filter out zero values to maintain visualization integrity
-            non_zero_indices = values != 0
-            ax.bar(category_positions[non_zero_indices], values[non_zero_indices], width=bar_width, color=palette[idx], label=category)
-    
-        # Centralize the x-ticks for each group
-        central_offset = bar_width * (len(categories) - 1) / 2
-        ax.set_xticks(positions + central_offset)
-        ax.set_xticklabels(data['sampleID'].unique(), rotation=90)
-        
+    # Stacked-bar pages are rendered by the module-level _render_stacked_bar /
+    # _stacked_bars_dict / _stacked_bars_indexed helpers.
+
     num_factors = all_gene_percs_long_DF[exp_factor].nunique()
     num_samples = all_gene_percs_long_DF['sampleID'].nunique()
     
@@ -1787,187 +1866,76 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         # matching the HTML report. The earlier per-sample stripplot views were removed.
 
         ##Barplot - structural category % - ALL genes
-        
-        all_gene_percs_pivot_DF=all_gene_percs_pivot_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in all_gene_percs_pivot_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(all_gene_percs_pivot_DF, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = category_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), all_gene_percs_pivot_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentages")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage Reads in Each Structural Category - All Genes", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
-        
-         ##Barplot - structural category % - Annotated genes
-         
-        annot_gene_percs_pivot_DF =annot_gene_percs_pivot_DF.sort_values(by=[exp_factor, 'sampleID'])
-        categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC','GI','GENIC'] if cat in annot_gene_percs_pivot_DF.columns]
-        g = sns.FacetGrid(annot_gene_percs_pivot_DF, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = category_color_palette)
-        g.set_axis_labels("Sample ID", "Percentages")
-        g.set_titles(exp_factor + " = {col_name}")
-        for ax, (name, group) in zip(g.axes.flatten(), annot_gene_percs_pivot_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        title = g.fig.suptitle("Percentage Reads in Each Structural Category - Annotated Genes", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
-        
+        _render_stacked_bar(pdf, all_gene_percs_pivot_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=category_color_palette,
+                            title="Percentage Reads in Each Structural Category - All Genes",
+                            xlabel="Sample ID", ylabel="Percentages",
+                            legend_title='Structural Category')
+
+        ##Barplot - structural category % - Annotated genes
+        _render_stacked_bar(pdf, annot_gene_percs_pivot_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=category_color_palette,
+                            title="Percentage Reads in Each Structural Category - Annotated Genes",
+                            xlabel="Sample ID", ylabel="Percentages",
+                            legend_title='Structural Category')
+
              ## Barplot subcategories
-        FSM_DF = FSM_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in FSM_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(FSM_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), FSM_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Reads in Each Sub-Category - FSM ", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, FSM_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Number of Reads in Each Sub-Category - FSM ',
+                            xlabel='Sample ID', ylabel='Number of reads',
+                            legend_title='Structural Category')
         
-        FSM_perc_DF =FSM_perc_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in FSM_perc_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(FSM_perc_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), FSM_perc_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of FSM Reads in Each Sub-Category ", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, FSM_perc_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Percentage of FSM Reads in Each Sub-Category ',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            legend_title='Structural Category')
         
-        ISM_DF =ISM_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in ISM_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(ISM_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), ISM_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Reads in Each Sub-Category - ISM ", y=1.02, fontsize=20)
-        lgd =  plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, ISM_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Number of Reads in Each Sub-Category - ISM ',
+                            xlabel='Sample ID', ylabel='Number of reads',
+                            legend_title='Structural Category')
         
         
-        ISM_perc_DF =ISM_perc_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in ISM_perc_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(ISM_perc_DF, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), ISM_perc_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of ISM Reads in Each Sub-Category ", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, ISM_perc_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Percentage of ISM Reads in Each Sub-Category ',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            legend_title='Structural Category')
         
         
-        NIC_NNC_DF =NIC_NNC_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in NIC_NNC_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(NIC_NNC_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), NIC_NNC_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Reads in Each Sub-Category - NIC and NNC ", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, NIC_NNC_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Number of Reads in Each Sub-Category - NIC and NNC ',
+                            xlabel='Sample ID', ylabel='Number of reads',
+                            legend_title='Structural Category')
         
          
-        NIC_NNC_perc_DF =NIC_NNC_perc_DF.sort_values(by=[exp_factor, 'sampleID']) 
-        categories =  [col for col in NIC_NNC_perc_DF.columns if col not in ['sampleID', exp_factor]]   
-        g = sns.FacetGrid(NIC_NNC_perc_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3,sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = subcat_color_palette)
-        for ax, (name, group) in zip(g.axes.flatten(), NIC_NNC_perc_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of NIC/NNC Reads in Each Sub-Category ", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, NIC_NNC_perc_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Percentage of NIC/NNC Reads in Each Sub-Category ',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            legend_title='Structural Category')
         
         
         ##Barplot - Genes detected counts
-        gene_agg_DF = gene_agg_DF.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
-        palette = [readcount_palette[c] for c in categories]
-        g = sns.FacetGrid(gene_agg_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars)
-        g.set_axis_labels("Sample ID", "Number of Genes")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Genes Detected", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
-        for ax, (name, group) in zip(g.axes.flatten(), gene_agg_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, gene_agg_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[readcount_palette[c] for c in ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']],
+                            categories=['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read'],
+                            title='Number of Genes Detected',
+                            xlabel='Sample ID', ylabel='Number of Genes',
+                            legend_title='Read Count')
         
         
         ##Barplot - Genes detected percentages
-        gene_percs_unstacked = gene_percs_unstacked.sort_values(by=[exp_factor, 'sampleID'])
-        g = sns.FacetGrid(gene_percs_unstacked, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)    
-        
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), gene_percs_unstacked.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of Genes")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Genes Detected", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, gene_percs_unstacked, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[readcount_palette[c] for c in ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']],
+                            categories=['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read'],
+                            title='Number of Genes Detected',
+                            xlabel='Sample ID', ylabel='Number of Genes',
+                            legend_title='Read Count')
     
             
         
@@ -1985,7 +1953,8 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
                 # Create a subplot for this exp_factor
                 plt.subplot(1, num_factors, i)
                 sns.violinplot(data=df_filtered, x='sampleID', y='percentage', palette=palette)
-                plt.title(exp_factor + f" = {exp_factor_val}")
+                if exp_factor != 'temp_factor':
+                    plt.title(exp_factor + f" = {exp_factor_val}")
                 plt.xticks(rotation=90)
             
             title = plt.suptitle(f'Gene distribution - {category}', y= 1.02)
@@ -1997,88 +1966,36 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
     
     
         # UJC barplots - percent and counts, structural 
-        for stack_by in ['read_category','structural_category']:
-            
-            ujc_cnts_dct[stack_by] =  ujc_cnts_dct[stack_by].sort_values(by=[exp_factor, 'sampleID'])
-            ujc_percs_dct[stack_by] =  ujc_percs_dct[stack_by].sort_values(by=[exp_factor, 'sampleID'])
-            
+        for stack_by in ['read_category', 'structural_category']:
+            ujc_cnts_dct[stack_by] = ujc_cnts_dct[stack_by].sort_values(by=[exp_factor, 'sampleID'])
+            ujc_percs_dct[stack_by] = ujc_percs_dct[stack_by].sort_values(by=[exp_factor, 'sampleID'])
+
             if stack_by == 'read_category':
-                categories = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
-                lab = 'Read count'
-                
-                palette = [readcount_palette[c] for c in categories]
-                g = sns.FacetGrid(ujc_cnts_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-                
-                #Barplot - number of UJCs per sample, colured by stackby
-                
-                g.map_dataframe(plot_stacked_bars)
-                for ax, (name, group) in zip(g.axes.flatten(), ujc_cnts_dct[stack_by].groupby(exp_factor)):
-                    ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-                    ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-                g.set_axis_labels("Sample ID","Number of UJCs" )
-                g.set_titles(exp_factor + " = {col_name}")
-                title = g.fig.suptitle("Number of UJCs Detected", y=1.02, fontsize=20)
-                lgd = plt.legend(title=lab, bbox_to_anchor=(1.05, 1), loc='upper left')
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                plt.subplots_adjust(top=0.85, right=0.8)
-                pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.close()
-                
-                g = sns.FacetGrid(ujc_percs_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-                #Barplot - number of UJCs per sample, colured by stackby
-                g.map_dataframe(plot_stacked_bars)
-                for ax, (name, group) in zip(g.axes.flatten(),ujc_percs_dct[stack_by].groupby(exp_factor)):
-                    ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-                    ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-                g.set_axis_labels("Sample ID", "Percentage of UJCs")
-                g.set_titles(exp_factor + " = {col_name}")
-                title = g.fig.suptitle("UJCs Detected", y=1.02, fontsize=20)
-                lgd = plt.legend(title=lab, bbox_to_anchor=(1.05, 1), loc='upper left')
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                plt.subplots_adjust(top=0.85, right=0.8)
-                pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.close()
-                
+                readcount_cats = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
+                readcount_pal = [readcount_palette[c] for c in readcount_cats]
+                _render_stacked_bar(pdf, ujc_cnts_dct[stack_by], exp_factor=exp_factor,
+                                    num_factors=num_factors, categories=readcount_cats,
+                                    palette=readcount_pal, title="Number of UJCs Detected",
+                                    xlabel="Sample ID", ylabel="Number of UJCs",
+                                    legend_title='Read count')
+                _render_stacked_bar(pdf, ujc_percs_dct[stack_by], exp_factor=exp_factor,
+                                    num_factors=num_factors, categories=readcount_cats,
+                                    palette=readcount_pal, title="UJCs Detected",
+                                    xlabel="Sample ID", ylabel="Percentage of UJCs",
+                                    legend_title='Read count')
             elif stack_by == 'structural_category':
-                categories = [col for col in ujc_cnts_dct[stack_by].columns if col not in ['sampleID', exp_factor]]
-                lab = 'Structural category'
-                
-                g = sns.FacetGrid(ujc_cnts_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-                g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = category_color_palette)
-                for ax, (name, group) in zip(g.axes.flatten(), ujc_cnts_dct[stack_by].groupby(exp_factor)):
-                    ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-                    ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-                g.set_axis_labels("Sample ID", "Number of UJCs")
-                g.set_titles(exp_factor + " = {col_name}")
-                title = g.fig.suptitle("Number of UJCs detected", y=1.02, fontsize=20)
-                lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                plt.subplots_adjust(top=0.85, right=0.8)
-                pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.close()
-                
-            
-                g = sns.FacetGrid(ujc_percs_dct[stack_by], col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-                g.map_dataframe(plot_stacked_bars_custom_palette, color_palette = category_color_palette)
-                for ax, (name, group) in zip(g.axes.flatten(), ujc_percs_dct[stack_by].groupby(exp_factor)):
-                    ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-                    ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-                g.set_axis_labels("Sample ID", "Percentage of UJCs")
-                g.set_titles(exp_factor + " = {col_name}")
-                title = g.fig.suptitle("UJCs detected", y=1.02, fontsize=20)
-                lgd = plt.legend(title='Structural Category', bbox_to_anchor=(1.05, 1), loc='upper left')
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                plt.subplots_adjust(top=0.85, right=0.8)
-                pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-                plt.close()
-                
-                
-                
-                
+                _render_stacked_bar(pdf, ujc_cnts_dct[stack_by], exp_factor=exp_factor,
+                                    num_factors=num_factors, palette=category_color_palette,
+                                    title="Number of UJCs detected",
+                                    xlabel="Sample ID", ylabel="Number of UJCs",
+                                    legend_title='Structural Category')
+                _render_stacked_bar(pdf, ujc_percs_dct[stack_by], exp_factor=exp_factor,
+                                    num_factors=num_factors, palette=category_color_palette,
+                                    title="UJCs detected",
+                                    xlabel="Sample ID", ylabel="Percentage of UJCs",
+                                    legend_title='Structural Category')
+
+
         ## Total Mapped reads vs % reads gt 1kb
     
         plt.figure(figsize=(14, 10))
@@ -2091,45 +2008,20 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         plt.close()
         
         ## Bar graph read categories - counts
-        length_cnts_agg = length_cnts_agg.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['reads_lt_1kb','reads_1kb_to_2kb', 'reads_2kb_to_3kb','reads_gt_3kb' ]
-    
-        palette = [length_palette[c] for c in categories]
-        g = sns.FacetGrid(length_cnts_agg, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)
-        
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), length_cnts_agg.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of Reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Lengths of All Mapped Reads", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, length_cnts_agg, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[length_palette[c] for c in ['reads_lt_1kb', 'reads_1kb_to_2kb', 'reads_2kb_to_3kb', 'reads_gt_3kb']],
+                            categories=['reads_lt_1kb', 'reads_1kb_to_2kb', 'reads_2kb_to_3kb', 'reads_gt_3kb'],
+                            title='Lengths of All Mapped Reads',
+                            xlabel='Sample ID', ylabel='Number of Reads',
+                            legend_title='Read Count')
          
         ## Bar graph read categories - %
-        length_percs_agg = length_percs_agg.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['reads_lt_1kb_perc','reads_1kb_to_2kb_perc', 'reads_2kb_to_3kb_perc','reads_gt_3kb_perc']
-        g = sns.FacetGrid(length_percs_agg, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3,sharex=False, sharey=True)    
-        
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), length_percs_agg.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Lengths of All Mapped Reads", y=1.02, fontsize=20)
-        lgd = plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        plt.legend(title='Read Count', bbox_to_anchor=(1.05, 1), loc='upper left')
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, length_percs_agg, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[length_palette[c] for c in ['reads_lt_1kb_perc', 'reads_1kb_to_2kb_perc', 'reads_2kb_to_3kb_perc', 'reads_gt_3kb_perc']],
+                            categories=['reads_lt_1kb_perc', 'reads_1kb_to_2kb_perc', 'reads_2kb_to_3kb_perc', 'reads_gt_3kb_perc'],
+                            title='Lengths of All Mapped Reads',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            legend_title='Read Count')
         
              
         
@@ -2137,7 +2029,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         g = sns.FacetGrid(length_DF2, col=exp_factor, col_wrap=num_factors, height=8, aspect=0.7, sharex=False, sharey=True)
         g.map_dataframe(sns.violinplot, x='sampleID', y='length', palette=sample_color_palette)
         g.set_axis_labels("Sample ID", "Length")
-        g.set_titles(exp_factor + " = {col_name}")
+        g.set_titles("" if exp_factor == 'temp_factor' else exp_factor + " = {col_name}")
         title = g.fig.suptitle("Read Length Distribution", y=1.02, fontsize=20)
         #handles = [plt.Rectangle((0,0),1,1, color=sample_color_palette[sampleID]) for sampleID in unique_sampleIDs]
         #labels = list(unique_sampleIDs)
@@ -2164,41 +2056,18 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
             plt.close()
             
         #Bar graph RTS/intra priming
-        err_DF = err_DF.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['num_reads_RTS','num_reads_intrapriming', 'num_reads_non-canonical']
-        palette = list(three_series_palette)
-        g = sns.FacetGrid(err_DF, col=exp_factor, col_wrap=num_factors,  height=8, aspect = 1.3, sharex=False, sharey=True)    
-        g.map_dataframe(plot_side_by_side_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), err_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of Reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Artefact Reads", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
-    
-        
-        categories = ['perc_reads_RTS','perc_reads_intrapriming', 'perc_reads_non-canonical']
-        palette = list(three_series_palette)
-        g = sns.FacetGrid(err_DF, col=exp_factor, col_wrap=num_factors, height=8, aspect=0.7, sharex=False, sharey=True)    
-        g.map_dataframe(plot_side_by_side_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), err_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage of Reads")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of Artefact Reads", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_grouped_bar(pdf, err_DF, exp_factor=exp_factor, num_factors=num_factors,
+                            categories=['num_reads_RTS', 'num_reads_intrapriming', 'num_reads_non-canonical'],
+                            palette=list(three_series_palette),
+                            title="Number of Artefact Reads",
+                            xlabel="Sample ID", ylabel="Number of Reads")
+
+        _render_grouped_bar(pdf, err_DF, exp_factor=exp_factor, num_factors=num_factors,
+                            categories=['perc_reads_RTS', 'perc_reads_intrapriming', 'perc_reads_non-canonical'],
+                            palette=list(three_series_palette),
+                            title="Percentage of Artefact Reads",
+                            xlabel="Sample ID", ylabel="Percentage of Reads",
+                            aspect=0.7)
         
         
         plt.figure(figsize=(14, 10))
@@ -2211,7 +2080,7 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         # Calculate the cumulative variance and determine the number of components to use
         cumulative_variance = np.cumsum(variance_ratio)
-        n_components = np.argmax(cumulative_variance >= args.cfg().get('pca_cumulative_variance', 0.85)) + 1
+        n_components = np.argmax(cumulative_variance >= args.cfg()['pca_cumulative_variance']) + 1
         
          # Create the plots
         fig, ax = plt.subplots(2, 2, figsize=(20, 20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
@@ -2248,642 +2117,51 @@ def plot_pdf_by_factor(out_path, all_gene_percs_long_DF, annot_gene_percs_long_D
         
         
         
-        nov_can_DF = nov_can_DF.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
-        palette = [jxn_palette[c] for c in categories]
-        g = sns.FacetGrid(nov_can_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(),nov_can_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-        g.set_axis_labels("Sample ID", "Number of Junctions")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Junctions by Category", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, nov_can_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[jxn_palette[c] for c in ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']],
+                            categories=['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical'],
+                            title='Junctions by Category',
+                            xlabel='Sample ID', ylabel='Number of Junctions',
+                            height=9, fixed_locator=False)
         
         
-        nov_can_perc_DF = nov_can_perc_DF.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
-        palette = [jxn_palette[c] for c in categories]
-        g = sns.FacetGrid(nov_can_perc_DF, col=exp_factor, col_wrap=num_factors, height=9, aspect = 1.3, sharex=False, sharey=True)
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(),nov_can_perc_DF.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-        g.set_axis_labels("Sample ID", "Percentage")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Junctions by Category", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, nov_can_perc_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=[jxn_palette[c] for c in ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']],
+                            categories=['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical'],
+                            title='Junctions by Category',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            height=9, fixed_locator=False)
         
-        cv_acc_summary = cv_acc_summary.sort_values(by=[exp_factor, 'sampleID'])
-        categories = ['ref_match','cv_0','cv_gt_0']
-        palette = list(three_series_palette)
-        g = sns.FacetGrid(cv_acc_summary, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)    
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(),cv_acc_summary.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of Detected Acceptors")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Detected Acceptors", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, cv_acc_summary, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=list(three_series_palette),
+                            categories=['ref_match', 'cv_0', 'cv_gt_0'],
+                            title='Number of Detected Acceptors',
+                            xlabel='Sample ID', ylabel='Number of Detected Acceptors',)
         
-        cv_don_summary = cv_don_summary.sort_values(by=[exp_factor, 'sampleID'])
-        g = sns.FacetGrid(cv_don_summary, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)    
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), cv_don_summary.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Number of Detected Donors")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Number of Detected Donors", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, cv_don_summary, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=list(three_series_palette),
+                            categories=['ref_match', 'cv_0', 'cv_gt_0'],
+                            title='Number of Detected Donors',
+                            xlabel='Sample ID', ylabel='Number of Detected Donors',)
         
         
         categories = ['perc_ref_match','perc_cv_0','perc_cv_gt_0']
-        cv_don_percs = cv_don_percs.sort_values(by=[exp_factor, 'sampleID'])
-        g = sns.FacetGrid(cv_don_percs, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)    
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), cv_don_percs.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage of Detected Donors")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of Detected Donors", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, cv_don_percs, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=list(three_series_palette),
+                            categories=['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0'],
+                            title='Percentage of Detected Donors',
+                            xlabel='Sample ID', ylabel='Percentage of Detected Donors',)
         
         categories = ['perc_ref_match','perc_cv_0','perc_cv_gt_0']
-        cv_acc_percs = cv_acc_percs.sort_values(by=[exp_factor, 'sampleID'])
-        g = sns.FacetGrid(cv_acc_percs, col=exp_factor, col_wrap=num_factors, height=8, aspect = 1.3, sharex=False, sharey=True)    
-        g.map_dataframe(plot_stacked_bars)
-        for ax, (name, group) in zip(g.axes.flatten(), cv_acc_percs.groupby(exp_factor)):
-            ax.set_xticklabels(group['sampleID'].unique(), rotation=90)
-            ax.xaxis.set_major_locator(FixedLocator(ax.get_xticks()))
-        g.set_axis_labels("Sample ID", "Percentage of Detected Acceptors")
-        g.set_titles(exp_factor + " = {col_name}")
-        title = g.fig.suptitle("Percentage of Detected Acceptors", y=1.02, fontsize=20)
-        lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_extra_artists=(lgd,title,), bbox_inches='tight')
-        plt.close()
+        _render_stacked_bar(pdf, cv_acc_percs, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=list(three_series_palette),
+                            categories=['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0'],
+                            title='Percentage of Detected Acceptors',
+                            xlabel='Sample ID', ylabel='Percentage of Detected Acceptors',)
 
         # UJC saturation, replicate concordance and UpSet plots
         plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
 
-def plot_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
-             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
-             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
-             cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, args=None):
-    
-    
-    plt.rcParams.update({'font.size': 13})
-    plt.rcParams['pdf.fonttype'] = 42
-    # Suppress warning about too many open figures
-    plt.rcParams['figure.max_open_warning'] = 0
-    
-    num_samples = all_gene_percs_long_DF['sampleID'].nunique()
-    exp_factor = 'temp_factor'
-    
-    # category/subcat palettes, cat_order and cat_order_stacked are module-level constants
-
-    #Define sample color palette
-    
-    unique_sampleIDs = all_gene_percs_long_DF['sampleID'].unique()
-    sample_color_palette = {sampleID: sample_seq[i % len(sample_seq)]
-                            for i, sampleID in enumerate(unique_sampleIDs)}
-    
-    
-    with (PdfPages(out_path) if pdf is None else nullcontext(pdf)) as pdf:
-        #Cover page
-        # Create the title page
-        title_fig = plt.figure(figsize =(14, 10))
-        title_fig.text(0.5, 0.5, "SQANTI-reads report", ha='center', va='center', fontsize=26)
-        pdf.savefig(title_fig)
-        plt.close(title_fig)
-        
-        # Structural-category composition is shown as stacked bars (below), matching
-        # the HTML report. The earlier per-sample stripplot views were removed.
-        categories = [col for col in all_gene_percs_pivot_DF.columns if col not in ['sampleID', exp_factor]]
-        categories = [cat for cat in cat_order_stacked if cat in categories]
-        
-        cols = ['sampleID'] + categories
-        all_gene_percs_pivot_DF = all_gene_percs_pivot_DF[cols]
-        all_gene_percs_pivot_DF = all_gene_percs_pivot_DF.sort_values(by= 'sampleID')
-        plt.figure(figsize=(14, 10))
-        bottom = np.zeros(len(all_gene_percs_pivot_DF))
-
-        for col in categories:
-            if col in category_color_palette:
-                plt.bar(all_gene_percs_pivot_DF.index, all_gene_percs_pivot_DF[col], bottom=bottom, label=col, color=category_color_palette[col])
-                bottom += all_gene_percs_pivot_DF[col].values
-
-        plt.title('Percent Reads in Each Structural Category - All Genes')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentages')
-        plt.xticks(ticks=np.arange(len(all_gene_percs_pivot_DF['sampleID'])), labels=all_gene_percs_pivot_DF['sampleID'], rotation=90, ha='right')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()  
-        
-     
-        
-        categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC', 'GI', 'GENIC'] if cat in annot_gene_percs_pivot_DF.columns]
-        categories = [cat for cat in cat_order_stacked if cat in categories]
-        palette = [category_color_palette[cat] for cat in categories]
-        
-        annot_gene_percs_pivot_DF = annot_gene_percs_pivot_DF.sort_values(by= 'sampleID')
-        plt.figure(figsize=(14, 10))
-        annot_gene_percs_pivot_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Percent Reads in Each Structural Category - Annotated Genes')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentages')
-        plt.xticks(ticks=np.arange(len(annot_gene_percs_pivot_DF['sampleID'])), labels=annot_gene_percs_pivot_DF['sampleID'], rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        ##Subcategory plots
-        
-        FSM_DF.set_index('sampleID', inplace=True)
-        categories =  [col for col in FSM_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        plt.figure(figsize=(14, 10))
-        FSM_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - FSM')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Reads')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        FSM_perc_DF.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        categories =  [col for col in FSM_perc_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        FSM_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Percentage of FSM Reads in Each subcategory')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        ISM_DF.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        categories =  [col for col in ISM_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        ISM_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - ISM')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Reads')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        ISM_perc_DF.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        categories =  [col for col in ISM_perc_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        ISM_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Percentage of ISM Reads in Each subcategory')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-       
-        
-        NIC_NNC_DF.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        categories =  [col for col in NIC_NNC_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        NIC_NNC_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Number of Reads in Each subcategory - NIC/NNC')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Reads')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        NIC_NNC_perc_DF.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        categories =  [col for col in NIC_NNC_perc_DF.columns if col not in ['sampleID', exp_factor]] 
-        palette = [subcat_color_palette[cat] for cat in categories]      
-        NIC_NNC_perc_DF.plot(kind='bar', stacked=True, color=palette)
-        plt.title('Percentage of NIC/NNC Reads in Each subcategory')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(labels=categories, bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-    
-        categories = ['100+ reads', '50-100 reads', '11-50 reads', '2-10 reads', '1 read']
-        cols = ['sampleID'] + categories
-        # Check all structural categories available,otherwise make them with 0s
-        for column in cols:
-            if column not in gene_agg_DF.columns:
-                gene_agg_DF[column] = 0
-        gene_agg_DF = gene_agg_DF[cols]
-        gene_agg_DF.set_index('sampleID', inplace=True)
-
-        plt.figure(figsize=(14, 10))
-        gene_agg_DF.plot(kind='bar', stacked=True, color=_palette_colors(gene_agg_DF.columns, readcount_palette))
-        plt.title('Genes detected')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Genes detected')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        #Plot 4 - Barplot - % genes per sample coloured by number of reads in the UJC
-        for column in cols:
-            if column not in gene_percs_unstacked.columns:
-                gene_percs_unstacked[column] = 0
-        gene_percs_unstacked = gene_percs_unstacked[cols]
-        gene_percs_unstacked.set_index('sampleID', inplace=True)
-        plt.figure(figsize=(14, 10))
-        gene_percs_unstacked.plot(kind='bar', stacked=True, color=_palette_colors(gene_percs_unstacked.columns, readcount_palette))
-        plt.title('Genes detected')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage of Genes detected')
-        plt.xticks(rotation=90, ha='right')
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        #Plot 5 - Boxplots Distribution of % structural category (FSM ISM NIC NNC) 
-        
-
-        for category in melted_annotated_gene_DF['category'].unique():
-             plt.figure(figsize=(14, 10))
-             sns.violinplot(x='sampleID', y='percentage', hue='sampleID' ,data=melted_annotated_gene_DF[melted_annotated_gene_DF['category'] == category],
-                    palette=sample_color_palette)
-             plt.title(f'Gene distribution - {category}')
-             plt.xticks(rotation=90)
-             plt.tight_layout()
-             matplotlib.rcParams['pdf.fonttype'] = 42
-             pdf.savefig()
-             plt.close()
-
-
-        
-        #Plots 6-9 - UJC barplots
-        for stack_by in ['read_category', 'structural_category']:
-            # Create a figure and a set of subplots
-            ujc_cnts_dct[stack_by] =  ujc_cnts_dct[stack_by].sort_values(by='sampleID')
-            ujc_cnts_dct[stack_by] =  ujc_cnts_dct[stack_by].drop(columns=[exp_factor])
-            ujc_percs_dct[stack_by] =  ujc_percs_dct[stack_by].sort_values(by = 'sampleID')
-            ujc_percs_dct[stack_by] =  ujc_percs_dct[stack_by].drop(columns=[exp_factor])
-            
-            if stack_by == 'read_category':
-                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 6))  # Adjust figsize as needed
-            
-                # Plot number of UJCs per sample on the first subplot
-                ujc_cnts_dct[stack_by].plot(kind='bar', stacked=True, color=_palette_colors(ujc_cnts_dct[stack_by].columns, readcount_palette), ax=axes[0])
-                axes[0].set_title('Number of UJCs detected')
-                axes[0].set_xticks(np.arange(len(ujc_cnts_dct[stack_by]['sampleID'])))
-                axes[0].set_xticklabels(ujc_cnts_dct[stack_by]['sampleID'], rotation=90, ha='right')
-                axes[0].set_xlabel('SampleID')
-                axes[0].set_ylabel('Number of UJCs')
-                axes[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-                
-                # Plot % UJCs per sample on the second subplot
-                ujc_percs_dct[stack_by].plot(kind='bar', stacked=True, color=_palette_colors(ujc_percs_dct[stack_by].columns, readcount_palette), ax=axes[1])
-                axes[1].set_title('Percentage of UJCs detected')
-                axes[1].set_xticks(np.arange(len(ujc_percs_dct[stack_by]['sampleID'])))
-                axes[1].set_xticklabels(ujc_percs_dct[stack_by]['sampleID'], rotation=90, ha='right')
-                axes[1].set_xlabel('SampleID')
-                axes[1].set_ylabel('Percentage of UJCs')
-                axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-                
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                pdf.savefig()  # If saving to PDF, uncomment this line
-                plt.close(fig)  # Close the figure to free up memory
-            elif stack_by == 'structural_category':
-                
-                categories = [col for col in ujc_cnts_dct[stack_by].columns if col not in ['sampleID', exp_factor]]
-                colors = [category_color_palette[cat] for cat in categories]
-                
-                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(20, 6))  # Adjust figsize as needed
-            
-                # Plot number of UJCs per sample on the first subplot
-                ujc_cnts_dct[stack_by].plot(kind='bar', stacked=True, color=colors, ax=axes[0])
-                axes[0].set_title('Number of UJCs detected')
-                axes[0].set_xticks(np.arange(len(ujc_cnts_dct[stack_by]['sampleID'])))
-                axes[0].set_xticklabels(ujc_cnts_dct[stack_by]['sampleID'], rotation=90, ha='right')
-                axes[0].set_xlabel('SampleID')
-                axes[0].set_ylabel('Number of UJCs')
-                axes[0].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-                
-                # Plot % UJCs per sample on the second subplot
-                ujc_percs_dct[stack_by].plot(kind='bar', stacked=True, color = colors, ax=axes[1])
-                axes[1].set_title('Percentage of UJCs detected')
-                axes[1].set_xticks(np.arange(len(ujc_percs_dct[stack_by]['sampleID'])))
-                axes[1].set_xticklabels(ujc_percs_dct[stack_by]['sampleID'], rotation=90, ha='right')
-                axes[1].set_xlabel('SampleID')
-                axes[1].set_ylabel('Percentage of UJCs')
-                axes[1].legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-                
-                plt.tight_layout()
-                matplotlib.rcParams['pdf.fonttype'] = 42
-                pdf.savefig()
-                plt.close(fig)  
-                
-            
-        ##Plot 10 - num reads vs % reads gt 1kb
-        
-        plt.figure(figsize=(14, 10))
-        _scatter_labeled(length_DF, 'perc_reads_gt_1kb', 'total_reads', 'sampleID',
-                         'Total Reads vs Percentage of Reads > 1kb',
-                         'Percentage of Reads > 1kb', 'Total Reads')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-
-        # Plot 11: 
-        length_cnts_agg = length_cnts_agg.sort_values(by= 'sampleID')
-        length_cnts_agg =  length_cnts_agg.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        length_cnts_agg.plot(kind='bar', stacked=True, color=_palette_colors(length_cnts_agg.columns, length_palette))
-        plt.title('Number of reads')
-        plt.xticks(ticks=np.arange(len(length_cnts_agg['sampleID'])), labels=length_cnts_agg['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Reads')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1), title='Read Length Category')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-
-        # Plot 12 - Barplot % reads by read count category
-        length_percs_agg = length_percs_agg.sort_values(by= 'sampleID')
-        length_percs_agg =  length_percs_agg.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        length_percs_agg.plot(kind='bar', stacked=True, color=_palette_colors(length_percs_agg.columns, length_palette))
-        plt.title('Number of reads')
-        plt.xticks(ticks=np.arange(len(length_percs_agg['sampleID'])), labels=length_percs_agg['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage of Reads')
-        plt.legend(title='Read Length Category', loc='upper left', bbox_to_anchor=(1, 1))
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        #Violin plots
-        sns.violinplot(x='sampleID', y='length', data=length_DF2, palette = sample_color_palette, legend = False, hue = "sampleID")
-        plt.xlabel('Sample ID')
-        plt.ylabel('Length')
-        plt.title('Read Length Distribution')
-        plt.xticks(rotation=90)
-        pdf.savefig()
-        plt.close()
-        
-        ##Plot 13 -  % structural category vs %reads greater than 1kb
-        categories = [cat for cat in ['FSM', 'ISM', 'NIC', 'NNC','GI','GENIC'] if cat in length_DF.columns]
-        for category in categories:
-            plt.figure(figsize=(14, 10))
-            _scatter_labeled(length_DF, category, 'perc_reads_gt_1kb', 'sampleID',
-                             'Percentage of Reads > 1kb vs %' + category,
-                             '%' + category, 'Percentage of Reads > 1kb')
-            plt.tight_layout()
-            matplotlib.rcParams['pdf.fonttype'] = 42
-            pdf.savefig()
-            plt.close()
-        
-        
-        cnt_categories = ['num_reads_RTS','num_reads_intrapriming','num_reads_non-canonical']
-        perc_categories = ['perc_reads_RTS','perc_reads_intrapriming','perc_reads_non-canonical' ]
-        cnt_cols = ['sampleID'] + cnt_categories
-        perc_cols =  ['sampleID'] + perc_categories
-        err_cnt_DF = err_DF[cnt_cols]
-        err_perc_DF = err_DF[perc_cols]
-        err_cnt_DF.set_index('sampleID', inplace=True)
-        err_perc_DF.set_index('sampleID', inplace=True)
-        
-        plt.figure(figsize=(14, 10))
-        err_cnt_DF.plot(kind='bar', stacked=False, color=three_series_palette)
-        plt.title('Number of Artefact reads')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Reads')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        plt.figure(figsize=(14, 10))
-        err_perc_DF.plot(kind='bar', stacked=False, color=three_series_palette)
-        plt.title('Percent Artefact reads')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        
-        plt.figure(figsize=(14, 10))
-        _scatter_labeled(pca_DF, 0, 1, 'sampleID', 'PCA Plot Based on sampleID',
-                         'Principal Component 1', 'Principal Component 2',
-                         factor_col=exp_factor)
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-
-        ##Screeplot and Loadings heatmap
-        cumulative_variance = np.cumsum(variance_ratio)
-        n_components = np.argmax(cumulative_variance >= args.cfg().get('pca_cumulative_variance', 0.85)) + 1
-        
-        # Create the plots
-        fig, ax = plt.subplots(2, 2, figsize=(20,20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
-        loadings_DF = loadings_DF.iloc[:, :n_components]
-        link = linkage(loadings_DF, method='average')
-        sorted_idx = leaves_list(link)
-        loadings_DF = loadings_DF.iloc[sorted_idx]
-        
-        # Bar plot for explained variance (Scree Plot)
-        x_tick_pos = [i + 0.5 for i in range(n_components)]
-        ax[0, 0].bar(x_tick_pos, variance_ratio[:n_components], align='center', label='Individual explained variance')
-        ax[0, 0].step(x_tick_pos, cumulative_variance[:n_components], where='mid', label='Cumulative explained variance')
-        ax[0, 0].set_xticks(x_tick_pos)
-        ax[0, 0].set_xticklabels([])  # Clear x tick labels here
-        ax[0, 0].set_ylabel('Variance Explained')
-        
-        # Set x tick labels for the heatmap
-        x_ticks = [f'PC{i+1}' for i in range(n_components)]
-        sns.heatmap(loadings_DF, cmap="coolwarm", ax=ax[1, 0], cbar_ax=ax[1, 1], xticklabels=x_ticks)
-        ax[1, 0].set_yticks(np.arange(loadings_DF.shape[0]) + 0.5)
-        ax[1, 0].set_yticklabels(loadings_DF.index, rotation=0)
-        ax[1, 0].set_xlabel('Principal Components')
-        
-        # Use the ax[0,1] for legend
-        ax[0, 1].axis('off')  # Turn off the axis lines and labels
-        handles, labels = ax[0, 0].get_legend_handles_labels()
-        ax[0, 1].legend(handles, labels, loc='center')  # Place legend at the center of ax[0, 1]
-        
-        title = fig.suptitle('Variance and Heatmap of PC loadings',y=1.02, fontsize=20)
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.close()
-        
-        
-        nov_can_DF = nov_can_DF.sort_values(by= 'sampleID')
-        nov_can_DF  =  nov_can_DF.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        nov_can_DF.plot(kind='bar', stacked=True, color=_palette_colors(nov_can_DF.columns, jxn_palette))
-        plt.title('Junctions by Category')
-        plt.xticks(ticks=np.arange(len(nov_can_DF['sampleID'])), labels=nov_can_DF['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Junctions')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        nov_can_perc_DF = nov_can_perc_DF.sort_values(by= 'sampleID')
-        nov_can_perc_DF  =  nov_can_perc_DF.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        nov_can_perc_DF.plot(kind='bar', stacked=True, color=_palette_colors(nov_can_perc_DF.columns, jxn_palette))
-        plt.title('Junctions by Category')
-        plt.xticks(ticks=np.arange(len(nov_can_perc_DF['sampleID'])), labels=nov_can_perc_DF['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        
-        cv_acc_summary = cv_acc_summary.sort_values(by= 'sampleID')
-        cv_acc_summary  =  cv_acc_summary.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        cv_acc_summary.plot(kind='bar', stacked=True, color=three_series_palette)
-        plt.title('Number of Detected Acceptors')
-        plt.xticks(ticks=np.arange(len(cv_acc_summary['sampleID'])), labels=cv_acc_summary['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Detected Acceptors')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        cv_don_summary = cv_don_summary.sort_values(by= 'sampleID')
-        cv_don_summary  =  cv_don_summary.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        cv_don_summary.plot(kind='bar', stacked=True, color=three_series_palette)
-        plt.title('Number of Detected Donors')
-        plt.xticks(ticks=np.arange(len(cv_don_summary['sampleID'])), labels=cv_don_summary['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Number of Detected Donors')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        cv_acc_percs = cv_acc_percs.sort_values(by= 'sampleID')
-        cv_acc_percs  =  cv_acc_percs.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        cv_acc_percs.plot(kind='bar', stacked=True, color=three_series_palette)
-        plt.title('Percentage of Detected Acceptors')
-        plt.xticks(ticks=np.arange(len(cv_acc_percs['sampleID'])), labels=cv_acc_percs['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-        
-        cv_don_percs = cv_don_percs.sort_values(by= 'sampleID')
-        cv_don_percs  =  cv_don_percs.drop(columns=[exp_factor])
-        plt.figure(figsize=(14, 10))
-        cv_don_percs.plot(kind='bar', stacked=True, color=three_series_palette)
-        plt.title('Percentage of Detected Donors')
-        plt.xticks(ticks=np.arange(len(cv_don_percs['sampleID'])), labels=cv_don_percs['sampleID'], rotation=90, ha='right')
-        plt.xlabel('SampleID')
-        plt.ylabel('Percentage')
-        plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
-        plt.xticks(rotation=90, ha='right')
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        pdf.savefig()
-        plt.close()
-
-        # UJC saturation, replicate concordance and UpSet plots
-        plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
 
 def run_reads_plots(
     ref_gtf: str,
@@ -2979,10 +2257,10 @@ def main(args):
 
     report_pdf = os.path.join(args.OUT, args.PREFIX + '_report.pdf')
 
-    # HTML is built FIRST: it needs the un-mutated plotting DataFrames, whereas
-    # plot_pdf mutates several of them in place (e.g. set_index('sampleID')).
-    # The under-annotation CSV tables are written first (plot=False) because the
-    # HTML report reads them.
+    # Both renderers now work on copies of the plotting DataFrames, so HTML/PDF
+    # order no longer matters for correctness. HTML is still built first only so
+    # its under-annotation CSV tables (written here with plot=False) exist before
+    # the HTML report reads them.
     if need_html:
         identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
         from src.utilities.sqanti_reads_report import build_html_report
@@ -2994,10 +2272,7 @@ def main(args):
     # passing the open `pdf` makes it append pages here.
     if need_pdf:
         with PdfPages(report_pdf) as pdf:
-            if args.inFACTOR is None:
-                plot_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
-            else:
-                plot_pdf_by_factor(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
+            render_report_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

@@ -14,22 +14,17 @@ These tests need the external tools used by the UJC-hashing step
 missing so the suite stays portable.
 """
 import os
-import shutil
-import subprocess
-import sys
 
 import pandas as pd
 import pandas.testing as pdt
 import pytest
 
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-DATA_DIR = os.path.join(REPO_ROOT, "test", "test_data", "sqanti_reads")
-SQANTI_DIRS = os.path.join(DATA_DIR, "sqanti_dirs")
-REF_GTF = os.path.join(DATA_DIR, "reference", "gencode.v38.basic_chr22.gtf")
-BASELINE_DIR = os.path.join(DATA_DIR, "baseline")
-
-# Read-count cutoff that lets the full pipeline run on this small fixture.
-GENE_EXPRESSION = "10"
+from .conftest import (
+    BASELINE_DIR,
+    DATA_DIR,
+    requires_external_tools,
+    run_reads,
+)
 
 EXPECTED_CSVS = [
     "sqantiReads_cv.csv",
@@ -43,36 +38,14 @@ EXPECTED_CSVS = [
 EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # Page-count snapshots for the fixture at -ge 10, guarding against a merge that
 # silently drops pages. Update these if plots are intentionally added/removed.
-EXPECTED_REPORT_PAGES = {"design.csv": 44, "design_with_factor.csv": 46}
+# Both designs now render through the single faceted path (render_report_pdf),
+# so the no-factor report matches the faceted page count.
+EXPECTED_REPORT_PAGES = {"design.csv": 46, "design_with_factor.csv": 46}
 
-REQUIRED_TOOLS = ["gffread", "gtftools", "bedtools"]
-_missing = [t for t in REQUIRED_TOOLS if shutil.which(t) is None]
-pytestmark = pytest.mark.skipif(
-    bool(_missing),
-    reason="missing external tools required by SQANTI-reads: " + ", ".join(_missing),
-)
+pytestmark = requires_external_tools
 
-
-def _run_reads(out_dir, design, factor=None, report="pdf", config=None, jobs=None):
-    cmd = [
-        sys.executable,
-        os.path.join(REPO_ROOT, "sqanti3_reads.py"),
-        "--design", os.path.join(DATA_DIR, design),
-        "--sqanti_dirs", SQANTI_DIRS,
-        "--refGTF", REF_GTF,
-        "--refFasta", REF_GTF,  # fast mode does not read it; satisfies argparse today
-        "--output", out_dir,
-        "--prefix", "sqantiReads",
-        "-ge", GENE_EXPRESSION,
-        "--report", report,
-    ]
-    if factor:
-        cmd += ["--factor", factor]
-    if config:
-        cmd += ["--config", config]
-    if jobs:
-        cmd += ["--jobs", str(jobs)]
-    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True)
+# Back-compat alias: this module historically called the runner ``_run_reads``.
+_run_reads = run_reads
 
 
 def _assert_outputs_present(out_dir):
@@ -99,11 +72,11 @@ def _assert_single_merged_report(out_dir, design):
 
 
 def _assert_titles_corrected(all_text):
-    """Lock in the Phase-1b plot-title fixes (mislabels / typos)."""
+    """Lock in the canonical plot titles (single faceted render path)."""
     must_be_present = [
-        "Percentage of Detected Donors",             # was "Number of Donors > 3 reads"
-        "Percentage of FSM Reads in Each subcategory",  # was a duplicate count title
-        "Number of Detected Acceptors",              # ylabel typo "Detetced" fixed
+        "Percentage of Detected Donors",                  # was "Number of Donors > 3 reads"
+        "Percentage of FSM Reads in Each Sub-Category",   # faceted sub-category title
+        "Number of Detected Acceptors",                   # ylabel typo "Detetced" fixed
     ]
     must_be_absent = [
         "Number of Donors > 3 reads",
