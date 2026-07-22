@@ -287,7 +287,7 @@ def _section(title, fig, interpretation, div_id):
 
 
 def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
-                     thresholds=QC_THRESHOLDS):
+                     thresholds=QC_THRESHOLDS, jxn_offset_metrics=None):
     """Per-sample metrics + flags. Returns (summary_dict, samples_in_order)."""
     exp_factor = _factor_col(args)
     samples = length_DF["sampleID"].astype(str).tolist()
@@ -298,6 +298,14 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
         if "FSM" in all_gene_percs_pivot_DF.columns else None
     gene_cols = _value_cols(gene_agg_DF, {"sampleID", exp_factor})
     genes_detected = gene_agg_DF.set_index("sampleID")[gene_cols].sum(axis=1)
+
+    # Per-sample splice-site imprecision scalar (share of near-reference site
+    # observations off by >0 bp), keyed by sampleID; None-safe when unavailable.
+    imprecise = {}
+    if jxn_offset_metrics and not jxn_offset_metrics.get("per_sample", None) is None:
+        ps = jxn_offset_metrics["per_sample"]
+        if not ps.empty:
+            imprecise = ps.set_index("sampleID")["perc_imprecise"].astype(float).to_dict()
 
     per_sample = {}
     for s in samples:
@@ -311,6 +319,7 @@ def _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, ar
             "perc_reads_intrapriming": float(err_idx.at[s, "perc_reads_intrapriming"]),
             "perc_reads_RTS": float(err_idx.at[s, "perc_reads_RTS"]),
             "perc_reads_non-canonical": float(err_idx.at[s, "perc_reads_non-canonical"]),
+            "perc_sites_imprecise": float(imprecise[s]) if s in imprecise else None,
         }
         flags = {m: _flag_for(metrics.get(m), spec) for m, spec in thresholds.items()}
         metrics["flags"] = flags
@@ -325,7 +334,7 @@ def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
     metric_labels = {spec["label"]: m for m, spec in thresholds.items()}
     # Metrics table
     head_cols = ["Sample", "Reads", "Genes", "Median len", "% &gt;1kb", "% FSM",
-                 "% intra-prim", "% RTS", "% non-canon", "Overall"]
+                 "% intra-prim", "% RTS", "% non-canon", "% fuzzy sites", "Overall"]
     rows = []
     for s in samples:
         m = per_sample[s]
@@ -341,6 +350,8 @@ def _summary_html(per_sample, samples, thresholds=QC_THRESHOLDS):
             (f'{m["perc_reads_intrapriming"]:.1f}', "perc_reads_intrapriming"),
             (f'{m["perc_reads_RTS"]:.1f}', "perc_reads_RTS"),
             (f'{m["perc_reads_non-canonical"]:.1f}', "perc_reads_non-canonical"),
+            ((f'{m["perc_sites_imprecise"]:.1f}' if m["perc_sites_imprecise"] is not None else "—"),
+             "perc_sites_imprecise"),
         ]
         tds = []
         for val, metric in cells:
@@ -432,7 +443,68 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 </body></html>"""
 
 
-def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None):
+def _jxn_offset_figures(m, samples):
+    """Return (spectrum_fig, profile_fig, byclass_fig) Plotly figures for the
+    splice-site fuzziness section, or (None, None, None) if no data."""
+    if not m or not m.get("samples"):
+        return None, None, None
+    palette = {s: _DEFAULT_SEQ[i % len(_DEFAULT_SEQ)] for i, s in enumerate(samples)}
+    window = m["window"]
+
+    # 1. Signed-offset spectrum, donor + acceptor subplots (exact excluded).
+    spec = m["spectrum"]
+    sfig = make_subplots(rows=1, cols=2, subplot_titles=("Donor", "Acceptor"),
+                         shared_yaxes=True)
+    for col, site in ((1, "donor"), (2, "acceptor")):
+        ss = spec[(spec["site"] == site) & (spec["offset"] != 0)]
+        for s in samples:
+            d = ss[ss["sampleID"] == s].sort_values("offset")
+            sfig.add_trace(go.Scatter(x=d["offset"], y=d["count"], mode="lines",
+                                      name=str(s), legendgroup=str(s),
+                                      showlegend=(col == 1),
+                                      line=dict(color=palette[s]),
+                                      hovertemplate="offset %{x} bp: %{y}<extra></extra>"),
+                           row=1, col=col)
+        sfig.update_xaxes(title_text=f"Offset from reference {site} (bp)",
+                          range=[-window, window], row=1, col=col)
+    sfig.update_yaxes(title_text="Site observations (exact excluded)", row=1, col=1)
+    _base_layout(sfig, "Splice-site offset spectrum", "", "")
+
+    # 2. Precision profile.
+    prof = m["profile"]
+    pfig = go.Figure()
+    for s in samples:
+        d = prof[prof["sampleID"] == s].sort_values("k")
+        pfig.add_trace(go.Scatter(x=d["k"], y=d["perc_within"], mode="lines+markers",
+                                  name=str(s), line=dict(color=palette[s]),
+                                  hovertemplate="within ±%{x} bp: %{y:.1f}%<extra></extra>"))
+    _base_layout(pfig, "Splice-site precision profile",
+                 "Window half-width k (bp)", "% within ±k of reference")
+
+    # 3. Canonical vs non-canonical imprecision.
+    bc = m["by_class"]
+    cfig = None
+    if bc is not None and not bc.empty:
+        classes = [c for c in ["canonical", "non_canonical"] if c in set(bc["canonical"])]
+        classes += [c for c in sorted(set(bc["canonical"])) if c not in classes]
+        class_colors = {"canonical": "#4CAF50", "non_canonical": "#C51B7D"}
+        cfig = go.Figure()
+        for can in classes:
+            vals = []
+            for s in samples:
+                v = bc[(bc["sampleID"] == s) & (bc["canonical"] == can)]["perc_imprecise"]
+                vals.append(float(v.iloc[0]) if len(v) else 0.0)
+            cfig.add_trace(go.Bar(x=samples, y=vals, name=can.replace("_", " "),
+                                  marker_color=class_colors.get(can, "#969696"),
+                                  hovertemplate="%{y:.1f}% imprecise<extra></extra>"))
+        cfig.update_layout(barmode="group")
+        _base_layout(cfig, "Splice-site fuzziness by canonical class",
+                     "Sample", "% site observations imprecise")
+    return sfig, pfig, cfig
+
+
+def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
+                      jxn_offset_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -460,7 +532,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None):
     qc_flags = args.cfg().get("qc_flags", QC_THRESHOLDS) if hasattr(args, "cfg") else QC_THRESHOLDS
 
     per_sample, samples = _compute_summary(length_DF, err_DF, all_gene_percs_pivot_DF,
-                                           gene_agg_DF, args, thresholds=qc_flags)
+                                           gene_agg_DF, args, thresholds=qc_flags,
+                                           jxn_offset_metrics=jxn_offset_metrics)
 
     sections = [_summary_html(per_sample, samples, thresholds=qc_flags)]
 
@@ -784,6 +857,33 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None):
                 "combination of samples (filled dots = members); the bar shows how many "
                 "UJCs fall in that combination, stacked by structural category. Large "
                 "sample-specific bars indicate low overlap between samples.", "fig-upset"))
+
+    # 9d. Splice-site fuzziness: offset spectrum, precision profile, canonical split
+    if jxn_offset_metrics and jxn_offset_metrics.get("samples"):
+        f_samples = jxn_offset_metrics["samples"]
+        sfig, pfig, cfig = _jxn_offset_figures(jxn_offset_metrics, f_samples)
+        if sfig is not None:
+            sections.append(_section(
+                "Splice-site offset spectrum", sfig,
+                "Signed distance of each detected donor/acceptor to its nearest reference "
+                "site (exact matches excluded, so the plot shows only the imprecise tail). "
+                "A tight central peak means precise boundaries; a broad or skewed skirt "
+                "flags systematic imprecision, and regular sub-peaks at ±3/±4 bp suggest "
+                "tandem-site (e.g. NAGNAG) usage.", "fig-offset-spectrum"))
+        if pfig is not None:
+            sections.append(_section(
+                "Splice-site precision profile", pfig,
+                "Cumulative % of donor/acceptor observations within ±k bp of a reference "
+                "site. A steeper curve reaching 100% sooner means more precise splice "
+                "boundaries; a sample whose curve lags the others is measurably noisier. "
+                "The value at k=0 is the exact-match rate.", "fig-offset-profile"))
+        if cfig is not None:
+            sections.append(_section(
+                "Splice-site fuzziness by canonical class", cfig,
+                "Share of site observations off by >0 bp, split by canonical vs "
+                "non-canonical splice sites. Non-canonical junctions are typically far "
+                "fuzzier; a high canonical fuzziness is unusual and worth inspecting.",
+                "fig-offset-byclass"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))

@@ -21,11 +21,21 @@ DEFAULT_CONFIG = {
                                       "label": "Non-canonical reads (%)"},
         "median_length": {"warn": 500.0, "fail": 250.0, "worse": "low",
                            "label": "Median read length (bp)"},
+        # Splice-site imprecision ("fuzziness"): % of donor+acceptor observations
+        # that fall near a reference site (within +/- jxn_offset_window) but are
+        # off by >0 bp. Higher => noisier splice-site boundaries.
+        "perc_sites_imprecise": {"warn": 10.0, "fail": 20.0, "worse": "high",
+                                  "label": "Imprecise splice sites (%)"},
     },
     # A read is counted as intra-primed when %A downstream of its TTS exceeds this.
     "intrapriming_perc_A_cutoff": 60.0,
     # PCA loadings heatmap keeps the leading PCs explaining at least this fraction.
     "pca_cumulative_variance": 0.85,
+    # Splice-site fuzziness: half-width (bp) of the signed-offset histogram and of
+    # the precision profile, and the window within which a junction site counts as
+    # an observation of a reference site (offsets beyond it are treated as novel,
+    # not imprecise reference matches).
+    "jxn_offset_window": 15,
 }
 
 

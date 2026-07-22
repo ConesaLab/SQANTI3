@@ -367,6 +367,7 @@ _SUMMARY_FLAG_COL = {
     'perc_reads_intrapriming': 6,
     'perc_reads_RTS': 7,
     'perc_reads_non-canonical': 8,
+    'perc_sites_imprecise': 9,
 }
 _FLAG_BG = {"warn": "#FFE0B2", "fail": "#FFCDD2"}
 _FLAG_FG = {"warn": "#B45309", "fail": "#B71C1C"}
@@ -379,7 +380,7 @@ def _render_summary_table_page(pdf, per_sample, samples, thresholds):
     Mirrors the HTML report's top table: cells that trigger a warn/fail flag are
     bold and tinted with the flag color, and the Overall cell is flag-colored."""
     headers = ["Sample", "Reads", "Genes", "Median len", "% >1kb", "% FSM",
-               "% intra-prim", "% RTS", "% non-canon", "Overall"]
+               "% intra-prim", "% RTS", "% non-canon", "% fuzzy sites", "Overall"]
     rows = []
     for s in samples:
         m = per_sample[s]
@@ -390,6 +391,7 @@ def _render_summary_table_page(pdf, per_sample, samples, thresholds):
             f'{m["perc_reads_intrapriming"]:.1f}',
             f'{m["perc_reads_RTS"]:.1f}',
             f'{m["perc_reads_non-canonical"]:.1f}',
+            (f'{m["perc_sites_imprecise"]:.1f}' if m.get("perc_sites_imprecise") is not None else "—"),
             m["overall_flag"].upper(),
         ])
 
@@ -603,6 +605,176 @@ def _plot_upset_pdf(pdf, upset_DF, samples):
     matplotlib.rcParams['pdf.fonttype'] = 42
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
+
+
+def compute_jxn_offset_metrics(jxn_offset_DF, window=15):
+    """Derive splice-site fuzziness views from the collapsed offset table.
+
+    Input is the long [sampleID, site, offset, canonical, count] frame from
+    ``_summarize_jxn_offsets`` (already restricted to +/- ``window`` bp). Returns a
+    dict shared by the PDF and HTML renderers:
+
+      - 'samples'   : sample order
+      - 'window'    : the +/- bp half-width used
+      - 'spectrum'  : [sampleID, site, offset, count] signed-offset histogram
+                      (exact matches, offset==0, kept — the plot excludes them)
+      - 'profile'   : [sampleID, k, perc_within] cumulative % of sites within +/-k
+      - 'per_sample': [sampleID, n_sites, perc_exact, perc_imprecise,
+                       median_abs_offset, perc_downstream] one row per sample
+      - 'by_class'  : [sampleID, canonical, perc_imprecise, n] canonical split
+
+    ``perc_imprecise`` (share of near-reference site observations off by >0 bp) is
+    the scalar wired into the QC-flag panel / qc_summary.json.
+    """
+    empty = {"samples": [], "window": window,
+             "spectrum": pd.DataFrame(columns=["sampleID", "site", "offset", "count"]),
+             "profile": pd.DataFrame(columns=["sampleID", "k", "perc_within"]),
+             "per_sample": pd.DataFrame(columns=["sampleID", "n_sites", "perc_exact",
+                                                 "perc_imprecise", "median_abs_offset",
+                                                 "perc_downstream"]),
+             "by_class": pd.DataFrame(columns=["sampleID", "canonical", "perc_imprecise", "n"])}
+    if jxn_offset_DF is None or jxn_offset_DF.empty:
+        return empty
+
+    df = jxn_offset_DF.copy()
+    df["offset"] = df["offset"].astype(int)
+    df["count"] = df["count"].astype(int)
+    df["abs"] = df["offset"].abs()
+    samples = list(pd.unique(df["sampleID"]))
+
+    # Signed-offset spectrum per (sample, site).
+    spectrum = (df.groupby(["sampleID", "site", "offset"], observed=True)["count"]
+                  .sum().reset_index())
+
+    # Cumulative precision profile: % of a sample's site observations within +/-k.
+    prof_rows = []
+    ks = range(0, window + 1)
+    for s in samples:
+        sd = df[df["sampleID"] == s]
+        tot = int(sd["count"].sum())
+        for k in ks:
+            within = int(sd.loc[sd["abs"] <= k, "count"].sum())
+            prof_rows.append({"sampleID": s, "k": k,
+                              "perc_within": (within / tot * 100) if tot else 0.0})
+    profile = pd.DataFrame(prof_rows)
+
+    # Per-sample scalars.
+    ps_rows = []
+    for s in samples:
+        sd = df[df["sampleID"] == s]
+        tot = int(sd["count"].sum())
+        exact = int(sd.loc[sd["offset"] == 0, "count"].sum())
+        fuzzy = sd[sd["offset"] != 0]
+        n_fuzzy = int(fuzzy["count"].sum())
+        # weighted median of |offset| over fuzzy observations
+        med = 0.0
+        if n_fuzzy:
+            f = fuzzy.sort_values("abs")
+            cum = f["count"].cumsum()
+            med = float(f.loc[cum >= n_fuzzy / 2, "abs"].iloc[0])
+        downstream = int(fuzzy.loc[fuzzy["offset"] > 0, "count"].sum())
+        ps_rows.append({
+            "sampleID": s,
+            "n_sites": tot,
+            "perc_exact": (exact / tot * 100) if tot else 0.0,
+            "perc_imprecise": (n_fuzzy / tot * 100) if tot else 0.0,
+            "median_abs_offset": med,
+            "perc_downstream": (downstream / n_fuzzy * 100) if n_fuzzy else 0.0,
+        })
+    per_sample = pd.DataFrame(ps_rows)
+
+    # Canonical vs non-canonical fuzziness.
+    bc_rows = []
+    if "canonical" in df.columns:
+        for (s, can), g in df.groupby(["sampleID", "canonical"], observed=True):
+            tot = int(g["count"].sum())
+            n_fuzzy = int(g.loc[g["offset"] != 0, "count"].sum())
+            bc_rows.append({"sampleID": s, "canonical": str(can),
+                            "perc_imprecise": (n_fuzzy / tot * 100) if tot else 0.0,
+                            "n": tot})
+    by_class = pd.DataFrame(bc_rows) if bc_rows else empty["by_class"]
+
+    return {"samples": samples, "window": window, "spectrum": spectrum,
+            "profile": profile, "per_sample": per_sample, "by_class": by_class}
+
+
+def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
+    """Append the splice-site fuzziness pages (spectrum + precision profile +
+    directionality + canonical split) to `pdf`."""
+    m = jxn_offset_metrics
+    if not m or not m.get("samples"):
+        return
+    samples = m["samples"]
+    window = m["window"]
+    sample_palette = {s: sample_seq[i % len(sample_seq)] for i, s in enumerate(samples)}
+    matplotlib.rcParams['pdf.fonttype'] = 42
+
+    # Title page for the section.
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.text(0.5, 0.5, "Splice-site fuzziness analysis", ha="center", va="center",
+             fontsize=24, fontweight="bold")
+    pdf.savefig(fig)
+    plt.close(fig)
+
+    # 1. Signed-offset spectrum (exact matches excluded), donor + acceptor panels.
+    spec = m["spectrum"]
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharey=True)
+    for ax, site in zip(axes, ["donor", "acceptor"]):
+        ss = spec[(spec["site"] == site) & (spec["offset"] != 0)]
+        for s in samples:
+            d = ss[ss["sampleID"] == s].sort_values("offset")
+            if not d.empty:
+                ax.plot(d["offset"], d["count"], color=sample_palette[s], lw=1.4, label=s)
+        ax.axvline(0, color="#999999", lw=0.8, ls=":")
+        ax.set_title(site.capitalize())
+        ax.set_xlabel(f"Offset from reference {site} (bp)")
+        ax.set_xlim(-window, window)
+    axes[0].set_ylabel("Site observations (exact matches excluded)")
+    axes[1].legend(title="Sample", bbox_to_anchor=(1.05, 1), loc="upper left")
+    fig.suptitle("Splice-site offset spectrum", y=1.0, fontsize=16)
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+    # 2. Precision profile: cumulative % within +/-k bp.
+    prof = m["profile"]
+    fig, ax = plt.subplots(figsize=(11, 7))
+    for s in samples:
+        d = prof[prof["sampleID"] == s].sort_values("k")
+        ax.plot(d["k"], d["perc_within"], marker="o", markersize=3,
+                color=sample_palette[s], label=s)
+    ax.set_xlabel("Window half-width k (bp)")
+    ax.set_ylabel("% of site observations within +/- k of reference")
+    ax.set_title("Splice-site precision profile")
+    ax.legend(title="Sample", bbox_to_anchor=(1.05, 1), loc="upper left")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+    # 3. Canonical vs non-canonical imprecision (grouped bars).
+    bc = m["by_class"]
+    if bc is not None and not bc.empty:
+        classes = [c for c in ["canonical", "non_canonical"] if c in set(bc["canonical"])]
+        classes += [c for c in sorted(set(bc["canonical"])) if c not in classes]
+        class_colors = {"canonical": aes_palette["green"],
+                        "non_canonical": aes_palette["magenta"]}
+        x = np.arange(len(samples))
+        w = 0.8 / max(1, len(classes))
+        fig, ax = plt.subplots(figsize=(11, 7))
+        for i, can in enumerate(classes):
+            vals = [bc[(bc["sampleID"] == s) & (bc["canonical"] == can)]["perc_imprecise"]
+                    for s in samples]
+            vals = [float(v.iloc[0]) if len(v) else 0.0 for v in vals]
+            ax.bar(x + (i - (len(classes) - 1) / 2) * w, vals, w,
+                   color=class_colors.get(can, "#999999"), label=can.replace("_", " "))
+        ax.set_xticks(x)
+        ax.set_xticklabels(samples, rotation=90)
+        ax.set_ylabel("% site observations imprecise (offset != 0)")
+        ax.set_title("Splice-site fuzziness by canonical class")
+        ax.legend(title="Splice-site class")
+        fig.tight_layout()
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
 
 
 def plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=None):
@@ -1016,6 +1188,53 @@ def _summarize_errors(class_DF, ip_cutoff, sampleID, exp_factor, exp_factor_val)
     return err_DF
 
 
+def _summarize_jxn_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window=15):
+    """Compact per-sample histogram of signed splice-site offsets to the reference.
+
+    Each junction contributes two *site observations* — a donor and an acceptor —
+    whose signed distance to the nearest annotated site is ``diff_to_Ref_*``. The
+    assignment is strand-aware: on ``+`` the junction start is the donor and the
+    end is the acceptor; on ``-`` this is reversed. Offsets are collapsed to a
+    per-(site, offset, canonical) count within +/- ``window`` bp (the near-reference
+    "fuzziness" zone); observations farther than ``window`` (or with no computable
+    diff) are genuinely novel sites and are excluded here — they are already
+    covered by the known/novel junction plots.
+
+    Returns a long DataFrame [sampleID, exp_factor, site, offset, canonical, count]
+    from which the offset spectrum, precision profile, directionality and the
+    per-sample imprecision scalar are all derived downstream. Collapsing to counts
+    keeps memory bounded (<=~4*(2*window+1) rows/sample) regardless of read depth.
+    """
+    cols = ["sampleID", exp_factor, "site", "offset", "canonical", "count"]
+    if jxn_DF is None or jxn_DF.empty:
+        return pd.DataFrame(columns=cols)
+
+    df = jxn_DF.copy()
+    for c in ("diff_to_Ref_start_site", "diff_to_Ref_end_site"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    can = df["canonical"] if "canonical" in df.columns else pd.Series("NA", index=df.index)
+
+    plus, minus = df["strand"] == "+", df["strand"] == "-"
+    parts = [
+        pd.DataFrame({"site": "donor",    "offset": df["diff_to_Ref_start_site"].where(plus),  "canonical": can}),
+        pd.DataFrame({"site": "acceptor", "offset": df["diff_to_Ref_end_site"].where(plus),    "canonical": can}),
+        pd.DataFrame({"site": "acceptor", "offset": df["diff_to_Ref_start_site"].where(minus), "canonical": can}),
+        pd.DataFrame({"site": "donor",    "offset": df["diff_to_Ref_end_site"].where(minus),   "canonical": can}),
+    ]
+    long = pd.concat(parts, ignore_index=True).dropna(subset=["offset"])
+    long = long[long["offset"].abs() <= window]
+    if long.empty:
+        return pd.DataFrame(columns=cols)
+    long["offset"] = long["offset"].astype(int)
+    long["canonical"] = long["canonical"].fillna("NA").astype(str)
+
+    out = (long.groupby(["site", "offset", "canonical"], observed=True)
+                .size().reset_index(name="count"))
+    out["sampleID"] = sampleID
+    out[exp_factor] = exp_factor_val
+    return out[cols]
+
+
 def proc_samples(args, design_file, ref):
     # Read design file
     design_DF = pd.read_csv(design_file, sep=",")
@@ -1028,6 +1247,7 @@ def proc_samples(args, design_file, ref):
     length_dfs = {}
     err_dfs = {}
     cv_dfs = {}
+    jxn_offset_dfs = {}
     fsm_dfs = {}
     ism_dfs = {}
     nic_nnc_dfs = {}
@@ -1112,12 +1332,17 @@ def proc_samples(args, design_file, ref):
         cv_DF['sampleID'] = sampleID
         cv_DF[exp_factor] = exp_factor_val
 
-    
+        ##Signed splice-site offset spectrum (fuzziness) for each sample
+        jxn_offset_DF = _summarize_jxn_offsets(
+            jxn_DF, sampleID, exp_factor, exp_factor_val,
+            window=args.cfg().get('jxn_offset_window', 15))
+
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
         ujc_count_dfs[sampleID] = ujc_count_DF
         length_dfs[sampleID] = length_summary_DF
         cv_dfs[sampleID] = cv_DF
+        jxn_offset_dfs[sampleID] = jxn_offset_DF
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
         ism_dfs[sampleID] = ISM_DF
@@ -1140,8 +1365,9 @@ def proc_samples(args, design_file, ref):
     cv_dfs, err_dfs, fsm_dfs = _reord(cv_dfs), _reord(err_dfs), _reord(fsm_dfs)
     ism_dfs, nic_nnc_dfs, nov_can_dfs = _reord(ism_dfs), _reord(nic_nnc_dfs), _reord(nov_can_dfs)
     length_Dct = _reord(length_Dct)
+    jxn_offset_dfs = _reord(jxn_offset_dfs)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -1160,7 +1386,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -1194,7 +1420,14 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
     ##Cat together all cv DFs
     
     cv_DF = pd.concat(cv_dfs.values(), sort=False)
-    
+
+    ##Cat together all junction-offset (fuzziness) DFs
+    _offset_frames = [d for d in jxn_offset_dfs.values() if d is not None and not d.empty]
+    if _offset_frames:
+        jxn_offset_DF = pd.concat(_offset_frames, sort=False, ignore_index=True)
+    else:
+        jxn_offset_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'site', 'offset', 'canonical', 'count'])
+
     #Cat subcategory DFs
     
     FSM_DF = pd.concat(fsm_dfs.values(), sort=False)
@@ -1218,6 +1451,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (ujc_count_DF, '_ujc_counts.csv'),
             (length_DF, '_length_summary.csv'),
             (cv_DF, '_cv.csv'),
+            (jxn_offset_DF, '_jxn_offsets.csv'),
         ],
         alltables_tables=[
             (err_DF, '_err_counts.csv'),
@@ -1228,7 +1462,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF)
 
 
 
@@ -1886,7 +2120,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, args=None):
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -1930,7 +2164,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
             from src.utilities.sqanti_reads_report import _compute_summary
             _per_sample, _samples = _compute_summary(
                 length_DF, err_DF, all_gene_percs_pivot_DF, gene_agg_DF, args,
-                thresholds=args.cfg()['qc_flags'])
+                thresholds=args.cfg()['qc_flags'], jxn_offset_metrics=jxn_offset_metrics)
             _render_summary_table_page(pdf, _per_sample, _samples, args.cfg()['qc_flags'])
         except Exception as exc:  # a summary-table hiccup must not sink the report
             reads_logger.warning(f"Could not render the summary-table page: {exc}")
@@ -2235,6 +2469,9 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # UJC saturation, replicate concordance and UpSet plots
         plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
 
+        # Splice-site fuzziness: offset spectrum, precision profile, canonical split
+        plot_jxn_offset_pages(pdf, jxn_offset_metrics)
+
 
 def run_reads_plots(
     ref_gtf: str,
@@ -2315,15 +2552,20 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct)
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs)
     dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
     # renderers. Computed before identify_cand_underannot mutates ujc_count_DF.
     ujc_metrics = compute_ujc_metrics(ujc_count_DF, factor_col=args.inFACTOR)
+
+    # Splice-site fuzziness metrics (offset spectrum, precision profile,
+    # directionality, per-sample imprecision scalar) shared by both renderers.
+    jxn_offset_metrics = compute_jxn_offset_metrics(
+        jxn_offset_DF, window=args.cfg().get('jxn_offset_window', 15))
 
     need_pdf = args.report in ("pdf", "both")
     need_html = args.report in ("html", "both")
@@ -2338,14 +2580,16 @@ def main(args):
         identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, plot=False)
         from src.utilities.sqanti_reads_report import build_html_report
         report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
-        build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics)
+        build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics,
+                          jxn_offset_metrics=jxn_offset_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
     # passing the open `pdf` makes it append pages here.
     if need_pdf:
         with PdfPages(report_pdf) as pdf:
-            render_report_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics, args=args)
+            render_report_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics,
+                              jxn_offset_metrics=jxn_offset_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory
