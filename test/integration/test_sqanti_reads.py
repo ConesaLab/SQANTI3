@@ -40,7 +40,7 @@ EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # silently drops pages. Update these if plots are intentionally added/removed.
 # Both designs render through the single faceted path (render_report_pdf) and
 # carry a summary-metrics page after the title page, so the counts match.
-EXPECTED_REPORT_PAGES = {"design.csv": 56, "design_with_factor.csv": 56}
+EXPECTED_REPORT_PAGES = {"design.csv": 59, "design_with_factor.csv": 59}
 
 pytestmark = requires_external_tools
 

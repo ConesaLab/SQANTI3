@@ -97,6 +97,15 @@ DEFAULT_CONFIG = {
             # peers'", which for replicates of one condition is worth a look.
             "perc_ISM_fragments": "high",
             "perc_novel_noncanonical_jxn": "high",
+            # Distinct junctions recovered per 1000 reads; depth-normalised so a low
+            # value is low junction complexity (consistent with degradation or a
+            # simpler transcriptome) rather than shallow sequencing. Scored
+            # cohort-relatively, no absolute threshold.
+            "jxn_per_1k_reads": "low",
+            # Mean Jensen–Shannon distance of a sample's structural-category
+            # composition to the rest of the cohort; scored cohort-relatively, no
+            # absolute threshold (a whole-cohort composition is not inherently wrong).
+            "composition_drift": "high",
         },
     },
 }

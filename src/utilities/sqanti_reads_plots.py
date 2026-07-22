@@ -26,6 +26,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.cluster.hierarchy import linkage, leaves_list
+from scipy.spatial.distance import jensenshannon
 from matplotlib.ticker import FixedLocator
 from contextlib import nullcontext
 # The interactive HTML report is built by src/utilities/sqanti_reads_report.py
@@ -767,6 +768,110 @@ def compute_completeness_metrics(completeness_DF, window=50):
             "profile": pd.DataFrame(prof_rows), "per_sample": pd.DataFrame(ps_rows)}
 
 
+def compute_jxn_yield_vs_depth(jxn_counts, read_counts):
+    """Depth-normalised junction yield per sample (A4).
+
+    ``jxn_per_1k_reads = n_jxn / n_reads * 1000`` — junctions recovered per 1000
+    reads, so a low value is genuinely lower junction complexity (consistent with
+    degradation or a simpler transcriptome) rather than merely shallower
+    sequencing. Cohort-relative; no absolute meaning. Empty-safe on missing counts.
+    """
+    empty = {"samples": [],
+             "per_sample": pd.DataFrame(columns=["sampleID", "n_jxn", "n_reads",
+                                                 "jxn_per_1k_reads"])}
+    if not jxn_counts or not read_counts:
+        return empty
+    rows = []
+    for s in jxn_counts:
+        n_reads = read_counts.get(s)
+        if n_reads is None or n_reads <= 0:
+            continue
+        n_jxn = jxn_counts[s]
+        rows.append({"sampleID": str(s), "n_jxn": int(n_jxn), "n_reads": int(n_reads),
+                     "jxn_per_1k_reads": n_jxn / n_reads * 1000.0})
+    if not rows:
+        return empty
+    return {"samples": [r["sampleID"] for r in rows],
+            "per_sample": pd.DataFrame(rows)}
+
+
+def compute_composition_drift(all_gene_percs_pivot_DF):
+    """Between-sample composition drift via pairwise Jensen–Shannon distance (A3).
+
+    Each sample's structural-category percentages become a probability vector over
+    the shared category set; pairwise Jensen–Shannon distance (base-2, symmetric,
+    bounded [0,1]) measures how different two samples' category mixes are, reduced
+    to each sample's mean distance to the rest of the cohort. High = an atypical
+    composition relative to peers — worth checking whether it is a genuine
+    biological difference (e.g. a distinct condition) or a technical one; the value
+    itself is not a pass/fail. Empty-safe (<2 samples or no categories).
+    """
+    empty = {"samples": [], "matrix": pd.DataFrame(),
+             "per_sample": pd.DataFrame(columns=["sampleID", "mean_jsd"])}
+    df = all_gene_percs_pivot_DF
+    if df is None or "sampleID" not in getattr(df, "columns", []):
+        return empty
+    cat_cols = [c for c in cat_order if c in df.columns]
+    if len(df) < 2 or not cat_cols:
+        return empty
+    samples = df["sampleID"].astype(str).tolist()
+    M = df[cat_cols].fillna(0).to_numpy(dtype=float)
+    # Drop categories that are zero across the whole cohort, then row-normalise.
+    keep = M.sum(axis=0) > 0
+    M = M[:, keep]
+    if M.shape[1] == 0:
+        return empty
+    row_tot = M.sum(axis=1, keepdims=True)
+    P = np.divide(M, row_tot, out=np.zeros_like(M), where=row_tot > 0)
+    n = len(samples)
+    D = np.zeros((n, n), dtype=float)
+    for i in range(n):
+        for j in range(i + 1, n):
+            d = jensenshannon(P[i], P[j], base=2)
+            d = 0.0 if not np.isfinite(d) else float(d)
+            D[i, j] = D[j, i] = d
+    matrix = pd.DataFrame(D, index=samples, columns=samples)
+    mean_jsd = D.sum(axis=1) / max(n - 1, 1)
+    per_sample = pd.DataFrame({"sampleID": samples, "mean_jsd": mean_jsd})
+    return {"samples": samples, "matrix": matrix, "per_sample": per_sample}
+
+
+def compute_tandem_sites(jxn_offset_metrics, tandem_offsets=(3, -3, 4, -4, 6, -6)):
+    """Tandem splice-site (NAGNAG) detector (F6).
+
+    Excess mass at ±3 bp (and ±4/±6) in the signed splice-site offset spectrum is
+    the signature of tandem donor/acceptor usage — reads legitimately choosing a
+    nearby alternative site, a real biological phenomenon distinct from random
+    boundary imprecision. Reports, per sample, the % of imprecise (offset!=0)
+    observations sitting at the tandem offsets. Descriptive (no scorecard, no
+    threshold). Empty-safe. Reads the existing offset spectrum, not new columns.
+    """
+    empty = {"samples": [],
+             "per_sample": pd.DataFrame(columns=["sampleID", "perc_tandem", "perc_tandem_3bp"]),
+             "by_offset": pd.DataFrame(columns=["sampleID", "offset", "count"])}
+    m = jxn_offset_metrics
+    if not m or not m.get("samples") or m.get("spectrum") is None or m["spectrum"].empty:
+        return empty
+    sp = m["spectrum"]
+    sp = sp[sp["offset"] != 0]   # imprecise observations only
+    if sp.empty:
+        return empty
+    tand3 = {3, -3}
+    tandall = set(tandem_offsets)
+    rows = []
+    for s, g in sp.groupby("sampleID"):
+        tot = float(g["count"].sum())
+        c3 = float(g.loc[g["offset"].isin(tand3), "count"].sum())
+        call = float(g.loc[g["offset"].isin(tandall), "count"].sum())
+        rows.append({"sampleID": str(s),
+                     "perc_tandem_3bp": (c3 / tot * 100) if tot else 0.0,
+                     "perc_tandem": (call / tot * 100) if tot else 0.0})
+    near = (sp[sp["offset"].abs() <= 10]
+            .groupby(["sampleID", "offset"], as_index=False)["count"].sum())
+    return {"samples": [r["sampleID"] for r in rows],
+            "per_sample": pd.DataFrame(rows), "by_offset": near}
+
+
 def _robust_z(values):
     """Robust z-scores of a 1-D sequence: (x - median) / (1.4826 * MAD).
 
@@ -921,7 +1026,7 @@ def _novel_noncanonical_pct(nov_can_DF):
 def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
                                all_gene_percs_pivot_DF=None, nov_can_DF=None,
                                completeness_metrics=None, jxn_offset_metrics=None,
-                               ISM_DF=None):
+                               ISM_DF=None, yield_metrics=None, drift_metrics=None):
     """Gather the raw per-sample metric values the scorecard scores.
 
     Pulls each metric from the table that already computed it (no recomputation),
@@ -967,6 +1072,10 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
     ism_frag = _ism_fragment_pct(ISM_DF)
     novnc = _novel_noncanonical_pct(nov_can_DF)
 
+    # Between-sample comparison scalars (A4 depth-normalised yield; A3 drift).
+    yld = _idx(yield_metrics.get("per_sample") if yield_metrics else None, "jxn_per_1k_reads")
+    drift = _idx(drift_metrics.get("per_sample") if drift_metrics else None, "mean_jsd")
+
     out = []
     for s in samples:
         out.append({
@@ -981,6 +1090,8 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
             "perc_sites_imprecise": impr.get(s),
             "perc_ISM_fragments": ism_frag.get(s),
             "perc_novel_noncanonical_jxn": novnc.get(s),
+            "jxn_per_1k_reads": yld.get(s),
+            "composition_drift": drift.get(s),
         })
     return out
 
@@ -1186,6 +1297,82 @@ def plot_quality_metric_pages(pdf, ISM_DF, nov_can_DF, qc_flags, scorecard=None)
             ylabel="% of junctions that are novel & non-canonical",
             threshold=(qc_flags or {}).get("perc_novel_noncanonical_jxn"),
             scorecard=scorecard, color=jxn_palette.get("novel_non_canonical", aes_palette["magenta"]))
+
+
+def plot_jxn_yield_page(pdf, yield_metrics, scorecard=None):
+    """Per-sample depth-normalised junction yield (A4), in cohort context.
+
+    A sample low here after depth-normalisation has genuinely lower junction
+    complexity, not just fewer reads. No-op on empty."""
+    m = yield_metrics
+    if not m or not m.get("samples"):
+        return
+    _plot_metric_cohort_page(
+        pdf, m["per_sample"], "jxn_per_1k_reads",
+        title="Junction yield per 1000 reads (depth-normalised)",
+        ylabel="distinct junctions / 1k reads",
+        scorecard=scorecard, color=aes_palette["blue"])
+
+
+def plot_composition_drift_page(pdf, drift):
+    """Pairwise composition-drift heatmap (A3): Jensen–Shannon distance between
+    samples' structural-category composition vectors. Sequential scale (distance
+    is >= 0). No-op on empty."""
+    m = drift
+    if not m or not m.get("samples") or m.get("matrix") is None or m["matrix"].empty:
+        return
+    mat = m["matrix"]
+    samples = list(mat.index)
+    Z = mat.to_numpy(dtype=float)
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(max(6, 0.7 * len(samples) + 3),
+                                    max(5, 0.6 * len(samples) + 2)))
+    im = ax.imshow(Z, cmap="viridis", vmin=0, vmax=max(float(Z.max()), 1e-6), aspect="auto")
+    ax.set_xticks(range(len(samples)))
+    ax.set_xticklabels(samples, rotation=40, ha="right", fontsize=8)
+    ax.set_yticks(range(len(samples)))
+    ax.set_yticklabels(samples, fontsize=8)
+    for i in range(len(samples)):
+        for j in range(len(samples)):
+            ax.text(j, i, f"{Z[i, j]:.2f}", ha="center", va="center", fontsize=7,
+                    color="white" if Z[i, j] > Z.max() * 0.6 else "black")
+    ax.set_title("Composition drift — pairwise Jensen–Shannon distance\n"
+                 "(structural-category composition; larger = more different)", fontsize=11)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.08)
+    cbar.set_label("Jensen–Shannon distance")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_tandem_sites_page(pdf, tandem):
+    """Tandem-site (NAGNAG) page (F6): near-zero offset histogram (summed over
+    samples) with the ±3/±4/±6 tandem bars highlighted, plus each sample's tandem
+    fraction at ±3 bp. Descriptive — a higher tandem fraction is a property of the
+    sample, not a defect. No-op on empty."""
+    m = tandem
+    if not m or not m.get("samples") or m.get("by_offset") is None or m["by_offset"].empty:
+        return
+    agg = (m["by_offset"].groupby("offset", as_index=False)["count"].sum()
+           .sort_values("offset"))
+    offs = agg["offset"].tolist()
+    counts = agg["count"].tolist()
+    tand = {3, -3, 4, -4, 6, -6}
+    colors = [aes_palette["magenta"] if o in tand else "#BBBBBB" for o in offs]
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    ax.bar(offs, counts, color=colors, width=0.8, zorder=2)
+    ax.set_xlabel("signed splice-site offset (bp)")
+    ax.set_ylabel("imprecise observations (all samples)")
+    ax.set_title("Tandem splice sites (NAGNAG): excess mass at ±3/±4/±6 bp "
+                 "(highlighted)", fontsize=12)
+    ps = m["per_sample"]
+    note = "   ".join(f"{r.sampleID}: {r.perc_tandem_3bp:.1f}%" for r in ps.itertuples())
+    ax.text(0.5, -0.22, "tandem fraction at ±3 bp — " + note,
+            transform=ax.transAxes, ha="center", fontsize=8, color="#555555")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
@@ -1779,6 +1966,7 @@ def proc_samples(args, design_file, ref):
     cv_dfs = {}
     jxn_offset_dfs = {}
     completeness_dfs = {}
+    jxn_count_by_sample = {}   # per-sample junction-record count (A4 depth-normalised yield)
     fsm_dfs = {}
     ism_dfs = {}
     nic_nnc_dfs = {}
@@ -1882,6 +2070,7 @@ def proc_samples(args, design_file, ref):
         cv_dfs[sampleID] = cv_DF
         jxn_offset_dfs[sampleID] = jxn_offset_DF
         completeness_dfs[sampleID] = completeness_DF
+        jxn_count_by_sample[sampleID] = int(len(jxn_DF))
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
         ism_dfs[sampleID] = ISM_DF
@@ -1906,8 +2095,9 @@ def proc_samples(args, design_file, ref):
     length_Dct = _reord(length_Dct)
     jxn_offset_dfs = _reord(jxn_offset_dfs)
     completeness_dfs = _reord(completeness_dfs)
+    jxn_count_by_sample = _reord(jxn_count_by_sample)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, jxn_count_by_sample )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -2669,7 +2859,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
-             completeness_metrics=None, scorecard=None, args=None):
+             completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
+             tandem_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3050,6 +3241,11 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # 5'/3' read-end completeness profiles
         plot_completeness_pages(pdf, completeness_metrics)
 
+        # Between-sample comparison views
+        plot_jxn_yield_page(pdf, yield_metrics, scorecard=scorecard)
+        plot_composition_drift_page(pdf, drift_metrics)
+        plot_tandem_sites_page(pdf, tandem_metrics)
+
 
 def run_reads_plots(
     ref_gtf: str,
@@ -3130,7 +3326,7 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
 
     gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
                                                                                                                             fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs)
@@ -3150,6 +3346,19 @@ def main(args):
     completeness_metrics = compute_completeness_metrics(
         completeness_DF, window=args.cfg().get('completeness_window', 50))
 
+    # Between-sample comparison metrics (A4 depth-normalised junction yield):
+    # junctions per 1000 reads, so a low value is low complexity rather than
+    # shallow sequencing. Read counts come from the length summary.
+    read_counts = dict(zip(length_DF["sampleID"].astype(str), length_DF["total_reads"]))
+    yield_metrics = compute_jxn_yield_vs_depth(jxn_count_by_sample, read_counts)
+
+    # A3 composition drift: pairwise Jensen–Shannon distance between samples'
+    # structural-category composition (all_gene_percs_pivot_DF = dfs_for_plotting[2]).
+    drift_metrics = compute_composition_drift(dfs_for_plotting[2])
+
+    # F6 tandem splice sites (NAGNAG): ±3/±4/±6 bp excess in the offset spectrum.
+    tandem_metrics = compute_tandem_sites(jxn_offset_metrics)
+
     # Cohort-relative sample-outlier scorecard: robust z of each read-QC metric
     # against the cohort, flagging samples that diverge from their peers. Uses the
     # read-level structural composition (all_gene_percs_pivot_DF = dfs_for_plotting[2])
@@ -3160,7 +3369,8 @@ def main(args):
             length_DF=length_DF, err_DF=err_DF,
             all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
             completeness_metrics=completeness_metrics,
-            jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF),
+            jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF,
+            yield_metrics=yield_metrics, drift_metrics=drift_metrics),
         args.cfg())
 
     need_pdf = args.report in ("pdf", "both")
@@ -3178,7 +3388,9 @@ def main(args):
         report_html = os.path.join(args.OUT, args.PREFIX + '_report.html')
         build_html_report(report_html, dfs_for_plotting, args, ujc_metrics=ujc_metrics,
                           jxn_offset_metrics=jxn_offset_metrics,
-                          completeness_metrics=completeness_metrics, scorecard=scorecard)
+                          completeness_metrics=completeness_metrics, scorecard=scorecard,
+                          yield_metrics=yield_metrics, drift_metrics=drift_metrics,
+                          tandem_metrics=tandem_metrics)  # F6
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -3187,7 +3399,9 @@ def main(args):
         with PdfPages(report_pdf) as pdf:
             render_report_pdf(report_pdf, *dfs_for_plotting, pdf=pdf, ujc_metrics=ujc_metrics,
                               jxn_offset_metrics=jxn_offset_metrics,
-                              completeness_metrics=completeness_metrics, scorecard=scorecard, args=args)
+                              completeness_metrics=completeness_metrics, scorecard=scorecard,
+                              yield_metrics=yield_metrics, drift_metrics=drift_metrics,
+                              tandem_metrics=tandem_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

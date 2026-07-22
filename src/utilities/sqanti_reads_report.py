@@ -617,9 +617,39 @@ def _metric_cohort_figure(err_DF, metric, title, ytitle, scorecard=None,
     return fig
 
 
+def _composition_drift_figure(drift):
+    """A3 pairwise composition-drift heatmap (Jensen–Shannon distance), or None."""
+    if (not drift or not drift.get("samples")
+            or drift.get("matrix") is None or drift["matrix"].empty):
+        return None
+    return _heatmap(drift["matrix"], "Composition drift (pairwise)",
+                    "Sample", "Sample", colorscale="Viridis", zmid=None, zmin=0,
+                    colorbar_title="JS distance", annotate=True)
+
+
+def _tandem_sites_figure(tandem):
+    """F6 near-zero offset histogram (summed over samples) with ±3/±4/±6 tandem
+    bars highlighted, or None."""
+    if (not tandem or not tandem.get("samples")
+            or tandem.get("by_offset") is None or tandem["by_offset"].empty):
+        return None
+    agg = (tandem["by_offset"].groupby("offset", as_index=False)["count"].sum()
+           .sort_values("offset"))
+    tand = {3, -3, 4, -4, 6, -6}
+    colors = ["#EE446F" if o in tand else "#BBBBBB" for o in agg["offset"]]
+    fig = go.Figure(go.Bar(x=agg["offset"].tolist(), y=agg["count"].tolist(),
+                           marker_color=colors,
+                           hovertemplate="offset %{x} bp<br>%{y} obs<extra></extra>"))
+    _base_layout(fig, "Tandem splice sites (NAGNAG)",
+                 "signed splice-site offset (bp)", "imprecise observations")
+    fig.update_layout(barmode="group", showlegend=False)
+    return fig
+
+
 def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
-                      scorecard=None):
+                      scorecard=None, yield_metrics=None, drift_metrics=None,
+                      tandem_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1105,6 +1135,41 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "so treat it as a comparative signal rather than a degradation verdict. "
                 "3' ends are usually tight (polyA-anchored), so 5' completeness is the more "
                 "informative axis for comparing samples.", "fig-completeness"))
+
+    # 9f. Between-sample comparison views (A4 depth-normalised junction yield)
+    if yield_metrics and yield_metrics.get("samples"):
+        _yfig = _metric_cohort_figure(
+            yield_metrics["per_sample"], "jxn_per_1k_reads",
+            "Junction yield per 1000 reads (depth-normalised)",
+            "distinct junctions / 1k reads", scorecard=scorecard, color="#74CDF0")
+        if _yfig is not None:
+            sections.append(_section(
+                "Junction yield vs depth", _yfig,
+                "Distinct junctions recovered per 1000 reads. Because it is normalised to "
+                "depth, a sample low here has genuinely lower junction complexity "
+                "(consistent with degradation or a simpler transcriptome), not merely fewer "
+                "reads. Cohort-relative, no absolute threshold.", "fig-jxn-yield"))
+
+    _dfig = _composition_drift_figure(drift_metrics)
+    if _dfig is not None:
+        sections.append(_section(
+            "Composition drift (pairwise)", _dfig,
+            "Pairwise Jensen–Shannon distance between samples' structural-category "
+            "composition vectors. Larger values mean two samples' category mixes differ "
+            "more. A sample far from all others (high row/column mean) has an atypical "
+            "composition — worth checking whether it is a genuine biological difference "
+            "(e.g. a distinct condition) or a technical one; the value itself is not a "
+            "pass/fail.", "fig-comp-drift"))
+
+    _tfig = _tandem_sites_figure(tandem_metrics)
+    if _tfig is not None:
+        sections.append(_section(
+            "Tandem splice sites (NAGNAG)", _tfig,
+            "Excess mass at ±3 bp (and ±4/±6) in the splice-site offset distribution is "
+            "the signature of tandem donor/acceptor (NAGNAG) usage — reads selecting a "
+            "nearby alternative site, a real biological phenomenon distinct from random "
+            "boundary imprecision. Shown descriptively; a higher tandem fraction is a "
+            "property of the sample, not a defect.", "fig-tandem"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
