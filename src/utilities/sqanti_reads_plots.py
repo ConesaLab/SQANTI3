@@ -878,9 +878,50 @@ def compute_sample_scorecard(sample_metrics, cfg):
     return result
 
 
+def _ism_fragment_pct(ISM_DF):
+    """{sampleID: % of ISM reads that are 3'/5'/internal fragments}.
+
+    Splits the ISM bucket into its fragment sub-types (3'/5'/internal) versus the
+    rest (mono-exon, intron retention). A high fragment fraction is a shape signal,
+    NOT a quality verdict: it is consistent with truncation/degradation but equally
+    with genuine alternative isoforms (alternative TSS/TTS, shorter isoforms). It is
+    interpreted cohort-relatively (does a sample's ISM shape diverge from its
+    peers?), never against an absolute cut-off. Empty dict when ISM_DF is
+    absent/empty."""
+    if ISM_DF is None or "sampleID" not in getattr(ISM_DF, "columns", []):
+        return {}
+    frag_cols = ["3prime_fragment", "5prime_fragment", "internal_fragment"]
+    subcols = [c for c in ISM_DF.columns if c != "sampleID"
+               and pd.api.types.is_numeric_dtype(ISM_DF[c])]
+    if not subcols:
+        return {}
+    idf = ISM_DF.set_index("sampleID")[subcols].astype(float)
+    tot = idf.sum(axis=1)
+    present = [c for c in frag_cols if c in idf.columns]
+    frag = idf[present].sum(axis=1) if present else tot * 0
+    return (frag / tot * 100).replace([np.inf, -np.inf], np.nan).to_dict()
+
+
+def _novel_noncanonical_pct(nov_can_DF):
+    """{sampleID: % of all junctions that are novel AND non-canonical} — the
+    junction class most enriched for alignment/calling artefacts (though not
+    exclusively artefactual; non-canonical splicing also occurs biologically).
+    Empty dict when the four known/novel x canonical columns aren't present."""
+    if nov_can_DF is None or "sampleID" not in getattr(nov_can_DF, "columns", []):
+        return {}
+    four = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
+    if not all(c in nov_can_DF.columns for c in four):
+        return {}
+    nj = nov_can_DF.set_index("sampleID")[four].astype(float)
+    tot = nj.sum(axis=1)
+    return (nj['novel_non_canonical'] / tot * 100
+            ).replace([np.inf, -np.inf], np.nan).to_dict()
+
+
 def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
                                all_gene_percs_pivot_DF=None, nov_can_DF=None,
-                               completeness_metrics=None, jxn_offset_metrics=None):
+                               completeness_metrics=None, jxn_offset_metrics=None,
+                               ISM_DF=None):
     """Gather the raw per-sample metric values the scorecard scores.
 
     Pulls each metric from the table that already computed it (no recomputation),
@@ -922,6 +963,10 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
     if jxn_offset_metrics and not jxn_offset_metrics.get("per_sample", pd.DataFrame()).empty:
         impr = jxn_offset_metrics["per_sample"].set_index("sampleID")["perc_imprecise"].to_dict()
 
+    # Derived quality scalars (single source of truth: the module helpers).
+    ism_frag = _ism_fragment_pct(ISM_DF)
+    novnc = _novel_noncanonical_pct(nov_can_DF)
+
     out = []
     for s in samples:
         out.append({
@@ -934,6 +979,8 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
             "perc_reads_RTS": rts.get(s),
             "perc_reads_intrapriming": ip.get(s),
             "perc_sites_imprecise": impr.get(s),
+            "perc_ISM_fragments": ism_frag.get(s),
+            "perc_novel_noncanonical_jxn": novnc.get(s),
         })
     return out
 
@@ -1100,6 +1147,45 @@ def plot_artefact_metric_pages(pdf, err_DF, qc_flags, scorecard=None):
         _plot_metric_cohort_page(
             pdf, err_DF, metric, title=title, ylabel=ylabel,
             threshold=(qc_flags or {}).get(metric), scorecard=scorecard, color=color)
+
+
+def plot_quality_metric_pages(pdf, ISM_DF, nov_can_DF, qc_flags, scorecard=None):
+    """Per-sample cohort-context pages for two derived read-quality scalars that
+    feed the scorecard:
+
+      * ISM fragment fraction  -- what share of a sample's ISM reads are 3'/5'/
+        internal fragments rather than mono-exon / intron-retention ISMs. This is a
+        SHAPE signal, not a quality verdict: fragment-shaped ISMs arise from
+        truncation/degradation but equally from genuine alternative isoforms, so it
+        is read cohort-relatively (does this sample's ISM shape diverge from its
+        peers?) and carries no absolute threshold;
+      * Novel non-canonical junction burden -- the junction class most enriched for
+        alignment/calling artefacts (not exclusively artefactual), separated from
+        novel-canonical.
+
+    Each rendered as bars against the cohort median, any config warn/fail lines,
+    and scorecard flag markers. No-ops when the source table is missing."""
+    frag = _ism_fragment_pct(ISM_DF)
+    if frag:
+        d = pd.DataFrame({"sampleID": list(frag.keys()),
+                          "perc_ISM_fragments": list(frag.values())})
+        _plot_metric_cohort_page(
+            pdf, d, "perc_ISM_fragments",
+            title="ISM fragment fraction per sample (shape, not quality)",
+            ylabel="% of ISM reads that are 3'/5'/internal fragments",
+            threshold=(qc_flags or {}).get("perc_ISM_fragments"),
+            scorecard=scorecard, color=subcat_color_palette.get("3prime_fragment", aes_palette["orange"]))
+
+    novnc = _novel_noncanonical_pct(nov_can_DF)
+    if novnc:
+        d = pd.DataFrame({"sampleID": list(novnc.keys()),
+                          "perc_novel_noncanonical_jxn": list(novnc.values())})
+        _plot_metric_cohort_page(
+            pdf, d, "perc_novel_noncanonical_jxn",
+            title="Novel non-canonical junction burden, per sample",
+            ylabel="% of junctions that are novel & non-canonical",
+            threshold=(qc_flags or {}).get("perc_novel_noncanonical_jxn"),
+            scorecard=scorecard, color=jxn_palette.get("novel_non_canonical", aes_palette["magenta"]))
 
 
 def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
@@ -2855,6 +2941,14 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                                        scorecard=scorecard)
         except Exception as exc:
             reads_logger.warning(f"Could not render artefact metric pages: {exc}")
+
+        # Derived read-quality scalars in cohort context: ISM fragment fraction
+        # and novel non-canonical junction burden (both feed the scorecard).
+        try:
+            plot_quality_metric_pages(pdf, ISM_DF, nov_can_DF,
+                                      args.cfg().get('qc_flags', {}), scorecard=scorecard)
+        except Exception as exc:
+            reads_logger.warning(f"Could not render quality metric pages: {exc}")
         
         
         plt.figure(figsize=(14, 10))
@@ -3066,7 +3160,7 @@ def main(args):
             length_DF=length_DF, err_DF=err_DF,
             all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
             completeness_metrics=completeness_metrics,
-            jxn_offset_metrics=jxn_offset_metrics),
+            jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF),
         args.cfg())
 
     need_pdf = args.report in ("pdf", "both")

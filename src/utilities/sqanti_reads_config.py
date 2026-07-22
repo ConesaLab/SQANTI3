@@ -27,13 +27,22 @@ DEFAULT_CONFIG = {
         "perc_sites_imprecise": {"warn": 10.0, "fail": 20.0, "worse": "high",
                                   "label": "Imprecise splice sites (%)"},
         # 5'/3' completeness: % of reads whose end lands within completeness_window
-        # bp of the annotated gene's end. Lower => more truncation/degradation. These
-        # are absolute thresholds; the cohort-relative scorecard (below) is the
-        # primary, dataset-agnostic view — leave these lenient by default.
+        # bp of the annotated gene's end. A low value means reads are systematically
+        # short at that end — consistent with truncation/degradation, but also with
+        # alternative TSS/TTS or incomplete annotation, so it is a comparative signal,
+        # not a degradation verdict. These absolute thresholds are deliberately lenient;
+        # the cohort-relative scorecard (below) is the primary, dataset-agnostic view.
         "perc_5p_within_window": {"warn": 40.0, "fail": 20.0, "worse": "low",
                                    "label": "Reads with complete 5' end (%)"},
         "perc_3p_within_window": {"warn": 40.0, "fail": 20.0, "worse": "low",
                                    "label": "Reads with complete 3' end (%)"},
+        # Novel non-canonical junction burden: % of all junctions that are novel
+        # AND non-canonical. This class is ENRICHED for alignment / junction-calling
+        # artefacts, but not exclusively artefactual (non-canonical splicing occurs
+        # biologically, e.g. minor-spliceosome introns). An elevated value relative to
+        # peers is worth inspecting; it is a candidate signal, not a definitive verdict.
+        "perc_novel_noncanonical_jxn": {"warn": 2.0, "fail": 5.0, "worse": "high",
+                                         "label": "Novel non-canonical junctions (%)"},
     },
     # A read is counted as intra-primed when %A downstream of its TTS exceeds this.
     "intrapriming_perc_A_cutoff": 60.0,
@@ -80,6 +89,14 @@ DEFAULT_CONFIG = {
             "perc_reads_RTS": "high",
             "perc_reads_intrapriming": "high",
             "perc_sites_imprecise": "high",
+            # Fraction of ISM reads that are 3'/5'/internal fragments (vs mono-exon /
+            # intron-retention ISMs). A high fragment fraction is NOT inherently bad
+            # -- alternative TSS/TTS and genuinely shorter isoforms land here too --
+            # so it carries no absolute threshold; it is scorecard-only, where the
+            # signal is purely "this sample's ISMs are shaped differently from its
+            # peers'", which for replicates of one condition is worth a look.
+            "perc_ISM_fragments": "high",
+            "perc_novel_noncanonical_jxn": "high",
         },
     },
 }

@@ -32,6 +32,8 @@ from src.utilities.sqanti_reads_plots import (
     sample_seq,
     underannot_palette,
     compute_upset_intersections,
+    _ism_fragment_pct,
+    _novel_noncanonical_pct,
 )
 from src.utilities.sqanti_reads_config import DEFAULT_CONFIG
 
@@ -810,6 +812,32 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             f"5'/3' ends, fragments, intron retention). Shifts here pinpoint the kind of "
             f"partial/novel structure driving the category.", div))
 
+    # 6a2. ISM fragment fraction in cohort context: one scalar per sample (share
+    # of ISM reads that are 3'/5'/internal fragments) against the cohort median +
+    # scorecard flags. A SHAPE signal, read relative to peers -- not a quality
+    # verdict (fragment-shaped ISMs can be alternative isoforms, not degradation).
+    _frag = _ism_fragment_pct(ISM_DF)
+    if _frag:
+        _fdf = pd.DataFrame({"sampleID": list(_frag.keys()),
+                             "perc_ISM_fragments": list(_frag.values())})
+        _ffig = _metric_cohort_figure(
+            _fdf, "perc_ISM_fragments", "ISM fragment fraction (shape, not quality)",
+            "% of ISM reads that are 3'/5'/internal fragments", scorecard=scorecard,
+            threshold=qc_flags.get("perc_ISM_fragments"), color="#c4531d")
+        if _ffig is not None:
+            sections.append(_section(
+                "ISM fragment fraction", _ffig,
+                "Of each sample's incomplete-splice-match reads, the share that are "
+                "3'/5'/internal fragments (rather than mono-exon or intron-retention "
+                "ISMs). This describes the <em>shape</em> of the ISM population, not its "
+                "quality: fragment-shaped ISMs arise from truncation or degradation but "
+                "equally from genuine alternative isoforms (alternative TSS/TTS, shorter "
+                "isoforms). Read it cohort-relatively — a sample whose ISM shape diverges "
+                "from its peers is worth a look; a high value shared by the whole cohort "
+                "is likely just the biology of the sample type, which is why this metric "
+                "carries no absolute threshold.",
+                "fig-ism-frag"))
+
     # 6b. Junction classification (known/novel × canonical/non-canonical)
     jxn_order = ["known_canonical", "known_non_canonical", "novel_canonical", "novel_non_canonical"]
     if nov_can_perc_DF is not None and not nov_can_perc_DF.empty:
@@ -829,6 +857,28 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                          color_map=jxn_palette, order=jxn_order, facet_col=facet),
             "Absolute junction counts per class.", "fig-jxn-n"))
 
+    # 6c. Novel non-canonical junction burden in cohort context: the single
+    # junction class most likely to be alignment/calling artefacts, pulled out of
+    # the classification above into one comparative scalar per sample.
+    _nnc = _novel_noncanonical_pct(nov_can_DF)
+    if _nnc:
+        _ndf = pd.DataFrame({"sampleID": list(_nnc.keys()),
+                             "perc_novel_noncanonical_jxn": list(_nnc.values())})
+        _nfig = _metric_cohort_figure(
+            _ndf, "perc_novel_noncanonical_jxn", "Novel non-canonical junction burden",
+            "% of junctions that are novel & non-canonical", scorecard=scorecard,
+            threshold=qc_flags.get("perc_novel_noncanonical_jxn"), color="#FC8D59")
+        if _nfig is not None:
+            sections.append(_section(
+                "Novel non-canonical junction burden", _nfig,
+                "Percent of all junctions that are both novel and non-canonical. This "
+                "class is enriched for alignment and junction-calling artefacts, but it "
+                "is not exclusively artefactual — non-canonical splicing does occur "
+                "biologically (e.g. minor-spliceosome introns). Read it cohort-relatively: "
+                "a sample well above its peers is worth inspecting for a mapping or library "
+                "difference, while a level shared across the cohort may simply reflect the "
+                "sample type or a less complete annotation.", "fig-jxn-novnc"))
+
     # 7. Artefacts (grouped bar of %)
     art_cols = ["perc_reads_RTS", "perc_reads_intrapriming", "perc_reads_non-canonical"]
     sections.append(_section(
@@ -846,16 +896,17 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     _art_pages = [
         ("perc_reads_RTS", "RT-switching reads per sample",
          "% reads with RT-switching evidence", "#F58A53", "fig-rts",
-         "Per-sample RT-switching rate against the cohort median. Bars are outlined "
-         "and colored when the sample-outlier scorecard flags this metric. RT-switching "
-         "produces artefactual junctions, so a sample well above its peers here is a "
-         "candidate library problem rather than a biological signal."),
+         "Per-sample rate of reads flagged by the RT-switching heuristic (a sequence "
+         "signature of template switching at direct repeats around a junction), against "
+         "the cohort median; bars are outlined when the scorecard flags this metric. "
+         "The flag marks candidate artefacts, not confirmed ones, so a sample well above "
+         "its peers is worth checking for a library or mapping difference."),
         ("perc_reads_intrapriming", "Intra-priming reads per sample",
          "% reads with intra-priming evidence", "#EE446F", "fig-intraprim",
          "Per-sample intra-priming rate (reads with a genomic poly-A run downstream of "
          "the TTS, likely primed off genomic A-stretches rather than the polyA tail) "
-         "against the cohort median, with scorecard flags. Elevated in one sample points "
-         "to a sample-specific priming issue."),
+         "against the cohort median, with scorecard flags. A sample elevated relative to "
+         "its peers is worth checking for a sample-specific priming or template difference."),
     ]
     for metric, title, ytitle, color, div_id, interp in _art_pages:
         _mfig = _metric_cohort_figure(err_DF, metric, title, ytitle,
@@ -1028,9 +1079,10 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             sections.append(_section(
                 "Splice-site precision profile", pfig,
                 "Cumulative % of donor/acceptor observations within ±k bp of a reference "
-                "site. A steeper curve reaching 100% sooner means more precise splice "
-                "boundaries; a sample whose curve lags the others is measurably noisier. "
-                "The value at k=0 is the exact-match rate.", "fig-offset-profile"))
+                "site. A steeper curve reaching 100% sooner means splice boundaries sit "
+                "closer to the reference; a sample whose curve lags the others has more of "
+                "its sites placed a few bp off the annotated position. The value at k=0 is "
+                "the exact-match rate.", "fig-offset-profile"))
         if cfig is not None:
             sections.append(_section(
                 "Splice-site fuzziness by canonical class", cfig,
@@ -1046,11 +1098,13 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             sections.append(_section(
                 "Read-end completeness profile", cmp_fig,
                 "Cumulative % of reads whose 5'/3' end lands within a given distance of "
-                "the annotated gene end. Steeper curves mean more reads reach the "
-                "annotated boundary; a sample whose 5' curve lags the others carries more "
-                "truncated/degraded transcripts. 3' ends are usually tight (polyA-anchored), "
-                "so 5' completeness is the more informative axis for comparing samples.",
-                "fig-completeness"))
+                "the annotated gene end. Steeper curves mean more reads reach the annotated "
+                "boundary. A sample whose 5' curve lags its peers has systematically shorter "
+                "5' ends — consistent with truncation or RNA degradation, but also with "
+                "alternative transcription start sites or incomplete reference annotation, "
+                "so treat it as a comparative signal rather than a degradation verdict. "
+                "3' ends are usually tight (polyA-anchored), so 5' completeness is the more "
+                "informative axis for comparing samples.", "fig-completeness"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
