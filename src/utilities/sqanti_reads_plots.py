@@ -330,6 +330,19 @@ def _render_grouped_bar(pdf, df, *, exp_factor, num_factors, categories, palette
     plt.close()
 
 
+def _vectorize_colorbars(fig):
+    """Force heatmap/colorbar artists to render as vector paths instead of a
+    raster image, so every mark on the page stays editable in vector tools like
+    Illustrator. matplotlib rasterizes colorbar solids by default; the two
+    heatmap pages (PCA loadings, replicate concordance) are the only report
+    pages that would otherwise carry a raster element."""
+    for ax in fig.axes:
+        for coll in ax.collections:
+            coll.set_rasterized(False)
+        for im in ax.images:
+            im.set_rasterized(False)
+
+
 def compute_ujc_metrics(ujc_count_DF, factor_col=None, n_depths=25):
     """Derive UJC-level QC metrics shared by the PDF and HTML reports.
 
@@ -573,6 +586,7 @@ def plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=None):
     plt.title("Replicate concordance (per-UJC read counts)")
     plt.tight_layout()
     matplotlib.rcParams['pdf.fonttype'] = 42
+    _vectorize_colorbars(plt.gcf())
     pdf.savefig()
     plt.close()
 
@@ -790,6 +804,138 @@ def _run_parallel(func, items, jobs):
         list(ex.map(func, items))
 
 
+# --- Per-sample summary builders --------------------------------------------
+# Each takes one sample's loaded/merged classification (and junction) frame and
+# returns one summary table. They are pure (no shared state) so proc_samples'
+# inner loop reads as an orchestration and each metric can be unit-tested.
+
+_JXN_CLASSES = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
+
+
+def _summarize_junctions(jxn_DF):
+    """Per-isoform counts of the four junction classes (known/novel × canonical)."""
+    count_jxns_DF = jxn_DF.pivot_table(index='isoform',
+                                       columns=['junction_category', 'canonical'],
+                                       aggfunc='size',
+                                       fill_value=0).reset_index()
+    # Flatten the MultiIndex columns by joining with an underscore, except 'isoform'.
+    count_jxns_DF.columns = ['isoform'] + ['_'.join([str(c) for c in col]).strip()
+                                           for col in count_jxns_DF.columns[1:]]
+    for col in _JXN_CLASSES:
+        if col not in count_jxns_DF.columns:
+            count_jxns_DF[col] = 0
+    return count_jxns_DF[['isoform'] + _JXN_CLASSES]
+
+
+def _summarize_gene_counts(class_DF, sampleID, exp_factor, exp_factor_val):
+    """Per-gene read counts by structural category + unique-UJC count."""
+    gene_category_count_DF = class_DF.pivot_table(index='associated_gene',
+                                                  columns='structural_category',
+                                                  aggfunc='count',
+                                                  fill_value=0)['isoform'].reset_index()
+    gene_category_count_DF['total_read_count'] = gene_category_count_DF.iloc[:, 1:].sum(axis=1)
+    gene_UJC_count_DF = class_DF.groupby('associated_gene')['jxnHash'].nunique().reset_index(name='unique_jxnHash_counts')
+    gene_count_DF = pd.merge(gene_category_count_DF, gene_UJC_count_DF, how='outer', on='associated_gene')
+    gene_count_DF['sampleID'] = sampleID
+    gene_count_DF[exp_factor] = exp_factor_val
+    return gene_count_DF
+
+
+def _summarize_subcategory(class_DF, categories, wanted, sampleID, exp_factor, exp_factor_val):
+    """Per-subcategory read counts for the structural categories in ``wanted``.
+
+    Returns an empty frame when none of ``wanted`` occurs in this sample (matches
+    the historical FSM/ISM/NIC-NNC guards)."""
+    df = pd.DataFrame()
+    if any(w in categories for w in wanted):
+        df = class_DF[class_DF['structural_category'].isin(wanted)].copy()
+        df['sampleID'] = sampleID
+        df = df.pivot_table(index='sampleID', columns='subcategory',
+                            aggfunc='count', fill_value=0)['isoform'].reset_index()
+        df[exp_factor] = exp_factor_val
+    return df
+
+
+def _summarize_ujc(class_DF, sampleID, exp_factor, exp_factor_val):
+    """Per-UJC (jxnHash × gene × structural category) read counts + MEI flag."""
+    ujc_group_cols = ['jxnHash', 'associated_gene', 'structural_category']
+    ujc_count_DF = class_DF.groupby(ujc_group_cols).agg({
+        'isoform': 'nunique'  # Count unique isoforms for this group
+    }).reset_index()
+
+    for col in _JXN_CLASSES:
+        if col in class_DF.columns:
+            first_vals = class_DF.groupby(ujc_group_cols)[col].first().reset_index()
+            ujc_count_DF = pd.merge(ujc_count_DF, first_vals, on=ujc_group_cols, how='left')
+        else:
+            ujc_count_DF[col] = 0
+    for col in ujc_count_DF.columns:
+        if ujc_count_DF[col].dtype == 'int64':
+            ujc_count_DF[col] = ujc_count_DF[col].fillna(0)
+        elif ujc_count_DF[col].dtype == 'object' or ujc_count_DF[col].dtype.name == 'string':
+            ujc_count_DF[col] = ujc_count_DF[col].fillna('0')
+    ujc_count_DF.rename(columns={'isoform': 'read_count'}, inplace=True)
+    ujc_count_DF['flag_MEI'] = ujc_count_DF.groupby('associated_gene')['read_count'] \
+        .transform(lambda s: (s == s.max()).astype(int))
+    ujc_count_DF['sampleID'] = sampleID
+    ujc_count_DF[exp_factor] = exp_factor_val
+
+    # Reorder columns to original layout
+    desired_cols = [
+        'jxnHash', 'read_count', 'associated_gene',
+        'known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical',
+        'structural_category', 'flag_MEI', 'sampleID', 'flag_annotated_gene',
+    ]
+    existing_desired = [c for c in desired_cols if c in ujc_count_DF.columns]
+    remaining_cols = [c for c in ujc_count_DF.columns if c not in existing_desired]
+    return ujc_count_DF[existing_desired + remaining_cols]
+
+
+def _summarize_length(class_DF, sampleID, exp_factor, exp_factor_val):
+    """Read-length summary stats (counts/percentages over 1/2/3 kb + quantiles)."""
+    total_reads = len(class_DF)
+    reads_gt_1kb = (class_DF['length'] > 1000).sum()
+    reads_gt_2kb = (class_DF['length'] > 2000).sum()
+    reads_gt_3kb = (class_DF['length'] > 3000).sum()
+    length_summary_DF = pd.DataFrame({
+        'total_reads': [total_reads],
+        'reads_gt_1kb': [reads_gt_1kb],
+        'reads_gt_2kb': [reads_gt_2kb],
+        'reads_gt_3kb': [reads_gt_3kb],
+        'perc_reads_gt_1kb': [(reads_gt_1kb / total_reads) * 100],
+        'perc_reads_gt_2kb': [(reads_gt_2kb / total_reads) * 100],
+        'perc_reads_gt_3kb': [(reads_gt_3kb / total_reads) * 100],
+        'average_length': [class_DF['length'].mean()],
+        'median_length': [class_DF['length'].median()],
+        'min_length': [class_DF['length'].min()],
+        'max_length': [class_DF['length'].max()],
+        'q25_length': [class_DF['length'].quantile(0.25)],
+        'q75_length': [class_DF['length'].quantile(0.75)],
+        'sampleID': [sampleID],
+    })
+    length_summary_DF[exp_factor] = exp_factor_val
+    return length_summary_DF
+
+
+def _summarize_errors(class_DF, ip_cutoff, sampleID, exp_factor, exp_factor_val):
+    """Artefact-read counts/percentages: RT-switching, intra-priming, non-canonical."""
+    total_reads = len(class_DF)
+    num_reads_RTS = (class_DF['RTS_stage'] == True).sum()
+    num_reads_intrapriming = (class_DF['perc_A_downstream_TTS'] > ip_cutoff).sum()
+    num_reads_non_can = (class_DF['all_canonical'] == 'non_canonical').sum()
+    err_DF = pd.DataFrame({
+        'num_reads_RTS': [num_reads_RTS],
+        'perc_reads_RTS': [(num_reads_RTS / total_reads) * 100],
+        'num_reads_intrapriming': [num_reads_intrapriming],
+        'perc_reads_intrapriming': [(num_reads_intrapriming / total_reads) * 100],
+        'num_reads_non-canonical': [num_reads_non_can],
+        'perc_reads_non-canonical': [(num_reads_non_can / total_reads) * 100],
+    })
+    err_DF['sampleID'] = sampleID
+    err_DF[exp_factor] = exp_factor_val
+    return err_DF
+
+
 def proc_samples(args, design_file, ref):
     # Read design file
     design_DF = pd.read_csv(design_file, sep=",")
@@ -858,196 +1004,34 @@ def proc_samples(args, design_file, ref):
         class_DF = merge_dfs(class_DF, ref_DF, 'associated_gene', 'gene_id', 'left')
     
         ##Get number of novel, known canonical and non-canonical junctions
-        jxn_columns = ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']
-        
-        # Perform the pivot table operation
-        count_jxns_DF = jxn_DF.pivot_table(index='isoform',
-                                           columns=['junction_category', 'canonical'],
-                                           aggfunc='size',
-                                           fill_value=0).reset_index()
-        
-        # Flatten the MultiIndex columns by joining with an underscore, except for 'isoform'
-        count_jxns_DF.columns = ['isoform'] + ['_'.join([str(c) for c in col]).strip() for col in count_jxns_DF.columns[1:]]
-        
-        # Ensure all expected columns are present, adding missing ones with value 0
-        for col in jxn_columns:
-            if col not in count_jxns_DF.columns:
-                count_jxns_DF[col] = 0
-        
-        # Reorder the columns to match the expected order
-        count_jxns_DF = count_jxns_DF[['isoform'] + jxn_columns]
-    
-        #Get number of canonical/novel junctions by sample
-        #print("Making nov_can_DF: " + sampleID)
+        count_jxns_DF = _summarize_junctions(jxn_DF)
+
+        # Total canonical/novel junctions for this sample
         nov_can_DF = count_jxns_DF.drop('isoform', axis=1).sum().to_frame().transpose()
         nov_can_DF['sampleID'] = sampleID
         nov_can_DF[exp_factor] = exp_factor_val
 
-        ##Merge classification DF, count jxns DF and jxn hash into one
+        ##Merge classification DF and per-isoform junction counts into one
         class_DF = merge_dfs(class_DF, count_jxns_DF, 'isoform', 'isoform')
-    
-        # Gene count DF 
-        # counting the number of reads in each structural category, in each gene
-        gene_category_count_DF = class_DF.pivot_table(index='associated_gene',
-                                                      columns='structural_category',
-                                                      aggfunc='count',
-                                                      fill_value=0)['isoform'].reset_index()
-        gene_category_count_DF['total_read_count'] = gene_category_count_DF.iloc[:, 1:].sum(axis=1)
-    
         categories = list(class_DF['structural_category'].unique())
-    
-        ##ISM DF
-        ISM_DF = pd.DataFrame()
-        if 'incomplete-splice_match' in categories:
-            ISM_DF = class_DF[class_DF['structural_category'] == 'incomplete-splice_match'].copy()
 
-            ISM_DF['sampleID'] = sampleID
-            ISM_DF = ISM_DF.pivot_table(index='sampleID',
-                                        columns='subcategory',
-                                        aggfunc='count',
-                                        fill_value=0)['isoform'].reset_index()
-            ISM_DF[exp_factor] = exp_factor_val
-    
-        ##FSM DF
-        FSM_DF = pd.DataFrame()
-        if 'full-splice_match' in categories:
-            FSM_DF = class_DF[class_DF['structural_category'] == 'full-splice_match'].copy()
-            FSM_DF['sampleID'] = sampleID
-            FSM_DF = FSM_DF.pivot_table(index='sampleID',
-                                        columns='subcategory',
-                                        aggfunc='count',
-                                        fill_value=0)['isoform'].reset_index()
-            FSM_DF[exp_factor] = exp_factor_val
-    
-        ##NIC/NNC DF
-        NIC_NNC_DF = pd.DataFrame()
-        if 'novel_in_catalog' in categories or 'novel_not_in_catalog' in categories:
-            NIC_NNC_DF = class_DF[class_DF['structural_category'].isin(['novel_in_catalog', 'novel_not_in_catalog'])].copy()
-            NIC_NNC_DF['sampleID'] = sampleID
-            NIC_NNC_DF = NIC_NNC_DF.pivot_table(index='sampleID',
-                                                columns='subcategory',
-                                                aggfunc='count',
-                                                fill_value=0)['isoform'].reset_index()
-            NIC_NNC_DF[exp_factor] = exp_factor_val
-        
-    
-        # counting the number of UJCs in each read
-        gene_UJC_count_DF = class_DF.groupby('associated_gene')['jxnHash'].nunique().reset_index(name='unique_jxnHash_counts')
-        gene_count_DF = pd.merge(gene_category_count_DF, gene_UJC_count_DF, how='outer', on='associated_gene')
-        gene_count_DF['sampleID'] = sampleID
-        gene_count_DF[exp_factor] = exp_factor_val
-    
-        ##UJC DF
-        # Group by UJC plus associated gene and structural category
-        ujc_group_cols = ['jxnHash', 'associated_gene', 'structural_category']
-        ujc_count_DF = class_DF.groupby(ujc_group_cols).agg({
-            'isoform': 'nunique'  # Count unique isoforms for this group
-        }).reset_index()
+        gene_count_DF = _summarize_gene_counts(class_DF, sampleID, exp_factor, exp_factor_val)
+        ISM_DF = _summarize_subcategory(class_DF, categories, ['incomplete-splice_match'], sampleID, exp_factor, exp_factor_val)
+        FSM_DF = _summarize_subcategory(class_DF, categories, ['full-splice_match'], sampleID, exp_factor, exp_factor_val)
+        NIC_NNC_DF = _summarize_subcategory(class_DF, categories, ['novel_in_catalog', 'novel_not_in_catalog'], sampleID, exp_factor, exp_factor_val)
+        ujc_count_DF = _summarize_ujc(class_DF, sampleID, exp_factor, exp_factor_val)
+        length_summary_DF = _summarize_length(class_DF, sampleID, exp_factor, exp_factor_val)
 
-        for col in ['known_canonical', 'known_non_canonical', 'novel_canonical', 'novel_non_canonical']:
-            if col in class_DF.columns:
-                first_vals = class_DF.groupby(ujc_group_cols)[col].first().reset_index()
-                ujc_count_DF = pd.merge(ujc_count_DF, first_vals, on=ujc_group_cols, how='left')
-            else:
-                ujc_count_DF[col] = 0
-        for col in ujc_count_DF.columns:
-            if ujc_count_DF[col].dtype == 'int64':
-                ujc_count_DF[col] = ujc_count_DF[col].fillna(0)
-            elif ujc_count_DF[col].dtype == 'object' or ujc_count_DF[col].dtype.name == 'string':
-                ujc_count_DF[col] = ujc_count_DF[col].fillna('0')
-        ujc_count_DF.rename(columns={'isoform': 'read_count'}, inplace=True)
-        ujc_count_DF['flag_MEI'] = ujc_count_DF.groupby('associated_gene')['read_count'] \
-            .transform(lambda s: (s == s.max()).astype(int))
-        ujc_count_DF['sampleID'] = sampleID
-        ujc_count_DF[exp_factor] = exp_factor_val
-
-        # Reorder columns to original layout
-        desired_cols = [
-            'jxnHash',
-            'read_count',
-            'associated_gene',
-            'known_canonical',
-            'known_non_canonical',
-            'novel_canonical',
-            'novel_non_canonical',
-            'structural_category',
-            'flag_MEI',
-            'sampleID',
-            'flag_annotated_gene'
-        ]
-        existing_desired = [c for c in desired_cols if c in ujc_count_DF.columns]
-        remaining_cols = [c for c in ujc_count_DF.columns if c not in existing_desired]
-        ujc_count_DF = ujc_count_DF[existing_desired + remaining_cols]
-    
-        # Length DF
-        # Calculating the length stats
-        total_reads = len(class_DF)
-        reads_gt_1kb = (class_DF['length'] > 1000).sum()
-        reads_gt_2kb = (class_DF['length'] > 2000).sum()
-        reads_gt_3kb = (class_DF['length'] > 3000).sum()
-        average_length = class_DF['length'].mean()
-        median_length = class_DF['length'].median()
-        min_length = class_DF['length'].min()
-        max_length = class_DF['length'].max()
-        q25_length = class_DF['length'].quantile(0.25)
-        q75_length = class_DF['length'].quantile(0.75)
-        perc_reads_gt_1kb = (reads_gt_1kb / total_reads) * 100
-        perc_reads_gt_2kb = (reads_gt_2kb / total_reads) * 100
-        perc_reads_gt_3kb = (reads_gt_3kb / total_reads) * 100
-    
-        # Creating a new dataframe with length stats
-        length_summary_DF = pd.DataFrame({
-            'total_reads': [total_reads],
-            'reads_gt_1kb': [reads_gt_1kb],
-            'reads_gt_2kb': [reads_gt_2kb],
-            'reads_gt_3kb': [reads_gt_3kb],
-            'perc_reads_gt_1kb': [perc_reads_gt_1kb],
-            'perc_reads_gt_2kb': [perc_reads_gt_2kb],
-            'perc_reads_gt_3kb': [perc_reads_gt_3kb],
-            'average_length': [average_length],
-            'median_length': [median_length],
-            'min_length': [min_length],
-            'max_length': [max_length],
-            'q25_length': [q25_length],
-            'q75_length': [q75_length],
-            'sampleID': [sampleID]
-        })
-        length_summary_DF[exp_factor] = exp_factor_val
-        
         ##Length arrays for violin plot
         length_Dct[sampleID] = np.array(class_DF['length'])
-    
-        ##Err DFs
-        # Count RTS, intrapriming and reads with noncan jxns
-        # Calculate counts
-        _ip_cutoff = args.cfg()['intrapriming_perc_A_cutoff']
-        num_reads_RTS = (class_DF['RTS_stage'] == True).sum()
-        num_reads_intrapriming = (class_DF['perc_A_downstream_TTS'] > _ip_cutoff).sum()
-        num_reads_non_can = (class_DF['all_canonical'] == 'non_canonical').sum()
-    
-        # Calculate percentages
-        total_reads = len(class_DF)
-        perc_reads_RTS = (num_reads_RTS / total_reads) * 100
-        perc_reads_intrapriming = (num_reads_intrapriming / total_reads) * 100
-        perc_reads_non_can = (num_reads_non_can / total_reads) * 100
-    
-        # Create err DataFrame
-        err_DF = pd.DataFrame({
-            'num_reads_RTS': [num_reads_RTS],
-            'perc_reads_RTS': [perc_reads_RTS],
-            'num_reads_intrapriming': [num_reads_intrapriming],
-            'perc_reads_intrapriming': [perc_reads_intrapriming],
-            'num_reads_non-canonical': [num_reads_non_can],
-            'perc_reads_non-canonical': [perc_reads_non_can]
-            
-        })
-        err_DF['sampleID'] = sampleID
-        err_DF[exp_factor] = exp_factor_val
-    
+
+        err_DF = _summarize_errors(class_DF, args.cfg()['intrapriming_perc_A_cutoff'], sampleID, exp_factor, exp_factor_val)
+
         ##Calculate junction cv for each of the samples
         cv_DF = calc_jxn_cv(jxn_DF, class_DF, ref_DF, dropFlag=True)
         cv_DF['sampleID'] = sampleID
         cv_DF[exp_factor] = exp_factor_val
+
     
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
@@ -1078,6 +1062,23 @@ def proc_samples(args, design_file, ref):
     length_Dct = _reord(length_Dct)
 
     return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct )
+
+def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
+    """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
+    dropped in no-factor runs; the ``*_counts`` extras are written only with
+    ``--all-tables``. ``*_tables`` are (DataFrame, filename-suffix) pairs."""
+    drop_factor = args.inFACTOR is None
+
+    def _write(df, suffix):
+        out = df.drop(columns=[exp_factor]) if drop_factor else df
+        out.to_csv(os.path.join(args.OUT, args.PREFIX + suffix), index=False)
+
+    for df, suffix in core_tables:
+        _write(df, suffix)
+    if args.ALLTABLES:
+        for df, suffix in alltables_tables:
+            _write(df, suffix)
+
 
 def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct ):
     
@@ -1130,50 +1131,22 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
     nov_can_DF.fillna(0, inplace=True)
         
     ##Export tables
-    
-    if args.inFACTOR is None:
-        
-        gene_count_DF_drop = gene_count_DF.drop(columns=[exp_factor])
-        gene_count_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_counts.csv'), index=False)
-        
-        ujc_count_DF_drop = ujc_count_DF.drop(columns=[exp_factor])
-        ujc_count_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_ujc_counts.csv'), index=False)
-        
-        length_DF_drop = length_DF.drop(columns=[exp_factor])
-        length_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_length_summary.csv'), index=False)
-        
-        cv_DF_drop = cv_DF.drop(columns=[exp_factor])
-        cv_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_cv.csv'), index=False)
-        
-        if args.ALLTABLES:
-            err_DF_drop =err_DF.drop(columns=[exp_factor])
-            err_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_err_counts.csv'), index=False)
-            
-            FSM_DF_drop = FSM_DF.drop(columns=[exp_factor])
-            FSM_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_FSM_counts.csv'), index=False)
-            
-            ISM_DF_drop = ISM_DF.drop(columns=[exp_factor])
-            ISM_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_ISM_counts.csv'), index=False)
-            
-            NIC_NNC_DF_drop = NIC_NNC_DF.drop(columns=[exp_factor])
-            NIC_NNC_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_NIC_NNC_counts.csv'), index=False)
-            
-            nov_can_DF_drop = nov_can_DF.drop(columns=[exp_factor])
-            nov_can_DF_drop.to_csv(os.path.join(args.OUT, args.PREFIX + '_jxn_counts.csv'), index=False)
-    else:    
-        gene_count_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_gene_counts.csv'), index=False)
-        ujc_count_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_ujc_counts.csv'), index=False)
-        length_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_length_summary.csv'), index=False)
-        cv_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_cv.csv'), index=False)
-        
-        if args.ALLTABLES:
-            err_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_err_counts.csv'), index=False)
-            FSM_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_FSM_counts.csv'), index=False)
-            ISM_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_ISM_counts.csv'), index=False)
-            NIC_NNC_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_NIC_NNC_counts.csv'), index=False)
-            nov_can_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_jxn_counts.csv'), index=False)
-        
-    
+    _export_reads_tables(
+        args, exp_factor,
+        core_tables=[
+            (gene_count_DF, '_gene_counts.csv'),
+            (ujc_count_DF, '_ujc_counts.csv'),
+            (length_DF, '_length_summary.csv'),
+            (cv_DF, '_cv.csv'),
+        ],
+        alltables_tables=[
+            (err_DF, '_err_counts.csv'),
+            (FSM_DF, '_FSM_counts.csv'),
+            (ISM_DF, '_ISM_counts.csv'),
+            (NIC_NNC_DF, '_NIC_NNC_counts.csv'),
+            (nov_can_DF, '_jxn_counts.csv'),
+        ],
+    )
 
     return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct)
 
@@ -2112,6 +2085,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         title = fig.suptitle('Variance and Heatmap of PC loadings',y=1.02, fontsize=20)
         plt.tight_layout()
         matplotlib.rcParams['pdf.fonttype'] = 42
+        _vectorize_colorbars(fig)
         pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
         plt.close()
         
