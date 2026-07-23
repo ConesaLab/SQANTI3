@@ -164,11 +164,36 @@ def _stacked_bar(df, x_col, value_cols, title, xtitle, ytitle, color_map=None,
     return fig
 
 
+# A violin/box KDE is computed client-side from the raw points Plotly embeds, so
+# a per-read distribution over millions of reads inflates the self-contained HTML
+# to hundreds of MB. A few thousand points per group give a visually identical
+# density/box, so each group is randomly subsampled to this cap before plotting.
+_VIOLIN_MAX_POINTS = 4000
+
+
+def _cap_per_group(df, group_cols, cap=_VIOLIN_MAX_POINTS):
+    """Randomly subsample each group to at most ``cap`` rows (reproducible), so a
+    distribution plot keeps its shape without embedding every raw data point.
+
+    Shuffles once (deterministically) then keeps the first ``cap`` rows of each
+    group — equivalent to a per-group random sample, without a groupby.apply."""
+    if df is None or df.empty:
+        return df
+    cols = [c for c in group_cols if c in df.columns]
+    if not cols:
+        return df.sample(min(cap, len(df)), random_state=0)
+    shuffled = df.sample(frac=1, random_state=0)
+    keep = shuffled.groupby(cols, observed=True, sort=False).cumcount() < cap
+    return shuffled[keep]
+
+
 def _violin(df, x_col, y_col, title, xtitle, ytitle, facet_col=None):
     """One violin (distribution) per x category; colored by factor when set."""
     fig = go.Figure()
     faceted = (facet_col and facet_col in df.columns
                and facet_col != "temp_factor" and df[facet_col].nunique() > 1)
+    # Cap points per violin (per x-group, and per facet level when faceted).
+    df = _cap_per_group(df, [x_col] + ([facet_col] if faceted else []))
     if faceted:
         for i, lv in enumerate(pd.unique(df[facet_col])):
             d = df[df[facet_col] == lv]
@@ -875,6 +900,9 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         mdf["category"] = (mdf["category"].astype(str)
                            .str.replace("percent_", "", regex=False)
                            .str.replace("_", " ", regex=False))
+        # Cap per (sample, category) so the box spread stays intact without
+        # embedding every gene's value (this figure was the second-largest).
+        mdf = _cap_per_group(mdf, ["sampleID", "category"])
         vio = go.Figure()
         for i, s in enumerate(samples):
             d = mdf[mdf["sampleID"] == s]
@@ -956,9 +984,11 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Read length distribution (raw)",
             _violin(length_DF2, "sampleID", "length", "Read length per sample", "Sample",
                     "Read length (bp)", facet_col=facet),
-            "Full per-read length distribution (box + density), with read length on the "
+            "Per-read length distribution (box + density), with read length on the "
             "vertical axis. Compare medians and spread; a long tail reaching toward the "
-            "bottom (low values) indicates an excess of short/degraded reads.",
+            "bottom (low values) indicates an excess of short/degraded reads. For a compact "
+            "interactive file, up to a few thousand reads per sample are drawn at random — the "
+            "density is representative of the full set.",
             "fig-length-violin"))
 
     # 5c. Total reads vs % reads > 1kb (scatter)
