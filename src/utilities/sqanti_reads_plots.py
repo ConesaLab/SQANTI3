@@ -117,6 +117,16 @@ subcat_color_palette = {
     "mono_in_multi": '#aec6cf',
 }
 
+# NNC (novel_not_in_catalog) sub-category palette — reds, matching the NNC
+# structural-category color (#EE6A50). Kept separate from subcat_color_palette
+# because NNC shares sub-category *names* with NIC (e.g. intron_retention) but
+# should read as red, not green. NNC has exactly two sub-categories: a novel
+# splice site, or intron retention (which overrides when present).
+nnc_subcat_color_palette = {
+    "at_least_one_novel_splicesite": '#a50f15',
+    "intron_retention": '#fb6a4a',
+}
+
 cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
 cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
 
@@ -1562,6 +1572,14 @@ def plot_replicate_concordance_page(pdf, concordance):
     ax.set_title("Replicate concordance (multi-axis): agreement with group-mates\n"
                  "(only factor levels with ≥2 replicates shown)", fontsize=12)
     ax.legend(fontsize=8, frameon=False, ncol=len(axes))
+    # In a 2-replicate group each sample's only group-mate is the other, and all
+    # distances are symmetric, so the pair's bars are identical by construction.
+    if (ps.groupby("group")["sampleID"].transform("size") == 2).any():
+        fig.text(0.5, -0.02,
+                 "Note: groups of exactly 2 replicates show identical bars for both samples "
+                 "(the score is the pair's mutual agreement); per-sample differences appear "
+                 "only with ≥3 replicates in a group.",
+                 ha="center", va="top", fontsize=7, style="italic", wrap=True)
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
@@ -3367,13 +3385,13 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                             legend_title='Structural Category')
 
         _render_stacked_bar(pdf, NNC_DF, exp_factor=exp_factor,
-                            num_factors=num_factors, palette=subcat_color_palette,
+                            num_factors=num_factors, palette=nnc_subcat_color_palette,
                             title='Number of Reads in Each Sub-Category - NNC ',
                             xlabel='Sample ID', ylabel='Number of reads',
                             legend_title='Structural Category')
 
         _render_stacked_bar(pdf, NNC_perc_DF, exp_factor=exp_factor,
-                            num_factors=num_factors, palette=subcat_color_palette,
+                            num_factors=num_factors, palette=nnc_subcat_color_palette,
                             title='Percentage of NNC Reads in Each Sub-Category ',
                             xlabel='Sample ID', ylabel='Percentage',
                             legend_title='Structural Category')

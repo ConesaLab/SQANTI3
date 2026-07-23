@@ -24,6 +24,7 @@ from src.module_logging import reads_logger
 from src.utilities.sqanti_reads_plots import (
     category_color_palette,
     subcat_color_palette,
+    nnc_subcat_color_palette,
     cat_order,
     jxn_palette,
     three_series_palette,
@@ -927,11 +928,15 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                                ("NNC", NNC_perc_DF, "fig-sub-nnc")]:
         if sub_df is None or sub_df.empty:
             continue
+        # NNC shares sub-category names with NIC but is colored red (matching its
+        # structural-category color), so it uses a dedicated reds palette.
+        sub_palette = nnc_subcat_color_palette if label == "NNC" else subcat_color_palette
+        sub_order = list(sub_palette.keys())
         sections.append(_section(
             f"{label} reads by sub-category",
             _stacked_bar(sub_df, "sampleID", _value_cols(sub_df, drop),
                          f"Percent of {label} reads per sub-category", "Sample", "Percentage",
-                         color_map=subcat_color_palette, order=subcat_order, facet_col=facet),
+                         color_map=sub_palette, order=sub_order, facet_col=facet),
             f"Sub-category composition of {label} reads (e.g. reference match, alternative "
             f"5'/3' ends, fragments, intron retention). Shifts here pinpoint the kind of "
             f"partial/novel structure driving the category.", div))
@@ -1338,7 +1343,11 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "group-mate. <b>Splice-site precision</b>: 1 − the mean relative difference of its "
             "imprecise-site fraction to each group-mate. A replicate low on one axis diverges "
             "from its peers on that specific property — more sensitive than UJC overlap alone. "
-            "Shown only when the design has a factor with ≥2 replicates in a level.",
+            "Shown only when the design has a factor with ≥2 replicates in a level. "
+            "<i>Note:</i> in a group of exactly two replicates each sample's only group-mate is "
+            "the other, and all three distances are symmetric, so the two bars are identical by "
+            "construction (the score reads as the pair's mutual agreement); values diverge "
+            "per-sample only with ≥3 replicates in a group.",
             "fig-rep-concord"))
 
     _ffcfig = _fuzziness_concordance_figure(fuzz_concordance)

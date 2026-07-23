@@ -51,12 +51,12 @@
   },
   "page_10.png": {
     "height": 817,
-    "sha256": "639b5545ff015e1818441e207fc1dafc6a19cb487dbb7865cd8b6f296a9f75cc",
+    "sha256": "c7626f74074f2823a1b089c5d6f3fa11b6ee3e9d36b7f2c39ad88e10c2f3f4f1",
     "width": 2074
   },
   "page_11.png": {
     "height": 817,
-    "sha256": "e4b667df080f0f461f88eb134b874b13960d441b62c09cedf93444e23820a1e3",
+    "sha256": "71bba6182f926d400d67de171f62c36d04c5cbe2d8398c198b6abcf1c46317d7",
     "width": 2074
   },
   "page_12.png": {
@@ -290,9 +290,9 @@
     "width": 982
   },
   "page_58.png": {
-    "height": 532,
-    "sha256": "ddb4b432b02cbff4de006f12df54852922b2edf8ba602eec447c6fa1372710cb",
-    "width": 782
+    "height": 582,
+    "sha256": "4a55b4720e60df65e9111ce64f8237e405e15b844b745fb1d716a2d2c33b3bcb",
+    "width": 794
   },
   "page_59.png": {
     "height": 532,
