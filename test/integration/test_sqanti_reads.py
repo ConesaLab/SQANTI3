@@ -161,6 +161,22 @@ def test_fast_mode_uppercase_factor(tmp_path):
     _assert_single_merged_report(out_dir, "design_with_factor.csv")
 
 
+def test_fast_mode_single_sample(tmp_path):
+    """A single-sample cohort must not crash the PDF report.
+
+    Regression guard: with one sample PCA collapses to a single component, so
+    ``pca_DF`` has no column 1 and the PDF's ``_scatter_labeled(pca_DF, 0, 1, ...)``
+    raised ``KeyError: 1``. The cohort-relative views (PCA, concordance, overlap,
+    scorecard) skip for n=1; the per-sample views (composition, length, CAGE/polyA
+    support when present) still render. Only the run completing is asserted.
+    """
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design_single.csv", report="both")
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+    assert os.path.getsize(os.path.join(out_dir, "sqantiReads_report.pdf")) > 0
+    assert os.path.getsize(os.path.join(out_dir, "sqantiReads_report.html")) > 0
+
+
 # Section headings expected in the interactive HTML report.
 HTML_SECTIONS = [
     "Summary &amp; QC flags",

@@ -3914,51 +3914,57 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
             reads_logger.warning(f"Could not render quality metric pages: {exc}")
         
         
-        plt.figure(figsize=(14, 10))
-        _scatter_labeled(pca_DF, 0, 1, 'sampleID', 'PCA Plot Based on QC metrics',
-                         'Principal Component 1', 'Principal Component 2', factor_col=exp_factor)
-        title = plt.gca().title
-        plt.subplots_adjust(top=0.85, right=0.8)
-        pdf.savefig(bbox_inches='tight')
-        plt.close()
-        
-        # Calculate the cumulative variance and determine the number of components to use
-        cumulative_variance = np.cumsum(variance_ratio)
-        n_components = np.argmax(cumulative_variance >= args.cfg()['pca_cumulative_variance']) + 1
-        
-         # Create the plots
-        fig, ax = plt.subplots(2, 2, figsize=(20, 20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
-        loadings_DF = loadings_DF.iloc[:, :n_components]
-        link = linkage(loadings_DF, method='average')
-        sorted_idx = leaves_list(link)
-        loadings_DF = loadings_DF.iloc[sorted_idx]
-        
-        # Bar plot for explained variance (Scree Plot)
-        x_tick_pos = [i + 0.5 for i in range(n_components)]
-        ax[0, 0].bar(x_tick_pos, variance_ratio[:n_components], align='center', label='Individual explained variance')
-        ax[0, 0].step(x_tick_pos, cumulative_variance[:n_components], where='mid', label='Cumulative explained variance')
-        ax[0, 0].set_xticks(x_tick_pos)
-        ax[0, 0].set_xticklabels([])  # Clear x tick labels here
-        ax[0, 0].set_ylabel('Variance Explained')
-        
-        # Set x tick labels for the heatmap
-        x_ticks = [f'PC{i+1}' for i in range(n_components)]
-        sns.heatmap(loadings_DF, cmap="coolwarm", ax=ax[1, 0], cbar_ax=ax[1, 1], xticklabels=x_ticks)
-        ax[1, 0].set_yticks(np.arange(loadings_DF.shape[0]) + 0.5)
-        ax[1, 0].set_yticklabels(loadings_DF.index, rotation=0)
-        ax[1, 0].set_xlabel('Principal Components')
-        
-        # Use the ax[0,1] for legend
-        ax[0, 1].axis('off')  # Turn off the axis lines and labels
-        handles, labels = ax[0, 0].get_legend_handles_labels()
-        ax[0, 1].legend(handles, labels, loc='center')  # Place legend at the center of ax[0, 1]
-        
-        title = fig.suptitle('Variance and Heatmap of PC loadings',y=1.02, fontsize=20)
-        plt.tight_layout()
-        matplotlib.rcParams['pdf.fonttype'] = 42
-        _vectorize_colorbars(fig)
-        pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
-        plt.close()
+        # PCA views need at least two samples (=> >=2 principal components).
+        # With a single sample PCA collapses to one component, so pca_DF has no
+        # column 1 and loadings/variance are degenerate; skip the scatter and the
+        # variance/loadings heatmap entirely (mirrors the HTML report's guard and
+        # the other cohort-relative views that no-op below n=2).
+        if pca_DF is not None and pca_DF.shape[0] >= 2 and 0 in pca_DF.columns and 1 in pca_DF.columns:
+            plt.figure(figsize=(14, 10))
+            _scatter_labeled(pca_DF, 0, 1, 'sampleID', 'PCA Plot Based on QC metrics',
+                             'Principal Component 1', 'Principal Component 2', factor_col=exp_factor)
+            title = plt.gca().title
+            plt.subplots_adjust(top=0.85, right=0.8)
+            pdf.savefig(bbox_inches='tight')
+            plt.close()
+
+            # Calculate the cumulative variance and determine the number of components to use
+            cumulative_variance = np.cumsum(variance_ratio)
+            n_components = np.argmax(cumulative_variance >= args.cfg()['pca_cumulative_variance']) + 1
+
+             # Create the plots
+            fig, ax = plt.subplots(2, 2, figsize=(20, 20), sharex='col', gridspec_kw={'width_ratios': [10, 3], 'height_ratios': [3, 10]})
+            loadings_DF = loadings_DF.iloc[:, :n_components]
+            link = linkage(loadings_DF, method='average')
+            sorted_idx = leaves_list(link)
+            loadings_DF = loadings_DF.iloc[sorted_idx]
+
+            # Bar plot for explained variance (Scree Plot)
+            x_tick_pos = [i + 0.5 for i in range(n_components)]
+            ax[0, 0].bar(x_tick_pos, variance_ratio[:n_components], align='center', label='Individual explained variance')
+            ax[0, 0].step(x_tick_pos, cumulative_variance[:n_components], where='mid', label='Cumulative explained variance')
+            ax[0, 0].set_xticks(x_tick_pos)
+            ax[0, 0].set_xticklabels([])  # Clear x tick labels here
+            ax[0, 0].set_ylabel('Variance Explained')
+
+            # Set x tick labels for the heatmap
+            x_ticks = [f'PC{i+1}' for i in range(n_components)]
+            sns.heatmap(loadings_DF, cmap="coolwarm", ax=ax[1, 0], cbar_ax=ax[1, 1], xticklabels=x_ticks)
+            ax[1, 0].set_yticks(np.arange(loadings_DF.shape[0]) + 0.5)
+            ax[1, 0].set_yticklabels(loadings_DF.index, rotation=0)
+            ax[1, 0].set_xlabel('Principal Components')
+
+            # Use the ax[0,1] for legend
+            ax[0, 1].axis('off')  # Turn off the axis lines and labels
+            handles, labels = ax[0, 0].get_legend_handles_labels()
+            ax[0, 1].legend(handles, labels, loc='center')  # Place legend at the center of ax[0, 1]
+
+            title = fig.suptitle('Variance and Heatmap of PC loadings',y=1.02, fontsize=20)
+            plt.tight_layout()
+            matplotlib.rcParams['pdf.fonttype'] = 42
+            _vectorize_colorbars(fig)
+            pdf.savefig(bbox_extra_artists=(title,), bbox_inches='tight')
+            plt.close()
         
         
         
