@@ -2319,7 +2319,8 @@ def proc_samples(args, design_file, ref):
     jxn_count_by_sample = {}   # per-sample junction-record count (A4 depth-normalised yield)
     fsm_dfs = {}
     ism_dfs = {}
-    nic_nnc_dfs = {}
+    nic_dfs = {}
+    nnc_dfs = {}
     nov_can_dfs = {}
     length_Dct ={}
     
@@ -2390,7 +2391,8 @@ def proc_samples(args, design_file, ref):
         gene_count_DF = _summarize_gene_counts(class_DF, sampleID, exp_factor, exp_factor_val)
         ISM_DF = _summarize_subcategory(class_DF, categories, ['incomplete-splice_match'], sampleID, exp_factor, exp_factor_val)
         FSM_DF = _summarize_subcategory(class_DF, categories, ['full-splice_match'], sampleID, exp_factor, exp_factor_val)
-        NIC_NNC_DF = _summarize_subcategory(class_DF, categories, ['novel_in_catalog', 'novel_not_in_catalog'], sampleID, exp_factor, exp_factor_val)
+        NIC_DF = _summarize_subcategory(class_DF, categories, ['novel_in_catalog'], sampleID, exp_factor, exp_factor_val)
+        NNC_DF = _summarize_subcategory(class_DF, categories, ['novel_not_in_catalog'], sampleID, exp_factor, exp_factor_val)
         ujc_count_DF = _summarize_ujc(class_DF, sampleID, exp_factor, exp_factor_val)
         length_summary_DF = _summarize_length(class_DF, sampleID, exp_factor, exp_factor_val)
 
@@ -2437,7 +2439,8 @@ def proc_samples(args, design_file, ref):
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
         ism_dfs[sampleID] = ISM_DF
-        nic_nnc_dfs[sampleID] = NIC_NNC_DF
+        nic_dfs[sampleID] = NIC_DF
+        nnc_dfs[sampleID] = NNC_DF
         nov_can_dfs[sampleID] = nov_can_DF
     
         reads_logger.info(sampleID + " done processing")
@@ -2454,7 +2457,8 @@ def proc_samples(args, design_file, ref):
     _reord = lambda d: {s: d[s] for s in _order if s in d}
     gene_count_dfs, ujc_count_dfs, length_dfs = _reord(gene_count_dfs), _reord(ujc_count_dfs), _reord(length_dfs)
     cv_dfs, err_dfs, fsm_dfs = _reord(cv_dfs), _reord(err_dfs), _reord(fsm_dfs)
-    ism_dfs, nic_nnc_dfs, nov_can_dfs = _reord(ism_dfs), _reord(nic_nnc_dfs), _reord(nov_can_dfs)
+    ism_dfs, nov_can_dfs = _reord(ism_dfs), _reord(nov_can_dfs)
+    nic_dfs, nnc_dfs = _reord(nic_dfs), _reord(nnc_dfs)
     length_Dct = _reord(length_Dct)
     jxn_offset_dfs = _reord(jxn_offset_dfs)
     completeness_dfs = _reord(completeness_dfs)
@@ -2462,7 +2466,7 @@ def proc_samples(args, design_file, ref):
     fuzz_depth_dfs = _reord(fuzz_depth_dfs)
     jxn_count_by_sample = _reord(jxn_count_by_sample)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -2481,7 +2485,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -2552,9 +2556,12 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
     ISM_DF = pd.concat(ism_dfs.values(), sort=False)
     ISM_DF.fillna(0, inplace=True)
     
-    NIC_NNC_DF = pd.concat(nic_nnc_dfs.values(), sort=False)
-    NIC_NNC_DF.fillna(0, inplace=True)
-    
+    NIC_DF = pd.concat(nic_dfs.values(), sort=False)
+    NIC_DF.fillna(0, inplace=True)
+
+    NNC_DF = pd.concat(nnc_dfs.values(), sort=False)
+    NNC_DF.fillna(0, inplace=True)
+
     #Cat nov_can_dfs
     nov_can_DF = pd.concat(nov_can_dfs.values(), sort=False)
     nov_can_DF.fillna(0, inplace=True)
@@ -2576,12 +2583,13 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (err_DF, '_err_counts.csv'),
             (FSM_DF, '_FSM_counts.csv'),
             (ISM_DF, '_ISM_counts.csv'),
-            (NIC_NNC_DF, '_NIC_NNC_counts.csv'),
+            (NIC_DF, '_NIC_counts.csv'),
+            (NNC_DF, '_NNC_counts.csv'),
             (nov_can_DF, '_jxn_counts.csv'),
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF)
 
 
 
@@ -2870,7 +2878,7 @@ def _cv_category_summary(cv_df, exp_factor, sample_factor_DF):
     return summary
 
 
-def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct):
+def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct):
     
     abbr_mapping = {
     "full-splice_match": "FSM",
@@ -3156,22 +3164,24 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     ISM_perc_DF['sampleID'] = ISM_DF['sampleID']
     ISM_perc_DF[exp_factor] = ISM_DF[exp_factor]
 
-    ##NIC_NNC
-    NIC_NNC_DF = NIC_NNC_DF.copy()
-    
-    NIC_NNC_perc_DF = NIC_NNC_DF.copy()
+    ##NIC and NNC subcategory percentages (each normalised to 100% within its
+    ## structural category, so NIC and NNC read as separate composition plots).
+    def _subcat_percent(df):
+        out = df.copy()
+        cats = [col for col in out.columns if col not in ['sampleID', exp_factor]]
+        out['total'] = out[cats].sum(axis=1)
+        for category in cats:
+            out[category] = (out[category] / out['total']) * 100
+        out.drop('total', axis=1, inplace=True)
+        out['sampleID'] = df['sampleID']
+        out[exp_factor] = df[exp_factor]
+        return out
 
-    # Calculate the sum for the subcategories (excluding 'sampleID' and exp_factor)
-    categories = [col for col in NIC_NNC_perc_DF.columns if col not in ['sampleID', exp_factor]]
-    NIC_NNC_perc_DF['total'] = NIC_NNC_perc_DF[categories].sum(axis=1)
-    
-    # Calculate the percentage for each subcategory
-    for category in categories:
-        NIC_NNC_perc_DF[category] = (NIC_NNC_perc_DF[category] / NIC_NNC_perc_DF['total']) * 100
-    NIC_NNC_perc_DF.drop('total', axis=1, inplace=True)
-    NIC_NNC_perc_DF['sampleID'] = NIC_NNC_DF['sampleID']
-    NIC_NNC_perc_DF[exp_factor] = NIC_NNC_DF[exp_factor]
-    
+    NIC_DF = NIC_DF.copy()
+    NNC_DF = NNC_DF.copy()
+    NIC_perc_DF = _subcat_percent(NIC_DF)
+    NNC_perc_DF = _subcat_percent(NNC_DF)
+
     #Make nov_can_perc_DF
     
     nov_can_perc_DF = nov_can_DF.copy()
@@ -3230,7 +3240,7 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     return (all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF, 
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF, 
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio, 
-             cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF, nov_can_DF, nov_can_perc_DF, 
+             cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_perc_DF, NNC_perc_DF, nov_can_DF, nov_can_perc_DF,
              length_DF2, cv_acc_percs, cv_don_percs)
     
     
@@ -3238,7 +3248,7 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
 def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
              length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
-             cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
+             cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_perc_DF, NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
              tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
@@ -3344,16 +3354,27 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                             legend_title='Structural Category')
         
         
-        _render_stacked_bar(pdf, NIC_NNC_DF, exp_factor=exp_factor,
+        _render_stacked_bar(pdf, NIC_DF, exp_factor=exp_factor,
                             num_factors=num_factors, palette=subcat_color_palette,
-                            title='Number of Reads in Each Sub-Category - NIC and NNC ',
+                            title='Number of Reads in Each Sub-Category - NIC ',
                             xlabel='Sample ID', ylabel='Number of reads',
                             legend_title='Structural Category')
-        
-         
-        _render_stacked_bar(pdf, NIC_NNC_perc_DF, exp_factor=exp_factor,
+
+        _render_stacked_bar(pdf, NIC_perc_DF, exp_factor=exp_factor,
                             num_factors=num_factors, palette=subcat_color_palette,
-                            title='Percentage of NIC/NNC Reads in Each Sub-Category ',
+                            title='Percentage of NIC Reads in Each Sub-Category ',
+                            xlabel='Sample ID', ylabel='Percentage',
+                            legend_title='Structural Category')
+
+        _render_stacked_bar(pdf, NNC_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Number of Reads in Each Sub-Category - NNC ',
+                            xlabel='Sample ID', ylabel='Number of reads',
+                            legend_title='Structural Category')
+
+        _render_stacked_bar(pdf, NNC_perc_DF, exp_factor=exp_factor,
+                            num_factors=num_factors, palette=subcat_color_palette,
+                            title='Percentage of NNC Reads in Each Sub-Category ',
                             xlabel='Sample ID', ylabel='Percentage',
                             legend_title='Structural Category')
         
@@ -3715,11 +3736,11 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs)
-    dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs)
+    dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
     # renderers. Computed before identify_cand_underannot mutates ujc_count_DF.

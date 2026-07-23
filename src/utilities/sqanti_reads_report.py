@@ -756,8 +756,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
      annot_gene_percs_pivot_DF, gene_agg_DF, gene_percs_unstacked,
      melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
      length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
-     cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF,
-     ISM_perc_DF, NIC_NNC_perc_DF, nov_can_DF, nov_can_perc_DF, length_DF2,
+     cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF,
+     ISM_perc_DF, NIC_perc_DF, NNC_perc_DF, nov_can_DF, nov_can_perc_DF, length_DF2,
      cv_acc_percs, cv_don_percs) = dfs_for_plotting
 
     exp_factor = _factor_col(args)
@@ -923,7 +923,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     # 6. Subcategory breakdowns (% of reads), one per major category
     for label, sub_df, div in [("FSM", FSM_perc_DF, "fig-sub-fsm"),
                                ("ISM", ISM_perc_DF, "fig-sub-ism"),
-                               ("NIC/NNC", NIC_NNC_perc_DF, "fig-sub-nicnnc")]:
+                               ("NIC", NIC_perc_DF, "fig-sub-nic"),
+                               ("NNC", NNC_perc_DF, "fig-sub-nnc")]:
         if sub_df is None or sub_df.empty:
             continue
         sections.append(_section(
