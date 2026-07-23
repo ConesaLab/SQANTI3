@@ -49,8 +49,15 @@ def fill_design_table(args):
     # We always overwrite these columns to ensure they match the current run arguments
     # regardless of what might be in the input CSV (which could have stale paths).
     
-    # Classification file is the OUTPUT file we will create
-    df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    # Classification file: normally the (jxnHash-augmented) file that the UJC
+    # hashing step writes into OUTPUT. With --skip_hash that step is not run, so
+    # the file is never created in OUTPUT; read the already-hashed classification
+    # straight from the existing SQANTI3 dirs instead (otherwise the run fails
+    # looking for a file that was never created).
+    if getattr(args, "SKIPHASH", False) and args.sqanti_dirs:
+        df['classification_file'] = args.sqanti_dirs + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    else:
+        df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
     
     # Junction file is the INPUT file we need to read
     # If using sqanti_dirs (fast mode), it's there. If running from scratch, it will be in OUTPUT.

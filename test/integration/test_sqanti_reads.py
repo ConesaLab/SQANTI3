@@ -143,6 +143,24 @@ def test_fast_mode_with_factor(tmp_path):
         )
 
 
+def test_fast_mode_uppercase_factor(tmp_path):
+    """A --factor whose name starts with an uppercase letter must not crash.
+
+    Regression guard: prep_data_4_plots renamed every PCA length column whose
+    name started with an uppercase letter, which also caught the factor column
+    (e.g. ``RIN_group`` -> ``perc_reads_RIN_group``) and then raised
+    ``KeyError: ['RIN_group'] not found in axis`` at the following ``drop()``.
+    The fixture's own factor (``group``) is lowercase, so this is exercised with
+    a dedicated uppercase-named factor.
+    """
+    out_dir = str(tmp_path / "out")
+    result = _run_reads(out_dir, "design_with_upper_factor.csv", factor="RIN_group")
+    assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+    _assert_outputs_present(out_dir)
+    # Same page count as the lowercase-factor faceted run (only the factor name differs).
+    _assert_single_merged_report(out_dir, "design_with_factor.csv")
+
+
 # Section headings expected in the interactive HTML report.
 HTML_SECTIONS = [
     "Summary &amp; QC flags",

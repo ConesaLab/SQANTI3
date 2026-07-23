@@ -3565,7 +3565,11 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     pca_ujc_percs_DF = ujc_percs_DF.rename(columns=lambda x: f'perc_ujc_{x}' if x not in ['sampleID', exp_factor] else x)
     pca_ujc_total_DF = ujc_total_DF.rename(columns={'total_counts': 'total_ujcs'})
     pca_length_DF = length_DF.drop(columns=length_DF.filter(regex='^reads').columns)
-    pca_length_DF = pca_length_DF.rename(columns=lambda x: f'perc_reads_{x}' if x[0].isupper() else x)
+    # Only rename the length-category columns (upper-cased bin labels); never the
+    # id/factor columns — a factor whose name starts with an uppercase letter
+    # (e.g. "RIN_group") would otherwise be renamed and break the drop() below.
+    pca_length_DF = pca_length_DF.rename(columns=lambda x: f'perc_reads_{x}'
+                                         if (x not in ['sampleID', exp_factor] and x[0].isupper()) else x)
     
     ##Merge all quality metrics for PCA
     quality_DF = pca_err_DF.drop(columns=[exp_factor]).merge(pca_nov_can_perc_DF.drop(columns=[exp_factor]), on='sampleID', how='outer')
