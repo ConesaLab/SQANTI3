@@ -1,8 +1,8 @@
 """Shared fixtures/helpers for the SQANTI-reads integration tests.
 
-Both ``test_sqanti_reads.py`` (CSV/page-count/title regression) and
-``test_reads_pdf_pages.py`` (page-image regression) drive the tool end-to-end on
-the vendored chr22 fixture in ``test/test_data/sqanti_reads`` via :func:`run_reads`.
+``test_sqanti_reads.py`` (CSV / page-count / title / HTML-section regression)
+drives the tool end-to-end on the vendored chr22 fixture in
+``test/test_data/sqanti_reads`` via :func:`run_reads`.
 """
 import os
 import shutil
