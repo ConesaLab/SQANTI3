@@ -106,6 +106,17 @@ DEFAULT_CONFIG = {
             # composition to the rest of the cohort; scored cohort-relatively, no
             # absolute threshold (a whole-cohort composition is not inherently wrong).
             "composition_drift": "high",
+            # B11/B12/B13 orthogonal-support scalars — the share of a sample's
+            # transcript 5' ends inside a CAGE peak (perc_within_cage), 3' ends at a
+            # polyA site (perc_within_polya), and junctions with short-read coverage
+            # (perc_jxn_SR_supported). Cohort-relative only (NO absolute qc_flag): a
+            # low value means this sample's ends/junctions are less independently
+            # supported than its peers', worth a look but not a fixed pass/fail. Each
+            # drops out automatically when the supporting assay wasn't supplied to
+            # SQANTI3 (columns all-NaN), so the fixture — which has none — is unaffected.
+            "perc_within_cage": "low",
+            "perc_within_polya": "low",
+            "perc_jxn_SR_supported": "low",
         },
     },
 }

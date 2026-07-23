@@ -1276,7 +1276,8 @@ def _novel_noncanonical_pct(nov_can_DF):
 def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
                                all_gene_percs_pivot_DF=None, nov_can_DF=None,
                                completeness_metrics=None, jxn_offset_metrics=None,
-                               ISM_DF=None, yield_metrics=None, drift_metrics=None):
+                               ISM_DF=None, yield_metrics=None, drift_metrics=None,
+                               support_DF=None):
     """Gather the raw per-sample metric values the scorecard scores.
 
     Pulls each metric from the table that already computed it (no recomputation),
@@ -1326,6 +1327,11 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
     yld = _idx(yield_metrics.get("per_sample") if yield_metrics else None, "jxn_per_1k_reads")
     drift = _idx(drift_metrics.get("per_sample") if drift_metrics else None, "mean_jsd")
 
+    # B11/B12/B13 orthogonal-support scalars (absent unless the assay was supplied).
+    cage = _idx(support_DF, "perc_within_cage")
+    polya = _idx(support_DF, "perc_within_polya")
+    sr = _idx(support_DF, "perc_jxn_SR_supported")
+
     out = []
     for s in samples:
         out.append({
@@ -1342,6 +1348,9 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
             "perc_novel_noncanonical_jxn": novnc.get(s),
             "jxn_per_1k_reads": yld.get(s),
             "composition_drift": drift.get(s),
+            "perc_within_cage": cage.get(s),
+            "perc_within_polya": polya.get(s),
+            "perc_jxn_SR_supported": sr.get(s),
         })
     return out
 
@@ -1455,6 +1464,35 @@ def plot_ujc_overlap_page(pdf, overlap):
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
+
+
+def plot_support_pages(pdf, cage_metrics, polya_metrics, sr_metrics, scorecard=None):
+    """B11/B12/B13 orthogonal-support pages — one per-sample cohort bar per view.
+
+    CAGE 5' support (B11), polyA 3' support (B12), and short-read support (B13:
+    TSS ratio + junction coverage). Each view no-ops when its evidence column was
+    not supplied to SQANTI3 (empty metrics). Cohort-relative only: a low value
+    means this sample's ends/junctions are less independently supported than its
+    peers', not a fixed pass/fail — so no warn/fail threshold lines are drawn."""
+    if cage_metrics and cage_metrics.get("samples"):
+        _plot_metric_cohort_page(
+            pdf, cage_metrics["per_sample"], "perc_within_cage", scorecard=scorecard,
+            title="CAGE 5'-end support: reads with a TSS inside a CAGE peak",
+            ylabel="% of reads within a CAGE peak", color=aes_palette["blue"])
+    if polya_metrics and polya_metrics.get("samples"):
+        _plot_metric_cohort_page(
+            pdf, polya_metrics["per_sample"], "perc_within_polya", scorecard=scorecard,
+            title="PolyA 3'-end support: reads with a TTS at a polyA site",
+            ylabel="% of reads at a polyA site", color=aes_palette["magenta"])
+    if sr_metrics and sr_metrics.get("samples"):
+        _plot_metric_cohort_page(
+            pdf, sr_metrics["per_sample"], "median_ratio_TSS",
+            title="Short-read 5' support: median TSS ratio",
+            ylabel="median short-read TSS ratio", color=aes_palette["green"])
+        _plot_metric_cohort_page(
+            pdf, sr_metrics["per_sample"], "perc_jxn_SR_supported", scorecard=scorecard,
+            title="Short-read junction support: junctions with short-read coverage",
+            ylabel="% of junctions with short-read coverage", color=aes_palette["green"])
 
 
 def _plot_metric_cohort_page(pdf, metric_DF, metric, *, title, ylabel,
@@ -1919,8 +1957,30 @@ def plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=None):
 # via run_reads_plots(). (A previous standalone getOptions()/__main__ entry point
 # duplicated --report and the thresholds and has been removed.)
 
-def load_sqanti_file(file,col_Lst, dtype_Dct):
+def load_sqanti_file(file,col_Lst, dtype_Dct, tolerant=False):
+    """Load a tab-separated SQANTI3 table, requesting only ``col_Lst``.
+
+    With ``tolerant=True`` the header is read first and only the requested columns
+    that actually exist are loaded — so optional columns (e.g. the CAGE/polyA/
+    short-read support columns, absent in older or evidence-free SQANTI3 runs) do
+    not raise. Downstream code guards on ``_column_is_populated`` before using any
+    optional column, so a missing column simply makes its view no-op."""
+    if tolerant:
+        header = pd.read_csv(file, sep="\t", nrows=0).columns
+        present = [c for c in col_Lst if c in header]
+        dtype_Dct = {k: v for k, v in dtype_Dct.items() if k in present}
+        return pd.read_csv(file, sep="\t", usecols=present, dtype=dtype_Dct, low_memory=True)
     return pd.read_csv(file, sep="\t", usecols=col_Lst, dtype=dtype_Dct, low_memory=True)
+
+
+def _column_is_populated(df, col):
+    """True when ``col`` exists in ``df`` and has at least one non-null value.
+
+    The empty-safe gate for every optional support column: an absent or all-NaN
+    column (no CAGE/polyA/short-read evidence supplied to SQANTI3) reads as
+    unpopulated, so the dependent metric/page/section degrades to a no-op."""
+    return (df is not None and col in getattr(df, "columns", [])
+            and bool(df[col].notna().any()))
 
 
 def merge_dfs(df1, df2, column1, column2, how='outer'):
@@ -2404,6 +2464,93 @@ def _summarize_fuzz_by_depth(jxn_DF, sampleID, exp_factor, exp_factor_val,
     return out[cols]
 
 
+def _summarize_support(class_DF, jxn_DF, sampleID, exp_factor, exp_factor_val):
+    """B11/B12/B13 — one row of orthogonal-support scalars for a sample.
+
+    From the classification table's optional evidence columns (present only when
+    CAGE / polyA / short-read data were supplied to SQANTI3):
+      perc_within_cage   B11 % of reads whose 5' end falls inside a CAGE peak
+      median_dist_cage   B11 median |distance| (bp) from the 5' end to the nearest CAGE peak
+      perc_within_polya  B12 % of reads whose 3' end sits at an annotated polyA site
+      perc_polya_motif   B12 % of reads with a polyA motif found near the 3' end
+      median_dist_polya  B12 median |distance| (bp) to the nearest polyA site
+      median_ratio_TSS   B13 median short-read TSS ratio (5'-end coverage support)
+    and from the junction table:
+      perc_jxn_SR_supported  B13 % of junctions with short-read coverage (>0 unique reads)
+    Every scalar is NaN when its source column is absent or all-NaN, so a sample
+    with no evidence contributes an all-NaN row and the downstream views no-op."""
+    def _truthy_frac(df, col):
+        if not _column_is_populated(df, col):
+            return np.nan
+        s = df[col].dropna().astype(str).str.upper()
+        return float((s == "TRUE").mean() * 100) if len(s) else np.nan
+
+    def _median_abs(df, col):
+        if not _column_is_populated(df, col):
+            return np.nan
+        v = pd.to_numeric(df[col], errors="coerce").dropna().abs()
+        return float(v.median()) if len(v) else np.nan
+
+    def _median(df, col):
+        if not _column_is_populated(df, col):
+            return np.nan
+        v = pd.to_numeric(df[col], errors="coerce").dropna()
+        return float(v.median()) if len(v) else np.nan
+
+    perc_jxn_sr = np.nan
+    if _column_is_populated(jxn_DF, "total_coverage_unique"):
+        cov = pd.to_numeric(jxn_DF["total_coverage_unique"], errors="coerce").dropna()
+        perc_jxn_sr = float((cov > 0).mean() * 100) if len(cov) else np.nan
+
+    return pd.DataFrame([{
+        "sampleID": sampleID, exp_factor: exp_factor_val,
+        "perc_within_cage": _truthy_frac(class_DF, "within_CAGE_peak"),
+        "median_dist_cage": _median_abs(class_DF, "dist_to_CAGE_peak"),
+        "perc_within_polya": _truthy_frac(class_DF, "within_polyA_site"),
+        "perc_polya_motif": _truthy_frac(class_DF, "polyA_motif_found"),
+        "median_dist_polya": _median_abs(class_DF, "dist_to_polyA_site"),
+        "median_ratio_TSS": _median(class_DF, "ratio_TSS"),
+        "perc_jxn_SR_supported": perc_jxn_sr,
+    }])
+
+
+_SUPPORT_COLS = ["perc_within_cage", "median_dist_cage", "perc_within_polya",
+                 "perc_polya_motif", "median_dist_polya", "median_ratio_TSS",
+                 "perc_jxn_SR_supported"]
+
+
+def _support_metrics(support_DF, cols):
+    """Shared empty-safe reducer for the B views: returns ``{samples, per_sample}``
+    where ``per_sample`` is ``support_DF`` restricted to sampleID + ``cols`` with at
+    least one populated column, or ``{'samples': []}`` when none are populated."""
+    if support_DF is None or support_DF.empty:
+        return {"samples": [], "per_sample": pd.DataFrame(columns=["sampleID"] + cols)}
+    have = [c for c in cols if _column_is_populated(support_DF, c)]
+    if not have:
+        return {"samples": [], "per_sample": pd.DataFrame(columns=["sampleID"] + cols)}
+    keep = ["sampleID"] + [c for c in cols if c in support_DF.columns]
+    ps = support_DF[keep].copy()
+    ps = ps[ps[have].notna().any(axis=1)]
+    return {"samples": ps["sampleID"].astype(str).tolist(), "per_sample": ps.reset_index(drop=True)}
+
+
+def compute_cage_metrics(support_DF):
+    """B11 — CAGE 5'-end support per sample (no-op when no CAGE evidence)."""
+    return _support_metrics(support_DF, ["perc_within_cage", "median_dist_cage"])
+
+
+def compute_polya_metrics(support_DF):
+    """B12 — polyA 3'-end support per sample (no-op when no polyA evidence)."""
+    return _support_metrics(support_DF, ["perc_within_polya", "perc_polya_motif",
+                                         "median_dist_polya"])
+
+
+def compute_sr_metrics(support_DF):
+    """B13 — short-read support per sample: TSS ratio + junction coverage fraction
+    (no-op when no short-read evidence)."""
+    return _support_metrics(support_DF, ["median_ratio_TSS", "perc_jxn_SR_supported"])
+
+
 def _summarize_completeness(class_DF, sampleID, exp_factor, exp_factor_val, window=50):
     """Per-sample 5'/3' completeness digest from read-to-gene end distances.
 
@@ -2461,6 +2608,7 @@ def proc_samples(args, design_file, ref):
     site_offset_dfs = {}       # per reference-site median offset (F7 fuzziness concordance)
     fuzz_depth_dfs = {}        # imprecision vs junction depth bin (F4)
     jxn_count_by_sample = {}   # per-sample junction-record count (A4 depth-normalised yield)
+    support_dfs = {}           # per-sample orthogonal-support scalars (B11/B12/B13)
     fsm_dfs = {}
     ism_dfs = {}
     nic_dfs = {}
@@ -2489,12 +2637,21 @@ def proc_samples(args, design_file, ref):
     
     class_cols = ['isoform','chrom','strand','exons','associated_gene','associated_transcript','structural_category','subcategory',
                     'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical',
-                    'diff_to_gene_TSS','diff_to_gene_TTS', "jxn_string", "jxnHash"]
+                    'diff_to_gene_TSS','diff_to_gene_TTS', "jxn_string", "jxnHash",
+                    # B11/B12/B13 orthogonal-support columns (present only when the
+                    # matching assay was supplied to SQANTI3; tolerant load skips any
+                    # that are absent, and the views no-op when they are all-NaN).
+                    'within_CAGE_peak', 'dist_to_CAGE_peak',
+                    'within_polyA_site', 'dist_to_polyA_site', 'polyA_motif_found',
+                    'ratio_TSS']
 
-    class_dtypes = {'isoform': 'string', 'chrom': 'string', 'strand': 'string', 'exons': 'Int64', 'associated_gene': 'string','associated_transcript': 'string', 
-                    'structural_category': 'string', 'subcategory': 'string','length': 'Int64', 'RTS_stage': 'boolean', 'perc_A_downstream_TTS': float, 
+    class_dtypes = {'isoform': 'string', 'chrom': 'string', 'strand': 'string', 'exons': 'Int64', 'associated_gene': 'string','associated_transcript': 'string',
+                    'structural_category': 'string', 'subcategory': 'string','length': 'Int64', 'RTS_stage': 'boolean', 'perc_A_downstream_TTS': float,
                     'ref_length': 'Int64','ref_exons': 'Int64', 'all_canonical': 'string',
-                    'diff_to_gene_TSS': 'Int64', 'diff_to_gene_TTS': 'Int64', 'jxn_string':'string', "jxnHash":'string'}
+                    'diff_to_gene_TSS': 'Int64', 'diff_to_gene_TTS': 'Int64', 'jxn_string':'string', "jxnHash":'string',
+                    'within_CAGE_peak': 'string', 'dist_to_CAGE_peak': 'Float64',
+                    'within_polyA_site': 'string', 'dist_to_polyA_site': 'Float64',
+                    'polyA_motif_found': 'string', 'ratio_TSS': 'Float64'}
     
     # Per-sample processing is independent (each writes only its own dict keys),
     # so it runs in parallel when --jobs>1 (thread pool; file loading dominates).
@@ -2514,7 +2671,9 @@ def proc_samples(args, design_file, ref):
         #jxn_DF = load_sqanti_file(jxn_file, jxn_cols)
         
         reads_logger.info("Loading classification file: "+ sampleID)
-        class_DF = load_sqanti_file(class_file, class_cols, class_dtypes)
+        # Tolerant: the optional CAGE/polyA/short-read support columns are absent in
+        # evidence-free or older SQANTI3 output, and must not break the load.
+        class_DF = load_sqanti_file(class_file, class_cols, class_dtypes, tolerant=True)
         #class_DF = load_sqanti_file(class_file, class_cols)
     
         ##Merge in ref DF
@@ -2570,6 +2729,9 @@ def proc_samples(args, design_file, ref):
             jxn_DF, sampleID, exp_factor, exp_factor_val,
             window=args.cfg().get('jxn_offset_window', 15))
 
+        ##Orthogonal-support scalars (B11/B12/B13); all-NaN when no evidence supplied
+        support_DF = _summarize_support(class_DF, jxn_DF, sampleID, exp_factor, exp_factor_val)
+
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
         ujc_count_dfs[sampleID] = ujc_count_DF
@@ -2580,6 +2742,7 @@ def proc_samples(args, design_file, ref):
         site_offset_dfs[sampleID] = site_offset_DF
         fuzz_depth_dfs[sampleID] = fuzz_depth_DF
         jxn_count_by_sample[sampleID] = int(len(jxn_DF))
+        support_dfs[sampleID] = support_DF
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
         ism_dfs[sampleID] = ISM_DF
@@ -2609,8 +2772,9 @@ def proc_samples(args, design_file, ref):
     site_offset_dfs = _reord(site_offset_dfs)
     fuzz_depth_dfs = _reord(fuzz_depth_dfs)
     jxn_count_by_sample = _reord(jxn_count_by_sample)
+    support_dfs = _reord(support_dfs)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample, support_dfs )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -2629,7 +2793,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, support_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -2692,6 +2856,13 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         fuzz_depth_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'depth_bin',
                                               'n_sites', 'n_imprecise'])
 
+    ##Cat together the per-sample orthogonal-support rows (B11/B12/B13)
+    _support_frames = [d for d in support_dfs.values() if d is not None and not d.empty]
+    if _support_frames:
+        support_DF = pd.concat(_support_frames, sort=False, ignore_index=True)
+    else:
+        support_DF = pd.DataFrame(columns=['sampleID', exp_factor] + _SUPPORT_COLS)
+
     #Cat subcategory DFs
     
     FSM_DF = pd.concat(fsm_dfs.values(), sort=False)
@@ -2722,6 +2893,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (completeness_DF, '_completeness.csv'),
             (site_offset_DF, '_site_offsets.csv'),
             (fuzz_depth_DF, '_fuzz_by_depth.csv'),
+            (support_DF, '_support.csv'),
         ],
         alltables_tables=[
             (err_DF, '_err_counts.csv'),
@@ -2733,7 +2905,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF, support_DF)
 
 
 
@@ -3396,7 +3568,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
              tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
-             fuzz_depth_metrics=None, overlap_metrics=None, args=None):
+             fuzz_depth_metrics=None, overlap_metrics=None,
+             cage_metrics=None, polya_metrics=None, sr_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3806,6 +3979,12 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         plot_fuzziness_concordance_page(pdf, fuzz_concordance)
         plot_fuzz_depth_page(pdf, fuzz_depth_metrics)
 
+        # B11/B12/B13 orthogonal-support views (no-op without the matching evidence)
+        try:
+            plot_support_pages(pdf, cage_metrics, polya_metrics, sr_metrics, scorecard=scorecard)
+        except Exception as e:
+            reads_logger.warning(f"orthogonal-support pages skipped: {e}")
+
 
 def run_reads_plots(
     ref_gtf: str,
@@ -3886,10 +4065,10 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample, support_dfs = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs)
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF, support_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_dfs, nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, support_dfs)
     dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_DF, NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
@@ -3898,6 +4077,12 @@ def main(args):
 
     # A6 pairwise UJC overlap index (asymmetric |A∩B|/|A|) — between-sample view.
     overlap_metrics = compute_ujc_overlap(ujc_metrics)
+
+    # B11/B12/B13 orthogonal-support views (CAGE 5', polyA 3', short-read). All
+    # no-op when the matching evidence wasn't supplied to SQANTI3 (columns all-NaN).
+    cage_metrics = compute_cage_metrics(support_DF)
+    polya_metrics = compute_polya_metrics(support_DF)
+    sr_metrics = compute_sr_metrics(support_DF)
 
     # Splice-site fuzziness metrics (offset spectrum, precision profile,
     # directionality, per-sample imprecision scalar) shared by both renderers.
@@ -3947,7 +4132,8 @@ def main(args):
             all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
             completeness_metrics=completeness_metrics,
             jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF,
-            yield_metrics=yield_metrics, drift_metrics=drift_metrics),
+            yield_metrics=yield_metrics, drift_metrics=drift_metrics,
+            support_DF=support_DF),
         args.cfg())
 
     need_pdf = args.report in ("pdf", "both")
@@ -3969,7 +4155,8 @@ def main(args):
                           yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                           tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
                           fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
-                          overlap_metrics=overlap_metrics)
+                          overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
+                          polya_metrics=polya_metrics, sr_metrics=sr_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -3982,7 +4169,8 @@ def main(args):
                               yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                               tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
                               fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
-                              overlap_metrics=overlap_metrics, args=args)
+                              overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
+                              polya_metrics=polya_metrics, sr_metrics=sr_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

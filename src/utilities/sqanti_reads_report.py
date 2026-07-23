@@ -765,7 +765,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
                       scorecard=None, yield_metrics=None, drift_metrics=None,
                       tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
-                      fuzz_depth_metrics=None, overlap_metrics=None):
+                      fuzz_depth_metrics=None, overlap_metrics=None,
+                      cage_metrics=None, polya_metrics=None, sr_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1419,6 +1420,55 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "persists at high depth points to a systematic placement offset. Requires "
             "per-junction coverage (<code>total_coverage_unique</code>); the section is "
             "omitted when that column is not populated.", "fig-fuzz-depth"))
+
+    # 9e. Orthogonal support (B11/B12/B13) — CAGE 5', polyA 3', short-read. Each
+    # section renders only when that evidence was supplied to SQANTI3; the fixture
+    # has none, so all three are omitted there.
+    if cage_metrics and cage_metrics.get("samples"):
+        cfig = _metric_cohort_figure(
+            cage_metrics["per_sample"], "perc_within_cage",
+            "CAGE 5'-end support: reads with a TSS inside a CAGE peak",
+            "% of reads within a CAGE peak", color="#74CDF0")
+        if cfig is not None:
+            sections.append(_section(
+                "CAGE 5'-end support (B11)", cfig,
+                "For each sample we take the fraction of reads whose 5' end (TSS) falls inside a "
+                "CAGE peak — an orthogonal, cap-based measurement of genuine transcription start "
+                "sites — and show it against the cohort median. This is independent evidence that "
+                "a sample's 5' ends are real rather than truncated or degraded; read "
+                "cohort-relatively, a sample well below its peers has less CAGE-supported 5' ends. "
+                "Requires CAGE data supplied to SQANTI3 (the <code>within_CAGE_peak</code> column); "
+                "omitted otherwise.", "fig-cage"))
+    if polya_metrics and polya_metrics.get("samples"):
+        pfig = _metric_cohort_figure(
+            polya_metrics["per_sample"], "perc_within_polya",
+            "PolyA 3'-end support: reads with a TTS at a polyA site",
+            "% of reads at a polyA site", color="#EE446F")
+        if pfig is not None:
+            sections.append(_section(
+                "PolyA 3'-end support (B12)", pfig,
+                "For each sample we take the fraction of reads whose 3' end (TTS) sits at a known "
+                "polyA site — orthogonal, cleavage-based evidence of a genuine transcript end — "
+                "shown against the cohort median. Read cohort-relatively: a sample below its peers "
+                "has fewer independently-supported 3' ends (consistent with internal priming or 3' "
+                "degradation, worth inspecting alongside the intra-priming rate). Requires polyA "
+                "data supplied to SQANTI3 (the <code>within_polyA_site</code> column); omitted "
+                "otherwise.", "fig-polya"))
+    if sr_metrics and sr_metrics.get("samples"):
+        sfig = _metric_cohort_figure(
+            sr_metrics["per_sample"], "perc_jxn_SR_supported",
+            "Short-read junction support: junctions with short-read coverage",
+            "% of junctions with short-read coverage", color="#15918A")
+        if sfig is not None:
+            sections.append(_section(
+                "Short-read junction support (B13)", sfig,
+                "For each sample we take the fraction of junctions that carry Illumina short-read "
+                "coverage (<code>total_coverage_unique &gt; 0</code>) — orthogonal, high-accuracy "
+                "confirmation that a splice junction is real — shown against the cohort median. "
+                "Read cohort-relatively: a sample below its peers has more junctions lacking "
+                "short-read backing (worth checking against its novel-junction and RT-switching "
+                "rates). Requires short-read coverage supplied to SQANTI3; omitted otherwise.",
+                "fig-sr-jxn"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
