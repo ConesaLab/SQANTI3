@@ -901,8 +901,10 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                            .str.replace("percent_", "", regex=False)
                            .str.replace("_", " ", regex=False))
         # Cap per (sample, category) so the box spread stays intact without
-        # embedding every gene's value (this figure was the second-largest).
-        mdf = _cap_per_group(mdf, ["sampleID", "category"])
+        # embedding every gene's value. This is a box (points=False), so its
+        # quartiles are stable with far fewer points than the density violin —
+        # a tighter cap keeps the report small at no visual cost.
+        mdf = _cap_per_group(mdf, ["sampleID", "category"], cap=1500)
         vio = go.Figure()
         for i, s in enumerate(samples):
             d = mdf[mdf["sampleID"] == s]
