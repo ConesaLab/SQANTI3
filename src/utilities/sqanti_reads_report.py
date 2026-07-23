@@ -49,6 +49,11 @@ _THREE_SEQ = three_series_palette
 # lower bounds for metrics where higher is worse, upper bounds where lower is worse.
 QC_THRESHOLDS = DEFAULT_CONFIG["qc_flags"]
 
+# Legend display names for the donor/acceptor position-consistency categories
+# (data columns keep their raw names; only the legend/hover labels are prettified).
+_CV_COUNT_LABELS = {"ref_match": "ref_match", "cv_0": "CV=0", "cv_gt_0": "CV>0"}
+_CV_PERC_LABELS = {"perc_ref_match": "ref_match", "perc_cv_0": "CV=0", "perc_cv_gt_0": "CV>0"}
+
 _FLAG_COLORS = {"pass": "#4CAF50", "warn": "#FF9800", "fail": "#F44336"}
 _PLOT_BG = "#ffffff"
 
@@ -97,14 +102,19 @@ def _base_layout(fig, title, xtitle, ytitle):
 
 
 def _stacked_bar(df, x_col, value_cols, title, xtitle, ytitle, color_map=None,
-                 order=None, barmode="stack", facet_col=None):
+                 order=None, barmode="stack", facet_col=None, labels=None):
     """Generic stacked/grouped bar: one trace per value column.
 
     When ``facet_col`` is a real design factor with >1 level, the plot is split
     into one subplot column per factor level (mirroring the PDF's FacetGrid),
-    with a single shared legend.
+    with a single shared legend. ``labels`` optionally maps a column name to the
+    display name shown in the legend/hover (data columns are unchanged).
     """
     cols = [c for c in (order or value_cols) if c in value_cols]
+    labels = labels or {}
+
+    def _disp(c):
+        return labels.get(c, str(c))
     # Stable color per series so a category keeps the same color in every facet
     # and appears exactly once in the legend (auto-colors would drift per subplot).
     # Three-series plots without an explicit palette use green/orange/yellow.
@@ -116,10 +126,10 @@ def _stacked_bar(df, x_col, value_cols, title, xtitle, ytitle, color_map=None,
     def _add(fig, d, row=None, col=None, show_legend=True):
         x = d[x_col].astype(str).tolist()
         for c in cols:
-            fig.add_trace(go.Bar(name=str(c), x=x, y=d[c].tolist(),
-                                 marker_color=col_color[c], legendgroup=str(c),
+            fig.add_trace(go.Bar(name=_disp(c), x=x, y=d[c].tolist(),
+                                 marker_color=col_color[c], legendgroup=_disp(c),
                                  showlegend=show_legend,
-                                 hovertemplate=f"%{{x}}<br>{c}: %{{y:.2f}}<extra></extra>"),
+                                 hovertemplate=f"%{{x}}<br>{_disp(c)}: %{{y:.2f}}<extra></extra>"),
                           row=row, col=col)
 
     faceted = (facet_col and facet_col in df.columns
@@ -202,11 +212,23 @@ def _heatmap(matrix_df, title, xtitle, ytitle, colorscale="RdBu", zmid=0,
         zmin=zmin, zmax=zmax, colorbar=dict(title=colorbar_title),
         hovertemplate="%{y}<br>%{x}: %{z:" + value_fmt + "}<extra></extra>"))
     if annotate:
+        import numpy as _np
+        vals = matrix_df.values.astype(float)
+        # Effective color range, to place each cell on the 0–1 colorscale.
+        lo = zmin if zmin is not None else _np.nanmin(vals)
+        hi = zmax if zmax is not None else _np.nanmax(vals)
+        span = (hi - lo) or 1.0
+        # Sequential dark-at-low scales (Viridis etc.) are dark in their lower half,
+        # where black text is unreadable — use white there.
+        dark_low = str(colorscale).lower() in ("viridis", "cividis", "plasma", "magma", "inferno")
         for yi, idx in enumerate(matrix_df.index):
             for xi, col in enumerate(matrix_df.columns):
+                v = vals[yi, xi]
+                norm = (v - lo) / span
+                text_color = "#ffffff" if (dark_low and norm < 0.45) else "#222"
                 fig.add_annotation(x=str(col), y=str(idx),
-                                   text=format(matrix_df.values[yi, xi], value_fmt),
-                                   showarrow=False, font=dict(size=11, color="#222"))
+                                   text=format(v, value_fmt),
+                                   showarrow=False, font=dict(size=11, color=text_color))
     _base_layout(fig, title, xtitle, ytitle)
     fig.update_layout(barmode="group",
                       height=max(460, 26 * len(matrix_df.index) + 160))
@@ -415,9 +437,21 @@ def _gene_classification_section(out_dir, prefix):
         hovertemplate="%{x}<br>%{y} genes<extra></extra>"))
     _base_layout(fig, "Gene annotation categories", "Category", "Number of genes")
     fig.update_layout(showlegend=False, barmode="group")
-    interp = ("Genes classified by whether a well-covered annotated (FSM) transcript was seen. "
-              "<b>underannotated_with_candidate_transcript</b> highlights genes where a "
-              "well-covered novel UJC suggests a missing annotation.")
+    interp = (
+        "SQANTI-reads looks for genes that may be <b>under-annotated</b> — where the reads "
+        "suggest a transcript the reference is missing. Only genes with enough read support "
+        "(the <code>-ge</code> gene-expression cut-off) are considered, and each such gene is "
+        "placed in one of four categories by comparing its reads against the annotation: "
+        "<b>annotated_with_well_covered_FSM</b> — a well-supported full-splice-match to a known "
+        "transcript was seen, so the gene looks correctly annotated; "
+        "<b>annotated_with_low_coverage_FSM</b> — a known transcript matched but only weakly; "
+        "<b>underannotated_with_candidate_transcript</b> — no well-covered known transcript, but "
+        "a well-supported <i>novel</i> unique junction chain is present (a strong candidate for "
+        "a real transcript missing from the annotation, worth manual inspection); "
+        "<b>underannotated_no_candidate_transcripts</b> — supported reads but no clear "
+        "well-covered candidate. The bars count how many genes fall in each category. It is a "
+        "discovery aid, not a pass/fail: the 'candidate' class is where to look for genuinely "
+        "novel transcripts, but individual calls should be confirmed (e.g. in a genome browser).")
     return _section("Under-annotation analysis", fig, interp, "fig-underannot")
 
 
@@ -871,8 +905,10 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Read length distribution (raw)",
             _violin(length_DF2, "sampleID", "length", "Read length per sample", "Sample",
                     "Read length (bp)", facet_col=facet),
-            "Full per-read length distribution (box + density). Compare medians and spread; a "
-            "long left tail indicates short/degraded reads.", "fig-length-violin"))
+            "Full per-read length distribution (box + density), with read length on the "
+            "vertical axis. Compare medians and spread; a long tail reaching toward the "
+            "bottom (low values) indicates an excess of short/degraded reads.",
+            "fig-length-violin"))
 
     # 5c. Total reads vs % reads > 1kb (scatter)
     if {"perc_reads_gt_1kb", "total_reads"}.issubset(length_DF.columns):
@@ -961,10 +997,14 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "Percent of all junctions that are both novel and non-canonical. This "
                 "class is enriched for alignment and junction-calling artefacts, but it "
                 "is not exclusively artefactual — non-canonical splicing does occur "
-                "biologically (e.g. minor-spliceosome introns). Read it cohort-relatively: "
-                "a sample well above its peers is worth inspecting for a mapping or library "
-                "difference, while a level shared across the cohort may simply reflect the "
-                "sample type or a less complete annotation.", "fig-jxn-novnc"))
+                "biologically (e.g. minor-spliceosome introns). The dashed grey line is the "
+                "cohort median; the dotted and dash-dot lines are the configured <b>warn</b> "
+                "and <b>fail</b> thresholds — fixed absolute cut-offs from the QC config "
+                "(independent of the cohort), so a bar above them exceeds that preset level, "
+                "while bars are outlined when the outlier scorecard flags the sample. Read it "
+                "cohort-relatively: a sample well above its peers is worth inspecting for a "
+                "mapping or library difference, while a level shared across the cohort may "
+                "simply reflect the sample type or a less complete annotation.", "fig-jxn-novnc"))
 
     # 7. Artefacts (grouped bar of %)
     art_cols = ["perc_reads_RTS", "perc_reads_intrapriming", "perc_reads_non-canonical"]
@@ -984,15 +1024,20 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         ("perc_reads_RTS", "RT-switching reads per sample",
          "% reads with RT-switching evidence", "#F58A53", "fig-rts",
          "Per-sample rate of reads flagged by the RT-switching heuristic (a sequence "
-         "signature of template switching at direct repeats around a junction), against "
-         "the cohort median; bars are outlined when the scorecard flags this metric. "
-         "The flag marks candidate artefacts, not confirmed ones, so a sample well above "
-         "its peers is worth checking for a library or mapping difference."),
+         "signature of template switching at direct repeats around a junction). "
+         "The dashed grey line is the cohort median; the dotted and dash-dot lines are the "
+         "configured <b>warn</b> and <b>fail</b> thresholds — fixed absolute cut-offs from "
+         "the QC config (not cohort-relative), so a bar rising above them exceeds that "
+         "preset level. Bars are also outlined/marked when the outlier scorecard flags this "
+         "sample. The flag marks candidate artefacts, not confirmed ones, so a sample well "
+         "above its peers is worth checking for a library or mapping difference."),
         ("perc_reads_intrapriming", "Intra-priming reads per sample",
          "% reads with intra-priming evidence", "#EE446F", "fig-intraprim",
          "Per-sample intra-priming rate (reads with a genomic poly-A run downstream of "
-         "the TTS, likely primed off genomic A-stretches rather than the polyA tail) "
-         "against the cohort median, with scorecard flags. A sample elevated relative to "
+         "the TTS, likely primed off genomic A-stretches rather than the polyA tail). "
+         "The dashed grey line is the cohort median; the dotted and dash-dot lines are the "
+         "configured warn / fail thresholds (fixed QC-config cut-offs, not cohort-relative). "
+         "Bars are marked when the scorecard flags this sample. A sample elevated relative to "
          "its peers is worth checking for a sample-specific priming or template difference."),
     ]
     for metric, title, ytitle, color, div_id, interp in _art_pages:
@@ -1008,10 +1053,18 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Splice-donor detection variation",
             _stacked_bar(cv_don_percs, "sampleID", _value_cols(cv_don_percs, drop),
                          "Detected donors by position-variation category (%)", "Sample",
-                         "Percentage", facet_col=facet),
-            "Reference splice donors split by how variable their detected position is "
-            "(ref_match / cv=0 / cv&gt;0). More cv&gt;0 means noisier junction ends.",
-            "fig-cvdon"))
+                         "Percentage", facet_col=facet, labels=_CV_PERC_LABELS),
+            "For every reference splice donor, we look at where the reads that use it actually "
+            "place the site relative to the annotated position, and classify the donor by the "
+            "spread of those read offsets (using their coefficient of variation, CV): "
+            "<b>ref_match</b> — every read lands exactly on the annotated donor (offset 0); "
+            "<b>CV=0</b> — the reads land at a single, consistent position that is <i>shifted</i> "
+            "from the annotation (a reproducible offset — no spread, but not on the reference); "
+            "<b>CV&gt;0</b> — the reads land at variable positions (a real spread of offsets). "
+            "So ref_match and CV=0 are <i>not</i> the same: both are consistent, but ref_match "
+            "is on-target while CV=0 is consistently off-target; CV&gt;0 is genuinely imprecise. "
+            "The bars show the % of a sample's donors in each category — a larger CV&gt;0 share "
+            "means noisier donor boundaries.", "fig-cvdon"))
 
     # 8b. Splice-acceptor CV (%)
     if cv_acc_percs is not None and not cv_acc_percs.empty:
@@ -1019,8 +1072,14 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Splice-acceptor detection variation",
             _stacked_bar(cv_acc_percs, "sampleID", _value_cols(cv_acc_percs, drop),
                          "Detected acceptors by position-variation category (%)", "Sample",
-                         "Percentage", facet_col=facet),
-            "As for donors, but for reference splice acceptors.", "fig-cvacc"))
+                         "Percentage", facet_col=facet, labels=_CV_PERC_LABELS),
+            "The acceptor counterpart of the donor plot above: every reference splice acceptor "
+            "is classified by how consistently the reads that use it land relative to the "
+            "annotated position — <b>ref_match</b> (all reads exactly on the acceptor), "
+            "<b>CV=0</b> (all reads at one consistent but shifted position), <b>CV&gt;0</b> "
+            "(reads at variable positions). A larger CV&gt;0 share means noisier acceptor "
+            "boundaries; ref_match vs CV=0 distinguishes on-target from a reproducible offset.",
+            "fig-cvacc"))
 
     # 8c. Detected donor / acceptor counts
     det_order = ["ref_match", "cv_0", "cv_gt_0"]
@@ -1032,9 +1091,14 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             f"Detected splice {label} (counts)",
             _stacked_bar(cv_df, "sampleID", [c for c in det_order if c in cv_df.columns],
                          f"Number of detected {label}", "Sample", f"Number of {label}",
-                         facet_col=facet),
-            f"Absolute number of reference {label} detected, by position-variation category.",
-            div))
+                         facet_col=facet, labels=_CV_COUNT_LABELS),
+            f"The absolute number of reference splice {label} detected in each sample, split by "
+            f"the same position-consistency categories as the variation plot above: "
+            f"<b>ref_match</b> (reads exactly on the annotated {label[:-1]}), <b>CV=0</b> (reads "
+            f"at one consistent but shifted position) and <b>CV&gt;0</b> (reads at variable "
+            f"positions). This is the count view — it shows how many {label} were recovered "
+            f"overall and how that total splits across the categories, whereas the percentage "
+            f"plot above normalises each sample to 100%.", div))
 
     # 9. PCA of QC metrics (colored by factor when set)
     if pca_DF is not None and pca_DF.shape[0] >= 2 and 0 in pca_DF.columns and 1 in pca_DF.columns:
@@ -1060,8 +1124,13 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         fig.update_layout(barmode="group", showlegend=show_leg)
         sections.append(_section(
             "Sample similarity (PCA)", fig,
-            "Each point is a sample in the space of its QC metrics. Replicates should cluster; "
-            "an outlier flags a sample that differs systematically.", "fig-pca"))
+            "Each sample is described by its full vector of QC metrics; the metrics are "
+            "standardised and reduced by <b>principal component analysis</b> to the two axes "
+            "(PC1, PC2) that capture the most variation across samples, and each sample is "
+            "plotted at its score on those axes (the % on each axis is the share of total "
+            "variance it explains). Samples close together have similar overall QC profiles — "
+            "replicates should cluster; a sample sitting apart differs systematically across "
+            "many metrics at once.", "fig-pca"))
 
         # 9b. PCA loadings (which metrics drive PC1/PC2)
         if loadings_DF is not None and loadings_DF.shape[0] > 0 and {0, 1}.issubset(loadings_DF.columns):
@@ -1072,8 +1141,11 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             sections.append(_section(
                 "PCA loadings",
                 _heatmap(load, "Metric loadings on PC1 / PC2", "Principal component", "QC metric"),
-                "How much each QC metric contributes to PC1/PC2. Metrics with the largest "
-                "absolute loadings explain why samples separate along each axis.", "fig-pca-load"))
+                "Principal components are weighted combinations of the QC metrics; this heatmap "
+                "shows each metric's weight (loading) on PC1 and PC2. The metrics with the "
+                "largest absolute loadings are the ones driving how samples separate along each "
+                "axis — read it alongside the PCA plot to see which metrics an outlier sample is "
+                "extreme on.", "fig-pca-load"))
 
     # 9c. UJC-level metrics: saturation, replicate concordance, UpSet
     if ujc_metrics:
@@ -1092,9 +1164,12 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         fig.update_layout(barmode="group")
         sections.append(_section(
             "UJC saturation", fig,
-            "Rarefaction: expected distinct junction chains as reads are subsampled. "
-            "A curve that plateaus means the library is saturated (more depth finds few "
-            "new isoforms); a still-rising curve means deeper sequencing would help.",
+            "Rarefaction curve: the expected number of distinct junction chains recovered as "
+            "reads are subsampled to increasing depths. The expectation is computed "
+            "analytically from the per-UJC read counts (the expected count of UJCs seen at "
+            "least once at each depth — deterministic, not a random resample). A curve that "
+            "plateaus means the library is saturated (more depth finds few new isoforms); a "
+            "still-rising curve means deeper sequencing would keep discovering junction chains.",
             "fig-saturation"))
 
         # Saturation per structural category (same total-depth x-axis)
@@ -1136,9 +1211,12 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             _heatmap(conc, "Replicate concordance (per-UJC read counts)", "Sample",
                      "Sample", colorscale="Viridis", zmid=None, zmin=0, zmax=1,
                      colorbar_title="Pearson r", annotate=True),
-            "Pearson correlation of per-UJC read counts between samples. Replicates of the "
-            "same condition should correlate highly; a low value flags an outlier or a "
-            "swapped/mismatched sample.", "fig-concordance"))
+            "Each unique junction chain's read count is tabulated per sample (a UJC × sample "
+            "matrix), and every pair of sample columns is compared with the <b>Pearson "
+            "correlation</b> of those counts — how linearly the two samples' per-UJC abundances "
+            "track each other (1 = identical profile). Replicates of the same condition should "
+            "correlate highly; a low value flags an outlier or a swapped/mismatched sample.",
+            "fig-concordance"))
 
         up_data = compute_upset_intersections(ujc_metrics["upset"], m_samples)
         if up_data:
@@ -1157,19 +1235,30 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         if sfig is not None:
             sections.append(_section(
                 "Splice-site offset spectrum", sfig,
-                "Signed distance of each detected donor/acceptor to its nearest reference "
-                "site (exact matches excluded, so the plot shows only the imprecise tail). "
-                "A tight central peak means precise boundaries; a broad or skewed skirt "
-                "flags systematic imprecision, and regular sub-peaks at ±3/±4 bp suggest "
-                "tandem-site (e.g. NAGNAG) usage.", "fig-offset-spectrum"))
+                "For every detected donor and acceptor we measure its <b>signed distance to "
+                "the nearest annotated reference site</b> — 0 = exactly on the reference, "
+                "negative = a few bp upstream, positive = downstream — and count how many "
+                "observations fall at each offset (donors and acceptors shown separately). "
+                "The curve is that histogram of offsets. Exact matches (offset 0) are excluded "
+                "so the plot shows only the imprecise tail, and only sites within ±window bp of "
+                "a reference are included (farther ones are genuinely novel, not imprecise). "
+                "A tight peak hugging 0 means the boundaries the reads place are very close to "
+                "the annotation; a broad or one-sided skirt flags systematic imprecision (a "
+                "consistent shift); and regular sub-peaks at ±3/±4/±6 bp are the signature of "
+                "tandem-site (e.g. NAGNAG) usage — reads legitimately choosing a nearby "
+                "alternative site.", "fig-offset-spectrum"))
         if pfig is not None:
             sections.append(_section(
                 "Splice-site precision profile", pfig,
-                "Cumulative % of donor/acceptor observations within ±k bp of a reference "
-                "site. A steeper curve reaching 100% sooner means splice boundaries sit "
-                "closer to the reference; a sample whose curve lags the others has more of "
-                "its sites placed a few bp off the annotated position. The value at k=0 is "
-                "the exact-match rate.", "fig-offset-profile"))
+                "The same offsets as the spectrum above, read as a cumulative curve: for each "
+                "distance k (in bp) it plots the <b>% of a sample's donor/acceptor observations "
+                "that land within ±k bp of a reference site</b>. It starts at k=0 (the "
+                "exact-match rate) and climbs to 100% by ±window bp. A steeper curve that "
+                "reaches 100% sooner means splice boundaries sit closer to the annotation "
+                "(more precise); a sample whose curve lags below the others has a larger "
+                "fraction of its sites placed a few bp off the annotated position. It is the "
+                "cumulative (ECDF) companion to the spectrum — easier for comparing samples at "
+                "a glance.", "fig-offset-profile"))
         if cfig is not None:
             sections.append(_section(
                 "Splice-site fuzziness by canonical class", cfig,
@@ -1211,43 +1300,59 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     if _dfig is not None:
         sections.append(_section(
             "Composition drift (pairwise)", _dfig,
-            "Pairwise Jensen–Shannon distance between samples' structural-category "
-            "composition vectors. Larger values mean two samples' category mixes differ "
-            "more. A sample far from all others (high row/column mean) has an atypical "
-            "composition — worth checking whether it is a genuine biological difference "
-            "(e.g. a distinct condition) or a technical one; the value itself is not a "
+            "Each sample's structural-category percentages (FSM, ISM, NIC, NNC, …) are read "
+            "as a probability distribution, and every pair of samples is compared with the "
+            "<b>Jensen–Shannon distance</b> — a symmetric 0–1 measure of how different two "
+            "distributions are (0 = identical category mix, 1 = no categories in common). The "
+            "heatmap shows those pairwise distances. A sample far from all the others (a bright "
+            "row/column — a high average distance to the rest of the cohort) has an atypical "
+            "composition; worth checking whether that is a genuine biological difference "
+            "(e.g. a distinct condition) or a technical one. The distance itself is not a "
             "pass/fail.", "fig-comp-drift"))
 
     _tfig = _tandem_sites_figure(tandem_metrics)
     if _tfig is not None:
         sections.append(_section(
             "Tandem splice sites (NAGNAG)", _tfig,
-            "Excess mass at ±3 bp (and ±4/±6) in the splice-site offset distribution is "
-            "the signature of tandem donor/acceptor (NAGNAG) usage — reads selecting a "
-            "nearby alternative site, a real biological phenomenon distinct from random "
-            "boundary imprecision. Shown descriptively; a higher tandem fraction is a "
-            "property of the sample, not a defect.", "fig-tandem"))
+            "This zooms into the near-zero part of the splice-site offset distribution (the same "
+            "signed offsets as the spectrum above) and highlights the bars at <b>±3 bp</b> "
+            "(and ±4/±6). A NAGNAG tandem site is a pair of splice sites exactly 3 nt apart, so "
+            "when reads legitimately use the alternative site their offsets pile up at ±3 bp — "
+            "a sharp excess there (rather than a smooth decay away from 0) is the signature of "
+            "tandem donor/acceptor usage, a real biological phenomenon distinct from random "
+            "boundary imprecision. The note under the plot gives each sample's <b>tandem "
+            "fraction</b> = the share of its imprecise (offset ≠ 0) observations that sit at "
+            "±3 bp. This is shown descriptively — a higher tandem fraction is a property of the "
+            "sample's biology, not a quality defect, so it carries no threshold.", "fig-tandem"))
 
     _rfig = _replicate_concordance_figure(rep_concordance)
     if _rfig is not None:
         sections.append(_section(
             "Replicate concordance (multi-axis)", _rfig,
-            "For samples sharing a design-factor level (replicates), how closely each "
-            "agrees with its group on structural composition, read-length profile, and "
-            "splice-site precision (1 = matches its replicates). A replicate low on one "
-            "axis diverges from its peers on that specific property — a more sensitive "
-            "check than UJC overlap alone. Shown only when the design has a factor with "
-            "≥2 replicates in a level.", "fig-rep-concord"))
+            "For samples sharing a design-factor level (replicates), each sample is scored "
+            "0–1 on how well it matches its group-mates on three axes, where <b>1 = identical "
+            "to its replicates</b>. <b>Composition</b>: 1 − the mean Jensen–Shannon distance "
+            "of its structural-category mix to each group-mate. <b>Read-length profile</b>: "
+            "1 − the mean relative difference of its (q25, median, q75) read lengths to each "
+            "group-mate. <b>Splice-site precision</b>: 1 − the mean relative difference of its "
+            "imprecise-site fraction to each group-mate. A replicate low on one axis diverges "
+            "from its peers on that specific property — more sensitive than UJC overlap alone. "
+            "Shown only when the design has a factor with ≥2 replicates in a level.",
+            "fig-rep-concord"))
 
     _ffcfig = _fuzziness_concordance_figure(fuzz_concordance)
     if _ffcfig is not None:
         sections.append(_section(
             "Replicate concordance of splice-site precision", _ffcfig,
-            "For replicate samples, whether the same reference splice sites are placed at "
-            "the same sub-bp offsets. High agreement means the imprecision pattern is "
-            "reproducible (a property of the sites/protocol); a replicate that disagrees "
-            "has sample-specific boundary placement. Shown only with a factor and ≥2 "
-            "replicates in a level.", "fig-fuzz-concord"))
+            "Whether replicates place the <i>same</i> reference splice sites at the <i>same</i> "
+            "sub-bp offsets. For each reference donor/acceptor we take each sample's median "
+            "signed offset (how many bp its reads land from the annotated site), keep the sites "
+            "seen in ≥2 replicates of a group, and score each sample as <b>1 − the mean absolute "
+            "offset difference to its group-mates, capped at ±3 bp</b> (so 1 = places every "
+            "shared site identically, 0 = ≥3 bp apart on average). High agreement means the "
+            "imprecision pattern is reproducible (a property of the sites/protocol); a replicate "
+            "that disagrees has sample-specific boundary placement. Shown only with a factor and "
+            "≥2 replicates in a level.", "fig-fuzz-concord"))
 
     _fdfig = _fuzz_depth_figure(fuzz_depth_metrics)
     if _fdfig is not None:

@@ -139,6 +139,11 @@ jxn_palette = {
 # donor/acceptor CV (ref_match/cv_0/cv_gt_0), in column order (good→bad).
 three_series_palette = [aes_palette["green"], aes_palette["orange"], aes_palette["magenta"]]
 
+# Legend display names for the donor/acceptor position-consistency categories
+# (data columns keep their raw names; only the legend labels are prettified).
+cv_count_legend_labels = {"ref_match": "ref_match", "cv_0": "CV=0", "cv_gt_0": "CV>0"}
+cv_perc_legend_labels = {"perc_ref_match": "ref_match", "perc_cv_0": "CV=0", "perc_cv_gt_0": "CV>0"}
+
 # Read-count bins, most support (best) → least support (worst).
 readcount_palette = {
     "100+ reads": aes_palette["green"],
@@ -250,28 +255,32 @@ def _stacked_bars_dict(*args, color_palette, exp_factor, **kwargs):
             reads_logger.warning(f"Color for {category} not found in palette.")
 
 
-def _stacked_bars_indexed(*args, categories, palette, **kwargs):
+def _stacked_bars_indexed(*args, categories, palette, legend_labels=None, **kwargs):
     """FacetGrid ``map_dataframe`` callback: stack a fixed ``categories`` list in
     order, colored by the aligned ``palette`` list. A category missing from a
-    facet subset is treated as all-zero so stack order/colors stay stable."""
+    facet subset is treated as all-zero so stack order/colors stay stable.
+    ``legend_labels`` optionally maps a column name to its legend display name."""
     data = kwargs.pop('data')
+    labels = legend_labels or {}
     ax = plt.gca()
     bottom = np.zeros(len(data))
     for idx, category in enumerate(categories):
         values = data[category].values if category in data.columns else np.zeros(len(data))
         non_zero_indices = values != 0
         ax.bar(data['sampleID'][non_zero_indices], values[non_zero_indices],
-               bottom=bottom[non_zero_indices], color=palette[idx], label=category)
+               bottom=bottom[non_zero_indices], color=palette[idx],
+               label=labels.get(category, category))
         bottom += values
 
 
 def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylabel,
                         palette, categories=None, legend_title=None,
-                        height=8, aspect=1.3, sort=True):
+                        height=8, aspect=1.3, sort=True, legend_labels=None):
     """Render one faceted stacked-bar page (one panel per ``exp_factor`` level).
 
     ``palette`` is either a {column: hex} dict (columns inferred + stacked in
     column order) or an ordered list aligned to ``categories`` (fixed stack).
+    ``legend_labels`` optionally maps a category column to its legend display name.
     With the synthetic single-level ``temp_factor`` this collapses to one panel.
     """
     plot_df = df.sort_values(by=[exp_factor, 'sampleID']) if sort else df
@@ -280,7 +289,8 @@ def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylab
     if isinstance(palette, dict):
         g.map_dataframe(_stacked_bars_dict, color_palette=palette, exp_factor=exp_factor)
     else:
-        g.map_dataframe(_stacked_bars_indexed, categories=categories, palette=palette)
+        g.map_dataframe(_stacked_bars_indexed, categories=categories, palette=palette,
+                        legend_labels=legend_labels)
     for ax, (_name, group) in zip(g.axes.flatten(), plot_df.groupby(exp_factor)):
         # Pin tick positions to the sample count before labelling. Using the
         # actual sample positions (not ax.get_xticks()) keeps labels aligned even
@@ -3580,27 +3590,31 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         _render_stacked_bar(pdf, cv_acc_summary, exp_factor=exp_factor,
                             num_factors=num_factors, palette=list(three_series_palette),
                             categories=['ref_match', 'cv_0', 'cv_gt_0'],
+                            legend_labels=cv_count_legend_labels,
                             title='Number of Detected Acceptors',
                             xlabel='Sample ID', ylabel='Number of Detected Acceptors',)
-        
+
         _render_stacked_bar(pdf, cv_don_summary, exp_factor=exp_factor,
                             num_factors=num_factors, palette=list(three_series_palette),
                             categories=['ref_match', 'cv_0', 'cv_gt_0'],
+                            legend_labels=cv_count_legend_labels,
                             title='Number of Detected Donors',
                             xlabel='Sample ID', ylabel='Number of Detected Donors',)
-        
-        
+
+
         categories = ['perc_ref_match','perc_cv_0','perc_cv_gt_0']
         _render_stacked_bar(pdf, cv_don_percs, exp_factor=exp_factor,
                             num_factors=num_factors, palette=list(three_series_palette),
                             categories=['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0'],
+                            legend_labels=cv_perc_legend_labels,
                             title='Percentage of Detected Donors',
                             xlabel='Sample ID', ylabel='Percentage of Detected Donors',)
-        
+
         categories = ['perc_ref_match','perc_cv_0','perc_cv_gt_0']
         _render_stacked_bar(pdf, cv_acc_percs, exp_factor=exp_factor,
                             num_factors=num_factors, palette=list(three_series_palette),
                             categories=['perc_ref_match', 'perc_cv_0', 'perc_cv_gt_0'],
+                            legend_labels=cv_perc_legend_labels,
                             title='Percentage of Detected Acceptors',
                             xlabel='Sample ID', ylabel='Percentage of Detected Acceptors',)
 
