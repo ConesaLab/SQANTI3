@@ -33,6 +33,7 @@ from src.utilities.sqanti_reads_plots import (
     sample_seq,
     underannot_palette,
     compute_upset_intersections,
+    missing_support_types,
     _ism_fragment_pct,
     _novel_noncanonical_pct,
 )
@@ -454,6 +455,30 @@ def _gene_classification_section(out_dir, prefix):
         "discovery aid, not a pass/fail: the 'candidate' class is where to look for genuinely "
         "novel transcripts, but individual calls should be confirmed (e.g. in a genome browser).")
     return _section("Under-annotation analysis", fig, interp, "fig-underannot")
+
+
+def _optional_support_footer(cage_metrics, polya_metrics, sr_metrics):
+    """Part C — a muted closing note naming the orthogonal-support types not
+    supplied and the (optional) SQANTI3 flags that would add them. Returns "" when
+    every support type is present. Deliberately non-judgemental: the evidence is
+    optional and the report is complete without it."""
+    missing = missing_support_types(cage_metrics, polya_metrics, sr_metrics)
+    if not missing:
+        return ""
+    items = "".join(
+        f"<li>{label} — add with <code>{flags}</code></li>" for label, flags in missing)
+    return f"""
+    <section class="card" style="opacity:0.75;border-style:dashed;">
+      <h2 style="font-size:1.05em;">Optional orthogonal support</h2>
+      <p class="interp">This report is complete as it stands. The independent
+      end/junction evidence below was not supplied to SQANTI3 and is entirely
+      <b>optional</b> — providing it would add extra cross-checks of transcript
+      5'/3' ends and splice junctions in a future run:</p>
+      <ul class="interp">{items}</ul>
+      <p class="interp">None of these are <b>required</b> to interpret the QC
+      results above.</p>
+    </section>
+    """
 
 
 PAGE_TEMPLATE = """<!DOCTYPE html>
@@ -1472,6 +1497,9 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
+
+    # 11. Part C — closing optional-support note (only when some type is absent).
+    sections.append(_optional_support_footer(cage_metrics, polya_metrics, sr_metrics))
 
     factor_note = (f" &middot; faceted by <code>{args.inFACTOR}</code>"
                    if getattr(args, "inFACTOR", None) else "")

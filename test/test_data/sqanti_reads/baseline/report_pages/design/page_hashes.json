@@ -308,5 +308,10 @@
     "height": 1000,
     "sha256": "dc7e1da0d8e3b058fb1d29d0c0ec457a86fd6a58e96f7eb99c8aaca8c252f3e2",
     "width": 1400
+  },
+  "page_62.png": {
+    "height": 421,
+    "sha256": "3f0080f3754f1b15bbcd6983d884976c6bd2aa680fa899a8ba5088912cc128da",
+    "width": 692
   }
 }

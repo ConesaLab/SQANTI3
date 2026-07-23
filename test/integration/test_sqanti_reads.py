@@ -43,7 +43,7 @@ EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # The two designs now differ: the within-group replicate views (A5 multi-axis
 # concordance, F7 splice-site precision concordance) render only with a --factor
 # that has a >=2-replicate level, so they add 2 pages to the faceted design only.
-EXPECTED_REPORT_PAGES = {"design.csv": 62, "design_with_factor.csv": 64}
+EXPECTED_REPORT_PAGES = {"design.csv": 63, "design_with_factor.csv": 65}
 
 pytestmark = requires_external_tools
 
@@ -165,7 +165,9 @@ HTML_SECTIONS = [
     "UJC saturation by structural category",
     "Replicate concordance",
     "Shared UJCs across samples (UpSet)",
+    "Pairwise UJC overlap index",
     "Under-annotation analysis",
+    "Optional orthogonal support",
 ]
 
 

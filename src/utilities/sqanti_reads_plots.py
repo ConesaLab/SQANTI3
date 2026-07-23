@@ -2551,6 +2551,54 @@ def compute_sr_metrics(support_DF):
     return _support_metrics(support_DF, ["median_ratio_TSS", "perc_jxn_SR_supported"])
 
 
+def missing_support_types(cage_metrics, polya_metrics, sr_metrics):
+    """Part C — the orthogonal-support evidence types NOT present in this run (their
+    B metrics have no populated samples), each paired with the SQANTI3 QC flag(s)
+    that would supply it. Returns a list of ``(label, flags)`` tuples; empty when
+    every support type is already present."""
+    missing = []
+    if not (cage_metrics and cage_metrics.get("samples")):
+        missing.append(("CAGE 5'-end support (transcription start sites)", "--CAGE_peak"))
+    if not (polya_metrics and polya_metrics.get("samples")):
+        missing.append(("polyA 3'-end support (cleavage sites)",
+                        "--polyA_peak / --polyA_motif_list"))
+    if not (sr_metrics and sr_metrics.get("samples")):
+        missing.append(("short-read support (junction coverage / TSS ratio)",
+                        "--short_reads / --coverage"))
+    return missing
+
+
+def plot_optional_support_note_page(pdf, cage_metrics, polya_metrics, sr_metrics):
+    """Part C — a compact end-of-report note naming the orthogonal-support types
+    that were not supplied and the (optional) SQANTI3 flags that would add them.
+
+    Drawn only when at least one type is missing. Deliberately non-judgemental:
+    this evidence is optional and the report is complete without it — the note
+    exists so users who *have* CAGE/polyA/short-read data know they can enrich a
+    future run, never to imply the current report is deficient."""
+    missing = missing_support_types(cage_metrics, polya_metrics, sr_metrics)
+    if not missing:
+        return
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig = plt.figure(figsize=(11, 8.5))
+    fig.text(0.5, 0.9, "Optional orthogonal support", ha="center",
+             fontsize=16, weight="bold", color="#333333")
+    lines = ["This report is complete as it stands. The independent end / junction",
+             "evidence below was not supplied to SQANTI3 and is entirely optional —",
+             "providing it would add extra cross-checks of transcript 5'/3' ends and",
+             "splice junctions in a future run, but it is not required for any metric",
+             "in this report:", ""]
+    for label, flags in missing:
+        lines.append(f"   •  {label}")
+        lines.append(f"         add with:  {flags}")
+        lines.append("")
+    lines.append("None of these are needed to interpret the QC results above.")
+    fig.text(0.12, 0.8, "\n".join(lines), ha="left", va="top",
+             fontsize=12, color="#555555")
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
 def _summarize_completeness(class_DF, sampleID, exp_factor, exp_factor_val, window=50):
     """Per-sample 5'/3' completeness digest from read-to-gene end distances.
 
@@ -4172,6 +4220,9 @@ def main(args):
                               overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
                               polya_metrics=polya_metrics, sr_metrics=sr_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
+            # Part C — closing "optional orthogonal support" note (only when some
+            # support type is absent). Placed last, after the under-annotation section.
+            plot_optional_support_note_page(pdf, cage_metrics, polya_metrics, sr_metrics)
 
     # Close all remaining figures to free memory
     plt.close('all')
