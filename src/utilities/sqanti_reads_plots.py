@@ -1005,6 +1005,25 @@ def compute_fuzziness_concordance(site_offset_DF, factor_map):
             "groups": groups, "per_sample": pd.DataFrame(rows)}
 
 
+def compute_fuzz_depth_metrics(fuzz_depth_DF):
+    """Per-sample splice-site imprecision vs junction depth-bin (F4).
+
+    Imprecision concentrated at low-depth junctions is consistent with limited
+    read support; imprecision that persists at high depth points to a systematic
+    placement offset. Empty-safe (the fixture has no per-junction coverage, so
+    this returns no samples and the page/section are skipped).
+    """
+    empty = {"samples": [],
+             "profile": pd.DataFrame(columns=["sampleID", "depth_bin", "perc_imprecise"])}
+    if fuzz_depth_DF is None or fuzz_depth_DF.empty:
+        return empty
+    g = (fuzz_depth_DF.groupby(["sampleID", "depth_bin"], observed=True)
+         .agg(n_sites=("n_sites", "sum"), n_imprecise=("n_imprecise", "sum")).reset_index())
+    g["perc_imprecise"] = np.where(g["n_sites"] > 0, g["n_imprecise"] / g["n_sites"] * 100, np.nan)
+    return {"samples": sorted(g["sampleID"].astype(str).unique().tolist()),
+            "profile": g[["sampleID", "depth_bin", "perc_imprecise"]]}
+
+
 def _robust_z(values):
     """Robust z-scores of a 1-D sequence: (x - median) / (1.4826 * MAD).
 
@@ -1561,6 +1580,34 @@ def plot_fuzziness_concordance_page(pdf, concordance):
     ax.set_ylim(0, 1.05)
     ax.set_title("Replicate concordance of splice-site precision\n"
                  "(per reference site; only ≥2-replicate levels shown)", fontsize=12)
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_fuzz_depth_page(pdf, metrics):
+    """Splice-site imprecision vs junction read-depth bin (F4): one line per
+    sample. No-op on empty (the fixture has no per-junction coverage → 0 pages)."""
+    m = metrics
+    if not m or not m.get("samples") or m["profile"].empty:
+        return
+    prof = m["profile"].copy()
+    order = _fuzz_depth_labels(_FUZZ_DEPTH_BINS)
+    prof["depth_bin"] = prof["depth_bin"].astype(str)
+    xpos = {lab: i for i, lab in enumerate(order)}
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+    for i, (s, g) in enumerate(prof.groupby("sampleID")):
+        g = g[g["depth_bin"].isin(order)].sort_values(
+            "depth_bin", key=lambda col: col.map(xpos))
+        ax.plot([xpos[b] for b in g["depth_bin"]], g["perc_imprecise"],
+                marker="o", label=str(s), color=sample_seq[i % len(sample_seq)])
+    ax.set_xticks(range(len(order)))
+    ax.set_xticklabels(order, rotation=30, ha="right", fontsize=9)
+    ax.set_xlabel("junction read depth (total_coverage_unique)")
+    ax.set_ylabel("% imprecise splice-site observations")
+    ax.set_title("Splice-site imprecision vs junction depth", fontsize=12)
+    ax.legend(fontsize=8, frameon=False)
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
@@ -2150,6 +2197,59 @@ def _summarize_site_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window
     return out[cols]
 
 
+_FUZZ_DEPTH_BINS = (1, 5, 10, 25, 50, 100)
+
+
+def _fuzz_depth_labels(bins):
+    labels = [f"{bins[i]}-{bins[i + 1] - 1}" for i in range(len(bins) - 1)]
+    return labels + [f"{bins[-1]}+"]
+
+
+def _summarize_fuzz_by_depth(jxn_DF, sampleID, exp_factor, exp_factor_val,
+                             window=15, depth_bins=_FUZZ_DEPTH_BINS):
+    """Splice-site imprecision as a function of junction read depth (F4).
+
+    Each donor/acceptor observation (strand-aware, within ±window) is bucketed by
+    its junction's ``total_coverage_unique`` into depth bins, counting imprecise
+    (offset≠0) vs total. Requires per-junction coverage; when that column is
+    absent or all-NaN (the chr22 fixture reality), returns a typed-empty frame so
+    F4 no-ops. Returns [sampleID, exp_factor, depth_bin, n_sites, n_imprecise].
+    """
+    cols = ["sampleID", exp_factor, "depth_bin", "n_sites", "n_imprecise"]
+    if (jxn_DF is None or jxn_DF.empty
+            or "total_coverage_unique" not in jxn_DF.columns):
+        return pd.DataFrame(columns=cols)
+    cov = pd.to_numeric(jxn_DF["total_coverage_unique"], errors="coerce")
+    if cov.notna().sum() == 0:   # all-NaN -> nothing to bin (fixture case)
+        return pd.DataFrame(columns=cols)
+    df = jxn_DF.copy()
+    df["_cov"] = cov
+    for c in ("diff_to_Ref_start_site", "diff_to_Ref_end_site"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    plus, minus = df["strand"] == "+", df["strand"] == "-"
+    parts = [
+        pd.DataFrame({"offset": df["diff_to_Ref_start_site"].where(plus),  "_cov": df["_cov"]}),
+        pd.DataFrame({"offset": df["diff_to_Ref_end_site"].where(plus),    "_cov": df["_cov"]}),
+        pd.DataFrame({"offset": df["diff_to_Ref_start_site"].where(minus), "_cov": df["_cov"]}),
+        pd.DataFrame({"offset": df["diff_to_Ref_end_site"].where(minus),   "_cov": df["_cov"]}),
+    ]
+    long = pd.concat(parts, ignore_index=True).dropna(subset=["offset", "_cov"])
+    long = long[long["offset"].abs() <= window]
+    if long.empty:
+        return pd.DataFrame(columns=cols)
+    edges = list(depth_bins) + [np.inf]
+    labels = _fuzz_depth_labels(depth_bins)
+    long["depth_bin"] = pd.cut(long["_cov"], bins=edges, right=False, labels=labels)
+    long = long.dropna(subset=["depth_bin"])
+    long["imprecise"] = (long["offset"] != 0).astype(int)
+    out = (long.groupby("depth_bin", observed=True)
+                .agg(n_sites=("offset", "size"), n_imprecise=("imprecise", "sum"))
+                .reset_index())
+    out["sampleID"] = sampleID
+    out[exp_factor] = exp_factor_val
+    return out[cols]
+
+
 def _summarize_completeness(class_DF, sampleID, exp_factor, exp_factor_val, window=50):
     """Per-sample 5'/3' completeness digest from read-to-gene end distances.
 
@@ -2205,6 +2305,7 @@ def proc_samples(args, design_file, ref):
     jxn_offset_dfs = {}
     completeness_dfs = {}
     site_offset_dfs = {}       # per reference-site median offset (F7 fuzziness concordance)
+    fuzz_depth_dfs = {}        # imprecision vs junction depth bin (F4)
     jxn_count_by_sample = {}   # per-sample junction-record count (A4 depth-normalised yield)
     fsm_dfs = {}
     ism_dfs = {}
@@ -2224,11 +2325,12 @@ def proc_samples(args, design_file, ref):
     
     ## CREATE SUMMARY FILES TO MAKE PLOTS FROM
     jxn_cols = ['isoform','chrom','strand','junction_number','genomic_start_coord','genomic_end_coord','junction_category',
-                'diff_to_Ref_start_site','diff_to_Ref_end_site','canonical']
-    
+                'diff_to_Ref_start_site','diff_to_Ref_end_site','canonical','total_coverage_unique']
+
     jxn_dtypes = {'isoform':'string', 'chrom': 'string', 'strand': 'string', 'junction_number': 'string',
                   'genomic_start_coord':'Int64', 'genomic_end_coord': 'Int64', 'junction_category':'string',
-                  'diff_to_Ref_start_site': 'Int64', 'diff_to_Ref_end_site': 'Int64', 'canonical': 'string'}
+                  'diff_to_Ref_start_site': 'Int64', 'diff_to_Ref_end_site': 'Int64', 'canonical': 'string',
+                  'total_coverage_unique': 'Int64'}   # per-junction read depth (F4); NaN-heavy
     
     class_cols = ['isoform','chrom','strand','exons','associated_gene','associated_transcript','structural_category','subcategory',
                     'length', 'RTS_stage','perc_A_downstream_TTS','ref_length','ref_exons','all_canonical',
@@ -2307,6 +2409,11 @@ def proc_samples(args, design_file, ref):
             jxn_DF, sampleID, exp_factor, exp_factor_val,
             window=args.cfg().get('jxn_offset_window', 15))
 
+        ##Imprecision vs junction read depth (F4); no-op when coverage is absent
+        fuzz_depth_DF = _summarize_fuzz_by_depth(
+            jxn_DF, sampleID, exp_factor, exp_factor_val,
+            window=args.cfg().get('jxn_offset_window', 15))
+
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
         ujc_count_dfs[sampleID] = ujc_count_DF
@@ -2315,6 +2422,7 @@ def proc_samples(args, design_file, ref):
         jxn_offset_dfs[sampleID] = jxn_offset_DF
         completeness_dfs[sampleID] = completeness_DF
         site_offset_dfs[sampleID] = site_offset_DF
+        fuzz_depth_dfs[sampleID] = fuzz_depth_DF
         jxn_count_by_sample[sampleID] = int(len(jxn_DF))
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
@@ -2341,9 +2449,10 @@ def proc_samples(args, design_file, ref):
     jxn_offset_dfs = _reord(jxn_offset_dfs)
     completeness_dfs = _reord(completeness_dfs)
     site_offset_dfs = _reord(site_offset_dfs)
+    fuzz_depth_dfs = _reord(fuzz_depth_dfs)
     jxn_count_by_sample = _reord(jxn_count_by_sample)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, jxn_count_by_sample )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -2362,7 +2471,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -2418,6 +2527,13 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         site_offset_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'ref_key',
                                                'site_type', 'median_offset', 'n'])
 
+    _fuzz_frames = [d for d in fuzz_depth_dfs.values() if d is not None and not d.empty]
+    if _fuzz_frames:
+        fuzz_depth_DF = pd.concat(_fuzz_frames, sort=False, ignore_index=True)
+    else:
+        fuzz_depth_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'depth_bin',
+                                              'n_sites', 'n_imprecise'])
+
     #Cat subcategory DFs
     
     FSM_DF = pd.concat(fsm_dfs.values(), sort=False)
@@ -2444,6 +2560,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (jxn_offset_DF, '_jxn_offsets.csv'),
             (completeness_DF, '_completeness.csv'),
             (site_offset_DF, '_site_offsets.csv'),
+            (fuzz_depth_DF, '_fuzz_by_depth.csv'),
         ],
         alltables_tables=[
             (err_DF, '_err_counts.csv'),
@@ -2454,7 +2571,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF)
 
 
 
@@ -3114,7 +3231,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
-             tandem_metrics=None, rep_concordance=None, fuzz_concordance=None, args=None):
+             tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
+             fuzz_depth_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3501,6 +3619,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         plot_tandem_sites_page(pdf, tandem_metrics)
         plot_replicate_concordance_page(pdf, rep_concordance)
         plot_fuzziness_concordance_page(pdf, fuzz_concordance)
+        plot_fuzz_depth_page(pdf, fuzz_depth_metrics)
 
 
 def run_reads_plots(
@@ -3582,10 +3701,10 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs)
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF, fuzz_depth_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, fuzz_depth_dfs)
     dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
@@ -3626,6 +3745,9 @@ def main(args):
     # F7 replicate concordance of splice-site precision (per reference site).
     fuzz_concordance = compute_fuzziness_concordance(site_offset_DF, factor_map)
 
+    # F4 splice-site imprecision vs junction depth (no-op without per-junction coverage).
+    fuzz_depth_metrics = compute_fuzz_depth_metrics(fuzz_depth_DF)
+
     # Cohort-relative sample-outlier scorecard: robust z of each read-QC metric
     # against the cohort, flagging samples that diverge from their peers. Uses the
     # read-level structural composition (all_gene_percs_pivot_DF = dfs_for_plotting[2])
@@ -3658,7 +3780,7 @@ def main(args):
                           completeness_metrics=completeness_metrics, scorecard=scorecard,
                           yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                           tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
-                          fuzz_concordance=fuzz_concordance)
+                          fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -3670,7 +3792,8 @@ def main(args):
                               completeness_metrics=completeness_metrics, scorecard=scorecard,
                               yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                               tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
-                              fuzz_concordance=fuzz_concordance, args=args)
+                              fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
+                              args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

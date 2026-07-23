@@ -683,10 +683,30 @@ def _fuzziness_concordance_figure(concordance):
     return fig
 
 
+def _fuzz_depth_figure(metrics):
+    """F4 imprecision-vs-depth line per sample, or None (fixture has no coverage)."""
+    m = metrics
+    if not m or not m.get("samples") or m.get("profile") is None or m["profile"].empty:
+        return None
+    prof = m["profile"].copy()
+    prof["depth_bin"] = prof["depth_bin"].astype(str)
+    fig = go.Figure()
+    for i, (s, g) in enumerate(prof.groupby("sampleID")):
+        fig.add_trace(go.Scatter(x=g["depth_bin"].tolist(), y=g["perc_imprecise"].tolist(),
+                                 mode="lines+markers", name=str(s),
+                                 line=dict(color=_DEFAULT_SEQ[i % len(_DEFAULT_SEQ)])))
+    _base_layout(fig, "Splice-site imprecision vs junction depth",
+                 "junction read depth (total_coverage_unique)",
+                 "% imprecise splice-site observations")
+    fig.update_layout(barmode="group")
+    return fig
+
+
 def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
                       scorecard=None, yield_metrics=None, drift_metrics=None,
-                      tandem_metrics=None, rep_concordance=None, fuzz_concordance=None):
+                      tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
+                      fuzz_depth_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1228,6 +1248,17 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "reproducible (a property of the sites/protocol); a replicate that disagrees "
             "has sample-specific boundary placement. Shown only with a factor and ≥2 "
             "replicates in a level.", "fig-fuzz-concord"))
+
+    _fdfig = _fuzz_depth_figure(fuzz_depth_metrics)
+    if _fdfig is not None:
+        sections.append(_section(
+            "Splice-site imprecision vs junction depth", _fdfig,
+            "Share of imprecise splice-site observations as a function of the junction's "
+            "read depth. Imprecision concentrated at low-depth junctions is consistent "
+            "with limited support (few reads to pin the boundary); imprecision that "
+            "persists at high depth points to a systematic placement offset. Requires "
+            "per-junction coverage (<code>total_coverage_unique</code>); the section is "
+            "omitted when that column is not populated.", "fig-fuzz-depth"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))
