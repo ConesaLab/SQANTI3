@@ -536,6 +536,38 @@ def compute_ujc_metrics(ujc_count_DF, factor_col=None, n_depths=25):
             "concordance": concordance, "upset": upset}
 
 
+def compute_ujc_overlap(ujc_metrics):
+    """A6 — pairwise UJC overlap index between samples.
+
+    From the UJC presence matrix (``ujc_metrics['upset']``, one boolean column
+    per sample), build an asymmetric matrix whose entry (row A, col B) is
+    ``|A ∩ B| / |A|``: the fraction of sample A's unique junction chains that are
+    also detected in sample B. The diagonal is 1. Reading across row A shows how
+    much of A's UJC repertoire each other sample recovers; the matrix is
+    asymmetric (A→B ≠ B→A) whenever the two repertoires differ in size, which is
+    exactly what distinguishes a small deeply-shared sample from a large one.
+    This is a between-sample comparative view (like the read-count concordance
+    and UpSet), not a per-sample quality score, so it feeds no scorecard metric.
+    Empty-safe: returns ``{'samples': [], 'matrix': None}`` with fewer than two
+    samples that carry UJCs.
+    """
+    if not ujc_metrics:
+        return {"samples": [], "matrix": None}
+    upset = ujc_metrics.get("upset")
+    samples = [s for s in (ujc_metrics.get("samples") or [])
+               if upset is not None and s in upset.columns]
+    if upset is None or len(samples) < 2:
+        return {"samples": [], "matrix": None}
+    present = {s: upset[s].to_numpy(dtype=bool) for s in samples}
+    mat = pd.DataFrame(index=samples, columns=samples, dtype=float)
+    for a in samples:
+        na = int(present[a].sum())
+        for b in samples:
+            inter = int(np.logical_and(present[a], present[b]).sum())
+            mat.loc[a, b] = (inter / na) if na > 0 else 0.0
+    return {"samples": samples, "matrix": mat}
+
+
 def compute_upset_intersections(upset_DF, samples, max_intersections=20):
     """Compute UpSet intersections of shared UJCs, broken down by structural category.
 
@@ -893,6 +925,8 @@ def compute_tandem_sites(jxn_offset_metrics, tandem_offsets=(3, -3, 4, -4, 6, -6
 
 
 _A5_AXES = ["category_composition", "length_profile", "imprecision"]
+# A8 within-group robust-spread (MAD) companion columns, aligned to _A5_AXES.
+_A5_MAD_COLS = ["mad_category_composition", "mad_length_profile", "mad_imprecision"]
 
 
 def _rel_agreement(x, y):
@@ -902,6 +936,18 @@ def _rel_agreement(x, y):
     denom = np.abs(x) + np.abs(y)
     rel = np.divide(np.abs(x - y), denom, out=np.zeros_like(denom), where=denom > 0)
     return float(1.0 - np.mean(rel))
+
+
+def _mad(values):
+    """Median absolute deviation (robust spread): median(|x − median(x)|).
+
+    0 when the replicates are identical on this axis; larger = more within-group
+    spread. NaN for fewer than two finite values. Not scaled by 1.4826 — reported
+    as a plain typical-deviation in the axis's own units."""
+    v = np.asarray([x for x in values if np.isfinite(x)], dtype=float)
+    if v.size < 2:
+        return np.nan
+    return float(np.median(np.abs(v - np.median(v))))
 
 
 def compute_replicate_concordance(all_gene_percs_pivot_DF, length_DF,
@@ -918,8 +964,9 @@ def compute_replicate_concordance(all_gene_percs_pivot_DF, length_DF,
     """
     def disabled(reason):
         return {"enabled": False, "reason": reason, "samples": [], "groups": {},
-                "axes": _A5_AXES,
-                "per_sample": pd.DataFrame(columns=["sampleID", "group"] + _A5_AXES)}
+                "axes": _A5_AXES, "mad_axes": _A5_MAD_COLS,
+                "per_sample": pd.DataFrame(
+                    columns=["sampleID", "group"] + _A5_AXES + _A5_MAD_COLS)}
 
     if not factor_map:
         return disabled("no design factor supplied")
@@ -950,6 +997,35 @@ def compute_replicate_concordance(all_gene_percs_pivot_DF, length_DF,
         impr = {str(k): float(v) for k, v in
                 jxn_offset_metrics["per_sample"].set_index("sampleID")["perc_imprecise"].items()}
 
+    # A8 — per-group robust within-group spread (MAD) on each axis, a companion to
+    # the agreement scores above: the agreement says how close each replicate is to
+    # its group-mates, the MAD says how tightly the whole group clusters (and, unlike
+    # pairwise agreement, is non-degenerate for exactly two replicates). Each axis is
+    # reduced to one scalar per sample, then MAD'd across the group (same value for
+    # every member; reported in the axis's own units):
+    #   composition -> Jensen–Shannon distance of the sample's category mix to the
+    #                  group-mean mix (JSD, 0–1); length -> median read length (bp);
+    #                  imprecision -> % imprecise splice sites (percentage points).
+    group_mad = {}
+    for lv, members in multi.items():
+        comp_scalars = []
+        if all(s in comp and comp[s].size for s in members):
+            stack = np.vstack([comp[s] for s in members])
+            centroid = stack.mean(axis=0)
+            csum = centroid.sum()
+            if csum > 0:
+                centroid = centroid / csum
+                for s in members:
+                    d = jensenshannon(comp[s], centroid, base=2)
+                    comp_scalars.append(0.0 if not np.isfinite(d) else float(d))
+        len_scalars = [float(lenv[s][1]) for s in members if s in lenv and len(lenv[s]) >= 2]
+        impr_scalars = [float(impr[s]) for s in members if s in impr]
+        group_mad[lv] = {
+            "mad_category_composition": _mad(comp_scalars) if len(comp_scalars) == len(members) else np.nan,
+            "mad_length_profile": _mad(len_scalars) if len(len_scalars) == len(members) else np.nan,
+            "mad_imprecision": _mad(impr_scalars) if len(impr_scalars) == len(members) else np.nan,
+        }
+
     rows = []
     for lv, members in multi.items():
         for s in members:
@@ -967,9 +1043,11 @@ def compute_replicate_concordance(all_gene_percs_pivot_DF, length_DF,
                        if s in impr and all(o in impr for o in others) else np.nan)
             rows.append({"sampleID": s, "group": lv,
                          "category_composition": comp_ag,
-                         "length_profile": len_ag, "imprecision": impr_ag})
+                         "length_profile": len_ag, "imprecision": impr_ag,
+                         **group_mad[lv]})
     return {"enabled": True, "reason": "", "samples": [r["sampleID"] for r in rows],
-            "groups": groups, "axes": _A5_AXES, "per_sample": pd.DataFrame(rows)}
+            "groups": groups, "axes": _A5_AXES, "mad_axes": _A5_MAD_COLS,
+            "per_sample": pd.DataFrame(rows)}
 
 
 _F7_OFFSET_TOL = 3.0  # bp; per-site offsets within this are treated as agreeing
@@ -1348,6 +1426,37 @@ def plot_scorecard_page(pdf, scorecard):
     plt.close(fig)
 
 
+def plot_ujc_overlap_page(pdf, overlap):
+    """A6 — pairwise UJC overlap-index heatmap (asymmetric ``|A∩B|/|A|``, Viridis
+    0–1, cells annotated). No-op when fewer than two samples carry UJCs."""
+    if not overlap or overlap.get("matrix") is None:
+        return
+    mat = overlap["matrix"]
+    samples = overlap["samples"]
+    M = mat.to_numpy(dtype=float)
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(max(6, 0.9 * len(samples) + 3),
+                                    max(5, 0.7 * len(samples) + 2)))
+    im = ax.imshow(M, cmap="viridis", vmin=0, vmax=1, aspect="auto")
+    ax.set_xticks(range(len(samples)))
+    ax.set_xticklabels(samples, rotation=40, ha="right", fontsize=8)
+    ax.set_yticks(range(len(samples)))
+    ax.set_yticklabels(samples, fontsize=8)
+    for i in range(len(samples)):
+        for j in range(len(samples)):
+            # Viridis is dark in its lower half — use white text on low cells.
+            ax.text(j, i, f"{M[i, j]:.2f}", ha="center", va="center", fontsize=7,
+                    color="white" if M[i, j] < 0.55 else "black")
+    ax.set_xlabel("fraction also detected in this sample (B)")
+    ax.set_ylabel("fraction of this sample's UJCs (A)")
+    ax.set_title("Pairwise UJC overlap index (row A ∩ col B / row A)", fontsize=11)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.08)
+    cbar.set_label("overlap fraction (1 = all of A's UJCs seen in B)")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
 def _plot_metric_cohort_page(pdf, metric_DF, metric, *, title, ylabel,
                              threshold=None, scorecard=None, color=None):
     """One per-sample bar page that puts a single QC rate in cohort context.
@@ -1572,10 +1681,27 @@ def plot_replicate_concordance_page(pdf, concordance):
     ax.set_title("Replicate concordance (multi-axis): agreement with group-mates\n"
                  "(only factor levels with ≥2 replicates shown)", fontsize=12)
     ax.legend(fontsize=8, frameon=False, ncol=len(axes))
+    # A8 companion — per-group robust within-group spread (MAD) in each axis's own
+    # units. Complements the agreement bars: how tightly the whole group clusters
+    # (non-degenerate even for exactly two replicates, unlike pairwise agreement).
+    mad_cols = m.get("mad_axes") or []
+    if mad_cols and all(c in ps.columns for c in mad_cols):
+        lines = []
+        for g, gdf in ps.groupby("group"):
+            r = gdf.iloc[0]
+            def _fmt(v):
+                return "n/a" if not np.isfinite(v) else f"{v:.3g}"
+            lines.append(f"{g}: composition {_fmt(r['mad_category_composition'])} JSD · "
+                         f"length {_fmt(r['mad_length_profile'])} bp · "
+                         f"imprecision {_fmt(r['mad_imprecision'])} pp")
+        fig.text(0.5, -0.02,
+                 "Within-group spread (robust MAD; 0 = replicates identical) — "
+                 + "   |   ".join(lines),
+                 ha="center", va="top", fontsize=7, color="#555555", wrap=True)
     # In a 2-replicate group each sample's only group-mate is the other, and all
     # distances are symmetric, so the pair's bars are identical by construction.
     if (ps.groupby("group")["sampleID"].transform("size") == 2).any():
-        fig.text(0.5, -0.02,
+        fig.text(0.5, -0.08,
                  "Note: groups of exactly 2 replicates show identical bars for both samples "
                  "(the score is the pair's mutual agreement); per-sample differences appear "
                  "only with ≥3 replicates in a group.",
@@ -3270,7 +3396,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
              tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
-             fuzz_depth_metrics=None, args=None):
+             fuzz_depth_metrics=None, overlap_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3660,6 +3786,12 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # UJC saturation, replicate concordance and UpSet plots
         plot_ujc_metrics_pages(pdf, ujc_metrics, factor_col=exp_factor)
 
+        # A6 — pairwise UJC overlap-index heatmap (between-sample repertoire sharing)
+        try:
+            plot_ujc_overlap_page(pdf, overlap_metrics)
+        except Exception as e:
+            reads_logger.warning(f"UJC overlap page skipped: {e}")
+
         # Splice-site fuzziness: offset spectrum, precision profile, canonical split
         plot_jxn_offset_pages(pdf, jxn_offset_metrics)
 
@@ -3764,6 +3896,9 @@ def main(args):
     # renderers. Computed before identify_cand_underannot mutates ujc_count_DF.
     ujc_metrics = compute_ujc_metrics(ujc_count_DF, factor_col=args.inFACTOR)
 
+    # A6 pairwise UJC overlap index (asymmetric |A∩B|/|A|) — between-sample view.
+    overlap_metrics = compute_ujc_overlap(ujc_metrics)
+
     # Splice-site fuzziness metrics (offset spectrum, precision profile,
     # directionality, per-sample imprecision scalar) shared by both renderers.
     jxn_offset_metrics = compute_jxn_offset_metrics(
@@ -3833,7 +3968,8 @@ def main(args):
                           completeness_metrics=completeness_metrics, scorecard=scorecard,
                           yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                           tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
-                          fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics)
+                          fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
+                          overlap_metrics=overlap_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -3846,7 +3982,7 @@ def main(args):
                               yield_metrics=yield_metrics, drift_metrics=drift_metrics,
                               tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
                               fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
-                              args=args)
+                              overlap_metrics=overlap_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

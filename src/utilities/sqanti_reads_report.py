@@ -681,6 +681,17 @@ def _tandem_sites_figure(tandem):
     return fig
 
 
+def _ujc_overlap_figure(overlap):
+    """A6 pairwise UJC overlap-index heatmap, or None when <2 samples carry UJCs."""
+    if not overlap or overlap.get("matrix") is None:
+        return None
+    return _heatmap(overlap["matrix"],
+                    "Pairwise UJC overlap index (row ∩ col / row)",
+                    "fraction also detected in this sample", "fraction of this sample's UJCs",
+                    colorscale="Viridis", zmid=None, zmin=0, zmax=1,
+                    colorbar_title="overlap", value_fmt=".2f", annotate=True)
+
+
 def _replicate_concordance_figure(concordance):
     """A5 multi-axis replicate-concordance grouped bar, or None when disabled."""
     m = concordance
@@ -691,11 +702,24 @@ def _replicate_concordance_figure(concordance):
     x = [f"{s} ({g})" for s, g in zip(ps["sampleID"], ps["group"])]
     colors = {"category_composition": "#15918A", "length_profile": "#F58A53",
               "imprecision": "#74CDF0"}
+    # A8 companion — the group's robust within-group spread (MAD) for each axis,
+    # surfaced on hover next to the agreement value.
+    mad_of = {"category_composition": "mad_category_composition",
+              "length_profile": "mad_length_profile", "imprecision": "mad_imprecision"}
+    mad_units = {"category_composition": "JSD", "length_profile": "bp", "imprecision": "pp"}
     fig = go.Figure()
     for axis in axes:
-        fig.add_trace(go.Bar(name=axis.replace("_", " "), x=x,
-                             y=ps[axis].fillna(0).tolist(),
-                             marker_color=colors.get(axis, "#999999")))
+        madcol = mad_of.get(axis)
+        if madcol and madcol in ps.columns:
+            cust = [("n/a" if pd.isna(v) else f"{v:.3g} {mad_units[axis]}")
+                    for v in ps[madcol]]
+        else:
+            cust = ["n/a"] * len(ps)
+        fig.add_trace(go.Bar(
+            name=axis.replace("_", " "), x=x, y=ps[axis].fillna(0).tolist(),
+            marker_color=colors.get(axis, "#999999"), customdata=cust,
+            hovertemplate="%{x}<br>agreement: %{y:.3f}<br>group spread (MAD): "
+                          "%{customdata}<extra>" + axis.replace("_", " ") + "</extra>"))
     _base_layout(fig, "Replicate concordance (multi-axis)",
                  "Sample (group)", "within-group agreement (1 = matches replicates)")
     fig.update_layout(barmode="group", yaxis_range=[0, 1.05])
@@ -741,7 +765,7 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
                       scorecard=None, yield_metrics=None, drift_metrics=None,
                       tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
-                      fuzz_depth_metrics=None):
+                      fuzz_depth_metrics=None, overlap_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1234,6 +1258,21 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "UJCs fall in that combination, stacked by structural category. Large "
                 "sample-specific bars indicate low overlap between samples.", "fig-upset"))
 
+        _ovfig = _ujc_overlap_figure(overlap_metrics)
+        if _ovfig is not None:
+            sections.append(_section(
+                "Pairwise UJC overlap index", _ovfig,
+                "For every ordered pair of samples we count how many unique junction chains "
+                "(UJCs) they share and divide by the <b>row</b> sample's own UJC count, giving "
+                "<b>|A ∩ B| / |A|</b> — the fraction of sample A's junction-chain repertoire that "
+                "is also detected in sample B (diagonal = 1). Read along a row to see how much of "
+                "that sample's repertoire each other sample recovers. The matrix is <i>asymmetric</i>: "
+                "a small, deeply-shared sample can have a high row (most of its UJCs appear "
+                "elsewhere) yet a low column (it recovers only a fraction of a larger sample's "
+                "repertoire), which is exactly how it distinguishes shallow or low-complexity "
+                "samples from rich ones. This complements the UpSet view (exact sharing pattern) "
+                "and the read-count concordance (abundance agreement).", "fig-ujc-overlap"))
+
     # 9d. Splice-site fuzziness: offset spectrum, precision profile, canonical split
     if jxn_offset_metrics and jxn_offset_metrics.get("samples"):
         f_samples = jxn_offset_metrics["samples"]
@@ -1344,6 +1383,12 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "imprecise-site fraction to each group-mate. A replicate low on one axis diverges "
             "from its peers on that specific property — more sensitive than UJC overlap alone. "
             "Shown only when the design has a factor with ≥2 replicates in a level. "
+            "<b>Hover</b> a bar to also see the group's <b>robust spread (MAD)</b> on that axis — "
+            "the median absolute deviation across the group of a per-sample scalar (composition: "
+            "Jensen–Shannon distance to the group-mean mix, in JSD; length: median read length, "
+            "in bp; imprecision: % imprecise sites, in pp), where 0 means the replicates are "
+            "identical on that axis. The MAD is a whole-group companion to the per-sample "
+            "agreement and stays informative even for exactly two replicates. "
             "<i>Note:</i> in a group of exactly two replicates each sample's only group-mate is "
             "the other, and all three distances are symmetric, so the two bars are identical by "
             "construction (the score reads as the pair's mutual agreement); values diverge "

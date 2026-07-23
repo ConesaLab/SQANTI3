@@ -79,6 +79,50 @@ def test_disabled_reasons(tmp_path):
     assert not os.path.exists(str(p)) or len(pypdf.PdfReader(str(p)).pages) == 0
 
 
+def test_mad_zero_for_identical_group():
+    # A8: identical replicates -> zero within-group spread on every axis.
+    comp = {s: {"FSM": 60, "ISM": 40} for s in ("A", "B", "C")}
+    ln = {s: (1000, 2000, 3000) for s in ("A", "B", "C")}
+    impr = {s: 5.0 for s in ("A", "B", "C")}
+    piv, length, jxn = _inputs(comp, ln, impr)
+    m = compute_replicate_concordance(piv, length, jxn,
+                                      {"A": "g", "B": "g", "C": "g"})
+    ps = m["per_sample"].set_index("sampleID")
+    for col in m["mad_axes"]:
+        assert ps.loc["A", col] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_mad_tracks_group_spread():
+    # A8: a group spread across length + imprecision (but sharing one category mix)
+    # -> non-zero MAD on those axes, zero on composition. MAD is robust: with three
+    # differing values the median absolute deviation is the middle deviation.
+    comp = {s: {"FSM": 60, "ISM": 40} for s in ("A", "B", "C")}
+    ln = {"A": (1000, 2000, 3000), "B": (1000, 2200, 3000), "C": (1000, 2400, 3000)}
+    impr = {"A": 4.0, "B": 6.0, "C": 8.0}
+    piv, length, jxn = _inputs(comp, ln, impr)
+    m = compute_replicate_concordance(piv, length, jxn,
+                                      {"A": "g", "B": "g", "C": "g"})
+    ps = m["per_sample"].set_index("sampleID")
+    assert ps.loc["A", "mad_category_composition"] == pytest.approx(0.0, abs=1e-9)
+    assert ps.loc["A", "mad_length_profile"] == pytest.approx(200.0)   # median|{200,0,200}|
+    assert ps.loc["A", "mad_imprecision"] == pytest.approx(2.0)        # median|{2,0,2}|
+    # MAD is a group-level quantity: identical for every member of the group.
+    assert ps.loc["A", "mad_length_profile"] == pytest.approx(ps.loc["C", "mad_length_profile"])
+
+
+def test_mad_nonzero_for_two_replicate_group():
+    # A8 value-add: MAD stays informative for exactly two replicates, where the
+    # pairwise agreement bars are identical by construction.
+    comp = {"A": {"FSM": 60, "ISM": 40}, "B": {"FSM": 60, "ISM": 40}}
+    ln = {"A": (1000, 2000, 3000), "B": (1000, 2400, 3000)}
+    impr = {"A": 4.0, "B": 8.0}
+    piv, length, jxn = _inputs(comp, ln, impr)
+    m = compute_replicate_concordance(piv, length, jxn, {"A": "g", "B": "g"})
+    ps = m["per_sample"].set_index("sampleID")
+    assert ps.loc["A", "mad_length_profile"] == pytest.approx(200.0)   # |2000-2400|/2
+    assert ps.loc["A", "mad_imprecision"] == pytest.approx(2.0)        # |4-8|/2
+
+
 def test_fixture_like_groupB_singleton_excluded():
     comp = {"SQ_R1": {"FSM": 50, "ISM": 50}, "SQ_R2": {"FSM": 55, "ISM": 45},
             "SQ_R3": {"FSM": 40, "ISM": 60}}
