@@ -872,6 +872,139 @@ def compute_tandem_sites(jxn_offset_metrics, tandem_offsets=(3, -3, 4, -4, 6, -6
             "per_sample": pd.DataFrame(rows), "by_offset": near}
 
 
+_A5_AXES = ["category_composition", "length_profile", "imprecision"]
+
+
+def _rel_agreement(x, y):
+    """1 - mean relative difference between two vectors, in [0, 1] (1 = identical)."""
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    denom = np.abs(x) + np.abs(y)
+    rel = np.divide(np.abs(x - y), denom, out=np.zeros_like(denom), where=denom > 0)
+    return float(1.0 - np.mean(rel))
+
+
+def compute_replicate_concordance(all_gene_percs_pivot_DF, length_DF,
+                                  jxn_offset_metrics, factor_map):
+    """Multi-axis within-group replicate concordance (A5).
+
+    For samples sharing a design-factor level (replicates), how closely each
+    agrees with its group-mates on: structural-category composition (1 − mean
+    Jensen–Shannon distance), read-length profile (q25/median/q75), and
+    splice-site imprecision. Each axis is a 0–1 agreement (1 = matches its
+    replicates). A replicate low on one axis diverges from its peers on that
+    specific property — more sensitive than UJC overlap alone. Only meaningful
+    with a factor and ≥2 replicates in a level; otherwise disabled with a reason.
+    """
+    def disabled(reason):
+        return {"enabled": False, "reason": reason, "samples": [], "groups": {},
+                "axes": _A5_AXES,
+                "per_sample": pd.DataFrame(columns=["sampleID", "group"] + _A5_AXES)}
+
+    if not factor_map:
+        return disabled("no design factor supplied")
+    groups = {}
+    for s, lv in factor_map.items():
+        groups.setdefault(str(lv), []).append(str(s))
+    multi = {lv: ss for lv, ss in groups.items() if len(ss) >= 2}
+    if not multi:
+        return disabled("no factor level has ≥2 replicates")
+
+    # Per-sample vectors from tables already computed.
+    comp = {}
+    if all_gene_percs_pivot_DF is not None and "sampleID" in all_gene_percs_pivot_DF.columns:
+        cat_cols = [c for c in cat_order if c in all_gene_percs_pivot_DF.columns]
+        piv = all_gene_percs_pivot_DF.set_index("sampleID")
+        for s in piv.index:
+            v = piv.loc[s, cat_cols].fillna(0).to_numpy(dtype=float) if cat_cols else np.array([])
+            tot = v.sum()
+            comp[str(s)] = v / tot if tot > 0 else v
+    lenv = {}
+    lcols = ["q25_length", "median_length", "q75_length"]
+    if length_DF is not None and all(c in length_DF.columns for c in lcols):
+        li = length_DF.set_index("sampleID")
+        for s in li.index:
+            lenv[str(s)] = li.loc[s, lcols].to_numpy(dtype=float)
+    impr = {}
+    if jxn_offset_metrics and not jxn_offset_metrics.get("per_sample", pd.DataFrame()).empty:
+        impr = {str(k): float(v) for k, v in
+                jxn_offset_metrics["per_sample"].set_index("sampleID")["perc_imprecise"].items()}
+
+    rows = []
+    for lv, members in multi.items():
+        for s in members:
+            others = [o for o in members if o != s]
+            comp_ag = np.nan
+            if s in comp and comp[s].size and all(o in comp and comp[o].size for o in others):
+                jsds = []
+                for o in others:
+                    d = jensenshannon(comp[s], comp[o], base=2)
+                    jsds.append(0.0 if not np.isfinite(d) else d)
+                comp_ag = 1.0 - float(np.mean(jsds))
+            len_ag = (float(np.mean([_rel_agreement(lenv[s], lenv[o]) for o in others]))
+                      if s in lenv and all(o in lenv for o in others) else np.nan)
+            impr_ag = (float(np.mean([_rel_agreement([impr[s]], [impr[o]]) for o in others]))
+                       if s in impr and all(o in impr for o in others) else np.nan)
+            rows.append({"sampleID": s, "group": lv,
+                         "category_composition": comp_ag,
+                         "length_profile": len_ag, "imprecision": impr_ag})
+    return {"enabled": True, "reason": "", "samples": [r["sampleID"] for r in rows],
+            "groups": groups, "axes": _A5_AXES, "per_sample": pd.DataFrame(rows)}
+
+
+_F7_OFFSET_TOL = 3.0  # bp; per-site offsets within this are treated as agreeing
+
+
+def compute_fuzziness_concordance(site_offset_DF, factor_map):
+    """Within-group concordance of per-reference-site splice precision (F7).
+
+    For replicate samples, whether the same reference splice sites are placed at
+    the same sub-bp offsets. Per factor group, restrict to reference sites detected
+    in ≥2 replicates and score each sample's agreement (1 − mean |Δoffset| capped
+    at ±{tol} bp) with its group-mates on those shared sites. High agreement means
+    the imprecision pattern is reproducible; a replicate that disagrees has
+    sample-specific boundary placement. Disabled with a reason when there is no
+    factor or no ≥2-replicate group.
+    """
+    def disabled(reason):
+        return {"enabled": False, "reason": reason, "samples": [], "groups": {},
+                "per_sample": pd.DataFrame(columns=["sampleID", "group",
+                                                    "site_precision_agreement"])}
+    if not factor_map:
+        return disabled("no design factor supplied")
+    if site_offset_DF is None or site_offset_DF.empty:
+        return disabled("no splice-site offset data")
+    groups = {}
+    for s, lv in factor_map.items():
+        groups.setdefault(str(lv), []).append(str(s))
+    multi = {lv: ss for lv, ss in groups.items() if len(ss) >= 2}
+    if not multi:
+        return disabled("no factor level has ≥2 replicates")
+
+    df = site_offset_DF.copy()
+    df["sampleID"] = df["sampleID"].astype(str)
+    df["site"] = df["ref_key"].astype(str) + "|" + df["site_type"].astype(str)
+    rows = []
+    for lv, members in multi.items():
+        piv = df[df["sampleID"].isin(members)].pivot_table(
+            index="site", columns="sampleID", values="median_offset", aggfunc="median")
+        piv = piv.reindex(columns=members)
+        piv = piv[piv.notna().sum(axis=1) >= 2]   # sites in >=2 replicates
+        for s in members:
+            ags = []
+            for o in members:
+                if o == s:
+                    continue
+                pair = piv[[s, o]].dropna()
+                if len(pair):
+                    d = np.abs(pair[s].to_numpy(dtype=float) - pair[o].to_numpy(dtype=float))
+                    ags.append(float(np.mean(np.clip(1.0 - d / _F7_OFFSET_TOL, 0.0, 1.0))))
+            rows.append({"sampleID": s, "group": lv,
+                         "site_precision_agreement": float(np.mean(ags)) if ags else np.nan})
+    return {"enabled": True, "reason": "", "samples": [r["sampleID"] for r in rows],
+            "groups": groups, "per_sample": pd.DataFrame(rows)}
+
+
 def _robust_z(values):
     """Robust z-scores of a 1-D sequence: (x - median) / (1.4826 * MAD).
 
@@ -1370,6 +1503,64 @@ def plot_tandem_sites_page(pdf, tandem):
     note = "   ".join(f"{r.sampleID}: {r.perc_tandem_3bp:.1f}%" for r in ps.itertuples())
     ax.text(0.5, -0.22, "tandem fraction at ±3 bp — " + note,
             transform=ax.transAxes, ha="center", fontsize=8, color="#555555")
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_replicate_concordance_page(pdf, concordance):
+    """Multi-axis replicate-concordance page (A5): per-sample within-group
+    agreement on composition / length / imprecision, grouped by factor level.
+    No-op when disabled (no factor or no ≥2-replicate level)."""
+    m = concordance
+    if not m or not m.get("enabled") or m["per_sample"].empty:
+        return
+    ps = m["per_sample"].reset_index(drop=True)
+    axes = m["axes"]
+    samples = ps["sampleID"].tolist()
+    x = np.arange(len(samples))
+    w = 0.8 / len(axes)
+    colors = [aes_palette["green"], aes_palette["orange"], aes_palette["blue"]]
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(max(8, 1.0 * len(samples) + 3), 5.5))
+    for i, axis in enumerate(axes):
+        ax.bar(x + i * w, ps[axis].fillna(0).to_numpy(dtype=float), width=w,
+               label=axis.replace("_", " "), color=colors[i % len(colors)], zorder=2)
+    ax.set_xticks(x + w * (len(axes) - 1) / 2)
+    ax.set_xticklabels([f"{s}\n({g})" for s, g in zip(samples, ps["group"])], fontsize=8)
+    ax.set_ylabel("within-group agreement (1 = matches replicates)")
+    ax.set_ylim(0, 1.05)
+    ax.set_title("Replicate concordance (multi-axis): agreement with group-mates\n"
+                 "(only factor levels with ≥2 replicates shown)", fontsize=12)
+    ax.legend(fontsize=8, frameon=False, ncol=len(axes))
+    fig.tight_layout()
+    pdf.savefig(fig, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_fuzziness_concordance_page(pdf, concordance):
+    """Replicate concordance of splice-site precision (F7): per-sample within-group
+    agreement on per-reference-site median offsets, colored by factor level. No-op
+    when disabled (no factor or no ≥2-replicate level)."""
+    m = concordance
+    if not m or not m.get("enabled") or m["per_sample"].empty:
+        return
+    ps = m["per_sample"].reset_index(drop=True)
+    samples = ps["sampleID"].tolist()
+    grps = ps["group"].tolist()
+    uniq = list(dict.fromkeys(grps))
+    gcolor = {g: sample_seq[i % len(sample_seq)] for i, g in enumerate(uniq)}
+    x = np.arange(len(samples))
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    fig, ax = plt.subplots(figsize=(max(8, 0.9 * len(samples) + 3), 5.5))
+    ax.bar(x, ps["site_precision_agreement"].fillna(0).to_numpy(dtype=float),
+           color=[gcolor[g] for g in grps], zorder=2)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"{s}\n({g})" for s, g in zip(samples, grps)], fontsize=8)
+    ax.set_ylabel("site-precision agreement (1 = matches replicates)")
+    ax.set_ylim(0, 1.05)
+    ax.set_title("Replicate concordance of splice-site precision\n"
+                 "(per reference site; only ≥2-replicate levels shown)", fontsize=12)
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
@@ -1912,6 +2103,53 @@ def _summarize_jxn_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window=
     return out[cols]
 
 
+def _summarize_site_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window=15):
+    """Per reference splice site, this sample's median signed offset (F7).
+
+    Keeps the reference-site identity that ``_summarize_jxn_offsets`` collapses
+    away, so replicates can be compared site-by-site. The reference coordinate is
+    reconstructed exactly as ``calc_jxn_cv`` does (``genomic_*_coord +
+    diff_to_Ref_*``); the donor/acceptor label is strand-aware (matching
+    ``_summarize_jxn_offsets``). Only near-reference observations (|offset| <=
+    window) are kept. Typed-empty safe.
+    Returns [sampleID, exp_factor, ref_key, site_type, median_offset, n].
+    """
+    cols = ["sampleID", exp_factor, "ref_key", "site_type", "median_offset", "n"]
+    need = ["chrom", "strand", "genomic_start_coord", "genomic_end_coord",
+            "diff_to_Ref_start_site", "diff_to_Ref_end_site"]
+    if jxn_DF is None or jxn_DF.empty or not all(c in jxn_DF.columns for c in need):
+        return pd.DataFrame(columns=cols)
+    df = jxn_DF.copy()
+    for c in ("genomic_start_coord", "genomic_end_coord",
+              "diff_to_Ref_start_site", "diff_to_Ref_end_site"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    plus, minus = df["strand"] == "+", df["strand"] == "-"
+
+    def _part(site_type, mask, coord_col, diff_col):
+        d = df[mask]
+        return pd.DataFrame({"chrom": d["chrom"], "strand": d["strand"],
+                             "ref_coord": d[coord_col] + d[diff_col],
+                             "offset": d[diff_col], "site_type": site_type})
+
+    parts = [
+        _part("donor", plus, "genomic_start_coord", "diff_to_Ref_start_site"),
+        _part("acceptor", plus, "genomic_end_coord", "diff_to_Ref_end_site"),
+        _part("acceptor", minus, "genomic_start_coord", "diff_to_Ref_start_site"),
+        _part("donor", minus, "genomic_end_coord", "diff_to_Ref_end_site"),
+    ]
+    long = pd.concat(parts, ignore_index=True).dropna(subset=["ref_coord", "offset"])
+    long = long[long["offset"].abs() <= window]
+    if long.empty:
+        return pd.DataFrame(columns=cols)
+    long["ref_key"] = (long["chrom"].astype(str) + ":" + long["strand"].astype(str)
+                       + ":" + long["ref_coord"].astype("int64").astype(str))
+    out = (long.groupby(["ref_key", "site_type"], observed=True)["offset"]
+                .agg(median_offset="median", n="size").reset_index())
+    out["sampleID"] = sampleID
+    out[exp_factor] = exp_factor_val
+    return out[cols]
+
+
 def _summarize_completeness(class_DF, sampleID, exp_factor, exp_factor_val, window=50):
     """Per-sample 5'/3' completeness digest from read-to-gene end distances.
 
@@ -1966,6 +2204,7 @@ def proc_samples(args, design_file, ref):
     cv_dfs = {}
     jxn_offset_dfs = {}
     completeness_dfs = {}
+    site_offset_dfs = {}       # per reference-site median offset (F7 fuzziness concordance)
     jxn_count_by_sample = {}   # per-sample junction-record count (A4 depth-normalised yield)
     fsm_dfs = {}
     ism_dfs = {}
@@ -2063,6 +2302,11 @@ def proc_samples(args, design_file, ref):
             class_DF, sampleID, exp_factor, exp_factor_val,
             window=args.cfg().get('completeness_window', 50))
 
+        ##Per reference-site median offset (F7 fuzziness concordance)
+        site_offset_DF = _summarize_site_offsets(
+            jxn_DF, sampleID, exp_factor, exp_factor_val,
+            window=args.cfg().get('jxn_offset_window', 15))
+
         ##Store all summary dataframes in dictionaries
         gene_count_dfs[sampleID] = gene_count_DF
         ujc_count_dfs[sampleID] = ujc_count_DF
@@ -2070,6 +2314,7 @@ def proc_samples(args, design_file, ref):
         cv_dfs[sampleID] = cv_DF
         jxn_offset_dfs[sampleID] = jxn_offset_DF
         completeness_dfs[sampleID] = completeness_DF
+        site_offset_dfs[sampleID] = site_offset_DF
         jxn_count_by_sample[sampleID] = int(len(jxn_DF))
         err_dfs[sampleID] = err_DF
         fsm_dfs[sampleID] = FSM_DF
@@ -2095,9 +2340,10 @@ def proc_samples(args, design_file, ref):
     length_Dct = _reord(length_Dct)
     jxn_offset_dfs = _reord(jxn_offset_dfs)
     completeness_dfs = _reord(completeness_dfs)
+    site_offset_dfs = _reord(site_offset_dfs)
     jxn_count_by_sample = _reord(jxn_count_by_sample)
 
-    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, jxn_count_by_sample )
+    return(ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, jxn_count_by_sample )
 
 def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
     """Write the per-run summary CSVs. The synthetic ``temp_factor`` column is
@@ -2116,7 +2362,7 @@ def _export_reads_tables(args, exp_factor, core_tables, alltables_tables):
             _write(df, suffix)
 
 
-def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs ):
+def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs ):
     
     if args.inFACTOR is None:
         exp_factor = 'temp_factor'
@@ -2165,6 +2411,13 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
     else:
         completeness_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'end', 'abs_dist', 'count'])
 
+    _site_frames = [d for d in site_offset_dfs.values() if d is not None and not d.empty]
+    if _site_frames:
+        site_offset_DF = pd.concat(_site_frames, sort=False, ignore_index=True)
+    else:
+        site_offset_DF = pd.DataFrame(columns=['sampleID', exp_factor, 'ref_key',
+                                               'site_type', 'median_offset', 'n'])
+
     #Cat subcategory DFs
     
     FSM_DF = pd.concat(fsm_dfs.values(), sort=False)
@@ -2190,6 +2443,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
             (cv_DF, '_cv.csv'),
             (jxn_offset_DF, '_jxn_offsets.csv'),
             (completeness_DF, '_completeness.csv'),
+            (site_offset_DF, '_site_offsets.csv'),
         ],
         alltables_tables=[
             (err_DF, '_err_counts.csv'),
@@ -2200,7 +2454,7 @@ def prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, er
         ],
     )
 
-    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF)
+    return (gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF)
 
 
 
@@ -2860,7 +3114,7 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
              length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
-             tandem_metrics=None, args=None):
+             tandem_metrics=None, rep_concordance=None, fuzz_concordance=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3245,6 +3499,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         plot_jxn_yield_page(pdf, yield_metrics, scorecard=scorecard)
         plot_composition_drift_page(pdf, drift_metrics)
         plot_tandem_sites_page(pdf, tandem_metrics)
+        plot_replicate_concordance_page(pdf, rep_concordance)
+        plot_fuzziness_concordance_page(pdf, fuzz_concordance)
 
 
 def run_reads_plots(
@@ -3326,10 +3582,10 @@ def run_reads_plots(
 
 
 def main(args):
-    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
+    ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs, fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs, jxn_count_by_sample = proc_samples(args, args.inDESIGN, args.inREF)
 
-    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
-                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs)
+    gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF,FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct, jxn_offset_DF, completeness_DF, site_offset_DF = prep_tables(args, ref_DF, gene_count_dfs,ujc_count_dfs,length_dfs,cv_dfs, err_dfs,
+                                                                                                                            fsm_dfs, ism_dfs, nic_nnc_dfs, nov_can_dfs,length_Dct, jxn_offset_dfs, completeness_dfs, site_offset_dfs)
     dfs_for_plotting = prep_data_4_plots( args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_DF, FSM_DF, ISM_DF, NIC_NNC_DF, nov_can_DF, length_Dct )
 
     # UJC-level metrics (saturation, replicate concordance, UpSet) shared by both
@@ -3358,6 +3614,17 @@ def main(args):
 
     # F6 tandem splice sites (NAGNAG): ±3/±4/±6 bp excess in the offset spectrum.
     tandem_metrics = compute_tandem_sites(jxn_offset_metrics)
+
+    # Within-group replicate views (A5). factor_map = {sampleID: level}; None when
+    # no --factor, which disables A5/F7 (they only mean something for replicates).
+    factor_map = None
+    if args.inFACTOR is not None and args.inFACTOR in length_DF.columns:
+        factor_map = dict(zip(length_DF["sampleID"].astype(str),
+                              length_DF[args.inFACTOR].astype(str)))
+    rep_concordance = compute_replicate_concordance(
+        dfs_for_plotting[2], length_DF, jxn_offset_metrics, factor_map)
+    # F7 replicate concordance of splice-site precision (per reference site).
+    fuzz_concordance = compute_fuzziness_concordance(site_offset_DF, factor_map)
 
     # Cohort-relative sample-outlier scorecard: robust z of each read-QC metric
     # against the cohort, flagging samples that diverge from their peers. Uses the
@@ -3390,7 +3657,8 @@ def main(args):
                           jxn_offset_metrics=jxn_offset_metrics,
                           completeness_metrics=completeness_metrics, scorecard=scorecard,
                           yield_metrics=yield_metrics, drift_metrics=drift_metrics,
-                          tandem_metrics=tandem_metrics)  # F6
+                          tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
+                          fuzz_concordance=fuzz_concordance)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -3401,7 +3669,8 @@ def main(args):
                               jxn_offset_metrics=jxn_offset_metrics,
                               completeness_metrics=completeness_metrics, scorecard=scorecard,
                               yield_metrics=yield_metrics, drift_metrics=drift_metrics,
-                              tandem_metrics=tandem_metrics, args=args)
+                              tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
+                              fuzz_concordance=fuzz_concordance, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
 
     # Close all remaining figures to free memory

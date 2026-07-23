@@ -646,10 +646,47 @@ def _tandem_sites_figure(tandem):
     return fig
 
 
+def _replicate_concordance_figure(concordance):
+    """A5 multi-axis replicate-concordance grouped bar, or None when disabled."""
+    m = concordance
+    if not m or not m.get("enabled") or m.get("per_sample") is None or m["per_sample"].empty:
+        return None
+    ps = m["per_sample"]
+    axes = m["axes"]
+    x = [f"{s} ({g})" for s, g in zip(ps["sampleID"], ps["group"])]
+    colors = {"category_composition": "#15918A", "length_profile": "#F58A53",
+              "imprecision": "#74CDF0"}
+    fig = go.Figure()
+    for axis in axes:
+        fig.add_trace(go.Bar(name=axis.replace("_", " "), x=x,
+                             y=ps[axis].fillna(0).tolist(),
+                             marker_color=colors.get(axis, "#999999")))
+    _base_layout(fig, "Replicate concordance (multi-axis)",
+                 "Sample (group)", "within-group agreement (1 = matches replicates)")
+    fig.update_layout(barmode="group", yaxis_range=[0, 1.05])
+    return fig
+
+
+def _fuzziness_concordance_figure(concordance):
+    """F7 per-sample splice-site precision agreement bar, or None when disabled."""
+    m = concordance
+    if not m or not m.get("enabled") or m.get("per_sample") is None or m["per_sample"].empty:
+        return None
+    ps = m["per_sample"]
+    x = [f"{s} ({g})" for s, g in zip(ps["sampleID"], ps["group"])]
+    fig = go.Figure(go.Bar(x=x, y=ps["site_precision_agreement"].fillna(0).tolist(),
+                           marker_color="#9F7BB8",
+                           hovertemplate="%{x}<br>agreement %{y:.2f}<extra></extra>"))
+    _base_layout(fig, "Replicate concordance of splice-site precision",
+                 "Sample (group)", "site-precision agreement")
+    fig.update_layout(barmode="group", yaxis_range=[0, 1.05], showlegend=False)
+    return fig
+
+
 def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       jxn_offset_metrics=None, completeness_metrics=None,
                       scorecard=None, yield_metrics=None, drift_metrics=None,
-                      tandem_metrics=None):
+                      tandem_metrics=None, rep_concordance=None, fuzz_concordance=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1170,6 +1207,27 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "nearby alternative site, a real biological phenomenon distinct from random "
             "boundary imprecision. Shown descriptively; a higher tandem fraction is a "
             "property of the sample, not a defect.", "fig-tandem"))
+
+    _rfig = _replicate_concordance_figure(rep_concordance)
+    if _rfig is not None:
+        sections.append(_section(
+            "Replicate concordance (multi-axis)", _rfig,
+            "For samples sharing a design-factor level (replicates), how closely each "
+            "agrees with its group on structural composition, read-length profile, and "
+            "splice-site precision (1 = matches its replicates). A replicate low on one "
+            "axis diverges from its peers on that specific property — a more sensitive "
+            "check than UJC overlap alone. Shown only when the design has a factor with "
+            "≥2 replicates in a level.", "fig-rep-concord"))
+
+    _ffcfig = _fuzziness_concordance_figure(fuzz_concordance)
+    if _ffcfig is not None:
+        sections.append(_section(
+            "Replicate concordance of splice-site precision", _ffcfig,
+            "For replicate samples, whether the same reference splice sites are placed at "
+            "the same sub-bp offsets. High agreement means the imprecision pattern is "
+            "reproducible (a property of the sites/protocol); a replicate that disagrees "
+            "has sample-specific boundary placement. Shown only with a factor and ≥2 "
+            "replicates in a level.", "fig-fuzz-concord"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))

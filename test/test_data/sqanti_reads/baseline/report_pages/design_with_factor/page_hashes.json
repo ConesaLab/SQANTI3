@@ -280,16 +280,26 @@
     "width": 982
   },
   "page_56.png": {
+    "height": 532,
+    "sha256": "ddb4b432b02cbff4de006f12df54852922b2edf8ba602eec447c6fa1372710cb",
+    "width": 782
+  },
+  "page_57.png": {
+    "height": 532,
+    "sha256": "1321b4ffde295ce8089dd872cea71554bee4c259148814ab50a8a612ee93fcd7",
+    "width": 782
+  },
+  "page_58.png": {
     "height": 1000,
     "sha256": "d479babbd635fede21a7d9c3636586ebeeb0a6a3fcc952e262e02e3ea81cde69",
     "width": 1400
   },
-  "page_57.png": {
+  "page_59.png": {
     "height": 1000,
     "sha256": "1dba1cf8ce4c993751ab612e8fe3f52d3d0f7ec66082013fc1f7896b3e221bea",
     "width": 1400
   },
-  "page_58.png": {
+  "page_60.png": {
     "height": 1000,
     "sha256": "dc7e1da0d8e3b058fb1d29d0c0ec457a86fd6a58e96f7eb99c8aaca8c252f3e2",
     "width": 1400
