@@ -94,11 +94,12 @@ As in _fast_ mode, you can add extra design columns (e.g. `platform`, `age`) and
 
 Before running SQANTI-reads, you will need to:
 
-**Activate the SQANTI3 conda environment:**
+**Create the SQANTI3 conda environment** (once, from the YAML shipped in the repo — it creates an environment named `sqanti3`) **and activate it:**
 
 ```
-(base)-bash-4.1$ conda activate SQANTI3.env
-(SQANTI3.env)-bash-4.1$
+(base)-bash-4.1$ conda env create -f SQANTI3.conda_env.yml   # first time only
+(base)-bash-4.1$ conda activate sqanti3
+(sqanti3)-bash-4.1$
 ```
 
 ## Arguments and parameters in SQANTI-reads
@@ -253,6 +254,27 @@ The design file will be modified to include all initial columns (e.g. sampleID, 
 - sqantiReads_pca_variance.csv: Gives the proportion variance explained by each PC.
 
 ### Results plots and reports
+
+**At a glance**, the report is organised into the sections below (each is described in detail further down; a section is skipped when its input is absent):
+
+| Report section | What it tells you | When it appears |
+| --- | --- | --- |
+| Summary & QC flags | Per-sample pass / warn / fail on the key QC metrics | HTML report |
+| Sample-outlier scorecard | Which samples diverge from the cohort (robust z-scores) | ≥ 4 samples |
+| Structural-category composition | Reads & UJCs per SQANTI3 category (FSM/ISM/NIC/NNC/…), per sample and per gene | Always |
+| Genes & UJCs detected | How many genes / junction chains, split by read support | Always |
+| Read length distribution | Length composition + full per-read distribution | Always |
+| FSM/ISM/NIC/NNC sub-categories | Which sub-types (alt 5'/3' ends, fragments, intron retention, …) dominate | Always |
+| Junction classification & artefacts | Known/novel × canonical junctions; RT-switching, intra-priming, novel non-canonical burden | Always |
+| Splice-site detection & fuzziness | Donor/acceptor detection variation, offset spectrum, precision profile, tandem (NAGNAG), imprecision vs depth | Always (some parts need per-junction coverage) |
+| 5'/3' completeness | How close read ends sit to the annotated gene boundaries | Always |
+| UJC saturation, concordance, UpSet, overlap | Library saturation and how junction chains are shared across samples | Multi-sample |
+| Sample similarity (PCA) | Overall clustering of samples by QC profile | ≥ 2 samples |
+| Between-sample comparison | Composition drift (JS distance) and depth-normalised junction yield | Multi-sample |
+| Replicate concordance (+ MAD) | How tightly replicates agree on composition / length / precision | `--factor` with ≥ 2 replicates |
+| Transcript divergency | Per-gene TD = (NIC+NNC)/(FSM+NIC+NNC): per-sample, distribution, and between-group differences | TD differences need `--factor` |
+| Orthogonal support (CAGE / polyA / short-read) | Independent confirmation of transcript ends & junctions | Only if that evidence was given to SQANTI3 |
+| Under-annotation analysis | Genes likely missing from the annotation / novel-transcript candidates | Always |
 
 The report format is controlled by `--report {pdf,html,both}` (default `pdf`):
 
