@@ -21,6 +21,18 @@ An example design file is:
 | wtc11_ONTdRNA | ENCFF104BNW |
 | wtc11_cDNA | ENCFF105WIJ |
 
+Only **sampleID** and **file_acc** are required. `sampleID` is the label used for the sample everywhere in the output; `file_acc` links the row to that sample's SQANTI3-QC output on disk (see the directory layout below).
+
+**Adding experimental factors (for faceted plots).** The design file can carry any number of extra columns describing your samples — e.g. `platform`, `condition`, `age`, `sex`, `tissue`, `RIN_group`. Give one of those column names to `--factor` and every multi-sample plot is split by that factor (one panel/colour per level), and the replicate-concordance and transcript-divergency comparisons are computed within and between its groups. For example:
+
+| sampleID | file_acc | platform |
+| --------- | ------- | -------- |
+| wtc11_PBcDNA | ENCFF003QZT | PacBio |
+| wtc11_ONTR2C2 | ENCFF063ASB | ONT |
+| wtc11_ONTdRNA | ENCFF104BNW | ONT |
+
+then run with `--factor platform`. The extra columns are optional and only used when you name one via `--factor`; if you omit `--factor`, all samples are shown together.
+
 To run SQANTI-reads in _fast_ mode, you must first, run SQANTI3-QC on all your samples individually (great opportunity for you to parallelize this using your system's slurm, gnu parallel or your favourite parallelization method). Using the parameter ```-d/--sqanti_dirs```, you can give sqanti3_reads.py the path to the parent directory where all the SQANTI3-QC output directories are stored.
 
 We recommend using _fast_ mode, this ensures you can easily parallelize your work and have more control over mapping parameters. The usual reads pre-processing pipelines for ONT and PacBio to run SQANTI-reads include:  
@@ -28,12 +40,26 @@ We recommend using _fast_ mode, this ensures you can easily parallelize your wor
 - For PacBio: Running lima and refine from IsoSeq pipeline, and ```bamtools convert -format fastq -in fl.bam``` to transform PacBio FL bams into fastq files for mapping.  
 - Common next steps: mapping with minimap2, transforming to gtf using spliced_bam2gff and running SQANTI3-QC.
 
-Directories with SQANTI3-QC output are named as {file_acc} (e.g. ./ENCFF003QZT/) and SQANTI3-QC output files are named as {sampleID} (e.g. ./ENCFF003QZT/wtc11_PBcDNA_classification.txt)
+**Directory layout SQANTI-reads expects.** Under the `--sqanti_dirs` folder, each sample's SQANTI3-QC output must live in a sub-directory named exactly as its `file_acc`, and the files inside must be prefixed with that sample's `sampleID`. For the first design row (`wtc11_PBcDNA` / `ENCFF003QZT`):
 
-Example run starting after running spliced_bam2gff:
+```
+<sqanti_dirs>/                            # the folder you pass to --sqanti_dirs
+└── ENCFF003QZT/                          # = file_acc  (one sub-dir per sample)
+    ├── wtc11_PBcDNA_classification.txt   # = {sampleID}_classification.txt
+    ├── wtc11_PBcDNA_junctions.txt        # = {sampleID}_junctions.txt
+    └── wtc11_PBcDNA_corrected.gtf        # = {sampleID}_corrected.gtf
+```
+
+You control these two names in the SQANTI3-QC run: `-d ./ENCFF003QZT` sets the sub-directory (= `file_acc`) and `-o wtc11_PBcDNA` sets the file prefix (= `sampleID`). Making these match your design file is the most common thing to get wrong — if a run reports missing classification/junction files, check that the sub-directory name and file prefix line up with the `file_acc` and `sampleID` columns.
+
+Example run starting after running spliced_bam2gff (one QC call per sample, then one SQANTI-reads call):
 ```
 python sqanti3_qc.py --isoforms ENCFF003QZT.gff --refGTF hg38.ensGene.gtf --refFasta hg38.fa --min_ref_len 0 --aligner_choice minimap2 -t 8 -d ./ENCFF003QZT -o wtc11_PBcDNA
-python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --sqanti_dirs ./
+# ...repeat sqanti3_qc.py for every sample...
+
+# then aggregate all of them (add --factor <column> to split plots by a design factor):
+python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --sqanti_dirs ./ --report both
+python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --sqanti_dirs ./ --factor platform --report both
 ```
   
 ### SQANTI-reads (minimum) _simple_ mode.  
@@ -61,6 +87,8 @@ python sqanti3_reads.py --design design.csv --refGTF hg38.ensGene.gtf --refFasta
 ```
 
 Fastq files are named {file_acc}\*.fastq (e.g. ENCFF003QZT_PB.fastq) and are stored in the current directory.
+
+As in _fast_ mode, you can add extra design columns (e.g. `platform`, `age`) and pass `--factor <column>` to facet the plots, and `--report {pdf,html,both}` to choose the report format.
 
 ## Getting ready
 
@@ -154,7 +182,10 @@ Analysis options:
                         Set of splice sites to be considered as canonical
                         (comma-separated list of splice sites). Default:
                         GTAG,GCAG,ATAC.
-  --skip_hash           Skip the hashing step
+  --skip_hash           Skip UJC hashing and read the already-hashed
+                        reads_classification straight from --sqanti_dirs. Use
+                        when the classification files already carry a jxnHash
+                        column (avoids re-hashing).
 
 Visualization options:
   -f INFACTOR, --factor INFACTOR

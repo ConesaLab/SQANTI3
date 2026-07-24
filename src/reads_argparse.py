@@ -33,7 +33,7 @@ def reads_argparser():
     pa = parser.add_argument_group("Analysis options")
     pa.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2', help="\t\tDefault: minimap2")
     pa.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
-    pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
+    pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip UJC hashing and read the already-hashed reads_classification straight from --sqanti_dirs. Use when the classification files already carry a jxnHash column (avoids re-hashing).')
 
     pv = parser.add_argument_group("Visualization options")
     pv.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
