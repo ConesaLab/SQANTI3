@@ -712,6 +712,26 @@ def _composition_drift_figure(drift):
                     colorbar_title="JS distance", annotate=True)
 
 
+def _td_difference_figure(pair):
+    """Sign-split histogram of per-gene TD differences for one group pair (A−B):
+    bars right of 0 (green) are genes with higher TD in group A, left (pink) in B."""
+    diffs = np.asarray(pair.get("diffs") if pair else [], dtype=float)
+    if diffs.size == 0:
+        return None
+    xbins = dict(start=-1, end=1, size=0.02)
+    fig = go.Figure()
+    fig.add_trace(go.Histogram(x=diffs[diffs < 0].tolist(), xbins=xbins,
+                               marker_color="#EE446F", name=f"higher in {pair['b']}"))
+    fig.add_trace(go.Histogram(x=diffs[diffs > 0].tolist(), xbins=xbins,
+                               marker_color="#15918A", name=f"higher in {pair['a']}"))
+    fig.add_vline(x=0, line_dash="dash", line_color="#555555")
+    _base_layout(fig, f"Transcript divergency: {pair['a']} vs {pair['b']} "
+                 f"({pair['n_genes']} shared genes)",
+                 f"per-gene TD difference (TD[{pair['a']}] − TD[{pair['b']}])", "gene count")
+    fig.update_layout(barmode="overlay")
+    return fig
+
+
 def _tandem_sites_figure(tandem):
     """F6 near-zero offset histogram (summed over samples) with ±3/±4/±6 tandem
     bars highlighted, or None."""
@@ -816,7 +836,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       scorecard=None, yield_metrics=None, drift_metrics=None,
                       tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
                       fuzz_depth_metrics=None, overlap_metrics=None,
-                      cage_metrics=None, polya_metrics=None, sr_metrics=None):
+                      cage_metrics=None, polya_metrics=None, sr_metrics=None,
+                      td_metrics=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -1526,6 +1547,54 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "short-read backing (worth checking against its novel-junction and RT-switching "
                 "rates). Requires short-read coverage supplied to SQANTI3; omitted otherwise.",
                 "fig-sr-jxn"))
+
+    # 9f. Transcript divergency (Monzó et al. 2025) — per-sample TD, its per-gene
+    # distribution, and pairwise between-group per-gene TD differences when faceted.
+    if td_metrics and td_metrics.get("samples"):
+        _td_intro = (
+            "Transcript divergency (TD; <b>Monzó, Frankish &amp; Conesa 2025, "
+            "<i>Genome Research</i></b>) is the stochastic population of RNA molecules that "
+            "diverge from a sample's condition-defining transcriptional state — distinct from "
+            "transcriptional noise and from alternative splicing. As an operational proxy, for "
+            "each annotated gene we take <b>TD = (NIC+NNC)/(FSM+NIC+NNC)</b> — the fraction of the "
+            "gene's high-confidence reads coming from <i>novel</i> isoforms (novel-in-catalog + "
+            "novel-not-in-catalog) rather than the reference-matching (FSM) isoform — over genes "
+            "with at least the configured number of such reads. TD = 0 for a gene seen only as "
+            "FSM and approaches 1 when novel isoforms dominate. This is a <b>measurement, not a "
+            "verdict</b>: elevated TD can reflect genuine biology (e.g. cellular stress) or "
+            "residual technical artefact, which the proxy alone cannot separate.")
+        _tdps = td_metrics["per_sample"]
+        _tdfig = _metric_cohort_figure(_tdps, "td_mean",
+                                       "Transcript divergency: mean per-gene TD",
+                                       "mean per-gene TD", color="#9F7BB8")
+        if _tdfig is not None:
+            sections.append(_section(
+                "Transcript divergency (per sample)", _tdfig,
+                _td_intro + " Here each sample's <b>mean per-gene TD</b> is shown against the "
+                "cohort median; a sample above its peers has more of its reads in novel isoforms.",
+                "fig-td"))
+        _tdpg = td_metrics.get("per_gene")
+        if _tdpg is not None and not _tdpg.empty:
+            _vfig = _violin(_tdpg, "sampleID", "TD", "Per-gene transcript divergency",
+                            "Sample", "per-gene TD", facet_col=facet)
+            sections.append(_section(
+                "Transcript-divergency distribution", _vfig,
+                "The full per-gene TD distribution per sample (box + density). Most genes sit near "
+                "0 (reference-matching); a heavier upper tail means more genes whose reads come "
+                "substantially from novel isoforms. Compare the spread and upper tail across "
+                "samples.", "fig-td-dist"))
+        for _k, _pair in enumerate(td_metrics.get("group_pairs") or []):
+            _dfig = _td_difference_figure(_pair)
+            if _dfig is None:
+                continue
+            sections.append(_section(
+                f"Transcript divergency: {_pair['a']} vs {_pair['b']}", _dfig,
+                "Per-gene TD difference between the two groups (reads pooled within each group per "
+                "gene, restricted to genes with enough reads in <i>both</i>). Bars right of 0 "
+                f"(green) are genes with higher TD in <b>{_pair['a']}</b> "
+                f"({_pair['n_a_higher']} genes); left (pink) higher in <b>{_pair['b']}</b> "
+                f"({_pair['n_b_higher']}). A skew toward one group means that group has more genes "
+                "with elevated transcript divergency.", f"fig-td-diff-{_k}"))
 
     # 10. Under-annotation section (from CSV on disk)
     sections.append(_gene_classification_section(args.OUT, args.PREFIX))

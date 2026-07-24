@@ -888,6 +888,82 @@ def compute_composition_drift(all_gene_percs_pivot_DF):
     return {"samples": samples, "matrix": matrix, "per_sample": per_sample}
 
 
+_TD_FSM, _TD_NIC, _TD_NNC = "full-splice_match", "novel_in_catalog", "novel_not_in_catalog"
+
+
+def compute_transcript_divergency(gene_count_DF, exp_factor, min_reads=10):
+    """Transcript divergency (TD; Monzó, Frankish & Conesa 2025, Genome Research).
+
+    Per annotated gene, TD = (NIC+NNC)/(FSM+NIC+NNC) — the fraction of a gene's
+    high-confidence reads coming from novel (in-/not-in-catalog) isoforms rather
+    than the reference-matching (FSM) isoform. A gene with only FSM reads has
+    TD=0; one whose reads are all novel approaches 1. This is an operational proxy
+    for the divergent-transcript population (the paper proposes no closed formula
+    — it contrasts non-FSM reads against a technical baseline); the proxy cannot
+    by itself separate true divergency from residual technical artefact, so it is
+    reported descriptively, never as a verdict.
+
+    Only annotated genes (``flag_annotated_gene == 1``) with FSM+NIC+NNC >=
+    ``min_reads`` are used (TD is unstable at low depth). Empty-safe dict:
+      samples      : sample order ([] when no qualifying genes)
+      per_sample   : DataFrame[sampleID, exp_factor, td_mean]  (mean per-gene TD)
+      per_gene     : long DataFrame[sampleID, exp_factor, associated_gene, TD]
+      group_pairs  : list of {a, b, diffs, n_a_higher, n_b_higher, n_genes} for
+                     every pair of factor levels (reads pooled within a group per
+                     gene); empty when not faceted (temp_factor / <2 levels).
+    """
+    empty = {"samples": [],
+             "per_sample": pd.DataFrame(columns=["sampleID", exp_factor, "td_mean"]),
+             "per_gene": pd.DataFrame(columns=["sampleID", exp_factor, "associated_gene", "TD"]),
+             "group_pairs": []}
+    if gene_count_DF is None or "associated_gene" not in getattr(gene_count_DF, "columns", []):
+        return empty
+    df = gene_count_DF
+    if "flag_annotated_gene" in df.columns:
+        df = df[df["flag_annotated_gene"] == 1]
+    df = df.copy()
+    for col in (_TD_FSM, _TD_NIC, _TD_NNC):
+        if col not in df.columns:
+            df[col] = 0
+        df[col] = df[col].fillna(0)
+    df["_denom"] = df[_TD_FSM] + df[_TD_NIC] + df[_TD_NNC]
+    df = df[df["_denom"] >= min_reads]
+    if df.empty:
+        return empty
+    df["TD"] = (df[_TD_NIC] + df[_TD_NNC]) / df["_denom"]
+
+    per_gene = df[["sampleID", exp_factor, "associated_gene", "TD"]].reset_index(drop=True)
+    per_sample = (per_gene.groupby(["sampleID", exp_factor], observed=True)["TD"]
+                  .mean().reset_index(name="td_mean"))
+    samples = per_sample["sampleID"].astype(str).tolist()
+
+    # Between-group pairwise per-gene TD differences: pool reads within each group
+    # per gene -> group TD, then TD_a - TD_b over genes qualifying in both groups.
+    group_pairs = []
+    if exp_factor != "temp_factor" and df[exp_factor].nunique() >= 2:
+        g = (df.groupby([exp_factor, "associated_gene"], observed=True)[[_TD_FSM, _TD_NIC, _TD_NNC]]
+             .sum().reset_index())
+        g["_denom"] = g[_TD_FSM] + g[_TD_NIC] + g[_TD_NNC]
+        g = g[g["_denom"] >= min_reads]
+        g["TD"] = (g[_TD_NIC] + g[_TD_NNC]) / g["_denom"]
+        wide = g.pivot_table(index="associated_gene", columns=exp_factor, values="TD")
+        levels = sorted(wide.columns, key=str)
+        for i in range(len(levels)):
+            for j in range(i + 1, len(levels)):
+                a, b = levels[i], levels[j]
+                pair = wide[[a, b]].dropna()
+                if pair.empty:
+                    continue
+                diffs = (pair[a] - pair[b]).to_numpy(dtype=float)
+                group_pairs.append({"a": str(a), "b": str(b), "diffs": diffs,
+                                    "n_a_higher": int((diffs > 0).sum()),
+                                    "n_b_higher": int((diffs < 0).sum()),
+                                    "n_genes": int(len(diffs))})
+
+    return {"samples": samples, "per_sample": per_sample,
+            "per_gene": per_gene, "group_pairs": group_pairs}
+
+
 def compute_tandem_sites(jxn_offset_metrics, tandem_offsets=(3, -3, 4, -4, 6, -6)):
     """Tandem splice-site (NAGNAG) detector (F6).
 
@@ -1662,6 +1738,69 @@ def plot_composition_drift_page(pdf, drift):
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
+
+
+def plot_transcript_divergency_page(pdf, td_metrics):
+    """Transcript-divergency pages (Monzó et al. 2025): per-sample mean per-gene
+    TD in cohort context, the per-gene TD distribution, and — when faceted — one
+    per-gene TD-difference histogram per group pair. No-op on empty."""
+    m = td_metrics
+    if not m or not m.get("samples"):
+        return
+    per_sample = m["per_sample"]
+    per_gene = m.get("per_gene")
+
+    # 1. Per-sample mean per-gene TD (descriptive: no threshold, no scorecard).
+    _plot_metric_cohort_page(
+        pdf, per_sample, "td_mean",
+        title="Transcript divergency: mean per-gene TD = (NIC+NNC)/(FSM+NIC+NNC)",
+        ylabel="mean per-gene TD", color=aes_palette["purple"])
+
+    # 2. Per-gene TD distribution, one box per sample.
+    if per_gene is not None and not per_gene.empty:
+        order = per_sample["sampleID"].astype(str).tolist()
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        fig, ax = plt.subplots(figsize=(max(8, 0.7 * len(order) + 3), 6))
+        sns.boxplot(data=per_gene.assign(sampleID=per_gene["sampleID"].astype(str)),
+                    x="sampleID", y="TD", order=order, color=aes_palette["purple"],
+                    fliersize=1, ax=ax)
+        ax.set_xticks(np.arange(len(order)))
+        ax.set_xticklabels(order, rotation=90, fontsize=8)
+        ax.set_xlabel("Sample ID")
+        ax.set_ylabel("per-gene TD")
+        ax.set_title("Per-gene transcript-divergency distribution", fontsize=13)
+        fig.tight_layout()
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
+
+    # 3. Faceted: per-gene TD-difference histogram per group pair (thesis Fig 3A).
+    bins = np.linspace(-1, 1, 101)
+    for p in (m.get("group_pairs") or []):
+        diffs = p["diffs"]
+        if diffs is None or len(diffs) == 0:
+            continue
+        matplotlib.rcParams['pdf.fonttype'] = 42
+        fig, ax = plt.subplots(figsize=(10, 5.5))
+        ax.hist(diffs[diffs < 0], bins=bins, color=aes_palette["magenta"],
+                label=f"higher in {p['b']}")
+        ax.hist(diffs[diffs > 0], bins=bins, color=aes_palette["green"],
+                label=f"higher in {p['a']}")
+        ax.axvline(0, color="#555555", ls="--", lw=1)
+        ntot = max(p["n_genes"], 1)
+        ax.set_xlabel(f"per-gene TD difference  (TD[{p['a']}] − TD[{p['b']}])")
+        ax.set_ylabel("gene count")
+        ax.set_title(f"Transcript divergency: {p['a']} vs {p['b']}  "
+                     f"({p['n_genes']} shared genes)", fontsize=12)
+        ax.legend(fontsize=9, frameon=False, loc="upper right")
+        ax.text(0.02, 0.95, f"higher in {p['a']}: {p['n_a_higher']} "
+                f"({p['n_a_higher'] / ntot * 100:.0f}%)", transform=ax.transAxes,
+                ha="left", va="top", fontsize=9, color=aes_palette["green"])
+        ax.text(0.02, 0.88, f"higher in {p['b']}: {p['n_b_higher']} "
+                f"({p['n_b_higher'] / ntot * 100:.0f}%)", transform=ax.transAxes,
+                ha="left", va="top", fontsize=9, color=aes_palette["magenta"])
+        fig.tight_layout()
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
 
 
 def plot_tandem_sites_page(pdf, tandem):
@@ -3621,7 +3760,8 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
              tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
              fuzz_depth_metrics=None, overlap_metrics=None,
-             cage_metrics=None, polya_metrics=None, sr_metrics=None, args=None):
+             cage_metrics=None, polya_metrics=None, sr_metrics=None,
+             td_metrics=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -4032,6 +4172,10 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # Between-sample comparison views
         plot_jxn_yield_page(pdf, yield_metrics, scorecard=scorecard)
         plot_composition_drift_page(pdf, drift_metrics)
+        try:
+            plot_transcript_divergency_page(pdf, td_metrics)
+        except Exception as e:
+            reads_logger.warning(f"transcript-divergency page skipped: {e}")
         plot_tandem_sites_page(pdf, tandem_metrics)
         plot_replicate_concordance_page(pdf, rep_concordance)
         plot_fuzziness_concordance_page(pdf, fuzz_concordance)
@@ -4162,6 +4306,14 @@ def main(args):
     # structural-category composition (all_gene_percs_pivot_DF = dfs_for_plotting[2]).
     drift_metrics = compute_composition_drift(dfs_for_plotting[2])
 
+    # Transcript divergency (Monzó et al. 2025): per-gene TD=(NIC+NNC)/(FSM+NIC+NNC)
+    # from the per-gene structural-category read counts, plus pairwise between-group
+    # per-gene TD differences when faceted. Descriptive (no scorecard).
+    td_exp_factor = args.inFACTOR if args.inFACTOR is not None else "temp_factor"
+    td_metrics = compute_transcript_divergency(
+        gene_count_DF, td_exp_factor,
+        min_reads=args.cfg().get("transcript_divergency", {}).get("min_gene_reads", 10))
+
     # F6 tandem splice sites (NAGNAG): ±3/±4/±6 bp excess in the offset spectrum.
     tandem_metrics = compute_tandem_sites(jxn_offset_metrics)
 
@@ -4214,7 +4366,8 @@ def main(args):
                           tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
                           fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
                           overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
-                          polya_metrics=polya_metrics, sr_metrics=sr_metrics)
+                          polya_metrics=polya_metrics, sr_metrics=sr_metrics,
+                          td_metrics=td_metrics)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -4228,7 +4381,8 @@ def main(args):
                               tandem_metrics=tandem_metrics, rep_concordance=rep_concordance,
                               fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
                               overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
-                              polya_metrics=polya_metrics, sr_metrics=sr_metrics, args=args)
+                              polya_metrics=polya_metrics, sr_metrics=sr_metrics,
+                              td_metrics=td_metrics, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
             # Part C — closing "optional orthogonal support" note (only when some
             # support type is absent). Placed last, after the under-annotation section.

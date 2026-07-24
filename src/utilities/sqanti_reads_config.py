@@ -57,6 +57,12 @@ DEFAULT_CONFIG = {
     # of the annotated gene start (5') / end (3'). Used by the completeness-profile
     # plots and the perc_5p/3p_within_window flags above.
     "completeness_window": 50,
+    # Transcript divergency (TD; Monzó et al. 2025, Genome Research). Per annotated
+    # gene, TD = (NIC+NNC)/(FSM+NIC+NNC) — the fraction of a gene's high-confidence
+    # reads from novel isoforms. Only genes with at least this many FSM+NIC+NNC
+    # reads are included (TD is unstable at low depth). Descriptive only — TD feeds
+    # no qc_flag and no scorecard metric (a high TD can be genuine biology).
+    "transcript_divergency": {"min_gene_reads": 10},
     # Cohort-relative sample-outlier scorecard. Each metric is turned into a robust
     # z-score against the COHORT's own distribution (median / MAD across samples),
     # so a sample is flagged for diverging from its peers — not against any absolute
