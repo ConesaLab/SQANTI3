@@ -128,7 +128,43 @@ nnc_subcat_color_palette = {
 }
 
 cat_order = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
+# Bottom-to-top stacking order for structural-category stacked bars: the first
+# element is drawn at the bottom, so this puts FSM on TOP (then ISM, NIC, … down
+# to INTER at the bottom). Legends for these bars are reversed to read FSM-first.
 cat_order_stacked = ["INTER", "GI", "GENIC", "FUS", "AS", "NNC", "NIC", "ISM", "FSM"]
+
+# Full structural-category name -> abbreviation used in the composition plots.
+_CAT_ABBR = {"full-splice_match": "FSM", "incomplete-splice_match": "ISM",
+             "novel_in_catalog": "NIC", "novel_not_in_catalog": "NNC",
+             "antisense": "AS", "fusion": "FUS", "genic": "GENIC",
+             "genic_intron": "GI", "intergenic": "INTER"}
+
+
+def _order_category_columns(df, exp_factor, category_order=cat_order_stacked):
+    """Reorder a per-sample category pivot so its category columns follow
+    ``category_order`` (bottom-to-top for stacking); id/factor columns stay first
+    and any category absent from the order is appended. No-op on empty frames."""
+    if df is None or getattr(df, "empty", True):
+        return df
+    id_cols = [c for c in ("sampleID", exp_factor) if c in df.columns]
+    cats = [c for c in category_order if c in df.columns]
+    cats += [c for c in df.columns if c not in id_cols and c not in cats]
+    return df[id_cols + cats]
+
+
+def _category_count_pivot(gene_count_DF, exp_factor, annotated_only=False, categories=None):
+    """Per-sample read COUNT per structural category (abbreviated columns), the
+    absolute-value counterpart of the composition-percentage pivots. Empty-safe."""
+    if gene_count_DF is None or gene_count_DF.empty:
+        return pd.DataFrame(columns=["sampleID", exp_factor])
+    df = gene_count_DF
+    if annotated_only and "flag_annotated_gene" in df.columns:
+        df = df[df["flag_annotated_gene"] == 1]
+    cats = [c for c in (categories or _CAT_ABBR.keys()) if c in df.columns]
+    if not cats:
+        return pd.DataFrame(columns=["sampleID", exp_factor])
+    agg = df.groupby(["sampleID", exp_factor], observed=True)[cats].sum().reset_index()
+    return agg.rename(columns={c: _CAT_ABBR[c] for c in cats})
 
 # Aesthetic categorical palette (a green→magenta "good→bad" severity ramp).
 aes_palette = {
@@ -285,7 +321,8 @@ def _stacked_bars_indexed(*args, categories, palette, legend_labels=None, **kwar
 
 def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylabel,
                         palette, categories=None, legend_title=None,
-                        height=8, aspect=1.3, sort=True, legend_labels=None):
+                        height=8, aspect=1.3, sort=True, legend_labels=None,
+                        reverse_legend=False):
     """Render one faceted stacked-bar page (one panel per ``exp_factor`` level).
 
     ``palette`` is either a {column: hex} dict (columns inferred + stacked in
@@ -315,7 +352,12 @@ def _render_stacked_bar(pdf, df, *, exp_factor, num_factors, title, xlabel, ylab
     legend_kwargs = {'bbox_to_anchor': (1.05, 1), 'loc': 'upper left'}
     if legend_title is not None:
         legend_kwargs['title'] = legend_title
-    lgd = plt.legend(**legend_kwargs)
+    if reverse_legend:
+        # Reverse so the legend reads top-of-stack first (e.g. FSM, ISM, NIC, …).
+        _h, _l = plt.gca().get_legend_handles_labels()
+        lgd = plt.legend(_h[::-1], _l[::-1], **legend_kwargs)
+    else:
+        lgd = plt.legend(**legend_kwargs)
     plt.tight_layout()
     matplotlib.rcParams['pdf.fonttype'] = 42
     plt.subplots_adjust(top=0.85, right=0.8)
@@ -1431,6 +1473,43 @@ def assemble_scorecard_metrics(samples, length_DF=None, err_DF=None,
     return out
 
 
+def compute_qc_pca(scorecard_metrics, factor_map, exp_factor, extra=None):
+    """Sample-similarity PCA over the unified per-sample QC metric matrix.
+
+    ``scorecard_metrics`` is the list of per-sample dicts from
+    ``assemble_scorecard_metrics`` — the same scalars the cohort-outlier scorecard
+    scores (read length, %ISM, novel-junction burden, completeness, artefact
+    rates, imprecision, composition drift, junction yield, CAGE/polyA/short-read
+    support, …). ``extra`` optionally folds in more per-sample metrics as
+    ``{name: {sampleID: value}}`` (e.g. transcript divergency). This unifies the
+    PCA and the scorecard on one feature set. Constant / all-absent features
+    (e.g. CAGE on evidence-free runs) are dropped so they don't distort the
+    scaling. Returns ``(pca_DF, loadings_DF, variance_ratio)``, empty-safe.
+    """
+    if not scorecard_metrics:
+        return (pd.DataFrame(columns=["sampleID", exp_factor]), pd.DataFrame(), np.array([]))
+    feat = pd.DataFrame(scorecard_metrics)                 # sampleID + metric columns
+    for name, mapping in (extra or {}).items():
+        feat[name] = feat["sampleID"].astype(str).map({str(k): v for k, v in mapping.items()})
+    fmap = {str(k): v for k, v in (factor_map or {}).items()}
+    feat[exp_factor] = feat["sampleID"].astype(str).map(fmap)
+    samples = feat["sampleID"].astype(str).tolist()
+    metric_cols = [c for c in feat.columns if c not in ("sampleID", exp_factor)]
+    X = feat[metric_cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    keep = [c for c in metric_cols if X[c].nunique(dropna=False) > 1]   # drop constant/absent
+    if len(samples) < 2 or not keep:
+        return (pd.DataFrame({"sampleID": samples, exp_factor: feat[exp_factor].values}),
+                pd.DataFrame(), np.array([]))
+    scaled = StandardScaler().fit_transform(X[keep])
+    pca = PCA()
+    results = pca.fit_transform(scaled)
+    pca_DF = pd.DataFrame(data=results)
+    pca_DF["sampleID"] = samples
+    pca_DF[exp_factor] = feat[exp_factor].values
+    loadings_DF = pd.DataFrame(data=pca.components_.T, index=keep)
+    return pca_DF, loadings_DF, pca.explained_variance_ratio_
+
+
 def plot_completeness_pages(pdf, completeness_metrics):
     """Append the 5'/3' completeness profile page (|distance|-to-gene-end ECDFs)."""
     m = completeness_metrics
@@ -1981,6 +2060,28 @@ def plot_jxn_offset_pages(pdf, jxn_offset_metrics):
     fig.tight_layout()
     pdf.savefig(fig, bbox_inches="tight")
     plt.close(fig)
+
+    # 1b. Companion bar: exact matches (offset 0) removed from the spectrum vs the
+    # total near-reference site observations. The exact slice is dominated by
+    # FSM/ISM reads whose junctions sit on the reference.
+    ps = m.get("per_sample")
+    if ps is not None and not ps.empty:
+        pr = ps.set_index("sampleID").reindex(samples).reset_index()
+        total = [int(v) for v in pr["n_sites"].fillna(0)]
+        exact = [round(t * float(p) / 100.0) for t, p in zip(total, pr["perc_exact"].fillna(0))]
+        imprecise = [t - e for t, e in zip(total, exact)]
+        x = np.arange(len(samples))
+        fig, ax = plt.subplots(figsize=(11, 7))
+        ax.bar(x, exact, color="#6BAED6", label="exact match (offset 0)")
+        ax.bar(x, imprecise, bottom=exact, color="#FC8D59", label="imprecise (offset != 0)")
+        ax.set_xticks(x)
+        ax.set_xticklabels(samples, rotation=90)
+        ax.set_ylabel("Near-reference site observations")
+        ax.set_title("Exact matches removed from the spectrum (mostly FSM/ISM)")
+        ax.legend(title="Splice-site placement")
+        fig.tight_layout()
+        pdf.savefig(fig, bbox_inches="tight")
+        plt.close(fig)
 
     # 2. Precision profile: cumulative % within +/-k bp.
     prof = m["profile"]
@@ -3696,57 +3797,14 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     nov_can_perc_DF['sampleID'] = nov_can_DF['sampleID']
     nov_can_perc_DF[exp_factor] = nov_can_DF[exp_factor]
     
-    ##Prep data for PCA
-    pca_err_DF = err_DF.drop(columns=err_DF.filter(regex='^num_reads').columns)
-    pca_nov_can_perc_DF = nov_can_perc_DF.rename(columns=lambda x: f'perc_{x}' if x not in ['sampleID', exp_factor] else x)
-    pca_cv_don_percs = cv_don_percs.rename(columns=lambda x: f'donors_{x}' if x not in ['sampleID', exp_factor] else x)
-    pca_cv_acc_percs = cv_acc_percs.rename(columns=lambda x: f'acceptors_{x}' if x not in ['sampleID', exp_factor] else x)
-    pca_ujc_percs_DF = ujc_percs_DF.rename(columns=lambda x: f'perc_ujc_{x}' if x not in ['sampleID', exp_factor] else x)
-    pca_ujc_total_DF = ujc_total_DF.rename(columns={'total_counts': 'total_ujcs'})
-    pca_length_DF = length_DF.drop(columns=length_DF.filter(regex='^reads').columns)
-    # Only rename the length-category columns (upper-cased bin labels); never the
-    # id/factor columns — a factor whose name starts with an uppercase letter
-    # (e.g. "RIN_group") would otherwise be renamed and break the drop() below.
-    pca_length_DF = pca_length_DF.rename(columns=lambda x: f'perc_reads_{x}'
-                                         if (x not in ['sampleID', exp_factor] and x[0].isupper()) else x)
-    
-    ##Merge all quality metrics for PCA
-    quality_DF = pca_err_DF.drop(columns=[exp_factor]).merge(pca_nov_can_perc_DF.drop(columns=[exp_factor]), on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(pca_cv_don_percs.drop(columns=[exp_factor]), on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(pca_cv_acc_percs.drop(columns=[exp_factor]), on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(pca_ujc_percs_DF.drop(columns=[exp_factor]), on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(pca_ujc_total_DF, on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(pca_length_DF.drop(columns=[exp_factor]), on='sampleID', how='outer')
-    quality_DF = quality_DF.merge(exp_factor_DF, on='sampleID', how='outer')
-    quality_DF = quality_DF.fillna(0) #!!!
-    
-    
-    pca_features = quality_DF.columns.difference(['sampleID', exp_factor])
-    scaler = StandardScaler()
-    scaled_feature_DF = scaler.fit_transform(quality_DF[pca_features])
-    pca = PCA()
-    pca_results = pca.fit_transform(scaled_feature_DF)
-    pca_DF = pd.DataFrame(data=pca_results)
-    pca_DF['sampleID'] = quality_DF['sampleID']
-    pca_DF[exp_factor] = quality_DF[exp_factor]
-    #Get PCA loadings
-    loadings = pca.components_.T
-    loadings_DF = pd.DataFrame(data=loadings, index=pca_features)
-    
-    #Get variance ratios
-    variance_ratio = pca.explained_variance_ratio_
-    
-    if args.PCATABLES:
-        pca_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_values.csv'), index=False)
-        loadings_DF2=loadings_DF.reset_index()
-        loadings_DF2.to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_loadings.csv'), index=False)
-        variance_DF=pd.DataFrame(variance_ratio)
-        variance_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_variance.csv'), index=False)
+    # PCA (sample similarity by QC metrics) is now computed in main() from the
+    # unified per-sample scorecard feature matrix (classic metrics + the newer
+    # cohort-relative scalars + transcript divergency), so that the PCA and the
+    # outlier scorecard reflect the same QC dimensions. See compute_qc_pca().
 
-    
-    return (all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF, 
-             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF, 
-             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio, 
+    return (all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
+             gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
+             length_cnts_agg, length_percs_agg, err_DF,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_perc_DF, NNC_perc_DF, nov_can_DF, nov_can_perc_DF,
              length_DF2, cv_acc_percs, cv_don_percs)
     
@@ -3754,14 +3812,16 @@ def prep_data_4_plots(args, gene_count_DF, ujc_count_DF, length_DF, cv_DF, err_D
     
 def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF, annot_gene_percs_pivot_DF, gene_agg_DF,
              gene_percs_unstacked, melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
-             length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
+             length_cnts_agg, length_percs_agg, err_DF,
              cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF, ISM_perc_DF, NIC_perc_DF, NNC_perc_DF,nov_can_DF, nov_can_perc_DF,
-             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, ujc_metrics=None, jxn_offset_metrics=None,
+             length_DF2,cv_acc_percs, cv_don_percs, pdf=None, pca_DF=None, loadings_DF=None, variance_ratio=None,
+             ujc_metrics=None, jxn_offset_metrics=None,
              completeness_metrics=None, scorecard=None, yield_metrics=None, drift_metrics=None,
              tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
              fuzz_depth_metrics=None, overlap_metrics=None,
              cage_metrics=None, polya_metrics=None, sr_metrics=None,
-             td_metrics=None, args=None):
+             td_metrics=None, all_gene_counts_pivot_DF=None,
+             annot_gene_counts_pivot_DF=None, args=None):
     """Render the full SQANTI-reads PDF report.
 
     One faceted code path serves both modes: with ``--factor`` each page shows
@@ -3822,19 +3882,32 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
         # Structural-category composition is shown as faceted stacked bars (below),
         # matching the HTML report. The earlier per-sample stripplot views were removed.
 
-        ##Barplot - structural category % - ALL genes
-        _render_stacked_bar(pdf, all_gene_percs_pivot_DF, exp_factor=exp_factor,
-                            num_factors=num_factors, palette=category_color_palette,
+        # Structural-category stacked bars: FSM on top (cat_order_stacked column
+        # order) with the legend reversed to read FSM-first. Percentage then the
+        # absolute-count version, for all genes then annotated genes.
+        _render_stacked_bar(pdf, _order_category_columns(all_gene_percs_pivot_DF, exp_factor),
+                            exp_factor=exp_factor, num_factors=num_factors, palette=category_color_palette,
                             title="Percentage Reads in Each Structural Category - All Genes",
                             xlabel="Sample ID", ylabel="Percentages",
-                            legend_title='Structural Category')
+                            legend_title='Structural Category', reverse_legend=True)
 
-        ##Barplot - structural category % - Annotated genes
-        _render_stacked_bar(pdf, annot_gene_percs_pivot_DF, exp_factor=exp_factor,
-                            num_factors=num_factors, palette=category_color_palette,
+        _render_stacked_bar(pdf, _order_category_columns(all_gene_counts_pivot_DF, exp_factor),
+                            exp_factor=exp_factor, num_factors=num_factors, palette=category_color_palette,
+                            title="Number of Reads in Each Structural Category - All Genes",
+                            xlabel="Sample ID", ylabel="Number of reads",
+                            legend_title='Structural Category', reverse_legend=True)
+
+        _render_stacked_bar(pdf, _order_category_columns(annot_gene_percs_pivot_DF, exp_factor),
+                            exp_factor=exp_factor, num_factors=num_factors, palette=category_color_palette,
                             title="Percentage Reads in Each Structural Category - Annotated Genes",
                             xlabel="Sample ID", ylabel="Percentages",
-                            legend_title='Structural Category')
+                            legend_title='Structural Category', reverse_legend=True)
+
+        _render_stacked_bar(pdf, _order_category_columns(annot_gene_counts_pivot_DF, exp_factor),
+                            exp_factor=exp_factor, num_factors=num_factors, palette=category_color_palette,
+                            title="Number of Reads in Each Structural Category - Annotated Genes",
+                            xlabel="Sample ID", ylabel="Number of reads",
+                            legend_title='Structural Category', reverse_legend=True)
 
              ## Barplot subcategories
         _render_stacked_bar(pdf, FSM_DF, exp_factor=exp_factor,
@@ -3953,16 +4026,18 @@ def render_report_pdf(out_path, all_gene_percs_long_DF, annot_gene_percs_long_DF
                                     xlabel="Sample ID", ylabel="Percentage of UJCs",
                                     legend_title='Read count')
             elif stack_by == 'structural_category':
-                _render_stacked_bar(pdf, ujc_cnts_dct[stack_by], exp_factor=exp_factor,
+                _render_stacked_bar(pdf, _order_category_columns(ujc_cnts_dct[stack_by], exp_factor),
+                                    exp_factor=exp_factor,
                                     num_factors=num_factors, palette=category_color_palette,
                                     title="Number of UJCs detected",
                                     xlabel="Sample ID", ylabel="Number of UJCs",
-                                    legend_title='Structural Category')
-                _render_stacked_bar(pdf, ujc_percs_dct[stack_by], exp_factor=exp_factor,
+                                    legend_title='Structural Category', reverse_legend=True)
+                _render_stacked_bar(pdf, _order_category_columns(ujc_percs_dct[stack_by], exp_factor),
+                                    exp_factor=exp_factor,
                                     num_factors=num_factors, palette=category_color_palette,
                                     title="UJCs detected",
                                     xlabel="Sample ID", ylabel="Percentage of UJCs",
-                                    legend_title='Structural Category')
+                                    legend_title='Structural Category', reverse_legend=True)
 
 
         ## Total Mapped reads vs % reads gt 1kb
@@ -4314,6 +4389,15 @@ def main(args):
         gene_count_DF, td_exp_factor,
         min_reads=args.cfg().get("transcript_divergency", {}).get("min_gene_reads", 10))
 
+    # Absolute-count (per-sample, per-structural-category) composition — the
+    # count counterpart of the percentage pivots, for all genes and annotated
+    # genes; shown alongside the percentage bars.
+    all_gene_counts_pivot_DF = _category_count_pivot(gene_count_DF, td_exp_factor)
+    annot_gene_counts_pivot_DF = _category_count_pivot(
+        gene_count_DF, td_exp_factor, annotated_only=True,
+        categories=['full-splice_match', 'incomplete-splice_match', 'novel_in_catalog',
+                    'novel_not_in_catalog', 'genic', 'genic_intron'])
+
     # F6 tandem splice sites (NAGNAG): ±3/±4/±6 bp excess in the offset spectrum.
     tandem_metrics = compute_tandem_sites(jxn_offset_metrics)
 
@@ -4335,16 +4419,30 @@ def main(args):
     # against the cohort, flagging samples that diverge from their peers. Uses the
     # read-level structural composition (all_gene_percs_pivot_DF = dfs_for_plotting[2])
     # and the junction-category counts already computed above.
-    scorecard = compute_sample_scorecard(
-        assemble_scorecard_metrics(
-            length_DF["sampleID"].astype(str).tolist(),
-            length_DF=length_DF, err_DF=err_DF,
-            all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
-            completeness_metrics=completeness_metrics,
-            jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF,
-            yield_metrics=yield_metrics, drift_metrics=drift_metrics,
-            support_DF=support_DF),
-        args.cfg())
+    sc_metric_list = assemble_scorecard_metrics(
+        length_DF["sampleID"].astype(str).tolist(),
+        length_DF=length_DF, err_DF=err_DF,
+        all_gene_percs_pivot_DF=dfs_for_plotting[2], nov_can_DF=nov_can_DF,
+        completeness_metrics=completeness_metrics,
+        jxn_offset_metrics=jxn_offset_metrics, ISM_DF=ISM_DF,
+        yield_metrics=yield_metrics, drift_metrics=drift_metrics,
+        support_DF=support_DF)
+    scorecard = compute_sample_scorecard(sc_metric_list, args.cfg())
+
+    # Sample-similarity PCA over the SAME per-sample metric matrix the scorecard
+    # scores (unified feature set), plus transcript divergency. Computed here (not
+    # in prep_data_4_plots) so it can see the newer cohort-relative metrics.
+    _td_map = ({} if not (td_metrics and td_metrics.get("samples"))
+               else dict(zip(td_metrics["per_sample"]["sampleID"].astype(str),
+                             td_metrics["per_sample"]["td_mean"])))
+    _factor_map_pca = dict(zip(length_DF["sampleID"].astype(str), length_DF[td_exp_factor]))
+    pca_DF, loadings_DF, variance_ratio = compute_qc_pca(
+        sc_metric_list, _factor_map_pca, td_exp_factor,
+        extra={"transcript_divergency": _td_map})
+    if args.PCATABLES:
+        pca_DF.to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_values.csv'), index=False)
+        loadings_DF.reset_index().to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_loadings.csv'), index=False)
+        pd.DataFrame(variance_ratio).to_csv(os.path.join(args.OUT, args.PREFIX + '_pca_variance.csv'), index=False)
 
     need_pdf = args.report in ("pdf", "both")
     need_html = args.report in ("html", "both")
@@ -4367,7 +4465,10 @@ def main(args):
                           fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
                           overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
                           polya_metrics=polya_metrics, sr_metrics=sr_metrics,
-                          td_metrics=td_metrics)
+                          td_metrics=td_metrics, pca_DF=pca_DF,
+                          loadings_DF=loadings_DF, variance_ratio=variance_ratio,
+                          all_gene_counts_pivot_DF=all_gene_counts_pivot_DF,
+                          annot_gene_counts_pivot_DF=annot_gene_counts_pivot_DF)
 
     # Single unified PDF report: QC plots followed by the under-annotation
     # section, all in one PDF. identify_cand_underannot also (re)writes its CSVs;
@@ -4382,7 +4483,10 @@ def main(args):
                               fuzz_concordance=fuzz_concordance, fuzz_depth_metrics=fuzz_depth_metrics,
                               overlap_metrics=overlap_metrics, cage_metrics=cage_metrics,
                               polya_metrics=polya_metrics, sr_metrics=sr_metrics,
-                              td_metrics=td_metrics, args=args)
+                              td_metrics=td_metrics, pca_DF=pca_DF, loadings_DF=loadings_DF,
+                              variance_ratio=variance_ratio,
+                              all_gene_counts_pivot_DF=all_gene_counts_pivot_DF,
+                              annot_gene_counts_pivot_DF=annot_gene_counts_pivot_DF, args=args)
             identify_cand_underannot(args, ujc_count_DF, factor_level=args.FACTORLVL, pdf=pdf)
             # Part C — closing "optional orthogonal support" note (only when some
             # support type is absent). Placed last, after the under-annotation section.

@@ -43,7 +43,7 @@ EXPECTED_PDFS = ["sqantiReads_report.pdf"]
 # The two designs now differ: the within-group replicate views (A5 multi-axis
 # concordance, F7 splice-site precision concordance) render only with a --factor
 # that has a >=2-replicate level, so they add 2 pages to the faceted design only.
-EXPECTED_REPORT_PAGES = {"design.csv": 65, "design_with_factor.csv": 68}
+EXPECTED_REPORT_PAGES = {"design.csv": 68, "design_with_factor.csv": 71}
 
 pytestmark = requires_external_tools
 
@@ -181,6 +181,8 @@ def test_fast_mode_single_sample(tmp_path):
 HTML_SECTIONS = [
     "Summary &amp; QC flags",
     "Reads per structural category — all genes",
+    "Reads per structural category — all genes (counts)",
+    "Reads per structural category — annotated genes (counts)",
     "Per-gene structural-category distribution",
     "Genes detected, by read support",
     "Unique junction chains, by structural category",
@@ -193,6 +195,7 @@ HTML_SECTIONS = [
     "Potential artefacts",
     "Splice-donor detection variation",
     "Splice-acceptor detection variation",
+    "Exact matches removed from the spectrum",
     "Sample similarity (PCA)",
     "PCA loadings",
     "UJC saturation",

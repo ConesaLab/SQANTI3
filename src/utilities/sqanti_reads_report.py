@@ -26,6 +26,7 @@ from src.utilities.sqanti_reads_plots import (
     subcat_color_palette,
     nnc_subcat_color_palette,
     cat_order,
+    cat_order_stacked,
     jxn_palette,
     three_series_palette,
     readcount_palette,
@@ -104,7 +105,8 @@ def _base_layout(fig, title, xtitle, ytitle):
 
 
 def _stacked_bar(df, x_col, value_cols, title, xtitle, ytitle, color_map=None,
-                 order=None, barmode="stack", facet_col=None, labels=None):
+                 order=None, barmode="stack", facet_col=None, labels=None,
+                 legend_reversed=False):
     """Generic stacked/grouped bar: one trace per value column.
 
     When ``facet_col`` is a real design factor with >1 level, the plot is split
@@ -155,12 +157,16 @@ def _stacked_bar(df, x_col, value_cols, title, xtitle, ytitle, color_map=None,
         fig.update_annotations(font_size=13)  # shrink subplot (facet) titles
         fig.update_xaxes(tickangle=-45)
         fig.update_yaxes(title_text=ytitle, row=1, col=1)
+        if legend_reversed:
+            fig.update_layout(legend_traceorder="reversed")
         return fig
 
     fig = go.Figure()
     _add(fig, df, show_legend=True)
     _base_layout(fig, title, xtitle, ytitle)
     fig.update_layout(barmode=barmode)
+    if legend_reversed:
+        fig.update_layout(legend_traceorder="reversed")
     return fig
 
 
@@ -549,10 +555,10 @@ PAGE_TEMPLATE = """<!DOCTYPE html>
 
 
 def _jxn_offset_figures(m, samples):
-    """Return (spectrum_fig, profile_fig, byclass_fig) Plotly figures for the
-    splice-site fuzziness section, or (None, None, None) if no data."""
+    """Return (spectrum_fig, exact_fig, profile_fig, byclass_fig) Plotly figures for
+    the splice-site fuzziness section, or (None, None, None, None) if no data."""
     if not m or not m.get("samples"):
-        return None, None, None
+        return None, None, None, None
     palette = {s: _DEFAULT_SEQ[i % len(_DEFAULT_SEQ)] for i, s in enumerate(samples)}
     window = m["window"]
 
@@ -574,6 +580,30 @@ def _jxn_offset_figures(m, samples):
                           range=[-window, window], row=1, col=col)
     sfig.update_yaxes(title_text="Site observations (exact excluded)", row=1, col=1)
     _base_layout(sfig, "Splice-site offset spectrum", "", "")
+
+    # 1b. Companion bar: how many observations the spectrum removes (offset 0 vs
+    # total near-reference site observations). The exact-match slice is dominated
+    # by FSM/ISM reads, whose junctions overwhelmingly sit on the reference.
+    ps = m["per_sample"]
+    xfig = None
+    if ps is not None and not ps.empty:
+        exact = [round(int(r["n_sites"]) * float(r["perc_exact"]) / 100.0) for _, r in
+                 ps.set_index("sampleID").reindex(samples).reset_index().iterrows()]
+        total = [int(r["n_sites"]) for _, r in
+                 ps.set_index("sampleID").reindex(samples).reset_index().iterrows()]
+        imprecise = [t - e for t, e in zip(total, exact)]
+        xfig = go.Figure()
+        xfig.add_trace(go.Bar(x=samples, y=exact, name="exact match (offset 0)",
+                              marker_color="#6BAED6",
+                              customdata=[[t, (e / t * 100 if t else 0.0)] for t, e in zip(total, exact)],
+                              hovertemplate="exact: %{y} of %{customdata[0]} "
+                                            "(%{customdata[1]:.1f}%)<extra></extra>"))
+        xfig.add_trace(go.Bar(x=samples, y=imprecise, name="imprecise (offset ≠ 0)",
+                              marker_color="#FC8D59",
+                              hovertemplate="imprecise: %{y}<extra></extra>"))
+        xfig.update_layout(barmode="stack")
+        _base_layout(xfig, "Exact matches removed from the spectrum",
+                     "Sample", "Near-reference site observations")
 
     # 2. Precision profile.
     prof = m["profile"]
@@ -605,7 +635,7 @@ def _jxn_offset_figures(m, samples):
         cfig.update_layout(barmode="group")
         _base_layout(cfig, "Splice-site fuzziness by canonical class",
                      "Sample", "% site observations imprecise")
-    return sfig, pfig, cfig
+    return sfig, xfig, pfig, cfig
 
 
 def _completeness_figure(m, samples):
@@ -837,7 +867,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                       tandem_metrics=None, rep_concordance=None, fuzz_concordance=None,
                       fuzz_depth_metrics=None, overlap_metrics=None,
                       cage_metrics=None, polya_metrics=None, sr_metrics=None,
-                      td_metrics=None):
+                      td_metrics=None, pca_DF=None, loadings_DF=None, variance_ratio=None,
+                      all_gene_counts_pivot_DF=None, annot_gene_counts_pivot_DF=None):
     """Build the interactive HTML report and the qc_summary.json sidecar.
 
     Parameters
@@ -852,7 +883,7 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     (all_gene_percs_long_DF, annot_gene_percs_long_DF, all_gene_percs_pivot_DF,
      annot_gene_percs_pivot_DF, gene_agg_DF, gene_percs_unstacked,
      melted_annotated_gene_DF, ujc_cnts_dct, ujc_percs_dct, length_DF,
-     length_cnts_agg, length_percs_agg, err_DF, pca_DF, loadings_DF, variance_ratio,
+     length_cnts_agg, length_percs_agg, err_DF,
      cv_acc_summary, cv_don_summary, FSM_DF, ISM_DF, NIC_DF, NNC_DF, FSM_perc_DF,
      ISM_perc_DF, NIC_perc_DF, NNC_perc_DF, nov_can_DF, nov_can_perc_DF, length_DF2,
      cv_acc_percs, cv_don_percs) = dfs_for_plotting
@@ -892,17 +923,32 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     length_order = ["reads_lt_1kb_perc", "reads_1kb_to_2kb_perc",
                     "reads_2kb_to_3kb_perc", "reads_gt_3kb_perc"]
 
+    # Structural-category stacked bars: FSM on top (cat_order_stacked stacking)
+    # with the legend reversed to read FSM-first. Percentage then absolute counts,
+    # for all genes then annotated genes.
     # 1. Structural category % (all genes)
     sections.append(_section(
         "Reads per structural category — all genes",
         _stacked_bar(all_gene_percs_pivot_DF, "sampleID",
                      _value_cols(all_gene_percs_pivot_DF, drop),
                      "Percent reads per structural category (all genes)", "Sample",
-                     "Percentage", color_map=category_color_palette, order=cat_order,
-                     facet_col=facet),
+                     "Percentage", color_map=category_color_palette, order=cat_order_stacked,
+                     facet_col=facet, legend_reversed=True),
         "Distribution of reads across SQANTI3 structural categories. A high FSM fraction "
         "indicates reads matching known transcripts; high ISM can signal degradation/5'–3' "
         "truncation; NIC/NNC capture novelty.", "fig-cat-all"))
+
+    # 1b. Structural category counts (all genes)
+    if all_gene_counts_pivot_DF is not None and not all_gene_counts_pivot_DF.empty:
+        sections.append(_section(
+            "Reads per structural category — all genes (counts)",
+            _stacked_bar(all_gene_counts_pivot_DF, "sampleID",
+                         _value_cols(all_gene_counts_pivot_DF, drop),
+                         "Number of reads per structural category (all genes)", "Sample",
+                         "Number of reads", color_map=category_color_palette,
+                         order=cat_order_stacked, facet_col=facet, legend_reversed=True),
+            "The same composition as above but in absolute read counts rather than percentages, "
+            "so overall sequencing depth per sample is also visible.", "fig-cat-all-n"))
 
     # 2. Structural category % (annotated genes)
     sections.append(_section(
@@ -910,10 +956,21 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
         _stacked_bar(annot_gene_percs_pivot_DF, "sampleID",
                      _value_cols(annot_gene_percs_pivot_DF, drop),
                      "Percent reads per structural category (annotated genes)", "Sample",
-                     "Percentage", color_map=category_color_palette, order=cat_order,
-                     facet_col=facet),
+                     "Percentage", color_map=category_color_palette, order=cat_order_stacked,
+                     facet_col=facet, legend_reversed=True),
         "As above but restricted to annotated genes, so samples are compared on the same "
         "gene set.", "fig-cat-annot"))
+
+    # 2a. Structural category counts (annotated genes)
+    if annot_gene_counts_pivot_DF is not None and not annot_gene_counts_pivot_DF.empty:
+        sections.append(_section(
+            "Reads per structural category — annotated genes (counts)",
+            _stacked_bar(annot_gene_counts_pivot_DF, "sampleID",
+                         _value_cols(annot_gene_counts_pivot_DF, drop),
+                         "Number of reads per structural category (annotated genes)", "Sample",
+                         "Number of reads", color_map=category_color_palette,
+                         order=cat_order_stacked, facet_col=facet, legend_reversed=True),
+            "The annotated-gene composition in absolute read counts.", "fig-cat-annot-n"))
 
     # 2b. Per-gene distribution of structural-category % (violin per sample)
     if melted_annotated_gene_DF is not None and not melted_annotated_gene_DF.empty:
@@ -967,7 +1024,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Unique junction chains, by structural category",
             _stacked_bar(ujc_sc, "sampleID", _value_cols(ujc_sc, drop),
                          "Percent of UJCs per structural category", "Sample", "Percentage",
-                         color_map=category_color_palette, order=cat_order, facet_col=facet),
+                         color_map=category_color_palette, order=cat_order_stacked,
+                         facet_col=facet, legend_reversed=True),
             "Distribution of distinct splicing patterns (UJCs) across categories — complements "
             "the read-based view by weighting each junction chain once.", "fig-ujc"))
 
@@ -978,7 +1036,8 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
             "Unique junction chains, by structural category (counts)",
             _stacked_bar(ujc_scn, "sampleID", _value_cols(ujc_scn, drop),
                          "Number of UJCs per structural category", "Sample", "Number of UJCs",
-                         color_map=category_color_palette, order=cat_order, facet_col=facet),
+                         color_map=category_color_palette, order=cat_order_stacked,
+                         facet_col=facet, legend_reversed=True),
             "Absolute number of distinct junction chains per category.", "fig-ujc-n"))
 
     # 4c. UJC by read support (%)
@@ -1355,7 +1414,7 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
     # 9d. Splice-site fuzziness: offset spectrum, precision profile, canonical split
     if jxn_offset_metrics and jxn_offset_metrics.get("samples"):
         f_samples = jxn_offset_metrics["samples"]
-        sfig, pfig, cfig = _jxn_offset_figures(jxn_offset_metrics, f_samples)
+        sfig, xfig, pfig, cfig = _jxn_offset_figures(jxn_offset_metrics, f_samples)
         if sfig is not None:
             sections.append(_section(
                 "Splice-site offset spectrum", sfig,
@@ -1363,14 +1422,29 @@ def build_html_report(out_path, dfs_for_plotting, args, ujc_metrics=None,
                 "the nearest annotated reference site</b> — 0 = exactly on the reference, "
                 "negative = a few bp upstream, positive = downstream — and count how many "
                 "observations fall at each offset (donors and acceptors shown separately). "
-                "The curve is that histogram of offsets. Exact matches (offset 0) are excluded "
-                "so the plot shows only the imprecise tail, and only sites within ±window bp of "
-                "a reference are included (farther ones are genuinely novel, not imprecise). "
+                "The curve is that histogram of offsets. <b>Exact matches (offset 0) are "
+                "excluded</b> so the plot shows only the imprecise tail — this removal is "
+                "large and predominantly drops <b>FSM and ISM</b> reads, whose junctions "
+                "overwhelmingly land exactly on the reference (see the companion bar below "
+                "for how much is removed). Only sites within ±window bp of a reference are "
+                "included (farther ones are genuinely novel, not imprecise). "
                 "A tight peak hugging 0 means the boundaries the reads place are very close to "
                 "the annotation; a broad or one-sided skirt flags systematic imprecision (a "
                 "consistent shift); and regular sub-peaks at ±3/±4/±6 bp are the signature of "
                 "tandem-site (e.g. NAGNAG) usage — reads legitimately choosing a nearby "
                 "alternative site.", "fig-offset-spectrum"))
+        if xfig is not None:
+            sections.append(_section(
+                "Exact matches removed from the spectrum", xfig,
+                "The spectrum above hides every offset-0 observation; this bar shows how much "
+                "that is. Each sample's near-reference site observations are split into "
+                "<b>exact match (offset 0)</b> and <b>imprecise (offset ≠ 0)</b>. The exact "
+                "slice is normally the large majority — it is dominated by <b>FSM and ISM</b> "
+                "reads, whose splice junctions match the annotation exactly — which is why it "
+                "is removed from the spectrum so the imprecise tail is visible. Read this bar "
+                "as the on-target fraction the spectrum sets aside: a sample with an unusually "
+                "small exact slice is placing more of its boundaries off the reference.",
+                "fig-offset-exact"))
         if pfig is not None:
             sections.append(_section(
                 "Splice-site precision profile", pfig,
