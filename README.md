@@ -15,15 +15,15 @@ SQANTI3 is the first module of the [Functional IsoTranscriptomics (FIT)](https:/
 SQANTI3 also includes TUSCO (Transcriptome Universal Single-isoform COntrol), a curated single-isoform reference for benchmarking transcriptome reconstruction from long-read sequencing; see https://doi.org/10.1038/s41467-026-72089-1.
 
 ## Installation
-The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0.1) (24/04/2026) is **version 6.0.1**. See our wiki for [installation instructions](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation).
+The [latest SQANTI3 release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0.1) (24/04/2026) is **version 6.0.1**. See our wiki for [installation instructions](https://conesalab.github.io/SQANTI3/latest/Dependencies-and-installation).
 
-For information about previous releases and features introduced in them, see the [version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history).
+For information about previous releases and features introduced in them, see the [version history](https://conesalab.github.io/SQANTI3/latest/Version-history).
 
 **⚠️WARNING:** v6.0 has fully changed the way that the rescue module operates. Now, the transcript recovery and reintroduction is much more strict. As well, there have been changes to the classification table and report, specially when it comes to the CDS predictions. Please, check the release notes and the wiki for the updated situation of SQANTI3.
 
 **⚠️WARNING:** v5.5 has replaced GeneMarkS-T for TransDecoder2. This has improved the results at the cost of longer runtimes. However, the changes are expected to be minimal. **The conda environment has to be recreated to add TD2 distribution.** Release 5.5.1 updated the python version to 3.11.13, as on the previous version freezes might happen in some datasets.
 
-**⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
+**⚠️WARNING:** v5.4 has changed the naming of some of the arguments in the command line input of [quality control](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-Quality-Control#arguments-and-parameters-in-sqanti3-qc), [filter](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-filter#running-the-rules-filter) and [rescue](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-rescue#running-sq3-rescue). Please, check their respective documentation for more information.
 
 **⚠️WARNING:** v5.0 represented a major release of the SQANTI3 software. **Versions of SQANTI3 >= 5.0 will not have backward compatibility** with previous releases and their output (v4.3 and earlier). Users that wish to apply any of the new functionalities in v5.0 to output files from older versions will therefore need to re-run SQANTI3 QC. See below for a full list of changes implemented in SQANTI3 v5.0.
 
@@ -32,31 +32,31 @@ For information about previous releases and features introduced in them, see the
 For detailed documentation, please visit [the SQANTI3 wiki](https://conesalab.github.io/SQANTI3/latest/).
 
 ### Wiki contents:
-* [Introduction to SQANTI3](https://github.com/ConesaLab/SQANTI3/wiki/Introduction-to-SQANTI3)
+* [Introduction to SQANTI3](https://conesalab.github.io/SQANTI3/latest/Introduction-to-SQANTI3)
 
-* [Dependencies and installation](https://github.com/ConesaLab/SQANTI3/wiki/Dependencies-and-installation)
+* [Dependencies and installation](https://conesalab.github.io/SQANTI3/latest/Dependencies-and-installation)
 
-* [Version history](https://github.com/ConesaLab/SQANTI3/wiki/Version-history)
+* [Version history](https://conesalab.github.io/SQANTI3/latest/Version-history)
 
-* [Isoform classification: categories and subcategories](https://github.com/ConesaLab/SQANTI3/wiki/SQANTI3-isoform-classification:-categories-and-subcategories)
+* [Isoform classification: categories and subcategories](https://conesalab.github.io/SQANTI3/latest/SQANTI3_isoform_classification/)
 
-* [Running SQANTI3 from the wrapper](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-from-the-wrapper)
+* [Running SQANTI3 from the wrapper](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-from-the-wrapper)
 
-* [Running SQANTI3 quality control](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-Quality-Control)
-* [TUSCO quick start (SQANTI3 QC)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-quick-start-%28SQANTI3-QC%29)
-* [TUSCO-novel (Novel Isoform Stress Test)](https://github.com/ConesaLab/SQANTI3/wiki/TUSCO-novel)
+* [Running SQANTI3 quality control](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-Quality-Control)
+* [TUSCO quick start (SQANTI3 QC)](https://conesalab.github.io/SQANTI3/latest/TUSCO-quick-start)
+* [TUSCO-novel (Novel Isoform Stress Test)](https://conesalab.github.io/SQANTI3/latest/TUSCO-novel)
 
-* [Understanding the output of SQANTI3 QC](https://github.com/ConesaLab/SQANTI3/wiki/Understanding-the-output-of-SQANTI3-QC)
+* [Understanding the output of SQANTI3 QC](https://conesalab.github.io/SQANTI3/latest/Understanding-the-output-of-SQANTI3-QC)
 
-* [IsoAnnotLite](https://github.com/ConesaLab/SQANTI3/wiki/IsoAnnotLite)
+* [IsoAnnotLite](https://conesalab.github.io/SQANTI3/latest/IsoAnnotLite)
 
-* [Running SQANTI3 filter](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-filter)
+* [Running SQANTI3 filter](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-filter)
 
-* [Running SQANTI3 rescue](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI3-rescue)
+* [Running SQANTI3 rescue](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI3-rescue)
 
-* [Running SQANTI-reads](https://github.com/ConesaLab/SQANTI3/wiki/Running-SQANTI%E2%80%90reads)
+* [Running SQANTI-reads](https://conesalab.github.io/SQANTI3/latest/Running-SQANTI%E2%80%90reads)
 
-* [Tutorial: running SQANTI3 on an example dataset](https://github.com/ConesaLab/SQANTI3/wiki/Tutorial:-running-SQANTI3-on-an-example-dataset)
+* [Tutorial: running SQANTI3 on an example dataset](https://conesalab.github.io/SQANTI3/latest/Tutorial:-running-SQANTI3-on-an-example-dataset)
 
 Please, note that we are currently updating and expanding the wiki to provide as much information as possible and 
 enhance the SQANTI3 user experience. Pages under construction -or where information is still missing- will be indicated where appropriate. 

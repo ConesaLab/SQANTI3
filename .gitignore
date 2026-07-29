@@ -148,7 +148,5 @@ src/data/module_logger_config.json
 /bugfix
 test/logs/test_module.log
 GEMINI.md
-dev/sqanti_reads_modularization_plan.md
 .gitignore
-dev/analysis_results.md
-dev/implementation_plan.md
+dev
