@@ -1,0 +1,1518 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://github.com/ConesaLab/SQANTI3/v6.0.2/Tusco-quick-start/">
+      
+      
+        <link rel="prev" href="../Running-SQANTI3-Quality-Control/">
+      
+      
+        <link rel="next" href="../Tusco-novel/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>TUSCO quick start (SQANTI3 QC) - SQANTI3 Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=-apple-system,+BlinkMacSystemFont,+"Segoe+UI",+Helvetica,+Arial,+sans-serif:300,300i,400,400i,700,700i%7CSFMono-Regular,+Consolas,+"Liberation+Mono",+Menlo,+monospace:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif";--md-code-font:"SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#overview" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="SQANTI3 Documentation" class="md-header__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SQANTI3 Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              TUSCO quick start (SQANTI3 QC)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SQANTI3 Documentation" class="md-nav__button md-logo" aria-label="SQANTI3 Documentation" data-md-component="logo">
+      
+  <img src="../assets/2025-4_Logos_AnaConesa_V3_SQANTI-lupa.png" alt="logo">
+
+    </a>
+    SQANTI3 Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Introduction-to-SQANTI3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction to SQANTI3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Dependencies-and-installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dependencies and installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Version-history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Version history
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3_isoform_classification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Isoform classification - categories and subcategories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-from-the-wrapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 from the wrapper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-Quality-Control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 Quality Control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TUSCO quick start (SQANTI3 QC)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TUSCO quick start (SQANTI3 QC)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Dataset
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-conda-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create Conda Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activate-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activate Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundled-reference-panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundled Reference Panels
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#report-contents-and-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report Contents and Interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Report Contents and Interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#benchmarking-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarking Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification Categories
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conda-solver-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conda Solver Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apple-silicon-arm64-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple Silicon (ARM64) Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-r-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing R Packages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#empty-or-missing-igv-plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Empty or Missing IGV Plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coordinate-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinate System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tusco-novel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TUSCO-novel (Novel Isoform Stress Test)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Understanding-the-output-of-SQANTI3-QC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understanding the output of SQANTI3 QC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IsoAnnotLite/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IsoAnnotLite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 filter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI3-rescue/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI3 rescue
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Tutorial%3A-running-SQANTI3-on-an-example-dataset/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorial - running SQANTI3 on an example dataset
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Running-SQANTI%E2%80%90reads/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running SQANTI-reads
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SQANTI3-memory-requeriments-and-paralellization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Memory requirements and parallelization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example Dataset
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Prerequisites">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#create-conda-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Create Conda Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#activate-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Activate Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basic Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundled-reference-panels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bundled Reference Panels
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#report-contents-and-interpretation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report Contents and Interpretation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Report Contents and Interpretation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#benchmarking-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Benchmarking Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#classification-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification Categories
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conda-solver-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conda Solver Issues
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apple-silicon-arm64-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Apple Silicon (ARM64) Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#missing-r-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Missing R Packages
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#empty-or-missing-igv-plots" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Empty or Missing IGV Plots
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Data
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source Data">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coordinate-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinate System
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+  <h1>TUSCO quick start (SQANTI3 QC)</h1>
+
+<h2 id="overview">Overview</h2>
+<p><strong>TUSCO</strong> (Transcriptome Universal Single-isoform COntrol) is a curated internal reference set of genes lacking alternative isoforms, designed to benchmark long-read transcriptome sequencing quality without external spike-in controls.</p>
+<p>Unlike BUSCO (which can misinterpret alternative splicing as gene duplications) or spike-ins like SIRVs/ERCCs (which oversimplify real-sample complexity and neglect RNA degradation artifacts), TUSCO uses endogenous single-isoform genes to evaluate:</p>
+<ul>
+<li><strong>Precision</strong>: Identifying transcripts that deviate from reference annotations</li>
+<li><strong>Sensitivity</strong>: Verifying detection completeness of known transcripts</li>
+</ul>
+<p>This module is integrated into SQANTI3 QC and generates an interactive HTML report with benchmarking metrics and IGV-style genome visualization plots.</p>
+<hr />
+<h2 id="example-dataset">Example Dataset</h2>
+<p>The <a href="https://github.com/ConesaLab/SQANTI3/tree/master/data/tusco"><code>data/tusco/</code></a> directory contains a minimal dataset for testing SQANTI3 TUSCO benchmarking (~8.8 MB total):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Size</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tusco_genome.fa</code></td>
+<td>4.7 MB</td>
+<td>Genomic regions around 46 TUSCO genes</td>
+</tr>
+<tr>
+<td><code>tusco_genome.fa.fai</code></td>
+<td>2 KB</td>
+<td>FASTA index</td>
+</tr>
+<tr>
+<td><code>tusco_annotation.gtf</code></td>
+<td>3.7 MB</td>
+<td>GENCODE v49 annotation subset (8,688 features)</td>
+</tr>
+<tr>
+<td><code>tusco_input.gtf</code></td>
+<td>13 KB</td>
+<td>Example input transcripts (112 entries, 40 genes)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="create-conda-environment">Create Conda Environment</h3>
+<p>Navigate to the SQANTI3 directory and create the conda environment:</p>
+<pre><code class="language-bash">cd /path/to/SQANTI3
+conda env create -f SQANTI3.conda_env.yml
+</code></pre>
+<p>This installs ~70+ packages including Python 3.11, R 4.3+, bioinformatics tools (minimap2, samtools, bedtools), and R packages (ggplot2, plotly, Gviz, rmarkdown).</p>
+<p><strong>Tip:</strong> For faster installation, use mamba instead of conda:</p>
+<pre><code class="language-bash">mamba env create -f SQANTI3.conda_env.yml
+</code></pre>
+<h3 id="activate-environment">Activate Environment</h3>
+<pre><code class="language-bash">conda activate sqanti3
+</code></pre>
+<hr />
+<h2 id="basic-usage">Basic Usage</h2>
+<p>Run SQANTI3 with TUSCO benchmarking enabled:</p>
+<pre><code class="language-bash">python sqanti3_qc.py \
+    --isoforms data/tusco/tusco_input.gtf \
+    --refGTF data/tusco/tusco_annotation.gtf \
+    --refFasta data/tusco/tusco_genome.fa \
+    --tusco human \
+    -d output/tusco_example \
+    --skipORF
+</code></pre>
+<p><strong>Parameters:</strong>
+- <code>--isoforms</code>: Input transcript GTF file to benchmark
+- <code>--refGTF</code>: Reference annotation GTF
+- <code>--refFasta</code>: Reference genome FASTA
+- <code>--tusco human</code>: Enable TUSCO benchmarking (use <code>human</code> or <code>mouse</code>)
+- <code>-d</code>: Output directory
+- <code>--skipORF</code>: Skip ORF prediction (faster for testing)</p>
+<hr />
+<h2 id="outputs">Outputs</h2>
+<p>The TUSCO module generates the following output files:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;prefix&gt;_TUSCO_report.html</code></td>
+<td>Interactive HTML benchmarking report with metrics and visualizations</td>
+</tr>
+<tr>
+<td><code>&lt;prefix&gt;_TUSCO_results.tsv</code></td>
+<td>Transcript categorization (transcript_id, associated_gene, structural_category, subcategory, TUSCO_category)</td>
+</tr>
+<tr>
+<td><code>igv_plots/</code></td>
+<td>Directory with IGV-style genome visualization PNG plots (one per gene)</td>
+</tr>
+<tr>
+<td><code>logs/tusco_report.log</code></td>
+<td>Execution log for troubleshooting</td>
+</tr>
+</tbody>
+</table>
+<p>Standard SQANTI3 outputs are also generated:
+- <code>&lt;prefix&gt;_classification.txt</code> - Full SQANTI3 classification results
+- <code>&lt;prefix&gt;_corrected.gtf</code> - Corrected GTF file
+- <code>&lt;prefix&gt;_junctions.txt</code> - Junction information</p>
+<p>To view the report, open <code>&lt;prefix&gt;_TUSCO_report.html</code> in a web browser.</p>
+<hr />
+<h2 id="bundled-reference-panels">Bundled Reference Panels</h2>
+<p>SQANTI3 includes pre-built TUSCO reference panels:</p>
+<table>
+<thead>
+<tr>
+<th>Species</th>
+<th>File</th>
+<th>Genes</th>
+<th>Location</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Human</td>
+<td><code>tusco_human.tsv</code></td>
+<td>46</td>
+<td><code>src/utilities/report_qc/</code></td>
+</tr>
+<tr>
+<td>Mouse</td>
+<td><code>tusco_mouse.tsv</code></td>
+<td>33</td>
+<td><code>src/utilities/report_qc/</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each TSV file contains columns: Ensembl Gene ID, Ensembl Transcript ID, Gene Symbol, Entrez ID, RefSeq mRNA, RefSeq Protein.</p>
+<hr />
+<h2 id="report-contents-and-interpretation">Report Contents and Interpretation</h2>
+<h3 id="benchmarking-metrics">Benchmarking Metrics</h3>
+<p>The TUSCO report calculates 7 benchmarking metrics:</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sensitivity</strong></td>
+<td>Proportion of reference transcripts correctly detected (TP / (TP + FN))</td>
+</tr>
+<tr>
+<td><strong>Non-redundant Precision</strong></td>
+<td>Proportion of unique predicted transcripts that are correct (TP / (TP + FP))</td>
+</tr>
+<tr>
+<td><strong>Redundant Precision</strong></td>
+<td>Precision accounting for redundant predictions</td>
+</tr>
+<tr>
+<td><strong>Positive Detection Rate</strong></td>
+<td>Rate of true positive detections among all predictions</td>
+</tr>
+<tr>
+<td><strong>False Discovery Rate</strong></td>
+<td>Proportion of predictions that are false positives (FP / (TP + FP))</td>
+</tr>
+<tr>
+<td><strong>False Detection Rate</strong></td>
+<td>Rate of reference transcripts not detected (FN / (TP + FN))</td>
+</tr>
+<tr>
+<td><strong>Redundancy</strong></td>
+<td>Ratio of total predictions to unique predictions</td>
+</tr>
+</tbody>
+</table>
+<h3 id="classification-categories">Classification Categories</h3>
+<p>Transcripts are classified into four TUSCO categories:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>TP</strong> (True Positive)</td>
+<td>Exact structural match to a TUSCO reference transcript (FSM - Full Splice Match)</td>
+</tr>
+<tr>
+<td><strong>PTP</strong> (Partial True Positive)</td>
+<td>Partial match to reference (ISM - Incomplete Splice Match, or NIC/NNC with shared junctions)</td>
+</tr>
+<tr>
+<td><strong>FN</strong> (False Negative)</td>
+<td>TUSCO reference transcript not detected in the input</td>
+</tr>
+<tr>
+<td><strong>FP</strong> (False Positive)</td>
+<td>Predicted transcript that does not match any TUSCO reference</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="conda-solver-issues">Conda Solver Issues</h3>
+<p>If conda fails to solve the environment:
+1. Use mamba instead of conda (faster solver)
+2. Remove specific version constraints if packages are unavailable for your platform</p>
+<h3 id="apple-silicon-arm64-notes">Apple Silicon (ARM64) Notes</h3>
+<p>Some packages may have limited ARM64 support. The core TUSCO functionality works on Apple Silicon, but you may need to:
+- Install packages without strict version pins
+- Skip optional dependencies like <code>parasail</code> if they fail to build</p>
+<h3 id="missing-r-packages">Missing R Packages</h3>
+<p>If R packages fail to load, verify they are installed in the conda environment:</p>
+<pre><code class="language-bash">Rscript -e &quot;library(Gviz); library(ggplot2); library(plotly); library(rmarkdown)&quot;
+</code></pre>
+<h3 id="empty-or-missing-igv-plots">Empty or Missing IGV Plots</h3>
+<p>If IGV plots are not generated:
+- Check <code>logs/tusco_report.log</code> for errors
+- Ensure the reference genome FASTA matches the annotation coordinates
+- Verify Gviz R package is properly installed</p>
+<hr />
+<h2 id="source-data">Source Data</h2>
+<ul>
+<li><strong>Genome:</strong> GRCh38.p14 (extracted regions)</li>
+<li><strong>Annotation:</strong> GENCODE v49</li>
+<li><strong>Input:</strong> WTC11 PacBio cDNA transcripts (subset)</li>
+</ul>
+<h3 id="coordinate-system">Coordinate System</h3>
+<p>Files use region-based chromosome names (e.g., <code>chr1:1182237-1285041</code>) to match the extracted genomic regions.</p>
+<hr />
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="https://github.com/ConesaLab/SQANTI3">SQANTI3 Documentation</a></li>
+<li><a href="https://doi.org/10.1101/2025.08.23.671926">TUSCO Preprint</a> - Liu et al., bioRxiv 2025</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
