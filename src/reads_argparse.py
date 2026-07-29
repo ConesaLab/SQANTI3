@@ -6,7 +6,10 @@ def reads_argparser():
     parser = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms")
 
     pr = parser.add_argument_group("Required arguments")
-    pr.add_argument('--refFasta',  required=True, help='Reference genome (Fasta format)')
+    # refFasta is only needed when SQANTI3-QC is run from scratch (fastq/GTF input).
+    # In fast mode (--sqanti_dirs with existing QC output) it is unused, so it is
+    # optional here and validated conditionally in sqanti3_reads.main().
+    pr.add_argument('--refFasta',  required=False, default=None, help='Reference genome (Fasta format). Required unless running in fast mode (--sqanti_dirs).')
     pr.add_argument('--refGTF',  required= True, help='Reference annotation file (GTF format)')
     pr.add_argument('-de', '--design', type=str, dest="inDESIGN" ,required=True, help='Path to design file, must have sampleID and file_acc column.')
     
@@ -16,6 +19,7 @@ def reads_argparser():
     pio.add_argument('-d', '--sqanti_dirs', type=str, dest='sqanti_dirs', help='\t\tDirectory containing existing SQANTI3 output folders. Use this to skip re-running QC and proceed directly to aggregation.', default = None, required=False)
     pio.add_argument('-o','--output', type=str, dest="OUTPUT", help='\t\tDirectory for output sqanti_reads files (plots, tables, design file). Default: Directory where the script was run.', default = "./", required=False)
     pio.add_argument('--report', type=str, choices = ["pdf", "html", "both"], default = 'pdf', help = "\t\tDefault: pdf")
+    pio.add_argument('--config', type=str, dest="CONFIG", default=None, required=False, help='\t\tYAML file overriding QC-flag thresholds and other cut-offs (intra-priming %%A, PCA variance, length bins). Defaults reproduce the standard behaviour.')
     pio.add_argument('--all_tables', dest="ALLTABLES", action='store_true', help='Export all output tables. Default tables are gene counts, ujc counts, length_summary, cv and underannotated gene tables')
     pio.add_argument('--pca_tables', dest="PCATABLES", action='store_true', help='Export table for making PCA plots')
 
@@ -29,7 +33,7 @@ def reads_argparser():
     pa = parser.add_argument_group("Analysis options")
     pa.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2', help="\t\tDefault: minimap2")
     pa.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
-    pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
+    pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip UJC hashing and read the already-hashed reads_classification straight from --sqanti_dirs. Use when the classification files already carry a jxnHash column (avoids re-hashing).')
 
     pv = parser.add_argument_group("Visualization options")
     pv.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
@@ -39,6 +43,7 @@ def reads_argparser():
     pp = parser.add_argument_group("Performance options")
     pp.add_argument('-t', '--cpus', default=10, type=int, help='\t\tNumber of threads used during alignment by aligners. Default: 10')
     pp.add_argument('-n', '--chunks', default=1, type=int, help='\t\tNumber of chunks to split SQANTI3 analysis in for speed up. Default: 1')
+    pp.add_argument('-j', '--jobs', default=1, type=int, help='\t\tNumber of samples to process in parallel (UJC hashing, and per-sample SQANTI3-QC in simple mode). Note: each parallel QC job still uses --cpus alignment threads, so peak cores ~= jobs*cpus. Default: 1 (serial)')
 
     # Check because this might not be needed
     parser.add_argument('--force_id_ignore', action="store_true", default=False, help="\t\t Allow the usage of transcript IDs non related with PacBio's nomenclature (PB.X.Y)")
