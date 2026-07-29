@@ -47,6 +47,8 @@ nav:
   - Isoform classification - categories and subcategories: SQANTI3_isoform_classification.md
   - Running SQANTI3 from the wrapper: Running-SQANTI3-from-the-wrapper.md
   - Running SQANTI3 Quality Control: Running-SQANTI3-Quality-Control.md
+  - TUSCO quick start (SQANTI3 QC): Tusco-quick-start.md
+  - TUSCO-novel (Novel Isoform Stress Test): Tusco-novel.md
   - Understanding the output of SQANTI3 QC: Understanding-the-output-of-SQANTI3-QC.md
   - IsoAnnotLite: IsoAnnotLite.md
   - Running SQANTI3 filter: Running-SQANTI3-filter.md

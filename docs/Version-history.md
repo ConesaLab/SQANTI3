@@ -10,7 +10,68 @@ See the dedicated site for [installation instructions](Dependencies-and-installa
 
 
 
-## SQANTI3 v5.2 [LATEST, 04/10/2023]
+## SQANTI3 v6.0.2 [LATEST, 22/07/2026]
+
+#### Minor fixes/enhancements:
+- Fixes in Cupcake SAM to GFF3 conversion and short-reads utilities.
+- Environment and build configuration updates (`pixi.toml`, `pyproject.toml`).
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0.2)
+
+_______
+
+## SQANTI3 v6.0.1 (24/04/2026)
+
+#### Minor fixes/enhancements:
+- Bugfixes in parallel processing and QC computations.
+- Added failsafe handling for low-memory environments.
+- Updated rules filter helper functions and test suites.
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0.1)
+
+_______
+
+## SQANTI3 v6.0 (30/03/2026)
+
+#### Major changes:
+- **Rescue Module Overhaul**: Fully revised transcript recovery and reintroduction logic with stricter criteria.
+- **CDS Predictions & Classification**: Updated classification table attributes and report format for CDS predictions.
+- **TUSCO Integration**: Included TUSCO (Transcriptome Universal Single-isoform COntrol) reference datasets for benchmarking transcriptome reconstruction.
+- **Parallel Execution**: Refactored parallel execution framework (`src/parallel.py`).
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.0)
+
+_______
+
+## SQANTI3 v5.5 (23/06/2025)
+
+#### Major changes:
+- Replaced GeneMarkS-T with **TransDecoder2 (TD2)** for improved ORF predictions.
+- Conda environment updated to Python 3.11 to prevent memory freezes on large datasets.
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.5)
+
+_______
+
+## SQANTI3 v5.4 (23/04/2025)
+
+#### Major changes:
+- Standardized command-line argument naming across Quality Control, Filter, and Rescue modules.
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.4)
+
+_______
+
+## SQANTI3 v5.3 (04/12/2024)
+
+#### Minor fixes/enhancements:
+- QC class updates, bugfixes in test suites, and general performance improvements.
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v5.3.0)
+
+_______
+
+## SQANTI3 v5.2 (04/10/2023)
 
 #### Major changes:
 **QC**

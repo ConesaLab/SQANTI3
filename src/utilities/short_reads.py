@@ -1,4 +1,4 @@
-import os, subprocess, sys
+import os, sys
 import pandas as pd
 import numpy as np
 import pybedtools
@@ -40,7 +40,7 @@ def star_mapping(index_dir, SR_fofn, output_dir, cpus):
             files = [x.strip() for x in line.split(' ')]
             compressed = files[0].endswith('.gz')
             sample_name = os.path.splitext(os.path.basename(files[0]))[0].split('.')[0]
-            sample_prefix = os.path.join(mapping_dir, sample_name)
+            sample_prefix = os.path.join(mapping_dir, f"{sample_name}.TH")
             if not os.path.exists(f'{sample_prefix}Log.final.out'):
                 qc_logger.info(f'Mapping for {sample_name}: in progress.')
                 cmd = star_cmd(cpus,index_dir,files,sample_prefix,compressed) 
@@ -81,7 +81,8 @@ def star(genome, SR_fofn, output_dir, cpus):
         os.makedirs(index_dir)
         if not os.path.exists(index_dir_o):
             qc_logger.info('** Running indexing.')
-            cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir, '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
+            cmd = ' '.join(['STAR', '--runThreadN', str(cpus), '--runMode', 'genomeGenerate', '--genomeDir', index_dir,
+             '--genomeFastaFiles', fasta_genome, '--outTmpDir', index_dir_tmp])
             logFile = f"{output_dir}/logs/STAR_index.log"
             run_command(cmd,qc_logger,logFile,"STAR genome indexing")
             qc_logger.info('Indexing done.')
