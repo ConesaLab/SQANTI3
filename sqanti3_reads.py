@@ -72,8 +72,7 @@ def fill_design_table(args):
     return(df)
 
 def _run_qc_cmd(cmd):
-    subprocess.call(cmd, shell=True)
-
+    subprocess.check_call(cmd, shell=True)
 
 def get_method_runSQANTI3(args, df):
 
