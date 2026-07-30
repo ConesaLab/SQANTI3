@@ -202,9 +202,9 @@ def get_bam_header(bam):
 def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
 ## calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get ratios across replicates and return it as a dictionary
-    def process_coverage(cov, column_name):
-        data = [(entry.name, float(entry[6])) for entry in cov]
-        df = pd.DataFrame(data, columns=['id', column_name])
+    def process_coverage(cov_file, column_name):
+        df = pd.read_csv(cov_file, sep='\t', header=None, usecols=[3, 6],
+                         names=['id', column_name], dtype={'id': str, column_name: float})
         if column_name == 'inside':
             df.loc[df[column_name] < 3, column_name] = np.nan
         return df
@@ -217,12 +217,16 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
         in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
-        qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {in_cov}")
+        qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {in_cov.fn}")
         out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
-        qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {out_cov}")
-        inside_df = process_coverage(in_cov, 'inside')
+        qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {out_cov.fn}")
+        inside_df = process_coverage(in_cov.fn, 'inside')
         qc_logger.debug(f"Processed inside coverage DataFrame for BAM file {bam_file}: {inside_df}")
-        outside_df = process_coverage(out_cov, 'outside')
+        outside_df = process_coverage(out_cov.fn, 'outside')
+        
+        # Clean up temporary pybedtools coverage files for this replicate
+        pybedtools.cleanup(remove_all=True)
+
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
         if ratio_rep_df is None:
@@ -236,18 +240,18 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
 
     # Convert all columns but id to numeric, coercing any non-numeric values to NaN
     if metric == "mean":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
     elif metric == "max":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.max(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].max(axis=1, numeric_only=True, skipna=True)
     elif metric == "median":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.median(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].median(axis=1, numeric_only=True, skipna=True)
     else:
         raise ValueError("Invalid value for 'metric'. Use 'mean', '3quartile', 'max', or 'median'.")
 
-    ratio_rep_df = ratio_rep_df[['id','return_ratio']]
-    ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
-    # [os.remove(i) for i in [inside_bed, outside_bed]]
-    # print('Temp files removed.\n')
+    ratio_rep_dict = {
+        iso: {'return_ratio': val}
+        for iso, val in zip(ratio_rep_df['id'], ratio_rep_df['return_ratio'])
+    }
     return(ratio_rep_dict) 
