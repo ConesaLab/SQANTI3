@@ -220,9 +220,9 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         inside_cov_file = os.path.join(out_dir, f"inside_coverage_rep{b}.bed")
         outside_cov_file = os.path.join(out_dir, f"outside_coverage_rep{b}.bed")
 
-        in_cov = in_bed.coverage(bam_file, output=inside_cov_file, sorted=True, g=chr_order, nonamecheck=True)
+        in_cov = in_bed.coverage(bam_file, output=inside_cov_file, sorted=True, g=chr_order, nonamecheck=True, counts=True)
         qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {inside_cov_file}")
-        out_cov = out_bed.coverage(bam_file, output=outside_cov_file, sorted=True, g=chr_order, nonamecheck=True)
+        out_cov = out_bed.coverage(bam_file, output=outside_cov_file, sorted=True, g=chr_order, nonamecheck=True, counts=True)
         qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {outside_cov_file}")
         
         inside_df = process_coverage(inside_cov_file, 'inside')
