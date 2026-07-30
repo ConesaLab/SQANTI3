@@ -213,11 +213,15 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)
+    qc_logger.debug(f"BED files for TSS ratio calculation: inside_bed={inside_bed}, outside_bed={outside_bed}")
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
         in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
+        qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {in_cov}")
         out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
+        qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {out_cov}")
         inside_df = process_coverage(in_cov, 'inside')
+        qc_logger.debug(f"Processed inside coverage DataFrame for BAM file {bam_file}: {inside_df}")
         outside_df = process_coverage(out_cov, 'outside')
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
