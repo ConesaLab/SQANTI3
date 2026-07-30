@@ -188,6 +188,28 @@ def test_get_TSS_bed_file_cleanup(mock_bedtool, mock_bcbio_parse, mock_remove, s
     mock_remove.assert_any_call(os.path.join(env["out_directory"], 'coverage_inside_TSS.bed_tmp'))
     mock_remove.assert_any_call(os.path.join(env["out_directory"], 'coverage_outside_TSS.bed_tmp'))
 
+@patch('BCBio.GFF.parse')
+def test_get_TSS_bed_already_exists(mock_bcbio_parse, setup_test_environment_bed):
+    env = setup_test_environment_bed
+    out_dir = env["out_directory"]
+    inside_bed = os.path.join(out_dir, "inside_TSS.bed")
+    outside_bed = os.path.join(out_dir, "outside_TSS.bed")
+
+    # Create dummy existing BED files
+    with open(inside_bed, 'w') as f:
+        f.write("chr1\t100\t200\tiso1\t0\t+\n")
+    with open(outside_bed, 'w') as f:
+        f.write("chr1\t0\t99\tiso1\t0\t+\n")
+
+    in_bed_ret, out_bed_ret = get_TSS_bed(env["corrected_gtf"], env["chr_order"])
+
+    assert in_bed_ret == inside_bed
+    assert out_bed_ret == outside_bed
+    # BCBio.GFF.parse should NOT be called since files already exist
+    mock_bcbio_parse.assert_not_called()
+
+
+
 ### get_bam_header ###
 
 @pytest.fixture

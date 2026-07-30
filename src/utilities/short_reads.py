@@ -141,8 +141,14 @@ def kallisto(corrected_fasta, SR_fofn, output_dir, cpus):
     return(expression_files)
 
 def get_TSS_bed(corrected_gtf, chr_order):
-    limit_info = dict(gff_type=["transcript"])
     out_directory=os.path.dirname(corrected_gtf)
+    inside_sorted = out_directory + "/inside_TSS.bed" 
+    outside_sorted = out_directory + "/outside_TSS.bed"
+    if os.path.isfile(inside_sorted) and os.path.isfile(outside_sorted):
+        qc_logger.info(f"Found existing TSS BED files at {out_directory}, skipping generation.")
+        return(inside_sorted, outside_sorted)
+
+    limit_info = dict(gff_type=["transcript"])
     tmp_in= out_directory + '/coverage_inside_TSS.bed_tmp'
     tmp_out = out_directory + '/coverage_outside_TSS.bed_tmp'
     in_handle=open(corrected_gtf)
@@ -175,8 +181,6 @@ def get_TSS_bed(corrected_gtf, chr_order):
     in_handle.close()
     i = pybedtools.BedTool(tmp_in)
     o = pybedtools.BedTool(tmp_out)
-    inside_sorted = out_directory + "/inside_TSS.bed" 
-    outside_sorted = out_directory + "/outside_TSS.bed"
     i.sort(g=chr_order, output=inside_sorted)
     o.sort(g=chr_order, output=outside_sorted)
     [os.remove(i) for i in [tmp_in, tmp_out]]
