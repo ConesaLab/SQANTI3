@@ -211,8 +211,8 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
     out_bed = pybedtools.BedTool(outside_bed)
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
-        in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order)
-        out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
+        in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
+        out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
         inside_df = process_coverage(in_cov, 'inside')
         outside_df = process_coverage(out_cov, 'outside')
         merged = pd.merge(inside_df, outside_df, on="id")
