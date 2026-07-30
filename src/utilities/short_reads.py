@@ -210,21 +210,27 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
         return df
 
     qc_logger.info('BAM files identified: '+str(replicates))
-    out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
+    out_dir = os.path.dirname(inside_bed)
+    out_TSS_file = os.path.join(out_dir, "ratio_TSS.csv")
     in_bed = pybedtools.BedTool(inside_bed)
     out_bed = pybedtools.BedTool(outside_bed)
     qc_logger.debug(f"BED files for TSS ratio calculation: inside_bed={inside_bed}, outside_bed={outside_bed}")
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
-        in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
-        qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {in_cov.fn}")
-        out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order, nonamecheck=True)
-        qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {out_cov.fn}")
-        inside_df = process_coverage(in_cov.fn, 'inside')
-        qc_logger.debug(f"Processed inside coverage DataFrame for BAM file {bam_file}: {inside_df}")
-        outside_df = process_coverage(out_cov.fn, 'outside')
+        inside_cov_file = os.path.join(out_dir, f"inside_coverage_rep{b}.bed")
+        outside_cov_file = os.path.join(out_dir, f"outside_coverage_rep{b}.bed")
+
+        in_cov = in_bed.coverage(bam_file, output=inside_cov_file, sorted=True, g=chr_order, nonamecheck=True)
+        qc_logger.debug(f"Coverage for inside_bed with BAM file {bam_file}: {inside_cov_file}")
+        out_cov = out_bed.coverage(bam_file, output=outside_cov_file, sorted=True, g=chr_order, nonamecheck=True)
+        qc_logger.debug(f"Coverage for outside_bed with BAM file {bam_file}: {outside_cov_file}")
         
-        # Clean up temporary pybedtools coverage files for this replicate
+        inside_df = process_coverage(inside_cov_file, 'inside')
+        qc_logger.debug(f"Processed inside coverage DataFrame for BAM file {bam_file}: {inside_df}")
+        outside_df = process_coverage(outside_cov_file, 'outside')
+        qc_logger.debug(f"Processed outside coverage DataFrame for BAM file {bam_file}: {outside_df}")
+
+        # Clean up temporary pybedtools files for this replicate
         pybedtools.cleanup(remove_all=True)
 
         merged = pd.merge(inside_df, outside_df, on="id")
