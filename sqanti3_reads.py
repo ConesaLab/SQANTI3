@@ -252,11 +252,18 @@ def make_UJC_hash(args, df):
             reads_logger.error(f"Input GTF not found: {input_gtf}")
             sys.exit(-1)
 
-        # LC_ALL=C keeps gawk's byte ops (index/substr) out of slow multibyte-locale
-        # paths; the awk is otherwise I/O-bound on the GTF read.
-        ujc_cmd = "LC_ALL=C awk '" + _UJC_AWK + f"' {input_gtf} > {outputPathPrefix}tmp_UJC.txt"
+        # Invoke awk WITHOUT a shell: the program and the GTF path are passed as argv
+        # elements and stdout is redirected through a Python file handle, so a sample
+        # path containing spaces/quotes/other shell metacharacters cannot break the
+        # command or inject anything. LC_ALL=C (via env, not a shell prefix) keeps
+        # gawk's byte ops (index/substr) out of slow multibyte-locale paths; the awk is
+        # otherwise I/O-bound on the GTF read.
+        ujc_txt = f"{outputPathPrefix}tmp_UJC.txt"
+        _awk_env = {**os.environ, "LC_ALL": "C"}
         try:
-            subprocess.check_call(ujc_cmd, shell=True)
+            with open(ujc_txt, "w") as _ujc_out:
+                subprocess.check_call(["awk", _UJC_AWK, input_gtf],
+                                      stdout=_ujc_out, env=_awk_env)
         except subprocess.CalledProcessError:
             reads_logger.error(f"ERROR building UJC chains (awk) from {input_gtf}")
             sys.exit(-1)
@@ -308,13 +315,24 @@ def make_UJC_hash(args, df):
         # the merge preserves the classification's row order, so a positional paste is
         # correct. Dropping the other four columns (incl. the long per-read isoform IDs)
         # avoids writing millions of discarded values to the temp file.
-        merged_df[["jxn_string", "jxnHash"]].to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
+        temp_txt = f"{outputPathPrefix}_temp.txt"
+        out_txt = f"{outputPathPrefix}_reads_classification.txt"
+        merged_df[["jxn_string", "jxnHash"]].to_csv(temp_txt, index = False, sep = "\t")
 
-        cmd_paste = f"""bash -c 'paste <(cat {input_classfile} | tr -d '\r') <(cut -f 1,2 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
-        subprocess.call(cmd_paste, shell = True)
+        # Column-append the two new fields to the classification (what the old `paste`
+        # did) in pure Python — no shell, so paths with spaces/special characters are
+        # safe. The merge preserved row order, so line i of the temp file lines up with
+        # line i of the classification (headers included). Lines are split on \n only
+        # and \r is stripped, matching the old `cat | tr -d '\r'` + `paste` pipeline.
+        with open(input_classfile, "r", newline = "\n") as _cf, \
+             open(temp_txt, "r", newline = "\n") as _tf, \
+             open(out_txt, "w", newline = "\n") as _of:
+            for _cl, _tl in zip(_cf, _tf):
+                _of.write(_cl.replace("\r", "").rstrip("\n") + "\t"
+                          + _tl.replace("\r", "").rstrip("\n") + "\n")
 
-        os.remove(f"{outputPathPrefix}tmp_UJC.txt")
-        os.remove(f"{outputPathPrefix}_temp.txt")
+        os.remove(ujc_txt)
+        os.remove(temp_txt)
 
     _run_parallel(_one, [row for _, row in df.iterrows()], getattr(args, 'jobs', 1))
 
