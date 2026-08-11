@@ -93,7 +93,10 @@ def fill_design_table(args):
     return(df)
 
 def _run_qc_cmd(cmd):
-    subprocess.call(cmd, shell=True)
+    # cmd is an argv list (built in get_method_runSQANTI3). Run WITHOUT a shell so
+    # sample paths containing spaces/quotes/other shell metacharacters are passed as
+    # literal arguments and cannot break the command or inject anything.
+    subprocess.call(cmd)
 
 
 def get_method_runSQANTI3(args, df):
@@ -146,19 +149,21 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}')
                 
-                # Update output directory to be args.OUTPUT instead of args.dir
-                cmd_sqanti = (
-                    f"python {sqantiqcPath}/sqanti3_qc.py "
-                    f"--isoforms {gtf_files} "
-                    f"--refGTF {args.refGTF} "
-                    f"--refFasta {args.refFasta} "
-                    f"--min_ref_len {args.min_ref_len} "
-                    f"--aligner_choice {args.aligner_choice} "
-                    f"-t {args.cpus} "
-                    f"-d {args.OUTPUT}/{file_acc} "
-                    f"-o {sampleID} "
-                    f"-s {args.sites}"
-                )
+                # Update output directory to be args.OUTPUT instead of args.dir.
+                # Built as an argv list (not a shell string) so it can be run without a
+                # shell — see _run_qc_cmd.
+                cmd_sqanti = [
+                    "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                    "--isoforms", gtf_files,
+                    "--refGTF", args.refGTF,
+                    "--refFasta", args.refFasta,
+                    "--min_ref_len", str(args.min_ref_len),
+                    "--aligner_choice", args.aligner_choice,
+                    "-t", str(args.cpus),
+                    "-d", f"{args.OUTPUT}/{file_acc}",
+                    "-o", sampleID,
+                    "-s", str(args.sites),
+                ]
 
                 qc_cmds.append(cmd_sqanti)
                 continue
@@ -180,21 +185,23 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}')
 
-                # Update output directory to be args.OUTPUT instead of args.dir
-                cmd_sqanti = (
-                    f"python {sqantiqcPath}/sqanti3_qc.py "
-                    f"--isoforms {fastq_files} "
-                    f"--refGTF {args.refGTF} "
-                    f"--refFasta {args.refFasta} "
-                    f"--min_ref_len {args.min_ref_len} "
-                    f"--aligner_choice {args.aligner_choice} "
-                    f"-t {args.cpus} "
-                    f"-d {args.OUTPUT}/{file_acc} "
-                    f"-o {sampleID} "
-                    f"-s {args.sites} "
-                    f"-n {args.chunks} "
-                    f"--fasta"
-                )
+                # Update output directory to be args.OUTPUT instead of args.dir.
+                # Built as an argv list (not a shell string) so it can be run without a
+                # shell — see _run_qc_cmd.
+                cmd_sqanti = [
+                    "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                    "--isoforms", fastq_files,
+                    "--refGTF", args.refGTF,
+                    "--refFasta", args.refFasta,
+                    "--min_ref_len", str(args.min_ref_len),
+                    "--aligner_choice", args.aligner_choice,
+                    "-t", str(args.cpus),
+                    "-d", f"{args.OUTPUT}/{file_acc}",
+                    "-o", sampleID,
+                    "-s", str(args.sites),
+                    "-n", str(args.chunks),
+                    "--fasta",
+                ]
 
                 reads_logger.debug(cmd_sqanti)
                 qc_cmds.append(cmd_sqanti)
