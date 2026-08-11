@@ -254,12 +254,18 @@ def make_UJC_hash(args, df):
 
         # LC_ALL=C keeps gawk's byte ops (index/substr) out of slow multibyte-locale
         # paths; the awk is otherwise I/O-bound on the GTF read.
-        ujc_cmd = "LC_ALL=C awk '" + _UJC_AWK + f"' {input_gtf} > {outputPathPrefix}tmp_UJC.txt"
-        try:
-            subprocess.check_call(ujc_cmd, shell=True)
-        except subprocess.CalledProcessError:
-            reads_logger.error(f"ERROR building UJC chains (awk) from {input_gtf}")
-            sys.exit(-1)
+        env = os.environ.copy()
+        env["LC_ALL"] = "C"
+        with open(f"{outputPathPrefix}tmp_UJC.txt", "w") as out_f:
+            try:
+                subprocess.check_call(
+                    ["awk", _UJC_AWK, input_gtf],
+                    stdout=out_f,
+                    env=env,
+                )
+            except subprocess.CalledProcessError:
+                reads_logger.error(f"ERROR running awk on {input_gtf}")
+                sys.exit(-1)
 
         ## Pandas merge to the left
         input_classfile = f"{inputPathPrefix}_classification.txt"
