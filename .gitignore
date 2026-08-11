@@ -149,3 +149,6 @@ src/data/module_logger_config.json
 test/logs/test_module.log
 
 GEMINI.md
+.gitignore
+dev
+

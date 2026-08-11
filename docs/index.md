@@ -14,6 +14,10 @@ Welcome to the SQANTI3 Documentation!
 
 * [Running SQANTI3 quality control](Running-SQANTI3-Quality-Control.md)
 
+* [TUSCO quick start (SQANTI3 QC)](Tusco-quick-start.md)
+
+* [TUSCO-novel (Novel Isoform Stress Test)](Tusco-novel.md)
+
 * [Understanding the output of SQANTI3 QC](Understanding-the-output-of-SQANTI3-QC.md)
 
 * [IsoAnnotLite](IsoAnnotLite.md)

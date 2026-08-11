@@ -96,8 +96,7 @@ def _run_qc_cmd(cmd):
     # cmd is an argv list (built in get_method_runSQANTI3). Run WITHOUT a shell so
     # sample paths containing spaces/quotes/other shell metacharacters are passed as
     # literal arguments and cannot break the command or inject anything.
-    subprocess.call(cmd)
-
+    subprocess.check_call(cmd)
 
 def get_method_runSQANTI3(args, df):
 
