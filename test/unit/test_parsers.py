@@ -376,19 +376,27 @@ class TestParseCounts:
         assert pb103724_row["sample3"] == 55
 
     def test_parse_counts_mixed_numeric_types(self, fl_count_mixed_numeric):
+        """Fractional counts from EM-based quantifiers must be preserved."""
         df = parse_counts(fl_count_mixed_numeric)
-        
-        # parse_counts converts all to int, so float values will be truncated
-        # But the function actually ensures counts are integers
+
         assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
-        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200.5
         assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
-        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300
-        
-        # All counts should be integers
+        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300.75
+
+    def test_parse_counts_subunit_fractional_not_zeroed(self, tmp_path):
+        """Counts below 1 must not collapse to zero (bambu/salmon EM output)."""
+        f = tmp_path / "frac.tsv"
+        f.write_text("pbid\tsample1\nPB.1.1\t0.4\nPB.1.2\t0.9\nPB.1.3\t3.0\n")
+        df = parse_counts(str(f))
+        assert df['sample1'].tolist() == [0.4, 0.9, 3.0]
+
+    def test_parse_counts_integer_input_stays_integer(self, fl_count_single_tsv):
+        """Integer count files keep an integer dtype (PacBio FL workflows)."""
+        df = parse_counts(fl_count_single_tsv)
         sample_cols = [col for col in df.columns if col != 'isoform']
         for col in sample_cols:
-            assert df[col].dtype == int
+            assert df[col].dtype.kind in ('i', 'u')
 
     def test_parse_counts_empty_file(self, fl_count_empty):
         df = parse_counts(fl_count_empty)
