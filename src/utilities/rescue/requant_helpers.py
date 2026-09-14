@@ -32,10 +32,15 @@ def prepare_count_matrices(old_counts, classid_df):
     # Identify IDs
     valid_ids = classid_df[classid_df['filter_result'] == 'Isoform']['isoform']
     artifact_ids = classid_df[classid_df['filter_result'] == 'Artifact']['isoform']
+
     
-    # Create aligned matrices (Fill NaN with 0 for safe math)
-    base_df = counts_df.reindex(valid_ids).fillna(0).astype(int)
-    source_df = counts_df.reindex(artifact_ids).fillna(0).astype(int)
+    # Create aligned matrices (Fill NaN with 0 for safe math).
+    # Counts are kept as provided: EM-based quantifiers (bambu, salmon,
+    # kallisto, RSEM) report fractional abundances, and truncating them
+    # biases expression downward.
+    base_df = counts_df.reindex(valid_ids).fillna(0)
+    source_df = counts_df.reindex(artifact_ids).fillna(0)
+  
     
     return base_df, source_df
 
@@ -172,10 +177,6 @@ def export_counts(old_counts_df, new_counts_df, prefix):
     if not extended_df.empty:
         # Select specific columns to clean up any extra metadata and apply sorting
         extended_df = extended_df[ordered_cols].sort_values('isoform').reset_index(drop=True)
-        
-        # Ensure integer counts (Merge converts to float due to NaNs)
-        numeric_cols = extended_df.columns.drop('isoform')
-        extended_df[numeric_cols] = extended_df[numeric_cols].astype(int)
     
     # Save files
     final_df.to_csv(f"{prefix}_reassigned_counts.tsv", sep='\t', index=False)

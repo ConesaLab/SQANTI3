@@ -159,6 +159,23 @@ class TestPrepareCountMatrices:
         assert 'PB.2.1' in source_df.index
         assert source_df.loc['PB.2.1', 'sample1'] == 0
 
+    def test_fractional_counts_preserved(self):
+            """Fractional counts from EM-based quantifiers must not be truncated."""
+            old_counts = pd.DataFrame({
+                'isoform': ['PB.1.1', 'PB.2.1'],
+                'sample1': [100.5, 0.4]
+            })
+
+            classif_df = pd.DataFrame({
+                'isoform': ['PB.1.1', 'PB.2.1'],
+                'filter_result': ['Isoform', 'Artifact']
+            })
+
+            base_df, source_df = prepare_count_matrices(old_counts, classif_df)
+
+            assert base_df.loc['PB.1.1', 'sample1'] == 100.5
+            assert source_df.loc['PB.2.1', 'sample1'] == 0.4
+
 
 class TestCalculateDistributionFractions:
     """Test suite for calculate_distribution_fractions function."""
