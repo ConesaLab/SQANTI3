@@ -398,7 +398,7 @@ def parse_TD2(corrORF, td2_faa):
 
 def extract_variables(s):
     # Extract the ID prefix and CDS coordinates with strand
-    match = re.search(r'ORF type:(?P<cds_type>[^\s:]+)\ .*?psauron_score=(?P<psauron_score>[0-9.]+).*?len:(?P<protein_length>\d+).*?(?P<id>[^\s:]+):(?P<start>\d+)-(?P<end>\d+)\([+-]\)', s)
+    match = re.search(r'ORF type:(?P<cds_type>[^\s:]+)\ .*?psauron_score=(?P<psauron_score>[0-9.]+).*?len:(?P<protein_length>\d+).*?(?P<id>\S+):(?P<start>\d+)-(?P<end>\d+)\([+-]\)', s)
     if not match:
         qc_logger.error(f"Failed to parse information from: {s}")
         sys.exit(1)

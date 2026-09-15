@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
+from src.parsers import extract_variables, isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
 from bx.intervals.intersection import IntervalTree
 
 class TestReferenceParser:
@@ -251,6 +251,22 @@ class TestParseTD2:
 
         # Clean up: remove the output file after the test
         os.remove(corrORF_td2_file)
+
+    @pytest.mark.parametrize("transcript_id", [
+        "PB.83093.1",
+        "ENST00000123456.1",
+        # IDs containing ':' (e.g., Isocall fusion and intergenic transcripts)
+        "ENSG00000111111.1::ENSG00000222222.2|T1",
+        "GENE|chr7:1234567-1240000|r|T2",
+    ])
+    def test_extract_variables_transcript_id(self, transcript_id):
+        header = f"{transcript_id}.p1 GENE.{transcript_id}~~{transcript_id}.p1  ORF type:complete (+),psauron_score=0.998 len:138 {transcript_id}:575-988(+)"
+
+        info = extract_variables(header)
+
+        assert info['id_pre'] == transcript_id
+        assert info['cds_start'] == 575
+        assert info['cds_end'] == 988
 
 
 class TestParseCounts:
