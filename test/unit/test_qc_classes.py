@@ -506,3 +506,93 @@ def test_polyapeak_empty_bed_file(tmp_path):
     empty_file.write_text("")
     polya = PolyAPeak(str(empty_file))
     assert len(polya.polya_peaks) == 0
+
+
+### prevalence tests ###
+# Number of samples in which each transcript is detected.
+# Detection threshold is one full read (count >= 1); see the contract test below.
+
+
+def _transcript_with_counts(fl_dict):
+    """Build a minimal transcript carrying a multi-sample FL count dict."""
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        length=1000,
+        exons=3,
+        structural_category="full-splice_match",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+    )
+    obj.FL_dict = fl_dict
+    return obj
+
+
+def test_prevalence_counts_samples_with_expression():
+    """prevalence counts how many samples reach the detection threshold."""
+    d = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5, "s4": 0, "s5": 1}).as_dict()
+    assert d["prevalence"] == 3
+    assert d["FL"] == 16
+
+
+def test_prevalence_all_samples():
+    """A transcript detected everywhere gets prevalence equal to sample count."""
+    d = _transcript_with_counts({"s1": 3, "s2": 7, "s3": 2}).as_dict()
+    assert d["prevalence"] == 3
+
+
+def test_prevalence_no_expression():
+    """No expression in any sample gives prevalence 0."""
+    d = _transcript_with_counts({"s1": 0, "s2": 0, "s3": 0}).as_dict()
+    assert d["prevalence"] == 0
+    assert d["FL"] == 0
+
+
+def test_prevalence_subunit_counts_are_not_detection():
+    """Contract: an estimated abundance below one full read is not a detection.
+
+    EM-based quantifiers (bambu, salmon, kallisto, RSEM) distribute each
+    ambiguous read across candidate isoforms, assigning fractional mass to
+    isoforms with no evidence of their own. Requiring at least one full read
+    is what separates evidence from allocation.
+
+    Measured empirically: lowering the threshold below 1 increases coverage
+    but degrades quantification accuracy, so these transcripts are noise.
+    They are not lost either: they reach the rescue module, which reassigns
+    their mass to the sibling isoforms the reads actually belong to.
+    """
+    d = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 0.99}).as_dict()
+    assert d["prevalence"] == 0
+
+
+def test_prevalence_one_read_is_detection():
+    """One full read counts as a detection, whether the value is integer or not."""
+    d = _transcript_with_counts({"s1": 1.0, "s2": 1.5, "s3": 0.7}).as_dict()
+    assert d["prevalence"] == 2
+
+
+def test_prevalence_single_sample():
+    """With a single sample prevalence can only be 0 or 1."""
+    d = _transcript_with_counts({"s1": 5}).as_dict()
+    assert d["prevalence"] == 1
+
+
+def test_prevalence_absent_without_fl_counts():
+    """Without --fl_count there is no FL_dict, so prevalence reports NA.
+
+    This is the default path for most users, who do not supply abundances.
+    The column must not break the classification table.
+    """
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        length=1000,
+        exons=3,
+        structural_category="full-splice_match",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+    )
+    assert obj.as_dict()["prevalence"] == "NA"
+
+
+def test_prevalence_empty_fl_counts():
+    """An empty FL_dict is treated the same as no FL_dict at all."""
+    assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"

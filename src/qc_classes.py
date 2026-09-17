@@ -193,9 +193,6 @@ class myQueryTranscripts:
     ref_length: Optional[int] = None
     ref_exons: Optional[int] = None
 
-    q_splicesite_hit: Optional[int] = None
-    q_exon_overlap: Optional[int] = None
-
     diff_to_TSS: Optional[int] = None
     diff_to_TTS: Optional[int] = None
     diff_to_TSS_genomic: Optional[int] = None
@@ -212,6 +209,9 @@ class myQueryTranscripts:
     sd_cov: Optional[float] = None
 
     FL: Optional[int] = None
+    # multisample m value. 
+    # Pending to allow different m values if groups have different size (M)
+    prevalence: Optional[int] = None
 
     n_indels: Optional[int] = None
     n_indels_junc: Optional[int] = None
@@ -257,6 +257,8 @@ class myQueryTranscripts:
     ref_start: Optional[int] = None
     ref_end: Optional[int] = None
     ref_strand: Optional[str] = None
+    q_splicesite_hit: Optional[int] = None
+    q_exon_overlap: Optional[int] = None
 
     def __post_init__(self):
         self._validate_input()
@@ -363,10 +365,14 @@ class myQueryTranscripts:
 
         # Handle multi-sample FL counts
         if self.FL_dict:
+            n = 1 # minimum count value
+            x = 0 # counts how many samples have expression
             for sample, count in self.FL_dict.items():
                 base[f"FL.{sample}"] = count
+                if count >= n: x += 1  
             # Set FL to sum of all samples for multi-sample case
             base["FL"] = sum(self.FL_dict.values())
+            base["prevalence"] = x
 
         # Eliminate non-report attributes
         non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start',

@@ -40,7 +40,7 @@ def qc_argparse():
     apod.add_argument("--phyloP_bed",  help="PhyloP BED for conservation score (BED, optional)")
     apod.add_argument('-e','--expression',  help='Expression matrix (supported: Kallisto tsv)')
     apod.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
-    apod.add_argument('-fl', '--fl_count', help='Full-length PacBio abundance file')
+    apod.add_argument('-fl', '--fl_count', help='Full-length abundance file')
 
     # Functional annotation
     apf = ap.add_argument_group("Functional annotation")
