@@ -47,8 +47,12 @@ def rescue_argparse():
                   help = "If 'automatic' (default), only automatic rescue of FSM artifacts will be performed.\
                      \nIf 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
   cc.add_argument("-q","--requant",
-                  action="store_true",
-                  help = "Run requantification of the rescued isoforms.")
+                  action = argparse.BooleanOptionalAction,
+                  default = True,
+                  help = "Run requantification of the rescued isoforms, redistributing counts \
+                    \nfrom discarded artifacts to their replacement transcripts. \
+                    \nRequires --counts. Use --no-requant to skip it. \
+                    \nDefault: %(default)s")
   cc.add_argument("-s","--strategy", 
                   choices = ["rules", "ml"],
                   default = "rules", 

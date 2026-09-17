@@ -258,4 +258,14 @@ def rescue_args_validation(args):
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
     if args.requant:
-        valid_file(args.counts,rescue_logger)
+        if args.counts is None:
+            rescue_logger.warning(
+                "Requantification is enabled by default but no --counts file was provided. "
+                "Isoforms will be rescued but NOT requantified: the resulting transcriptome "
+                "will contain rescued transcripts with no associated expression values. "
+                "Provide --counts to enable requantification, or pass --no-requant "
+                "to skip this step silently."
+            )
+            args.requant = False
+        else:
+            valid_file(args.counts, rescue_logger)
