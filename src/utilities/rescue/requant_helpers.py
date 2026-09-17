@@ -83,40 +83,60 @@ def calculate_distribution_fractions(exploded_map, base_df, sample_cols):
     
     return fractions
 
-def distribute_integer_counts(source_df, exploded_map, fractions, sample_cols):
+def _has_fractional_values(df) -> bool:
+    """True if any value is not an exact integer."""
+    if df.empty:
+        return False
+    values = df.to_numpy(dtype="float64", copy=False)
+    return bool(np.any(np.isfinite(values) & (values % 1 != 0)))
+
+
+def distribute_integer_counts(source_df, exploded_map, fractions, sample_cols,
+                              fractional=None):
     """
-    Applies fractions to source counts and enforces integer conservation.
-    Strategy: Floor(Value) + Remainder added to the first target.
+    Applies fractions to source counts and distributes them across targets.
+
+    Integer input: Floor(Value) + Remainder added to the first target. This
+    conserves the total exactly while keeping every value integral.
+
+    Fractional input (EM-based quantifiers: bambu, salmon, kallisto, RSEM):
+    proportional shares are kept as provided. Flooring sends sub-unit artifact
+    counts to zero on every target and the remainder is then truncated away,
+    so the counts are lost outright. Fractions already sum to 1 per artifact
+    group, so the proportional split conserves the total by construction.
+
+    `fractional` is auto-detected from the source counts when not given.
     """
     # 1. Align Source (Artifact) counts to the exploded map
     # We look up the count for the artifact (isoform) corresponding to each row
     artifact_counts_aligned = source_df.loc[exploded_map['isoform']].reset_index(drop=True)[sample_cols]
 
-    # 2. Basic Distribution (Floored to Integer)
-    # e.g., 10 * 0.33 = 3.3 -> 3
-    counts_to_add = np.floor(artifact_counts_aligned * fractions).astype(int)
+    if fractional is None:
+        fractional = _has_fractional_values(artifact_counts_aligned)
 
-    # 3. Calculate Remainder (Integer Conservation)
-    # Check how many counts we lost due to flooring
-    # e.g., Original: 10. Allocated Sum: 3+3+3=9. Remainder: 1.
-    allocated_sum = counts_to_add.groupby(exploded_map['isoform']).transform('sum')
-    remainders = (artifact_counts_aligned - allocated_sum).astype(int)
+    # 2. Basic Distribution
+    counts_to_add = artifact_counts_aligned * fractions
 
-    # 4. Distribute Remainder
-    # Add the remainder to the FIRST target of each artifact group to preserve the sum.
-    # This avoids creating decimals or losing counts.
-    is_first = (exploded_map.groupby('isoform').cumcount() == 0)
-    
-    # We only update rows where 'is_first' is True
-    # Pandas aligns indices automatically, so this safely adds the remainder vector
-    counts_to_add.loc[is_first] += remainders.loc[is_first]
+    if not fractional:
+        # 2b. Floor to integer, e.g., 10 * 0.33 = 3.3 -> 3
+        counts_to_add = np.floor(counts_to_add).astype(int)
+
+        # 3. Calculate Remainder (Integer Conservation)
+        # e.g., Original: 10. Allocated Sum: 3+3+3=9. Remainder: 1.
+        allocated_sum = counts_to_add.groupby(exploded_map['isoform']).transform('sum')
+        remainders = (artifact_counts_aligned - allocated_sum).astype(int)
+
+        # 4. Distribute Remainder
+        # Add the remainder to the FIRST target of each artifact group.
+        is_first = (exploded_map.groupby('isoform').cumcount() == 0)
+        counts_to_add.loc[is_first] += remainders.loc[is_first]
 
     # 5. Assign Target IDs for final aggregation
     counts_to_add['isoform'] = exploded_map['assigned_transcript']
     counts_to_add.fillna(0, inplace=True)
     # 6. Sum up all contributions per Target
     final_additions = counts_to_add.groupby('isoform')[sample_cols].sum()
-    
+
     return final_additions
 
 def export_counts(old_counts_df, new_counts_df, prefix):

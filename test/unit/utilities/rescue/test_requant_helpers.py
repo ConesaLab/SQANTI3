@@ -294,6 +294,95 @@ class TestDistributeIntegerCounts:
         assert result.loc['target2', 'sample1'] == 6
         assert result['sample1'].sum() == 10
 
+    def test_fractional_input_distributed_proportionally(self):
+        """Sub-unit artifact counts must split, not vanish."""
+        source_df = pd.DataFrame({'sample1': [0.8]}, index=['artifact1'])
+        exploded_map = pd.DataFrame({
+            'isoform': ['artifact1', 'artifact1'],
+            'assigned_transcript': ['target1', 'target2']
+        })
+        fractions = pd.DataFrame({'sample1': [0.5, 0.5]})
+
+        result = distribute_integer_counts(source_df, exploded_map, fractions, ['sample1'])
+
+        # Before the patch both targets get 0 and the 0.8 counts are lost
+        assert result.loc['target1', 'sample1'] == pytest.approx(0.4)
+        assert result.loc['target2', 'sample1'] == pytest.approx(0.4)
+
+    def test_fractional_input_total_conserved(self):
+        """10.5 split 1/3-2/3 -> 3.5 + 7.0. Before the patch: 10.0."""
+        source_df = pd.DataFrame({'sample1': [10.5]}, index=['artifact1'])
+        exploded_map = pd.DataFrame({
+            'isoform': ['artifact1', 'artifact1'],
+            'assigned_transcript': ['target1', 'target2']
+        })
+        fractions = pd.DataFrame({'sample1': [1/3, 2/3]})
+
+        result = distribute_integer_counts(source_df, exploded_map, fractions, ['sample1'])
+
+        assert result['sample1'].sum() == pytest.approx(10.5)
+
+    def test_float_dtype_with_integral_values_uses_integer_path(self):
+        """reindex().fillna(0) upcasts integer input to float; integral values
+        must still take the integer path so existing workflows don't change."""
+        source_df = pd.DataFrame({'sample1': [10.0]}, index=['artifact1'])
+        exploded_map = pd.DataFrame({
+            'isoform': ['artifact1', 'artifact1'],
+            'assigned_transcript': ['target1', 'target2']
+        })
+        fractions = pd.DataFrame({'sample1': [1/3, 2/3]})
+
+        result = distribute_integer_counts(source_df, exploded_map, fractions, ['sample1'])
+
+        # Integer path: floor(3.33)=3 plus remainder 1, floor(6.67)=6
+        assert result.loc['target1', 'sample1'] == 4
+        assert result.loc['target2', 'sample1'] == 6
+        assert (result['sample1'] % 1 == 0).all()
+
+    def test_fractional_flag_overrides_detection(self):
+        """An explicit flag wins over auto-detection in both directions.
+
+        Fractions of 1/3 and 2/3 are deliberate: the two paths give different
+        answers, so each assertion fails if the wrong one is taken.
+        """
+        exploded_map = pd.DataFrame({
+            'isoform': ['artifact1', 'artifact1'],
+            'assigned_transcript': ['target1', 'target2']
+        })
+        fractions = pd.DataFrame({'sample1': [1/3, 2/3]})
+
+        # Fractional input forced onto the integer path:
+        # floor(3.5)=3, floor(7.0)=7, remainder int(0.5)=0 -> 3 and 7.
+        # The fractional path would give 3.5 and 7.0.
+        source_frac = pd.DataFrame({'sample1': [10.5]}, index=['artifact1'])
+        forced_int = distribute_integer_counts(
+            source_frac, exploded_map, fractions, ['sample1'], fractional=False)
+        assert forced_int.loc['target1', 'sample1'] == 3
+        assert forced_int.loc['target2', 'sample1'] == 7
+        assert (forced_int['sample1'] % 1 == 0).all()
+
+        # Integer input forced onto the fractional path:
+        # 10/3 and 20/3. The integer path would give 4 (3 + remainder) and 6.
+        source_int = pd.DataFrame({'sample1': [10]}, index=['artifact1'])
+        forced_frac = distribute_integer_counts(
+            source_int, exploded_map, fractions, ['sample1'], fractional=True)
+        assert forced_frac.loc['target1', 'sample1'] == pytest.approx(10/3)
+        assert forced_frac.loc['target2', 'sample1'] == pytest.approx(20/3)
+
+    def test_many_targets_low_count(self):
+        """0.9 counts across 3 targets: 0.3 each, nobody takes it all."""
+        source_df = pd.DataFrame({'sample1': [0.9]}, index=['artifact1'])
+        exploded_map = pd.DataFrame({
+            'isoform': ['artifact1'] * 3,
+            'assigned_transcript': ['target1', 'target2', 'target3']
+        })
+        fractions = pd.DataFrame({'sample1': [1/3, 1/3, 1/3]})
+
+        result = distribute_integer_counts(source_df, exploded_map, fractions, ['sample1'])
+
+        for target in ['target1', 'target2', 'target3']:
+            assert result.loc[target, 'sample1'] == pytest.approx(0.3)
+        assert result['sample1'].sum() == pytest.approx(0.9)
 
 class TestExportCounts:
     """Test suite for export_counts function."""
