@@ -97,6 +97,7 @@ def main():
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
   if args.filtered_isoforms_gtf is None:
+    rescue_class = None
     rescue_logger.warning("No filtered GTF provided.")
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
@@ -106,11 +107,21 @@ def main():
                                        class_df,args.refClassif)
 
   ## END ##
-  message("Rescue finished successfully!",rescue_logger)
+ 
 
-  if args.requant:  
-    message("Running requantification.",rescue_logger)
-    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df, rescue_class)
+  if args.requant:
+    if rescue_class is None:
+      rescue_logger.warning(
+        "Requantification skipped: it requires the rescued classification, which is only "
+        "generated when --filtered_isoforms_gtf is provided."
+      )
+    else:
+      message("Running requantification.", rescue_logger)
+      requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df, rescue_class)
+  else:
+    rescue_logger.info("Requantification skipped (--no-requant). The count matrix will not include rescued transcripts.")
+
+  message("Rescue finished successfully!", rescue_logger)
 
 ## Run main()
 if __name__ == "__main__":
