@@ -270,15 +270,16 @@ def parse_counts(count_file):
     """
     Parses a count file into a Pandas DataFrame.
     Optimized for multi-sample requantification pipelines.
-    
+
     Features:
     - Auto-detects delimiter (CSV/TSV).
     - Preserves all sample columns dynamically.
     - Handles 'NA' by converting to 0.
+    - Preserves fractional counts as provided.
     - Returns a dense matrix ready for groupby operations.
     """
     try:
-        # 1. Sniff the delimiter 
+        # 1. Sniff the delimiter
         with open(count_file, 'r') as f:
             # Skip comments to find header
             pos = f.tell()
@@ -286,8 +287,8 @@ def parse_counts(count_file):
             while line and line.startswith('#'):
                 pos = f.tell()
                 line = f.readline()
-            
-            # Sniff 
+
+            # Sniff
             f.seek(pos)
             chunk = f.read(2048)
             try:
@@ -298,25 +299,40 @@ def parse_counts(count_file):
 
         # 2. Read with Pandas
         # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1
-        df = pd.read_csv(count_file, sep=sep, dtype={0: str},comment='#')
+        df = pd.read_csv(count_file, sep=sep, dtype={0: str}, comment='#')
 
         # 3. Dynamic Column Validation
         # Rename first column to standard 'isoform' for easier merging later
         df.rename(columns={df.columns[0]: 'isoform'}, inplace=True)
-        
-        if df.shape[1] < 2:
-             qc_logger.error(f"Error: File {count_file} has no sample columns.", file=sys.stderr)
-             sys.exit(1)
 
-        # 4. Handle NAs and dtypes
-        # Fills NA with 0 and ensures counts are integers (common requirement for counts)
+        if df.shape[1] < 2:
+            qc_logger.error(f"File {count_file} has no sample columns.")
+            sys.exit(1)
+
+        # 4. Handle NAs and validate dtypes
+        # Counts are kept as provided. EM-based quantifiers (bambu, salmon,
+        # kallisto, RSEM) report fractional abundances; truncating them biases
+        # expression downward and collapses low-expression transcripts to zero.
         sample_cols = df.columns[1:]
-        df[sample_cols] = df[sample_cols].fillna(0).astype(int)
+
+        # Empty files have no values to infer a numeric dtype from, so pandas
+        # types their columns as object. Skip the check rather than reject them.
+        if len(df) > 0:
+            non_numeric = [c for c in sample_cols
+                           if not pd.api.types.is_numeric_dtype(df[c])]
+            if non_numeric:
+                qc_logger.error(f"Non-numeric count columns in {count_file}: {non_numeric}")
+                sys.exit(1)
+
+        df[sample_cols] = df[sample_cols].fillna(0)
+
+        if len(df) > 0 and (df[sample_cols] % 1 != 0).any().any():
+            qc_logger.info("Fractional counts detected in FL count file; values preserved as provided.")
 
         return df
 
     except Exception as e:
-        qc_logger.error(f"Error parsing count file {count_file}: {e}", file=sys.stderr)
+        qc_logger.error(f"Error parsing count file {count_file}: {e}")
         sys.exit(1)
 
 def parse_td2_to_dict(td2_faa):
