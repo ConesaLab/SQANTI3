@@ -35,7 +35,7 @@ As of SQANTI3 v5.1, a new module has been added to the SQANTI3 workflow for tran
 The SQANTI3 rescue algorithm is designed to be run **after transcriptome filtering** and uses the long read-based evidence provided by discarded isoforms (i.e. artifacts) to recover transcripts in the associated reference transcriptome. 
 The idea behind this strategy is to avoid losing transcripts/genes that are detected as expressed by long read sequencing, but whose start/end/junctions could not be confidently validated using orthogonal data, resulting in the removal of those genes/transcripts from the transcriptome. More details about this can be found in the [Motivation](#motivation) section below.
 
-In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Optionally, requantification can be performed to reassign expression values to the rescued isoforms.
+In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Requantification is performed by default to reassign expression values to the rescued isoforms. It requires `--counts` and can be disabled with `--no-requant`.
 
 A new functionality of the rescue module is the requantification of the curated transcriptome. In this final step, the expression values of the transcripts that were not affected by filtering or rescue are kept intact, while the expression values of the rescued transcripts are transferred from their corresponding long read-defined artifact(s). More details about this can be found in the [Requantification]() section below.
 
@@ -210,7 +210,9 @@ Customization options:
                         Whether or not to include mono-exonic artifacts in the rescue. Default: all
   --mode {automatic,full}
                         If 'automatic' (default), only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.
-  -q, --requant         Run requantification of the rescued isoforms.
+  -q, --requant, --no-requant
+                        Run requantification of the rescued isoforms. Requires --counts.
+                        (default: True)
   -s {rules,ml}, --strategy {rules,ml}
                         Filter strategy used. Default: rules
 
@@ -250,7 +252,7 @@ Regardless of the rescue mode that is selected, SQ3 has the following **common a
 
 - **Reference transcriptome classification file** generated after running SQANTI3 QC on the reference transcriptome, which must be done previously to running the rescue and using the same orthogonal data as for long read-defined transcriptome QC. This file must be supplied via the `--refClassif` (or `-k`) argument and will be used to evaluate reference rescue target support ([see details above](#3-application-of-sq3-filter-to-the-reference-transcriptome)).
 
-- **Counts** file containing expression values of transcript models before SQANTI3 filtering and rescue. This file is required if the `--requant` (`-q`) module is used. It must include two columns: the first for the isoform ID and the second for the corresponding expression value. Column headers can vary. Provide this file using the `--counts` (or `-c`) argument; it will be used to re-evaluate the expression values of the filtered and rescued transcript models.
+- **Counts** file containing expression values of transcript models before SQANTI3 filtering and rescue. This file is required by the requantification module, which is enabled by default. If it is not provided, rescue emits a warning and skips requantification. It must include two columns: the first for the isoform ID and the second for the corresponding expression value. Column headers can vary. Provide this file using the `--counts` (or `-c`) argument; it will be used to re-evaluate the expression values of the filtered and rescued transcript models.
 
 
 Additionally, the following **parameters** can be set to modify the behavior of the rescue algorithm:
@@ -345,7 +347,7 @@ DQ875385	0.758
 
 ### Requantification output
 
-If the `--requant` (`-q`) flag is used when running SQANTI3 rescue, two additional output files will be generated:
+Unless `--no-requant` is passed, and provided that `--counts` is supplied, two additional output files will be generated:
 
 - `*_requantified_counts.tsv`: a two-column table including the isoform IDs and their corresponding expression values after requantification.
 - `*_requantified_extended.tsv`: an extended version of the previous table, with one extra column per sample with the counts of the isoform before requantification. In this table, the artifact isoforms are included.
