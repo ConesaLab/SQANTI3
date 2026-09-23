@@ -69,6 +69,7 @@ def write_filter_parameters(args):
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
           f.write("IgnorePrevalence\t" + str(args.ignore_prevalence) + "\n")
+          f.write("CountsDesign\t" + (os.path.abspath(args.counts_design) if args.counts_design is not None else "NA") + "\n")
       if args.subcommand == 'ml':
           f.write("PercentTraining\t" + str(args.percent_training) + "\n")
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")

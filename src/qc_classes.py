@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Set, Optional, Union, get_args, get_origin
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
+from src.config import MIN_DETECTION_COUNT
 
 class genePredReader(object):
     """
@@ -210,7 +211,8 @@ class myQueryTranscripts:
 
     FL: Optional[int] = None
     # multisample m value. 
-    # Pending to allow different m values if groups have different size (M)
+    # Number of samples where the transcript reaches MIN_DETECTION_COUNT, over all
+    # samples. Per-group prevalence is computed by the rules filter (--counts_design).
     prevalence: Optional[int] = None
 
     n_indels: Optional[int] = None
@@ -365,11 +367,10 @@ class myQueryTranscripts:
 
         # Handle multi-sample FL counts
         if self.FL_dict:
-            n = 1 # minimum count value
             x = 0 # counts how many samples have expression
             for sample, count in self.FL_dict.items():
                 base[f"FL.{sample}"] = count
-                if count >= n: x += 1  
+                if count >= MIN_DETECTION_COUNT: x += 1  
             # Set FL to sum of all samples for multi-sample case
             base["FL"] = sum(self.FL_dict.values())
             base["prevalence"] = x

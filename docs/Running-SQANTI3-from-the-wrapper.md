@@ -126,6 +126,7 @@ filter:
       options:
         json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
         ignore_prevalence: false
+        counts_design: ''
     ml:
       enabled: false
       options:

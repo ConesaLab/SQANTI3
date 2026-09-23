@@ -212,6 +212,8 @@ def filter_args_validation(args):
     valid_dir(args.dir,filter_logger)
     if args.subcommand == 'rules':
         valid_file(args.json_filter, filter_logger)
+        if args.counts_design is not None:
+            valid_file(args.counts_design, filter_logger)
     if args.subcommand == 'ml':
         if args.TP is not None:
             valid_file(args.TP, filter_logger)

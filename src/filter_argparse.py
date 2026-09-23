@@ -48,6 +48,12 @@ def filter_argparse():
     rf.add_argument('--ignore_prevalence', action="store_true",
                     help="Ignore min_prevalence rules in the JSON file. Used by SQANTI3 rescue"
                          "\nto filter the reference transcriptome, which has no expression data.")
+    rf.add_argument('--counts_design', default=None,
+                    help="JSON file assigning the samples of the --fl_count file used in QC to"
+                         "\nexperimental groups, e.g. {\"K\": [\"K1\", \"K2\"], \"B\": [\"B1\", \"B2\"]}."
+                         "\nWith it, min_prevalence rules are evaluated per group, and an isoform passes"
+                         "\nif it reaches the threshold in any group. Without it, prevalence is counted"
+                         "\nover all samples together.")
 
 ### ML filter arguments
     machine_learning = subparsers.add_parser('ml', 

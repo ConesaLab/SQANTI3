@@ -51,7 +51,7 @@ These are the arguments accepted by `sqanti3_filter.py rules`:
 
 ```
 usage: sqanti3_filter.py rules [-h] --sqanti_class SQANTI_CLASS [--isoAnnotGFF3 ISOANNOTGFF3] [--filter_isoforms FILTER_ISOFORMS] [--filter_gtf FILTER_GTF] [--filter_sam FILTER_SAM]
-                               [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER] [--ignore_prevalence]
+                               [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER] [--ignore_prevalence] [--counts_design COUNTS_DESIGN]
 ```
 
 <details><summary> Arguments description</summary>
@@ -99,7 +99,12 @@ Rules specific options:
   -j JSON_FILTER, --json_filter JSON_FILTER
                         JSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept.
                         Default: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
-  --ignore_prevalence   Ignore min_prevalence rules in the JSON file. Used by SQANTI3 rescue
+  --ignore_prevalence   Ignore min_prevalence rules in the JSON file. Used by 
+  --counts_design  JSON file assigning the samples of the --fl_count file used in QC to experimental groups, e.g. {"K": ["K1", "K2"], "B": ["B1", "B2"]}.
+  With it, min_prevalence rules are evaluated per group, and an isoform passes
+  if it reaches the threshold in any group. Without it, prevalence is counted over all samples together.
+
+  SQANTI3 rescue
                         to filter the reference transcriptome, which has no expression data.
 ```
 </details><br>
@@ -197,6 +202,26 @@ As an example, the rule below keeps NNC transcripts that are not intrapriming pr
 `min_prevalence` behaves like any other requisite with respect to rules: it is combined with the rest of the requisites of its rule as an AND, and different rules for the same structural category are still evaluated as OR. When an isoform is discarded because of it, the `*_filtering_reasons.txt` file 
 
 Note that the default filter does not include any `min_prevalence` requisite, so single-sample analyses are unaffected.
+
+##### Experimental groups: `--counts_design`
+
+When the samples come from more than one experimental condition, counting prevalence over all of them together is not appropriate: an isoform expressed only in one condition would need to reach the threshold using the samples of that condition alone, while the samples of the other conditions can never contribute. The `--counts_design` option takes a JSON file that assigns each sample to an experimental group:
+
+```json
+{
+    "K": ["K1", "K2", "K3"],
+    "B": ["B1", "B2", "B3", "B4", "B5"]
+}
+```
+
+Sample names must match the header of the `--fl_count` file used in QC, which are the `FL.<sample>` columns of the classification file without the `FL.` prefix. A sample can belong to a single group. Samples of the classification file that are not listed in the design are ignored by `min_prevalence` (a warning lists them), which allows leaving out samples that should not take part in the filter.
+
+With a design file, the filter computes one `prevalence.<group>` column per group, which is added to the `*_RulesFilter_classification.txt` output, and an isoform passes the `min_prevalence` requisite if it reaches the threshold **in at least one group**. The threshold can be given in two ways:
+
+* A single integer, applied to every group: `"min_prevalence": 2`.
+* One integer per group, when groups have different sizes or different requirements: `"min_prevalence": {"K": 2, "B": 3}`. Every group of the design must have a threshold.
+
+In both cases no threshold can exceed the number of samples of its group. Per-group thresholds require `--counts_design`. When an isoform fails the requisite, the reason reports every group, e.g. `prevalence.K: 1 < 2, prevalence.B: 0 < 3 Multisample-artifact`.
 
 #### User-defined rules (JSON file) example
 

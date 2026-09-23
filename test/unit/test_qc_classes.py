@@ -596,3 +596,16 @@ def test_prevalence_absent_without_fl_counts():
 def test_prevalence_empty_fl_counts():
     """An empty FL_dict is treated the same as no FL_dict at all."""
     assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"
+
+def test_prevalence_uses_shared_detection_threshold(monkeypatch):
+    """QC and the rules filter must count detections with the same threshold."""
+    import src.qc_classes
+    monkeypatch.setattr(src.qc_classes, "MIN_DETECTION_COUNT", 0.5)
+    d = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 1.0}).as_dict()
+    assert d["prevalence"] == 2
+
+
+def test_detection_threshold_is_one_read():
+    """Contract: the shared default is one full read (see test_prevalence_subunit_counts_are_not_detection)."""
+    from src.config import MIN_DETECTION_COUNT
+    assert MIN_DETECTION_COUNT == 1

@@ -5,7 +5,10 @@ __version__ = '6.1'  # Python 3.7
 __reads_version__ = '1.1.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
-
+# Minimum abundance for a transcript to count as detected in a sample (one full read).
+# Shared by QC (prevalence column) and the rules filter (per-group prevalence).
+# Will become the default of a future --min_reads option.
+MIN_DETECTION_COUNT = 1
 
 FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
                    'genomic_end_coord', 'transcript_coord', 'junction_category',

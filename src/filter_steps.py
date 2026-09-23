@@ -40,7 +40,8 @@ def run_rules(args):
 
     prefix = os.path.join(args.dir, args.output)
     rules_filter(args.sqanti_class,args.json_filter,args.filter_mono_exonic,
-            prefix,filter_logger,ignore_prevalence=args.ignore_prevalence)
+                prefix,filter_logger,ignore_prevalence=args.ignore_prevalence,
+            counts_design=args.counts_design)
     if not args.skip_report:
       report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f rules"
       logFile = os.path.join(args.dir, 'logs', 'filter_report.log')

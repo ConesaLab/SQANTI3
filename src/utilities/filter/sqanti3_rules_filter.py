@@ -2,6 +2,7 @@ import os, sys, json
 import pandas as pd
 from src.module_logging import message,filter_logger
 from typing import Optional
+from src.config import MIN_DETECTION_COUNT
 
 junction_related_columns = [
     "RTS_stage",
@@ -16,21 +17,37 @@ junction_related_columns = [
 
 
 def check_min_prevalence(r, sc: str) -> None:
-    """ Checks if min_prevalence is a int value greater than 0
+    """Check that a min_prevalence value is a valid threshold.
+
+    The value is either one integer, applied to all the samples (or to every
+    group when a counts design is given), or an object with one integer per
+    experimental group. Group names are checked against the design later, in
+    resolve_prevalence_rules(), because the rules are read before it.
+
     Args:
         r: value to check
         sc(str): structural category
-    
+
     Exits:
-        Calls sys.exit(1) if r is not int or value equal or lower to 0
+        Calls sys.exit(1) if r is not an integer >= 1, or a non-empty object
+        whose values are all integers >= 1.
     """
-    if type(r) is int:
-        if r < 1:
-            filter_logger.error(f"Invalid min_prevalence value {r!r} at {sc}, minimum value is 1")
+    if isinstance(r, dict):
+        if not r:
+            filter_logger.error(f"Empty min_prevalence object at {sc}, at least one group is required")
             sys.exit(1)
+        values = r.items()
     else:
-        filter_logger.error(f"Invalid min_prevalence value {r!r} at {sc}, integer value required")
-        sys.exit(1)
+        values = [(None, r)]
+
+    for group, value in values:
+        where = sc if group is None else f"{sc} (group {group!r})"
+        if type(value) is not int:
+            filter_logger.error(f"Invalid min_prevalence value {value!r} at {where}, integer value required")
+            sys.exit(1)
+        if value < 1:
+            filter_logger.error(f"Invalid min_prevalence value {value!r} at {where}, minimum value is 1")
+            sys.exit(1)
 
 
 
@@ -50,7 +67,9 @@ def read_json_rules(json_file):
             - structural_category (str)
             - column (str): Column name from classification data
             - type (str): Rule type (Category/Min_Threshold/Max_Threshold/min_prevalence)
-            - rule (str/float): Threshold value or category requirement
+            - rule (str/float/dict): Threshold value or category requirement.
+            min_prevalence keeps the JSON value (int or {group: int}); with a
+            counts design, resolve_prevalence_rules() maps it to prevalence columns.
 
     """
     with open(json_file, 'r') as f:
@@ -84,6 +103,7 @@ def read_json_rules(json_file):
 
     return rules_dict
 
+
 def names_check(input_dict):
     """Check if the input dictionary has the required keys.
 
@@ -107,6 +127,72 @@ def names_check(input_dict):
         )
     if invalid_keys: # We only exit once if there are any invalid keys
         sys.exit(1)
+
+
+def prevalence_thresholds(rule_value) -> dict:
+    """Return a min_prevalence value as {prevalence column: threshold}.
+
+    An integer is a threshold on the prevalence column computed by QC over all
+    the samples. A dict has already been resolved against a counts design by
+    resolve_prevalence_rules() and maps prevalence.<group> columns to thresholds.
+
+    Args:
+        rule_value: possible dict of values or int with mininimum prevalence value
+    
+    Return:
+        dict with value or values with minimum prevalence values
+    """
+        
+    if type(rule_value) is dict:
+        output = rule_value
+    else:
+        output = {"prevalence": rule_value}
+
+    return output
+
+
+def passes_prevalence(row, rule_value) -> bool:
+    """Evaluate a min_prevalence rule on one isoform.
+
+    OR between groups: the rule passes if any prevalence column reaches its
+    threshold. A NA value means the isoform was detected in no sample (e.g. it
+    is missing from the --fl_count file), so that column never reaches it.
+    The reference transcriptome, with no expression data, never gets here:
+    rescue drops these rules with --ignore_prevalence.
+
+    Args:
+        row: single row of the classification table
+        rule_value (int or dict): min_prevalence value, either an integer checked
+            on the prevalence column, or {prevalence column: threshold} resolved
+            by resolve_prevalence_rules()
+
+    Returns:
+        bool: True if the isoform passes the rule, False if not
+    """
+    thresholds = prevalence_thresholds(rule_value)
+    
+    passes = any(not pd.isna(row[col]) and row[col] >= m
+                 for col, m in thresholds.items())
+
+    return passes
+
+
+def has_prevalence_rules(rules_dict: dict) -> bool:
+    """Check whether the parsed rules contain any min_prevalence rule.
+
+    Args:
+        rules_dict (dict): parsed rules from read_json_rules(), with structural
+            categories as keys and lists of rule DataFrames as values
+
+    Returns:
+        bool: True if any rule set contains a min_prevalence rule, False otherwise
+    """
+    has_rules = any((rules["type"] == "min_prevalence").any()
+                    for rule_sets in rules_dict.values()
+                    for rules in rule_sets)
+
+    return has_rules
+
 
 def apply_rules(row, force_multiexon, rules_dict):
     """
@@ -144,6 +230,10 @@ def apply_rules(row, force_multiexon, rules_dict):
             if float(row['exons']) == 1 and column in junction_related_columns:
                 continue
 
+            if rule_type == "min_prevalence":
+                if not passes_prevalence(row, rule_value):
+                    isoform = False
+                continue
 
             # check if it is nan
             try:
@@ -164,9 +254,6 @@ def apply_rules(row, force_multiexon, rules_dict):
                         elif rule_type == 'Max_Threshold':
                             if row[column] > rule_value:
                                 isoform = False
-                        elif rule_type == "min_prevalence":
-                            if row[column] < rule_value:
-                                isoform = False
                     except TypeError:
                         filter_logger.error(f"Type error for column {column} with value {row[column]}.")
                         filter_logger.error(f"Check if the column you indicated in the rules file is correct.")
@@ -183,6 +270,7 @@ def apply_rules(row, force_multiexon, rules_dict):
         return "Isoform"
     else:
         return "Artifact"
+
 
 def get_reasons(row, force_multiexon, rules_dict):
     """Collect detailed reasons for transcript filtering decisions.
@@ -216,6 +304,17 @@ def get_reasons(row, force_multiexon, rules_dict):
             if float(row['exons']) == 1 and column in junction_related_columns:
                 continue
 
+            if rule_type == "min_prevalence":
+                if not passes_prevalence(row, rule_value):
+                    thresholds = prevalence_thresholds(rule_value)
+                    na_cols = [col for col in thresholds if pd.isna(row[col])]
+                    reasons.update(f"NA value in {col}" for col in na_cols)
+                    failed = ", ".join(f"{col}: {row[col]} < {m}"
+                                       for col, m in thresholds.items() if col not in na_cols)
+                    if failed:
+                        reasons.add(f"{failed} Multisample-artifact")
+                continue
+
             if pd.isna(row[column]):
                 reasons.add(f"NA value in {column}")
                 continue
@@ -233,9 +332,6 @@ def get_reasons(row, force_multiexon, rules_dict):
             elif rule_type == 'Max_Threshold':
                 if row[column] > rule_value:
                     reasons.add(f"{column}: {row[column]} > {rule_value}")
-            elif rule_type == "min_prevalence":
-                if row[column] < rule_value:
-                    reasons.add(f"{column}: {row[column]} < {rule_value} Multisample-artifact")
     
     return pd.Series({
         'isoform': row['isoform'], 
@@ -309,10 +405,218 @@ def check_prevalence_column(classif, highest_min_prevalence: int)-> None:
         filter_logger.error(f"Use a lower minimum prevalence value equal or lower to the number of samples({n_samples}).")
         sys.exit(1)
 
+
+def _reject_duplicate_groups(pairs):
+    """object_pairs_hook for json.load, which silently keeps the last duplicated key."""
+    keys = [key for key, _ in pairs]
+    duplicated = sorted({k for k in keys if keys.count(k) > 1})
+
+    if duplicated:
+        filter_logger.error(f"Duplicated group names in the counts design file: {duplicated}")
+        sys.exit(1)
+    return dict(pairs)
+
+
+def read_counts_design(design_file: str) -> dict:
+    """Read the experimental design: which samples belong to each group.
+
+    The file is a JSON object with one key per experimental group and, as
+    value, the list of its samples, named as in the header of the --fl_count
+    file used in QC (without the "FL." prefix of the classification columns):
+
+        {"K": ["K1", "K2", "K3"], "B": ["B1", "B2", "B3"]}
+
+    Args:
+        design_file (str): path to the JSON design file
+
+    Returns:
+        dict: group name -> list of sample names, in file order
+
+    Exits:
+        Calls sys.exit(1) if the file is not valid JSON, is not an object of
+        non-empty lists of sample names, repeats a group, or assigns a sample
+        to more than one group.
+    """
+    try:
+        with open(design_file, 'r') as f:
+            design = json.load(f, object_pairs_hook=_reject_duplicate_groups)
+    except json.JSONDecodeError as e:
+        filter_logger.error(f"Counts design file {design_file} is not valid JSON: {e}")
+        sys.exit(1)
+
+    if not isinstance(design, dict) or not design:
+        filter_logger.error("The counts design file must be a JSON object with one entry per group, "
+                            'e.g. {"K": ["K1", "K2"], "B": ["B1", "B2"]}')
+        sys.exit(1)
+
+    seen = {}
+    for group, samples in design.items():
+        if not group.strip():
+            filter_logger.error("Empty group name in the counts design file.")
+            sys.exit(1)
+        if (not isinstance(samples, list) or not samples
+                or not all(isinstance(s, str) and s for s in samples)):
+            filter_logger.error(f"Group {group!r} in the counts design file must be a non-empty "
+                                "list of sample names.")
+            sys.exit(1)
+        for sample in samples:
+            if sample in seen:
+                filter_logger.error(f"Sample {sample!r} is assigned more than once in the counts design "
+                                    f"file (groups {seen[sample]!r} and {group!r}).")
+                sys.exit(1)
+            seen[sample] = group
+
+    return design
+
+
+def check_counts_design(classif: pd.DataFrame, design: dict) -> None:
+    """Check the design against the per-sample columns of the classification.
+
+    Every sample of the design must have its FL.<sample> column. Samples of
+    the classification left out of the design are allowed: they may be samples
+    that should not take part in the filter (for instance, mixtures used as a
+    response variable). A warning lists them.
+
+    Exits:
+        Calls sys.exit(1) if the classification has no per-sample counts, or if
+        a sample of the design has no FL.<sample> column.
+    """
+    available = [col[3:] for col in classif.columns if col.startswith("FL.")]
+    if not available:
+        filter_logger.error("A counts design file was given, but the classification file has no "
+                            "per-sample counts (FL.<sample> columns).")
+        filter_logger.error("Run SQANTI3 QC with a multi-sample --fl_count file to generate them.")
+        sys.exit(1)
+
+    in_design = [s for samples in design.values() for s in samples]
+    missing = [s for s in in_design if s not in available]
+    if missing:
+        filter_logger.error(f"Samples in the counts design file not found in the classification file: {missing}")
+        filter_logger.error(f"Available samples: {available}")
+        sys.exit(1)
+
+    unused = [s for s in available if s not in in_design]
+    if unused:
+        filter_logger.warning("Samples not assigned to any group in the counts design file, "
+                              f"ignored by min_prevalence rules: {unused}")
+
+    for group, samples in design.items():
+        if len(samples) == 1:
+            filter_logger.warning(f"Group {group!r} has a single sample: its prevalence can only be 0 or 1.")
+
+
+def resolve_prevalence_rules(rules_dict: dict, design: Optional[dict]) -> dict:
+    """Map each min_prevalence value to the prevalence columns it is checked on.
+
+    Without design, integer values are left as they are (checked on the QC
+    prevalence column) and per-group values are an error. With design, every
+    value becomes {prevalence.<group>: threshold}:
+
+        2                 -> {"prevalence.K": 2, "prevalence.B": 2}
+        {"K": 2, "B": 3}  -> {"prevalence.K": 2, "prevalence.B": 3}
+
+    Per-group values must name exactly the groups of the design: a group left
+    out would never retain anything, which is what removing it from the design
+    already expresses. No threshold can exceed the size of its group.
+
+    Returns:
+        dict: a copy of rules_dict with min_prevalence values resolved
+
+    Exits:
+        Calls sys.exit(1) on per-group values without design, group names that
+        do not match the design, or thresholds larger than their group.
+    """
+
+
+    def resolve(value, sc):
+        if design is None:
+            if isinstance(value, dict):
+                filter_logger.error(f"Per-group min_prevalence at {sc} requires a counts design file "
+                                    "(--counts_design).")
+                sys.exit(1)
+            return value
+
+        if isinstance(value, dict):
+            unknown = [g for g in value if g not in design]
+            missing = [g for g in design if g not in value]
+            if unknown or missing:
+                if unknown:
+                    filter_logger.error(f"min_prevalence at {sc} uses groups not in the counts design file: {unknown}")
+                if missing:
+                    filter_logger.error(f"min_prevalence at {sc} has no threshold for groups: {missing}")
+                filter_logger.error(f"Groups in the counts design file: {list(design)}")
+                sys.exit(1)
+        thresholds = {g: value[g] if isinstance(value, dict) else value for g in design}
+
+        for g, m in thresholds.items():
+            if m > len(design[g]):
+                filter_logger.error(f"min_prevalence {m} at {sc} is larger than the number of samples "
+                                    f"in group {g!r} ({len(design[g])}).")
+                sys.exit(1)
+        return {f"prevalence.{g}": m for g, m in thresholds.items()}
+
+    resolved = {}
+    for sc, rule_sets in rules_dict.items():
+        resolved[sc] = []
+        for rules in rule_sets:
+            rules = rules.copy()
+            rules["rule"] = rules["rule"].astype(object)  # an int column cannot hold dicts
+            is_prev = rules["type"] == "min_prevalence"
+            rules.loc[is_prev, "rule"] = pd.Series(
+                [resolve(v, sc) for v in rules.loc[is_prev, "rule"]],
+                index=rules.index[is_prev], dtype=object)
+            resolved[sc].append(rules)
+    return resolved
+
+
+def add_group_prevalence(classif: pd.DataFrame, design: dict) -> pd.DataFrame:
+    """Add one prevalence.<group> column per group of the design.
+
+    Each column counts the samples of the group where the transcript reaches
+    the detection threshold, the same rule QC uses for the prevalence column.
+    Missing counts are not detections.
+
+    Returns:
+        pd.DataFrame: classif with the new columns (modified in place)
+    """
+    for group, samples in design.items():
+        counts = classif[[f"FL.{s}" for s in samples]]
+        classif[f"prevalence.{group}"] = (counts >= MIN_DETECTION_COUNT).sum(axis=1)
+
+    return classif
+
+
+def prepare_prevalence_rules(classif, rules_dict, counts_design, ignore_prevalence, logger):
+    """Validate and resolve min_prevalence rules before filtering.
+
+    Returns:
+        tuple: (classif, rules_dict). With a counts design, classif gains the
+        prevalence.<group> columns and min_prevalence values are resolved to them.
+    """
+    if not has_prevalence_rules(rules_dict):
+        if counts_design is not None:
+            logger.warning("--counts_design is ignored: the rules file has no min_prevalence rules.")
+        return classif, rules_dict
+
+    if ignore_prevalence:
+        logger.info("Ignoring min_prevalence rules (--ignore_prevalence).")
+        return classif, drop_prevalence_rules(rules_dict)
+
+    if counts_design is None:
+        rules_dict = resolve_prevalence_rules(rules_dict, None)
+        check_prevalence_column(classif, get_highest_min_prevalence(rules_dict))
+        return classif, rules_dict
+
+    design = read_counts_design(counts_design)
+    check_counts_design(classif, design)
+    rules_dict = resolve_prevalence_rules(rules_dict, design)
+    classif = add_group_prevalence(classif, design)
+    logger.info("Counts design: " + ", ".join(f"{g} ({len(s)} samples)" for g, s in design.items()))
+    return classif, rules_dict
         
 
 
-def rules_filter(sqanti_class, json_file, force_multi_exon, prefix, logger, ignore_prevalence=False):
+def rules_filter(sqanti_class, json_file, force_multi_exon, prefix, logger, ignore_prevalence=False, counts_design=None):
     """Main function to execute SQANTI3 filtering workflow.
     
     Args:
@@ -323,6 +627,9 @@ def rules_filter(sqanti_class, json_file, force_multi_exon, prefix, logger, igno
         logger (logging.Logger): Configured logger for progress reporting
         ignore_prevalence (bool): If True, min_prevalence rules are removed before filtering.
             SQANTI3 rescue sets it to filter the reference transcriptome.
+        counts_design (str): Path to a JSON file assigning samples to experimental groups.
+        With it, min_prevalence is evaluated per group and an isoform passes if it
+    r   eaches the threshold in any group. Without it, over all samples together.
         
     Output Files:
         Creates three files in current directory:
@@ -340,13 +647,8 @@ def rules_filter(sqanti_class, json_file, force_multi_exon, prefix, logger, igno
     message("Reading JSON rules",logger)
     
     rules_dict = read_json_rules(json_file)
-    highest_min_prevalence = get_highest_min_prevalence(rules_dict)
-    if highest_min_prevalence is not None:
-        if ignore_prevalence:
-            logger.info("Ignoring min_prevalence rules (--ignore_prevalence).")
-            rules_dict = drop_prevalence_rules(rules_dict)
-        else:
-            check_prevalence_column(classif, highest_min_prevalence)
+    classif, rules_dict = prepare_prevalence_rules(classif, rules_dict, counts_design,
+                                                   ignore_prevalence, logger)
 
     message("Applying rules to filter isoforms",logger)
 
