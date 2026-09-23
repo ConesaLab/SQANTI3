@@ -168,7 +168,7 @@ def run_rules_rescue(filter_classification, reference_classification, hits_df,
     ref_dir = f"{out_dir}/reference_rules_filter"
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
     # Actual command
-    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report"
+    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report --ignore_prevalence"
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
 

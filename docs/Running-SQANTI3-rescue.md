@@ -109,6 +109,8 @@ This requires users to [run SQANTI3 quality control](Running-SQANTI3-Quality-Con
 
 Using the supplied reference classification file, SQ3 rescue will next **apply SQ3 filter to the reference transcriptome**. The filter to be applied will be specified by the `rules` or `ml` flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the `ml` option (and the same is true for the rules filter).
 
+If your JSON file includes `min_prevalence` requisites, note that they are **not applied to the reference transcriptome**. The reference is a fixed annotation, not the result of sequencing a set of samples, so it has no expression data from which prevalence could be computed. SQANTI3 rescue therefore runs the rules filter on the reference with the `--ignore_prevalence` flag, which discards those requisites before filtering; the rest of the rules in your JSON file are applied to reference targets exactly as they were to the long read-defined transcriptome. As a consequence, a rule made up solely of a `min_prevalence` requisite will accept every reference transcript in its structural category.
+
 <img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = "216" width = "763">
 
 

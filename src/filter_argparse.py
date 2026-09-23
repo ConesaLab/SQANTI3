@@ -45,6 +45,9 @@ def filter_argparse():
     rf.add_argument('-j', "--json_filter", default=default_json, 
                     help="JSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept."
                         "\nDefault: %(default)s")
+    rf.add_argument('--ignore_prevalence', action="store_true",
+                    help="Ignore min_prevalence rules in the JSON file. Used by SQANTI3 rescue"
+                         "\nto filter the reference transcriptome, which has no expression data.")
 
 ### ML filter arguments
     machine_learning = subparsers.add_parser('ml', 

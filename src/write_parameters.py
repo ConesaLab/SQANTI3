@@ -68,6 +68,7 @@ def write_filter_parameters(args):
       f.write("LogLevel\t" + str(args.log_level) + "\n")
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
+          f.write("IgnorePrevalence\t" + str(args.ignore_prevalence) + "\n")
       if args.subcommand == 'ml':
           f.write("PercentTraining\t" + str(args.percent_training) + "\n")
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")

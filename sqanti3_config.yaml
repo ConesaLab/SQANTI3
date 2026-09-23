@@ -54,6 +54,7 @@ filter:
       enabled: true
       options:
         json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+        ignore_prevalence: false
     ml:
       enabled: false
       options:

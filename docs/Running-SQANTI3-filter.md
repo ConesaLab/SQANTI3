@@ -51,7 +51,7 @@ These are the arguments accepted by `sqanti3_filter.py rules`:
 
 ```
 usage: sqanti3_filter.py rules [-h] --sqanti_class SQANTI_CLASS [--isoAnnotGFF3 ISOANNOTGFF3] [--filter_isoforms FILTER_ISOFORMS] [--filter_gtf FILTER_GTF] [--filter_sam FILTER_SAM]
-                               [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER]
+                               [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER] [--ignore_prevalence]
 ```
 
 <details><summary> Arguments description</summary>
@@ -99,6 +99,8 @@ Rules specific options:
   -j JSON_FILTER, --json_filter JSON_FILTER
                         JSON file where filtering rules are expressed. Rules must be set taking into account that attributes described in the filter will be present in those isoforms that should be kept.
                         Default: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+  --ignore_prevalence   Ignore min_prevalence rules in the JSON file. Used by SQANTI3 rescue
+                        to filter the reference transcriptome, which has no expression data.
 ```
 </details><br>
 
@@ -169,6 +171,32 @@ Here is a basic scheme of how to define rules and the list of requisites that ma
 Rules can be set for any numeric or character column in the classification file:
 - **Numeric values**: in this case, it is possible to define an interval (`[X,Y]`) or set just the lower limit (`X`). Please, take into account that the **limit values will be included**. 
 - **Character and logical columns**: such as `subcategory`, `RTS_stage` or `all_canonical`. In this case, users can simply establish which terms will be accepted. Of note, users may want to accept several of the values in the column (for instance, several subcategories). If so, the requisite can be defined as an array, and the filter will keep the entries if any of those values are present in the specified column.
+
+#### Multi-sample filtering: the `min_prevalence` requisite
+
+Besides the columns of the classification file, rules can include a special requisite named `min_prevalence`. Instead of evaluating a single attribute of a transcript, this requisite asks **in how many samples the isoform was detected**, and keeps it only if that number reaches the specified threshold. It is meant to discard isoforms that were seen in a single sample and are therefore likely to reflect technical noise rather than a reproducible transcript.
+
+This requisite reads the `prevalence` column of the classification file, which counts the samples in which the isoform reaches at least one full read (`count >= 1`). That column is only produced when SQANTI3 QC (release 6.1 or later) is run with a **multi-sample** `--fl_count` file, i.e. one containing a separate column of counts per sample. If the rules contain a `min_prevalence` requisite and the classification file has no prevalence values, the filter will stop with an error asking you to regenerate the QC output.
+
+The threshold must be an integer equal to or greater than 1, and it cannot exceed the number of samples present in the classification file. A value of 1 is not equivalent to omitting the requisite: it still discards isoforms that do not reach one full read in any sample, which is common with EM-based quantifiers that assign fractional counts.
+
+As an example, the rule below keeps NNC transcripts that are not intrapriming products and were detected in at least 2 of the sequenced samples:
+
+```json
+{
+    "novel_not_in_catalog":[
+        {
+            "perc_A_downstream_TTS":[0,59],
+            "min_prevalence": 2
+        }
+    ]
+}
+```
+
+`min_prevalence` behaves like any other requisite with respect to rules: it is combined with the rest of the requisites of its rule as an AND, and different rules for the same structural category are still evaluated as OR. When an isoform is discarded because of it, the `*_filtering_reasons.txt` file reports the reason as `prevalence: X < Y Multisample-artifact`. An isoform without a prevalence value, such as one missing from the `--fl_count` file, was detected in no sample: like any other missing value, it fails the requisite and is reported as `NA value in prevalence`.
+`min_prevalence` behaves like any other requisite with respect to rules: it is combined with the rest of the requisites of its rule as an AND, and different rules for the same structural category are still evaluated as OR. When an isoform is discarded because of it, the `*_filtering_reasons.txt` file 
+
+Note that the default filter does not include any `min_prevalence` requisite, so single-sample analyses are unaffected.
 
 #### User-defined rules (JSON file) example
 
