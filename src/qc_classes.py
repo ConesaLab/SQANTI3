@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import math
 import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
@@ -371,7 +372,7 @@ class myQueryTranscripts:
                 base[f"FL.{sample}"] = count
                 if count >= n: x += 1  
             # Set FL to sum of all samples for multi-sample case
-            base["FL"] = sum(self.FL_dict.values())
+            base["FL"] = sum(v for v in self.FL_dict.values() if isinstance(v, (int, float)) and not math.isnan(v))
             base["prevalence"] = x
 
         # Eliminate non-report attributes

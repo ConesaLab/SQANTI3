@@ -596,3 +596,15 @@ def test_prevalence_absent_without_fl_counts():
 def test_prevalence_empty_fl_counts():
     """An empty FL_dict is treated the same as no FL_dict at all."""
     assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"
+
+def test_fl_sum_skips_nan_counts():
+    """A NaN count in one sample must not turn the total FL into NaN."""
+    d = _transcript_with_counts({"s1": 3, "s2": float("nan"), "s3": 2.5}).as_dict()
+    assert d["FL"] == 5.5
+
+
+def test_fl_sum_all_nan_counts_is_zero():
+    """If every sample is NaN the total is 0, consistent with prevalence 0."""
+    d = _transcript_with_counts({"s1": float("nan"), "s2": float("nan")}).as_dict()
+    assert d["FL"] == 0
+    assert d["prevalence"] == 0
