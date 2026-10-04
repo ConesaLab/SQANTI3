@@ -207,6 +207,8 @@ class myQueryTranscripts:
     min_cov: Optional[float] = None
     min_cov_pos: Optional[float] = None
     sd_cov: Optional[float] = None
+    # length (bp) of the shortest intron, NA for mono-exonic transcripts
+    min_intron_length: Optional[int] = None
 
     FL: Optional[int] = None
     # multisample m value. 

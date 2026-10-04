@@ -274,7 +274,9 @@ class TestIsoformsJunctions:
                 'indel_near_junct': 'FALSE',
                 'sample_with_cov': '3',
                 'total_coverage_unique': '100',
-                'junction_number': '1'
+                'junction_number': '1',
+                'genomic_start_coord': '1001',
+                'genomic_end_coord': '1400'
             },
             {
                 'isoform': 'PB.124830.1',
@@ -283,7 +285,9 @@ class TestIsoformsJunctions:
                 'indel_near_junct': 'FALSE',
                 'sample_with_cov': '2',
                 'total_coverage_unique': '80',
-                'junction_number': '2'
+                'junction_number': '2',
+                'genomic_start_coord': '1501',
+                'genomic_end_coord': '1590'
             },
             {
                 'isoform': 'PB.103724.1',
@@ -292,7 +296,9 @@ class TestIsoformsJunctions:
                 'indel_near_junct': 'TRUE',
                 'sample_with_cov': '1',
                 'total_coverage_unique': '50',
-                'junction_number': '1'
+                'junction_number': '1',
+                'genomic_start_coord': '5001',
+                'genomic_end_coord': '6000'
             }
         ]
         return junction_data
@@ -338,6 +344,15 @@ class TestIsoformsJunctions:
         # PB.103724.1 should have min_cov = 50
         assert result["PB.103724.1"].min_cov == 50
         assert result["PB.103724.1"].min_cov_pos == '1'
+
+    def test_min_intron_length(self, sample_isoforms_info, mock_junction_reader):
+        """Test that the shortest intron length is stored (1-based inclusive coordinates)."""
+        result = isoforms_junctions(sample_isoforms_info, mock_junction_reader)
+
+        # PB.124830.1 has introns of 400 and 90 bp
+        assert result["PB.124830.1"].min_intron_length == 90
+        # PB.103724.1 has a single 1000 bp intron
+        assert result["PB.103724.1"].min_intron_length == 1000
 
     def test_min_sample_coverage(self, sample_isoforms_info, mock_junction_reader):
         """Test minimum sample coverage across junctions."""

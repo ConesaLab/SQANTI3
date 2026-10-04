@@ -164,6 +164,7 @@ def isoforms_junctions(isoforms_info, reader):
     # Read the junction information to fill in several remaining unfilled fields in classification
     # (1) "canonical": is "canonical" if all junctions are canonical, otherwise "non_canonical"
     # (2) "bite": is TRUE if any of the junction "bite_junction" field is TRUE
+    # (3) "min_intron_length": length of the shortest intron of the isoform
 
     sj_covs_by_isoform = defaultdict(lambda: [])  # pbid --> list of total_cov for each junction so we can calculate SD later
     for r in reader:
@@ -177,6 +178,12 @@ def isoforms_junctions(isoforms_info, reader):
 
         if (isoforms_info[r['isoform']].bite is None) or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
+
+        # junction coordinates are the 1-based first and last intronic bases
+        intron_length = int(r['genomic_end_coord']) - int(r['genomic_start_coord']) + 1
+        if (isoforms_info[r['isoform']].min_intron_length is None) or \
+            (isoforms_info[r['isoform']].min_intron_length > intron_length):
+            isoforms_info[r['isoform']].min_intron_length = intron_length
 
         if r['indel_near_junct'] == 'TRUE':
             if isoforms_info[r['isoform']].n_indels_junc is None:

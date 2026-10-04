@@ -120,34 +120,35 @@ The output `_classification.txt` has the following fields:
 24. `min_cov`: minimum junction coverage based on short read STAR junction output file. NA if no short read given.
 25. `min_cov_pos`: the junction that had the fewest coverage. NA if no short read data given.
 26. `sd_cov`: standard deviation of junction coverage counts from short read data. NA if no short read data given.
-27. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
-28. `n_indels`: total number of indels based on alignment.
-29. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
-30. `bite`: TRUE if contains at least one "bite" positive SJ.
-31. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
-32. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
-33. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
-34. `coding`: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"
-35. `ORF_length`: predicted ORF length (including introns) in nucleotides.
-36. `CDS_length`: predicted CDS length in nucleotides.
-37. `protein_length`: predicted protein length in amino acids. 
-38. `CDS_start`: CDS start.
-39. `CDS_end`: CDS end.
-40. `CDS_genomic_start`: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.
-41. `CDS_genomic_end`: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.
-42. `psauron_score`: Value between 0 and 1 indicating the coding potential of the transcript according to the PSAURON algorithm. Higher values indicate higher coding potential.
-43. `CDS_type`: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"
-44. `predicted_NMD`: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.
-45. `perc_A_downstream_TTS`: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say > 0.8), the 3' end site of this isoform is probably not reliable.
-46. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
-47. `dist_to_CAGE_peak`: distance to closest TSS based on CAGE Peak data. Negative means the middle of the cage peak is upstream of the isoform TSS and positive means downstream of the isoform TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
-48. `within_CAGE_peak`: TRUE if the transcript start site is within a CAGE Peak. 
-49. `dist_to_polyA_site`: distance to the closest polyA site, based on polyA site data (e.g. Quant-seq).
-50. `within_polyA_site`: TRUE if the transcript start site is within a polyA site, retrieved from polyA site data (e.g. Quant-seq).
-51. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
-52. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
-53. `polyA_motif_found`: TRUE if a polyA motif given via `--polyA_motif_list` is detected in the 3'end of the transcript.  
-54. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform has a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
+27. `min_intron_length`: length (bp) of the shortest intron of the isoform, computed from the junction coordinates. Very short introns can be alignment artifacts. NA for mono-exonic isoforms.
+28. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
+29. `n_indels`: total number of indels based on alignment.
+30. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).
+31. `bite`: TRUE if contains at least one "bite" positive SJ.
+32. `iso_exp`: short read expression for this isoform if `--expression` is provided, otherwise NA.
+33. `gene_exp`: short read expression for the gene associated with this isoform (summing over all isoforms) if `--expression` is provided, otherwise NA.
+34. `ratio_exp`: ratio of `iso_exp` to `gene_exp` if `--expression` is provided, otherwise NA.
+35. `coding`: Coding potential capacity according to GeneMarkS-T. It can take values of "coding" or "non_coding"
+36. `ORF_length`: predicted ORF length (including introns) in nucleotides.
+37. `CDS_length`: predicted CDS length in nucleotides.
+38. `protein_length`: predicted protein length in amino acids. 
+39. `CDS_start`: CDS start.
+40. `CDS_end`: CDS end.
+41. `CDS_genomic_start`: genomic coordinate of the CDS start. If on - strand, this coord will be greater than the end.
+42. `CDS_genomic_end`: genomic coordinate of the CDS end. If on - strand, this coord will be smaller than the start.
+43. `psauron_score`: Value between 0 and 1 indicating the coding potential of the transcript according to the PSAURON algorithm. Higher values indicate higher coding potential.
+44. `CDS_type`: one of the following based on the presence/absence of start and stop codons: "complete", "5prime_partial", "3prime_partial", "internal"
+45. `predicted_NMD`: TRUE if there's a predicted ORF and CDS ends at least 50bp before the last junction; FALSE if otherwise. NA if non-coding.
+46. `perc_A_downstream_TTS`: percent of genomic "A"s in the downstream 20 bp window. If this number is high (say > 0.8), the 3' end site of this isoform is probably not reliable.
+47. `seq_A_downstream_TTS`: sequence of the downstream 20 bp window.
+48. `dist_to_CAGE_peak`: distance to closest TSS based on CAGE Peak data. Negative means the middle of the cage peak is upstream of the isoform TSS and positive means downstream of the isoform TSS. Strand-specific. SQANTI3 only searches for nearby CAGE Peaks within 10000 bp of the PacBio transcript start site. Will be `NA` if none are found within 10000 bp.
+49. `within_CAGE_peak`: TRUE if the transcript start site is within a CAGE Peak. 
+50. `dist_to_polyA_site`: distance to the closest polyA site, based on polyA site data (e.g. Quant-seq).
+51. `within_polyA_site`: TRUE if the transcript start site is within a polyA site, retrieved from polyA site data (e.g. Quant-seq).
+52. `polyA_motif`: if `--polyA_motif_list` is given, shows the top ranking polyA motif found within 50 bp upstream of end.
+53. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
+54. `polyA_motif_found`: TRUE if a polyA motif given via `--polyA_motif_list` is detected in the 3'end of the transcript.  
+55. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform has a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
 
 
 <a name="junctioncols"></a>

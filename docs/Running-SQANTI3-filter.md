@@ -170,6 +170,24 @@ Rules can be set for any numeric or character column in the classification file:
 - **Numeric values**: in this case, it is possible to define an interval (`[X,Y]`) or set just the lower limit (`X`). Please, take into account that the **limit values will be included**. 
 - **Character and logical columns**: such as `subcategory`, `RTS_stage` or `all_canonical`. In this case, users can simply establish which terms will be accepted. Of note, users may want to accept several of the values in the column (for instance, several subcategories). If so, the requisite can be defined as an array, and the filter will keep the entries if any of those values are present in the specified column.
 
+Requisites on junction-related columns (`RTS_stage`, `all_canonical`, `min_cov`, `min_cov_pos`, `sd_cov`, `min_intron_length`, `n_indels_junc`, `bite` and `predicted_NMD`) are skipped for mono-exonic transcripts, since they have no junctions.
+
+#### Minimum intron length
+
+The `min_intron_length` column of the classification file holds the length (bp) of the shortest intron of each transcript. Very short introns can come from alignment errors, where the aligner reports a small deletion as an intron. To discard multi-exonic transcripts with an intron shorter than 100 bp, add the requisite to the rules of the categories you want to control:
+
+```json
+{
+    "rest": [
+        {
+            "min_intron_length": 100
+        }
+     ]
+}
+```
+
+The threshold is inclusive, so a transcript whose shortest intron has exactly 100 bp passes. Mono-exonic transcripts are not affected by this requisite. Bear in mind that some annotated introns are shorter than 100 bp, so check the distribution of `min_intron_length` in your QC output before choosing the threshold.
+
 #### User-defined rules (JSON file) example
 
 As an example, let's say that we want to define a custom filter that will keep only isoforms that pass these rules:
