@@ -1,8 +1,10 @@
 import os
+import json
 import shutil
 import pandas as pd
 
 from src.wrapper_utils import sqanti_path
+from src.config import RESCUE_IGNORED_RULES
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
@@ -171,6 +173,58 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
     return hits_df
 
+def is_ignored_rule(column, ignored=RESCUE_IGNORED_RULES):
+    """Check whether a rule column cannot be evaluated on the reference transcriptome.
+
+    Args:
+        column (str): column name used as key in the rules JSON file
+        ignored (list): names from RESCUE_IGNORED_RULES. A column matches a name
+            if it is equal to it or starts with it followed by "." or "_"
+            (FL.<sample>, prevalence_<group>).
+
+    Returns:
+        bool: True if the rule has to be removed for the reference
+    """
+    return any(column == name or column.startswith((f"{name}.", f"{name}_"))
+               for name in ignored)
+
+
+def write_reference_rules(json_filter, out_file):
+    """Write a copy of the rules without the requisites ignored for the reference.
+
+    The structure of the file is kept: every structural category and every rule
+    stays, only the ignored requisites are removed. A rule left empty accepts
+    every reference transcript of its structural category.
+
+    Args:
+        json_filter (str): rules JSON file used to filter the long-read transcriptome
+        out_file (str): path of the JSON file to write
+
+    Returns:
+        list: sorted names of the removed requisites
+    """
+    with open(json_filter, 'r') as f:
+        rules = json.load(f)
+
+    removed = set()
+    reference_rules = {}
+    for sc, rule_sets in rules.items():
+        reference_rules[sc] = []
+        for rule_set in rule_sets:
+            kept = {}
+            for column, value in rule_set.items():
+                if is_ignored_rule(column):
+                    removed.add(column)
+                else:
+                    kept[column] = value
+            reference_rules[sc].append(kept)
+
+    with open(out_file, 'w') as f:
+        json.dump(reference_rules, f, indent=4)
+
+    return sorted(removed)
+
+
 ## Run rescue steps specific to rules filter
 def run_rules_rescue(filter_classification, reference_classification, hits_df, 
                      rescue_df, automatic_inclusion_list, out_dir, json_filter):
@@ -179,9 +233,15 @@ def run_rules_rescue(filter_classification, reference_classification, hits_df,
     rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
     ref_out = "reference"
     ref_dir = f"{out_dir}/reference_rules_filter"
+    os.makedirs(ref_dir, exist_ok=True)
+    # Rules that need long-read evidence cannot be evaluated on the reference
+    ref_json = f"{ref_dir}/reference_rules.json"
+    removed = write_reference_rules(json_filter, ref_json)
+    if removed:
+        rescue_logger.info(f"Requisites not applied to the reference transcriptome: {removed}")
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
     # Actual command
-    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report"
+    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {ref_json} -o {ref_out} -d {ref_dir} --skip_report"
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
 

@@ -109,6 +109,13 @@ This requires users to [run SQANTI3 quality control](Running-SQANTI3-Quality-Con
 
 Using the supplied reference classification file, SQ3 rescue will next **apply SQ3 filter to the reference transcriptome**. The filter to be applied will be specified by the `rules` or `ml` flags used when running the rescue. This means that, if you run SQ3 machine learning-based filter, you should also run the rescue using the `ml` option (and the same is true for the rules filter).
 
+Some requisites of the rules filter cannot be evaluated on the reference transcriptome, so SQANTI3 rescue removes them from the JSON file before filtering it (the copy used is saved as `reference_rules_filter/reference_rules.json`, and the removed requisites are listed in the log):
+
+- Requisites on long-read counts (`FL`, `FL.<sample>`, `prevalence` and `prevalence_<group>`), since the reference has no long-read counts.
+- Requisites on `subcategory`, since every reference FSM is a `reference_match` and the requisite would evaluate the annotation itself rather than the evidence supporting each transcript.
+
+The rest of the requisites are applied to reference targets exactly as they were to the long read-defined transcriptome. As a consequence, a rule made up solely of removed requisites accepts every reference transcript in its structural category.
+
 <img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_03-ref-filter.png" height = "216" width = "763">
 
 

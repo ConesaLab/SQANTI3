@@ -5,10 +5,17 @@ __version__ = '6.1'  # Python 3.7
 __reads_version__ = '1.1.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
+# Rules that SQANTI3 rescue removes from the JSON file before filtering the reference
+# transcriptome, because they cannot be evaluated on it. A rule is removed when its
+# column is one of these names or starts with one of them followed by "." or "_".
+# - FL, FL.<sample>, prevalence, prevalence_<group>: long-read counts, which the
+#   reference does not have.
+# - subcategory: every reference FSM is reference_match, so the rule would test the
+#   annotation itself instead of the evidence supporting each reference transcript.
+RESCUE_IGNORED_RULES = ["FL", "prevalence", "subcategory"]
 # Minimum abundance for a transcript to count as detected in a sample (one full read).
 # Used by QC for the prevalence and prevalence_<group> columns.
 MIN_DETECTION_COUNT = 1
-
 
 FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
                    'genomic_end_coord', 'transcript_coord', 'junction_category',
