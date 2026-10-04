@@ -265,6 +265,14 @@ def rescue_args_validation(args):
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
+    if args.counts_design is not None:
+        valid_file(args.counts_design, rescue_logger)
+    if args.map_automatic_fsm and args.corrected_isoforms_fasta is None:
+        rescue_logger.error("--map_automatic_fsm needs the corrected isoforms FASTA file (--corrected_isoforms_fasta).")
+        sys.exit(1)
+    if args.min_expression < 0:
+        rescue_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
     if args.requant:
         if args.counts is None:
             rescue_logger.warning(

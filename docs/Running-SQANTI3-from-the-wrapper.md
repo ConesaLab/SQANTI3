@@ -152,6 +152,10 @@ rescue:
     requant: true
     strategy: rules
     json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+    counts_design: ''
+    min_expression: 0
+    skip_evidence_check: false
+    map_automatic_fsm: false
     random_forest: sqanti3_results/isoformsrandomforest.RData
     threshold: 0.7
 

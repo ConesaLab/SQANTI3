@@ -1,5 +1,5 @@
 import argparse
-from src.config import __version__, default_json
+from src.config import __version__, default_json, MIN_EXPRESSION
 
 def rescue_argparse():
 
@@ -65,6 +65,23 @@ def rescue_argparse():
                   default = default_json,
                   help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter. \
                     \nDefault: %(default)s")
+  rf.add_argument("--counts_design",
+                  help = "JSON file with the experimental groups given to SQANTI3 QC (--counts_design). \
+                    \nNeeded when the rules use prevalence_<group> columns, so that the evidence check \
+                    \ncomputes them on the counts that rescued reference transcripts receive from their artifacts.")
+  rf.add_argument("--min_expression", type = float, default = MIN_EXPRESSION,
+                  help = "Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): \
+                    \n0 means any count above 0, any other value a count greater than or equal to it. \
+                    \nUsed by the evidence check to compute prevalence and prevalence_<group> on the counts \
+                    \nthat rescued reference transcripts receive from their artifacts. \
+                    \nDefault: %(default)s")
+  rf.add_argument("--skip_evidence_check", action="store_true",
+                  help = "Do not apply the requisites on long-read counts (FL, prevalence, prevalence_<group>) \
+                    \nto the rescued reference transcripts (behaviour of previous versions).")
+  rf.add_argument("--map_automatic_fsm", action="store_true",
+                  help = "Map the FSM artifacts of automatic rescue (needs --corrected_isoforms_fasta), so that \
+                    \nthey are reassigned to a long-read isoform if their reference transcript fails the evidence check. \
+                    \nBy default their counts go to the gene residual.")
 
   # ML options
   ml = parser.add_argument_group("Machine Learning specific options")

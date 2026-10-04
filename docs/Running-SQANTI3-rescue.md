@@ -134,6 +134,14 @@ This part of the rescue can be divided into the following tasks/criteria:
 
 After performing this last filter of the rescue target list, SQ3 rescue outputs a list of rescued reference transcripts, which are then added to the long-read transcriptome GTF.
 
+#### 4b. Evidence check of reference targets
+
+The requisites on long-read counts (`FL`, `FL.<sample>`, `prevalence` and `prevalence_<group>`) are removed to filter the reference transcriptome, since reference transcripts have no counts of their own. Their evidence is instead the counts of the artifacts assigned to them, which may have been discarded precisely for being detected in too few samples. Before reintroducing a reference transcript, SQ3 rescue therefore computes, sample by sample, the counts it would receive from all its artifacts (automatic and rescue-by-mapping together) with the same redistribution as [requantification](#requantification-output) and the same `--counts` file: an artifact with several targets is split in proportion to the counts of each target in the sample, evenly if none has counts, and integer counts stay integer. A reference transcript tied with a long read-defined isoform that has counts in a sample therefore gets nothing from that artifact in that sample. The redistribution is computed once, with all the targets: removing the ones that fail can only increase the counts of the others. On those counts it computes `FL`, `prevalence` and `prevalence_<group>` as SQANTI3 QC does (a sample expresses the transcript when its count is above 0 with the default `--min_expression` 0, or greater than or equal to `--min_expression` otherwise; it must be the value given to QC), and evaluates the count requisites of the `full-splice_match` rules (or `rest`, if there are none) with the rules filter. The structure of the rules is kept, so the AND/OR combinations of groups behave as in the filter. If one of these rules has no count requisite, counts are not needed to pass and the check is not applied. The requisites evaluated are saved to `evidence_check_rules.json`.
+
+Rules on `prevalence_<group>` need the experimental design: provide the same `--counts_design` file given to SQANTI3 QC. Samples outside the design (e.g. mixtures) count for the global `prevalence` but not for any group.
+
+Reference transcripts that fail are not reintroduced. Each of their rescue-by-mapping artifacts that is left without a passing target is reassigned to its best mapping hit among the long read-defined isoforms that passed the filter. FSM artifacts of automatic rescue are not mapped: they share all their junctions with the failed reference transcript, so any long read-defined isoform would contradict them. With `--map_automatic_fsm` they are also mapped for this purpose, into separate `*_fallback_*` files, in both rescue modes (this needs `--corrected_isoforms_fasta`). Artifacts without such a hit are left unrescued, and requantification sends their counts to the gene residual. The check needs `--counts`; it is skipped with `--skip_evidence_check`, and has no effect when the rules have no requisites on long-read counts.
+
 <img src = "https://raw.githubusercontent.com/aarzalluz/figures_public/master/SQANTI3/SQ3_rescue_04-rescue.png" height = "497" width = "798">
 
 A new classification 
@@ -181,7 +189,7 @@ All in all, these are the arguments accepted by `sqanti3_rescue.py rules`:
 
 ```bash
 usage: sqanti3_rescue.py [-h] --filter_class FILTER_CLASS -rg REFGTF -rf REFFASTA [--corrected_isoforms_fasta CORRECTED_ISOFORMS_FASTA] [--filtered_isoforms_gtf FILTERED_ISOFORMS_GTF] [-k REFCLASSIF] [--counts COUNTS]
-                         [-e {all,fsm,none}] [--mode {automatic,full}] [-q] [-s {rules,ml}] [-j JSON_FILTER] [-r RANDOM_FOREST] [-t THRESHOLD] [-o OUTPUT] [-d DIR] [-c CPUS] [-v] [-l {ERROR,WARNING,INFO,DEBUG}]
+                         [-e {all,fsm,none}] [--mode {automatic,full}] [-q] [-s {rules,ml}] [-j JSON_FILTER] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--skip_evidence_check] [--map_automatic_fsm] [-r RANDOM_FOREST] [-t THRESHOLD] [-o OUTPUT] [-d DIR] [-c CPUS] [-v] [-l {ERROR,WARNING,INFO,DEBUG}]
 
 ```
 
@@ -226,6 +234,13 @@ Customization options:
 Rules specific options:
   -j JSON_FILTER, --json_filter JSON_FILTER
                         Full path to the JSON file including the rules used when running the SQANTI3 rules filter. Default: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+  --counts_design COUNTS_DESIGN
+                        JSON file with the experimental groups given to SQANTI3 QC (--counts_design). Needed when the rules use prevalence_<group> columns, so that the evidence check computes them on the counts that rescued reference transcripts receive from their artifacts.
+  --min_expression MIN_EXPRESSION
+                        Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): 0 means any count above 0, any other value a count greater than or equal to it. Used by the evidence check to compute prevalence and prevalence_<group> on the counts that rescued reference transcripts receive from their artifacts. Default: 0.0
+  --skip_evidence_check
+                        Do not apply the requisites on long-read counts (FL, prevalence, prevalence_<group>) to the rescued reference transcripts (behaviour of previous versions).
+  --map_automatic_fsm   Map the FSM artifacts of automatic rescue (needs --corrected_isoforms_fasta), so that they are reassigned to a long-read isoform if their reference transcript fails the evidence check. By default their counts go to the gene residual.
 
 Machine Learning specific options:
   -r RANDOM_FOREST, --random_forest RANDOM_FOREST
@@ -285,6 +300,8 @@ In addition to the common arguments, the rules rescue requires the following **s
 
 - **Rules JSON file**: using the `-j` flag, the user must provide the JSON file used for running SQANTI3 rules filter on the long read-defined transcriptome. This same set of rules will be [applied to the reference transcriptome](#3-application-of-sq3-filter-to-the-reference-transcriptome) to evaluate the reliability of reference rescue targets. Note that, to achieve this, SQANTI3 rescue requires the classification file output after running SQANTI3 QC on the reference to be provided via the `--refClassif` argument.
 
+- **Counts design file** (optional): if SQANTI3 QC was run with `--counts_design` and the rules use `prevalence_<group>` columns, provide the same file here so that the [evidence check](#4b-evidence-check-of-reference-targets) can compute them. If QC was run with a `--min_expression` other than the default, give the same value to rescue.
+
 <a name="ml"></a>
 
 #### Machine learning rescue arguments
@@ -303,7 +320,7 @@ The final result of SQANTI3 rescue is a **transcriptome GTF file and FASTA files
 Independently of running only rescue on `automatic` or `full` mode, two main files will be present:
 
 - `*_rescue_inclusion_list.tsv`: A single-column file including the IDs of all the reference transcripts that have been reintroduced into the transcriptome during the rescue.
-- `*_recue_table.tsv`: A table summarizing the rescue results, with the same columns for both modes. All the columns are self-explanatory (origin refers to where the assigned transcript came from, i.e. reference or long read-defined transcriptome).
+- `*_recue_table.tsv`: A table summarizing the rescue results, with the same columns for both modes. All the columns are self-explanatory (origin refers to where the assigned transcript came from, i.e. reference or long read-defined transcriptome). When the [evidence check](#4b-evidence-check-of-reference-targets) runs, an `evidence_check` column is added: `pass` (reference target reintroduced), `failed` (reference target not reintroduced; the row is kept for traceability and its counts are not moved to it), `reassigned` (new row assigning the artifact of a failed target to a long read-defined isoform) or `not_required` (long read-defined targets).
 
 <a name="out_fill"></a>
 ### Mapping rescue specific files

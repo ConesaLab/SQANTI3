@@ -53,6 +53,9 @@ def _rescue_namespace(**overrides):
         mode="automatic",
         strategy="rules",
         json_filter="filter.json",
+        counts_design=None,
+        min_expression=0.0,
+        map_automatic_fsm=False,
         random_forest="rf.RData",
         threshold=0.7,
         requant=True,
@@ -102,3 +105,33 @@ class TestRequantValidation:
         au.rescue_args_validation(args)
         assert args.requant is False
         assert None not in checked
+
+
+class TestMapAutomaticFsm:
+    """--map_automatic_fsm is off by default and needs the corrected FASTA."""
+
+    @pytest.fixture(autouse=True)
+    def _no_disk_access(self, monkeypatch):
+        monkeypatch.setattr(au, "valid_file", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_gtf", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_fasta", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_dir", lambda *a, **k: True)
+
+    def test_disabled_by_default(self, parser):
+        args = parser.parse_args(MIN_ARGS)
+        assert args.map_automatic_fsm is False
+
+    def test_flag_enables_it(self, parser):
+        args = parser.parse_args(MIN_ARGS + ["--map_automatic_fsm"])
+        assert args.map_automatic_fsm is True
+
+    def test_without_corrected_fasta_exits(self):
+        args = _rescue_namespace(map_automatic_fsm=True, counts="counts.tsv")
+        with pytest.raises(SystemExit):
+            au.rescue_args_validation(args)
+
+    def test_with_corrected_fasta_passes(self):
+        args = _rescue_namespace(map_automatic_fsm=True, counts="counts.tsv",
+                                 corrected_isoforms_fasta="corrected.fasta")
+        au.rescue_args_validation(args)
+        assert args.map_automatic_fsm is True

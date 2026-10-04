@@ -1,10 +1,11 @@
 import os
 import json
 import shutil
+import sys
 import pandas as pd
 
 from src.wrapper_utils import sqanti_path
-from src.config import RESCUE_IGNORED_RULES
+from src.config import RESCUE_IGNORED_RULES, MIN_EXPRESSION
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
@@ -29,6 +30,12 @@ from src.rescue_output import (
 )
 
 MINIMAP2_RESCUE_OPTS = "--secondary=yes -ax map-hifi"
+from src.parsers import read_counts_design, check_counts_design
+from src.utilities.rescue.evidence_check import (
+    target_count_rules, count_samples, check_design_for_rules,
+    write_evidence_rules, apply_evidence_check
+)
+from src.utilities.rescue.sq_requant import load_counts
 
 def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
@@ -276,6 +283,82 @@ def run_ML_rescue(filter_classification, reference_classification, hits_df, resc
                                                   automatic_inclusion_list, rescue_df,"ml",thr)
     
     return inclusion_list, rescue_df
+
+## Evidence check of reference targets (count requisites of the rules)
+def evidence_check_enabled(args):
+    """Whether the reintroduced reference transcripts must pass the count requisites.
+
+    Only for the rules strategy, when the rules that apply to reference targets
+    have requisites on long-read counts (FL, prevalence, prevalence_<group>).
+    The counts are those of requantification, so --counts is then required.
+    """
+    if args.skip_evidence_check:
+        rescue_logger.info("Evidence check of reference targets skipped (--skip_evidence_check).")
+        return False
+    if args.strategy != "rules":
+        if args.counts_design is not None:
+            rescue_logger.warning("--counts_design is only used with the rules strategy, ignoring it.")
+        return False
+    with open(args.json_filter) as f:
+        if not target_count_rules(json.load(f)):
+            if args.counts_design is not None:
+                rescue_logger.warning("--counts_design is ignored: the rules of reference targets "
+                                      "have no requisites on long-read counts.")
+            return False
+    if args.counts is None:
+        rescue_logger.error("The rules have requisites on long-read counts: the evidence check of the "
+                            "rescued reference transcripts needs the --counts file used for requantification. "
+                            "Provide --counts, or --skip_evidence_check to reintroduce them without the check.")
+        sys.exit(1)
+    return True
+
+
+def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
+                         corrected_isoforms, out_dir, out_prefix):
+    """Map the FSM artifacts of automatic rescue to the rescue targets.
+
+    Automatic rescue does not map its artifacts. Their hits are only used to
+    reassign them to a long-read isoform if their reference transcript fails
+    the evidence check, so they are kept apart from the rescue-by-mapping hits.
+    """
+    fsm_artifacts = rescue_df.loc[rescue_df["rescue_mode"] == "automatic", "artifact"].unique().tolist()
+    if not fsm_artifacts:
+        return pd.DataFrame(columns=["rescue_candidate", "mapping_hit", "alignment_type", "alignment_score"])
+
+    fb_prefix = f"{out_prefix}_fallback"
+    hits_file = f"{out_dir}/{fb_prefix}_rescue_mapping_hits.tsv"
+    if os.path.isfile(hits_file):
+        rescue_logger.info("Fallback mapping hits already exist, skipping fallback mapping.")
+        return pd.read_csv(hits_file, sep="\t")
+
+    message("Fallback mapping of automatic rescue artifacts", rescue_logger)
+    targets = rescue_targets(classif_df, fsm_artifacts, ref_gtf, f"{out_dir}/{fb_prefix}")
+    return run_candidate_mapping(ref_trans_fasta, targets, fsm_artifacts,
+                                 corrected_isoforms, out_dir, fb_prefix)
+
+
+def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filter,
+                       counts_design, counts_file, out_dir, min_expression=MIN_EXPRESSION):
+    """Apply the count requisites of the rules to the rescued reference targets.
+
+    The requisites are written to {out_dir}/evidence_check_rules.json and
+    evaluated by the rules filter on the counts that requantification would give
+    each target from the --counts file, with the expression threshold of QC
+    (min_expression).
+    """
+    message("Evidence check of rescued reference transcripts", rescue_logger)
+    with open(json_filter) as f:
+        rule_sets = target_count_rules(json.load(f))
+    counts_df = load_counts(counts_file, classif_df)
+    design = None
+    if counts_design is not None:
+        design = read_counts_design(counts_design)
+        check_counts_design(design, count_samples(counts_df))
+    check_design_for_rules(rule_sets, design)
+    rules_dict = write_evidence_rules(rule_sets, f"{out_dir}/evidence_check_rules.json")
+    return apply_evidence_check(rescue_df, inclusion_list, classif_df, counts_df, hits_df, rules_dict,
+                                design, min_expression)
+
 
 def concatenate_gtf_files(input_files, output_file):
     """
