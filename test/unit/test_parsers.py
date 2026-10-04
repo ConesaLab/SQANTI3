@@ -422,3 +422,48 @@ class TestParseCounts:
         assert len(df.columns) == 2  # isoform + 1 sample column
         assert len(df) == 0
     
+
+
+### read_counts_design / check_counts_design ###
+
+import json as _json
+from src.parsers import read_counts_design, check_counts_design
+
+
+def _design_file(tmp_path, content):
+    f = tmp_path / "design.json"
+    f.write_text(content if isinstance(content, str) else _json.dumps(content))
+    return str(f)
+
+
+class TestCountsDesign:
+    def test_valid_design(self, tmp_path):
+        design = {"K": ["K1", "K2"], "B": ["B1", "B2", "B3"]}
+        assert read_counts_design(_design_file(tmp_path, design)) == design
+
+    @pytest.mark.parametrize("content", [
+        "not json",
+        "[]",
+        "{}",
+        '{"K": ["K1"], "K": ["K2"]}',          # duplicated group
+        '{"K": []}',                            # empty group
+        '{"K": ["K1", ""]}',                    # empty sample name
+        '{"K": "K1"}',                          # not a list
+        '{"K": ["K1"], "B": ["K1"]}',           # sample in two groups
+        '{"K 1": ["K1"]}',                      # not a valid column suffix
+        '{"": ["K1"]}',
+    ])
+    def test_invalid_design_exits(self, tmp_path, content):
+        with pytest.raises(SystemExit):
+            read_counts_design(_design_file(tmp_path, content))
+
+    def test_check_accepts_unused_samples(self):
+        check_counts_design({"K": ["K1"], "B": ["B1"]}, ["K1", "B1", "MIX"])
+
+    def test_check_missing_sample_exits(self):
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"])
+
+    def test_check_single_sample_file_exits(self):
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1"]}, ["K1"])

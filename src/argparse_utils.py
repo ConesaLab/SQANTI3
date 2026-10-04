@@ -161,6 +161,11 @@ def qc_args_validation(args):
     # FL counts given
     if args.fl_count is not None:
         valid_file(args.fl_count,qc_logger)
+    if args.counts_design is not None:
+        if args.fl_count is None:
+            qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
+            sys.exit(1)
+        valid_file(args.counts_design,qc_logger)
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)

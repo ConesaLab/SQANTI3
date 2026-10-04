@@ -100,6 +100,7 @@ qc:
     expression: ''
     coverage: ''
     fl_count: ''
+    counts_design: ''
     isoAnnotLite: false
     gff3: ''
     saturation: false

@@ -596,3 +596,53 @@ def test_prevalence_absent_without_fl_counts():
 def test_prevalence_empty_fl_counts():
     """An empty FL_dict is treated the same as no FL_dict at all."""
     assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"
+
+
+def test_prevalence_uses_shared_detection_threshold(monkeypatch):
+    """prevalence and prevalence_<group> count detections with the same threshold."""
+    import src.qc_classes
+    monkeypatch.setattr(src.qc_classes, "MIN_DETECTION_COUNT", 0.5)
+    obj = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 1.0})
+    obj.counts_design = {"A": ["s1", "s2"], "B": ["s3"]}
+    d = obj.as_dict()
+    assert (d["prevalence"], d["prevalence_A"], d["prevalence_B"]) == (2, 1, 1)
+
+
+def test_detection_threshold_is_one_read():
+    """Contract: the shared default is one full read (see test_prevalence_subunit_counts_are_not_detection)."""
+    from src.config import MIN_DETECTION_COUNT
+    assert MIN_DETECTION_COUNT == 1
+
+
+def _transcript_with_design(fl_dict, design):
+    obj = _transcript_with_counts(fl_dict)
+    obj.counts_design = design
+    return obj
+
+
+def test_group_prevalence_per_group():
+    """Each group counts detections only over its own samples."""
+    d = _transcript_with_design({"K1": 3, "K2": 0, "K3": 1, "B1": 0, "B2": 0.7},
+                                {"K": ["K1", "K2", "K3"], "B": ["B1", "B2"]}).as_dict()
+    assert d["prevalence_K"] == 2
+    assert d["prevalence_B"] == 0
+    assert d["prevalence"] == 2
+
+
+def test_group_prevalence_ignores_samples_out_of_design():
+    """Samples not assigned to a group count for prevalence but not for any group."""
+    d = _transcript_with_design({"K1": 3, "B1": 2, "MIX": 9},
+                                {"K": ["K1"], "B": ["B1"]}).as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == (3, 1, 1)
+
+
+def test_group_prevalence_na_without_counts():
+    """An isoform missing from --fl_count has NA in every prevalence column, global and per group."""
+    d = _transcript_with_design({}, {"K": ["K1"], "B": ["B1"]}).as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == ("NA", "NA", "NA")
+
+
+def test_group_prevalence_absent_without_design():
+    d = _transcript_with_counts({"K1": 3, "B1": 2}).as_dict()
+    assert not [k for k in d if k.startswith("prevalence_")]
+    assert "counts_design" not in d

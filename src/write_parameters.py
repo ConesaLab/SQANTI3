@@ -14,6 +14,7 @@ def write_qc_parameters(args):
         f.write("MinRefLength\t"+ str(args.min_ref_len) + "\n")
         f.write("Aligner\t" + str(args.aligner_choice) + "\n")
         f.write("FLCount\t" + (os.path.abspath(args.fl_count) if args.fl_count is not None else "NA") + "\n")
+        f.write("CountsDesign\t" + (os.path.abspath(args.counts_design) if args.counts_design is not None else "NA") + "\n")
         f.write("Expression\t" + (os.path.abspath(args.expression) if args.expression is not None else "NA") + "\n")
         f.write("Junction\t" + (os.path.abspath(args.coverage) if args.coverage is not None else "NA") + "\n")
         f.write("CAGEPeak\t" + (os.path.abspath(args.CAGE_peak)  if args.CAGE_peak is not None else "NA") + "\n")

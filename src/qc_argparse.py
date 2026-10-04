@@ -41,6 +41,7 @@ def qc_argparse():
     apod.add_argument('-e','--expression',  help='Expression matrix (supported: Kallisto tsv)')
     apod.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apod.add_argument('-fl', '--fl_count', help='Full-length abundance file')
+    apod.add_argument('--counts_design', default=None, help='JSON file assigning the samples of a multi-sample --fl_count file to experimental groups, e.g. {"K": ["K1", "K2"], "B": ["B1", "B2"]}. Adds one prevalence_<group> column per group to the classification file.')
 
     # Functional annotation
     apf = ap.add_argument_group("Functional annotation")
