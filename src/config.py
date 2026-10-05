@@ -13,9 +13,11 @@ default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 # - subcategory: every reference FSM is reference_match, so the rule would test the
 #   annotation itself instead of the evidence supporting each reference transcript.
 RESCUE_IGNORED_RULES = ["FL", "prevalence", "subcategory"]
-# Minimum abundance for a transcript to count as detected in a sample (one full read).
-# Used by QC for the prevalence and prevalence_<group> columns.
-MIN_DETECTION_COUNT = 1
+# Default of --min_expression, the minimum count for a transcript to be expressed in a
+# sample (see is_expressed() in utils.py). With 0, any count above 0 is expression, so
+# the fractional counts of quantifiers such as bambu are kept. Used by QC for the
+# prevalence and prevalence_<group> columns.
+MIN_EXPRESSION = 0.0
 
 FIELDS_JUNC = ['isoform', 'chrom', 'strand', 'junction_number', 'genomic_start_coord',
                    'genomic_end_coord', 'transcript_coord', 'junction_category',

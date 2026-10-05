@@ -190,7 +190,7 @@ The threshold is inclusive, so a transcript whose shortest intron has exactly 10
 
 #### Multi-sample filtering: the `prevalence` column
 
-When SQANTI3 QC is run with a **multi-sample** `--fl_count` file, the classification file includes a `prevalence` column: the number of samples in which the isoform reaches at least one full read (`count >= 1`). It can be used in rules like any other numeric column, to discard isoforms seen in too few samples to be considered reproducible. For example, the rule below keeps NNC transcripts that are not intrapriming products and were detected in at least 2 samples:
+When SQANTI3 QC is run with a **multi-sample** `--fl_count` file, the classification file includes a `prevalence` column: the number of samples in which the isoform is expressed, that is, its count reaches the [`--min_expression`](Running-SQANTI3-Quality-Control.md#supplying-single-or-multi-sample-full-length-fl-counts---fl_count) value of QC (`count > 0` with the default, 0, and `count >= min_expression` otherwise). It can be used in rules like any other numeric column, to discard isoforms seen in too few samples to be considered reproducible. For example, the rule below keeps NNC transcripts that are not intrapriming products and were detected in at least 2 samples:
 
 ```json
 {
@@ -203,7 +203,7 @@ When SQANTI3 QC is run with a **multi-sample** `--fl_count` file, the classifica
 }
 ```
 
-A threshold of 1 is not equivalent to omitting the requisite: it still discards isoforms that do not reach one full read in any sample, which is common with EM-based quantifiers that assign fractional counts. Isoforms missing from the `--fl_count` file have no prevalence value; like any other missing value, they fail the requisite and are reported as `NA value in prevalence`.
+A threshold of 1 is not equivalent to omitting the requisite: it still discards isoforms that are not expressed in any sample. Isoforms missing from the `--fl_count` file have no prevalence value; like any other missing value, they fail the requisite and are reported as `NA value in prevalence`.
 
 ##### Experimental groups
 

@@ -6,6 +6,7 @@ from src.parsers import expression_parser, parse_counts, read_counts_design, che
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 from src.module_logging import qc_logger
+from src.config import MIN_EXPRESSION
 
 def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
@@ -65,9 +66,13 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             isoforms_info[iso].ratio_TSS = None
     return isoforms_info
 
-def full_length_quantification(fl_count, isoforms_info, counts_design=None):
+def full_length_quantification(fl_count, isoforms_info, counts_design=None,
+                               min_expression=MIN_EXPRESSION):
     """Assign FL counts to the isoforms.
 
+    In a multi-sample file, a sample expresses an isoform when its count is above 0
+    (min_expression 0, the default) or reaches min_expression; prevalence is the
+    number of such samples.
     With counts_design (JSON file assigning samples to experimental groups), every
     isoform also gets the design, which as_dict() uses to report one
     prevalence_<group> column per group.
@@ -125,6 +130,7 @@ def full_length_quantification(fl_count, isoforms_info, counts_design=None):
                 n += 1
                 obj.FL_dict = {s: 0 for s in fl_samples}
             obj.counts_design = design
+            obj.min_expression = min_expression
 
     if n > 0:
         qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")

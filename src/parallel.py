@@ -221,7 +221,8 @@ def combine_split_runs(args, split_dirs):
     isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)
     ## FL count file
     if args.fl_count:
-        isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design)
+        isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design,
+                                                   args.min_expression)
     isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
 
     fields_junc_cur = headers[0]

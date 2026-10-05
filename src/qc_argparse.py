@@ -1,5 +1,5 @@
 import argparse
-from src.config import __version__,__author__
+from src.config import __version__,__author__,MIN_EXPRESSION
 
 def qc_argparse():
     ap = argparse.ArgumentParser(description="Structural and Quality Annotation of Novel Transcript Isoforms",
@@ -42,6 +42,7 @@ def qc_argparse():
     apod.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apod.add_argument('-fl', '--fl_count', help='Full-length abundance file')
     apod.add_argument('--counts_design', default=None, help='JSON file assigning the samples of a multi-sample --fl_count file to experimental groups, e.g. {"K": ["K1", "K2"], "B": ["B1", "B2"]}. Adds one prevalence_<group> column per group to the classification file.')
+    apod.add_argument('--min_expression', type=float, default=MIN_EXPRESSION, help='Minimum count for a transcript to be considered expressed in a sample of a multi-sample --fl_count file; prevalence and prevalence_<group> count those samples. With the default, 0, any count above 0 is expression, which keeps fractional counts (e.g. bambu); with any other value the count must be greater than or equal to it. Default: %(default)s')
 
     # Functional annotation
     apf = ap.add_argument_group("Functional annotation")

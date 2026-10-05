@@ -63,7 +63,7 @@ usage: sqanti3_qc.py [-h] --isoforms ISOFORMS --refGTF REFGTF --refFasta REFFAST
                      [--aligner_choice {minimap2,deSALT,gmap,uLTRA}] [-x GMAP_INDEX] [--include_ORF] [--orf_input ORF_INPUT]
                      [--psauron_threshold PSAURON_THRESHOLD] [--short_reads SHORT_READS] [--SR_bam SR_BAM]
                      [--CAGE_peak CAGE_PEAK] [--polyA_motif_list POLYA_MOTIF_LIST] [--polyA_peak POLYA_PEAK]
-                     [--phyloP_bed PHYLOP_BED] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--counts_design COUNTS_DESIGN] [--isoAnnotLite] [--gff3 GFF3]
+                     [--phyloP_bed PHYLOP_BED] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--isoAnnotLite] [--gff3 GFF3]
                      [-o OUTPUT] [-d DIR] [--saturation] [--report {html,pdf,both,skip}] [--isoform_hits]
                      [--ratio_TSS_metric {max,mean,median,3quartile}] [-t CPUS] [-n CHUNKS] [-l {ERROR,WARNING,INFO,DEBUG}]
                      [--is_fusion] [-v] [--tusco {human,mouse}]
@@ -135,6 +135,11 @@ Orthogonal data inputs:
                         JSON file assigning the samples of a multi-sample --fl_count file to experimental groups, e.g.
                         {"K": ["K1", "K2"], "B": ["B1", "B2"]}. Adds one prevalence_<group> column per group to the
                         classification file.
+  --min_expression MIN_EXPRESSION
+                        Minimum count for a transcript to be considered expressed in a sample of a multi-sample --fl_count
+                        file; prevalence and prevalence_<group> count those samples. With the default, 0, any count above 0
+                        is expression, which keeps fractional counts (e.g. bambu); with any other value the count must be
+                        greater than or equal to it. Default: 0.0
 
 Functional annotation:
   --isoAnnotLite        Run isoAnnot Lite to output a tappAS-compatible gff3 file
@@ -396,7 +401,7 @@ SQANTI3 QC supports single or multi-sample FL counts in a stadarized format. The
 
 The name of the first column can be anything, and the rest of the columns name will be used as sample/replicate identifiers. These will show up in the final classification file as `FL.<sample>` columns, where `<sample>` is the name of the corresponding column in the input FL count file. The sum of all the FL reads across the samples associated to one transcript will be recorded in the `FL` column of the `*_classification.txt` output file.
 
-With a multi-sample file, the `prevalence` column records the number of samples in which the transcript reaches at least one full read (`count >= 1`). It can be used in the [rules filter](Running-SQANTI3-filter.md#multi-sample-filtering-the-prevalence-column) to discard transcripts detected in too few samples.
+With a multi-sample file, the `prevalence` column records the number of samples in which the transcript is expressed, that is, its count reaches `--min_expression`. With the default, 0, any count above 0 is expression (`count > 0`), which keeps the fractional counts of quantifiers that distribute ambiguous reads among isoforms, such as bambu. With any other value the count must be greater than or equal to it (`count >= min_expression`): for instance, `--min_expression 1` requires at least one full read, as in previous versions. It can be used in the [rules filter](Running-SQANTI3-filter.md#multi-sample-filtering-the-prevalence-column) to discard transcripts detected in too few samples.
 
 ### Prevalence per experimental group (`--counts_design`)
 
@@ -409,7 +414,7 @@ When the samples come from several experimental conditions, the prevalence over 
 }
 ```
 
-For each group, QC adds a `prevalence_<group>` column to the classification file (`prevalence_K` and `prevalence_B` in the example) with the number of samples of that group in which the transcript reaches at least one full read. The `prevalence` column over all samples is kept.
+For each group, QC adds a `prevalence_<group>` column to the classification file (`prevalence_K` and `prevalence_B` in the example) with the number of samples of that group in which the transcript is expressed, with the same `--min_expression` threshold. The `prevalence` column over all samples is kept.
 
 Sample names must match the header of the `--fl_count` file, and each sample can belong to a single group. Group names can only contain letters, digits, `_` and `.`, since they become part of a column name. Samples of the `--fl_count` file that are not listed in the design (for instance, mixtures used as a response variable) still count for `prevalence` but for no group; a warning lists them. Transcripts missing from the `--fl_count` file get `NA` in every prevalence column.
 

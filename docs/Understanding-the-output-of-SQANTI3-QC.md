@@ -122,7 +122,7 @@ The output `_classification.txt` has the following fields:
 26. `sd_cov`: standard deviation of junction coverage counts from short read data. NA if no short read data given.
 27. `min_intron_length`: length (bp) of the shortest intron of the isoform, computed from the junction coordinates. Very short introns can be alignment artifacts. NA for mono-exonic isoforms.
 28. `FL` or `FL.<sample>`: FL count associated with this isoform per sample if `--fl_count` is provided, otherwise NA.
-    - `prevalence`: number of samples where the isoform reaches at least one full read, if a multi-sample `--fl_count` is provided, otherwise NA.
+    - `prevalence`: number of samples where the isoform is expressed: count above 0 with the default `--min_expression` 0, count greater than or equal to `--min_expression` otherwise, if a multi-sample `--fl_count` is provided, otherwise NA.
     - `prevalence_<group>`: the same count restricted to the samples of each experimental group, only if `--counts_design` is provided. These columns are written after the `FL.<sample>` columns.
 29. `n_indels`: total number of indels based on alignment.
 30. `n_indels_junc`: number of junctions in this isoform that have alignment indels near the junction site (indicating potentially unreliable junctions).

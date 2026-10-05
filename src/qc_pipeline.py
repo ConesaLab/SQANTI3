@@ -111,7 +111,8 @@ def run(args):
         ## FL count file
     
         if args.fl_count:
-            isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design)
+            isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design,
+                                                   args.min_expression)
         else:
             qc_logger.info("Full-length read abundance files not provided.")
 

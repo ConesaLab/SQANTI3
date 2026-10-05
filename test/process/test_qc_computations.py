@@ -224,6 +224,16 @@ class TestFullLengthQuantification:
         d = result_info["PB.124830.1"].as_dict()
         assert (d["prevalence_A"], d["prevalence_B"]) == (2, 1)
 
+    def test_fl_count_min_expression(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+        """min_expression is the minimum count, inclusive, for a sample to express an isoform."""
+        design = tmp_path / "design.json"
+        design.write_text('{"A": ["sample1", "sample2"], "B": ["sample3"]}')
+        # PB.124830.1 has 150, 200 and 180 reads in sample1, sample2 and sample3
+        result_info = full_length_quantification(fl_count_file_multi, sample_isoforms_info,
+                                                 str(design), min_expression=180)
+        d = result_info["PB.124830.1"].as_dict()
+        assert (d["prevalence"], d["prevalence_A"], d["prevalence_B"]) == (2, 1, 1)
+
     def test_fl_count_design_unknown_sample_exits(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
         design = tmp_path / "design.json"
         design.write_text('{"A": ["sample1", "sampleX"]}')

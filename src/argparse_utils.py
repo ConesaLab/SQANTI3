@@ -166,6 +166,9 @@ def qc_args_validation(args):
             qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
             sys.exit(1)
         valid_file(args.counts_design,qc_logger)
+    if args.min_expression < 0:
+        qc_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
