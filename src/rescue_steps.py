@@ -16,7 +16,8 @@ from src.utilities.rescue.rescue_helpers import (
 )
 
 from src.utilities.rescue.candidate_mapping_helpers import (
-    filter_transcriptome, process_sam_file, save_fasta
+    filter_transcriptome, process_sam_file, save_fasta, merge_target_records,
+    mapping_fingerprint, is_mapping_reusable, save_mapping_fingerprint
 )
 
 from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
@@ -24,6 +25,8 @@ from src.utilities.rescue.rescue_by_mapping import rescue_by_mapping
 from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
+
+MINIMAP2_RESCUE_OPTS = "--secondary=yes -ax map-hifi"
 
 def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
@@ -117,9 +120,12 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.info("Filtering supplied long read transcriptome FASTA (--isoforms) to only include rescue targets...")
     LR_targets = filter_transcriptome(corrected_isoforms,targets_list)
 
-    ## join both FASTA files and remove duplicates in LR targets (some tools like Bambu have the same ids for reference and long read transcripts, so we need to remove duplicates in the long read targets to avoid issues with minimap2)
-    tr_ids = {record.id for record in LR_targets}
-    all_targets = LR_targets + [record for record in ref_targets if record.id not in tr_ids]
+    ## join both FASTA files and remove duplicated IDs (some tools like Bambu have the same ids for reference and long read transcripts,
+    ## and duplicated IDs within any of the FASTA files would end up as duplicated @SQ lines in the minimap2 SAM header)
+    all_targets, dropped_ids = merge_target_records(LR_targets, ref_targets)
+    if dropped_ids:
+        rescue_logger.warning(f"Removed {len(dropped_ids)} rescue targets with duplicated IDs (long read transcripts are kept over reference ones).")
+        rescue_logger.debug(f"Duplicated target IDs: {', '.join(sorted(set(dropped_ids)))}")
 
     save_fasta(all_targets,targets_fasta)
 
@@ -139,14 +145,21 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.info("Mapping rescue candidates to rescue targets with minimap2...")
     # make file names
     sam_file = f"{prefix}_mapped_rescue.sam"
-    if os.path.isfile(sam_file):
-        rescue_logger.info("Mapping file already exists, skipping mapping step.")
+    # The mapping is only reused if it was generated from the same targets, candidates and options
+    fingerprint = mapping_fingerprint([targets_fasta, candidates_fasta], MINIMAP2_RESCUE_OPTS)
+    if is_mapping_reusable(sam_file, fingerprint):
+        rescue_logger.info("Mapping file already exists for the same rescue targets and candidates, skipping mapping step.")
     else:
-        # make command
-        minimap_cmd = f"minimap2 --secondary=yes -ax map-hifi {targets_fasta} {candidates_fasta} > {sam_file}"
+        if os.path.isfile(sam_file):
+            rescue_logger.info("Existing mapping file was generated from different inputs, mapping again.")
+        # make command (written to a temporary file so an interrupted run never leaves a truncated SAM behind)
+        tmp_sam_file = f"{sam_file}.tmp"
+        minimap_cmd = f"minimap2 {MINIMAP2_RESCUE_OPTS} {targets_fasta} {candidates_fasta} > {tmp_sam_file}"
         # run
         logFile=f"{out_dir}/logs/rescue/minimap2.log"
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
+        os.replace(tmp_sam_file, sam_file)
+        save_mapping_fingerprint(sam_file, fingerprint)
     # Filter mapping results (select SAM columns)
     rescue_logger.info("Building candidate-target table of mapping hits...")
     hits_df = process_sam_file(sam_file)
