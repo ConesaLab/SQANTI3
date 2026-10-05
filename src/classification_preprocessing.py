@@ -52,7 +52,7 @@ def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
     return mapping_out, star_index, SJcovNames, SJcovInfo, fields_junc_cur
 
 
-def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_TSS_metric):
+def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_TSS_metric,outdir):
     bams = None
     ratio_TSS_dict = None
       ## TSS ratio calculation
@@ -62,7 +62,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             bams = [SR_bam]
         else:
             bams = get_files_from_dir(SR_bam,".bam")
-        chr_order = get_bam_header(bams[0])
+        chr_order = get_bam_header(bams[0], outdir)
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
         ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, ratio_TSS_metric)
     else:

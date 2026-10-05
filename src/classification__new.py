@@ -478,7 +478,7 @@ def preprocess_isoform_data(args, corrGTF):
 
     ## TSS ratio calculation
     ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam,args.short_reads,
-                                           star_out,star_index,corrGTF,args.ratio_TSS_metric)
+                                           star_out,star_index,corrGTF,args.ratio_TSS_metric,args.dir)
     # CAGE peaks
     if args.CAGE_peak is not None:
         print("**** Reading CAGE Peak data.", file=sys.stdout)

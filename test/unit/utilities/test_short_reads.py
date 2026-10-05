@@ -192,44 +192,56 @@ def test_get_TSS_bed_file_cleanup(mock_bedtool, mock_bcbio_parse, mock_remove, s
 
 @pytest.fixture
 def setup_test_environment_bam(tmp_path):
-    # Create a temporary directory structure
-    bam_file = tmp_path / "test.bam"
+    # Input BAM and output directory live in different places, as with --SR_bam
+    input_dir = tmp_path / "input"
+    out_dir = tmp_path / "output"
+    input_dir.mkdir()
+    out_dir.mkdir()
+    bam_file = input_dir / "test.bam"
     bam_file.touch()
-    return str(bam_file)
+    return str(bam_file), str(out_dir)
 
 def test_get_bam_header_file_exists(setup_test_environment_bam):
-    bam_file = setup_test_environment_bam
-    expected_output = os.path.dirname(bam_file) + "/chr_order.txt"
+    bam_file, out_dir = setup_test_environment_bam
+    expected_output = os.path.join(out_dir, "chr_order.txt")
     
     # Create a mock chr_order.txt file
     with open(expected_output, 'w') as f:
         f.write("mock content")
     
-    result = get_bam_header(bam_file)
+    result = get_bam_header(bam_file, out_dir)
     assert result == expected_output
     assert os.path.isfile(result)
-    
+
+@patch('src.utilities.short_reads.run_command')
+def test_get_bam_header_writes_inside_outdir(mock_run_command, setup_test_environment_bam):
+    # Regression test for #611: nothing must be written next to the input BAM or its parent
+    bam_file, out_dir = setup_test_environment_bam
+    result = get_bam_header(bam_file, out_dir)
+    assert result == os.path.join(out_dir, "chr_order.txt")
+    log_file = mock_run_command.call_args[0][2]
+    assert log_file == os.path.join(out_dir, "logs", "samtools_header.log")
 
 @patch('subprocess.run')
 def test_get_bam_header_file_not_exists(mock_subprocess, setup_test_environment_bam):
-    bam_file = setup_test_environment_bam
+    bam_file, out_dir = setup_test_environment_bam
     with pytest.raises(SystemExit):
-        get_bam_header(bam_file)
+        get_bam_header(bam_file, out_dir)
     
 
 @patch('subprocess.run')
 def test_get_bam_header_subprocess_error(mock_subprocess, setup_test_environment_bam):
-    bam_file = setup_test_environment_bam
+    bam_file, out_dir = setup_test_environment_bam
     mock_subprocess.side_effect = subprocess.CalledProcessError(1, 'cmd')
     
     with pytest.raises(SystemExit):
-        get_bam_header(bam_file)
+        get_bam_header(bam_file, out_dir)
 
 def test_get_bam_header_invalid_bam(tmp_path):
     non_existent_bam = str(tmp_path / "non_existent.bam")
     
     with pytest.raises(FileNotFoundError):
-        get_bam_header(non_existent_bam)
+        get_bam_header(non_existent_bam, str(tmp_path))
 
 
 ### get_ratio_TSS ###
