@@ -11,7 +11,7 @@ from Bio import SeqIO
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -155,9 +155,72 @@ def split_input_run(args, outdir):
         p.join()
     return [d for (d,x) in split_outs]
 
+def concat_tables(in_files, out_file):
+    """
+    Concatenate tab-separated files that share a one-line header, keeping the header once.
+    Missing input files are skipped. out_file is only written if at least one input exists.
+
+    :return: number of data lines written
+    """
+    in_files = [f for f in in_files if os.path.exists(f)]
+    if not in_files:
+        return 0
+    n_lines = 0
+    with open(out_file, 'w') as out:
+        for i, in_file in enumerate(in_files):
+            with open(in_file) as h:
+                header = h.readline()
+                if i == 0:
+                    out.write(header)
+                for line in h:
+                    out.write(line)
+                    n_lines += 1
+    return n_lines
+
+def concat_sams(in_files, out_file):
+    """
+    Concatenate the SAM files of the chunks. The header (@ lines) is taken from the first chunk:
+    all chunks are aligned to the same genome, so their @SQ lines are identical.
+    """
+    with open(out_file, 'w') as out:
+        for i, in_file in enumerate(in_files):
+            with open(in_file) as h:
+                for line in h:
+                    if line.startswith('@') and i > 0:
+                        continue
+                    out.write(line)
+
+def combine_alignment_outputs(args, split_dirs):
+    """
+    Combine the outputs of the alignment step of each chunk (only produced with FASTA/FASTQ input):
+    corrected SAM, indels table and supplementary alignments report.
+    Without this, they are lost when the split directories are removed.
+    """
+    _, corrSAM, _, _, _ = get_corr_filenames(args.dir, args.output)
+    split_sams = [get_corr_filenames(d, args.output)[1] for d in split_dirs]
+    if not all(os.path.exists(sam) for sam in split_sams):
+        qc_logger.warning("Not all chunks have an alignment SAM file. The corrected SAM will not be combined.")
+        return
+
+    concat_sams(split_sams, corrSAM)
+
+    def indels_name(sam):
+        # Same naming as calc_indels_from_sam: <corrected SAM without extension>_indels.txt
+        return os.path.splitext(sam)[0] + "_indels.txt"
+    concat_tables([indels_name(sam) for sam in split_sams], indels_name(corrSAM))
+
+    supplementary_file = get_supplementary_name(args.dir, args.output)
+    concat_tables([get_supplementary_name(d, args.output) for d in split_dirs], supplementary_file)
+    if os.path.exists(supplementary_file):
+        with open(supplementary_file) as h:
+            n_split = len({line.split('\t')[0] for line in h} - {"isoform"})
+        qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments in total. "
+                          f"All their alignments are listed in {supplementary_file}")
+
 def combine_split_runs(args, split_dirs):
     """
-    Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
+    Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt and, with FASTA/FASTQ input,
+    the alignment outputs (.sam, indels, supplementary alignments).
     Then write out the PDF report
     """
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
@@ -212,6 +275,9 @@ def combine_split_runs(args, split_dirs):
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
+
+    if args.fasta:
+        combine_alignment_outputs(args, split_dirs)
 
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)

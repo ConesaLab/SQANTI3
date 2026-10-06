@@ -29,3 +29,14 @@ class TestParallelPipeline:
             assert os.path.exists(os.path.join(tmpdir, "test_parallel_classification.txt"))
             assert os.path.exists(os.path.join(tmpdir, "test_parallel_junctions.txt"))
 
+            # Alignment outputs of the chunks must be combined, not lost with the split directories
+            sam = os.path.join(tmpdir, "test_parallel_corrected.sam")
+            assert os.path.exists(sam)
+            assert os.path.exists(os.path.join(tmpdir, "test_parallel_corrected_indels.txt"))
+            with open(sam) as h:
+                lines = h.read().splitlines()
+            assert sum(l.startswith("@SQ") for l in lines) == 1  # one header, not one per chunk
+            with open(os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms.fasta")) as h:
+                n_isoforms = sum(l.startswith(">") for l in h)
+            assert sum(not l.startswith("@") for l in lines) == n_isoforms
+
