@@ -378,13 +378,24 @@ class SAMRecord:
 
 
 class GMAPSAMReader(SAMReader):
+    def __init__(self, filename, has_header, ref_len_dict=None, query_len_dict=None, skip_non_primary=False):
+        """
+        :param skip_non_primary: if True, skip secondary (256) and supplementary (2048) alignments,
+                                 so each query yields only its primary alignment
+        """
+        super().__init__(filename, has_header, ref_len_dict, query_len_dict)
+        self.skip_non_primary = skip_non_primary
+
     def __next__(self):
         while True:
             line = self.f.readline().strip()
             if len(line) == 0:
                 raise StopIteration
-            if not line.startswith('@'): # header can occur at file end if the SAM was sorted
-                break
+            if line.startswith('@'): # header can occur at file end if the SAM was sorted
+                continue
+            if self.skip_non_primary and int(line.split('\t', 2)[1]) & (256 | 2048):
+                continue
+            break
         return GMAPSAMRecord(line, self.ref_len_dict, self.query_len_dict)
 
 class GMAPSAMRecord(SAMRecord):
@@ -426,7 +437,9 @@ class GMAPSAMRecord(SAMRecord):
                 _s = x[5:]
                 if _s!='?':
                     self._flag_strand = self.flag.strand # serve as backup for debugging
-                    self.flag = SAMRecord.SAMflag(self.flag.is_paired, _s, self.flag.PE_read_num, is_secondary=False, is_supplementary=False)
+                    self.flag = SAMRecord.SAMflag(self.flag.is_paired, _s, self.flag.PE_read_num,
+                                                  is_secondary=self.flag.is_secondary,
+                                                  is_supplementary=self.flag.is_supplementary)
 
         if ref_len_dict is not None:
             self.sCoverage = (self.sEnd - self.sStart) * 1. / ref_len_dict[self.sID]

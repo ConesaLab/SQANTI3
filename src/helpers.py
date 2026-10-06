@@ -1,4 +1,5 @@
 import os
+import re
 import gzip
 
 
@@ -58,6 +59,44 @@ def get_corr_filenames(outdir, prefix):
     corrORF = corrPathPrefix + "_corrected.faa"
     corrCDS_GTF_GFF = corrPathPrefix + "_corrected.cds.gff3"
     return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
+
+def get_supplementary_name(outdir, prefix):
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
+    return corrPathPrefix + "_supplementary_alignments.txt"
+
+def report_non_primary_alignments(sam_file, out_file):
+    """
+    SQANTI3 only uses the primary alignment of each isoform. Isoforms that also have supplementary
+    (split/chimeric) or secondary alignments are reported here, with all their alignments, so that
+    the information is not lost (issue #216).
+
+    :return: number of isoforms with non-primary alignments. out_file is only written if > 0.
+    """
+    def records():
+        with open(sam_file) as f:
+            for line in f:
+                if line.startswith('@'):
+                    continue
+                raw = line.split('\t', 6)
+                if raw[2] == '*':
+                    continue
+                yield raw
+
+    split_ids = {raw[0] for raw in records() if int(raw[1]) & (256 | 2048)}
+    if not split_ids:
+        return 0
+
+    with open(out_file, 'w') as out:
+        out.write("isoform\talignment\tchrom\tstrand\tstart\tend\tMAPQ\n")
+        for qid, flag, chrom, pos, mapq, cigar, _ in records():
+            if qid not in split_ids:
+                continue
+            flag = int(flag)
+            kind = "supplementary" if flag & 2048 else "secondary" if flag & 256 else "primary"
+            ref_len = sum(int(n) for n, op in re.findall(r'(\d+)([MDN=X])', cigar))
+            start = int(pos)
+            out.write(f"{qid}\t{kind}\t{chrom}\t{'-' if flag & 16 else '+'}\t{start}\t{start + ref_len - 1}\t{mapq}\n")
+    return len(split_ids)
 
 def get_isoform_hits_name(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
@@ -119,6 +158,14 @@ def sequence_correction(
                 cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
                                           outdir,corrSAM, n_cpu, gmap_index)
                 run_command(cmd,qc_logger, logFile,description="aligning reads")
+
+            # Only primary alignments are used downstream; report the rest (issue #216)
+            supplementary_file = get_supplementary_name(outdir, output)
+            n_split = report_non_primary_alignments(corrSAM, supplementary_file)
+            if n_split > 0:
+                qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments (e.g. chimeric "
+                                  f"or split sequences). Only their primary alignment is used. "
+                                  f"All their alignments are listed in {supplementary_file}")
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
