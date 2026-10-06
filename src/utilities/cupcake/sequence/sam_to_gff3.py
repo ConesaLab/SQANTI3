@@ -34,8 +34,7 @@ def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
 	:param qid_seen: list of qIDs processed so far -- if redundant, we have to put a unique suffix
     :return SeqRecord ready to be written as GFF3
     """
-    if r.sID == '*':
-        print("Skipping {0} because unmapped.".format(r.qID), file=sys.stderr)
+    if r.sID == '*': # unmapped, counted by the caller
         return None
     t_len = sum(e.end-e.start for e in r.segments)
     seq = Seq('A'*t_len)  # DO NOT CARE since sequence is not written in GFF3
@@ -71,13 +70,28 @@ def convert_sam_rec_to_gff3_rec(r, source, qid_index_dict=None):
     rec.features = [top_feature]
     return rec
 
+def mapped_gff3_recs(reader, source, skipped, qid_index_dict=None):
+    """
+    Yield the GFF3 records of the mapped alignments; unmapped ones are counted in skipped['unmapped'].
+    """
+    for r in reader:
+        rec = convert_sam_rec_to_gff3_rec(r, source, qid_index_dict)
+        if rec is None:
+            skipped['unmapped'] += 1
+        else:
+            yield rec
+
 def convert_sam_to_gff3(sam_filename, output_gff3, source, q_dict=None):
+    """
+    :return: number of unmapped records skipped
+    """
     qid_index_dict = Counter()
+    skipped = Counter()
     with open(output_gff3, 'w') as f:
         # Only primary alignments, matching err_correct (issue #216)
         reader = GMAPSAMReader(sam_filename, True, query_len_dict=q_dict, skip_non_primary=True)
-        recs = (convert_sam_rec_to_gff3_rec(r0, source, qid_index_dict) for r0 in reader)
-        BCBio_GFF.write((x for x in recs if x is not None), f)
+        BCBio_GFF.write(mapped_gff3_recs(reader, source, skipped, qid_index_dict), f)
+    return skipped['unmapped']
 
 def main():
     from argparse import ArgumentParser
@@ -100,11 +114,12 @@ def main():
     if args.input_fasta is not None:
         q_dict = dict((r.id, len(r.seq)) for r in SeqIO.parse(open(args.input_fasta), 'fasta'))
 
+    skipped = Counter()
     with open(output_gff3, 'w') as f:
-        recs = (convert_sam_rec_to_gff3_rec(r0, args.source) for r0 in GMAPSAMReader(args.sam_filename, True, query_len_dict=q_dict))
-        BCBio_GFF.write((x for x in recs if x is not None), f)
+        reader = GMAPSAMReader(args.sam_filename, True, query_len_dict=q_dict)
+        BCBio_GFF.write(mapped_gff3_recs(reader, args.source, skipped), f)
 
-
+    print("Skipped {0} unmapped records.".format(skipped['unmapped']), file=sys.stderr)
     print("Output written to {0}.".format(output_gff3), file=sys.stderr)
 
 if __name__ == "__main__":

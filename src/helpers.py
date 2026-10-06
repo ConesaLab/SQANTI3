@@ -98,6 +98,37 @@ def report_non_primary_alignments(sam_file, out_file):
             out.write(f"{qid}\t{kind}\t{chrom}\t{'-' if flag & 16 else '+'}\t{start}\t{start + ref_len - 1}\t{mapq}\n")
     return len(split_ids)
 
+def get_unmapped_name(outdir, prefix):
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
+    return corrPathPrefix + "_unmapped.txt"
+
+def report_unmapped_isoforms(isoforms_fasta, sam_file, out_file):
+    """
+    Isoforms without a primary alignment are dropped from all SQANTI3 outputs. They are listed here.
+    The input FASTA is compared against the SAM instead of looking for unmapped records (flag 4),
+    because not every aligner writes unmapped sequences to the SAM.
+
+    :return: number of unmapped isoforms. out_file is only written if > 0.
+    """
+    mapped_ids = set()
+    with open(sam_file) as f:
+        for line in f:
+            if line.startswith('@'):
+                continue
+            qid, flag, chrom = line.split('\t', 3)[:3]
+            if chrom != '*' and not int(flag) & (4 | 256 | 2048):
+                mapped_ids.add(qid)
+
+    unmapped = [(r.id, len(r.seq)) for r in SeqIO.parse(isoforms_fasta, 'fasta') if r.id not in mapped_ids]
+    if not unmapped:
+        return 0
+
+    with open(out_file, 'w') as out:
+        out.write("isoform\tlength\n")
+        for qid, length in unmapped:
+            out.write(f"{qid}\t{length}\n")
+    return len(unmapped)
+
 def get_isoform_hits_name(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     isoform_hits_name = corrPathPrefix + "_isoform_hits.txt"
@@ -167,11 +198,19 @@ def sequence_correction(
                                   f"or split sequences). Only their primary alignment is used. "
                                   f"All their alignments are listed in {supplementary_file}")
 
+            # Isoforms that did not align are dropped from all outputs; report them
+            unmapped_file = get_unmapped_name(outdir, output)
+            n_unmapped = report_unmapped_isoforms(isoforms, corrSAM, unmapped_file)
+            if n_unmapped > 0:
+                qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome and are not included "
+                                  f"in the SQANTI3 output. They are listed in {unmapped_file}")
+
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             qc_logger.debug(f"The corrected fasta file has been written to: {corrFASTA}")
             # convert SAM to GFF --> GTF
-            convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
+            n_skipped = convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
+            qc_logger.info(f"Skipped {n_skipped} unmapped SAM records when converting the alignments to GTF.")
         else:
             qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
             filter_gtf(isoforms, f'{corrGTF}.tmp', badstrandGTF, genome_dict)

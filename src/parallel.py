@@ -11,7 +11,7 @@ from Bio import SeqIO
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -193,7 +193,7 @@ def concat_sams(in_files, out_file):
 def combine_alignment_outputs(args, split_dirs):
     """
     Combine the outputs of the alignment step of each chunk (only produced with FASTA/FASTQ input):
-    corrected SAM, indels table and supplementary alignments report.
+    corrected SAM, indels table, supplementary alignments report and unmapped isoforms list.
     Without this, they are lost when the split directories are removed.
     """
     _, corrSAM, _, _, _ = get_corr_filenames(args.dir, args.output)
@@ -217,10 +217,16 @@ def combine_alignment_outputs(args, split_dirs):
         qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments in total. "
                           f"All their alignments are listed in {supplementary_file}")
 
+    unmapped_file = get_unmapped_name(args.dir, args.output)
+    n_unmapped = concat_tables([get_unmapped_name(d, args.output) for d in split_dirs], unmapped_file)
+    if n_unmapped > 0:
+        qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome in total. "
+                          f"They are listed in {unmapped_file}")
+
 def combine_split_runs(args, split_dirs):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt and, with FASTA/FASTQ input,
-    the alignment outputs (.sam, indels, supplementary alignments).
+    the alignment outputs (.sam, indels, supplementary alignments, unmapped isoforms).
     Then write out the PDF report
     """
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)

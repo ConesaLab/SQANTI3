@@ -2,7 +2,9 @@
 Process tests for supplementary/secondary alignments in mapping mode (issue #216).
 SQANTI3 must use only the primary alignment of each isoform, keep the GTF and corrected FASTA IDs
 consistent, not count indels of split alignments, and report the non-primary alignments.
+Isoforms that do not align must be reported too, since they are dropped from all outputs.
 """
+import random
 import os
 import re
 import shutil
@@ -12,7 +14,7 @@ import pytest
 from Bio import SeqIO
 from Bio.Seq import Seq
 
-from src.helpers import report_non_primary_alignments, sequence_correction
+from src.helpers import report_non_primary_alignments, report_unmapped_isoforms, sequence_correction
 from src.utilities.cupcake.io.BioReaders import GMAPSAMReader
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
@@ -67,6 +69,15 @@ def test_corrected_fasta_and_gtf_ids_match(sam_file, genome_dict, tmp_path):
     assert fasta_ids(fasta) == ["PB.1.1", "PB.2.1"]
     assert gff_transcript_ids(gff) == ["PB.1.1", "PB.2.1"]
 
+def test_gff3_conversion_counts_unmapped(tmp_path, capfd):
+    sam = tmp_path / "with_unmapped.sam"
+    sam.write_text(SAM + "PB.3.1\t4\t*\t0\t0\t*\t*\t0\t0\t*\t*\n")
+    gff = str(tmp_path / "corrected.gff3")
+
+    assert convert_sam_to_gff3(str(sam), gff, source="test") == 1
+    assert gff_transcript_ids(gff) == ["PB.1.1", "PB.2.1"]
+    assert "PB.3.1" not in capfd.readouterr().err  # no per-record console message
+
 def test_indels_from_supplementary_not_counted(sam_file):
     _, indelsTotal = calc_indels_from_sam(sam_file)
     assert indelsTotal["PB.1.1"] == 0  # its only indel is in the supplementary alignment
@@ -93,6 +104,29 @@ def test_report_not_written_without_split_isoforms(tmp_path):
     assert report_non_primary_alignments(str(sam), str(out)) == 0
     assert not out.exists()
 
+### Report of unmapped isoforms ###
+
+def test_report_unmapped_isoforms(sam_file, tmp_path):
+    # PB.3.1 has an unmapped record (flag 4), PB.4.1 is missing from the SAM, PB.5.1 only has a
+    # supplementary alignment (no primary), so none of them reach the SQANTI3 outputs
+    sam = tmp_path / "with_unmapped.sam"
+    sam.write_text(SAM + "PB.3.1\t4\t*\t0\t0\t*\t*\t0\t0\t*\t*\n"
+                         "PB.5.1\t2048\tchr22\t1000\t60\t50M\t*\t0\t0\t*\t*\n")
+    fasta = tmp_path / "isoforms.fasta"
+    fasta.write_text("".join(f">{i}\n{'A' * n}\n" for i, n in
+                             [("PB.1.1", 300), ("PB.2.1", 150), ("PB.3.1", 40), ("PB.4.1", 25), ("PB.5.1", 50)]))
+    out = tmp_path / "unmapped.txt"
+
+    assert report_unmapped_isoforms(str(fasta), str(sam), str(out)) == 3
+    assert out.read_text() == "isoform\tlength\nPB.3.1\t40\nPB.4.1\t25\nPB.5.1\t50\n"
+
+def test_report_unmapped_not_written_when_all_map(sam_file, tmp_path):
+    fasta = tmp_path / "isoforms.fasta"
+    fasta.write_text(">PB.1.1\nACGT\n>PB.2.1\nACGT\n")
+    out = tmp_path / "unmapped.txt"
+    assert report_unmapped_isoforms(str(fasta), sam_file, str(out)) == 0
+    assert not out.exists()
+
 ### End-to-end with minimap2 ###
 
 def spliced_sequence(genome_dict, exons, strand):
@@ -109,12 +143,14 @@ def test_sequence_correction_chimeric_isoform(genome_dict, tmp_path):
             tid = re.search(r'transcript_id "([^"]+)"', f[8]).group(1)
             exons[tid].append((int(f[3]), int(f[4])))
             strands[tid] = f[6]
-    # Chimera of two transcripts ~39 Mb apart, plus a normal control
+    # Chimera of two transcripts ~39 Mb apart, a normal control and a random sequence that cannot align
     chimera = (spliced_sequence(genome_dict, exons["ENST00000657645.1"], strands["ENST00000657645.1"]) +
                spliced_sequence(genome_dict, exons["ENST00000496652.5"], strands["ENST00000496652.5"]))
     control = spliced_sequence(genome_dict, exons["ENST00000397906.6"], strands["ENST00000397906.6"])
     isoforms = tmp_path / "isoforms.fasta"
-    isoforms.write_text(f">PB.1.1\n{chimera}\n>PB.2.1\n{control}\n")
+    random.seed(3)
+    unalignable = "".join(random.choice("ACGT") for _ in range(1500))
+    isoforms.write_text(f">PB.1.1\n{chimera}\n>PB.2.1\n{control}\n>PB.3.1\n{unalignable}\n")
 
     outdir = tmp_path / "out"
     outdir.mkdir()
@@ -132,3 +168,5 @@ def test_sequence_correction_chimeric_isoform(genome_dict, tmp_path):
     report = [l.split("\t") for l in open(outdir / "test_supplementary_alignments.txt")][1:]
     assert {r[0] for r in report} == {"PB.1.1"}
     assert sorted(r[1] for r in report) == ["primary", "supplementary"]
+
+    assert (outdir / "test_unmapped.txt").read_text() == "isoform\tlength\nPB.3.1\t1500\n"
