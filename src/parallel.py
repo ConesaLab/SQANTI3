@@ -10,7 +10,7 @@ from multiprocessing import Process
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, warn_supplementary, warn_unmapped
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -234,19 +234,17 @@ def combine_alignment_outputs(args, split_dirs):
         return os.path.splitext(sam)[0] + "_indels.txt"
     concat_tables([indels_name(sam) for sam in split_sams], indels_name(corrSAM))
 
+    # Same warnings as a run without chunks, now with the final paths (the chunks only log a debug line)
     supplementary_file = get_supplementary_name(args.dir, args.output)
-    concat_tables([get_supplementary_name(d, args.output) for d in split_dirs], supplementary_file)
-    if os.path.exists(supplementary_file):
+    n_split = 0
+    if concat_tables([get_supplementary_name(d, args.output) for d in split_dirs], supplementary_file) > 0:
         with open(supplementary_file) as h:
             n_split = len({line.split('\t')[0] for line in h} - {"isoform"})
-        qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments in total. "
-                          f"All their alignments are listed in {supplementary_file}")
+    warn_supplementary(n_split, supplementary_file)
 
     unmapped_file = get_unmapped_name(args.dir, args.output)
     n_unmapped = concat_tables([get_unmapped_name(d, args.output) for d in split_dirs], unmapped_file)
-    if n_unmapped > 0:
-        qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome in total. "
-                          f"They are listed in {unmapped_file}")
+    warn_unmapped(n_unmapped, unmapped_file)
 
 def combine_split_runs(args, split_dirs):
     """

@@ -167,6 +167,33 @@ def report_unmapped_isoforms(isoforms_fasta, sam_file, out_file):
             out.write(f"{qid}\t{length}\n")
     return len(unmapped)
 
+def warn_supplementary(n_split, supplementary_file, in_chunk=False):
+    """
+    Log the isoforms with supplementary/secondary alignments. Same message with and without chunks:
+    inside a chunk it is only a debug line, since the chunk file is deleted after combine_alignment_outputs
+    merges it and logs the warning with the final path.
+    """
+    if n_split == 0:
+        return
+    if in_chunk:
+        qc_logger.debug(f"Chunk: {n_split} isoforms have supplementary or secondary alignments.")
+    else:
+        qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments (e.g. chimeric "
+                          f"or split sequences). Only their primary alignment is used. "
+                          f"All their alignments are listed in {supplementary_file}")
+
+def warn_unmapped(n_unmapped, unmapped_file, in_chunk=False):
+    """
+    Log the isoforms that could not be aligned. See warn_supplementary for the chunk behaviour.
+    """
+    if n_unmapped == 0:
+        return
+    if in_chunk:
+        qc_logger.debug(f"Chunk: {n_unmapped} isoforms could not be aligned to the genome.")
+    else:
+        qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome and are not included "
+                          f"in the SQANTI3 output. They are listed in {unmapped_file}")
+
 def get_isoform_hits_name(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
     isoform_hits_name = corrPathPrefix + "_isoform_hits.txt"
@@ -229,19 +256,15 @@ def sequence_correction(
                 run_command(cmd,qc_logger, logFile,description="aligning reads")
 
             # Only primary alignments are used downstream; report the rest (issue #216)
+            # Inside a chunk of a parallel run (chunks > 1), the warnings are logged after combining the chunks
             supplementary_file = get_supplementary_name(outdir, output)
             n_split = report_non_primary_alignments(corrSAM, supplementary_file)
-            if n_split > 0:
-                qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments (e.g. chimeric "
-                                  f"or split sequences). Only their primary alignment is used. "
-                                  f"All their alignments are listed in {supplementary_file}")
+            warn_supplementary(n_split, supplementary_file, in_chunk=chunks > 1)
 
             # Isoforms that did not align are dropped from all outputs; report them
             unmapped_file = get_unmapped_name(outdir, output)
             n_unmapped = report_unmapped_isoforms(isoforms, corrSAM, unmapped_file)
-            if n_unmapped > 0:
-                qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome and are not included "
-                                  f"in the SQANTI3 output. They are listed in {unmapped_file}")
+            warn_unmapped(n_unmapped, unmapped_file, in_chunk=chunks > 1)
 
             # The renamed copy of the input is only needed until here, and it is rebuilt on every run.
             # Remove it: for SQANTI-reads it is a full copy of the reads.
