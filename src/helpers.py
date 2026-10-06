@@ -25,24 +25,43 @@ def clean_isoform_id(seqid):
     """
     return seqid.split('|')[0].split()[0]
 
+def is_fastq_file(input_fasta):
+    """
+    :param input_fasta: fasta or fastq. Can be gzipped.
+    :return: True if the file is FASTQ (first line starts with '@'), False if FASTA
+    """
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    with open_function(input_fasta, mode="rt") as h:
+        return h.readline().startswith('@')
+
+def read_fasta_fastq(input_fasta):
+    """
+    Iterate over a FASTA or FASTQ file (autodetected, can be gzipped) without building SeqRecords,
+    which is much faster for large read files. FASTQ qualities are not returned.
+
+    :return: generator of (title, sequence); title is the full header line without '>' or '@'
+    """
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    is_fastq = is_fastq_file(input_fasta)
+    with open_function(input_fasta, mode="rt") as h:
+        if is_fastq:
+            for title, seq, _ in FastqGeneralIterator(h):
+                yield title, seq
+        else:
+            yield from SimpleFastaParser(h)
+
 def find_isoform_id_collisions(input_fasta):
     """
     Find sequences that end up with the same ID after clean_isoform_id (or that already share an ID).
     Duplicated IDs give duplicated isoforms downstream (issue #216), so they must be detected before
-    aligning. Only the headers are read, so it is fast also for large read files.
+    aligning.
 
     :param input_fasta: fasta or fastq, autodetected. Can be gzipped.
     :return: dict of (clean ID --> list of original IDs), only for IDs shared by more than one sequence
     """
-    open_function = gzip.open if input_fasta.endswith('.gz') else open
-    with open_function(input_fasta, mode="rt") as h:
-        is_fastq = h.readline().startswith('@')
-    with open_function(input_fasta, mode="rt") as h:
-        parser = FastqGeneralIterator(h) if is_fastq else SimpleFastaParser(h)
-        originals = defaultdict(list)
-        for record in parser:
-            title = record[0]
-            originals[clean_isoform_id(title)].append(title.split()[0])
+    originals = defaultdict(list)
+    for title, _ in read_fasta_fastq(input_fasta):
+        originals[clean_isoform_id(title)].append(title.split()[0])
     return {new_id: ids for new_id, ids in originals.items() if len(ids) > 1}
 
 def rename_isoform_seqids(input_fasta):

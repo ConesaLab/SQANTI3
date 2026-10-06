@@ -13,7 +13,7 @@ sys.path.insert(0, main_path)
 
 from src.helpers import (
     process_gtf_line, rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
-    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions
+    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions, read_fasta_fastq, is_fastq_file
 )
 
 
@@ -135,6 +135,30 @@ class TestRenameIsoformSeqids:
         # Cleanup
         os.remove(arbitrary_fasta)
         os.remove(output_fasta)
+
+
+class TestReadFastaFastq:
+    """Test suite for read_fasta_fastq and is_fastq_file."""
+
+    def test_fasta_multiline(self, tmp_path):
+        fasta = tmp_path / "isoforms.fasta"
+        fasta.write_text(">PB.1.1|info desc\nACGT\nTTGG\n>PB.2.1\nCCCC\n")
+        assert not is_fastq_file(str(fasta))
+        assert list(read_fasta_fastq(str(fasta))) == [("PB.1.1|info desc", "ACGTTTGG"), ("PB.2.1", "CCCC")]
+
+    def test_fastq(self, tmp_path):
+        # The second quality line starts with '>', which a FASTA parser would take as a header
+        fastq = tmp_path / "reads.fastq"
+        fastq.write_text("@read1 runid=x\nACGT\n+\nIIII\n@read2\nGGCC\n+\n>III\n")
+        assert is_fastq_file(str(fastq))
+        assert list(read_fasta_fastq(str(fastq))) == [("read1 runid=x", "ACGT"), ("read2", "GGCC")]
+
+    def test_gzipped_fastq(self, tmp_path):
+        fastq = tmp_path / "reads.fastq.gz"
+        with gzip.open(fastq, "wt") as f:
+            f.write("@read1\nACGT\n+\nIIII\n")
+        assert is_fastq_file(str(fastq))
+        assert list(read_fasta_fastq(str(fastq))) == [("read1", "ACGT")]
 
 
 class TestFindIsoformIdCollisions:
