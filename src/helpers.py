@@ -64,39 +64,27 @@ def find_isoform_id_collisions(input_fasta):
         originals[clean_isoform_id(title)].append(title.split()[0])
     return {new_id: ids for new_id, ids in originals.items() if len(ids) > 1}
 
-def rename_isoform_seqids(input_fasta):
+def rename_isoform_seqids(input_fasta, out_dir):
     """
     Rename input isoform fasta/fastq by extracting the first part of the sequence ID.
-    
+
     Handles various ID formats by taking the content before '|' or space characters.
     For example:
     - "PB.1.1|chr1:10-100|xxxxxx" becomes "PB.1.1"
     - "transcript_name some_annotation" becomes "transcript_name"
 
     :param input_fasta: Could be either fasta or fastq, autodetect. Can be gzipped.
-    :return: output fasta with the cleaned up sequence ID
+    :param out_dir: directory for the output, so nothing is written next to the input (it may be read-only)
+    :return: output fasta (<out_dir>/<input name>.renamed.fasta) with the cleaned up sequence IDs
     """
-    type = 'fasta'
-    # gzip.open and open have different default open modes:
-    # gzip.open uses "rb" (read in binary format)
-    # open uses "rt" (read in text format)
-    # This can be solved by making explicit the read text mode (which is required
-    # by SeqIO.parse)
-    if input_fasta.endswith('.gz'):
-        open_function = gzip.open
-        in_file = os.path.splitext(input_fasta)[0]
-        out_file = os.path.splitext(in_file)[0] + '.renamed.fasta'
-    else:
-        open_function = open
-        out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
-    with open_function(input_fasta, mode="rt") as h:
-        if h.readline().startswith('@'): type = 'fastq'
-        
+    in_name = os.path.basename(input_fasta)
+    if in_name.endswith('.gz'):
+        in_name = in_name[:-3]
+    out_file = os.path.join(out_dir, os.path.splitext(in_name)[0] + '.renamed.fasta')
+
     with open(out_file, mode='wt') as f:
-        for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
-            # Extract the first part of the ID (before '|' or space)
-            newid = clean_isoform_id(r.id)
-            f.write(">{0}\n{1}\n".format(newid, r.seq))
+        for title, seq in read_fasta_fastq(input_fasta):
+            f.write(f">{clean_isoform_id(title)}\n{seq}\n")
     return out_file
 
 ### Input/Output functions ###
@@ -168,7 +156,8 @@ def report_unmapped_isoforms(isoforms_fasta, sam_file, out_file):
             if chrom != '*' and not int(flag) & (4 | 256 | 2048):
                 mapped_ids.add(qid)
 
-    unmapped = [(r.id, len(r.seq)) for r in SeqIO.parse(isoforms_fasta, 'fasta') if r.id not in mapped_ids]
+    unmapped = [(title.split()[0], len(seq)) for title, seq in read_fasta_fastq(isoforms_fasta)
+                if title.split()[0] not in mapped_ids]
     if not unmapped:
         return 0
 
@@ -228,8 +217,8 @@ def sequence_correction(
         qc_logger.info("Correcting fasta")
         if fasta:
             qc_logger.info("Cleaning up isoform IDs...")
-            isoforms = rename_isoform_seqids(isoforms)
-            qc_logger.info(f"Cleaned up isoform fasta file written to: {isoforms}")
+            isoforms = rename_isoform_seqids(isoforms, outdir)
+            qc_logger.debug(f"Cleaned up isoform fasta file written to: {isoforms}")
     
             if os.path.exists(corrSAM):
                 qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
@@ -253,6 +242,10 @@ def sequence_correction(
             if n_unmapped > 0:
                 qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome and are not included "
                                   f"in the SQANTI3 output. They are listed in {unmapped_file}")
+
+            # The renamed copy of the input is only needed until here, and it is rebuilt on every run.
+            # Remove it: for SQANTI-reads it is a full copy of the reads.
+            os.remove(isoforms)
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)

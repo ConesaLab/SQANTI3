@@ -147,7 +147,9 @@ def test_sequence_correction_chimeric_isoform(genome_dict, tmp_path):
     chimera = (spliced_sequence(genome_dict, exons["ENST00000657645.1"], strands["ENST00000657645.1"]) +
                spliced_sequence(genome_dict, exons["ENST00000496652.5"], strands["ENST00000496652.5"]))
     control = spliced_sequence(genome_dict, exons["ENST00000397906.6"], strands["ENST00000397906.6"])
-    isoforms = tmp_path / "isoforms.fasta"
+    in_dir = tmp_path / "input"
+    in_dir.mkdir()
+    isoforms = in_dir / "isoforms.fasta"
     random.seed(3)
     unalignable = "".join(random.choice("ACGT") for _ in range(1500))
     isoforms.write_text(f">PB.1.1\n{chimera}\n>PB.2.1\n{control}\n>PB.3.1\n{unalignable}\n")
@@ -170,3 +172,7 @@ def test_sequence_correction_chimeric_isoform(genome_dict, tmp_path):
     assert sorted(r[1] for r in report) == ["primary", "supplementary"]
 
     assert (outdir / "test_unmapped.txt").read_text() == "isoform\tlength\nPB.3.1\t1500\n"
+
+    # Nothing is written next to the input, and the renamed copy of the input is removed
+    assert os.listdir(in_dir) == ["isoforms.fasta"]
+    assert not (outdir / "isoforms.renamed.fasta").exists()
