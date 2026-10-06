@@ -2,6 +2,7 @@ import os, sys
 import subprocess
 
 from src.commands import GFFREAD_PROG
+from src.helpers import find_isoform_id_collisions
 from src.module_logging import qc_logger, filter_logger, rescue_logger
 
 def valid_file(filename,logger):
@@ -16,6 +17,21 @@ def valid_fasta(filename,logger):
     valid_extensions = ['fasta', 'fa', 'fastq', 'fq', 'faa', 'fna']
     if extension not in valid_extensions:
         logger.error(f"File {filename} is not a FASTA file. Abort!")
+        sys.exit(1)
+    return filename
+
+def valid_unique_ids(filename,logger):
+    """
+    SQANTI3 shortens sequence IDs to the part before '|' or the first space. Abort if two sequences
+    end up with the same ID, since they would become duplicated isoforms.
+    """
+    collisions = find_isoform_id_collisions(filename)
+    if collisions:
+        examples = "\n".join(f"  {new_id} <- {', '.join(ids)}" for new_id, ids in list(collisions.items())[:10])
+        logger.error(f"{len(collisions)} sequence IDs in {filename} are not unique once shortened to the part "
+                     f"before '|' or the first space (SQANTI3 needs unique IDs). "
+                     f"{'First 10 cases' if len(collisions) > 10 else 'Cases'}:\n{examples}\n"
+                     f"Please make the IDs unique before running SQANTI3. Abort!")
         sys.exit(1)
     return filename
 
@@ -120,7 +136,9 @@ def qc_args_validation(args):
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
-    
+    if args.fasta:
+        valid_unique_ids(args.isoforms, qc_logger)
+
     valid_gtf(args.refGTF,qc_logger)
     valid_fasta(args.refFasta,qc_logger)
 

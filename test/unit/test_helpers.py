@@ -5,6 +5,7 @@ import pytest
 from Bio import SeqIO
 from pathlib import Path
 import sys, os
+import gzip
 
 
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -12,7 +13,7 @@ sys.path.insert(0, main_path)
 
 from src.helpers import (
     process_gtf_line, rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
-    get_class_junc_filenames, get_omitted_name
+    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions
 )
 
 
@@ -134,6 +135,32 @@ class TestRenameIsoformSeqids:
         # Cleanup
         os.remove(arbitrary_fasta)
         os.remove(output_fasta)
+
+
+class TestFindIsoformIdCollisions:
+    """Test suite for find_isoform_id_collisions function."""
+
+    def test_no_collisions(self):
+        for name in ["isoform_mock.fasta", "isoform_mock.fastq", "isoform_mock.fasta.gz"]:
+            assert find_isoform_id_collisions(os.path.join(main_path, "test", "test_data", "isoforms", name)) == {}
+
+    def test_collisions_fasta(self, tmp_path):
+        fasta = tmp_path / "isoforms.fasta"
+        fasta.write_text(">PB.1.1|copyA\nACGT\n>PB.1.1|copyB\nACGT\n"   # same ID after cutting at '|'
+                         ">PB.2.1 sample=1\nACGT\n>PB.2.1|x\nACGT\n"     # same ID after cutting at space and '|'
+                         ">PB.3.1\nACGT\n>PB.3.1\nACGT\n"                # already identical in the input
+                         ">PB.4.1|unique\nACGT\n")
+        assert find_isoform_id_collisions(str(fasta)) == {
+            "PB.1.1": ["PB.1.1|copyA", "PB.1.1|copyB"],
+            "PB.2.1": ["PB.2.1", "PB.2.1|x"],
+            "PB.3.1": ["PB.3.1", "PB.3.1"],
+        }
+
+    def test_collisions_fastq_gz(self, tmp_path):
+        fastq = tmp_path / "reads.fastq.gz"
+        with gzip.open(fastq, "wt") as f:
+            f.write("@read1|a\nACGT\n+\nIIII\n@read1|b\nACGT\n+\nIIII\n@read2\nACGT\n+\nIIII\n")
+        assert find_isoform_id_collisions(str(fastq)) == {"read1": ["read1|a", "read1|b"]}
 
 
 class TestFilenameGetters:

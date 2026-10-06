@@ -3,8 +3,11 @@ import re
 import gzip
 
 
+from collections import defaultdict
 from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
+from Bio.SeqIO.FastaIO import SimpleFastaParser #type: ignore
+from Bio.SeqIO.QualityIO import FastqGeneralIterator #type: ignore
 
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
@@ -15,6 +18,33 @@ from src.parsers import parse_TD2, parse_corrORF
 from src.module_logging import qc_logger
 
 ### Environment manipulation functions ###
+def clean_isoform_id(seqid):
+    """
+    Keep the part of a sequence ID before '|' or the first space.
+    For example, "PB.1.1|chr1:10-100|xxxxxx" becomes "PB.1.1".
+    """
+    return seqid.split('|')[0].split()[0]
+
+def find_isoform_id_collisions(input_fasta):
+    """
+    Find sequences that end up with the same ID after clean_isoform_id (or that already share an ID).
+    Duplicated IDs give duplicated isoforms downstream (issue #216), so they must be detected before
+    aligning. Only the headers are read, so it is fast also for large read files.
+
+    :param input_fasta: fasta or fastq, autodetected. Can be gzipped.
+    :return: dict of (clean ID --> list of original IDs), only for IDs shared by more than one sequence
+    """
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    with open_function(input_fasta, mode="rt") as h:
+        is_fastq = h.readline().startswith('@')
+    with open_function(input_fasta, mode="rt") as h:
+        parser = FastqGeneralIterator(h) if is_fastq else SimpleFastaParser(h)
+        originals = defaultdict(list)
+        for record in parser:
+            title = record[0]
+            originals[clean_isoform_id(title)].append(title.split()[0])
+    return {new_id: ids for new_id, ids in originals.items() if len(ids) > 1}
+
 def rename_isoform_seqids(input_fasta):
     """
     Rename input isoform fasta/fastq by extracting the first part of the sequence ID.
@@ -46,7 +76,7 @@ def rename_isoform_seqids(input_fasta):
     with open(out_file, mode='wt') as f:
         for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
             # Extract the first part of the ID (before '|' or space)
-            newid = r.id.split('|')[0].split()[0]
+            newid = clean_isoform_id(r.id)
             f.write(">{0}\n{1}\n".format(newid, r.seq))
     return out_file
 
