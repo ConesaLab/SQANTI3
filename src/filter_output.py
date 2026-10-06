@@ -35,12 +35,13 @@ def filter_gtf(filename,prefix,ids_to_keep):
 
 def filter_sam(filename,prefix,ids_to_keep):
     outputSAM = prefix + '.filtered.sam'
+    reader = GMAPSAMReader(filename,has_header=True)
     with open(outputSAM, 'w') as f:
-        for r in GMAPSAMReader(filename,has_header=True):
+        f.write(reader.header)
+        for r in reader:
             if r.qID in ids_to_keep:
-                f.write(r)
-        filter_logger.info(f"Output written to: {f.name}")
-    f.close()
+                f.write(r.record_line + "\n")
+    filter_logger.info(f"Output written to: {outputSAM}")
 
 def filter_gff3(filename,prefix,inclusion_f):
     outputGFF3 = prefix + '.filtered.gff3'
