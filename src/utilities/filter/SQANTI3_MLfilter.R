@@ -360,6 +360,13 @@ if (run_ML) {
     d1[, x] <- as.integer(d1[, x])
   }
   
+  # Convert back to numeric the columns turned into character by the NA replacement
+  # (replacement.na is a character vector)
+  numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS")
+  for (x in numerics){
+    d1[, x] <- as.numeric(d1[, x])
+  }
+  
   r = as.vector(which(apply(d1, 2, function(x) (anyNA(x)))))
   if (length(r) > 0){d1 <- d1[, -r]}
 
