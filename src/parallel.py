@@ -10,7 +10,7 @@ from multiprocessing import Process
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, warn_supplementary, warn_unmapped
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -34,9 +34,8 @@ def split_fasta_input(isoforms, split_root_dir, chunks):
     # FASTA or FASTQ input, streamed in one pass (read files can be very large). Sequences are written
     # in input order, and a new chunk starts once ~file_size/chunks bytes of input have been read,
     # as in the GTF branch. Chunks are written as FASTA: FASTQ qualities are not used downstream.
-    # NOTE: if gzipped input is supported, the file size is the compressed one and the chunks
-    # would be unbalanced: count the sequences first instead.
-    file_size = os.path.getsize(isoforms)
+    # Gzipped input uses its uncompressed size, so it is split exactly like the decompressed file.
+    file_size = uncompressed_size(isoforms)
     target_chunk_bytes = max(1, file_size // chunks + (1 if file_size % chunks else 0))
     is_fastq = is_fastq_file(isoforms)
 

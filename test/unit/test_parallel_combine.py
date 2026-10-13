@@ -1,4 +1,6 @@
 import os, sys
+import gzip
+import shutil
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
@@ -88,3 +90,17 @@ def test_split_empty_input(tmp_path):
     empty.write_text("")
     with pytest.raises(ValueError):
         split_fasta_input(str(empty), str(tmp_path / "splits"), 2)
+
+@pytest.mark.parametrize("name", ["test_isoforms.fasta", "test_isoforms.fastq"])
+@pytest.mark.parametrize("chunks", [2, 3, 4])
+def test_split_gzipped_like_plain(tmp_path, name, chunks):
+    """A gzipped input is split into exactly the same chunks as the decompressed file."""
+    plain = os.path.join(main_path, "test", "test_data", "isoforms", name)
+    gz = tmp_path / (name + ".gz")
+    with open(plain, "rb") as f_in, gzip.open(gz, "wb") as f_out:
+        shutil.copyfileobj(f_in, f_out)
+
+    plain_chunks = chunk_ids(split_fasta_input(plain, str(tmp_path / "plain"), chunks))
+    gz_chunks = chunk_ids(split_fasta_input(str(gz), str(tmp_path / "gz"), chunks))
+    assert len(plain_chunks) > 1
+    assert gz_chunks == plain_chunks
