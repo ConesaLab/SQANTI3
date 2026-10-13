@@ -9,6 +9,7 @@ import shutil
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
+from src.utilities.sqanti_reads_mods import validate_MODS, mod_files_check, align_uBAM
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -46,7 +47,7 @@ def fill_design_table(args):
     return(df)
 
 def get_method_runSQANTI3(args, df):
-
+    
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -75,7 +76,26 @@ def get_method_runSQANTI3(args, df):
                 else:
                      if args.verbose:
                          reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
-        
+        if args.mods_mode:
+            _, uBAM_files = mod_files_check(args, file_acc, reads_logger)
+            # uBAM -> fastq -> mappedBAM
+            fastq = align_uBAM(args, uBAM_files, file_acc, sampleID, reads_logger)
+            cmd_sqanti = (
+                f"python {sqantiqcPath}/sqanti3_qc.py "
+                f"--isoforms {fastq} "
+                f"--refGTF {args.refGTF} "
+                f"--refFasta {args.refFasta} "
+                f"--min_ref_len {args.min_ref_len} "
+                f"--aligner_choice minimap2 "
+                f"-t {args.cpus} "
+                f"-d {args.OUTPUT}/{file_acc} "
+                f"-o {sampleID} "
+                f"-s {args.sites} "
+                f"--fasta"
+            )
+            reads_logger.debug(cmd_sqanti)
+            subprocess.call(cmd_sqanti, shell = True)
+            continue
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
         reads_logger.debug(gtf_pattern)
@@ -149,7 +169,7 @@ def get_method_runSQANTI3(args, df):
                 continue
 
         # If none of the conditions are met, raise an error
-        reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
+        reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf, .ubam or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
 
 def make_UJC_hash(args, df):
@@ -246,6 +266,7 @@ def make_UJC_hash(args, df):
 
         os.remove(f"{outputPathPrefix}tmp_UJC.txt")
         os.remove(f"{outputPathPrefix}_temp.txt")
+        
 
 def main():
     global utilitiesPath
@@ -266,7 +287,7 @@ def main():
         args.refGTF = os.path.abspath(os.path.expanduser(args.refGTF))
     if args.refFasta:
         args.refFasta = os.path.abspath(os.path.expanduser(args.refFasta))
-
+    
     # Ensure output directory exists
     if not os.path.exists(args.OUTPUT):
         os.makedirs(args.OUTPUT)
@@ -278,7 +299,10 @@ def main():
         log_level = logging.INFO
     
     update_logger(reads_logger, args.OUTPUT, "reads", log_level)
-
+    
+    if args.mods_mode:
+        validate_MODS(args, reads_logger)
+            
     # Check and read design file
     df = fill_design_table(args)
     

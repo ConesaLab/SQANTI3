@@ -13,6 +13,7 @@ sys.path.insert(0, utilitiesPath)
 
 GMAP_CMD = "gmap --cross-species -n 1 --max-intronlength-middle=2000000 --max-intronlength-ends=2000000 -L 3000000 -f samse -t {cpus} -D {dir} -d {name} -z sense_force {i} > {o}"
 MINIMAP2_CMD = "minimap2 -ax splice --secondary=no -C5 -uf -t {cpus} {g} {i} > {o}"
+MINIMAP2_MODS_CMD = "minimap2 -ax splice --secondary=no -C5 -uf -y -Y -t {cpus} {g} {i} > {o}"
 DESALT_CMD = "deSALT aln {dir} {i} -t {cpus} -x ccs -o {o}"
 ULTRA_CMD = "uLTRA pipeline {g} {a} {i} {o_dir} --t {cpus} --prefix {prefix} --isoseq"
 

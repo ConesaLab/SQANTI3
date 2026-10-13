@@ -30,6 +30,15 @@ def reads_argparser():
     pa.add_argument('--aligner_choice', type=str, choices=['minimap2', "uLTRA"], default='minimap2', help="\t\tDefault: minimap2")
     pa.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
+    
+    # MDS arguments
+    pm = parser.add_argument_group("Modification options")
+    pm.add_argument("--mods", dest="mods_mode", default=False, action="store_true", help="Activate uBAM analysis mode")
+    # If user does not give the modtypes we will use all found in the uBAM
+    pm.add_argument("--mod_types", dest="MODTYPES", nargs="+", default=[], help="Modifications to inspect in the uBAM")
+    # Default general probability if len is 1 or specific probs for each mod if len(MODPROB)==len(MODTYPES)
+    pm.add_argument("--mod_prob", dest="MODPROB", nargs="+", type=float, default=[0.9], help="Probabilities assigned for each modification. If a single value is given, it will be the global probability used for every modification type")
+    
 
     pv = parser.add_argument_group("Visualization options")
     pv.add_argument('-f', '--factor', type=str, dest="inFACTOR" ,required=False, help='This is the column name that plots are to be faceted by. Default: None')
