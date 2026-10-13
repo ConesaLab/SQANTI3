@@ -11,6 +11,7 @@ from src.qc_computations import (
     process_rts
 )
 from src.utilities.rt_switching import rts
+from src.qc_output import write_junction_output
 
 # Test rts function
 
@@ -71,3 +72,26 @@ def test_isoforms_output(isoforms_info,junctions_file,genome,genome_dict,result_
 
     
 # Junction output file
+
+def test_junction_output_rts_column(junctions_file, genome, genome_dict, tmp_path):
+    """Every junction gets TRUE/FALSE in RTS_junction, including isoforms with no RT-switching junction."""
+    junc = pd.read_csv(junctions_file, sep="\t")
+    junc["RTS_junction"] = "????"  # placeholder written to the _tmp file by the QC
+    out_path = str(tmp_path / "test_junctions.txt")
+    junc.to_csv(out_path + "_tmp", sep="\t", index=False)
+
+    _, RTS_info = process_rts({}, out_path, genome, genome_dict)
+    write_junction_output(out_path, RTS_info, list(junc.columns))
+
+    result = pd.read_csv(out_path, sep="\t", dtype={"RTS_junction": str})
+    assert len(result) == len(junc)
+    assert set(result["RTS_junction"]) == {"TRUE", "FALSE"}
+    # isoforms without any RT-switching junction must be FALSE, not left as ????
+    assert "PB.103724.1" not in RTS_info
+    assert (result.loc[result["isoform"] == "PB.103724.1", "RTS_junction"] == "FALSE").all()
+    # isoforms with RT-switching junctions: only those junctions are TRUE
+    iso = result[result["isoform"] == "PB.137296.2"].set_index("junction_number")["RTS_junction"]
+    assert iso["junction_1"] == "TRUE" and iso["junction_3"] == "TRUE"
+    assert (iso.drop(["junction_1", "junction_3"]) == "FALSE").all()
+    rts_true = {(i, j) for i, js in RTS_info.items() for j in js}
+    assert set(map(tuple, result.loc[result["RTS_junction"] == "TRUE", ["isoform", "junction_number"]].values)) == rts_true
