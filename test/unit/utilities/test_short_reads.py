@@ -261,17 +261,25 @@ def test_files():
         "chr_order": chr_order
     }
 
-def test_get_ratio_TSS_mean(test_files):
-    
+# PB.103709.3 has ratios 49.51 (Rep1) and 2801.0 (Rep2); PB.137296.2 only has Rep1 (9.91, Rep2 is NaN)
+@pytest.mark.parametrize("metric, expected", [
+    ("max", 2801.0),
+    ("mean", 1425.2574257425742),
+    ("median", 1425.2574257425742),
+    ("3quartile", 2113.128712871287),
+])
+def test_get_ratio_TSS_metrics(test_files, metric, expected):
     result = get_ratio_TSS(
         test_files["inside_bed"],
         test_files["outside_bed"],
         test_files["bam_files"],
         test_files["chr_order"],
-        "mean"
+        metric
     )
 
     assert isinstance(result, dict)
-    assert len(result) > 0  
-    assert abs(result["PB.103709.3"]["return_ratio"] - 1425.2574257425742 <= 0.01) # Ensure we got some results
+    assert len(result) > 0
+    assert result["PB.103709.3"]["return_ratio"] == pytest.approx(expected)
+    # NaN replicates are skipped, and isoforms without coverage in any replicate stay NaN
+    assert result["PB.137296.2"]["return_ratio"] == pytest.approx(9.910891, abs=1e-6)
     assert np.isnan(result["PB.103820.1"]["return_ratio"])
