@@ -5,6 +5,7 @@ import pytest
 from Bio import SeqIO
 from pathlib import Path
 import sys, os
+import gzip
 
 
 main_path=os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -12,7 +13,7 @@ sys.path.insert(0, main_path)
 
 from src.helpers import (
     process_gtf_line, rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
-    get_class_junc_filenames, get_omitted_name
+    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions, read_fasta_fastq, is_fastq_file
 )
 
 
@@ -34,106 +35,108 @@ class TestRenameIsoformSeqids:
         """Fixture to return the path to the mock gzipped FASTA file."""
         return Path(main_path, "test", "test_data", "isoforms", "isoform_mock.fasta.gz")
 
-    def test_rename_isoform_seqids_fasta(self, mock_fasta_file):
+    def renamed_ids(self, fasta):
+        with open(fasta) as h:
+            return [record.id for record in SeqIO.parse(h, "fasta")]
+
+    def test_rename_isoform_seqids_fasta(self, mock_fasta_file, tmp_path):
         """Test renaming IDs in a standard FASTA file."""
-        # Arrange
-        output_fasta = str(mock_fasta_file.with_name("isoform_mock.renamed.fasta"))
-        expected_ids = ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
+        result_file = rename_isoform_seqids(str(mock_fasta_file), str(tmp_path))
 
-        # Act
-        result_file = rename_isoform_seqids(str(mock_fasta_file))
-        
-        # Assert
-        assert result_file == output_fasta, "Output file name does not match expected."
-        assert os.path.exists(output_fasta), "Output file was not created."
+        assert result_file == str(tmp_path / "isoform_mock.renamed.fasta")
+        assert self.renamed_ids(result_file) == ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
 
-        # Verify the content of the output FASTA file
-        with open(output_fasta, "r") as output:
-            renamed_records = list(SeqIO.parse(output, "fasta"))
-            assert len(renamed_records) == len(expected_ids), "Number of records mismatch."
-
-            for record, expected_id in zip(renamed_records, expected_ids):
-                assert record.id == expected_id, f"Expected ID {expected_id} but got {record.id}."
-
-        # Cleanup: Remove the output file after test
-        os.remove(output_fasta)
-
-    def test_rename_isoform_seqids_fastq(self, mock_fastq_file):
+    def test_rename_isoform_seqids_fastq(self, mock_fastq_file, tmp_path):
         """Test renaming IDs in a FASTQ file (output is FASTA)."""
-        # Arrange
-        output_fastq = str(mock_fastq_file.with_name("isoform_mock.renamed.fasta"))
-        expected_ids = ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
+        result_file = rename_isoform_seqids(str(mock_fastq_file), str(tmp_path))
 
-        # Act
-        result_file = rename_isoform_seqids(str(mock_fastq_file))
+        assert result_file == str(tmp_path / "isoform_mock.renamed.fasta")
+        assert self.renamed_ids(result_file) == ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
 
-        # Assert
-        assert result_file == output_fastq, "Output file name does not match expected."
-        assert os.path.exists(output_fastq), "Output file was not created."
-
-        # Verify the content of the output FASTA file
-        with open(output_fastq, "r") as output:
-            renamed_records = list(SeqIO.parse(output, "fasta"))
-            assert len(renamed_records) == len(expected_ids), "Number of records mismatch."
-
-            for record, expected_id in zip(renamed_records, expected_ids):
-                assert record.id == expected_id, f"Expected ID {expected_id} but got {record.id}."
-
-        # Cleanup: Remove the output file after test
-        os.remove(output_fastq)
-
-    def test_rename_isoform_seqids_gz(self, mock_gz_file):
+    def test_rename_isoform_seqids_gz(self, mock_gz_file, tmp_path):
         """Test renaming IDs in a gzipped FASTA file."""
-        # Arrange
-        output_fastq = str(mock_gz_file.with_name("isoform_mock.renamed.fasta"))
-        expected_ids = ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
+        result_file = rename_isoform_seqids(str(mock_gz_file), str(tmp_path))
 
-        # Act
-        result_file = rename_isoform_seqids(str(mock_gz_file))
+        assert result_file == str(tmp_path / "isoform_mock.renamed.fasta")
+        assert self.renamed_ids(result_file) == ["PB.1.1", "PB.2.1", "PBfusion.3.1"]
 
-        # Assert
-        assert result_file == output_fastq, "Output file name does not match expected."
-        assert os.path.exists(output_fastq), "Output file was not created."
-
-        # Verify the content of the output FASTA file
-        with open(output_fastq, "r") as output:
-            renamed_records = list(SeqIO.parse(output, "fasta"))
-            assert len(renamed_records) == len(expected_ids), "Number of records mismatch."
-
-            for record, expected_id in zip(renamed_records, expected_ids):
-                assert record.id == expected_id, f"Expected ID {expected_id} but got {record.id}."
-
-        # Cleanup: Remove the output file after test
-        os.remove(output_fastq)
-
-    def test_rename_isoform_seqids_arbitrary_format(self, mock_fasta_file):
+    def test_rename_isoform_seqids_arbitrary_format(self, tmp_path):
         """Test that any ID format is accepted and properly cleaned."""
-        # Arrange
-        arbitrary_fasta = str(mock_fasta_file.with_name("arbitrary_format.fasta"))
-        with open(arbitrary_fasta, "w") as f:
-            f.write(">ENST00000456328|additional_info some description\nACGTACGT\n")
-            f.write(">transcript_123 gene=ABC\nGCTAGCTA\n")
-            f.write(">simple_id\nATATATAT\n")
+        arbitrary_fasta = tmp_path / "arbitrary_format.fasta"
+        arbitrary_fasta.write_text(">ENST00000456328|additional_info some description\nACGTACGT\n"
+                                   ">transcript_123 gene=ABC\nGCTAGCTA\n"
+                                   ">simple_id\nATATATAT\n")
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
 
-        output_fasta = str(mock_fasta_file.with_name("arbitrary_format.renamed.fasta"))
-        expected_ids = ["ENST00000456328", "transcript_123", "simple_id"]
+        result_file = rename_isoform_seqids(str(arbitrary_fasta), str(out_dir))
 
-        # Act
-        result_file = rename_isoform_seqids(arbitrary_fasta)
+        assert result_file == str(out_dir / "arbitrary_format.renamed.fasta")
+        assert self.renamed_ids(result_file) == ["ENST00000456328", "transcript_123", "simple_id"]
 
-        # Assert
-        assert result_file == output_fasta, "Output file was not created."
-        
-        with open(output_fasta, "r") as output:
-            renamed_records = list(SeqIO.parse(output, "fasta"))
-            assert len(renamed_records) == len(expected_ids), "Number of records mismatch."
+    def test_rename_isoform_seqids_writes_nothing_next_to_input(self, tmp_path):
+        """The renamed copy goes to out_dir only: the input folder may be read-only (issue #611)."""
+        in_dir = tmp_path / "input"
+        in_dir.mkdir()
+        fasta = in_dir / "isoforms.fasta"
+        fasta.write_text(">PB.1.1|x\nACGT\n")
+        out_dir = tmp_path / "out"
+        out_dir.mkdir()
 
-            for record, expected_id in zip(renamed_records, expected_ids):
-                assert record.id == expected_id, f"Expected ID {expected_id} but got {record.id}."
+        rename_isoform_seqids(str(fasta), str(out_dir))
 
-        # Cleanup
-        os.remove(arbitrary_fasta)
-        os.remove(output_fasta)
+        assert sorted(os.listdir(in_dir)) == ["isoforms.fasta"]
+        assert sorted(os.listdir(out_dir)) == ["isoforms.renamed.fasta"]
+
+
+class TestReadFastaFastq:
+    """Test suite for read_fasta_fastq and is_fastq_file."""
+
+    def test_fasta_multiline(self, tmp_path):
+        fasta = tmp_path / "isoforms.fasta"
+        fasta.write_text(">PB.1.1|info desc\nACGT\nTTGG\n>PB.2.1\nCCCC\n")
+        assert not is_fastq_file(str(fasta))
+        assert list(read_fasta_fastq(str(fasta))) == [("PB.1.1|info desc", "ACGTTTGG"), ("PB.2.1", "CCCC")]
+
+    def test_fastq(self, tmp_path):
+        # The second quality line starts with '>', which a FASTA parser would take as a header
+        fastq = tmp_path / "reads.fastq"
+        fastq.write_text("@read1 runid=x\nACGT\n+\nIIII\n@read2\nGGCC\n+\n>III\n")
+        assert is_fastq_file(str(fastq))
+        assert list(read_fasta_fastq(str(fastq))) == [("read1 runid=x", "ACGT"), ("read2", "GGCC")]
+
+    def test_gzipped_fastq(self, tmp_path):
+        fastq = tmp_path / "reads.fastq.gz"
+        with gzip.open(fastq, "wt") as f:
+            f.write("@read1\nACGT\n+\nIIII\n")
+        assert is_fastq_file(str(fastq))
+        assert list(read_fasta_fastq(str(fastq))) == [("read1", "ACGT")]
+
+
+class TestFindIsoformIdCollisions:
+    """Test suite for find_isoform_id_collisions function."""
+
+    def test_no_collisions(self):
+        for name in ["isoform_mock.fasta", "isoform_mock.fastq", "isoform_mock.fasta.gz"]:
+            assert find_isoform_id_collisions(os.path.join(main_path, "test", "test_data", "isoforms", name)) == {}
+
+    def test_collisions_fasta(self, tmp_path):
+        fasta = tmp_path / "isoforms.fasta"
+        fasta.write_text(">PB.1.1|copyA\nACGT\n>PB.1.1|copyB\nACGT\n"   # same ID after cutting at '|'
+                         ">PB.2.1 sample=1\nACGT\n>PB.2.1|x\nACGT\n"     # same ID after cutting at space and '|'
+                         ">PB.3.1\nACGT\n>PB.3.1\nACGT\n"                # already identical in the input
+                         ">PB.4.1|unique\nACGT\n")
+        assert find_isoform_id_collisions(str(fasta)) == {
+            "PB.1.1": ["PB.1.1|copyA", "PB.1.1|copyB"],
+            "PB.2.1": ["PB.2.1", "PB.2.1|x"],
+            "PB.3.1": ["PB.3.1", "PB.3.1"],
+        }
+
+    def test_collisions_fastq_gz(self, tmp_path):
+        fastq = tmp_path / "reads.fastq.gz"
+        with gzip.open(fastq, "wt") as f:
+            f.write("@read1|a\nACGT\n+\nIIII\n@read1|b\nACGT\n+\nIIII\n@read2\nACGT\n+\nIIII\n")
+        assert find_isoform_id_collisions(str(fastq)) == {"read1": ["read1|a", "read1|b"]}
 
 
 class TestFilenameGetters:
