@@ -35,7 +35,7 @@ def setup_test_environment(tmp_path):
     }
 
 # TODO: Change this test to use the star_cmd function. Mapping per se will not be tested
-@patch('subprocess.call')
+# @patch('subprocess.call')
 # def test_star_mapping(mock_subprocess_call, setup_test_environment):
 #     env = setup_test_environment
 #     # Run the function

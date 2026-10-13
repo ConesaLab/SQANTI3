@@ -271,3 +271,40 @@ for b in ["2-4", "5-9", "10-19", "20+"]:
 Change `GENOME` and `GTF` to run it on a full annotation. To test candidate fix 1, keep only novel
 junctions, which requires a SQANTI3 `*_junctions.txt` file rather than the reference GTF. To test
 fix 3, add a position constraint to a copy of `checkForRepeatPat`.
+
+---
+
+## Alignment: supplementary alignments and aligner settings (follow-up to #216)
+
+**Status:** postponed (October 2026). Since #216, SQANTI3 runs minimap2 with `-G 2000000`, uses
+only the primary alignment of each isoform, and lists isoforms with supplementary or secondary
+alignments in `<prefix>_supplementary_alignments.txt` and unaligned ones in `<prefix>_unmapped.txt`.
+Background and measurements: `dev/b1_216/B1_report.md`.
+
+### Optional extras for split alignments
+
+- **Classification column** flagging isoforms with supplementary alignments (count or TRUE/FALSE).
+  Lets users filter chimeras from the classification table and the rules/ML filters use them. Cost:
+  a schema change across the reports, the filter, SQANTI-reads and the parameters file, for data
+  that is already in the supplementary report. The cheaper of the two if requested.
+- **`--keep_supplementary`**: classify each aligned piece separately, with unique `_part1`,
+  `_part2`... IDs consistent across GTF, classification and FASTA. Useful for chimera hunting from
+  a FASTA. Cost: the pieces inflate gene counts and FL/expression and are not linked in the output;
+  `--is_fusion` already covers proper fusion input.
+
+### Aligner settings (benchmark first)
+
+- **`--aligner_extras`** (or `--minimap2_extras`): expose the aligner options as one string with
+  our default, e.g. `--aligner_extras "-x splice -ub"` for unstranded ONT. To settle: minimap2 only
+  or per aligner; which flags stay fixed (`-a`, `--secondary=no`, `-t`, I/O); also in SQANTI-reads,
+  the parameters file, the log and the docs.
+- **Preset:** `splice:hq` suits accurate sequences (collapsed transcripts, PacBio HiFi/Kinnex),
+  `splice` suits noisy ONT. Benchmark on the B100K0 1M-read subset (junctions matching
+  `mm39.ncbiRefSeq.gtf`, split rates) plus ONT data.
+- **`-uf` vs `-ub`:** `-uf` assumes transcript-strand input, wrong for unstranded ONT cDNA reads
+  (matters most for SQANTI-reads).
+- **`--junc-bed`:** use the reference splice sites to place junctions.
+- **MAPQ / coverage filter:** multi-mapping and partially aligned sequences are currently
+  classified like any other.
+- **Stale SAM reuse:** an existing `_corrected.sam` is reused without checking it came from the same
+  genome or aligner.
