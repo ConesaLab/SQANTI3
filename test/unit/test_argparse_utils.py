@@ -99,3 +99,4 @@ def test_filter_args_validation_uses_converted_gtf(tmp_path):
     with mock.patch("src.argparse_utils.run_command", side_effect=fake_gffread()):
         filter_args_validation(args)
     assert args.filter_gtf == str(out_dir / "isoforms.converted.gtf")
+    assert args.filter_gtf_input == str(gff)

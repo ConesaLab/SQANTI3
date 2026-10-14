@@ -180,6 +180,7 @@ def qc_args_validation(args):
     # Output options checks
     valid_dir(args.dir,qc_logger)
     # After valid_dir: a GFF reference is converted into the output directory
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
     args.refGTF = valid_gtf(args.refGTF,qc_logger,args.dir)
     
     # FL counts given
@@ -234,6 +235,7 @@ def filter_args_validation(args):
     valid_dir(args.dir,filter_logger)
     # After valid_dir: a GFF is converted into the output directory
     if args.filter_gtf is not None:
+        args.filter_gtf_input = args.filter_gtf # the parameters file records what the user gave, not the converted GTF
         args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger, args.dir)
     if args.subcommand == 'rules':
         valid_file(args.json_filter, filter_logger)
@@ -260,9 +262,11 @@ def filter_args_validation(args):
 def rescue_args_validation(args):
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
     args.refGTF = valid_gtf(args.refGTF,rescue_logger,args.dir)
     valid_fasta(args.refFasta,rescue_logger)
     if args.filtered_isoforms_gtf is not None:
+        args.filtered_isoforms_gtf_input = args.filtered_isoforms_gtf
         args.filtered_isoforms_gtf = valid_gtf(args.filtered_isoforms_gtf,rescue_logger,args.dir)
     if args.mode == "full":
         try:
