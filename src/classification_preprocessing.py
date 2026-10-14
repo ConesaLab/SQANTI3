@@ -52,7 +52,7 @@ def SJ_coverage(short_reads,coverage_file,genome,outdir,cpus):
     return mapping_out, star_index, SJcovNames, SJcovInfo, fields_junc_cur
 
 
-def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_TSS_metric,outdir):
+def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_TSS_metric,outdir,cpus,bam_index_dir):
     bams = None
     ratio_TSS_dict = None
       ## TSS ratio calculation
@@ -64,7 +64,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             bams = get_files_from_dir(SR_bam,".bam")
         chr_order = get_bam_header(bams[0], outdir)
         inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
-        ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, ratio_TSS_metric)
+        ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, ratio_TSS_metric, cpus, bam_index_dir)
     else:
         if short_reads is not None: # If short reads are provided, it looks for the STAR output
             qc_logger.info("**** Running calculation of TSS ratio")
@@ -75,7 +75,7 @@ def TSS_ratio_calculation(SR_bam,short_reads,star_out,star_index,corrGTF,ratio_T
             chr_order = star_index + "/chrNameLength.txt"
             inside_bed, outside_bed = get_TSS_bed(corrGTF, chr_order)
             bams = get_files_from_dir(star_out,".bam")
-            ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, chr_order, ratio_TSS_metric)
+            ratio_TSS_dict = get_ratio_TSS(inside_bed, outside_bed, bams, ratio_TSS_metric, cpus, bam_index_dir)
         else:
             qc_logger.info('TSS ratio will not be calculated since SR information was not provided')
     return ratio_TSS_dict

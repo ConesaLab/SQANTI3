@@ -3,6 +3,7 @@ import os, sys
 from argparse import Namespace
 from unittest import mock
 import pytest
+import pysam
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)

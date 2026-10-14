@@ -122,6 +122,18 @@ def valid_sr(filename,logger):
                 sys.exit(1)
     return filename
 
+def index_sr_bams(SR_bam, index_dir, cpus, logger):
+    """
+    The TSS ratio counts reads through the BAM index. The --SR_bam files are checked and indexed here,
+    before the run is split, so that the chunks of a -n > 1 run share one index.
+    """
+    from src.utils import get_files_from_dir
+    from src.utilities.short_reads import get_bam_index
+    bams = [SR_bam] if SR_bam.endswith('.bam') else get_files_from_dir(SR_bam, ".bam")
+    for bam in bams:
+        valid_file(bam,logger)
+        get_bam_index(bam, index_dir, cpus)
+
 def contains_gene_name(filepath):
     with open(filepath, 'r') as f:
         for line in f:
@@ -149,8 +161,11 @@ def qc_args_validation(args):
     # Customization validation
     if args.short_reads is not None:
         valid_file(args.short_reads,qc_logger)
+    # BAM indexes made by SQANTI3 for the TSS ratio go here
+    args.bam_index_dir = os.path.join(os.path.abspath(args.dir), "bam_index")
     if args.SR_bam is not None:
         valid_sr(args.SR_bam,qc_logger)
+        index_sr_bams(args.SR_bam, args.bam_index_dir, args.cpus, qc_logger)
 
     # Mappers checks
     if args.fasta:
