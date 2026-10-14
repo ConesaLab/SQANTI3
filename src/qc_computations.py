@@ -111,7 +111,7 @@ def full_length_quantification(fl_count, isoforms_info):
                 obj.FL_dict = count_data
             else:
                 n += 1
-                obj.FL_dict = defaultdict(int)
+                obj.FL_dict = {s: 0 for s in fl_samples}
 
     if n > 0:
         qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")

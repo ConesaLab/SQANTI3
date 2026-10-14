@@ -82,7 +82,7 @@ def run(args):
         SJcovInfo, fields_junc_cur = SJ_coverage(args.short_reads, args.coverage, 
                                                  args.refFasta, args.dir, args.cpus)
     ratio_TSS_dict = TSS_ratio_calculation(args.SR_bam, args.short_reads, star_out,
-                                           star_index, corrGTF, args.ratio_TSS_metric)
+                                           star_index, corrGTF, args.ratio_TSS_metric, args.dir)
     cage_peak_obj = read_CAGE_peaks(args.CAGE_peak)
     polya_peak_obj = read_polyA_peaks(args.polyA_peak)
     polyA_motif_list = read_polyA_motifs(args.polyA_motif_list)

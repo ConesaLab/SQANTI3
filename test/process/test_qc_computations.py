@@ -3,6 +3,8 @@ Process-level tests for qc_computations functions.
 Tests the various QC computation functions that modify isoforms_info dictionaries.
 """
 import pytest
+import pandas as pd
+from src.qc_output import write_classification_output
 from src.qc_computations import (
     classify_fsm,
     full_length_quantification,
@@ -195,6 +197,64 @@ class TestFullLengthQuantification:
         # Other attributes should remain unchanged
         assert result_info["PB.124830.1"].structural_category == original_category
         assert result_info["PB.124830.1"].length == original_length
+
+    def test_fl_count_multi_sample_missing_isoform(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+        """Test that isoforms missing from a multi-sample FL count file get 0 for every sample."""
+        fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, "PB.124830.1")
+
+        result_info = full_length_quantification(fl_count, sample_isoforms_info)
+
+        missing = result_info["PB.124830.1"]
+        assert missing.FL_dict == {"sample1": 0, "sample2": 0, "sample3": 0}
+        row = missing.as_dict()
+        for sample in ["sample1", "sample2", "sample3"]:
+            assert row[f"FL.{sample}"] == 0
+        assert row["FL"] == 0
+        assert row["prevalence"] == 0
+
+
+### full_length_quantification + write_classification_output tests ###
+
+def write_partial_fl_count(fl_count_file, out_dir, missing_isoform):
+    """Copy a FL count file without the row of missing_isoform (e.g. IsoQuant omitting 0-count transcripts)."""
+    with open(fl_count_file) as f:
+        lines = [l for l in f if l.split("\t")[0] != missing_isoform]
+    out = out_dir / "fl_count_partial.tsv"
+    out.write_text("".join(lines))
+    return str(out)
+
+class TestFLCountsToClassificationOutput:
+    """Tests that multi-sample FL counts with missing isoforms are written to the classification file."""
+
+    def _write_and_read(self, isoforms_info, tmp_path):
+        out_class = tmp_path / "test_classification.txt"
+        write_classification_output(isoforms_info, str(out_class))
+        return pd.read_csv(out_class, sep="\t", index_col="isoform")
+
+    def test_classification_output_first_isoform_missing_from_counts(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+        """The header is taken from the first isoform, so it must contain the FL columns even if that isoform has no counts."""
+        first_isoform = next(iter(sample_isoforms_info))
+        fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, first_isoform)
+        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info)
+
+        df = self._write_and_read(isoforms_info, tmp_path)
+
+        fl_cols = ["FL.sample1", "FL.sample2", "FL.sample3"]
+        assert set(fl_cols + ["prevalence"]).issubset(df.columns)
+        assert (df.loc[first_isoform, fl_cols + ["FL", "prevalence"]] == 0).all()
+        assert df.loc["PB.103714.1", "FL.sample2"] == 220
+
+    def test_classification_output_later_isoform_missing_from_counts(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+        """Isoforms missing from the counts must be written as 0, not as empty cells."""
+        last_isoform = list(sample_isoforms_info)[-1]
+        fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, last_isoform)
+        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info)
+
+        df = self._write_and_read(isoforms_info, tmp_path)
+
+        fl_cols = ["FL.sample1", "FL.sample2", "FL.sample3", "prevalence"]
+        assert not df.loc[last_isoform, fl_cols].isna().any()
+        assert (df.loc[last_isoform, fl_cols] == 0).all()
 
 
 ### isoforms_junctions tests ###

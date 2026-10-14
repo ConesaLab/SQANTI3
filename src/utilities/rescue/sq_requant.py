@@ -113,7 +113,7 @@ def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
     final_additions = distribute_integer_counts(source_df, rescue_df, fractions, sample_cols)
 
     # 5. Merge Result
-    final_counts = base_df.add(final_additions, fill_value=0).astype(int)
+    final_counts = base_df.add(final_additions, fill_value=0)
 
     return final_counts.reset_index().rename(columns={'index': 'isoform'})
 

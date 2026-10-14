@@ -153,7 +153,6 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
         sourceAux = "TranscriptAttributes"
         lengthTranscript = fields[sq_length]
         if not CDSstart == "NA":
-            print(CDSstart)
             #3'UTR
             feature = "3UTR_Length"
             start = int(CDSend) + 1
@@ -1604,7 +1603,6 @@ def mappingFeatures(dc_SQexons, dc_SQcoding, dc_SQtransGene, dc_SQgeneTrans, dc_
             strand = dc_SQstrand.get(transSQ)
             #Check if we had same CDS to add Protein information
             coding, semicoding = checkSameCDS(dc_SQcoding, dc_GFF3coding, transSQ, transGFF3, strand)
-            print("Got to the cool part")
             for values in dc_GFF3.get(transGFF3):
                 fields = values[2].split("\t")
                 text = fields[8].split(" ")

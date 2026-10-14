@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
+from src.parsers import extract_variables, isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
 from bx.intervals.intersection import IntervalTree
 
 class TestReferenceParser:
@@ -252,6 +252,22 @@ class TestParseTD2:
         # Clean up: remove the output file after the test
         os.remove(corrORF_td2_file)
 
+    @pytest.mark.parametrize("transcript_id", [
+        "PB.83093.1",
+        "ENST00000123456.1",
+        # IDs containing ':' (e.g., Isocall fusion and intergenic transcripts)
+        "ENSG00000111111.1::ENSG00000222222.2|T1",
+        "GENE|chr7:1234567-1240000|r|T2",
+    ])
+    def test_extract_variables_transcript_id(self, transcript_id):
+        header = f"{transcript_id}.p1 GENE.{transcript_id}~~{transcript_id}.p1  ORF type:complete (+),psauron_score=0.998 len:138 {transcript_id}:575-988(+)"
+
+        info = extract_variables(header)
+
+        assert info['id_pre'] == transcript_id
+        assert info['cds_start'] == 575
+        assert info['cds_end'] == 988
+
 
 class TestParseCounts:
     @pytest.fixture
@@ -376,19 +392,27 @@ class TestParseCounts:
         assert pb103724_row["sample3"] == 55
 
     def test_parse_counts_mixed_numeric_types(self, fl_count_mixed_numeric):
+        """Fractional counts from EM-based quantifiers must be preserved."""
         df = parse_counts(fl_count_mixed_numeric)
-        
-        # parse_counts converts all to int, so float values will be truncated
-        # But the function actually ensures counts are integers
+
         assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
-        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200.5
         assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
-        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300
-        
-        # All counts should be integers
+        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300.75
+
+    def test_parse_counts_subunit_fractional_not_zeroed(self, tmp_path):
+        """Counts below 1 must not collapse to zero (bambu/salmon EM output)."""
+        f = tmp_path / "frac.tsv"
+        f.write_text("pbid\tsample1\nPB.1.1\t0.4\nPB.1.2\t0.9\nPB.1.3\t3.0\n")
+        df = parse_counts(str(f))
+        assert df['sample1'].tolist() == [0.4, 0.9, 3.0]
+
+    def test_parse_counts_integer_input_stays_integer(self, fl_count_single_tsv):
+        """Integer count files keep an integer dtype (PacBio FL workflows)."""
+        df = parse_counts(fl_count_single_tsv)
         sample_cols = [col for col in df.columns if col != 'isoform']
         for col in sample_cols:
-            assert df[col].dtype == int
+            assert df[col].dtype.kind in ('i', 'u')
 
     def test_parse_counts_empty_file(self, fl_count_empty):
         df = parse_counts(fl_count_empty)

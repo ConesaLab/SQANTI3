@@ -182,14 +182,13 @@ def get_TSS_bed(corrected_gtf, chr_order):
     [os.remove(i) for i in [tmp_in, tmp_out]]
     return(inside_sorted, outside_sorted)
 
-def get_bam_header(bam):
+def get_bam_header(bam, outdir):
     if not os.path.isfile(bam):
         raise FileNotFoundError(f"File {bam} not found")
-    o_dir=os.path.dirname(bam)
-    out=o_dir + "/chr_order.txt"
+    out=os.path.join(outdir,"chr_order.txt")
     if not os.path.isfile(out):
         cmd = rf"samtools view -H {bam} | grep '^@SQ' | sed 's/@SQ\tSN:\|LN://g'  > {out}"
-        logFile=os.path.normpath(os.path.join(o_dir,"..","logs","samtools_header.log"))
+        logFile=os.path.join(outdir,"logs","samtools_header.log")
         run_command(cmd,qc_logger,logFile,"samtools header")
     return(out)
 
