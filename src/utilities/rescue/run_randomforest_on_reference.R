@@ -111,6 +111,13 @@ message("\n\tPerforming ML filter data cleaning on classification...\n")
       classification[,x] <- as.integer(classification[,x])
     }
     
+    # Convert back to numeric the columns turned into character by the NA replacement
+    # (replacement.na is a character vector)
+    numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS")
+    for (x in numerics){
+      classification[,x] <- as.numeric(classification[,x])
+    }
+    
 
   
 #### ENSURE COMPATIBILITY WITH PREVIOUS CLASSIFIER ####

@@ -2,7 +2,9 @@ import pytest, sys, os
 import subprocess
 import numpy as np
 from unittest.mock import patch, mock_open,patch, MagicMock
-from src.utilities.short_reads import star_mapping, get_TSS_bed, get_bam_header, get_ratio_TSS
+import pysam
+from src.utilities.short_reads import star_mapping, get_TSS_bed, get_bam_header, get_ratio_TSS, \
+    get_bam_index, count_TSS_reads
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 sys.path.insert(0, main_path)
@@ -268,13 +270,14 @@ def test_files():
     ("median", 1425.2574257425742),
     ("3quartile", 2113.128712871287),
 ])
-def test_get_ratio_TSS_metrics(test_files, metric, expected):
+def test_get_ratio_TSS_metrics(test_files, tmp_path, metric, expected):
     result = get_ratio_TSS(
         test_files["inside_bed"],
         test_files["outside_bed"],
         test_files["bam_files"],
-        test_files["chr_order"],
-        metric
+        metric,
+        4,
+        str(tmp_path / "bam_index")
     )
 
     assert isinstance(result, dict)
@@ -283,3 +286,96 @@ def test_get_ratio_TSS_metrics(test_files, metric, expected):
     # NaN replicates are skipped, and isoforms without coverage in any replicate stay NaN
     assert result["PB.137296.2"]["return_ratio"] == pytest.approx(9.910891, abs=1e-6)
     assert np.isnan(result["PB.103820.1"]["return_ratio"])
+
+
+### get_bam_index and count_TSS_reads ###
+
+def write_bam(bam_path, reads, sort_order="coordinate"):
+    """Writes a BAM on chr1 from (name, flag, start, cigar) tuples. A cigar of None is an unmapped read."""
+    header = {"HD": {"VN": "1.6", "SO": sort_order}, "SQ": [{"SN": "chr1", "LN": 10000}]}
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        for name, flag, start, cigar in reads:
+            read = pysam.AlignedSegment(bam.header)
+            read.query_name = name
+            read.flag = flag
+            read.reference_id = 0
+            read.reference_start = start
+            if cigar is not None:
+                read.cigarstring = cigar
+                read.mapping_quality = 60
+            read.query_sequence = "A" * 50
+            bam.write(read)
+    return str(bam_path)
+
+@pytest.fixture
+def tss_bam(tmp_path):
+    input_dir = tmp_path / "input"
+    input_dir.mkdir()
+    reads = [
+        ("spliced", 0, 500, "20M1000N30M"),  # 500-1550: its intron covers the window
+        ("primary", 0, 1020, "50M"),
+        ("secondary", 256, 1050, "50M"),
+        ("duplicate", 1024, 1060, "50M"),
+        ("unmapped", 4, 1070, None),         # unmapped mate placed next to its pair
+        ("far", 0, 2000, "50M"),
+    ]
+    return write_bam(input_dir / "Aligned.sortedByCoord.out.bam", reads)
+
+class TestGetBamIndex:
+    """Test suite for get_bam_index."""
+
+    def test_uses_index_next_to_bam(self, tss_bam, tmp_path):
+        pysam.index(tss_bam)
+        assert get_bam_index(tss_bam, str(tmp_path / "bam_index"), 1) == f"{tss_bam}.bai"
+        assert not os.path.exists(tmp_path / "bam_index")
+
+    def test_creates_index_in_index_dir(self, tss_bam, tmp_path):
+        """The input folder may be read-only, so the new index goes to index_dir (issue #611)."""
+        index_dir = str(tmp_path / "bam_index")
+        index = get_bam_index(tss_bam, index_dir, 2)
+        assert os.path.dirname(index) == index_dir
+        assert os.path.isfile(index)
+        assert os.listdir(os.path.dirname(tss_bam)) == ["Aligned.sortedByCoord.out.bam"]
+
+    def test_replicates_with_the_same_name_get_their_own_index(self, tmp_path):
+        """STAR names every replicate Aligned.sortedByCoord.out.bam, in a folder per sample."""
+        index_dir = str(tmp_path / "bam_index")
+        indexes = []
+        for sample in ["rep1", "rep2"]:
+            (tmp_path / sample).mkdir()
+            bam = write_bam(tmp_path / sample / "Aligned.sortedByCoord.out.bam", [("primary", 0, 1020, "50M")])
+            indexes.append(get_bam_index(bam, index_dir, 1))
+        assert indexes[0] != indexes[1]
+
+    def test_index_older_than_bam_is_made_again(self, tss_bam, tmp_path):
+        index_dir = str(tmp_path / "bam_index")
+        index = get_bam_index(tss_bam, index_dir, 1)
+        os.utime(index, (0, 0))
+        assert get_bam_index(tss_bam, index_dir, 1) == index
+        assert os.path.getmtime(index) >= os.path.getmtime(tss_bam)
+
+    @patch("src.utilities.short_reads.qc_logger")
+    def test_unsorted_bam(self, mock_logger, tmp_path):
+        bam = write_bam(tmp_path / "unsorted.bam", [("b", 0, 2000, "50M"), ("a", 0, 100, "50M")], sort_order="unsorted")
+        with pytest.raises(SystemExit):
+            get_bam_index(bam, str(tmp_path / "bam_index"), 1)
+        assert "must be sorted by coordinate" in mock_logger.error.call_args[0][0]
+        assert not os.path.exists(tmp_path / "bam_index" / (os.path.abspath(bam).strip("/").replace("/", "_") + ".bai"))
+
+class TestCountTSSReads:
+    """Test suite for count_TSS_reads."""
+
+    windows = [("chr1", 1000, 1100), ("chr1", 1900, 2000), ("chr1", 2000, 2010), ("chrUn", 0, 100)]
+
+    def test_counts_as_bedtools(self, tss_bam, tmp_path):
+        """Same counts as bedtools coverage -counts: reads spanning the window with an intron, secondary
+        and duplicate reads count, unmapped reads don't, and a contig missing from the BAM gives 0."""
+        bam_index = get_bam_index(tss_bam, str(tmp_path / "bam_index"), 1)
+        assert count_TSS_reads(tss_bam, bam_index, self.windows, 1) == [4, 0, 1, 0]
+
+    @pytest.mark.parametrize("cpus", [2, 3, 8])
+    def test_same_counts_in_parallel(self, tss_bam, tmp_path, cpus):
+        """Windows are dealt round-robin to the processes; the counts must come back in the input order."""
+        bam_index = get_bam_index(tss_bam, str(tmp_path / "bam_index"), 1)
+        windows = self.windows * 5
+        assert count_TSS_reads(tss_bam, bam_index, windows, cpus) == [4, 0, 1, 0] * 5

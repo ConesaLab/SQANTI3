@@ -2,7 +2,9 @@ import os, sys
 import pandas as pd
 import numpy as np
 import pybedtools
+import pysam
 import re
+from multiprocessing import Pool
 
 from src.commands import run_command
 from src.module_logging import qc_logger
@@ -194,26 +196,88 @@ def get_bam_header(bam, outdir):
 
 
 
-def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
+def get_bam_index(bam_file, index_dir, cpus):
+    """
+    Counting reads per TSS window needs the BAM index. An index next to the BAM is used if there is one,
+    otherwise it is created in index_dir, never next to the input (issue #611).
+
+    :return: path to the BAM index
+    """
+    for index in [f"{bam_file}.bai", f"{bam_file}.csi", f"{os.path.splitext(bam_file)[0]}.bai"]:
+        if os.path.isfile(index):
+            return index
+    # Named after the full path: replicates from STAR often share the name Aligned.sortedByCoord.out.bam
+    index = os.path.join(index_dir, os.path.abspath(bam_file).strip("/").replace("/", "_") + ".bai")
+    # An index older than the BAM is from a previous version of it (e.g. STAR was run again)
+    if not os.path.isfile(index) or os.path.getmtime(index) < os.path.getmtime(bam_file):
+        os.makedirs(index_dir, exist_ok=True)
+        qc_logger.info(f"Indexing {bam_file} for the TSS ratio calculation")
+        try:
+            pysam.index("-@", str(cpus), "-o", f"{index}.tmp", bam_file)
+        except pysam.SamtoolsError as e:
+            qc_logger.error(f"Could not index {bam_file}. The short-read BAM files must be sorted by coordinate (samtools sort). Abort!\n{e}")
+            sys.exit(1)
+        os.replace(f"{index}.tmp", index)
+    return index
+
+
+def count_reads_in_windows(bam_file, bam_index, windows):
+    """
+    Number of reads overlapping each (chrom, start, end) window, counted as bedtools coverage -counts does:
+    unmapped reads are skipped, secondary, duplicate and QC-failed reads are counted.
+    """
+    with pysam.AlignmentFile(bam_file, "rb", index_filename=bam_index) as bam:
+        contigs = set(bam.references)
+        return [bam.count(chrom, start, end, read_callback=lambda read: not read.is_unmapped) if chrom in contigs else 0
+                for chrom, start, end in windows]
+
+
+def count_TSS_reads(bam_file, bam_index, windows, cpus):
+    """
+    Counts the reads in each TSS window. Every window is looked up through the BAM index, so memory does not
+    grow with read depth: bedtools coverage needed 207 GiB on a BAM with a chloroplast covered ~1 million-fold.
+    """
+    if cpus == 1:
+        return count_reads_in_windows(bam_file, bam_index, windows)
+    # The deepest windows (e.g. an organelle genome) are next to each other in the sorted BED,
+    # so the windows are dealt out round-robin to spread them over the processes
+    n_chunks = min(len(windows), cpus * 4)
+    chunks = [windows[i::n_chunks] for i in range(n_chunks)]
+    with Pool(cpus) as pool:
+        chunk_counts = pool.starmap(count_reads_in_windows, [(bam_file, bam_index, chunk) for chunk in chunks])
+    counts = [0] * len(windows)
+    for i, chunk in enumerate(chunk_counts):
+        counts[i::n_chunks] = chunk
+    return counts
+
+
+def get_ratio_TSS(inside_bed, outside_bed, replicates, metric, cpus, bam_index_dir):
 ## calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get ratios across replicates and return it as a dictionary
-    def process_coverage(cov, column_name):
-        data = [(entry.name, float(entry[6])) for entry in cov]
-        df = pd.DataFrame(data, columns=['id', column_name])
+    def read_windows(bed):
+        return pd.read_csv(bed, sep='\t', header=None, usecols=[0, 1, 2, 3],
+                           names=['chrom', 'start', 'end', 'id'], dtype={'chrom': str, 'id': str})
+
+    def process_coverage(windows_df, counts, column_name):
+        df = pd.DataFrame({'id': windows_df['id'], column_name: np.array(counts, dtype=float)})
         if column_name == 'inside':
             df.loc[df[column_name] < 3, column_name] = np.nan
         return df
 
     qc_logger.info('BAM files identified: '+str(replicates))
-    out_TSS_file = os.path.dirname(inside_bed) + "/ratio_TSS.csv"
-    in_bed = pybedtools.BedTool(inside_bed)
-    out_bed = pybedtools.BedTool(outside_bed)
+    out_TSS_file = os.path.join(os.path.dirname(inside_bed), "ratio_TSS.csv")
+    inside_windows = read_windows(inside_bed)
+    outside_windows = read_windows(outside_bed)
+    # Inside and outside windows are counted in one go, then split again
+    all_windows = pd.concat([inside_windows, outside_windows])
+    windows = list(zip(all_windows['chrom'], all_windows['start'].tolist(), all_windows['end'].tolist()))
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
-        in_cov = in_bed.coverage(bam_file, sorted=True, g=chr_order)
-        out_cov = out_bed.coverage(bam_file, sorted=True, g=chr_order)
-        inside_df = process_coverage(in_cov, 'inside')
-        outside_df = process_coverage(out_cov, 'outside')
+        bam_index = get_bam_index(bam_file, bam_index_dir, cpus)
+        counts = count_TSS_reads(bam_file, bam_index, windows, cpus)
+        inside_df = process_coverage(inside_windows, counts[:len(inside_windows)], 'inside')
+        outside_df = process_coverage(outside_windows, counts[len(inside_windows):], 'outside')
+
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
         if ratio_rep_df is None:
@@ -227,18 +291,18 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric):
 
     # Convert all columns but id to numeric, coercing any non-numeric values to NaN
     if metric == "mean":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.mean(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.quantile(q=0.75, axis=1, numeric_only=True)  # quantile skips NaN by default and has no skipna argument
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].quantile(q=0.75, axis=1, numeric_only=True)  # quantile skips NaN by default and has no skipna argument
     elif metric == "max":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.max(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].max(axis=1, numeric_only=True, skipna=True)
     elif metric == "median":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.median(axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].median(axis=1, numeric_only=True, skipna=True)
     else:
         raise ValueError("Invalid value for 'metric'. Use 'mean', '3quartile', 'max', or 'median'.")
 
-    ratio_rep_df = ratio_rep_df[['id','return_ratio']]
-    ratio_rep_dict = ratio_rep_df.set_index('id').T.to_dict()
-    # [os.remove(i) for i in [inside_bed, outside_bed]]
-    # print('Temp files removed.\n')
+    ratio_rep_dict = {
+        iso: {'return_ratio': val}
+        for iso, val in zip(ratio_rep_df['id'], ratio_rep_df['return_ratio'])
+    }
     return(ratio_rep_dict) 

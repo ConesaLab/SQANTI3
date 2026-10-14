@@ -1,8 +1,7 @@
 import os, sys
 import gzip
-import subprocess
 
-from src.commands import GFFREAD_PROG
+from src.commands import GFFREAD_PROG, run_command
 from src.helpers import find_isoform_id_collisions
 from src.module_logging import qc_logger, filter_logger, rescue_logger
 
@@ -42,24 +41,26 @@ def valid_unique_ids(filename,logger):
         sys.exit(1)
     return filename
 
-def valid_gtf(filename,logger):
+def valid_gtf(filename,logger,out_dir):
+    """
+    Accepts a GTF, or a GFF/GFF3 that is converted to GTF with gffread.
+    The converted file is written to out_dir, because the input folder may be read-only (issue #611).
+
+    :return: path of the GTF to use downstream (the converted one for GFF input)
+    """
     valid_file(filename,logger)
+    converted = False
     if not filename.endswith('.gtf'):
-        if not filename.endswith('.gff') or not filename.endswith('.gff3'):
-            qc_logger.error(f"File {filename} is not a GTF file. Abort!")
+        if not filename.endswith('.gff') and not filename.endswith('.gff3'):
+            logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:
             logger.warning("GTF file is in GFF3 format. Converting to GTF format.")
-            # GFF to GTF (in case the user provides gff instead of gtf)
-            gtf_name = filename.replace('.gff', '.gtf')
-            # Use the run command?
-            try:
-                subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
-            except (RuntimeError, TypeError, NameError):
-                logger.error(f'File {filename} without GTF/GFF format.')
-                raise SystemExit(1)
+            gtf_name = os.path.join(out_dir, os.path.splitext(os.path.basename(filename))[0] + ".converted.gtf")
+            run_command(f"{GFFREAD_PROG} {filename} -T -o {gtf_name}", logger, f"{out_dir}/logs/gffread.log", "GFF to GTF conversion")
             logger.info(f"GFF file converted to GTF format. New file: {gtf_name}")
             filename = gtf_name
+            converted = True
 
     # Check if the GTF file is in the correct format
     ind = 0
@@ -71,6 +72,10 @@ def valid_gtf(filename,logger):
             elif len(line.split("\t"))==9:
                 ind += 1
         if ind == 0:
+            # gffread exits without error on a file that is not GFF, and just writes an empty GTF
+            if converted:
+                logger.error(f"No annotation lines could be read from {filename}. Please check that the input is a valid GFF file. Abort!")
+                sys.exit(1)
             logger.warning(f"GTF has {filename} no annotation lines.")
 
     return filename
@@ -124,6 +129,18 @@ def valid_sr(filename,logger):
                 sys.exit(1)
     return filename
 
+def index_sr_bams(SR_bam, index_dir, cpus, logger):
+    """
+    The TSS ratio counts reads through the BAM index. The --SR_bam files are checked and indexed here,
+    before the run is split, so that the chunks of a -n > 1 run share one index.
+    """
+    from src.utils import get_files_from_dir
+    from src.utilities.short_reads import get_bam_index
+    bams = [SR_bam] if SR_bam.endswith('.bam') else get_files_from_dir(SR_bam, ".bam")
+    for bam in bams:
+        valid_file(bam,logger)
+        get_bam_index(bam, index_dir, cpus)
+
 def contains_gene_name(filepath):
     open_function = gzip.open if filepath.endswith('.gz') else open
     with open_function(filepath, 'rt') as f:
@@ -147,14 +164,16 @@ def qc_args_validation(args):
     if args.fasta:
         valid_unique_ids(args.isoforms, qc_logger)
 
-    valid_gtf(args.refGTF,qc_logger)
     valid_fasta(args.refFasta,qc_logger)
 
     # Customization validation
     if args.short_reads is not None:
         valid_file(args.short_reads,qc_logger)
+    # BAM indexes made by SQANTI3 for the TSS ratio go here
+    args.bam_index_dir = os.path.join(os.path.abspath(args.dir), "bam_index")
     if args.SR_bam is not None:
         valid_sr(args.SR_bam,qc_logger)
+        index_sr_bams(args.SR_bam, args.bam_index_dir, args.cpus, qc_logger)
 
     # Mappers checks
     if args.fasta:
@@ -183,6 +202,9 @@ def qc_args_validation(args):
 
     # Output options checks
     valid_dir(args.dir,qc_logger)
+    # After valid_dir: a GFF reference is converted into the output directory
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
+    args.refGTF = valid_gtf(args.refGTF,qc_logger,args.dir)
     
     # FL counts given
     if args.fl_count is not None:
@@ -228,14 +250,16 @@ def filter_args_validation(args):
     valid_file(args.sqanti_class, filter_logger)
     if args.filter_isoforms is not None:
         valid_fasta(args.filter_isoforms, filter_logger)
-    if args.filter_gtf is not None:
-        valid_gtf(args.filter_gtf, filter_logger)
     if args.filter_sam is not None:
         valid_file(args.filter_sam, filter_logger)
     if args.filter_faa is not None:
         valid_fasta(args.filter_faa, filter_logger)
 
     valid_dir(args.dir,filter_logger)
+    # After valid_dir: a GFF is converted into the output directory
+    if args.filter_gtf is not None:
+        args.filter_gtf_input = args.filter_gtf # the parameters file records what the user gave, not the converted GTF
+        args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger, args.dir)
     if args.subcommand == 'rules':
         valid_file(args.json_filter, filter_logger)
     if args.subcommand == 'ml':
@@ -261,10 +285,12 @@ def filter_args_validation(args):
 def rescue_args_validation(args):
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
-    valid_gtf(args.refGTF,rescue_logger)
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
+    args.refGTF = valid_gtf(args.refGTF,rescue_logger,args.dir)
     valid_fasta(args.refFasta,rescue_logger)
     if args.filtered_isoforms_gtf is not None:
-        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
+        args.filtered_isoforms_gtf_input = args.filtered_isoforms_gtf
+        args.filtered_isoforms_gtf = valid_gtf(args.filtered_isoforms_gtf,rescue_logger,args.dir)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)

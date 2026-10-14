@@ -326,6 +326,8 @@ If you have several samples, we recommend providing them as separated `*SJ.out.t
 ### Short read mapping results (BAM files)
 If you used the `-c` argument to provide coverage information, but you want to calculate `ratio_TSS` values for each isoform, SQANTI3 QC will still require you to supply short read mapping information. Therefore, we recommend users to supply the BAM files obtained as a result of mapping short reads to the genome via the `--SR_bam` option. Otherwise, you may supply short reads as raw data to SQANTI3 and have all pre-processing steps done internally, however, keep in mind that this will take longer as well as require more memory/computational resources.
 
+The BAM files must be sorted by coordinate. SQANTI3 counts the reads around each TSS through the BAM index (`.bai` or `.csi` next to the BAM). If there is no index, SQANTI3 creates one in `<output_dir>/bam_index/` at the start of the run, so the input folder is never modified. Indexing a large BAM can take a few minutes; index your BAM files beforehand (`samtools index`) to skip this step. The counting uses the number of CPUs given with `-t`.
+
 
 <a name="cage"></a>
 
