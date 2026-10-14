@@ -23,18 +23,21 @@ def valid_gtf(filename,logger):
     valid_file(filename,logger)
     if not filename.endswith('.gtf'):
         if not filename.endswith('.gff') and not filename.endswith('.gff3'):
-            qc_logger.error(f"File {filename} is not a GTF file. Abort!")
+            logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:
             logger.warning("GTF file is in GFF3 format. Converting to GTF format.")
             # GFF to GTF (in case the user provides gff instead of gtf)
-            gtf_name = filename.replace('.gff', '.gtf')
+            gtf_name = os.path.splitext(filename)[0] + '.gtf'
             # Use the run command?
             try:
-                subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
-            except (RuntimeError, TypeError, NameError):
-                logger.error(f'File {filename} without GTF/GFF format.')
-                raise SystemExit(1)
+                exit_code = subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
+            except FileNotFoundError:
+                logger.error(f"Cannot find {GFFREAD_PROG}, which is needed to convert {filename} to GTF. Abort!")
+                sys.exit(1)
+            if exit_code != 0:
+                logger.error(f"{GFFREAD_PROG} could not convert {filename} to GTF. Please check that it is a valid GFF file. Abort!")
+                sys.exit(1)
             logger.info(f"GFF file converted to GTF format. New file: {gtf_name}")
             filename = gtf_name
 
@@ -121,7 +124,7 @@ def qc_args_validation(args):
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
     
-    valid_gtf(args.refGTF,qc_logger)
+    args.refGTF = valid_gtf(args.refGTF,qc_logger)
     valid_fasta(args.refFasta,qc_logger)
 
     # Customization validation
@@ -203,7 +206,7 @@ def filter_args_validation(args):
     if args.filter_isoforms is not None:
         valid_fasta(args.filter_isoforms, filter_logger)
     if args.filter_gtf is not None:
-        valid_gtf(args.filter_gtf, filter_logger)
+        args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger)
     if args.filter_sam is not None:
         valid_file(args.filter_sam, filter_logger)
     if args.filter_faa is not None:
@@ -235,10 +238,10 @@ def filter_args_validation(args):
 def rescue_args_validation(args):
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
-    valid_gtf(args.refGTF,rescue_logger)
+    args.refGTF = valid_gtf(args.refGTF,rescue_logger)
     valid_fasta(args.refFasta,rescue_logger)
     if args.filtered_isoforms_gtf is not None:
-        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
+        args.filtered_isoforms_gtf = valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)

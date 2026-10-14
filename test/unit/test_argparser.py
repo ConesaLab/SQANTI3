@@ -31,7 +31,7 @@ def _write(path, content=GTF_LINE):
 
 def test_valid_gtf_accepts_gff3(tmp_path, tester_logger):
     gff3 = _write(str(tmp_path / "reference.gff3"))
-    converted = str(tmp_path / "reference.gtf3")
+    converted = str(tmp_path / "reference.gtf")
 
     def fake_call(cmd):
         # gffread writes the converted file in real usage
@@ -70,3 +70,11 @@ def test_valid_gtf_rejects_unknown_extension(tmp_path, tester_logger):
     bad = _write(str(tmp_path / "reference.txt"))
     with pytest.raises(SystemExit):
         valid_gtf(bad, tester_logger)
+
+
+def test_valid_gtf_stops_when_gffread_fails(tmp_path, tester_logger):
+    """A failed conversion must stop the run, not continue with a missing or stale GTF."""
+    gff3 = _write(str(tmp_path / "reference.gff3"))
+    with mock.patch("src.argparse_utils.subprocess.call", return_value=1):
+        with pytest.raises(SystemExit):
+            valid_gtf(gff3, tester_logger)
