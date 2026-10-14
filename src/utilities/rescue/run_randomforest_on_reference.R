@@ -105,7 +105,7 @@ message("\n\tPerforming ML filter data cleaning on classification...\n")
     
     # Convert in integers columns with numerical variables
     integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov",
-                  "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak",
+                  "min_cov", "polyA_dist", "dist_to_CAGE_peak",
                   "FL", "length", "exons")
     for (x in integers){
       classification[,x] <- as.integer(classification[,x])
@@ -113,7 +113,8 @@ message("\n\tPerforming ML filter data cleaning on classification...\n")
     
     # Convert back to numeric the columns turned into character by the NA replacement
     # (replacement.na is a character vector)
-    numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS")
+    # ratio_exp is a fraction (0-1): as.integer() would turn it into 0/1 (issue #634)
+    numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS", "ratio_exp")
     for (x in numerics){
       classification[,x] <- as.numeric(classification[,x])
     }
