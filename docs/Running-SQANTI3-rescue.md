@@ -285,6 +285,8 @@ In addition to the common arguments, the machine learning rescue requires the fo
 
 - **ML probability threshold**: minimum probability value that is required in order to consider a transcript to be a true isoform. It should be set using the `-j` flag (default: 0.7). We recommend setting the same threshold that was used when running SQANTI3 filter.
 
+⚠️**Warning**: the ML rescue does not support multi-sample long-read counts yet. If SQANTI3 QC was run with a multi-sample `--fl_count` file, the classifier can use the per-sample `FL.<sample>` columns or `prevalence`, which reference transcripts do not have, and the rescue stops with an error that names those columns. In that case, re-run the ML filter with those columns in `--remove_columns`, or use the rules rescue.
+
 <a name="out"></a>
 
 ## Rescue output files

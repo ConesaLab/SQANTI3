@@ -134,7 +134,19 @@ message("\n\tChecking column compatibility with pre-trained random forest classi
     
     ## Filter columns that were not used during training
     model_cols <- randomforest$trainingData %>% colnames
-    classification <- classification[, model_cols[-length(model_cols)]]
+    model_cols <- model_cols[-length(model_cols)]
+
+    # Columns from multi-sample long-read counts (FL.<sample>, prevalence) can be used by the
+    # classifier, but reference transcripts have no counts, so they are not in their classification
+    missing_cols <- setdiff(model_cols, colnames(classification))
+    if (length(missing_cols) > 0) {
+      stop(paste0("The random forest classifier was trained with columns that are not in the ",
+                  "reference classification: ", paste(missing_cols, collapse = ", "), ". ",
+                  "This happens when the ML filter was run on multi-sample long-read counts, ",
+                  "which the ML rescue does not support yet. Re-run the ML filter with these ",
+                  "columns in --remove_columns, or use the rules rescue."))
+    }
+    classification <- classification[, model_cols]
     
     ## Check for NAs
     message("\n\tValidating columns used in prediction...")

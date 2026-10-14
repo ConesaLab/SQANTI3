@@ -486,9 +486,8 @@ if (run_ML) {
   cat("\n-------------------------------------------------")
   
   # check working directory for previously classifier object
-  RF_outfiles <- dir(opt$dir)
   rf_file <- paste0(opt$dir, "/",opt$output ,"_randomforest.RData")
-  if(rf_file %in% RF_outfiles) {
+  if(file.exists(rf_file)) {
     
     # if the object exists, it is loaded to save runtime
     
