@@ -105,9 +105,23 @@ def _assert_matches_baseline(out_dir):
         )
 
 
-def test_fast_mode_no_factor(tmp_path):
-    out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design.csv")
+# Each run takes 10-30 s, most of it drawing the PDF. Tests that check different
+# outputs of the same input share one run with both reports (module-scoped), and
+# tests that only check tables or the HTML skip the PDF.
+@pytest.fixture(scope="module")
+def no_factor_run(tmp_path_factory):
+    out_dir = str(tmp_path_factory.mktemp("no_factor") / "out")
+    return _run_reads(out_dir, "design.csv", report="both"), out_dir
+
+
+@pytest.fixture(scope="module")
+def factor_run(tmp_path_factory):
+    out_dir = str(tmp_path_factory.mktemp("factor") / "out")
+    return _run_reads(out_dir, "design_with_factor.csv", factor="group", report="both"), out_dir
+
+
+def test_fast_mode_no_factor(no_factor_run):
+    result, out_dir = no_factor_run
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
     _assert_outputs_present(out_dir)
     all_text = _assert_single_merged_report(out_dir, "design.csv")
@@ -115,15 +129,14 @@ def test_fast_mode_no_factor(tmp_path):
     _assert_matches_baseline(out_dir)
 
 
-def test_fast_mode_with_factor(tmp_path):
+def test_fast_mode_with_factor(factor_run):
     """The faceted (--factor) path must complete and produce both PDFs.
 
     Regression guard for the Phase-1 fix to plot_stacked_bars /
     plot_side_by_side_bars, which previously raised KeyError('100+ reads')
     when a read-count category was absent in a facet.
     """
-    out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design_with_factor.csv", factor="group")
+    result, out_dir = factor_run
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
     _assert_outputs_present(out_dir)
     _assert_single_merged_report(out_dir, "design_with_factor.csv")
@@ -151,14 +164,16 @@ def test_fast_mode_uppercase_factor(tmp_path):
     (e.g. ``RIN_group`` -> ``perc_reads_RIN_group``) and then raised
     ``KeyError: ['RIN_group'] not found in axis`` at the following ``drop()``.
     The fixture's own factor (``group``) is lowercase, so this is exercised with
-    a dedicated uppercase-named factor.
+    a dedicated uppercase-named factor. That rename is gone since the plotting
+    refactor; the run goes through the data preparation shared by both reports,
+    so the cheaper HTML report is enough.
     """
     out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design_with_upper_factor.csv", factor="RIN_group")
+    result = _run_reads(out_dir, "design_with_upper_factor.csv", factor="RIN_group", report="html")
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
-    _assert_outputs_present(out_dir)
-    # Same page count as the lowercase-factor faceted run (only the factor name differs).
-    _assert_single_merged_report(out_dir, "design_with_factor.csv")
+    for name in EXPECTED_CSVS:
+        assert os.path.getsize(os.path.join(out_dir, name)) > 0, f"empty output: {name}"
+    assert os.path.getsize(os.path.join(out_dir, "sqantiReads_report.html")) > 0
 
 
 def test_fast_mode_single_sample(tmp_path):
@@ -210,20 +225,17 @@ HTML_SECTIONS = [
 ]
 
 
-def test_html_report(tmp_path):
-    """--report html produces a single self-contained interactive report + JSON."""
+def test_html_report(no_factor_run):
+    """The HTML report is a single self-contained interactive report + JSON."""
     import json
 
-    out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design.csv", report="html")
+    result, out_dir = no_factor_run
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
 
     html = os.path.join(out_dir, "sqantiReads_report.html")
     js_summary = os.path.join(out_dir, "sqantiReads_qc_summary.json")
     assert os.path.getsize(html) > 0, "HTML report missing/empty"
     assert os.path.getsize(js_summary) > 0, "qc_summary.json missing/empty"
-    # html-only: no PDF
-    assert not os.path.exists(os.path.join(out_dir, "sqantiReads_report.pdf"))
 
     text = open(html, encoding="utf-8").read()
     # Self-contained: plotly inlined, no external resource loads
@@ -243,12 +255,11 @@ def test_html_report(tmp_path):
         assert m["total_reads"] > 0
 
 
-def test_html_report_faceted(tmp_path):
-    """--factor + --report html produces a faceted interactive report."""
+def test_html_report_faceted(factor_run):
+    """--factor produces a faceted interactive report."""
     import json
 
-    out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design_with_factor.csv", factor="group", report="html")
+    result, out_dir = factor_run
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
 
     html = os.path.join(out_dir, "sqantiReads_report.html")
@@ -264,9 +275,8 @@ def test_html_report_faceted(tmp_path):
 def test_parallel_jobs_match_serial(tmp_path):
     """--jobs>1 (parallel per-sample processing) must give identical tables."""
     out_dir = str(tmp_path / "out")
-    result = _run_reads(out_dir, "design.csv", jobs=3)
+    result = _run_reads(out_dir, "design.csv", jobs=3, report="html")
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
-    _assert_outputs_present(out_dir)
     _assert_matches_baseline(out_dir)  # same as the serial baseline
 
 
@@ -286,6 +296,9 @@ def test_config_overrides_qc_thresholds(tmp_path):
     out_dir = str(tmp_path / "out")
     result = _run_reads(out_dir, "design.csv", report="html", config=str(cfg))
     assert result.returncode == 0, f"non-zero exit\nSTDERR:\n{result.stderr}"
+
+    # html-only: no PDF
+    assert not os.path.exists(os.path.join(out_dir, "sqantiReads_report.pdf"))
 
     summary = json.load(open(os.path.join(out_dir, "sqantiReads_qc_summary.json")))
     spec = summary["thresholds"]["perc_reads_intrapriming"]
