@@ -2,7 +2,9 @@ import os, sys
 import pandas as pd
 import numpy as np
 import pybedtools
+import pysam
 import re
+from multiprocessing import Pool
 
 from src.commands import run_command
 from src.module_logging import qc_logger
@@ -194,31 +196,87 @@ def get_bam_header(bam, outdir):
 
 
 
-def get_ratio_TSS(inside_bed, outside_bed, replicates, chr_order, metric): 
+def get_bam_index(bam_file, index_dir, cpus):
+    """
+    Counting reads per TSS window needs the BAM index. An index next to the BAM is used if there is one,
+    otherwise it is created in index_dir, never next to the input (issue #611).
+
+    :return: path to the BAM index
+    """
+    for index in [f"{bam_file}.bai", f"{bam_file}.csi", f"{os.path.splitext(bam_file)[0]}.bai"]:
+        if os.path.isfile(index):
+            return index
+    # Named after the full path: replicates from STAR often share the name Aligned.sortedByCoord.out.bam
+    index = os.path.join(index_dir, os.path.abspath(bam_file).strip("/").replace("/", "_") + ".bai")
+    # An index older than the BAM is from a previous version of it (e.g. STAR was run again)
+    if not os.path.isfile(index) or os.path.getmtime(index) < os.path.getmtime(bam_file):
+        os.makedirs(index_dir, exist_ok=True)
+        qc_logger.info(f"Indexing {bam_file} for the TSS ratio calculation")
+        try:
+            pysam.index("-@", str(cpus), "-o", f"{index}.tmp", bam_file)
+        except pysam.SamtoolsError as e:
+            qc_logger.error(f"Could not index {bam_file}. The short-read BAM files must be sorted by coordinate (samtools sort). Abort!\n{e}")
+            sys.exit(1)
+        os.replace(f"{index}.tmp", index)
+    return index
+
+
+def count_reads_in_windows(bam_file, bam_index, windows):
+    """
+    Number of reads overlapping each (chrom, start, end) window, counted as bedtools coverage -counts does:
+    unmapped reads are skipped, secondary, duplicate and QC-failed reads are counted.
+    """
+    with pysam.AlignmentFile(bam_file, "rb", index_filename=bam_index) as bam:
+        contigs = set(bam.references)
+        return [bam.count(chrom, start, end, read_callback=lambda read: not read.is_unmapped) if chrom in contigs else 0
+                for chrom, start, end in windows]
+
+
+def count_TSS_reads(bam_file, bam_index, windows, cpus):
+    """
+    Counts the reads in each TSS window. Every window is looked up through the BAM index, so memory does not
+    grow with read depth: bedtools coverage needed 207 GiB on a BAM with a chloroplast covered ~1 million-fold.
+    """
+    if cpus == 1:
+        return count_reads_in_windows(bam_file, bam_index, windows)
+    # The deepest windows (e.g. an organelle genome) are next to each other in the sorted BED,
+    # so the windows are dealt out round-robin to spread them over the processes
+    n_chunks = min(len(windows), cpus * 4)
+    chunks = [windows[i::n_chunks] for i in range(n_chunks)]
+    with Pool(cpus) as pool:
+        chunk_counts = pool.starmap(count_reads_in_windows, [(bam_file, bam_index, chunk) for chunk in chunks])
+    counts = [0] * len(windows)
+    for i, chunk in enumerate(chunk_counts):
+        counts[i::n_chunks] = chunk
+    return counts
+
+
+def get_ratio_TSS(inside_bed, outside_bed, replicates, metric, cpus, bam_index_dir):
 ## calculate the average coverage per sample for in and out beds. Calculate each ratio
 ## get ratios across replicates and return it as a dictionary
-    def process_coverage(cov_file, column_name):
-        df = pd.read_csv(cov_file, sep='\t', header=None, usecols=[3, 6],
-                         names=['id', column_name], dtype={'id': str, column_name: float})
+    def read_windows(bed):
+        return pd.read_csv(bed, sep='\t', header=None, usecols=[0, 1, 2, 3],
+                           names=['chrom', 'start', 'end', 'id'], dtype={'chrom': str, 'id': str})
+
+    def process_coverage(windows_df, counts, column_name):
+        df = pd.DataFrame({'id': windows_df['id'], column_name: np.array(counts, dtype=float)})
         if column_name == 'inside':
             df.loc[df[column_name] < 3, column_name] = np.nan
         return df
 
     qc_logger.info('BAM files identified: '+str(replicates))
-    out_dir = os.path.dirname(inside_bed)
-    out_TSS_file = os.path.join(out_dir, "ratio_TSS.csv")
-    in_bed = pybedtools.BedTool(inside_bed)
-    out_bed = pybedtools.BedTool(outside_bed)
+    out_TSS_file = os.path.join(os.path.dirname(inside_bed), "ratio_TSS.csv")
+    inside_windows = read_windows(inside_bed)
+    outside_windows = read_windows(outside_bed)
+    # Inside and outside windows are counted in one go, then split again
+    all_windows = pd.concat([inside_windows, outside_windows])
+    windows = list(zip(all_windows['chrom'], all_windows['start'].tolist(), all_windows['end'].tolist()))
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
-        # bedtools writes only the read counts straight to file, so pybedtools keeps no temp files
-        inside_cov_file = os.path.join(out_dir, f"inside_coverage_rep{b}.bed")
-        outside_cov_file = os.path.join(out_dir, f"outside_coverage_rep{b}.bed")
-        in_bed.coverage(bam_file, output=inside_cov_file, sorted=True, g=chr_order, nonamecheck=True, counts=True)
-        out_bed.coverage(bam_file, output=outside_cov_file, sorted=True, g=chr_order, nonamecheck=True, counts=True)
-        inside_df = process_coverage(inside_cov_file, 'inside')
-        outside_df = process_coverage(outside_cov_file, 'outside')
-        [os.remove(f) for f in [inside_cov_file, outside_cov_file]]
+        bam_index = get_bam_index(bam_file, bam_index_dir, cpus)
+        counts = count_TSS_reads(bam_file, bam_index, windows, cpus)
+        inside_df = process_coverage(inside_windows, counts[:len(inside_windows)], 'inside')
+        outside_df = process_coverage(outside_windows, counts[len(inside_windows):], 'outside')
 
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)
