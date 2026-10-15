@@ -1,4 +1,4 @@
-import numpy as np
+import pandas as pd
 
 from src.module_logging import rescue_logger
 
@@ -8,11 +8,13 @@ def get_lost_reference_id(df):
     
     :param df: SQANTI classification dataframe in Pandas
     """
-    all_ref = df['associated_transcript'].to_numpy()
+    all_ref = df['associated_transcript'].unique()
     # Find all references were one of their transcripts is classified as "Isoforms"  
     isoform_ref = df.loc[df['filter_result'].eq('Isoform'), 'associated_transcript'].unique()
     rescue_logger.debug(f"Found {isoform_ref.size} references represented")
-    return np.setdiff1d(np.unique(all_ref), isoform_ref)
+    # Hash-based difference, sorted like np.setdiff1d; on string IDs numpy
+    # compares every pair of IDs
+    return pd.Index(all_ref).difference(isoform_ref).to_numpy()
 
 def generate_automatic_table(inclusion_df,class_df):
     """

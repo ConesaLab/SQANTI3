@@ -1,7 +1,6 @@
 import os
 import json
 import shutil
-import numpy as np
 import pandas as pd
 
 from src.wrapper_utils import sqanti_path
@@ -77,7 +76,8 @@ def run_automatic_rescue(classif_df,monoexons):
         rescue_classif['structural_category'] == 'full-splice_match',
         'associated_transcript'
     ].unique()
-    rescue = pd.DataFrame({'isoform': lost_ref[np.isin(lost_ref, fsm_refs)]})
+    has_fsm = pd.Series(lost_ref).isin(fsm_refs).to_numpy()
+    rescue = pd.DataFrame({'isoform': lost_ref[has_fsm]})
 
     # Split into reference transcripts and ISM TODO: Eliminate this step?
     rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
