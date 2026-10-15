@@ -75,7 +75,8 @@ def main():
     # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
     # file if it was made from the same targets and candidates (mapping fingerprint)
     hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                         args.corrected_isoforms_fasta,args.dir,args.output)
+                         args.corrected_isoforms_fasta,args.dir,args.output,
+                         args.cpus)
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results

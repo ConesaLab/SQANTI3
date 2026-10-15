@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 
 from src.module_logging import rescue_logger
@@ -15,18 +14,6 @@ def get_lost_reference_id(df):
     rescue_logger.debug(f"Found {isoform_ref.size} references represented")
     return np.setdiff1d(np.unique(all_ref), isoform_ref)
 
-def rescue_lost_reference(ref_id, classif):
-    # Filter classification
-    classif_ref = classif[classif['associated_transcript'] == ref_id]
-    
-    # Check for FSM
-    ref_check = any(classif_ref['structural_category'] == "full-splice_match")
-    
-    # If there is an FSM associated to the lost reference, return lost reference
-    if ref_check:
-        ref_df = pd.DataFrame({'isoform': [ref_id]})
-        return ref_df
-    
 def generate_automatic_table(inclusion_df,class_df):
     """
     Generate the rescue table with the results of automatic rescue
