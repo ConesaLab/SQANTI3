@@ -5,7 +5,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import List, Dict, Set, Optional, Union, get_args, get_origin
 from src.module_logging import qc_logger
-from src.utils import calculate_tss
+from src.utils import calculate_tss, is_expressed
+from src.config import MIN_EXPRESSION
 
 class genePredReader(object):
     """
@@ -207,10 +208,13 @@ class myQueryTranscripts:
     min_cov: Optional[float] = None
     min_cov_pos: Optional[float] = None
     sd_cov: Optional[float] = None
+    # length (bp) of the shortest intron, NA for mono-exonic transcripts
+    min_intron_length: Optional[int] = None
 
     FL: Optional[int] = None
-    # multisample m value. 
-    # Pending to allow different m values if groups have different size (M)
+    # multisample m value: number of samples where the transcript is expressed
+    # (is_expressed() with --min_expression). With --counts_design,
+    # as_dict() also reports one prevalence_<group> value per experimental group.
     prevalence: Optional[int] = None
 
     n_indels: Optional[int] = None
@@ -251,6 +255,8 @@ class myQueryTranscripts:
 
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
+    counts_design: Dict[str, list] = field(default_factory=dict)  # group -> samples (--counts_design)
+    min_expression: float = MIN_EXPRESSION  # minimum count for expression in a sample (--min_expression)
     AS_genes: Set[str] = field(default_factory=set)
     genes: Optional[list] = None  # List of genes associated with the isoform
     transcripts: Optional[list] = None  # List of transcripts associated with the isoform
@@ -365,17 +371,25 @@ class myQueryTranscripts:
 
         # Handle multi-sample FL counts
         if self.FL_dict:
-            n = 1 # minimum count value
             x = 0 # counts how many samples have expression
             for sample, count in self.FL_dict.items():
                 base[f"FL.{sample}"] = count
-                if count >= n: x += 1  
+                if is_expressed(count, self.min_expression): x += 1  
             # Set FL to sum of all samples for multi-sample case
             base["FL"] = sum(self.FL_dict.values())
             base["prevalence"] = x
 
+        # Per-group prevalence: same rule as prevalence, over the samples of each group.
+        # Written for every isoform so that the header does not depend on the first one.
+        for group, samples in self.counts_design.items():
+            if self.FL_dict:
+                base[f"prevalence_{group}"] = sum(is_expressed(self.FL_dict[s], self.min_expression)
+                                                  for s in samples)
+            else:
+                base[f"prevalence_{group}"] = "NA"
+
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start',
+        non_report_attrs = ['AS_genes','FL_dict','counts_design','min_expression','genes','transcripts', 'ref_start',
                             'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap']
         for attr in non_report_attrs:
             if attr in base:

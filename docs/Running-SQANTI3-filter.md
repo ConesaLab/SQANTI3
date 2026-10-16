@@ -170,6 +170,79 @@ Rules can be set for any numeric or character column in the classification file:
 - **Numeric values**: in this case, it is possible to define an interval (`[X,Y]`) or set just the lower limit (`X`). Please, take into account that the **limit values will be included**. 
 - **Character and logical columns**: such as `subcategory`, `RTS_stage` or `all_canonical`. In this case, users can simply establish which terms will be accepted. Of note, users may want to accept several of the values in the column (for instance, several subcategories). If so, the requisite can be defined as an array, and the filter will keep the entries if any of those values are present in the specified column.
 
+Requisites on junction-related columns (`RTS_stage`, `all_canonical`, `min_cov`, `min_cov_pos`, `sd_cov`, `min_intron_length`, `n_indels_junc`, `bite` and `predicted_NMD`) are skipped for mono-exonic transcripts, since they have no junctions.
+
+#### Minimum intron length
+
+The `min_intron_length` column of the classification file holds the length (bp) of the shortest intron of each transcript. Very short introns can come from alignment errors, where the aligner reports a small deletion as an intron. To discard multi-exonic transcripts with an intron shorter than 100 bp, add the requisite to the rules of the categories you want to control:
+
+```json
+{
+    "rest": [
+        {
+            "min_intron_length": 100
+        }
+     ]
+}
+```
+
+The threshold is inclusive, so a transcript whose shortest intron has exactly 100 bp passes. Mono-exonic transcripts are not affected by this requisite. Bear in mind that some annotated introns are shorter than 100 bp, so check the distribution of `min_intron_length` in your QC output before choosing the threshold.
+
+#### Multi-sample filtering: the `prevalence` column
+
+When SQANTI3 QC is run with a **multi-sample** `--fl_count` file, the classification file includes a `prevalence` column: the number of samples in which the isoform is expressed, that is, its count reaches the [`--min_expression`](Running-SQANTI3-Quality-Control.md#supplying-single-or-multi-sample-full-length-fl-counts---fl_count) value of QC (`count > 0` with the default, 0, and `count >= min_expression` otherwise). It can be used in rules like any other numeric column, to discard isoforms seen in too few samples to be considered reproducible. For example, the rule below keeps NNC transcripts that are not intrapriming products and were detected in at least 2 samples:
+
+```json
+{
+    "novel_not_in_catalog":[
+        {
+            "perc_A_downstream_TTS":[0,59],
+            "prevalence": 2
+        }
+    ]
+}
+```
+
+A threshold of 1 is not equivalent to omitting the requisite: it still discards isoforms that are not expressed in any sample. Isoforms missing from the `--fl_count` file have no prevalence value; like any other missing value, they fail the requisite and are reported as `NA value in prevalence`.
+
+##### Experimental groups
+
+If SQANTI3 QC was run with [`--counts_design`](Running-SQANTI3-Quality-Control.md#prevalence-per-experimental-group---counts_design), the classification file also has one `prevalence_<group>` column per experimental group. They are numeric columns too, so the usual logic of the rules decides how groups are combined: requisites of the same rule are combined with AND, and the rules of a structural category with OR.
+
+To require detection in every group, put the requisites in the same rule:
+
+```json
+{
+    "novel_not_in_catalog":[
+        {"all_canonical":"canonical", "prevalence_K": 2, "prevalence_B": 3}
+    ]
+}
+```
+
+To require detection in at least one group, write one rule per group:
+
+```json
+{
+    "novel_not_in_catalog":[
+        {"all_canonical":"canonical", "prevalence_K": 2},
+        {"all_canonical":"canonical", "prevalence_B": 3}
+    ]
+}
+```
+
+The prevalence over all samples can be combined with the per-group ones. The rules below keep the isoforms detected in at least 4 samples overall, or in at least 2 samples of each group:
+
+```json
+{
+    "novel_not_in_catalog":[
+        {"all_canonical":"canonical", "prevalence": 4},
+        {"all_canonical":"canonical", "prevalence_K": 2, "prevalence_B": 2}
+    ]
+}
+```
+
+Thresholds larger than the number of samples of a group are not checked: such a requisite can never be met.
+
 #### User-defined rules (JSON file) example
 
 As an example, let's say that we want to define a custom filter that will keep only isoforms that pass these rules:

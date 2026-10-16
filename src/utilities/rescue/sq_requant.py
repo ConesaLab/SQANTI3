@@ -49,10 +49,7 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
       as they lack length information required for TPM computation
     """
     prefix = f"{output_dir}/{output_prefix}"
-    #TODO: Make this take the variables from python directly
-    counts_df = parse_counts(counts_file)
-    # Keep only counts present in the original classification
-    counts_df = counts_df[counts_df['isoform'].isin(original_class['isoform'])]
+    counts_df = load_counts(counts_file, original_class)
     rescue_logger.info("Counts file parsed.")
     requant_df = requantify(counts_df, rescue_df, original_class, prefix)
     rescue_logger.info("Requantification of counts completed.")
@@ -62,6 +59,13 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
     #to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
     return
+
+def load_counts(counts_file, original_class):
+    """Count matrix used by requantification: the --counts file, restricted to the
+    isoforms of the filter classification."""
+    #TODO: Make this take the variables from python directly
+    counts_df = parse_counts(counts_file)
+    return counts_df[counts_df['isoform'].isin(original_class['isoform'])]
 
 def requantify(counts, rescue_df, classif_df, prefix):
     """

@@ -510,7 +510,8 @@ def test_polyapeak_empty_bed_file(tmp_path):
 
 ### prevalence tests ###
 # Number of samples in which each transcript is detected.
-# Detection threshold is one full read (count >= 1); see the contract test below.
+# A sample expresses a transcript when its count is above 0 (--min_expression 0,
+# the default) or reaches --min_expression; see the contract tests below.
 
 
 def _transcript_with_counts(fl_dict):
@@ -547,27 +548,29 @@ def test_prevalence_no_expression():
     assert d["FL"] == 0
 
 
-def test_prevalence_subunit_counts_are_not_detection():
-    """Contract: an estimated abundance below one full read is not a detection.
+def test_prevalence_fractional_counts_are_expression():
+    """Contract: by default any count above 0 is expression, fractional or not.
 
-    EM-based quantifiers (bambu, salmon, kallisto, RSEM) distribute each
-    ambiguous read across candidate isoforms, assigning fractional mass to
-    isoforms with no evidence of their own. Requiring at least one full read
-    is what separates evidence from allocation.
-
-    Measured empirically: lowering the threshold below 1 increases coverage
-    but degrades quantification accuracy, so these transcripts are noise.
-    They are not lost either: they reach the rescue module, which reassigns
-    their mass to the sibling isoforms the reads actually belong to.
+    EM-based quantifiers (bambu, salmon, kallisto, RSEM) distribute ambiguous
+    reads among isoforms, so an expressed isoform can have less than one read
+    in a sample. The default keeps those counts; --min_expression raises the bar.
     """
-    d = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 0.99}).as_dict()
-    assert d["prevalence"] == 0
+    d = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 0, "s4": 1.5}).as_dict()
+    assert d["prevalence"] == 3
 
 
-def test_prevalence_one_read_is_detection():
-    """One full read counts as a detection, whether the value is integer or not."""
-    d = _transcript_with_counts({"s1": 1.0, "s2": 1.5, "s3": 0.7}).as_dict()
-    assert d["prevalence"] == 2
+def test_prevalence_min_expression_is_inclusive():
+    """With a min_expression other than 0, a count equal to it is expression."""
+    obj = _transcript_with_counts({"s1": 1.0, "s2": 1.5, "s3": 0.7})
+    obj.min_expression = 1
+    assert obj.as_dict()["prevalence"] == 2
+
+
+def test_is_expressed():
+    """0 means any count above 0; any other value is a minimum count, inclusive."""
+    from src.utils import is_expressed
+    assert [is_expressed(c, 0) for c in (0, 0.01, 1)] == [False, True, True]
+    assert [is_expressed(c, 0.5) for c in (0.4, 0.5, 2)] == [False, True, True]
 
 
 def test_prevalence_single_sample():
@@ -596,3 +599,54 @@ def test_prevalence_absent_without_fl_counts():
 def test_prevalence_empty_fl_counts():
     """An empty FL_dict is treated the same as no FL_dict at all."""
     assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"
+
+
+def test_prevalence_uses_shared_expression_threshold():
+    """prevalence and prevalence_<group> count expression with the same threshold."""
+    obj = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 1.0})
+    obj.counts_design = {"A": ["s1", "s2"], "B": ["s3"]}
+    obj.min_expression = 0.9
+    d = obj.as_dict()
+    assert (d["prevalence"], d["prevalence_A"], d["prevalence_B"]) == (2, 1, 1)
+
+
+def test_default_min_expression_is_zero():
+    """Contract: the default keeps every count above 0 (see test_prevalence_fractional_counts_are_expression)."""
+    from src.config import MIN_EXPRESSION
+    assert MIN_EXPRESSION == 0
+    assert _transcript_with_counts({"s1": 1}).min_expression == 0
+
+
+def _transcript_with_design(fl_dict, design):
+    obj = _transcript_with_counts(fl_dict)
+    obj.counts_design = design
+    return obj
+
+
+def test_group_prevalence_per_group():
+    """Each group counts detections only over its own samples."""
+    d = _transcript_with_design({"K1": 3, "K2": 0, "K3": 1, "B1": 0, "B2": 0.7},
+                                {"K": ["K1", "K2", "K3"], "B": ["B1", "B2"]}).as_dict()
+    assert d["prevalence_K"] == 2
+    assert d["prevalence_B"] == 1
+    assert d["prevalence"] == 3
+
+
+def test_group_prevalence_ignores_samples_out_of_design():
+    """Samples not assigned to a group count for prevalence but not for any group."""
+    d = _transcript_with_design({"K1": 3, "B1": 2, "MIX": 9},
+                                {"K": ["K1"], "B": ["B1"]}).as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == (3, 1, 1)
+
+
+def test_group_prevalence_na_without_counts():
+    """An isoform missing from --fl_count has NA in every prevalence column, global and per group."""
+    d = _transcript_with_design({}, {"K": ["K1"], "B": ["B1"]}).as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == ("NA", "NA", "NA")
+
+
+def test_group_prevalence_absent_without_design():
+    d = _transcript_with_counts({"K1": 3, "B1": 2}).as_dict()
+    assert not [k for k in d if k.startswith("prevalence_")]
+    assert "counts_design" not in d
+    assert "min_expression" not in d

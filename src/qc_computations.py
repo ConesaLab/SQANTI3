@@ -2,10 +2,11 @@ from collections import defaultdict
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts
-from src.parsers import expression_parser, parse_counts
+from src.parsers import expression_parser, parse_counts, read_counts_design, check_counts_design
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev
 from src.module_logging import qc_logger
+from src.config import MIN_EXPRESSION
 
 def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
@@ -65,7 +66,17 @@ def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
             isoforms_info[iso].ratio_TSS = None
     return isoforms_info
 
-def full_length_quantification(fl_count, isoforms_info):
+def full_length_quantification(fl_count, isoforms_info, counts_design=None,
+                               min_expression=MIN_EXPRESSION):
+    """Assign FL counts to the isoforms.
+
+    In a multi-sample file, a sample expresses an isoform when its count is above 0
+    (min_expression 0, the default) or reaches min_expression; prevalence is the
+    number of such samples.
+    With counts_design (JSON file assigning samples to experimental groups), every
+    isoform also gets the design, which as_dict() uses to report one
+    prevalence_<group> column per group.
+    """
     qc_logger.info("**** Reading Full-length read abundance files.")
 
     # 1. Parse and set the ID as the index for easy lookup
@@ -75,6 +86,12 @@ def full_length_quantification(fl_count, isoforms_info):
     # 3. Get sample names
     fl_samples = df.columns.tolist()
     n = 0
+
+    design = {}
+    if counts_design is not None:
+        design = read_counts_design(counts_design)
+        check_counts_design(design, fl_samples)
+        qc_logger.info("Counts design: " + ", ".join(f"{g} ({len(s)} samples)" for g, s in design.items()))
 
     if len(fl_samples) == 1:
         # --- Single Sample Case ---
@@ -112,6 +129,8 @@ def full_length_quantification(fl_count, isoforms_info):
             else:
                 n += 1
                 obj.FL_dict = {s: 0 for s in fl_samples}
+            obj.counts_design = design
+            obj.min_expression = min_expression
 
     if n > 0:
         qc_logger.warning(f"{n} isoforms not found in FL count file. Assigned counts as 0.")
@@ -164,6 +183,7 @@ def isoforms_junctions(isoforms_info, reader):
     # Read the junction information to fill in several remaining unfilled fields in classification
     # (1) "canonical": is "canonical" if all junctions are canonical, otherwise "non_canonical"
     # (2) "bite": is TRUE if any of the junction "bite_junction" field is TRUE
+    # (3) "min_intron_length": length of the shortest intron of the isoform
 
     sj_covs_by_isoform = defaultdict(lambda: [])  # pbid --> list of total_cov for each junction so we can calculate SD later
     for r in reader:
@@ -177,6 +197,12 @@ def isoforms_junctions(isoforms_info, reader):
 
         if (isoforms_info[r['isoform']].bite is None) or (r['bite_junction'] == 'TRUE'):
             isoforms_info[r['isoform']].bite = r['bite_junction']
+
+        # junction coordinates are the 1-based first and last intronic bases
+        intron_length = int(r['genomic_end_coord']) - int(r['genomic_start_coord']) + 1
+        if (isoforms_info[r['isoform']].min_intron_length is None) or \
+            (isoforms_info[r['isoform']].min_intron_length > intron_length):
+            isoforms_info[r['isoform']].min_intron_length = intron_length
 
         if r['indel_near_junct'] == 'TRUE':
             if isoforms_info[r['isoform']].n_indels_junc is None:

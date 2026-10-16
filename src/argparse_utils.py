@@ -201,6 +201,14 @@ def qc_args_validation(args):
     # FL counts given
     if args.fl_count is not None:
         valid_file(args.fl_count,qc_logger)
+    if args.counts_design is not None:
+        if args.fl_count is None:
+            qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
+            sys.exit(1)
+        valid_file(args.counts_design,qc_logger)
+    if args.min_expression < 0:
+        qc_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
@@ -301,5 +309,23 @@ def rescue_args_validation(args):
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
+    if args.counts_design is not None:
+        valid_file(args.counts_design, rescue_logger)
+    if args.map_automatic_fsm and args.corrected_isoforms_fasta is None:
+        rescue_logger.error("--map_automatic_fsm needs the corrected isoforms FASTA file (--corrected_isoforms_fasta).")
+        sys.exit(1)
+    if args.min_expression < 0:
+        rescue_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
     if args.requant:
-        valid_file(args.counts,rescue_logger)
+        if args.counts is None:
+            rescue_logger.warning(
+                "Requantification is enabled by default but no --counts file was provided. "
+                "Isoforms will be rescued but NOT requantified: the resulting transcriptome "
+                "will contain rescued transcripts with no associated expression values. "
+                "Provide --counts to enable requantification, or pass --no-requant "
+                "to skip this step silently."
+            )
+            args.requant = False
+        else:
+            valid_file(args.counts, rescue_logger)

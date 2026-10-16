@@ -173,9 +173,27 @@ def flatten_dict(d):
             items.append((k, v))
     return dict(items)
 
+# Options declared with argparse.BooleanOptionalAction, i.e. the only ones
+# that accept a --no-<option> form. store_true flags must still be omitted
+# when False, since they have no negated counterpart.
+NEGATABLE_OPTIONS = {"requant"}
+
 def format_options(options):
     """Convert a dictionary of options into a command-line argument string."""
-    return ' '.join(f'--{key}' if value is True or value == "True" or value == "true" else f'--{key} {value}' for key, value in options.items() if value not in ['',False])
+    parts = []
+    for key, value in options.items():
+        if isinstance(value, str) and value.strip().lower() in ("true", "false"):
+            value = value.strip().lower() == "true"
+        if value is True:
+            parts.append(f"--{key}")
+        elif value is False:
+            if key in NEGATABLE_OPTIONS:
+                parts.append(f"--no-{key}")
+        elif value is None or value == '':
+            continue
+        else:
+            parts.append(f"--{key} {value}")
+    return ' '.join(parts)
 
 def validate_user_options(user_options, valid_keys):
     """Check if any user option is not in the list of valid keys."""
