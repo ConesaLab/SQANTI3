@@ -31,7 +31,7 @@ def reads_argparser():
     pa.add_argument('-s','--sites', type=str, default="ATAC,GCAG,GTAG", help='\t\tSet of splice sites to be considered as canonical (comma-separated list of splice sites). Default: GTAG,GCAG,ATAC.', required=False)
     pa.add_argument('--skip_hash', dest="SKIPHASH", action='store_true', help='Skip the hashing step')
     
-    # MDS arguments
+    # MODS arguments
     pm = parser.add_argument_group("Modification options")
     pm.add_argument("--mods", dest="mods_mode", default=False, action="store_true", help="Activate uBAM analysis mode")
     # If user does not give the modtypes we will use all found in the uBAM

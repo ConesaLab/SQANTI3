@@ -9,7 +9,7 @@ import shutil
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
-from src.utilities.sqanti_reads_mods import validate_MODS, mod_files_check, align_uBAM
+from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -47,7 +47,8 @@ def fill_design_table(args):
     return(df)
 
 def get_method_runSQANTI3(args, df):
-    
+    if args.mods_mode:
+        uBAM_files = get_mods_info(args, df, reads_logger)
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -77,9 +78,8 @@ def get_method_runSQANTI3(args, df):
                      if args.verbose:
                          reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
         if args.mods_mode:
-            _, uBAM_files = mod_files_check(args, file_acc, reads_logger)
             # uBAM -> fastq -> mappedBAM
-            fastq = align_uBAM(args, uBAM_files, file_acc, sampleID, reads_logger)
+            fastq = align_uBAM(args, uBAM_files[file_acc], file_acc, sampleID, reads_logger)
             cmd_sqanti = (
                 f"python {sqantiqcPath}/sqanti3_qc.py "
                 f"--isoforms {fastq} "

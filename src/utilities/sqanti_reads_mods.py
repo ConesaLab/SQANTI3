@@ -60,8 +60,8 @@ def validate_MODS(args,reads_logger):
         reads_logger.error(f"[ERROR] The length of the probabilities vector must be equal to the number of modification types or 1 (global probability).")
         sys.exit(-1)
     for i in args.MODPROB:
-        if i < 0 or i > 1:
-            reads_logger.error("[ERROR] The probabilities have to be a number between 0 and 1")
+        if i < 0.5 or i > 1:
+            reads_logger.error("[ERROR] The probabilities have to be a number between 0.5 and 1")
             sys.exit(-1)
     if args.MODTYPES == []:
         reads_logger.warning("[WARNING] No modification types given. Every modifications in the uBAMs will be included")
@@ -72,26 +72,43 @@ def validate_MODS(args,reads_logger):
     if all_correct:
         args.MODTYPES = types
     else:
-        reads_logger.error("[ERRROR] At least one of the given modifications is not accepted (accepted: m5C,m6A,inosine, pseU,2OmeC,2OmeA,2OmeG,2OmeU or their CHEBI code)")
+        reads_logger.error("[ERROR] At least one of the given modifications is not accepted (accepted: m5C,m6A,inosine, pseU,2OmeC,2OmeA,2OmeG,2OmeU or their CHEBI code)")
+        sys.exit(-1)
+    if len(set(args.MODTYPES)) != len(args.MODTYPES):
+        reads_logger.error("[ERROR] The modification types given are not unique")
         sys.exit(-1)
 
 def check_uBAM(path, reads_logger,n=1000):
-    '''Function to check if first n reads of a bam have MM/ML tags'''
-    bam = pysam.AlignmentFile(path,"rb", check_sq=False)
-    if bam.nreferences > 0:
-        reads_logger.error("[ERROR] BAM seems to have been aligned. uBAM is required" )
-        sys.exit(-1)
-    reads_checked = 0
-    reads_with_mods = 0
-    for read in bam:
-        if reads_checked >= n:
-            break
-        tags = dict(read.tags)
-        if read.has_tag("MM") and read.has_tag("ML"):
-            reads_with_mods +=1
-        reads_checked += 1
-    bam.close()
-    return reads_with_mods > 0
+    '''
+    Function to check if first n reads of a ubam have MM/ML tags.
+    It also checks if the bam is aligned and returns the modifications found in the first n reads
+    '''
+    with pysam.AlignmentFile(path,"rb", check_sq=False) as bam:
+        if bam.nreferences > 0:
+            reads_logger.error("[ERROR] BAM seems to have been aligned. uBAM is required" )
+            sys.exit(-1)
+        types_found = set()
+        types_new = set()
+        for i, read in enumerate(bam):
+            if i >= n:
+                break
+            try:
+                mods = read.modified_bases
+            except (ValueError, RuntimeError):
+                continue
+            if not mods:
+                continue
+            # for every modification found in the read, we check if it's in our dictionary and add it to the set of found modifications
+            for base, strand, code in mods:
+                key =f"{base}+{code}"
+                name = mod_lookup.get(key, None)
+                if name:
+                    types_found.add(name)
+                else:
+                    types_new.add(key)
+        if types_new:
+            reads_logger.warning(f"[WARNING] The following modifications were found in the uBAM but are not supported, they will be ignored: {', '.join(sorted(types_new))}") 
+    return types_found
 
 def mod_files_check(args, file_acc, reads_logger):
     """Checks that all the files needed for mods mode are in order"""
@@ -111,11 +128,14 @@ def mod_files_check(args, file_acc, reads_logger):
             sys.exit(-1)
         if args.verbose:
             reads_logger.debug(f'[INFO] You inputted bam files, we will run sqanti_reads in modifications mode for sample {uBAM_files}')
-        
-        if not check_uBAM(uBAM_files,reads_logger):
-            reads_logger.error(f"[ERROR] While checking first {1000} reads, no MM/ML tags where found")
+        mods = check_uBAM(uBAM_files,reads_logger)
+        if not mods:
+            reads_logger.error(f"[ERROR] While checking first 1000 reads, no MM/ML tags were found")
             sys.exit(-1)
-        return True, uBAM_files
+        if not set(args.MODTYPES).issubset(mods):
+            reads_logger.error(f"[ERROR] The following modifications were requested but not found in the uBAM: {', '.join(sorted(set(args.MODTYPES) - mods))}")
+            sys.exit(-1)
+        return mods, uBAM_files
 
 def align_uBAM(args, uBAM_file, file_acc, sampleID, reads_logger):
     '''Converts the uBAM to fastq keeping the MM/ML tags, aligns it with minimap2 into the
@@ -160,3 +180,28 @@ def align_uBAM(args, uBAM_file, file_acc, sampleID, reads_logger):
     run_command(cmd, reads_logger, os.path.join(logdir, "samtools_index.log"), description="indexing aligned uBAM reads")
 
     return fastq
+
+def get_mods_info(args, df, reads_logger):
+    '''
+    To check in every sample if the uBAM is valid and has the modifications.
+    It also saves the probabilities for each mod type in a dictionary.
+    '''
+    uBAM_files = {}
+    types_found = set()
+    # For each sample we check and add all modifications found
+    for _, row in df.iterrows():
+        mods, uBAM_files[row['file_acc']] = mod_files_check(args, row['file_acc'], reads_logger)
+        types_found |= mods
+
+    # If user does not give modtypes 
+    if args.MODTYPES == []:
+        # We use the mods found in all of the samples
+        args.MODTYPES = sorted(types_found)
+        
+    # if a single probability is used for every modification type
+    probs = args.MODPROB * len(args.MODTYPES) if len(args.MODPROB) == 1 else args.MODPROB
+    args.MODTOTHRESH = dict(zip(args.MODTYPES, probs))
+
+    reads_logger.info("Modifications to analyse (threshold): " +
+                      ", ".join(f"{mod} ({prob})" for mod, prob in args.MODTOTHRESH.items()))
+    return uBAM_files
