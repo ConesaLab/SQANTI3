@@ -1,3 +1,4 @@
+import gzip
 import logging
 import os, sys
 from argparse import Namespace
@@ -8,7 +9,8 @@ import pysam
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 
-from src.argparse_utils import valid_unique_ids, valid_gtf, filter_args_validation
+from src.argparse_utils import valid_unique_ids, valid_fasta, contains_gene_name, valid_gtf, filter_args_validation, \
+    index_sr_bams
 
 @pytest.fixture
 def tester_logger():
@@ -28,6 +30,34 @@ def test_valid_unique_ids_aborts_on_collision(tmp_path, tester_logger, caplog):
     assert "1 sequence IDs" in caplog.text
     assert "PB.1.1 <- PB.1.1|copyA, PB.1.1|copyB" in caplog.text
 
+def write_gz(path, text):
+    with gzip.open(path, "wt") as f:
+        f.write(text)
+    return str(path)
+
+@pytest.mark.parametrize("name", ["isoforms.fasta.gz", "isoforms.fa.gz", "reads.fastq.gz", "reads.fq.gz"])
+def test_valid_fasta_gzipped_allowed(tmp_path, tester_logger, name):
+    path = write_gz(tmp_path / name, ">PB.1.1\nACGT\n")
+    assert valid_fasta(path, tester_logger, allow_gz=True) == path
+
+def test_valid_fasta_gzipped_not_allowed(tmp_path, tester_logger, caplog):
+    """Inputs read with plain open() (genome, ORF input, filter/rescue FASTAs) must be uncompressed."""
+    path = write_gz(tmp_path / "genome.fa.gz", ">chr1\nACGT\n")
+    caplog.set_level(logging.ERROR)
+    with pytest.raises(SystemExit):
+        valid_fasta(path, tester_logger)
+    assert "is gzipped" in caplog.text
+
+def test_valid_fasta_gzipped_wrong_extension(tmp_path, tester_logger, caplog):
+    path = write_gz(tmp_path / "isoforms.txt.gz", ">PB.1.1\nACGT\n")
+    caplog.set_level(logging.ERROR)
+    with pytest.raises(SystemExit):
+        valid_fasta(path, tester_logger, allow_gz=True)
+    assert "is not a FASTA file" in caplog.text
+
+def test_contains_gene_name_gzipped(tmp_path):
+    assert contains_gene_name(write_gz(tmp_path / "with.fasta.gz", ">PB.1.1 gene_name=X\nACGT\n"))
+    assert not contains_gene_name(write_gz(tmp_path / "without.fasta.gz", ">PB.1.1\nACGT\n"))
 
 GTF_LINES = (
     'chr1\ttest\ttranscript\t1\t100\t.\t+\t.\tgene_id "G1"; transcript_id "T1";\n'
@@ -101,3 +131,30 @@ def test_filter_args_validation_uses_converted_gtf(tmp_path):
         filter_args_validation(args)
     assert args.filter_gtf == str(out_dir / "isoforms.converted.gtf")
     assert args.filter_gtf_input == str(gff)
+
+def write_sorted_bam(bam_path):
+    header = {"HD": {"VN": "1.6", "SO": "coordinate"}, "SQ": [{"SN": "chr1", "LN": 10000}]}
+    with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
+        read = pysam.AlignedSegment(bam.header)
+        read.query_name, read.reference_id, read.reference_start = "r1", 0, 100
+        read.cigarstring, read.query_sequence = "50M", "A" * 50
+        bam.write(read)
+
+def test_index_sr_bams_directory(tmp_path, tester_logger):
+    """Every BAM of an --SR_bam directory gets an index in index_dir, none next to the input (issue #611)."""
+    bam_dir = tmp_path / "bams"
+    bam_dir.mkdir()
+    for name in ["rep1.bam", "rep2.bam"]:
+        write_sorted_bam(bam_dir / name)
+    index_dir = tmp_path / "bam_index"
+    index_sr_bams(str(bam_dir), str(index_dir), 1, tester_logger)
+    assert len(os.listdir(index_dir)) == 2
+    assert sorted(os.listdir(bam_dir)) == ["rep1.bam", "rep2.bam"]
+
+def test_index_sr_bams_missing_bam_in_fofn(tmp_path, tester_logger, caplog):
+    fofn = tmp_path / "bams.fofn"
+    fofn.write_text(f"{tmp_path}/missing.bam\n")
+    caplog.set_level(logging.ERROR)
+    with pytest.raises(SystemExit):
+        index_sr_bams(str(fofn), str(tmp_path / "bam_index"), 1, tester_logger)
+    assert "missing.bam not found" in caplog.text

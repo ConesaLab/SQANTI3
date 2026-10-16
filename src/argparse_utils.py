@@ -1,4 +1,5 @@
 import os, sys
+import gzip
 
 from src.commands import GFFREAD_PROG, run_command
 from src.helpers import find_isoform_id_collisions
@@ -10,12 +11,18 @@ def valid_file(filename,logger):
         sys.exit(1)
     return filename
 
-def valid_fasta(filename,logger):
+def valid_fasta(filename,logger,allow_gz=False):
+    """
+    :param allow_gz: accept gzipped files (only for inputs read with the gzip-aware helpers)
+    """
     valid_file(filename,logger)
-    extension = filename.split('.')[-1]
+    extension = filename.removesuffix('.gz').split('.')[-1]
     valid_extensions = ['fasta', 'fa', 'fastq', 'fq', 'faa', 'fna']
     if extension not in valid_extensions:
         logger.error(f"File {filename} is not a FASTA file. Abort!")
+        sys.exit(1)
+    if filename.endswith('.gz') and not allow_gz:
+        logger.error(f"File {filename} is gzipped, but SQANTI3 needs this file uncompressed. Please decompress it. Abort!")
         sys.exit(1)
     return filename
 
@@ -135,7 +142,8 @@ def index_sr_bams(SR_bam, index_dir, cpus, logger):
         get_bam_index(bam, index_dir, cpus)
 
 def contains_gene_name(filepath):
-    with open(filepath, 'r') as f:
+    open_function = gzip.open if filepath.endswith('.gz') else open
+    with open_function(filepath, 'rt') as f:
         for line in f:
             if 'gene_name' in line:
                 return True
@@ -148,7 +156,7 @@ def qc_args_validation(args):
     valid_file(args.isoforms,qc_logger)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
-    elif valid_fasta(args.isoforms,qc_logger):
+    elif valid_fasta(args.isoforms,qc_logger,allow_gz=True):
         args.fasta = True
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")

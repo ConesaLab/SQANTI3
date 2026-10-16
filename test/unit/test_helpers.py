@@ -13,7 +13,7 @@ sys.path.insert(0, main_path)
 
 from src.helpers import (
     process_gtf_line, rename_isoform_seqids, get_corr_filenames, get_isoform_hits_name, 
-    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions, read_fasta_fastq, is_fastq_file
+    get_class_junc_filenames, get_omitted_name, find_isoform_id_collisions, read_fasta_fastq, is_fastq_file, uncompressed_size
 )
 
 
@@ -111,6 +111,23 @@ class TestReadFastaFastq:
             f.write("@read1\nACGT\n+\nIIII\n")
         assert is_fastq_file(str(fastq))
         assert list(read_fasta_fastq(str(fastq))) == [("read1", "ACGT")]
+
+
+class TestUncompressedSize:
+    """Test suite for uncompressed_size."""
+
+    def test_plain_file(self, tmp_path):
+        fasta = tmp_path / "isoforms.fasta"
+        fasta.write_text(">PB.1.1\nACGT\n")
+        assert uncompressed_size(str(fasta)) == os.path.getsize(fasta)
+
+    def test_gzipped_file(self, tmp_path):
+        content = "@read1\nACGT\n+\nIIII\n" * 1000
+        fastq = tmp_path / "reads.fastq.gz"
+        with gzip.open(fastq, "wt") as f:
+            f.write(content)
+        assert uncompressed_size(str(fastq)) == len(content)
+        assert os.path.getsize(fastq) < len(content)
 
 
 class TestFindIsoformIdCollisions:

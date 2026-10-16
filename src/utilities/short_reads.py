@@ -293,7 +293,7 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, metric, cpus, bam_index_d
     if metric == "mean":
         ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].mean(axis=1, numeric_only=True, skipna=True)
     elif metric == "3quartile":
-        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].quantile(q=0.75, axis=1, numeric_only=True, skipna=True)
+        ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].quantile(q=0.75, axis=1, numeric_only=True)  # quantile skips NaN by default and has no skipna argument
     elif metric == "max":
         ratio_rep_df['return_ratio'] = ratio_rep_df.iloc[:, 1:].max(axis=1, numeric_only=True, skipna=True)
     elif metric == "median":

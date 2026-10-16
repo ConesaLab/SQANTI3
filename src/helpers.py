@@ -34,6 +34,16 @@ def is_fastq_file(input_fasta):
     with open_function(input_fasta, mode="rt") as h:
         return h.readline().startswith('@')
 
+def uncompressed_size(input_file):
+    """
+    :param input_file: any file. Can be gzipped.
+    :return: size in bytes of the file once decompressed (for plain files, the file size)
+    """
+    if not input_file.endswith('.gz'):
+        return os.path.getsize(input_file)
+    with gzip.open(input_file, mode="rb") as h:
+        return sum(len(block) for block in iter(lambda: h.read(1 << 20), b''))
+
 def read_fasta_fastq(input_fasta):
     """
     Iterate over a FASTA or FASTQ file (autodetected, can be gzipped) without building SeqRecords,
