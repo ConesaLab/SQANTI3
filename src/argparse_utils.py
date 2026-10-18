@@ -273,15 +273,15 @@ def rescue_args_validation(args):
     if args.min_expression < 0:
         rescue_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
         sys.exit(1)
-    if args.requant:
+    if not args.skip_requant:
         if args.counts is None:
             rescue_logger.warning(
                 "Requantification is enabled by default but no --counts file was provided. "
                 "Isoforms will be rescued but NOT requantified: the resulting transcriptome "
                 "will contain rescued transcripts with no associated expression values. "
-                "Provide --counts to enable requantification, or pass --no-requant "
+                "Provide --counts to enable requantification, or pass --skip_requant "
                 "to skip this step silently."
             )
-            args.requant = False
+            args.skip_requant = True
         else:
             valid_file(args.counts, rescue_logger)

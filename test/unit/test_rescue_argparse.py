@@ -19,23 +19,19 @@ def parser():
 
 
 class TestRequantFlagParsing:
-    """--requant must be on by default and still accept its legacy forms."""
+    """Requantification is on by default and --skip_requant disables it."""
 
     def test_enabled_by_default(self, parser):
         args = parser.parse_args(MIN_ARGS)
-        assert args.requant is True
+        assert args.skip_requant is False
 
-    def test_long_flag_still_accepted(self, parser):
-        args = parser.parse_args(MIN_ARGS + ["--requant"])
-        assert args.requant is True
+    def test_skip_requant_disables_it(self, parser):
+        args = parser.parse_args(MIN_ARGS + ["--skip_requant"])
+        assert args.skip_requant is True
 
-    def test_short_flag_still_accepted(self, parser):
-        args = parser.parse_args(MIN_ARGS + ["-q"])
-        assert args.requant is True
-
-    def test_no_requant_disables_it(self, parser):
-        args = parser.parse_args(MIN_ARGS + ["--no-requant"])
-        assert args.requant is False
+    def test_legacy_requant_flag_is_rejected(self, parser):
+        with pytest.raises(SystemExit):
+            parser.parse_args(MIN_ARGS + ["--requant"])
 
 
 def _rescue_namespace(**overrides):
@@ -58,7 +54,7 @@ def _rescue_namespace(**overrides):
         map_automatic_fsm=False,
         random_forest="rf.RData",
         threshold=0.7,
-        requant=True,
+        skip_requant=False,
     )
     for key, value in overrides.items():
         setattr(ns, key, value)
@@ -80,30 +76,30 @@ class TestRequantValidation:
         caplog.set_level(logging.WARNING, logger=au.rescue_logger.name)
 
     def test_missing_counts_does_not_exit(self, caplog):
-        args = _rescue_namespace(requant=True, counts=None)
+        args = _rescue_namespace(skip_requant=False, counts=None)
         with caplog.at_level(logging.WARNING):
             au.rescue_args_validation(args)
-        assert args.requant is False
+        assert args.skip_requant is True
 
     def test_missing_counts_warns_explicitly(self, caplog):
-        args = _rescue_namespace(requant=True, counts=None)
+        args = _rescue_namespace(skip_requant=False, counts=None)
         with caplog.at_level(logging.WARNING):
             au.rescue_args_validation(args)
         assert any("NOT requantified" in record.message for record in caplog.records)
 
     def test_counts_provided_keeps_requant_on(self, caplog):
-        args = _rescue_namespace(requant=True, counts="counts.tsv")
+        args = _rescue_namespace(skip_requant=False, counts="counts.tsv")
         with caplog.at_level(logging.WARNING):
             au.rescue_args_validation(args)
-        assert args.requant is True
+        assert args.skip_requant is False
         assert not any("NOT requantified" in r.message for r in caplog.records)
 
-    def test_no_requant_skips_counts_check(self, monkeypatch):
+    def test_skip_requant_skips_counts_check(self, monkeypatch):
         checked = []
         monkeypatch.setattr(au, "valid_file", lambda filename, logger: checked.append(filename))
-        args = _rescue_namespace(requant=False, counts=None)
+        args = _rescue_namespace(skip_requant=True, counts=None)
         au.rescue_args_validation(args)
-        assert args.requant is False
+        assert args.skip_requant is True
         assert None not in checked
 
 

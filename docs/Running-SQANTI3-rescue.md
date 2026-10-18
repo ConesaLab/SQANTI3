@@ -35,7 +35,7 @@ As of SQANTI3 v5.1, a new module has been added to the SQANTI3 workflow for tran
 The SQANTI3 rescue algorithm is designed to be run **after transcriptome filtering** and uses the long read-based evidence provided by discarded isoforms (i.e. artifacts) to recover transcripts in the associated reference transcriptome. 
 The idea behind this strategy is to avoid losing transcripts/genes that are detected as expressed by long read sequencing, but whose start/end/junctions could not be confidently validated using orthogonal data, resulting in the removal of those genes/transcripts from the transcriptome. More details about this can be found in the [Motivation](#motivation) section below.
 
-In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Requantification is performed by default to reassign expression values to the rescued isoforms. It requires `--counts` and can be disabled with `--no-requant`.
+In particular, during the rescue, SQANTI3 will try to confidently assign each discarded artifact to the best matching reference transcript. As a result, SQANTI3 rescue will generate an **expanded transcriptome GTF** including a set of reference transcripts as well as the long read-defined isoforms that passed the filter. Requantification is performed by default to reassign expression values to the rescued isoforms. It requires `--counts` and can be disabled with `--skip_requant`.
 
 A new functionality of the rescue module is the requantification of the curated transcriptome. In this final step, the expression values of the transcripts that were not affected by filtering or rescue are kept intact, while the expression values of the rescued transcripts are transferred from their corresponding long read-defined artifact(s). More details about this can be found in the [Requantification]() section below.
 
@@ -189,7 +189,7 @@ All in all, these are the arguments accepted by `sqanti3_rescue.py rules`:
 
 ```bash
 usage: sqanti3_rescue.py [-h] --filter_class FILTER_CLASS -rg REFGTF -rf REFFASTA [--corrected_isoforms_fasta CORRECTED_ISOFORMS_FASTA] [--filtered_isoforms_gtf FILTERED_ISOFORMS_GTF] [-k REFCLASSIF] [--counts COUNTS]
-                         [-e {all,fsm,none}] [--mode {automatic,full}] [-q] [-s {rules,ml}] [-j JSON_FILTER] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--skip_evidence_check] [--map_automatic_fsm] [-r RANDOM_FOREST] [-t THRESHOLD] [-o OUTPUT] [-d DIR] [-c CPUS] [-v] [-l {ERROR,WARNING,INFO,DEBUG}]
+                         [-e {all,fsm,none}] [--mode {automatic,full}] [--skip_requant] [-s {rules,ml}] [-j JSON_FILTER] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--skip_evidence_check] [--map_automatic_fsm] [-r RANDOM_FOREST] [-t THRESHOLD] [-o OUTPUT] [-d DIR] [-c CPUS] [-v] [-l {ERROR,WARNING,INFO,DEBUG}]
 
 ```
 
@@ -225,9 +225,7 @@ Customization options:
                         Whether or not to include mono-exonic artifacts in the rescue. Default: all
   --mode {automatic,full}
                         If 'automatic' (default), only automatic rescue of FSM artifacts will be performed. If 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.
-  -q, --requant, --no-requant
-                        Run requantification of the rescued isoforms. Requires --counts.
-                        (default: True)
+  --skip_requant        Skip the requantification of the rescued isoforms, which redistributes counts from discarded artifacts to their replacement transcripts and requires --counts.
   -s {rules,ml}, --strategy {rules,ml}
                         Filter strategy used. Default: rules
 
@@ -235,9 +233,9 @@ Rules specific options:
   -j JSON_FILTER, --json_filter JSON_FILTER
                         Full path to the JSON file including the rules used when running the SQANTI3 rules filter. Default: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
   --counts_design COUNTS_DESIGN
-                        JSON file with the experimental groups given to SQANTI3 QC (--counts_design). Needed when the rules use prevalence_<group> columns, so that the evidence check computes them on the counts that rescued reference transcripts receive from their artifacts.
+                        TSV/CSV file with the experimental groups given to SQANTI3 QC (--counts_design). Needed when the rules use prevalence_<group> columns, so that the evidence check computes them on the counts that rescued reference transcripts receive from their artifacts.
   --min_expression MIN_EXPRESSION
-                        Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): 0 means any count above 0, any other value a count greater than or equal to it. Used by the evidence check to compute prevalence and prevalence_<group> on the counts that rescued reference transcripts receive from their artifacts. Default: 0.0
+                        Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): 0 means any count above 0, any other value a count greater than or equal to it. Used by the evidence check to compute prevalence and prevalence_<group> on the counts that rescued reference transcripts receive from their artifacts. Default: 0
   --skip_evidence_check
                         Do not apply the requisites on long-read counts (FL, prevalence, prevalence_<group>) to the rescued reference transcripts (behaviour of previous versions).
   --map_automatic_fsm   Map the FSM artifacts of automatic rescue (needs --corrected_isoforms_fasta), so that they are reassigned to a long-read isoform if their reference transcript fails the evidence check. By default their counts go to the gene residual.
@@ -371,7 +369,7 @@ DQ875385	0.758
 
 ### Requantification output
 
-Unless `--no-requant` is passed, and provided that `--counts` is supplied, two additional output files will be generated:
+Unless `--skip_requant` is passed, and provided that `--counts` is supplied, two additional output files will be generated:
 
 - `*_requantified_counts.tsv`: a two-column table including the isoform IDs and their corresponding expression values after requantification.
 - `*_requantified_extended.tsv`: an extended version of the previous table, with one extra column per sample with the counts of the isoform before requantification. In this table, the artifact isoforms are included.

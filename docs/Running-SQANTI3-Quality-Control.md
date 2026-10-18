@@ -132,14 +132,14 @@ Orthogonal data inputs:
   -fl FL_COUNT, --fl_count FL_COUNT
                         Full-length PacBio abundance file
   --counts_design COUNTS_DESIGN
-                        JSON file assigning the samples of a multi-sample --fl_count file to experimental groups, e.g.
-                        {"K": ["K1", "K2"], "B": ["B1", "B2"]}. Adds one prevalence_<group> column per group to the
-                        classification file.
+                        TSV/CSV file assigning the samples of a multi-sample --fl_count file to experimental groups, with a
+                        header and the columns "sample" and "group" (one row per sample). Adds one prevalence_<group> column
+                        per group to the classification file.
   --min_expression MIN_EXPRESSION
                         Minimum count for a transcript to be considered expressed in a sample of a multi-sample --fl_count
                         file; prevalence and prevalence_<group> count those samples. With the default, 0, any count above 0
                         is expression, which keeps fractional counts (e.g. bambu); with any other value the count must be
-                        greater than or equal to it. Default: 0.0
+                        greater than or equal to it. Default: 0
 
 Functional annotation:
   --isoAnnotLite        Run isoAnnot Lite to output a tappAS-compatible gff3 file
@@ -401,22 +401,26 @@ SQANTI3 QC supports single or multi-sample FL counts in a stadarized format. The
 
 The name of the first column can be anything, and the rest of the columns name will be used as sample/replicate identifiers. These will show up in the final classification file as `FL.<sample>` columns, where `<sample>` is the name of the corresponding column in the input FL count file. The sum of all the FL reads across the samples associated to one transcript will be recorded in the `FL` column of the `*_classification.txt` output file.
 
-With a multi-sample file, the `prevalence` column records the number of samples in which the transcript is expressed, that is, its count reaches `--min_expression`. With the default, 0, any count above 0 is expression (`count > 0`), which keeps the fractional counts of quantifiers that distribute ambiguous reads among isoforms, such as bambu. With any other value the count must be greater than or equal to it (`count >= min_expression`): for instance, `--min_expression 1` requires at least one full read, as in previous versions. It can be used in the [rules filter](Running-SQANTI3-filter.md#multi-sample-filtering-the-prevalence-column) to discard transcripts detected in too few samples.
+With a multi-sample file, the `prevalence` column records the number of samples in which the transcript is expressed. The threshold is set with `--min_expression`: with the default, 0, a transcript is expressed in a sample when its count is above 0; with any other value, when its count is greater than or equal to that value (for instance, `--min_expression 1` requires at least one full read). The default keeps the fractional counts that quantifiers such as bambu assign when they distribute ambiguous reads among isoforms. Like any other numeric column, `prevalence` can be used in the [rules filter](Running-SQANTI3-filter.md#defining-rules-and-requisites) to discard transcripts detected in too few samples.
 
 ### Prevalence per experimental group (`--counts_design`)
 
-When the samples come from several experimental conditions, the prevalence over all of them may not be the right measure: a transcript expressed in only one condition can never be detected in the samples of the others. The `--counts_design` option takes a JSON file that assigns samples to experimental groups:
+When the samples come from several experimental conditions, the prevalence over all of them may not be the right measure: a transcript expressed in only one condition can never be detected in the samples of the others. The `--counts_design` option takes a TSV or CSV file with a header and one row per sample, in which the `sample` column holds the sample names, as in the header of the `--fl_count` file, and the `group` column the experimental group of each sample. Any other column is ignored:
 
-```json
-{
-    "K": ["K1", "K2", "K3"],
-    "B": ["B1", "B2", "B3", "B4", "B5"]
-}
+```
+sample	group
+K1	K
+K2	K
+K3	K
+B1	B
+B2	B
 ```
 
 For each group, QC adds a `prevalence_<group>` column to the classification file (`prevalence_K` and `prevalence_B` in the example) with the number of samples of that group in which the transcript is expressed, with the same `--min_expression` threshold. The `prevalence` column over all samples is kept.
 
-Sample names must match the header of the `--fl_count` file, and each sample can belong to a single group. Group names can only contain letters, digits, `_` and `.`, since they become part of a column name. Samples of the `--fl_count` file that are not listed in the design (for instance, mixtures used as a response variable) still count for `prevalence` but for no group; a warning lists them. Transcripts missing from the `--fl_count` file get `NA` in every prevalence column.
+Each sample can belong to a single group, and group names can only contain letters, digits, `_` and `.`, since they become part of a column name. Samples of the `--fl_count` file that are not listed in the design (for instance, mixtures used as a response variable) still count for `prevalence` but for no group; a warning lists them. Transcripts missing from the `--fl_count` file get 0 in every prevalence column. If the `--fl_count` file has a single sample, the design is ignored with a warning, since prevalence can then only be 0 or 1.
+
+In the rules filter, these columns follow the usual logic: the requisites of a rule must all be met, and a transcript passes if it meets any of the rules of its structural category. A rule such as `{"prevalence_K": 2, "prevalence_B": 2}` therefore requires detection in both groups, whereas two separate rules, `{"prevalence_K": 2}` and `{"prevalence_B": 2}`, require it in at least one of them.
 
 When plotted, the script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 

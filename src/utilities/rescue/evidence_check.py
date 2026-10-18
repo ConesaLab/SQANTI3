@@ -18,7 +18,6 @@ import sys
 import numpy as np
 import pandas as pd
 
-from src.config import MIN_EXPRESSION
 from src.module_logging import rescue_logger
 from src.utils import is_expressed
 from src.utilities.rescue.sq_requant import build_artifact_table, redistribute_counts_vectorized
@@ -104,8 +103,8 @@ def target_counts(rescue_df: pd.DataFrame, classif_df: pd.DataFrame,
     return out
 
 
-def add_count_columns(agg: pd.DataFrame, design=None,
-                      min_expression: float = MIN_EXPRESSION) -> pd.DataFrame:
+def add_count_columns(agg: pd.DataFrame, design,
+                      min_expression: float) -> pd.DataFrame:
     """Add the count columns of QC computed on the aggregated counts.
 
     FL is the sum over samples, prevalence the number of samples where the target
@@ -124,7 +123,7 @@ def add_count_columns(agg: pd.DataFrame, design=None,
 
 
 def failed_targets(rescue_df: pd.DataFrame, classif_df: pd.DataFrame, counts_df: pd.DataFrame,
-                   rules_dict: dict, design=None, min_expression: float = MIN_EXPRESSION) -> set:
+                   rules_dict: dict, design, min_expression: float) -> set:
     """Reference targets whose counts (target_counts()) fail the count requisites.
 
     Args:
@@ -192,8 +191,8 @@ def check_design_for_rules(rule_sets: list, design) -> None:
 
 
 def apply_evidence_check(rescue_df: pd.DataFrame, inclusion_list, classif_df: pd.DataFrame,
-                         counts_df: pd.DataFrame, hits_df: pd.DataFrame, rules_dict: dict, design=None,
-                         min_expression: float = MIN_EXPRESSION):
+                         counts_df: pd.DataFrame, hits_df: pd.DataFrame, rules_dict: dict, design,
+                         min_expression: float):
     """Drop reference targets without count evidence and reassign their artifacts.
 
     Rows of failed targets stay in the rescue table, marked as failed and not

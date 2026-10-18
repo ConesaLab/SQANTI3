@@ -1,5 +1,5 @@
 import argparse
-from src.config import __version__, default_json, MIN_EXPRESSION
+from src.config import __version__, default_json
 
 def rescue_argparse():
 
@@ -46,13 +46,10 @@ def rescue_argparse():
                   default = "automatic", 
                   help = "If 'automatic' (default), only automatic rescue of FSM artifacts will be performed.\
                      \nIf 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
-  cc.add_argument("-q","--requant",
-                  action = argparse.BooleanOptionalAction,
-                  default = True,
-                  help = "Run requantification of the rescued isoforms, redistributing counts \
-                    \nfrom discarded artifacts to their replacement transcripts. \
-                    \nRequires --counts. Use --no-requant to skip it. \
-                    \nDefault: %(default)s")
+  cc.add_argument("--skip_requant",
+                  action="store_true",
+                  help = "Skip the requantification of the rescued isoforms, which redistributes counts \
+                    \nfrom discarded artifacts to their replacement transcripts and requires --counts.")
   cc.add_argument("-s","--strategy", 
                   choices = ["rules", "ml"],
                   default = "rules", 
@@ -66,10 +63,10 @@ def rescue_argparse():
                   help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter. \
                     \nDefault: %(default)s")
   rf.add_argument("--counts_design",
-                  help = "JSON file with the experimental groups given to SQANTI3 QC (--counts_design). \
+                  help = "TSV/CSV file with the experimental groups given to SQANTI3 QC (--counts_design). \
                     \nNeeded when the rules use prevalence_<group> columns, so that the evidence check \
                     \ncomputes them on the counts that rescued reference transcripts receive from their artifacts.")
-  rf.add_argument("--min_expression", type = float, default = MIN_EXPRESSION,
+  rf.add_argument("--min_expression", type = float, default = 0,
                   help = "Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): \
                     \n0 means any count above 0, any other value a count greater than or equal to it. \
                     \nUsed by the evidence check to compute prevalence and prevalence_<group> on the counts \

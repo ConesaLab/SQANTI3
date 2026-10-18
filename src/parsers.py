@@ -3,7 +3,6 @@ import sys
 import glob
 import re
 import csv
-import json
 
 import numpy as np
 import pandas as pd
@@ -338,65 +337,65 @@ def parse_counts(count_file):
 
 # Group names become prevalence_<group> columns and keys of the rules JSON file
 VALID_GROUP_NAME = re.compile(r"^[A-Za-z0-9_.]+$")
-
-def _reject_duplicate_groups(pairs):
-    """object_pairs_hook for json.load, which silently keeps the last duplicated key."""
-    keys = [key for key, _ in pairs]
-    duplicated = sorted({k for k in keys if keys.count(k) > 1})
-    if duplicated:
-        qc_logger.error(f"Duplicated group names in the counts design file: {duplicated}")
-        sys.exit(1)
-    return dict(pairs)
+# Columns of the counts design file: sample name and its experimental group
+DESIGN_COLUMNS = ["sample", "group"]
 
 def read_counts_design(design_file):
     """Read the experimental design: which samples belong to each group.
 
-    The file is a JSON object with one key per experimental group and, as
-    value, the list of its samples, named as in the header of the --fl_count file:
+    The file is a TSV or CSV table with a header and one row per sample: the
+    "sample" column holds the sample names, as in the header of the --fl_count
+    file, and the "group" column the experimental group of each sample. Any
+    other column is ignored.
 
-        {"K": ["K1", "K2", "K3"], "B": ["B1", "B2", "B3"]}
+        sample  group
+        K1      K
+        K2      K
+        B1      B
 
     Args:
-        design_file (str): path to the JSON design file
+        design_file (str): path to the TSV/CSV design file
 
     Returns:
         dict: group name -> list of sample names, in file order
 
     Exits:
-        Calls sys.exit(1) if the file is not valid JSON, is not an object of
-        non-empty lists of sample names, repeats a group, uses a group name that
-        is not a valid column suffix, or assigns a sample to more than one group.
+        Calls sys.exit(1) if the file cannot be parsed, lacks the sample or
+        group columns, has empty values, uses a group name that is not a valid
+        column suffix, or assigns a sample more than once.
     """
+    with open(design_file, 'r') as f:
+        header = f.readline()
+    sep = '\t' if '\t' in header else ','
     try:
-        with open(design_file, 'r') as f:
-            design = json.load(f, object_pairs_hook=_reject_duplicate_groups)
-    except json.JSONDecodeError as e:
-        qc_logger.error(f"Counts design file {design_file} is not valid JSON: {e}")
+        df = pd.read_csv(design_file, sep=sep, dtype=str)
+    except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
+        qc_logger.error(f"Error parsing counts design file {design_file}: {e}")
         sys.exit(1)
 
-    if not isinstance(design, dict) or not design:
-        qc_logger.error("The counts design file must be a JSON object with one entry per group, "
-                        'e.g. {"K": ["K1", "K2"], "B": ["B1", "B2"]}')
+    df.columns = df.columns.str.strip()
+    if df.empty or not all(c in df.columns for c in DESIGN_COLUMNS):
+        qc_logger.error("The counts design file must be a TSV/CSV table with a header and the "
+                        "columns 'sample' and 'group', with one row per sample.")
         sys.exit(1)
 
-    seen = {}
-    for group, samples in design.items():
-        if not VALID_GROUP_NAME.match(group):
-            qc_logger.error(f"Invalid group name {group!r} in the counts design file: use only "
-                            "letters, digits, '_' and '.' (it becomes the column prevalence_<group>).")
-            sys.exit(1)
-        if (not isinstance(samples, list) or not samples
-                or not all(isinstance(s, str) and s for s in samples)):
-            qc_logger.error(f"Group {group!r} in the counts design file must be a non-empty "
-                            "list of sample names.")
-            sys.exit(1)
-        for sample in samples:
-            if sample in seen:
-                qc_logger.error(f"Sample {sample!r} is assigned more than once in the counts design "
-                                f"file (groups {seen[sample]!r} and {group!r}).")
-                sys.exit(1)
-            seen[sample] = group
+    df = df[DESIGN_COLUMNS].apply(lambda col: col.str.strip())
+    if df.isna().any().any() or (df == "").any().any():
+        qc_logger.error("Empty sample or group names in the counts design file.")
+        sys.exit(1)
 
+    invalid = sorted({g for g in df["group"] if not VALID_GROUP_NAME.match(g)})
+    if invalid:
+        qc_logger.error(f"Invalid group names in the counts design file: {invalid}. Use only "
+                        "letters, digits, '_' and '.' (they become the columns prevalence_<group>).")
+        sys.exit(1)
+
+    duplicated = sorted(df.loc[df["sample"].duplicated(), "sample"].unique())
+    if duplicated:
+        qc_logger.error(f"Samples assigned more than once in the counts design file: {duplicated}")
+        sys.exit(1)
+
+    design = df.groupby("group", sort=False)["sample"].apply(list).to_dict()
     return design
 
 def check_counts_design(design, fl_samples):
@@ -405,14 +404,23 @@ def check_counts_design(design, fl_samples):
     Every sample of the design must be in the count file. Samples of the count
     file left out of the design are allowed: they may be samples that should not
     take part in any group (for instance, mixtures used as a response variable).
+    With a single-sample count file, prevalence can only be 0 or 1, so the
+    design is ignored with a warning.
+
+    Args:
+        design (dict): group name -> list of sample names (read_counts_design)
+        fl_samples (list): sample names of the count file
+
+    Returns:
+        dict: the design, or an empty dict if the count file is single-sample
 
     Exits:
-        Calls sys.exit(1) if the count file is single-sample, or if a sample of
-        the design is not in it.
+        Calls sys.exit(1) if a sample of the design is not in the count file.
     """
     if len(fl_samples) < 2:
-        qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
-        sys.exit(1)
+        qc_logger.warning("The count file has a single sample, so prevalence can only be 0 or 1: "
+                          "--counts_design is ignored and no prevalence_<group> columns are added.")
+        design = {}
 
     in_design = [s for samples in design.values() for s in samples]
     missing = [s for s in in_design if s not in fl_samples]
@@ -422,12 +430,14 @@ def check_counts_design(design, fl_samples):
         sys.exit(1)
 
     unused = [s for s in fl_samples if s not in in_design]
-    if unused:
+    if design and unused:
         qc_logger.warning(f"Samples not assigned to any group in the counts design file: {unused}")
 
     for group, samples in design.items():
         if len(samples) == 1:
             qc_logger.warning(f"Group {group!r} has a single sample: its prevalence can only be 0 or 1.")
+
+    return design
 
 def parse_td2_to_dict(td2_faa):
     """

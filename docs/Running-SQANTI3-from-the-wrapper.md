@@ -149,7 +149,7 @@ rescue:
     counts: ''
     rescue_mono_exonic: all
     mode: automatic
-    requant: true
+    skip_requant: false
     strategy: rules
     json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
     counts_design: ''

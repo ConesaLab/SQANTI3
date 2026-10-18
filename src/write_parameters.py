@@ -96,7 +96,7 @@ def write_rescue_parameters(args):
         f.write("Counts\t" + (os.path.abspath(args.counts) if args.counts is not None else "NA") + "\n")
         f.write("RescueMonoexonic\t" + str(args.rescue_mono_exonic) + "\n")
         f.write("Mode\t" + str(args.mode) + "\n")
-        f.write("Requant\t" + str(args.requant) + "\n")
+        f.write("SkipRequant\t" + str(args.skip_requant) + "\n")
         f.write("Strategy\t" + str(args.strategy) + "\n")
         f.write("CountsDesign\t" + (os.path.abspath(args.counts_design) if args.counts_design is not None else "NA") + "\n")
         f.write("MinExpression\t" + str(args.min_expression) + "\n")

@@ -159,7 +159,7 @@ class TestCountColumns:
     def test_columns_as_qc_computes_them(self):
         agg = pd.DataFrame({"FL.K1": [1.0], "FL.K2": [0.5], "FL.B1": [2.0], "FL.M1": [3.0]},
                            index=["REF1"])
-        out = add_count_columns(agg, {"K": ["K1", "K2"], "B": ["B1"]}).loc["REF1"]
+        out = add_count_columns(agg, {"K": ["K1", "K2"], "B": ["B1"]}, 0).loc["REF1"]
         assert out["FL"] == 6.5
         assert out["prevalence"] == 4          # any count above 0 is expression
         assert out["prevalence_K"] == 2        # half a read included
@@ -173,7 +173,7 @@ class TestCountColumns:
         assert (out["prevalence_K"], out["prevalence_B"]) == (1, 1)
 
     def test_single_sample(self):
-        agg = add_count_columns(pd.DataFrame({"FL": [4.0]}, index=["REF1"]))
+        agg = add_count_columns(pd.DataFrame({"FL": [4.0]}, index=["REF1"]), None, 0)
         assert agg.loc["REF1", "FL"] == 4 and agg.loc["REF1", "prevalence"] == 1
 
 
@@ -183,37 +183,37 @@ class TestFailedTargets:
         c = classif({"ism1": ("Artifact", {"K1": 1}), "ism2": ("Artifact", {"K2": 2})})
         r = rescue_table([("ism1", "REF1", "rules_mapping", "reference", "yes"),
                           ("ism2", "REF1", "rules_mapping", "reference", "no")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == set()
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == set()
 
     def test_counts_in_the_same_sample_do_not_create_reproducibility(self):
         c = classif({"ism1": ("Artifact", {"K1": 1}), "ism2": ("Artifact", {"K1": 2})})
         r = rescue_table([("ism1", "REF1", "rules_mapping", "reference", "yes"),
                           ("ism2", "REF1", "rules_mapping", "reference", "no")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == {"REF1"}
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == {"REF1"}
 
     def test_mixture_only_signal_fails_per_group_rules(self):
         # Detected in the mixtures, zero in both pure groups
         c = classif({"a1": ("Artifact", {"M1": 3, "M2": 4})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == {"REF1"}
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == {"REF1"}
 
     def test_mixture_only_signal_passes_global_prevalence(self):
         # The global prevalence counts every sample, mixtures included
         c = classif({"a1": ("Artifact", {"M1": 3, "M2": 4})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(GLOBAL), None) == set()
+        assert failed_targets(r, c, counts_of(c), parsed(GLOBAL), None, 0) == set()
 
     def test_or_between_groups(self):
         c = classif({"a1": ("Artifact", {"B1": 1, "B2": 1})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == set()
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == set()
 
     def test_and_between_groups(self):
         c = classif({"a1": ("Artifact", {"B1": 1, "B2": 1}),
                      "a2": ("Artifact", {"B1": 1, "B2": 1, "K1": 1, "K3": 2})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes"),
                           ("a2", "REF2", "automatic", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(EVERY_GROUP), DESIGN) == {"REF1"}
+        assert failed_targets(r, c, counts_of(c), parsed(EVERY_GROUP), DESIGN, 0) == {"REF1"}
 
     def test_fl_requisite_on_the_sum(self):
         c = classif({"a1": ("Artifact", {"K1": 2}), "a2": ("Artifact", {"B1": 2})})
@@ -221,7 +221,7 @@ class TestFailedTargets:
                           ("a2", "REF1", "rules_mapping", "reference", "no"),
                           ("a1", "REF2", "rules_mapping", "reference", "yes")])
         # a1 is split 1 + 1: REF1 receives 1 + 2 = 3 reads, REF2 1
-        assert failed_targets(r, c, counts_of(c), parsed([{"FL": 3}]), None) == {"REF2"}
+        assert failed_targets(r, c, counts_of(c), parsed([{"FL": 3}]), None, 0) == {"REF2"}
 
     def test_integer_read_is_not_split_into_detections(self):
         # One read in K1 and K2 tied between two references: requantification gives
@@ -229,14 +229,14 @@ class TestFailedTargets:
         c = classif({"a1": ("Artifact", {"K1": 1, "K2": 1})})
         r = rescue_table([("a1", "REF1", "rules_mapping", "reference", "yes"),
                           ("a1", "REF2", "rules_mapping", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == {"REF2"}
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == {"REF2"}
 
     def test_fractional_shares_are_expression_by_default(self):
         # Fractional counts (e.g. bambu) are split proportionally: 0.3 each
         c = classif({"a1": ("Artifact", {"K1": 0.6, "K2": 0.6})})
         r = rescue_table([("a1", "REF1", "rules_mapping", "reference", "yes"),
                           ("a1", "REF2", "rules_mapping", "reference", "yes")])
-        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN) == set()
+        assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN, 0) == set()
         assert failed_targets(r, c, counts_of(c), parsed(ANY_GROUP), DESIGN,
                               min_expression=0.5) == {"REF1", "REF2"}
 
@@ -289,7 +289,7 @@ class TestApplyEvidenceCheck:
         h = hits([("fsm1", "REF1", 0, 100), ("fsm1", "LR1", 256, 85),
                   ("nic1", "REF3", 0, 100), ("nic1", "LR_ART", 256, 90)])
         inclusion = pd.Series(["REF1", "REF2", "REF3"])
-        return apply_evidence_check(r, inclusion, c, counts_of(c), h, parsed(ANY_GROUP), DESIGN)
+        return apply_evidence_check(r, inclusion, c, counts_of(c), h, parsed(ANY_GROUP), DESIGN, 0)
 
     def test_failed_targets_leave_the_inclusion_list(self, setup):
         inclusion, _ = setup
@@ -324,7 +324,7 @@ class TestApplyEvidenceCheck:
         c = classif({"fsm1": ("Artifact", {"M1": 2}), "LR1": ("Isoform", {"K1": 10, "K2": 8})})
         r = rescue_table([("fsm1", "REF1", "automatic", "reference", "yes")])
         inc, df = apply_evidence_check(r, pd.Series(["REF1"]), c, counts_of(c), hits([]),
-                                       parsed(ANY_GROUP), DESIGN)
+                                       parsed(ANY_GROUP), DESIGN, 0)
         assert inc.empty
         assert "reassigned" not in set(df["evidence_check"])
         assert "fsm1" not in set(rows_for_requant(df)["artifact"])
@@ -340,7 +340,7 @@ class TestApplyEvidenceCheck:
                           ("a3", "REF1", "rules_mapping", "reference", "no")])
         h = hits([("a1", "LR1", 256, 90), ("a2", "LR1", 256, 90)])
         inc, df = apply_evidence_check(r, pd.Series(["REF1", "REF2"]), c, counts_of(c), h,
-                                       parsed([{"prevalence_K": 3}]), DESIGN)
+                                       parsed([{"prevalence_K": 3}]), DESIGN, 0)
         assert list(inc) == ["REF1"]
         assert set(df.loc[df["evidence_check"] == "reassigned", "artifact"]) == {"a2"}
 
@@ -349,7 +349,7 @@ class TestApplyEvidenceCheck:
         r = rescue_table([])
         c = classif({})
         out, df = apply_evidence_check(r, pd.DataFrame(columns=["isoform"]), c, counts_of(c), hits([]),
-                                       parsed(ANY_GROUP), DESIGN)
+                                       parsed(ANY_GROUP), DESIGN, 0)
         assert out.empty and "evidence_check" in df.columns
 
 
@@ -370,8 +370,9 @@ class TestOrchestration:
 
     @pytest.fixture
     def design_file(self, tmp_path):
-        p = tmp_path / "design.json"
-        p.write_text(json.dumps(DESIGN))
+        p = tmp_path / "design.tsv"
+        p.write_text("sample\tgroup\n" + "".join(f"{s}\t{g}\n" for g, samples in DESIGN.items()
+                                                 for s in samples))
         return str(p)
 
     def args(self, json_file, **kw):
@@ -402,7 +403,7 @@ class TestOrchestration:
         c = classif({"a1": ("Artifact", {"M1": 5, "M2": 5})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
         inc, df = run_evidence_check(c, r, pd.Series(["REF1"]), hits([]), json_file, design_file,
-                                     counts_file(tmp_path, c), str(tmp_path))
+                                     counts_file(tmp_path, c), str(tmp_path), 0)
         assert inc.empty
         assert df["evidence_check"].tolist() == ["failed"]
         # Only the count requisites are evaluated, written for traceability
@@ -414,7 +415,7 @@ class TestOrchestration:
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
         with pytest.raises(SystemExit):
             run_evidence_check(c, r, pd.Series(["REF1"]), hits([]), json_file, None,
-                               counts_file(tmp_path, c), str(tmp_path))
+                               counts_file(tmp_path, c), str(tmp_path), 0)
 
     def test_run_evidence_check_matches_main_unpacking(self, json_file, design_file, tmp_path):
         # main() unpacks (inclusion_list, rescue_df), as for the other rescue steps,
@@ -423,7 +424,7 @@ class TestOrchestration:
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
         inclusion_list, rescue_df = run_evidence_check(c, r, pd.Series(["REF1"]), hits([]),
                                                        json_file, design_file, counts_file(tmp_path, c),
-                                                       str(tmp_path))
+                                                       str(tmp_path), 0)
         assert isinstance(inclusion_list, pd.Series)
         assert isinstance(rescue_df, pd.DataFrame)
         assert inclusion_list.to_frame(name="isoform")["isoform"].tolist() == ["REF1"]

@@ -5,7 +5,6 @@ import sys
 import pandas as pd
 
 from src.wrapper_utils import sqanti_path
-from src.config import RESCUE_IGNORED_RULES, MIN_EXPRESSION
 from src.module_logging import rescue_logger, message
 from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
@@ -29,13 +28,22 @@ from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
 
-MINIMAP2_RESCUE_OPTS = "--secondary=yes -ax map-hifi"
 from src.parsers import read_counts_design, check_counts_design
 from src.utilities.rescue.evidence_check import (
     target_count_rules, count_samples, check_design_for_rules,
     write_evidence_rules, apply_evidence_check
 )
 from src.utilities.rescue.sq_requant import load_counts
+
+MINIMAP2_RESCUE_OPTS = "--secondary=yes -ax map-hifi"
+# Rules removed from the JSON file before filtering the reference transcriptome,
+# because they cannot be evaluated on it. A rule is removed when its column is one
+# of these names or starts with one of them followed by "." or "_".
+# - FL, FL.<sample>, prevalence, prevalence_<group>: long-read counts, which the
+#   reference does not have.
+# - subcategory: every reference FSM is reference_match, so the rule would test the
+#   annotation itself instead of the evidence supporting each reference transcript.
+RESCUE_IGNORED_RULES = ["FL", "prevalence", "subcategory"]
 
 def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
@@ -338,7 +346,7 @@ def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
 
 
 def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filter,
-                       counts_design, counts_file, out_dir, min_expression=MIN_EXPRESSION):
+                       counts_design, counts_file, out_dir, min_expression):
     """Apply the count requisites of the rules to the rescued reference targets.
 
     The requisites are written to {out_dir}/evidence_check_rules.json and
@@ -353,7 +361,7 @@ def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filt
     design = None
     if counts_design is not None:
         design = read_counts_design(counts_design)
-        check_counts_design(design, count_samples(counts_df))
+        design = check_counts_design(design, count_samples(counts_df))
     check_design_for_rules(rule_sets, design)
     rules_dict = write_evidence_rules(rule_sets, f"{out_dir}/evidence_check_rules.json")
     return apply_evidence_check(rescue_df, inclusion_list, classif_df, counts_df, hits_df, rules_dict,

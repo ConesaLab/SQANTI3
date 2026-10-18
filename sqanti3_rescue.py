@@ -129,7 +129,7 @@ def main():
   ## END ##
  
 
-  if args.requant:
+  if not args.skip_requant:
     if rescue_class is None:
       rescue_logger.warning(
         "Requantification skipped: it requires the rescued classification, which is only "
@@ -140,7 +140,7 @@ def main():
       requantification_pipeline(args.dir, args.output, args.counts, rows_for_requant(rescue_df),
                                 class_df, rescue_class)
   else:
-    rescue_logger.info("Requantification skipped (--no-requant). The count matrix will not include rescued transcripts.")
+    rescue_logger.info("Requantification skipped (--skip_requant). The count matrix will not include rescued transcripts.")
 
   message("Rescue finished successfully!", rescue_logger)
 

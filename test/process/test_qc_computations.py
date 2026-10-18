@@ -144,7 +144,9 @@ class TestFullLengthQuantification:
         """Test FL count parsing for single-sample format."""
         result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info
+            sample_isoforms_info,
+            None,
+            0
         )
         
         # Check that FL counts were assigned
@@ -158,7 +160,9 @@ class TestFullLengthQuantification:
         """Test FL count parsing for multi-sample format."""
         result_info = full_length_quantification(
             fl_count_file_multi,
-            sample_isoforms_info
+            sample_isoforms_info,
+            None,
+            0
         )
         
         # Check that FL_dict was populated for multi-sample
@@ -178,7 +182,9 @@ class TestFullLengthQuantification:
         
         result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info
+            sample_isoforms_info,
+            None,
+            0
         )
         
         # Missing isoform should get FL = 0
@@ -191,7 +197,9 @@ class TestFullLengthQuantification:
         
         result_info = full_length_quantification(
             fl_count_file_single,
-            sample_isoforms_info
+            sample_isoforms_info,
+            None,
+            0
         )
         
         # Other attributes should remain unchanged
@@ -202,7 +210,7 @@ class TestFullLengthQuantification:
         """Test that isoforms missing from a multi-sample FL count file get 0 for every sample."""
         fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, "PB.124830.1")
 
-        result_info = full_length_quantification(fl_count, sample_isoforms_info)
+        result_info = full_length_quantification(fl_count, sample_isoforms_info, None, 0)
 
         missing = result_info["PB.124830.1"]
         assert missing.FL_dict == {"sample1": 0, "sample2": 0, "sample3": 0}
@@ -215,9 +223,8 @@ class TestFullLengthQuantification:
 
     def test_fl_count_with_counts_design(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
         """With a design, every isoform reports one prevalence_<group> column."""
-        design = tmp_path / "design.json"
-        design.write_text('{"A": ["sample1", "sample2"], "B": ["sample3"]}')
-        result_info = full_length_quantification(fl_count_file_multi, sample_isoforms_info, str(design))
+        design = write_design(tmp_path, {"A": ["sample1", "sample2"], "B": ["sample3"]})
+        result_info = full_length_quantification(fl_count_file_multi, sample_isoforms_info, design, 0)
         for obj in result_info.values():
             d = obj.as_dict()
             assert {"prevalence_A", "prevalence_B"} <= set(d)
@@ -226,25 +233,82 @@ class TestFullLengthQuantification:
 
     def test_fl_count_min_expression(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
         """min_expression is the minimum count, inclusive, for a sample to express an isoform."""
-        design = tmp_path / "design.json"
-        design.write_text('{"A": ["sample1", "sample2"], "B": ["sample3"]}')
+        design = write_design(tmp_path, {"A": ["sample1", "sample2"], "B": ["sample3"]})
         # PB.124830.1 has 150, 200 and 180 reads in sample1, sample2 and sample3
         result_info = full_length_quantification(fl_count_file_multi, sample_isoforms_info,
-                                                 str(design), min_expression=180)
+                                                 design, 180)
         d = result_info["PB.124830.1"].as_dict()
         assert (d["prevalence"], d["prevalence_A"], d["prevalence_B"]) == (2, 1, 1)
 
-    def test_fl_count_design_unknown_sample_exits(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
-        design = tmp_path / "design.json"
-        design.write_text('{"A": ["sample1", "sampleX"]}')
-        with pytest.raises(SystemExit):
-            full_length_quantification(fl_count_file_multi, sample_isoforms_info, str(design))
+    def test_prevalence_counts_samples_with_expression(self, sample_isoforms_info, tmp_path):
+        fl_count = write_fl_count(tmp_path, {"s1": 10, "s2": 0, "s3": 5, "s4": 0, "s5": 1})
+        obj = full_length_quantification(fl_count, sample_isoforms_info, None, 0)["PB.124830.1"]
+        assert obj.prevalence == 3
+        assert obj.as_dict()["FL"] == 16
 
-    def test_fl_count_design_single_sample_exits(self, sample_isoforms_info, fl_count_file_single, tmp_path):
-        design = tmp_path / "design.json"
-        design.write_text('{"A": ["sample1"]}')
+    def test_prevalence_fractional_counts_are_expression(self, sample_isoforms_info, tmp_path):
+        """Contract: with min_expression 0 any count above 0 is expression, fractional or not.
+
+        EM-based quantifiers (bambu, salmon, kallisto, RSEM) distribute ambiguous
+        reads among isoforms, so an expressed isoform can have less than one read
+        in a sample. min_expression 0 keeps those counts; a higher value raises the bar.
+        """
+        fl_count = write_fl_count(tmp_path, {"s1": 0.4, "s2": 0.9, "s3": 0, "s4": 1.5})
+        obj = full_length_quantification(fl_count, sample_isoforms_info, None, 0)["PB.124830.1"]
+        assert obj.prevalence == 3
+
+    def test_prevalence_min_expression_is_inclusive(self, sample_isoforms_info, tmp_path):
+        """With a min_expression other than 0, a count equal to it is expression."""
+        fl_count = write_fl_count(tmp_path, {"s1": 1.0, "s2": 1.5, "s3": 0.7})
+        obj = full_length_quantification(fl_count, sample_isoforms_info, None, 1)["PB.124830.1"]
+        assert obj.prevalence == 2
+
+    def test_group_prevalence_per_group(self, sample_isoforms_info, tmp_path):
+        """Each group counts detections only over its own samples; samples out of
+        the design count for prevalence but not for any group."""
+        fl_count = write_fl_count(tmp_path, {"K1": 3, "K2": 0, "K3": 1, "B1": 0, "B2": 0.7, "MIX": 9})
+        design = write_design(tmp_path, {"K": ["K1", "K2", "K3"], "B": ["B1", "B2"]})
+        obj = full_length_quantification(fl_count, sample_isoforms_info, design, 0)["PB.124830.1"]
+        assert obj.prevalence == 4
+        assert obj.prevalence_dict == {"K": 2, "B": 1}
+
+    def test_group_prevalence_missing_isoform_is_zero(self, sample_isoforms_info, tmp_path):
+        """Isoforms missing from the count file have 0 in every prevalence column."""
+        fl_count = write_fl_count(tmp_path, {"K1": 3, "B1": 2})
+        design = write_design(tmp_path, {"K": ["K1"], "B": ["B1"]})
+        obj = full_length_quantification(fl_count, sample_isoforms_info, design, 0)["PB.103714.1"]
+        assert obj.prevalence == 0
+        assert obj.prevalence_dict == {"K": 0, "B": 0}
+
+    def test_fl_count_design_unknown_sample_exits(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+        design = write_design(tmp_path, {"A": ["sample1", "sampleX"]})
         with pytest.raises(SystemExit):
-            full_length_quantification(fl_count_file_single, sample_isoforms_info, str(design))
+            full_length_quantification(fl_count_file_multi, sample_isoforms_info, design, 0)
+
+    def test_fl_count_design_single_sample_is_ignored(self, sample_isoforms_info, fl_count_file_single, tmp_path):
+        """With a single-sample file the design is ignored with a warning, not an error."""
+        design = write_design(tmp_path, {"A": ["sample1"]})
+        result_info = full_length_quantification(fl_count_file_single, sample_isoforms_info, design, 0)
+        d = result_info["PB.124830.1"].as_dict()
+        assert d["FL"] == 150
+        assert not [k for k in d if k.startswith("prevalence_")]
+
+
+def write_fl_count(out_dir, counts):
+    """Write a multi-sample FL count file with counts {sample: count} for PB.124830.1 only."""
+    samples = list(counts)
+    out = out_dir / "fl_count_custom.tsv"
+    out.write_text("pbid\t" + "\t".join(samples) + "\n"
+                   + "PB.124830.1\t" + "\t".join(str(counts[s]) for s in samples) + "\n")
+    return str(out)
+
+
+def write_design(out_dir, design):
+    """Write a counts design TSV file from {group: [samples]}."""
+    out = out_dir / "design.tsv"
+    out.write_text("sample\tgroup\n" + "".join(f"{s}\t{g}\n" for g, samples in design.items()
+                                               for s in samples))
+    return str(out)
 
 
 ### full_length_quantification + write_classification_output tests ###
@@ -269,7 +333,7 @@ class TestFLCountsToClassificationOutput:
         """The header is taken from the first isoform, so it must contain the FL columns even if that isoform has no counts."""
         first_isoform = next(iter(sample_isoforms_info))
         fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, first_isoform)
-        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info)
+        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info, None, 0)
 
         df = self._write_and_read(isoforms_info, tmp_path)
 
@@ -282,7 +346,7 @@ class TestFLCountsToClassificationOutput:
         """Isoforms missing from the counts must be written as 0, not as empty cells."""
         last_isoform = list(sample_isoforms_info)[-1]
         fl_count = write_partial_fl_count(fl_count_file_multi, tmp_path, last_isoform)
-        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info)
+        isoforms_info = full_length_quantification(fl_count, sample_isoforms_info, None, 0)
 
         df = self._write_and_read(isoforms_info, tmp_path)
 
