@@ -2,43 +2,35 @@ import sys
 import pysam
 import os
 import glob
+import pandas as pd
 from src.commands import MINIMAP2_MODS_CMD, run_command
 from src.helpers import get_corr_filenames
+
+# For translation from one mod name to another
 ACCEPTED = ["m5C","m6A","inosine","pseU","2OmeC","2OmeA","2OmeG","2OmeU"]
 mod_lookup = {
     # m5C
-    "5-Methylcytosine": "m5C",
-    "C+m": "m5C",
-    "27551": "m5C",
+    "5-Methylcytosine": "m5C","C+m": "m5C","27551": "m5C",
     # m6A
-    "N(6)-Methyladenosine": "m6A",
-    "A+a": "m6A",
-    "21891": "m6A",
+    "N(6)-Methyladenosine": "m6A","A+a": "m6A","21891": "m6A",
     # inosine
-    "Inosine": "inosine",
-    "A+17596": "inosine",
-    "17596": "inosine",
+    "Inosine": "inosine","A+17596": "inosine","17596": "inosine",
     # pseU
-    "Pseudouridine": "pseU",
-    "T+17802": "pseU",
-    "17802": "pseU",
+    "Pseudouridine": "pseU","T+17802": "pseU","17802": "pseU",
     # 2OmeC
-    "2'-O-methylcytidine": "2OmeC",
-    "C+19228": "2OmeC",
-    "19228": "2OmeC",
+    "2'-O-methylcytidine": "2OmeC","C+19228": "2OmeC","19228": "2OmeC",
     # 2OmeA
-    "2'-O-methyladenosine": "2OmeA",
-    "A+69426": "2OmeA",
-    "69426": "2OmeA",
+    "2'-O-methyladenosine": "2OmeA","A+69426": "2OmeA","69426": "2OmeA",
     # 2OmeG
-    "2'-O-methylguanosine": "2OmeG",
-    "G+19229": "2OmeG",
-    "19229": "2OmeG",
+    "2'-O-methylguanosine": "2OmeG","G+19229": "2OmeG","19229": "2OmeG",
     # 2OmeU
-    "2'-O-methyluridine": "2OmeU",
-    "T+19227": "2OmeU",
-    "19227": "2OmeU"
+    "2'-O-methyluridine": "2OmeU","T+19227": "2OmeU","19227": "2OmeU"
     }
+
+CHEBI_to_acc = {"m":"m5C","a":"m6A", "19228":"2OmeC", 
+                 "17802":"pseU","19227":"2OmeU", "17596":"inosine" , 
+                 "69426":"2OmeA", "19229":"2OmeG"}
+acc_to_CHEBI = {v: k for k, v in CHEBI_to_acc.items()}
 
 def lookup_mods(args):
     # Function for mod_types parsing
@@ -154,7 +146,7 @@ def align_uBAM(args, uBAM_file, file_acc, sampleID, reads_logger):
         reads_logger.info(f"Aligned uBAM for {sampleID} already exists. Using it...")
         return fastq
 
-    # -y so that tags go to the read header
+    # -T so that tags go to the read header
     reads_logger.info(f"**** Converting uBAM to fastq for {sampleID}...")
     cmd = f"samtools fastq -T MM,ML,MN,Mm,Ml {uBAM_file} > {fastq}.tmp"
     run_command(cmd, reads_logger, os.path.join(logdir, "samtools_fastq.log"), description="converting uBAM to fastq")
@@ -205,3 +197,69 @@ def get_mods_info(args, df, reads_logger):
     reads_logger.info("Modifications to analyse (threshold): " +
                       ", ".join(f"{mod} ({prob})" for mod, prob in args.MODTOTHRESH.items()))
     return uBAM_files
+
+def convert_prob(prob):
+    '''
+    We convert the prob of the mods (from 0 to 256) to a number between 0 and 1
+    '''
+    return prob / 256
+
+def process_read(read,args,reads_logger):
+    '''
+    Function to process a read and return the modifications that pass the probability threshold
+    '''
+    read_id = read.query_name
+    mods = read.modified_bases
+    # We create the row with the read_id and read_length, and a list for each mod with pos and probs 
+    row = {"isoform": read_id, "read_length": read.query_length, 
+           "start": read.reference_start + 1, "end": read.reference_end, # 1-based
+           "chrom": read.reference_name, "strand": "-" if read.is_reverse else "+"}
+    for mod in args.MODTYPES:
+        row[f"{mod}_positions"] = ""
+        row[f"{mod}_probs"] = ""
+        row[f"{mod}_n_mod"] = 0
+    # We will have to convert read pos to genomic 
+    aligned_pairs = read.get_aligned_pairs(matches_only=True)
+    read_to_genomic = {read_pos: ref_pos for read_pos, ref_pos in aligned_pairs}
+    # For every mod (canonical base, strand, CHEBI code) with its [(pos,qual),...] list
+    for tupla, probs_list in mods.items():
+        valid_mods = [] # mods that pass the probability threshold
+        base, strand, code = tupla
+        code = str(code) # because CHEBI codes are interpreted as integers 
+        if CHEBI_to_acc.get(code) not in args.MODTYPES:
+            continue
+        mod_name = CHEBI_to_acc.get(code)
+        prob_lim = args.MODTOTHRESH.get(mod_name)
+        # For each position we check that the probability is above the threshold
+        for pos, prob in probs_list:
+            pos = read_to_genomic.get(pos,None) # convert to genomic position
+            if pos is not None:
+                pos = pos + 1 # convert to 1-based
+                prob = convert_prob(prob)
+                if prob >= prob_lim:
+                    valid_mods.append((pos, prob))
+        valid_mods.sort(key=lambda x: x[0]) # we make sure list is sorted by position
+        row[f"{mod_name}_probs"] = ','.join([str(round(prob,3)) for _, prob in valid_mods])
+        row[f"{mod_name}_positions"] = ','.join([str(pos) for pos, _ in valid_mods])
+        row[f"{mod_name}_n_mod"] = len(valid_mods)
+    return row
+
+def gen_mod_tsv(args,path_to_bam,reads_logger):
+    '''
+    Function to extract mod information from the aligned BAM to a TSV
+    '''
+    rows = []
+    with pysam.AlignmentFile(path_to_bam, "rb", threads=1) as bamfile:
+        if not bamfile.check_index():
+            reads_logger.error("Error: The BAM file does not have an index (.bai). Aborting.")
+            sys.exit(-1)
+        
+        for read in bamfile.fetch():
+            if read.is_secondary or read.is_supplementary or read.is_unmapped:
+                continue
+            row = process_read(read,args,reads_logger)
+            rows.append(row)
+    df = pd.DataFrame(rows)
+    df.to_csv(os.path.join(args.OUTPUT, "_modifications.tsv"), sep="\t", index=False)
+
+        
