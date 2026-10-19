@@ -69,6 +69,78 @@ def split_fasta_input(isoforms, split_root_dir, chunks):
         raise ValueError(f"Input file '{isoforms}' contains no sequences.")
     return split_outs
 
+# Root, limit, usage and reclaimable-cache names of each cgroup memory layout
+CGROUP_MEMORY_LAYOUTS = {
+    'memory': ('/sys/fs/cgroup/memory', 'memory.limit_in_bytes',
+               'memory.usage_in_bytes', 'total_inactive_file'),  # cgroup v1
+    '': ('/sys/fs/cgroup', 'memory.max', 'memory.current',
+         'inactive_file'),  # cgroup v2
+}
+
+def read_cgroup_value(path):
+    """Return the integer in a cgroup file, or None if it is missing or 'max'."""
+    try:
+        with open(path) as f:
+            value = int(f.read().strip())
+    except (OSError, ValueError):
+        value = None
+    return value
+
+def read_cgroup_stat(path, key):
+    """Return one field of a cgroup memory.stat file, or 0 if it is missing."""
+    try:
+        with open(path) as f:
+            fields = dict(line.split() for line in f if len(line.split()) == 2)
+    except OSError:
+        fields = {}
+    return int(fields.get(key, 0))
+
+def read_cgroup_memory():
+    """
+    Return (used, limit) in bytes for the most restrictive memory cgroup that
+    holds this process, or None if no limit is set. SLURM sets --mem on the job
+    or step cgroup, not on the task cgroup of the process, so the cgroups above
+    it are checked too. Inactive file cache can be reclaimed and is not counted
+    as used.
+    """
+    result = None
+    try:
+        with open('/proc/self/cgroup') as f:
+            cgroup_lines = f.read().splitlines()
+    except OSError:
+        cgroup_lines = []
+    total_memory = psutil.virtual_memory().total
+    for line in cgroup_lines:
+        _, controllers, path = line.split(':', 2)
+        controller = 'memory' if 'memory' in controllers.split(',') else controllers
+        if result is None and controller in CGROUP_MEMORY_LAYOUTS:
+            root, limit_name, usage_name, inactive_name = CGROUP_MEMORY_LAYOUTS[controller]
+            directory = root + path.rstrip('/')
+            while directory.startswith(root):
+                limit = read_cgroup_value(os.path.join(directory, limit_name))
+                usage = read_cgroup_value(os.path.join(directory, usage_name))
+                # An unlimited cgroup reports 'max' (v2) or a huge number (v1)
+                if (limit is not None and usage is not None and limit < total_memory
+                        and (result is None or limit < result[1])):
+                    inactive = read_cgroup_stat(os.path.join(directory, 'memory.stat'),
+                                                inactive_name)
+                    result = (usage - inactive, limit)
+                directory = os.path.dirname(directory)
+    return result
+
+def memory_use_percent():
+    """
+    Percentage of memory in use: the larger of the use of the whole machine and,
+    inside a cgroup with a memory limit (a SLURM job with --mem, for instance),
+    the use of that cgroup against its limit.
+    """
+    percent = psutil.virtual_memory().percent
+    cgroup_memory = read_cgroup_memory()
+    if cgroup_memory is not None:
+        used, limit = cgroup_memory
+        percent = max(percent, round(100 * used / limit, 1))
+    return percent
+
 def read_shared_inputs(args):
     """
     Read the genome and parse the reference annotation once for all the chunks.
@@ -202,10 +274,10 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
         # Keep only alive processes
         active_processes = [p for p in active_processes if p.is_alive()]
         
-        # Check system memory. We need to reserve some overhead (e.g., >15% free memory)
-        # to process the reference genome for each chunk
-        mem_info = psutil.virtual_memory()
-        can_launch_mem = mem_info.percent < 85  or len(active_processes) == 0
+        # Check memory, against the job's limit when there is one. We need to
+        # reserve some overhead (e.g., >15% free memory) for each new chunk
+        mem_percent = memory_use_percent()
+        can_launch_mem = mem_percent < 85  or len(active_processes) == 0
         
         # max_workers is at least 1, so a worker can always start when none is running
         can_launch_cpu = len(active_processes) < max_workers
@@ -213,7 +285,7 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
         # Launch next chunk if resources are safe
         if pending_tasks and can_launch_cpu and can_launch_mem:
             i, (d, x) = pending_tasks.pop(0)
-            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_info.percent}%)")
+            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_percent}%)")
             
             args2 = copy.deepcopy(args)
             args2.isoforms = x
