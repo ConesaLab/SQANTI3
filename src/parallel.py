@@ -185,8 +185,15 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
 
     pools = []
     
-    max_concurrent = psutil.cpu_count(logical=True) or 1
-    cpus_per_worker = args.cpus if hasattr(args, 'cpus') and args.cpus > 0 else 1
+    # -t is the CPU budget of the whole run (sequence_correction() already
+    # gives each worker's aligner cpus // chunks), and only the CPUs this
+    # process may use count, such as a SLURM allocation, not every CPU of the
+    # machine. A worker classifies on one CPU, so up to that many run at once
+    if hasattr(os, 'sched_getaffinity'):
+        available_cpus = len(os.sched_getaffinity(0))
+    else:
+        available_cpus = psutil.cpu_count(logical=True) or 1
+    max_workers = max(1, min(args.cpus, available_cpus))
 
     pending_tasks = list(enumerate(split_outs))
     active_processes = []
@@ -200,9 +207,8 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
         mem_info = psutil.virtual_memory()
         can_launch_mem = mem_info.percent < 85  or len(active_processes) == 0
         
-        current_used_cpus = len(active_processes) * cpus_per_worker
-        # Always allow at least 1 process if active_processes is 0, to prevent deadlocks
-        can_launch_cpu = (current_used_cpus + cpus_per_worker) <= max_concurrent or len(active_processes) == 0
+        # max_workers is at least 1, so a worker can always start when none is running
+        can_launch_cpu = len(active_processes) < max_workers
 
         # Launch next chunk if resources are safe
         if pending_tasks and can_launch_cpu and can_launch_mem:
@@ -214,7 +220,6 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
             args2.novel_gene_prefix = str(i)
             args2.dir = d
             args2.report = 'skip'
-            args2.cpus = cpus_per_worker # Allocate a fair share of CPUs per worker
             
             p = Process(target=run, args=(args2, genome_dict, reference))
             p.start()
