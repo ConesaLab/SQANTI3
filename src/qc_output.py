@@ -48,8 +48,8 @@ def write_junction_output(outputJuncPath, RTS_info, fields_junc_cur):
         fout_junc = DictWriter(h, fieldnames=fields_junc_cur, delimiter='\t')
         fout_junc.writeheader()
         for r in DictReader(open(outputJuncPath+"_tmp"), delimiter='\t'):
-            if r['isoform'] in RTS_info:
-                r['RTS_junction'] = 'TRUE' if r['junction_number'] in RTS_info[r['isoform']] else 'FALSE'
+            # RTS_info only holds isoforms with at least one RT-switching junction
+            r['RTS_junction'] = 'TRUE' if r['junction_number'] in RTS_info.get(r['isoform'], ()) else 'FALSE'
             fout_junc.writerow(r)
 
 def write_isoform_hits(outdir,prefix, isoforms_info):

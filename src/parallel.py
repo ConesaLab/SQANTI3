@@ -6,12 +6,11 @@ import time
 import psutil
 
 from multiprocessing import Process
-from Bio import SeqIO
 
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
+from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -25,6 +24,45 @@ def get_split_dir(outdir,prefix):
 
 def natural_sort_key(s):
     return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
+
+def split_fasta_input(isoforms, split_root_dir, chunks):
+    """
+    Split a FASTA or FASTQ file into at most `chunks` FASTA files, one per directory in split_root_dir.
+
+    :return: list of (chunk directory, chunk FASTA file)
+    """
+    # FASTA or FASTQ input, streamed in one pass (read files can be very large). Sequences are written
+    # in input order, and a new chunk starts once ~file_size/chunks bytes of input have been read,
+    # as in the GTF branch. Chunks are written as FASTA: FASTQ qualities are not used downstream.
+    # Gzipped input uses its uncompressed size, so it is split exactly like the decompressed file.
+    file_size = uncompressed_size(isoforms)
+    target_chunk_bytes = max(1, file_size // chunks + (1 if file_size % chunks else 0))
+    is_fastq = is_fastq_file(isoforms)
+
+    split_outs = []
+    current_f = None
+    current_chunk_bytes = 0
+    try:
+        for title, seq in read_fasta_fastq(isoforms):
+            if current_f is None or (current_chunk_bytes >= target_chunk_bytes and len(split_outs) < chunks):
+                if current_f is not None:
+                    current_f.close()
+                d = os.path.join(split_root_dir, str(len(split_outs)))
+                os.makedirs(d, exist_ok=True)
+                current_f = open(os.path.join(d, os.path.basename(isoforms) + '.split' + str(len(split_outs))), 'w')
+                split_outs.append((os.path.abspath(d), current_f.name))
+                current_chunk_bytes = 0
+            current_f.write(f">{title}\n{seq}\n")
+            # Size of the record in the input file: header, sequence (+ '+' line and qualities in FASTQ)
+            current_chunk_bytes += len(title) + 2 + (2 * len(seq) + 4 if is_fastq else len(seq) + 1)
+    finally:
+        if current_f is not None and not current_f.closed:
+            current_f.close()
+
+    if not split_outs:
+        qc_logger.error(f"Input file '{isoforms}' contains no sequences.")
+        raise ValueError(f"Input file '{isoforms}' contains no sequences.")
+    return split_outs
 
 def split_input_run(args, outdir):
     SPLIT_ROOT_DIR = outdir
@@ -90,21 +128,7 @@ def split_input_run(args, outdir):
             qc_logger.warning(f"No primary features (e.g., transcript, mRNA) detected in '{args.isoforms}'. SQANTI3 might fail to process this file correctly.")
 
     else:
-        # FASTA file handling remains unchanged
-        recs = [r for r in SeqIO.parse(open(args.isoforms),'fasta')]
-        n = len(recs)
-        chunk_size = n//args.chunks + (n%args.chunks >0)
-        split_outs = []
-        for i in range(args.chunks):
-            if i*chunk_size >= n:
-                break
-            d = os.path.join(SPLIT_ROOT_DIR, str(i))
-            os.makedirs(d)
-            f = open(os.path.join(d, os.path.basename(args.isoforms)+'.split'+str(i)), 'w')
-            for j in range(i*chunk_size, min((i+1)*chunk_size, n)):
-                SeqIO.write(recs[j], f, 'fasta')
-            f.close()
-            split_outs.append((os.path.abspath(d), f.name))
+        split_outs = split_fasta_input(args.isoforms, SPLIT_ROOT_DIR, args.chunks)
 
     pools = []
     
@@ -155,9 +179,76 @@ def split_input_run(args, outdir):
         p.join()
     return [d for (d,x) in split_outs]
 
+def concat_tables(in_files, out_file):
+    """
+    Concatenate tab-separated files that share a one-line header, keeping the header once.
+    Missing input files are skipped. out_file is only written if at least one input exists.
+
+    :return: number of data lines written
+    """
+    in_files = [f for f in in_files if os.path.exists(f)]
+    if not in_files:
+        return 0
+    n_lines = 0
+    with open(out_file, 'w') as out:
+        for i, in_file in enumerate(in_files):
+            with open(in_file) as h:
+                header = h.readline()
+                if i == 0:
+                    out.write(header)
+                for line in h:
+                    out.write(line)
+                    n_lines += 1
+    return n_lines
+
+def concat_sams(in_files, out_file):
+    """
+    Concatenate the SAM files of the chunks. The header (@ lines) is taken from the first chunk:
+    all chunks are aligned to the same genome, so their @SQ lines are identical.
+    """
+    with open(out_file, 'w') as out:
+        for i, in_file in enumerate(in_files):
+            with open(in_file) as h:
+                for line in h:
+                    if line.startswith('@') and i > 0:
+                        continue
+                    out.write(line)
+
+def combine_alignment_outputs(args, split_dirs):
+    """
+    Combine the outputs of the alignment step of each chunk (only produced with FASTA/FASTQ input):
+    corrected SAM, indels table, supplementary alignments report and unmapped isoforms list.
+    Without this, they are lost when the split directories are removed.
+    """
+    _, corrSAM, _, _, _ = get_corr_filenames(args.dir, args.output)
+    split_sams = [get_corr_filenames(d, args.output)[1] for d in split_dirs]
+    if not all(os.path.exists(sam) for sam in split_sams):
+        qc_logger.warning("Not all chunks have an alignment SAM file. The corrected SAM will not be combined.")
+        return
+
+    concat_sams(split_sams, corrSAM)
+
+    def indels_name(sam):
+        # Same naming as calc_indels_from_sam: <corrected SAM without extension>_indels.txt
+        return os.path.splitext(sam)[0] + "_indels.txt"
+    concat_tables([indels_name(sam) for sam in split_sams], indels_name(corrSAM))
+
+    # Same warnings as a run without chunks, now with the final paths (the chunks only log a debug line)
+    supplementary_file = get_supplementary_name(args.dir, args.output)
+    n_split = 0
+    if concat_tables([get_supplementary_name(d, args.output) for d in split_dirs], supplementary_file) > 0:
+        with open(supplementary_file) as h:
+            n_split = len({line.split('\t')[0] for line in h} - {"isoform"})
+    warn_supplementary(n_split, supplementary_file)
+
+    unmapped_file = get_unmapped_name(args.dir, args.output)
+    n_unmapped = concat_tables([get_unmapped_name(d, args.output) for d in split_dirs], unmapped_file)
+    warn_unmapped(n_unmapped, unmapped_file)
+
 def combine_split_runs(args, split_dirs):
     """
-    Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt
+    Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt and, with FASTA/FASTQ input,
+    the alignment outputs (.sam, indels, supplementary alignments, unmapped isoforms).
     Then write out the PDF report
     """
     corrGTF, _, corrFASTA, corrORF , corrCDS_GTF_GFF = get_corr_filenames(args.dir, args.output)
@@ -212,6 +303,9 @@ def combine_split_runs(args, split_dirs):
     f_fasta.close()
     f_gtf.close()
     f_junc_temp.close()
+
+    if args.fasta:
+        combine_alignment_outputs(args, split_dirs)
 
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)

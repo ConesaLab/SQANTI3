@@ -1,9 +1,13 @@
 import os
+import re
 import gzip
 
 
+from collections import defaultdict
 from typing import Dict, Optional
 from Bio import SeqIO #type: ignore
+from Bio.SeqIO.FastaIO import SimpleFastaParser #type: ignore
+from Bio.SeqIO.QualityIO import FastqGeneralIterator #type: ignore
 
 from src.utilities.cupcake.sequence.err_correct_w_genome import err_correct
 from src.utilities.cupcake.sequence.sam_to_gff3 import convert_sam_to_gff3
@@ -14,39 +18,83 @@ from src.parsers import parse_TD2, parse_corrORF
 from src.module_logging import qc_logger
 
 ### Environment manipulation functions ###
-def rename_isoform_seqids(input_fasta):
+def clean_isoform_id(seqid):
+    """
+    Keep the part of a sequence ID before '|' or the first space.
+    For example, "PB.1.1|chr1:10-100|xxxxxx" becomes "PB.1.1".
+    """
+    return seqid.split('|')[0].split()[0]
+
+def is_fastq_file(input_fasta):
+    """
+    :param input_fasta: fasta or fastq. Can be gzipped.
+    :return: True if the file is FASTQ (first line starts with '@'), False if FASTA
+    """
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    with open_function(input_fasta, mode="rt") as h:
+        return h.readline().startswith('@')
+
+def uncompressed_size(input_file):
+    """
+    :param input_file: any file. Can be gzipped.
+    :return: size in bytes of the file once decompressed (for plain files, the file size)
+    """
+    if not input_file.endswith('.gz'):
+        return os.path.getsize(input_file)
+    with gzip.open(input_file, mode="rb") as h:
+        return sum(len(block) for block in iter(lambda: h.read(1 << 20), b''))
+
+def read_fasta_fastq(input_fasta):
+    """
+    Iterate over a FASTA or FASTQ file (autodetected, can be gzipped) without building SeqRecords,
+    which is much faster for large read files. FASTQ qualities are not returned.
+
+    :return: generator of (title, sequence); title is the full header line without '>' or '@'
+    """
+    open_function = gzip.open if input_fasta.endswith('.gz') else open
+    is_fastq = is_fastq_file(input_fasta)
+    with open_function(input_fasta, mode="rt") as h:
+        if is_fastq:
+            for title, seq, _ in FastqGeneralIterator(h):
+                yield title, seq
+        else:
+            yield from SimpleFastaParser(h)
+
+def find_isoform_id_collisions(input_fasta):
+    """
+    Find sequences that end up with the same ID after clean_isoform_id (or that already share an ID).
+    Duplicated IDs give duplicated isoforms downstream (issue #216), so they must be detected before
+    aligning.
+
+    :param input_fasta: fasta or fastq, autodetected. Can be gzipped.
+    :return: dict of (clean ID --> list of original IDs), only for IDs shared by more than one sequence
+    """
+    originals = defaultdict(list)
+    for title, _ in read_fasta_fastq(input_fasta):
+        originals[clean_isoform_id(title)].append(title.split()[0])
+    return {new_id: ids for new_id, ids in originals.items() if len(ids) > 1}
+
+def rename_isoform_seqids(input_fasta, out_dir):
     """
     Rename input isoform fasta/fastq by extracting the first part of the sequence ID.
-    
+
     Handles various ID formats by taking the content before '|' or space characters.
     For example:
     - "PB.1.1|chr1:10-100|xxxxxx" becomes "PB.1.1"
     - "transcript_name some_annotation" becomes "transcript_name"
 
     :param input_fasta: Could be either fasta or fastq, autodetect. Can be gzipped.
-    :return: output fasta with the cleaned up sequence ID
+    :param out_dir: directory for the output, so nothing is written next to the input (it may be read-only)
+    :return: output fasta (<out_dir>/<input name>.renamed.fasta) with the cleaned up sequence IDs
     """
-    type = 'fasta'
-    # gzip.open and open have different default open modes:
-    # gzip.open uses "rb" (read in binary format)
-    # open uses "rt" (read in text format)
-    # This can be solved by making explicit the read text mode (which is required
-    # by SeqIO.parse)
-    if input_fasta.endswith('.gz'):
-        open_function = gzip.open
-        in_file = os.path.splitext(input_fasta)[0]
-        out_file = os.path.splitext(in_file)[0] + '.renamed.fasta'
-    else:
-        open_function = open
-        out_file = os.path.splitext(input_fasta)[0] + '.renamed.fasta'
-    with open_function(input_fasta, mode="rt") as h:
-        if h.readline().startswith('@'): type = 'fastq'
-        
+    in_name = os.path.basename(input_fasta)
+    if in_name.endswith('.gz'):
+        in_name = in_name[:-3]
+    out_file = os.path.join(out_dir, os.path.splitext(in_name)[0] + '.renamed.fasta')
+
     with open(out_file, mode='wt') as f:
-        for r in SeqIO.parse(open_function(input_fasta, "rt"), type):
-            # Extract the first part of the ID (before '|' or space)
-            newid = r.id.split('|')[0].split()[0]
-            f.write(">{0}\n{1}\n".format(newid, r.seq))
+        for title, seq in read_fasta_fastq(input_fasta):
+            f.write(f">{clean_isoform_id(title)}\n{seq}\n")
     return out_file
 
 ### Input/Output functions ###
@@ -58,6 +106,103 @@ def get_corr_filenames(outdir, prefix):
     corrORF = corrPathPrefix + "_corrected.faa"
     corrCDS_GTF_GFF = corrPathPrefix + "_corrected.cds.gff3"
     return corrGTF, corrSAM, corrFASTA, corrORF, corrCDS_GTF_GFF
+
+def get_supplementary_name(outdir, prefix):
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
+    return corrPathPrefix + "_supplementary_alignments.txt"
+
+def report_non_primary_alignments(sam_file, out_file):
+    """
+    SQANTI3 only uses the primary alignment of each isoform. Isoforms that also have supplementary
+    (split/chimeric) or secondary alignments are reported here, with all their alignments, so that
+    the information is not lost (issue #216).
+
+    :return: number of isoforms with non-primary alignments. out_file is only written if > 0.
+    """
+    def records():
+        with open(sam_file) as f:
+            for line in f:
+                if line.startswith('@'):
+                    continue
+                raw = line.split('\t', 6)
+                if raw[2] == '*':
+                    continue
+                yield raw
+
+    split_ids = {raw[0] for raw in records() if int(raw[1]) & (256 | 2048)}
+    if not split_ids:
+        return 0
+
+    with open(out_file, 'w') as out:
+        out.write("isoform\talignment\tchrom\tstrand\tstart\tend\tMAPQ\n")
+        for qid, flag, chrom, pos, mapq, cigar, _ in records():
+            if qid not in split_ids:
+                continue
+            flag = int(flag)
+            kind = "supplementary" if flag & 2048 else "secondary" if flag & 256 else "primary"
+            ref_len = sum(int(n) for n, op in re.findall(r'(\d+)([MDN=X])', cigar))
+            start = int(pos)
+            out.write(f"{qid}\t{kind}\t{chrom}\t{'-' if flag & 16 else '+'}\t{start}\t{start + ref_len - 1}\t{mapq}\n")
+    return len(split_ids)
+
+def get_unmapped_name(outdir, prefix):
+    corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
+    return corrPathPrefix + "_unmapped.txt"
+
+def report_unmapped_isoforms(isoforms_fasta, sam_file, out_file):
+    """
+    Isoforms without a primary alignment are dropped from all SQANTI3 outputs. They are listed here.
+    The input FASTA is compared against the SAM instead of looking for unmapped records (flag 4),
+    because not every aligner writes unmapped sequences to the SAM.
+
+    :return: number of unmapped isoforms. out_file is only written if > 0.
+    """
+    mapped_ids = set()
+    with open(sam_file) as f:
+        for line in f:
+            if line.startswith('@'):
+                continue
+            qid, flag, chrom = line.split('\t', 3)[:3]
+            if chrom != '*' and not int(flag) & (4 | 256 | 2048):
+                mapped_ids.add(qid)
+
+    unmapped = [(title.split()[0], len(seq)) for title, seq in read_fasta_fastq(isoforms_fasta)
+                if title.split()[0] not in mapped_ids]
+    if not unmapped:
+        return 0
+
+    with open(out_file, 'w') as out:
+        out.write("isoform\tlength\n")
+        for qid, length in unmapped:
+            out.write(f"{qid}\t{length}\n")
+    return len(unmapped)
+
+def warn_supplementary(n_split, supplementary_file, in_chunk=False):
+    """
+    Log the isoforms with supplementary/secondary alignments. Same message with and without chunks:
+    inside a chunk it is only a debug line, since the chunk file is deleted after combine_alignment_outputs
+    merges it and logs the warning with the final path.
+    """
+    if n_split == 0:
+        return
+    if in_chunk:
+        qc_logger.debug(f"Chunk: {n_split} isoforms have supplementary or secondary alignments.")
+    else:
+        qc_logger.warning(f"{n_split} isoforms have supplementary or secondary alignments (e.g. chimeric "
+                          f"or split sequences). Only their primary alignment is used. "
+                          f"All their alignments are listed in {supplementary_file}")
+
+def warn_unmapped(n_unmapped, unmapped_file, in_chunk=False):
+    """
+    Log the isoforms that could not be aligned. See warn_supplementary for the chunk behaviour.
+    """
+    if n_unmapped == 0:
+        return
+    if in_chunk:
+        qc_logger.debug(f"Chunk: {n_unmapped} isoforms could not be aligned to the genome.")
+    else:
+        qc_logger.warning(f"{n_unmapped} isoforms could not be aligned to the genome and are not included "
+                          f"in the SQANTI3 output. They are listed in {unmapped_file}")
 
 def get_isoform_hits_name(outdir, prefix):
     corrPathPrefix = os.path.abspath(os.path.join(outdir, prefix))
@@ -109,8 +254,8 @@ def sequence_correction(
         qc_logger.info("Correcting fasta")
         if fasta:
             qc_logger.info("Cleaning up isoform IDs...")
-            isoforms = rename_isoform_seqids(isoforms)
-            qc_logger.info(f"Cleaned up isoform fasta file written to: {isoforms}")
+            isoforms = rename_isoform_seqids(isoforms, outdir)
+            qc_logger.debug(f"Cleaned up isoform fasta file written to: {isoforms}")
     
             if os.path.exists(corrSAM):
                 qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
@@ -120,11 +265,27 @@ def sequence_correction(
                                           outdir,corrSAM, n_cpu, gmap_index)
                 run_command(cmd,qc_logger, logFile,description="aligning reads")
 
+            # Only primary alignments are used downstream; report the rest (issue #216)
+            # Inside a chunk of a parallel run (chunks > 1), the warnings are logged after combining the chunks
+            supplementary_file = get_supplementary_name(outdir, output)
+            n_split = report_non_primary_alignments(corrSAM, supplementary_file)
+            warn_supplementary(n_split, supplementary_file, in_chunk=chunks > 1)
+
+            # Isoforms that did not align are dropped from all outputs; report them
+            unmapped_file = get_unmapped_name(outdir, output)
+            n_unmapped = report_unmapped_isoforms(isoforms, corrSAM, unmapped_file)
+            warn_unmapped(n_unmapped, unmapped_file, in_chunk=chunks > 1)
+
+            # The renamed copy of the input is only needed until here, and it is rebuilt on every run.
+            # Remove it: for SQANTI-reads it is a full copy of the reads.
+            os.remove(isoforms)
+
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)
             qc_logger.debug(f"The corrected fasta file has been written to: {corrFASTA}")
             # convert SAM to GFF --> GTF
-            convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
+            n_skipped = convert_sam_to_gff3(corrSAM, f'{corrGTF}.tmp', source=os.path.basename(genome).split('.')[0])  # convert SAM to GFF3
+            qc_logger.info(f"Skipped {n_skipped} unmapped SAM records when converting the alignments to GTF.")
         else:
             qc_logger.info("Skipping aligning of sequences because GTF file was provided.")
             filter_gtf(isoforms, f'{corrGTF}.tmp', badstrandGTF, genome_dict)
