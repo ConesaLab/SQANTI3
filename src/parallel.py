@@ -2,14 +2,17 @@ import pickle
 import shutil
 import os,copy
 import re
+import tempfile
 import time
 import psutil
 
-from multiprocessing import Process
+from multiprocessing import Process, get_start_method
+from Bio import SeqIO
 
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
+from src.parsers import reference_parser
 from src.helpers import (
     align_isoforms, get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, 
     get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped)
@@ -66,7 +69,26 @@ def split_fasta_input(isoforms, split_root_dir, chunks):
         raise ValueError(f"Input file '{isoforms}' contains no sequences.")
     return split_outs
 
-def split_input_run(args, outdir):
+def read_shared_inputs(args):
+    """
+    Read the genome and parse the reference annotation once for all the chunks.
+    Forked workers share them with this process instead of reading them again.
+    With another start method they would be pickled for every worker, so None
+    is returned and each worker reads its own, as before.
+    """
+    genome_dict, reference = None, None
+    if get_start_method() == 'fork':
+        qc_logger.info(f"Reading genome fasta {args.refFasta}")
+        genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
+        # The genePred written by reference_parser is only needed while parsing
+        with tempfile.TemporaryDirectory(dir=args.dir) as ref_dir:
+            os.makedirs(os.path.join(ref_dir, 'logs'))
+            reference = reference_parser(args.refGTF, ref_dir, args.output,
+                                         list(genome_dict.keys()), args.genename,
+                                         args.isoAnnotLite)
+    return genome_dict, reference
+
+def split_input_run(args, outdir, genome_dict=None, reference=None):
     SPLIT_ROOT_DIR = outdir
     if os.path.exists(SPLIT_ROOT_DIR):
         qc_logger.warning(f"{SPLIT_ROOT_DIR} directory already exists!")
@@ -194,7 +216,7 @@ def split_input_run(args, outdir):
             args2.report = 'skip'
             args2.cpus = cpus_per_worker # Allocate a fair share of CPUs per worker
             
-            p = Process(target=run, args=(args2,))
+            p = Process(target=run, args=(args2, genome_dict, reference))
             p.start()
             
             active_processes.append(p)
@@ -276,7 +298,7 @@ def combine_alignment_outputs(args, split_dirs):
     n_unmapped = concat_tables([get_unmapped_name(d, args.output) for d in split_dirs], unmapped_file)
     warn_unmapped(n_unmapped, unmapped_file)
 
-def combine_split_runs(args, split_dirs):
+def combine_split_runs(args, split_dirs, genome_dict=None):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt and, with FASTA/FASTQ input,
     the alignment outputs (.sam, indels, supplementary alignments, unmapped isoforms).
@@ -348,7 +370,7 @@ def combine_split_runs(args, split_dirs):
     if args.fl_count:
         isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design,
                                                    args.min_expression)
-    isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
+    isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta,genome_dict)
 
     fields_junc_cur = headers[0]
     if args.include_ORF:

@@ -10,7 +10,7 @@ import shutil
 # Import SQANTI3 modules
 from src.qc_argparse import qc_argparse
 from src.qc_pipeline import run
-from src.parallel import split_input_run, combine_split_runs, get_split_dir
+from src.parallel import read_shared_inputs, split_input_run, combine_split_runs, get_split_dir
 from src.config import __version__
 from src.argparse_utils import qc_args_validation
 from src.logging_config import qc_art, art_logger
@@ -38,9 +38,10 @@ def main():
 
     else:
         SPLIT_ROOT_DIR = get_split_dir(args.dir,args.output)
-        split_dirs = split_input_run(args, SPLIT_ROOT_DIR)
+        genome_dict, reference = read_shared_inputs(args)
+        split_dirs = split_input_run(args, SPLIT_ROOT_DIR, genome_dict, reference)
         qc_logger.info("Split runs completed. Merging results...")
-        combine_split_runs(args,split_dirs)
+        combine_split_runs(args,split_dirs,genome_dict)
         qc_logger.info("All runs have been combined.")
         shutil.rmtree(SPLIT_ROOT_DIR)
 
