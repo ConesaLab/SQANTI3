@@ -202,15 +202,9 @@ def convert_prob(prob):
     '''
     We convert the prob of the mods (from 0 to 256) to a number between 0 and 1
     '''
-    return prob / 256
+    return (prob+0.5) / 256
 
-def process_read(read,args,reads_logger):
-    '''
-    Function to process a read and return the modifications that pass the probability threshold
-    '''
-    read_id = read.query_name
-    mods = read.modified_bases
-    # We create the row with the read_id and read_length, and a list for each mod with pos and probs 
+def new_row(read_id, read, args):
     row = {"isoform": read_id, "read_length": read.query_length, 
            "start": read.reference_start + 1, "end": read.reference_end, # 1-based
            "chrom": read.reference_name, "strand": "-" if read.is_reverse else "+"}
@@ -218,6 +212,16 @@ def process_read(read,args,reads_logger):
         row[f"{mod}_positions"] = ""
         row[f"{mod}_probs"] = ""
         row[f"{mod}_n_mod"] = 0
+    return row
+
+def process_read(read,args,reads_logger):
+    '''
+    Function to process a read and return the modifications that pass the probability threshold
+    '''
+    read_id = read.query_name
+    mods = read.modified_bases
+    # We create the row with the read id, start, end, ... and a list for each mod with pos and probs 
+    row = new_row(read_id, read, args)
     # We will have to convert read pos to genomic 
     aligned_pairs = read.get_aligned_pairs(matches_only=True)
     read_to_genomic = {read_pos: ref_pos for read_pos, ref_pos in aligned_pairs}
@@ -244,10 +248,11 @@ def process_read(read,args,reads_logger):
         row[f"{mod_name}_n_mod"] = len(valid_mods)
     return row
 
-def gen_mod_tsv(args,path_to_bam,reads_logger):
+def gen_mod_tsv(args,file_acc,sampleID, reads_logger):
     '''
     Function to extract mod information from the aligned BAM to a TSV
     '''
+    path_to_bam = os.path.join(args.OUTPUT, file_acc, f"{sampleID}_mods.bam")
     rows = []
     with pysam.AlignmentFile(path_to_bam, "rb", threads=1) as bamfile:
         if not bamfile.check_index():
@@ -260,6 +265,7 @@ def gen_mod_tsv(args,path_to_bam,reads_logger):
             row = process_read(read,args,reads_logger)
             rows.append(row)
     df = pd.DataFrame(rows)
-    df.to_csv(os.path.join(args.OUTPUT, "_modifications.tsv"), sep="\t", index=False)
+    df.to_csv(os.path.join(args.OUTPUT, file_acc, f"{sampleID}_modifications.tsv"), sep="\t", index=False)
+    return str(os.path.join(args.OUTPUT,file_acc, f"{sampleID}_modifications.tsv"))
 
         

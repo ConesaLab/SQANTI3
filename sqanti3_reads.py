@@ -9,7 +9,7 @@ import shutil
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
-from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info
+from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info, gen_mod_tsv
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -320,7 +320,14 @@ def main():
     # Make UJC and hash
     if not args.SKIPHASH:
         make_UJC_hash(args, df)
-
+        
+    # Make modifications table if mods_mode is activated
+    if args.mods_mode:
+        for index, row in df.iterrows():
+            file_acc = row['file_acc']
+            sampleID = row['sampleID']
+            tsv = gen_mod_tsv(args, file_acc, sampleID, reads_logger)
+            reads_logger.info(f"Modifications table generated for sample {sampleID} in {tsv}")
     # Run plotting script directly as a function call
     reads_logger.info("Running SQANTI-reads tables and plots generation...")
     
