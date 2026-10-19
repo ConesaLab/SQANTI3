@@ -22,8 +22,21 @@ def calc_exon_overlap(query_exons, ref_exons):
             query_ranges[-1][1] = max(query_ranges[-1][1], end)
         else:
             query_ranges.append([start, end])
-    return sum(max(0, min(e.end, end) - max(e.start, start))
-               for e in ref_exons for start, end in query_ranges)
+    # One sweep over both lists sorted by start instead of every pair: the
+    # merged ranges are disjoint, so a range that ends before a reference
+    # exon starts cannot overlap any later reference exon either
+    overlap = 0
+    first = 0
+    n_ranges = len(query_ranges)
+    for ref_start, ref_end in sorted((e.start, e.end) for e in ref_exons):
+        while first < n_ranges and query_ranges[first][1] <= ref_start:
+            first += 1
+        i = first
+        while i < n_ranges and query_ranges[i][0] < ref_end:
+            overlap += (min(ref_end, query_ranges[i][1])
+                        - max(ref_start, query_ranges[i][0]))
+            i += 1
+    return overlap
 
 def _exonic_len_between(exons, a, b):
     """
