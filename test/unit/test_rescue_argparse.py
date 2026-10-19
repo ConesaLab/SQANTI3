@@ -3,6 +3,7 @@ Tests for the rescue argument parser and its validation, focused on the
 requantification flag defaults.
 """
 import argparse
+import json
 import logging
 
 import pytest
@@ -55,6 +56,7 @@ def _rescue_namespace(**overrides):
         random_forest="rf.RData",
         threshold=0.7,
         skip_requant=False,
+        skip_evidence_check=True,
     )
     for key, value in overrides.items():
         setattr(ns, key, value)
@@ -62,7 +64,7 @@ def _rescue_namespace(**overrides):
 
 
 class TestRequantValidation:
-    """Missing --counts must warn and downgrade, never abort."""
+    """Missing --counts stops the run at validation, before any step, unless --skip_requant."""
 
     @pytest.fixture(autouse=True)
     def _no_disk_access(self, monkeypatch, caplog):
@@ -75,32 +77,33 @@ class TestRequantValidation:
         monkeypatch.setattr(au.rescue_logger, "propagate", True)
         caplog.set_level(logging.WARNING, logger=au.rescue_logger.name)
 
-    def test_missing_counts_does_not_exit(self, caplog):
+    def test_missing_counts_exits(self, caplog):
         args = _rescue_namespace(skip_requant=False, counts=None)
-        with caplog.at_level(logging.WARNING):
+        with pytest.raises(SystemExit):
             au.rescue_args_validation(args)
-        assert args.skip_requant is True
+        assert "--skip_requant" in caplog.text
 
-    def test_missing_counts_warns_explicitly(self, caplog):
-        args = _rescue_namespace(skip_requant=False, counts=None)
-        with caplog.at_level(logging.WARNING):
-            au.rescue_args_validation(args)
-        assert any("NOT requantified" in record.message for record in caplog.records)
-
-    def test_counts_provided_keeps_requant_on(self, caplog):
+    def test_counts_provided_keeps_requant_on(self, monkeypatch):
+        checked = []
+        monkeypatch.setattr(au, "valid_file", lambda filename, logger: checked.append(filename))
         args = _rescue_namespace(skip_requant=False, counts="counts.tsv")
-        with caplog.at_level(logging.WARNING):
-            au.rescue_args_validation(args)
+        au.rescue_args_validation(args)
         assert args.skip_requant is False
-        assert not any("NOT requantified" in r.message for r in caplog.records)
+        assert "counts.tsv" in checked
 
-    def test_skip_requant_skips_counts_check(self, monkeypatch):
+    def test_skip_requant_without_counts_passes(self, monkeypatch):
         checked = []
         monkeypatch.setattr(au, "valid_file", lambda filename, logger: checked.append(filename))
         args = _rescue_namespace(skip_requant=True, counts=None)
         au.rescue_args_validation(args)
-        assert args.skip_requant is True
         assert None not in checked
+
+    def test_skip_requant_still_checks_given_counts(self, monkeypatch):
+        """The evidence check also reads --counts, so a given file is validated even without requantification."""
+        checked = []
+        monkeypatch.setattr(au, "valid_file", lambda filename, logger: checked.append(filename))
+        au.rescue_args_validation(_rescue_namespace(skip_requant=True, counts="counts.tsv"))
+        assert "counts.tsv" in checked
 
 
 class TestMapAutomaticFsm:
@@ -117,6 +120,12 @@ class TestMapAutomaticFsm:
         args = parser.parse_args(MIN_ARGS)
         assert args.map_automatic_fsm is False
 
+    def test_hidden_from_help_and_config(self, parser):
+        """Beta feature: it works on the command line but is not shown to users."""
+        from src.wrapper_utils import get_parser_specific_args_simple
+        assert "--map_automatic_fsm" not in parser.format_help()
+        assert "map_automatic_fsm" not in get_parser_specific_args_simple(parser, {})["options"]
+
     def test_flag_enables_it(self, parser):
         args = parser.parse_args(MIN_ARGS + ["--map_automatic_fsm"])
         assert args.map_automatic_fsm is True
@@ -131,3 +140,48 @@ class TestMapAutomaticFsm:
                                  corrected_isoforms_fasta="corrected.fasta")
         au.rescue_args_validation(args)
         assert args.map_automatic_fsm is True
+
+
+class TestEvidenceCheckValidation:
+    """The evidence check is decided at validation; it reads --counts even with --skip_requant."""
+
+    @pytest.fixture(autouse=True)
+    def _no_disk_access(self, monkeypatch):
+        monkeypatch.setattr(au, "valid_gtf", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_fasta", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_dir", lambda *a, **k: True)
+        monkeypatch.setattr(au, "valid_file", lambda *a, **k: True)
+
+    @pytest.fixture
+    def json_file(self, tmp_path):
+        p = tmp_path / "rules.json"
+        p.write_text(json.dumps({"full-splice_match": [{"prevalence_K": 2}, {"prevalence_B": 2}]}))
+        return str(p)
+
+    def args(self, json_file, **kw):
+        base = dict(skip_evidence_check=False, json_filter=json_file, counts="counts.tsv")
+        base.update(kw)
+        return _rescue_namespace(**base)
+
+    def test_enabled(self, json_file):
+        assert au.rescue_args_validation(self.args(json_file)) is True
+
+    def test_disabled_by_flag(self, json_file):
+        assert au.rescue_args_validation(self.args(json_file, skip_evidence_check=True)) is False
+
+    def test_disabled_for_ml(self, json_file):
+        assert au.rescue_args_validation(self.args(json_file, strategy="ml")) is False
+
+    def test_disabled_without_count_rules(self, tmp_path):
+        p = tmp_path / "r.json"
+        p.write_text(json.dumps({"rest": [{"min_cov": 3}]}))
+        assert au.rescue_args_validation(self.args(str(p))) is False
+
+    def test_count_rules_without_counts_exit(self, json_file):
+        """With --skip_requant, --counts is still needed by the evidence check."""
+        with pytest.raises(SystemExit):
+            au.rescue_args_validation(self.args(json_file, counts=None, skip_requant=True))
+
+    def test_skip_both_without_counts_passes(self, json_file):
+        args = self.args(json_file, counts=None, skip_requant=True, skip_evidence_check=True)
+        assert au.rescue_args_validation(args) is False

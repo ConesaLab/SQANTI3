@@ -84,6 +84,5 @@ rescue:
     counts_design: ''
     min_expression: 0
     skip_evidence_check: false
-    map_automatic_fsm: false
     random_forest: sqanti3_results/isoformsrandomforest.RData
     threshold: 0.7

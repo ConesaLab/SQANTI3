@@ -1,9 +1,10 @@
-import os, sys
+import os, sys, json
 import gzip
 
 from src.commands import GFFREAD_PROG, run_command
 from src.helpers import find_isoform_id_collisions
 from src.module_logging import qc_logger, filter_logger, rescue_logger
+from src.utilities.rescue.evidence_check import target_count_rules
 
 def valid_file(filename,logger):
     if not os.path.isfile(filename):
@@ -291,6 +292,11 @@ def filter_args_validation(args):
     
 
 def rescue_args_validation(args):
+    """
+    Validate the rescue inputs before any step runs.
+
+    :return: whether the evidence check of the rescued reference transcripts has to be run.
+    """
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
     args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
@@ -325,15 +331,25 @@ def rescue_args_validation(args):
     if args.min_expression < 0:
         rescue_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
         sys.exit(1)
-    if not args.skip_requant:
-        if args.counts is None:
-            rescue_logger.warning(
-                "Requantification is enabled by default but no --counts file was provided. "
-                "Isoforms will be rescued but NOT requantified: the resulting transcriptome "
-                "will contain rescued transcripts with no associated expression values. "
-                "Provide --counts to enable requantification, or pass --skip_requant "
-                "to skip this step silently."
-            )
-            args.skip_requant = True
-        else:
-            valid_file(args.counts, rescue_logger)
+    if args.counts is not None:
+        valid_file(args.counts, rescue_logger)
+    elif not args.skip_requant:
+        rescue_logger.error("Requantification is run by default and needs the --counts file. "
+                            "Provide --counts, or --skip_requant to rescue without requantification.")
+        sys.exit(1)
+    # Evidence check of the rescued reference transcripts: only for the rules strategy, when the
+    # rules of reference targets have requisites on long-read counts (FL, prevalence, prevalence_<group>).
+    # It also reads --counts, so the file is needed even with --skip_requant.
+    evidence_check = False
+    if args.skip_evidence_check:
+        rescue_logger.info("Evidence check of reference targets skipped (--skip_evidence_check).")
+    elif args.strategy == "rules":
+        valid_file(args.json_filter, rescue_logger)
+        with open(args.json_filter) as f:
+            evidence_check = bool(target_count_rules(json.load(f)))
+        if evidence_check and args.counts is None:
+            rescue_logger.error("The rules have requisites on long-read counts: the evidence check of the "
+                                "rescued reference transcripts needs the --counts file used for requantification. "
+                                "Provide --counts, or --skip_evidence_check to reintroduce them without the check.")
+            sys.exit(1)
+    return evidence_check

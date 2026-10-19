@@ -20,7 +20,9 @@ from src.utilities.rescue.evidence_check import (
     add_count_columns, failed_targets, best_lr_fallback, write_evidence_rules,
     check_design_for_rules, apply_evidence_check, rows_for_requant
 )
-from src.rescue_steps import evidence_check_enabled, run_evidence_check, run_fallback_mapping
+import src.rescue_steps as rescue_steps
+from src.rescue_steps import run_evidence_check, run_fallback_mapping
+from src.module_logging import rescue_logger
 
 K = ["K1", "K2", "K3"]
 B = ["B1", "B2", "B3"]
@@ -250,6 +252,15 @@ class TestDesignForRules:
         with pytest.raises(SystemExit):
             check_design_for_rules([{"prevalence_X": 2}], DESIGN)
 
+    def test_single_sample_counts(self, caplog, monkeypatch):
+        """check_counts_design() returns {} for a single-sample --counts file: the error must say so,
+        not that the groups are missing from the design."""
+        monkeypatch.setattr(rescue_logger, "propagate", True)
+        with pytest.raises(SystemExit):
+            check_design_for_rules(ANY_GROUP, {})
+        assert "single sample" in caplog.text
+        assert "not defined" not in caplog.text
+
     def test_global_rules_need_no_design(self):
         check_design_for_rules(GLOBAL, None)
         check_design_for_rules(EVERY_GROUP, DESIGN)
@@ -375,30 +386,6 @@ class TestOrchestration:
                                                  for s in samples))
         return str(p)
 
-    def args(self, json_file, **kw):
-        base = dict(skip_evidence_check=False, strategy="rules", json_filter=json_file, counts_design=None,
-                    counts="counts.tsv")
-        base.update(kw)
-        return SimpleNamespace(**base)
-
-    def test_enabled(self, json_file):
-        assert evidence_check_enabled(self.args(json_file))
-
-    def test_disabled_by_flag(self, json_file):
-        assert not evidence_check_enabled(self.args(json_file, skip_evidence_check=True))
-
-    def test_disabled_for_ml(self, json_file):
-        assert not evidence_check_enabled(self.args(json_file, strategy="ml"))
-
-    def test_disabled_without_count_rules(self, tmp_path):
-        p = tmp_path / "r.json"
-        p.write_text(json.dumps({"rest": [{"min_cov": 3}]}))
-        assert not evidence_check_enabled(self.args(str(p)))
-
-    def test_count_rules_without_counts_file_exit(self, json_file):
-        with pytest.raises(SystemExit):
-            evidence_check_enabled(self.args(json_file, counts=None))
-
     def test_run_evidence_check_with_design(self, json_file, design_file, tmp_path):
         c = classif({"a1": ("Artifact", {"M1": 5, "M2": 5})})
         r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
@@ -434,9 +421,18 @@ class TestOrchestration:
         out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x")
         assert out.empty
 
-    def test_fallback_mapping_reuses_existing_hits(self, tmp_path):
-        hits([("fsm1", "LR1", 0, 50)]).to_csv(tmp_path / "x_fallback_rescue_mapping_hits.tsv",
-                                              sep="\t", index=False)
+    def test_fallback_mapping_ignores_stale_hits(self, tmp_path, monkeypatch):
+        """An existing hit table may come from other artifacts or targets: the mapping step is run,
+        and it only reuses the SAM file if its fingerprint matches."""
+        hits([("old", "LR_OLD", 0, 50)]).to_csv(tmp_path / "x_fallback_rescue_mapping_hits.tsv",
+                                                sep="\t", index=False)
+        monkeypatch.setattr(rescue_steps, "rescue_targets", lambda *a: ["LR1", "REF1"])
+        calls = []
+        def fake_mapping(ref_fasta, targets, artifacts, corrected, out_dir, prefix):
+            calls.append((targets, artifacts, prefix))
+            return hits([("fsm1", "LR1", 0, 50)])
+        monkeypatch.setattr(rescue_steps, "run_candidate_mapping", fake_mapping)
         r = rescue_table([("fsm1", "REF1", "automatic", "reference", "yes")])
         out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x")
+        assert calls == [(["LR1", "REF1"], ["fsm1"], "x_fallback")]
         assert out["mapping_hit"].tolist() == ["LR1"]

@@ -34,10 +34,16 @@ EVIDENCE_COLUMN = "evidence_check"
 COUNT_RULES = ["FL", "prevalence"]
 
 
+def rule_column_matches(column: str, names: list) -> bool:
+    """Whether a rule column is one of names, or one of them followed by "." or "_"
+    (FL.<sample>, prevalence_<group>). Also used by rescue_steps.is_ignored_rule()."""
+    return any(column == name or column.startswith((f"{name}.", f"{name}_"))
+               for name in names)
+
+
 def is_count_rule(column: str) -> bool:
     """Whether a rule column is computed from long-read counts."""
-    return any(column == name or column.startswith((f"{name}.", f"{name}_"))
-               for name in COUNT_RULES)
+    return rule_column_matches(column, COUNT_RULES)
 
 
 def target_count_rules(json_data: dict, category: str = TARGET_CATEGORY) -> list:
@@ -183,6 +189,11 @@ def check_design_for_rules(rule_sets: list, design) -> None:
     if design is None:
         rescue_logger.error(f"The rules use per-group prevalence ({sorted(groups)}): the evidence check "
                             "needs the --counts_design file given to SQANTI3 QC.")
+        sys.exit(1)
+    # check_counts_design() returns an empty design for a single-sample count file
+    if not design:
+        rescue_logger.error(f"The rules use per-group prevalence ({sorted(groups)}), which needs a "
+                            "multi-sample --counts file, but it has a single sample.")
         sys.exit(1)
     missing = sorted(groups - set(design))
     if missing:

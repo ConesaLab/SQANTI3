@@ -23,7 +23,7 @@ from src.rescue_steps import (
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue,
   save_rescue_results,
-  evidence_check_enabled, run_fallback_mapping, run_evidence_check
+  run_fallback_mapping, run_evidence_check
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
@@ -38,7 +38,7 @@ def main():
   # Create the log directory if it does not exist
   os.makedirs(f"{args.dir}/logs", exist_ok=True)
   # Check if the logs directory exists, if not create it
-  rescue_args_validation(args)
+  evidence_check = rescue_args_validation(args)
   write_rescue_parameters(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
@@ -101,7 +101,7 @@ def main():
   #### EVIDENCE CHECK OF REFERENCE TARGETS ####
   # The requisites on long-read counts, removed to filter the reference, are applied
   # to the counts each reintroduced reference transcript receives from its artifacts
-  if evidence_check_enabled(args):
+  if evidence_check:
     # FSM artifacts of automatic rescue are not mapped: if their reference fails, their
     # counts go to the gene residual. With --map_automatic_fsm they are mapped, so that
     # they can fall back to a long-read isoform (in any rescue mode)
@@ -138,7 +138,7 @@ def main():
     else:
       message("Running requantification.", rescue_logger)
       requantification_pipeline(args.dir, args.output, args.counts, rows_for_requant(rescue_df),
-                                class_df, rescue_class)
+                                class_df, rescue_class, args.counts_design, args.min_expression)
   else:
     rescue_logger.info("Requantification skipped (--skip_requant). The count matrix will not include rescued transcripts.")
 

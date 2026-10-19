@@ -1,7 +1,6 @@
 import os
 import json
 import shutil
-import sys
 import pandas as pd
 
 from src.wrapper_utils import sqanti_path
@@ -30,7 +29,7 @@ from src.rescue_output import (
 
 from src.parsers import read_counts_design, check_counts_design
 from src.utilities.rescue.evidence_check import (
-    target_count_rules, count_samples, check_design_for_rules,
+    rule_column_matches, target_count_rules, count_samples, check_design_for_rules,
     write_evidence_rules, apply_evidence_check
 )
 from src.utilities.rescue.sq_requant import load_counts
@@ -193,15 +192,12 @@ def is_ignored_rule(column, ignored=RESCUE_IGNORED_RULES):
 
     Args:
         column (str): column name used as key in the rules JSON file
-        ignored (list): names from RESCUE_IGNORED_RULES. A column matches a name
-            if it is equal to it or starts with it followed by "." or "_"
-            (FL.<sample>, prevalence_<group>).
+        ignored (list): names from RESCUE_IGNORED_RULES (see rule_column_matches)
 
     Returns:
         bool: True if the rule has to be removed for the reference
     """
-    return any(column == name or column.startswith((f"{name}.", f"{name}_"))
-               for name in ignored)
+    return rule_column_matches(column, ignored)
 
 
 def write_reference_rules(json_filter, out_file):
@@ -293,34 +289,6 @@ def run_ML_rescue(filter_classification, reference_classification, hits_df, resc
     return inclusion_list, rescue_df
 
 ## Evidence check of reference targets (count requisites of the rules)
-def evidence_check_enabled(args):
-    """Whether the reintroduced reference transcripts must pass the count requisites.
-
-    Only for the rules strategy, when the rules that apply to reference targets
-    have requisites on long-read counts (FL, prevalence, prevalence_<group>).
-    The counts are those of requantification, so --counts is then required.
-    """
-    if args.skip_evidence_check:
-        rescue_logger.info("Evidence check of reference targets skipped (--skip_evidence_check).")
-        return False
-    if args.strategy != "rules":
-        if args.counts_design is not None:
-            rescue_logger.warning("--counts_design is only used with the rules strategy, ignoring it.")
-        return False
-    with open(args.json_filter) as f:
-        if not target_count_rules(json.load(f)):
-            if args.counts_design is not None:
-                rescue_logger.warning("--counts_design is ignored: the rules of reference targets "
-                                      "have no requisites on long-read counts.")
-            return False
-    if args.counts is None:
-        rescue_logger.error("The rules have requisites on long-read counts: the evidence check of the "
-                            "rescued reference transcripts needs the --counts file used for requantification. "
-                            "Provide --counts, or --skip_evidence_check to reintroduce them without the check.")
-        sys.exit(1)
-    return True
-
-
 def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
                          corrected_isoforms, out_dir, out_prefix):
     """Map the FSM artifacts of automatic rescue to the rescue targets.
@@ -333,12 +301,9 @@ def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
     if not fsm_artifacts:
         return pd.DataFrame(columns=["rescue_candidate", "mapping_hit", "alignment_type", "alignment_score"])
 
+    # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
+    # file if it was made from the same targets and artifacts (mapping fingerprint)
     fb_prefix = f"{out_prefix}_fallback"
-    hits_file = f"{out_dir}/{fb_prefix}_rescue_mapping_hits.tsv"
-    if os.path.isfile(hits_file):
-        rescue_logger.info("Fallback mapping hits already exist, skipping fallback mapping.")
-        return pd.read_csv(hits_file, sep="\t")
-
     message("Fallback mapping of automatic rescue artifacts", rescue_logger)
     targets = rescue_targets(classif_df, fsm_artifacts, ref_gtf, f"{out_dir}/{fb_prefix}")
     return run_candidate_mapping(ref_trans_fasta, targets, fsm_artifacts,
@@ -360,8 +325,8 @@ def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filt
     counts_df = load_counts(counts_file, classif_df)
     design = None
     if counts_design is not None:
-        design = read_counts_design(counts_design)
-        design = check_counts_design(design, count_samples(counts_df))
+        design = read_counts_design(counts_design, rescue_logger)
+        design = check_counts_design(design, count_samples(counts_df), rescue_logger)
     check_design_for_rules(rule_sets, design)
     rules_dict = write_evidence_rules(rule_sets, f"{out_dir}/evidence_check_rules.json")
     return apply_evidence_check(rescue_df, inclusion_list, classif_df, counts_df, hits_df, rules_dict,

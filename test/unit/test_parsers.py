@@ -470,3 +470,13 @@ class TestCountsDesign:
 
     def test_check_single_sample_file_ignores_design(self):
         assert check_counts_design({"K": ["K1"]}, ["K1"]) == {}
+
+    def test_check_uses_the_given_logger(self):
+        """Rescue passes its own logger, and the messages name no QC-only option."""
+        from unittest.mock import MagicMock
+        logger = MagicMock()
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"], logger)
+        messages = [c.args[0] for c in logger.error.call_args_list]
+        assert messages[0] == "Samples in the counts design file not found in the count file: ['K9']"
+        assert not any("--fl_count" in m for m in messages)

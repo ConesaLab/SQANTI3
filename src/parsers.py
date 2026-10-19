@@ -340,7 +340,7 @@ VALID_GROUP_NAME = re.compile(r"^[A-Za-z0-9_.]+$")
 # Columns of the counts design file: sample name and its experimental group
 DESIGN_COLUMNS = ["sample", "group"]
 
-def read_counts_design(design_file):
+def read_counts_design(design_file, logger=qc_logger):
     """Read the experimental design: which samples belong to each group.
 
     The file is a TSV or CSV table with a header and one row per sample: the
@@ -355,6 +355,7 @@ def read_counts_design(design_file):
 
     Args:
         design_file (str): path to the TSV/CSV design file
+        logger: logger of the calling module (qc_logger or rescue_logger)
 
     Returns:
         dict: group name -> list of sample names, in file order
@@ -370,36 +371,36 @@ def read_counts_design(design_file):
     try:
         df = pd.read_csv(design_file, sep=sep, dtype=str)
     except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:
-        qc_logger.error(f"Error parsing counts design file {design_file}: {e}")
+        logger.error(f"Error parsing counts design file {design_file}: {e}")
         sys.exit(1)
 
     df.columns = df.columns.str.strip()
     if df.empty or not all(c in df.columns for c in DESIGN_COLUMNS):
-        qc_logger.error("The counts design file must be a TSV/CSV table with a header and the "
-                        "columns 'sample' and 'group', with one row per sample.")
+        logger.error("The counts design file must be a TSV/CSV table with a header and the "
+                     "columns 'sample' and 'group', with one row per sample.")
         sys.exit(1)
 
     df = df[DESIGN_COLUMNS].apply(lambda col: col.str.strip())
     if df.isna().any().any() or (df == "").any().any():
-        qc_logger.error("Empty sample or group names in the counts design file.")
+        logger.error("Empty sample or group names in the counts design file.")
         sys.exit(1)
 
     invalid = sorted({g for g in df["group"] if not VALID_GROUP_NAME.match(g)})
     if invalid:
-        qc_logger.error(f"Invalid group names in the counts design file: {invalid}. Use only "
-                        "letters, digits, '_' and '.' (they become the columns prevalence_<group>).")
+        logger.error(f"Invalid group names in the counts design file: {invalid}. Use only "
+                     "letters, digits, '_' and '.' (they become the columns prevalence_<group>).")
         sys.exit(1)
 
     duplicated = sorted(df.loc[df["sample"].duplicated(), "sample"].unique())
     if duplicated:
-        qc_logger.error(f"Samples assigned more than once in the counts design file: {duplicated}")
+        logger.error(f"Samples assigned more than once in the counts design file: {duplicated}")
         sys.exit(1)
 
     design = df.groupby("group", sort=False)["sample"].apply(list).to_dict()
     return design
 
-def check_counts_design(design, fl_samples):
-    """Check the design against the samples of the --fl_count file.
+def check_counts_design(design, fl_samples, logger=qc_logger):
+    """Check the design against the samples of the count file (--fl_count in QC, --counts in rescue).
 
     Every sample of the design must be in the count file. Samples of the count
     file left out of the design are allowed: they may be samples that should not
@@ -410,6 +411,7 @@ def check_counts_design(design, fl_samples):
     Args:
         design (dict): group name -> list of sample names (read_counts_design)
         fl_samples (list): sample names of the count file
+        logger: logger of the calling module (qc_logger or rescue_logger)
 
     Returns:
         dict: the design, or an empty dict if the count file is single-sample
@@ -418,24 +420,24 @@ def check_counts_design(design, fl_samples):
         Calls sys.exit(1) if a sample of the design is not in the count file.
     """
     if len(fl_samples) < 2:
-        qc_logger.warning("The count file has a single sample, so prevalence can only be 0 or 1: "
-                          "--counts_design is ignored and no prevalence_<group> columns are added.")
+        logger.warning("The count file has a single sample, so prevalence can only be 0 or 1: "
+                       "--counts_design is ignored and there are no prevalence_<group> columns.")
         design = {}
 
     in_design = [s for samples in design.values() for s in samples]
     missing = [s for s in in_design if s not in fl_samples]
     if missing:
-        qc_logger.error(f"Samples in the counts design file not found in the --fl_count file: {missing}")
-        qc_logger.error(f"Available samples: {fl_samples}")
+        logger.error(f"Samples in the counts design file not found in the count file: {missing}")
+        logger.error(f"Available samples: {fl_samples}")
         sys.exit(1)
 
     unused = [s for s in fl_samples if s not in in_design]
     if design and unused:
-        qc_logger.warning(f"Samples not assigned to any group in the counts design file: {unused}")
+        logger.warning(f"Samples not assigned to any group in the counts design file: {unused}")
 
     for group, samples in design.items():
         if len(samples) == 1:
-            qc_logger.warning(f"Group {group!r} has a single sample: its prevalence can only be 0 or 1.")
+            logger.warning(f"Group {group!r} has a single sample: its prevalence can only be 0 or 1.")
 
     return design
 
