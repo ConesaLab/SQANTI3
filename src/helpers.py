@@ -80,6 +80,33 @@ def get_omitted_name(outdir, prefix):
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
 
+def align_isoforms(
+    outdir: str,
+    corrSAM: str,
+    cpus: int,
+    genome: str,
+    isoforms: str,
+    aligner_choice: str,
+    gmap_index: Optional[str] = None,
+    annotation: Optional[str] = None
+    ) -> str:
+    """
+    Clean up the isoform IDs and align the isoforms to the genome as corrSAM,
+    unless corrSAM already exists. Returns the file with the cleaned up isoforms.
+    """
+    qc_logger.info("Cleaning up isoform IDs...")
+    isoforms = rename_isoform_seqids(isoforms)
+    qc_logger.info(f"Cleaned up isoform fasta file written to: {isoforms}")
+
+    if os.path.exists(corrSAM):
+        qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
+    else:
+        logFile = f"{os.path.dirname(corrSAM)}/logs/{aligner_choice}_alignment.log"
+        cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation,
+                                  outdir,corrSAM, cpus, gmap_index)
+        run_command(cmd,qc_logger, logFile,description="aligning reads")
+    return isoforms
+
 def sequence_correction(
     outdir: str,
     output: str,
@@ -108,17 +135,8 @@ def sequence_correction(
     else:
         qc_logger.info("Correcting fasta")
         if fasta:
-            qc_logger.info("Cleaning up isoform IDs...")
-            isoforms = rename_isoform_seqids(isoforms)
-            qc_logger.info(f"Cleaned up isoform fasta file written to: {isoforms}")
-    
-            if os.path.exists(corrSAM):
-                qc_logger.info(f"Aligned SAM {corrSAM} already exists. Using it...")
-            else:
-                logFile = f"{os.path.dirname(corrSAM)}/logs/{aligner_choice}_alignment.log"
-                cmd = get_aligner_command(aligner_choice, genome, isoforms, annotation, 
-                                          outdir,corrSAM, n_cpu, gmap_index)
-                run_command(cmd,qc_logger, logFile,description="aligning reads")
+            align_isoforms(outdir, corrSAM, n_cpu, genome, isoforms, aligner_choice,
+                           gmap_index, annotation)
 
             # error correct the genome (input: corrSAM, output: corrFASTA)
             err_correct(genome, corrSAM, corrFASTA, genome_dict=genome_dict)

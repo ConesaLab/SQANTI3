@@ -11,7 +11,7 @@ from Bio import SeqIO
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
+from src.helpers import align_isoforms, get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -98,7 +98,23 @@ def split_input_run(args, outdir):
             recs = [r for r in SeqIO.parse(h, seq_format)]
         n = len(recs)
         chunk_size = n//args.chunks + (n%args.chunks >0)
+        # Align all the sequences at once, as a run without chunks does: an
+        # aligner per chunk builds its own genome index, and they all run at
+        # the same time. Each chunk gets its alignments as its own SAM, so it
+        # skips the alignment. The whole SAM is removed with SPLIT_ROOT_DIR
+        all_isoforms = os.path.join(SPLIT_ROOT_DIR, os.path.splitext(os.path.basename(args.isoforms))[0] + '.fasta')
+        with open(all_isoforms, 'w') as f:
+            SeqIO.write(recs, f, 'fasta')
+        _, all_sam, _, _, _ = get_corr_filenames(SPLIT_ROOT_DIR, args.output)
+        renamed_isoforms = align_isoforms(SPLIT_ROOT_DIR, all_sam, args.cpus, args.refFasta,
+                                          all_isoforms, args.aligner_choice,
+                                          args.gmap_index, args.refGTF)
+        # Chunk of every cleaned up isoform ID, in the order of the input
+        with open(renamed_isoforms) as h:
+            isoform_ids = [line[1:].rstrip('\n') for line in h if line.startswith('>')]
+        chunk_of_isoform = {isoform: k // chunk_size for k, isoform in enumerate(isoform_ids)}
         split_outs = []
+        split_sams = []
         for i in range(args.chunks):
             if i*chunk_size >= n:
                 break
@@ -109,6 +125,17 @@ def split_input_run(args, outdir):
                 SeqIO.write(recs[j], f, 'fasta')
             f.close()
             split_outs.append((os.path.abspath(d), f.name))
+            split_sams.append(open(get_corr_filenames(d, args.output)[1], 'w'))
+        # Every chunk gets the SAM header and the alignments of its isoforms
+        with open(all_sam) as h:
+            for line in h:
+                if line.startswith('@'):
+                    for f in split_sams:
+                        f.write(line)
+                else:
+                    split_sams[chunk_of_isoform[line.split('\t', 1)[0]]].write(line)
+        for f in split_sams:
+            f.close()
 
     pools = []
     

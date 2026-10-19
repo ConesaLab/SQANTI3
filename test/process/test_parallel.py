@@ -64,3 +64,23 @@ class TestParallelPipeline:
                     classifications.append(h.read())
 
             assert classifications[0] == classifications[1]
+
+    def test_parallel_run_aligns_once(self):
+        """Test that --chunks aligns a FASTA input once instead of once per chunk."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cmd = [
+                "python", os.path.join(main_path, "sqanti3_qc.py"),
+                "--isoforms", os.path.join(main_path, "test", "test_data", "isoforms", "test_isoforms.fasta"),
+                "--refGTF", os.path.join(main_path, "test", "test_data", "reference", "test_reference.gtf"),
+                "--refFasta", os.path.join(main_path, "test", "test_data", "genome", "genome_test.fasta"),
+                "--dir", tmpdir,
+                "--output", "test_parallel",
+                "--chunks", "2",
+                "--report", "skip"
+            ]
+
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
+            assert result.returncode == 0, f"QC parallel run failed!\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            with open(os.path.join(tmpdir, "logs", "sqanti3_qc.log")) as h:
+                assert h.read().count("Aligning reads with Minimap2") == 1
