@@ -90,8 +90,12 @@ def split_input_run(args, outdir):
             qc_logger.warning(f"No primary features (e.g., transcript, mRNA) detected in '{args.isoforms}'. SQANTI3 might fail to process this file correctly.")
 
     else:
-        # FASTA file handling remains unchanged
-        recs = [r for r in SeqIO.parse(open(args.isoforms),'fasta')]
+        # The sequences may be FASTA or FASTQ (autodetected as in
+        # rename_isoform_seqids); the chunks are written as FASTA either way
+        with open(args.isoforms) as h:
+            seq_format = 'fastq' if h.readline().startswith('@') else 'fasta'
+        with open(args.isoforms) as h:
+            recs = [r for r in SeqIO.parse(h, seq_format)]
         n = len(recs)
         chunk_size = n//args.chunks + (n%args.chunks >0)
         split_outs = []
