@@ -7,6 +7,7 @@ import time
 import psutil
 
 from multiprocessing import Process, get_start_method
+from multiprocessing.connection import wait
 from Bio import SeqIO
 
 
@@ -299,11 +300,15 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
             active_processes.append(p)
             pools.append(p)
             
-            # Brief pause to let memory initialize before spawning another chunk
-            time.sleep(2)
+            # Brief pause to let memory initialize before spawning another chunk.
+            # Only a worker that reads its own genome and reference needs it;
+            # forked workers share those of this process
+            if genome_dict is None:
+                time.sleep(2)
         else:
-            # Wait for resources to free up
-            time.sleep(1)
+            # Wait for resources to free up: until a worker ends, checking
+            # again at least every second
+            wait([p.sentinel for p in active_processes], timeout=1)
 
     for p in pools:
         p.join()
