@@ -509,8 +509,8 @@ def test_polyapeak_empty_bed_file(tmp_path):
 
 
 ### prevalence tests ###
-# Number of samples in which each transcript is detected.
-# Detection threshold is one full read (count >= 1); see the contract test below.
+# prevalence and prevalence_<group> are computed by full_length_quantification()
+# (see test_qc_computations.py); as_dict() only reports them.
 
 
 def _transcript_with_counts(fl_dict):
@@ -527,53 +527,24 @@ def _transcript_with_counts(fl_dict):
     return obj
 
 
-def test_prevalence_counts_samples_with_expression():
-    """prevalence counts how many samples reach the detection threshold."""
-    d = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5, "s4": 0, "s5": 1}).as_dict()
-    assert d["prevalence"] == 3
-    assert d["FL"] == 16
+def test_multi_sample_fl_columns():
+    """Each sample gets an FL.<sample> column and FL is the sum over samples."""
+    d = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5.5}).as_dict()
+    assert (d["FL.s1"], d["FL.s2"], d["FL.s3"]) == (10, 0, 5.5)
+    assert d["FL"] == 15.5
 
 
-def test_prevalence_all_samples():
-    """A transcript detected everywhere gets prevalence equal to sample count."""
-    d = _transcript_with_counts({"s1": 3, "s2": 7, "s3": 2}).as_dict()
-    assert d["prevalence"] == 3
+def test_prevalence_is_reported():
+    obj = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5})
+    obj.prevalence = 2
+    assert obj.as_dict()["prevalence"] == 2
 
 
-def test_prevalence_no_expression():
-    """No expression in any sample gives prevalence 0."""
-    d = _transcript_with_counts({"s1": 0, "s2": 0, "s3": 0}).as_dict()
-    assert d["prevalence"] == 0
-    assert d["FL"] == 0
-
-
-def test_prevalence_subunit_counts_are_not_detection():
-    """Contract: an estimated abundance below one full read is not a detection.
-
-    EM-based quantifiers (bambu, salmon, kallisto, RSEM) distribute each
-    ambiguous read across candidate isoforms, assigning fractional mass to
-    isoforms with no evidence of their own. Requiring at least one full read
-    is what separates evidence from allocation.
-
-    Measured empirically: lowering the threshold below 1 increases coverage
-    but degrades quantification accuracy, so these transcripts are noise.
-    They are not lost either: they reach the rescue module, which reassigns
-    their mass to the sibling isoforms the reads actually belong to.
-    """
-    d = _transcript_with_counts({"s1": 0.4, "s2": 0.9, "s3": 0.99}).as_dict()
-    assert d["prevalence"] == 0
-
-
-def test_prevalence_one_read_is_detection():
-    """One full read counts as a detection, whether the value is integer or not."""
-    d = _transcript_with_counts({"s1": 1.0, "s2": 1.5, "s3": 0.7}).as_dict()
-    assert d["prevalence"] == 2
-
-
-def test_prevalence_single_sample():
-    """With a single sample prevalence can only be 0 or 1."""
-    d = _transcript_with_counts({"s1": 5}).as_dict()
-    assert d["prevalence"] == 1
+def test_is_expressed():
+    """0 means any count above 0; any other value is a minimum count, inclusive."""
+    from src.utils import is_expressed
+    assert [is_expressed(c, 0) for c in (0, 0.01, 1)] == [False, True, True]
+    assert [is_expressed(c, 0.5) for c in (0.4, 0.5, 2)] == [False, True, True]
 
 
 def test_prevalence_absent_without_fl_counts():
@@ -593,6 +564,16 @@ def test_prevalence_absent_without_fl_counts():
     assert obj.as_dict()["prevalence"] == "NA"
 
 
-def test_prevalence_empty_fl_counts():
-    """An empty FL_dict is treated the same as no FL_dict at all."""
-    assert _transcript_with_counts({}).as_dict()["prevalence"] == "NA"
+def test_group_prevalence_columns():
+    """Each entry of prevalence_dict becomes a prevalence_<group> column."""
+    obj = _transcript_with_counts({"K1": 3, "B1": 0})
+    obj.prevalence = 1
+    obj.prevalence_dict = {"K": 1, "B": 0}
+    d = obj.as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == (1, 1, 0)
+    assert "prevalence_dict" not in d
+
+
+def test_group_prevalence_absent_without_design():
+    d = _transcript_with_counts({"K1": 3, "B1": 2}).as_dict()
+    assert not [k for k in d if k.startswith("prevalence_")]

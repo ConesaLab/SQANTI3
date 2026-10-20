@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from src.parsers import parse_counts
+from src.parsers import parse_counts, read_counts_design
+from src.utils import is_expressed
 warnings.filterwarnings("ignore") #TODO: See why pandas raises the warning on copying
 
 from collections import defaultdict
@@ -14,7 +15,8 @@ from src.utilities.rescue.requant_helpers import (
     calculate_tpm
 )
 
-def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df, original_class, rescue_class):
+def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df, original_class, rescue_class,
+                              counts_design=None, min_expression=0):
     """
     Executes the requantification pipeline for transcript abundance estimation.
 
@@ -33,6 +35,10 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
         DataFrame containing rescued transcript information.
     rescue_class : object
         Class or object containing rescue classification data and methods.
+    counts_design : str, optional
+        --counts_design file given to QC, to recompute the prevalence_<group> columns.
+    min_expression : float
+        --min_expression given to QC, to recompute prevalence and prevalence_<group>.
 
     Returns
     -------
@@ -49,19 +55,27 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
       as they lack length information required for TPM computation
     """
     prefix = f"{output_dir}/{output_prefix}"
-    #TODO: Make this take the variables from python directly
-    counts_df = parse_counts(counts_file)
-    # Keep only counts present in the original classification
-    counts_df = counts_df[counts_df['isoform'].isin(original_class['isoform'])]
+    counts_df = load_counts(counts_file, original_class)
     rescue_logger.info("Counts file parsed.")
     requant_df = requantify(counts_df, rescue_df, original_class, prefix)
     rescue_logger.info("Requantification of counts completed.")
     rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
-    update_classification(requant_df, rescue_class, prefix)
+    # The design was checked against --counts by rescue_args_validation; with a single sample it is ignored
+    design = {}
+    if counts_design is not None and len(counts_df.columns) > 2:
+        design = read_counts_design(counts_design, rescue_logger)
+    update_classification(requant_df, rescue_class, prefix, design, min_expression)
     # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
     #to_tpm(requant_df,rescue_class, prefix)
     rescue_logger.info("Requantification finished!")
     return
+
+def load_counts(counts_file, original_class):
+    """Count matrix used by requantification: the --counts file, restricted to the
+    isoforms of the filter classification."""
+    #TODO: Make this take the variables from python directly
+    counts_df = parse_counts(counts_file)
+    return counts_df[counts_df['isoform'].isin(original_class['isoform'])]
 
 def requantify(counts, rescue_df, classif_df, prefix):
     """
@@ -117,11 +131,13 @@ def redistribute_counts_vectorized(rescue_df, classid_df, old_counts):
 
     return final_counts.reset_index().rename(columns={'index': 'isoform'})
 
-def update_classification(requant_df, rescue_class, prefix):
+def update_classification(requant_df, rescue_class, prefix, design=None, min_expression=0):
     """
     Update the FL count columns in the rescue classification based on reassigned counts.
     - Safe: Only updates isoforms present in BOTH files.
     - Prevents creation of 'ghost' rows (NaNs) if requant_df has extra IDs.
+    - With several samples, prevalence and prevalence_<group> (design) are recomputed
+      from the new counts, as QC does with --min_expression.
     """
     # 1. Set Indices
     req_df = requant_df.set_index('isoform')
@@ -160,7 +176,14 @@ def update_classification(requant_df, rescue_class, prefix):
         class_df['FL'] = 0
     class_df.loc[common_ids, 'FL'] = new_totals
 
-    # 5. Save
+    # 5. Update prevalence columns, only written by QC for multi-sample counts
+    if len(sample_cols) > 1:
+        detected = is_expressed(req_subset, min_expression)
+        class_df.loc[common_ids, 'prevalence'] = detected.sum(axis=1)
+        for group, samples in (design or {}).items():
+            class_df.loc[common_ids, f'prevalence_{group}'] = detected[samples].sum(axis=1)
+
+    # 6. Save
     output_file = f"{prefix}_rescued_classification.txt"
     class_df.reset_index().to_csv(output_file, sep='\t', index=False)
 

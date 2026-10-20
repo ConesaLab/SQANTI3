@@ -170,6 +170,8 @@ Rules can be set for any numeric or character column in the classification file:
 - **Numeric values**: in this case, it is possible to define an interval (`[X,Y]`) or set just the lower limit (`X`). Please, take into account that the **limit values will be included**. 
 - **Character and logical columns**: such as `subcategory`, `RTS_stage` or `all_canonical`. In this case, users can simply establish which terms will be accepted. Of note, users may want to accept several of the values in the column (for instance, several subcategories). If so, the requisite can be defined as an array, and the filter will keep the entries if any of those values are present in the specified column.
 
+Requisites on junction-related columns (`RTS_stage`, `all_canonical`, `min_cov`, `min_cov_pos`, `sd_cov`, `min_intron_length`, `n_indels_junc`, `bite` and `predicted_NMD`) are skipped for mono-exonic transcripts, since they have no junctions.
+
 #### User-defined rules (JSON file) example
 
 As an example, let's say that we want to define a custom filter that will keep only isoforms that pass these rules:

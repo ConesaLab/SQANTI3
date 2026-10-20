@@ -1,4 +1,5 @@
 import os
+import json
 import shutil
 import pandas as pd
 
@@ -26,7 +27,22 @@ from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
 
+from src.parsers import read_counts_design
+from src.utilities.rescue.evidence_check import (
+    rule_column_matches, target_count_rules, count_samples,
+    write_evidence_rules, apply_evidence_check
+)
+from src.utilities.rescue.sq_requant import load_counts
+
 MINIMAP2_RESCUE_OPTS = "--secondary=yes -ax map-hifi"
+# Rules removed from the JSON file before filtering the reference transcriptome,
+# because they cannot be evaluated on it. A rule is removed when its column is one
+# of these names or starts with one of them followed by "." or "_".
+# - FL, FL.<sample>, prevalence, prevalence_<group>: long-read counts, which the
+#   reference does not have.
+# - subcategory: every reference FSM is reference_match, so the rule would test the
+#   annotation itself instead of the evidence supporting each reference transcript.
+RESCUE_IGNORED_RULES = ["FL", "prevalence", "subcategory"]
 
 def run_automatic_rescue(classif_df,monoexons):
     message("Performing automatic rescue",rescue_logger)
@@ -171,6 +187,55 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
     rescue_logger.debug("Candidate-target mapping process has been executed successfully.")
     return hits_df
 
+def is_ignored_rule(column, ignored=RESCUE_IGNORED_RULES):
+    """Check whether a rule column cannot be evaluated on the reference transcriptome.
+
+    Args:
+        column (str): column name used as key in the rules JSON file
+        ignored (list): names from RESCUE_IGNORED_RULES (see rule_column_matches)
+
+    Returns:
+        bool: True if the rule has to be removed for the reference
+    """
+    return rule_column_matches(column, ignored)
+
+
+def write_reference_rules(json_filter, out_file):
+    """Write a copy of the rules without the requisites ignored for the reference.
+
+    The structure of the file is kept: every structural category and every rule
+    stays, only the ignored requisites are removed. A rule left empty accepts
+    every reference transcript of its structural category.
+
+    Args:
+        json_filter (str): rules JSON file used to filter the long-read transcriptome
+        out_file (str): path of the JSON file to write
+
+    Returns:
+        list: sorted names of the removed requisites
+    """
+    with open(json_filter, 'r') as f:
+        rules = json.load(f)
+
+    removed = set()
+    reference_rules = {}
+    for sc, rule_sets in rules.items():
+        reference_rules[sc] = []
+        for rule_set in rule_sets:
+            kept = {}
+            for column, value in rule_set.items():
+                if is_ignored_rule(column):
+                    removed.add(column)
+                else:
+                    kept[column] = value
+            reference_rules[sc].append(kept)
+
+    with open(out_file, 'w') as f:
+        json.dump(reference_rules, f, indent=4)
+
+    return sorted(removed)
+
+
 ## Run rescue steps specific to rules filter
 def run_rules_rescue(filter_classification, reference_classification, hits_df, 
                      rescue_df, automatic_inclusion_list, out_dir, json_filter):
@@ -179,9 +244,15 @@ def run_rules_rescue(filter_classification, reference_classification, hits_df,
     rescue_logger.info("Applying provided rules (--json_filter) to reference transcriptome classification file.")
     ref_out = "reference"
     ref_dir = f"{out_dir}/reference_rules_filter"
+    os.makedirs(ref_dir, exist_ok=True)
+    # Rules that need long-read evidence cannot be evaluated on the reference
+    ref_json = f"{ref_dir}/reference_rules.json"
+    removed = write_reference_rules(json_filter, ref_json)
+    if removed:
+        rescue_logger.info(f"Requisites not applied to the reference transcriptome: {removed}")
     FILTER_PATH = sqanti_path("sqanti3_filter.py")
     # Actual command
-    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {json_filter} -o {ref_out} -d {ref_dir} --skip_report"
+    refRules_cmd = f"{PYTHONPATH} {FILTER_PATH} rules --sqanti_class {reference_classification} -j {ref_json} -o {ref_out} -d {ref_dir} --skip_report"
     logFile=f"{out_dir}/logs/refRules.log"
     run_command(refRules_cmd,rescue_logger,logFile,description="Run rules filter on reference transcriptome")
 
@@ -216,6 +287,51 @@ def run_ML_rescue(filter_classification, reference_classification, hits_df, resc
                                                   automatic_inclusion_list, rescue_df,"ml",thr)
     
     return inclusion_list, rescue_df
+
+## Evidence check of reference targets (count requisites of the rules)
+def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
+                         corrected_isoforms, out_dir, out_prefix):
+    """Map the FSM artifacts of automatic rescue to the rescue targets.
+
+    Automatic rescue does not map its artifacts. Their hits are only used to
+    reassign them to a long-read isoform if their reference transcript fails
+    the evidence check, so they are kept apart from the rescue-by-mapping hits.
+    """
+    fsm_artifacts = rescue_df.loc[rescue_df["rescue_mode"] == "automatic", "artifact"].unique().tolist()
+    if not fsm_artifacts:
+        return pd.DataFrame(columns=["rescue_candidate", "mapping_hit", "alignment_type", "alignment_score"])
+
+    # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
+    # file if it was made from the same targets and artifacts (mapping fingerprint)
+    fb_prefix = f"{out_prefix}_fallback"
+    message("Fallback mapping of automatic rescue artifacts", rescue_logger)
+    targets = rescue_targets(classif_df, fsm_artifacts, ref_gtf, f"{out_dir}/{fb_prefix}")
+    return run_candidate_mapping(ref_trans_fasta, targets, fsm_artifacts,
+                                 corrected_isoforms, out_dir, fb_prefix)
+
+
+def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filter,
+                       counts_design, counts_file, out_dir, min_expression):
+    """Apply the count requisites of the rules to the rescued reference targets.
+
+    The requisites are written to {out_dir}/evidence_check_rules.json and
+    evaluated by the rules filter on the counts that requantification would give
+    each target from the --counts file, with the expression threshold of QC
+    (min_expression).
+    """
+    message("Evidence check of rescued reference transcripts", rescue_logger)
+    with open(json_filter) as f:
+        rule_sets = target_count_rules(json.load(f))
+    counts_df = load_counts(counts_file, classif_df)
+    # The design and the rules were checked against --counts by rescue_args_validation;
+    # with a single sample the design is ignored
+    design = {}
+    if counts_design is not None and len(count_samples(counts_df)) > 1:
+        design = read_counts_design(counts_design, rescue_logger)
+    rules_dict = write_evidence_rules(rule_sets, f"{out_dir}/evidence_check_rules.json")
+    return apply_evidence_check(rescue_df, inclusion_list, classif_df, counts_df, hits_df, rules_dict,
+                                design, min_expression)
+
 
 def concatenate_gtf_files(input_files, output_file):
     """
