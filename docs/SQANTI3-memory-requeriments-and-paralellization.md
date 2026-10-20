@@ -20,6 +20,8 @@ In any case, some of the parameters used to run SQANTI3 require and increase in 
 
 Using the -n option in chunks allows SQANTI3 QC to work in parallel and accelerate the analysis. However, by doing so, memory requirements increase in a considerable manner.
 
+Since v6.1, when the transcriptome is provided as FASTA/FASTQ, the long-read alignment runs once, before the transcriptome is split into chunks, instead of once per chunk. The genome index of the aligner (about 13 GB for minimap2 and the mouse genome) is therefore loaded only once, whatever the number of chunks ([PR #643](https://github.com/ConesaLab/SQANTI3/pull/643)). The measurements below were made with earlier versions of SQANTI3.
+
 For example, using the 156k transcripts dataset for testing parallelization process in a HPC, the memory cost is linear (memory complexity is **O(n)**, n being how many chunks were used), while real time needed to process the dataset was reduced up to a 25% of the time needed to process without parallelization.
 
 * This dataset took 1678 seconds (about 28 minutes) to process without parallelization, and required 5.87 GB of RAM.

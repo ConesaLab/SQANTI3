@@ -34,6 +34,7 @@ See the dedicated site for [installation instructions](Dependencies-and-installa
 - GFF/GFF3 reference annotations are no longer rejected at input validation ([PR #635](https://github.com/ConesaLab/SQANTI3/pull/635)).
 - QC accepts gzipped FASTA/FASTQ as `--isoforms`.
 - FASTQ input can be run in parallel (`-n` > 1), and the renamed FASTA is written to `--dir` instead of the input folder.
+- With FASTA/FASTQ input and `-n` > 1, the sequences are aligned once, with all the CPUs given with `-t`, instead of once per chunk. Before, each chunk ran its own aligner and loaded its own copy of the genome index at the same time, so runs with many chunks could run out of memory ([PR #643](https://github.com/ConesaLab/SQANTI3/pull/643)).
 - QC stops with an error when two isoform IDs become identical after renaming.
 - Fixed `--SR_bam` input paths ([issue #611](https://github.com/ConesaLab/SQANTI3/issues/611)), the `--ratio_TSS_metric 3quartile` crash, `RTS_junction` written as `????` in `_junctions.txt`, and transcript ID parsing in TD2 ORF headers ([PR #626](https://github.com/ConesaLab/SQANTI3/pull/626)).
 

@@ -474,5 +474,5 @@ There are two options related to parallelization:
 - The `-t` (`--cpus`) parameter designates the number of CPUs used by the aligners for long and short reads. If you have supplied your transcriptome as a GTF file and you do not provide short-read FASTA/FASTQ files, the `-t` option has no effect.
 - The `-n` (`--chunks`) parameter divides the input transcriptome (GTF or FASTA/FASTQ) into chunks and runs SQANTI3 in parallel for each fragment, then combining the results into one classification and junctions file. 
 
-Note that both of these parameters can be combined, for instance, if you have set `-t 30 -n 10`, then each chunk will get (30/10=3) CPUs.
+Both parameters can be combined. When the transcriptome is provided as FASTA/FASTQ, the long-read alignment is not split into chunks: SQANTI3 first aligns all the sequences at once, using all the CPUs given with `-t`, and each chunk then receives the alignments of its own sequences. This way, a single aligner runs and loads the genome index (about 13 GB for minimap2 and the mouse genome) only once, whatever the number of chunks ([PR #643](https://github.com/ConesaLab/SQANTI3/pull/643)).
 
