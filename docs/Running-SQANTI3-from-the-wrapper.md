@@ -100,6 +100,8 @@ qc:
     expression: ''
     coverage: ''
     fl_count: ''
+    counts_design: ''
+    min_expression: 0
     isoAnnotLite: false
     gff3: ''
     saturation: false
@@ -147,9 +149,12 @@ rescue:
     counts: ''
     rescue_mono_exonic: all
     mode: automatic
-    requant: false
+    skip_requant: false
     strategy: rules
     json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+    counts_design: ''
+    min_expression: 0
+    skip_evidence_check: false
     random_forest: sqanti3_results/isoformsrandomforest.RData
     threshold: 0.7
 

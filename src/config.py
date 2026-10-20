@@ -1,8 +1,8 @@
 import os, re
 
 __author__  = "pablo.atienza@csic.es"
-__version__ = '6.0.2'  # Python 3.7
-__reads_version__ = '1.0.0'  # SQANTI-Reads version
+__version__ = '6.1'  # Python 3.7
+__reads_version__ = '1.1.0'  # SQANTI-Reads version
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "utilities")
 default_json = os.path.abspath(utilitiesPath + "/filter/filter_default.json")
 
@@ -20,7 +20,7 @@ FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',
                 'diff_to_TSS', 'diff_to_TTS', 'diff_to_TSS_genomic', 'diff_to_TTS_genomic',
                 'diff_to_gene_TSS', 'diff_to_gene_TTS',
                 'subcategory', 'RTS_stage', 'all_canonical',
-                'min_sample_cov', 'min_cov', 'min_cov_pos',  'sd_cov', 'FL', 'n_indels',
+                'min_sample_cov', 'min_cov', 'min_cov_pos',  'sd_cov', 'min_intron_length', 'FL', 'n_indels',
                 'n_indels_junc',  'bite',  'iso_exp', 'gene_exp',  'ratio_exp',
                 'FSM_class',   'coding', 'ORF_length', 'CDS_length', 'CDS_start',
                 'CDS_end', 'CDS_genomic_start', 'CDS_genomic_end', 'predicted_NMD',

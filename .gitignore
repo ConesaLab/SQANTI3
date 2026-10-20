@@ -147,6 +147,8 @@ src/data/module_logger_config.json
 # BugFixes
 /bugfix
 test/logs/test_module.log
+
 GEMINI.md
 .gitignore
 dev
+

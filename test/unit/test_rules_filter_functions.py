@@ -162,6 +162,26 @@ def test_multiexon_junction_failsafe_enforced():
     assert len(reasons) == 2
     assert reasons == {"min_cov: 0 < 10", "bite: False"}
 
+@pytest.mark.parametrize("exons, distance, expected", [
+    (2, 150, "Isoform"),
+    (2, 99, "Artifact"),
+    (1, None, "Isoform"),   # mono-exonic: no introns, the requisite is skipped
+])
+def test_min_intron_length_rule(exons, distance, expected):
+    row = pd.Series({
+        "isoform": "PB.1.1",
+        "exons": exons,
+        "structural_category": "rest",
+        "min_intron_length": distance
+    })
+    rules_dict = {"rest": [pd.DataFrame([["min_intron_length", "Min_Threshold", 100]],
+                                        columns=["column", "type", "rule"])]}
+
+    assert "min_intron_length" in junction_related_columns
+    assert apply_rules(row, False, rules_dict) == expected
+    reasons = get_reasons(row, False, rules_dict)["filter_reason"]
+    assert reasons == ("min_intron_length: 99 < 100" if expected == "Artifact" else "")
+
 def test_apply_rules_isoform_rest(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[1]
     result = apply_rules(row, False, rules_dict)

@@ -6,7 +6,7 @@ from Bio import SeqIO
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.parsers import isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
+from src.parsers import extract_variables, isoforms_parser, parse_corrORF, parse_TD2, reference_parser, parse_counts
 from bx.intervals.intersection import IntervalTree
 
 class TestReferenceParser:
@@ -252,6 +252,22 @@ class TestParseTD2:
         # Clean up: remove the output file after the test
         os.remove(corrORF_td2_file)
 
+    @pytest.mark.parametrize("transcript_id", [
+        "PB.83093.1",
+        "ENST00000123456.1",
+        # IDs containing ':' (e.g., Isocall fusion and intergenic transcripts)
+        "ENSG00000111111.1::ENSG00000222222.2|T1",
+        "GENE|chr7:1234567-1240000|r|T2",
+    ])
+    def test_extract_variables_transcript_id(self, transcript_id):
+        header = f"{transcript_id}.p1 GENE.{transcript_id}~~{transcript_id}.p1  ORF type:complete (+),psauron_score=0.998 len:138 {transcript_id}:575-988(+)"
+
+        info = extract_variables(header)
+
+        assert info['id_pre'] == transcript_id
+        assert info['cds_start'] == 575
+        assert info['cds_end'] == 988
+
 
 class TestParseCounts:
     @pytest.fixture
@@ -376,19 +392,27 @@ class TestParseCounts:
         assert pb103724_row["sample3"] == 55
 
     def test_parse_counts_mixed_numeric_types(self, fl_count_mixed_numeric):
+        """Fractional counts from EM-based quantifiers must be preserved."""
         df = parse_counts(fl_count_mixed_numeric)
-        
-        # parse_counts converts all to int, so float values will be truncated
-        # But the function actually ensures counts are integers
+
         assert df[df['isoform'] == "PB.124830.1"]['count_fl'].values[0] == 150
-        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200
+        assert df[df['isoform'] == "PB.103714.1"]['count_fl'].values[0] == 200.5
         assert df[df['isoform'] == "PB.103724.1"]['count_fl'].values[0] == 50
-        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300
-        
-        # All counts should be integers
+        assert df[df['isoform'] == "PB.103781.1"]['count_fl'].values[0] == 300.75
+
+    def test_parse_counts_subunit_fractional_not_zeroed(self, tmp_path):
+        """Counts below 1 must not collapse to zero (bambu/salmon EM output)."""
+        f = tmp_path / "frac.tsv"
+        f.write_text("pbid\tsample1\nPB.1.1\t0.4\nPB.1.2\t0.9\nPB.1.3\t3.0\n")
+        df = parse_counts(str(f))
+        assert df['sample1'].tolist() == [0.4, 0.9, 3.0]
+
+    def test_parse_counts_integer_input_stays_integer(self, fl_count_single_tsv):
+        """Integer count files keep an integer dtype (PacBio FL workflows)."""
+        df = parse_counts(fl_count_single_tsv)
         sample_cols = [col for col in df.columns if col != 'isoform']
         for col in sample_cols:
-            assert df[col].dtype == int
+            assert df[col].dtype.kind in ('i', 'u')
 
     def test_parse_counts_empty_file(self, fl_count_empty):
         df = parse_counts(fl_count_empty)
@@ -398,3 +422,79 @@ class TestParseCounts:
         assert len(df.columns) == 2  # isoform + 1 sample column
         assert len(df) == 0
     
+
+
+### read_counts_design / check_counts_design ###
+
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
+
+
+def _design_file(tmp_path, content, name="design.tsv"):
+    f = tmp_path / name
+    f.write_text(content)
+    return str(f)
+
+
+class TestCountsDesign:
+    def test_valid_tsv_design(self, tmp_path):
+        content = "sample\tgroup\nK1\tK\nB1\tB\nK2\tK\nB2\tB\nB3\tB\n"
+        assert read_counts_design(_design_file(tmp_path, content)) == \
+            {"K": ["K1", "K2"], "B": ["B1", "B2", "B3"]}
+
+    def test_valid_csv_design_with_extra_columns(self, tmp_path):
+        content = "group,sample,batch\nK,K1,1\nB,B1,2\n"
+        assert read_counts_design(_design_file(tmp_path, content, "design.csv")) == \
+            {"K": ["K1"], "B": ["B1"]}
+
+    @pytest.mark.parametrize("content", [
+        "",                                     # empty file
+        "sample\tgroup\n",                      # no rows
+        "K1\tK\nB1\tB\n",                       # no header
+        "sample\tcondition\nK1\tK\n",            # no group column
+        "sample\tgroup\nK1\t\n",                 # empty group
+        "sample\tgroup\nK1\tK\nK1\tB\n",         # sample in two groups
+        "sample\tgroup\nK1\tK\nK1\tK\n",         # duplicated sample
+        "sample\tgroup\nK1\tK 1\n",              # not a valid column suffix
+    ])
+    def test_invalid_design_exits(self, tmp_path, content):
+        with pytest.raises(SystemExit):
+            read_counts_design(_design_file(tmp_path, content))
+
+    def test_check_accepts_unused_samples(self):
+        design = {"K": ["K1"], "B": ["B1"]}
+        assert check_counts_design(design, ["K1", "B1", "MIX"]) == design
+
+    def test_check_missing_sample_exits(self):
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"])
+
+    def test_check_single_sample_file_ignores_design(self):
+        assert check_counts_design({"K": ["K1"]}, ["K1"]) == {}
+
+    def test_check_uses_the_given_logger(self):
+        """Rescue passes its own logger, and the messages name no QC-only option."""
+        from unittest.mock import MagicMock
+        logger = MagicMock()
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"], logger)
+        messages = [c.args[0] for c in logger.error.call_args_list]
+        assert messages[0] == "Samples in the counts design file not found in the count file: ['K9']"
+        assert not any("--fl_count" in m for m in messages)
+
+
+class TestCountFileSamples:
+    """count_file_samples reads only the header, with the delimiter detection of parse_counts."""
+
+    @pytest.mark.parametrize("content, name", [
+        ("isoform\tS1\tS2\nPB.1.1\t1\t2\n", "counts.tsv"),
+        ("isoform,S1,S2\nPB.1.1,1,2\n", "counts.csv"),
+        ("# made by bambu\nisoform\tS1\tS2\nPB.1.1\t1\t2\n", "comments.tsv"),
+    ])
+    def test_samples(self, tmp_path, content, name):
+        f = tmp_path / name
+        f.write_text(content)
+        assert count_file_samples(str(f)) == ["S1", "S2"]
+
+    def test_matches_parse_counts(self):
+        f = os.path.join(main_path, "test/test_data/abundance/fl_count_multi_sample.csv")
+        assert count_file_samples(f) == parse_counts(f).columns[1:].tolist()

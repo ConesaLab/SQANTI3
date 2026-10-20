@@ -193,9 +193,6 @@ class myQueryTranscripts:
     ref_length: Optional[int] = None
     ref_exons: Optional[int] = None
 
-    q_splicesite_hit: Optional[int] = None
-    q_exon_overlap: Optional[int] = None
-
     diff_to_TSS: Optional[int] = None
     diff_to_TTS: Optional[int] = None
     diff_to_TSS_genomic: Optional[int] = None
@@ -210,8 +207,13 @@ class myQueryTranscripts:
     min_cov: Optional[float] = None
     min_cov_pos: Optional[float] = None
     sd_cov: Optional[float] = None
+    # length (bp) of the shortest intron, NA for mono-exonic transcripts
+    min_intron_length: Optional[int] = None
 
     FL: Optional[int] = None
+    # multisample m value: number of samples where the transcript is expressed
+    # (is_expressed() with --min_expression), set by full_length_quantification()
+    prevalence: Optional[int] = None
 
     n_indels: Optional[int] = None
     n_indels_junc: Optional[int] = None
@@ -251,12 +253,15 @@ class myQueryTranscripts:
 
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
+    prevalence_dict: Dict[str, int] = field(default_factory=dict)  # group -> prevalence (--counts_design)
     AS_genes: Set[str] = field(default_factory=set)
     genes: Optional[list] = None  # List of genes associated with the isoform
     transcripts: Optional[list] = None  # List of transcripts associated with the isoform
     ref_start: Optional[int] = None
     ref_end: Optional[int] = None
     ref_strand: Optional[str] = None
+    q_splicesite_hit: Optional[int] = None
+    q_exon_overlap: Optional[int] = None
 
     def __post_init__(self):
         self._validate_input()
@@ -368,8 +373,12 @@ class myQueryTranscripts:
             # Set FL to sum of all samples for multi-sample case
             base["FL"] = sum(self.FL_dict.values())
 
+        # Per-group prevalence (--counts_design)
+        for group, prevalence in self.prevalence_dict.items():
+            base[f"prevalence_{group}"] = prevalence
+
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start',
+        non_report_attrs = ['AS_genes','FL_dict','prevalence_dict','genes','transcripts', 'ref_start',
                             'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap']
         for attr in non_report_attrs:
             if attr in base:

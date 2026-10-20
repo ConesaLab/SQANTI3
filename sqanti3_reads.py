@@ -2,7 +2,6 @@
 import subprocess, os, sys, glob
 import pandas as pd
 import hashlib
-import shutil
 
 # SQANTI_Reads: Structural and Quality Annotation of Novel Transcripts in reads
 # Author: Carolina Monzo
@@ -14,10 +13,51 @@ import logging
 __author__  = "carolina.monzo@csic.es"
 __version__ = '1.0'  # Python 3.7
 
+# Streaming awk that emits each multi-exon transcript's unique junction chain (UJC)
+# straight from the corrected GTF, replacing the old gffread -> gtftools -> bedtools
+# pipeline (gffread scaled ~quadratically, ~11 h on a 6 GB GTF; gtftools then
+# reparsed the whole file in pure Python, ~75 min/sample). A transcript's introns
+# are just the gaps between its exons sorted by start, so the junction string
+#   chr<chrom>_<strand>_<i1start>_<i1end>_<i2start>_<i2end>...
+# (each intron = prev_exon_end+1 .. next_exon_start-1) is byte-identical to the old
+# output. Exons are insertion-sorted per transcript (no dependency on gffread's
+# normalisation); monoexons produce no line (jxn_string stays NaN, keyed separately).
+_UJC_AWK = r'''BEGIN{ FS="\t" }
+function emit(  i,j,ks,ke,chain){
+  if(n<2){ n=0; return }
+  for(i=2;i<=n;i++){ ks=es[i]; ke=ee[i]; j=i-1; while(j>=1 && es[j]>ks){ es[j+1]=es[j]; ee[j+1]=ee[j]; j-- } es[j+1]=ks; ee[j+1]=ke }
+  chain=""; for(i=1;i<n;i++) chain=chain"_"(ee[i]+1)"_"(es[i+1]-1); print cur"\t""chr"c"_"st chain; n=0
+}
+$3=="exon"{
+  p=index($0,"transcript_id \""); if(p==0) next; rest=substr($0,p+15); q=index(rest,"\""); tid=substr(rest,1,q-1);
+  if(tid!=cur){ emit(); cur=tid; c=$1; sub(/^chr/,"",c); st=$7 }
+  n++; es[n]=$4; ee[n]=$5
+}
+END{ emit() }'''
+
 
 utilitiesPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "src/utilities")
 sys.path.insert(0, utilitiesPath)
 sqantiqcPath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
+
+
+def _run_parallel(func, items, jobs):
+    """Run func(item) over items, in parallel with a thread pool when jobs>1.
+
+    A thread pool is used (not processes) because the per-sample work is
+    dominated by external subprocesses / file I/O, which release the GIL — so
+    this gives real parallelism without pickling. Exceptions propagate.
+    """
+    jobs = max(1, int(jobs or 1))
+    items = list(items)
+    if jobs <= 1 or len(items) <= 1:
+        for it in items:
+            func(it)
+        return
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=min(jobs, len(items))) as ex:
+        # list() forces evaluation so any worker exception is re-raised here.
+        list(ex.map(func, items))
 
 def fill_design_table(args):
     df = pd.read_csv(args.inDESIGN, sep = ",")
@@ -30,8 +70,15 @@ def fill_design_table(args):
     # We always overwrite these columns to ensure they match the current run arguments
     # regardless of what might be in the input CSV (which could have stale paths).
     
-    # Classification file is the OUTPUT file we will create
-    df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    # Classification file: normally the (jxnHash-augmented) file that the UJC
+    # hashing step writes into OUTPUT. With --skip_hash that step is not run, so
+    # the file is never created in OUTPUT; read the already-hashed classification
+    # straight from the existing SQANTI3 dirs instead (otherwise the run fails
+    # looking for a file that was never created).
+    if getattr(args, "SKIPHASH", False) and args.sqanti_dirs:
+        df['classification_file'] = args.sqanti_dirs + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
+    else:
+        df['classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_classification.txt'
     
     # Junction file is the INPUT file we need to read
     # If using sqanti_dirs (fast mode), it's there. If running from scratch, it will be in OUTPUT.
@@ -45,8 +92,15 @@ def fill_design_table(args):
         
     return(df)
 
+def _run_qc_cmd(cmd):
+    # cmd is an argv list (built in get_method_runSQANTI3). Run WITHOUT a shell so
+    # sample paths containing spaces/quotes/other shell metacharacters are passed as
+    # literal arguments and cannot break the command or inject anything.
+    subprocess.check_call(cmd)
+
 def get_method_runSQANTI3(args, df):
 
+    qc_cmds = []
     for index, row in df.iterrows():
         file_acc = row['file_acc']
         sampleID = row['sampleID']
@@ -85,7 +139,7 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(gtf_files):
-                if os.path.isfile(args.refFasta) is False:
+                if not args.refFasta or os.path.isfile(args.refFasta) is False:
                     reads_logger.error(f'[ERROR] You inputted gtf files to run SQANTI3 but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
@@ -94,21 +148,23 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted gtfs, we will run sqanti_reads in simple mode for sample {gtf_files}')
                 
-                # Update output directory to be args.OUTPUT instead of args.dir
-                cmd_sqanti = (
-                    f"python {sqantiqcPath}/sqanti3_qc.py "
-                    f"--isoforms {gtf_files} "
-                    f"--refGTF {args.refGTF} "
-                    f"--refFasta {args.refFasta} "
-                    f"--min_ref_len {args.min_ref_len} "
-                    f"--aligner_choice {args.aligner_choice} "
-                    f"-t {args.cpus} "
-                    f"-d {args.OUTPUT}/{file_acc} "
-                    f"-o {sampleID} "
-                    f"-s {args.sites}"
-                )
+                # Update output directory to be args.OUTPUT instead of args.dir.
+                # Built as an argv list (not a shell string) so it can be run without a
+                # shell — see _run_qc_cmd.
+                cmd_sqanti = [
+                    "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                    "--isoforms", gtf_files,
+                    "--refGTF", args.refGTF,
+                    "--refFasta", args.refFasta,
+                    "--min_ref_len", str(args.min_ref_len),
+                    "--aligner_choice", args.aligner_choice,
+                    "-t", str(args.cpus),
+                    "-d", f"{args.OUTPUT}/{file_acc}",
+                    "-o", sampleID,
+                    "-s", str(args.sites),
+                ]
 
-                subprocess.call(cmd_sqanti, shell = True)
+                qc_cmds.append(cmd_sqanti)
                 continue
 
         # Check for .fastq files
@@ -119,7 +175,7 @@ def get_method_runSQANTI3(args, df):
             pass
         else:
             if os.path.isfile(fastq_files):
-                if os.path.isfile(args.refFasta) is False:
+                if not args.refFasta or os.path.isfile(args.refFasta) is False:
                     reads_logger.error(f'[ERROR] You inputted fastq files to map but no reference genome FASTA')
                     sys.exit(-1)
                 if os.path.isfile(args.refGTF) is False:
@@ -128,33 +184,43 @@ def get_method_runSQANTI3(args, df):
                 if args.verbose:
                     reads_logger.debug(f'[INFO] You inputted reads, we will run sqanti_reads in simple mode for sample {fastq_files}')
 
-                # Update output directory to be args.OUTPUT instead of args.dir
-                cmd_sqanti = (
-                    f"python {sqantiqcPath}/sqanti3_qc.py "
-                    f"--isoforms {fastq_files} "
-                    f"--refGTF {args.refGTF} "
-                    f"--refFasta {args.refFasta} "
-                    f"--min_ref_len {args.min_ref_len} "
-                    f"--aligner_choice {args.aligner_choice} "
-                    f"-t {args.cpus} "
-                    f"-d {args.OUTPUT}/{file_acc} "
-                    f"-o {sampleID} "
-                    f"-s {args.sites} "
-                    f"-n {args.chunks} "
-                    f"--fasta"
-                )
+                # Update output directory to be args.OUTPUT instead of args.dir.
+                # Built as an argv list (not a shell string) so it can be run without a
+                # shell — see _run_qc_cmd.
+                cmd_sqanti = [
+                    "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                    "--isoforms", fastq_files,
+                    "--refGTF", args.refGTF,
+                    "--refFasta", args.refFasta,
+                    "--min_ref_len", str(args.min_ref_len),
+                    "--aligner_choice", args.aligner_choice,
+                    "-t", str(args.cpus),
+                    "-d", f"{args.OUTPUT}/{file_acc}",
+                    "-o", sampleID,
+                    "-s", str(args.sites),
+                    "-n", str(args.chunks),
+                    "--fasta",
+                ]
 
                 reads_logger.debug(cmd_sqanti)
-                subprocess.call(cmd_sqanti, shell = True)
+                qc_cmds.append(cmd_sqanti)
                 continue
 
         # If none of the conditions are met, raise an error
         reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
 
+    # Run the per-sample SQANTI3-QC commands (simple mode), in parallel if --jobs>1.
+    if qc_cmds:
+        reads_logger.info(f"Running SQANTI3-QC for {len(qc_cmds)} sample(s) with jobs={getattr(args, 'jobs', 1)}")
+        _run_parallel(_run_qc_cmd, qc_cmds, getattr(args, 'jobs', 1))
+
 def make_UJC_hash(args, df):
 
-    for index, row in df.iterrows():
+    # Per-sample UJC hashing (single awk pass over the corrected GTF + pandas). Each sample
+    # writes only into its own output dir, so samples are independent and run in
+    # parallel when --jobs>1 (thread pool: the work is subprocess/I/O dominated).
+    def _one(row):
         file_acc = row['file_acc']
         sampleID = row['sampleID']
         
@@ -180,47 +246,33 @@ def make_UJC_hash(args, df):
 
         reads_logger.info("**** Calculating UJCs...")
                 
-        # Ensure the corrected GTF contains gene_id attributes on every exon/CDS line so that
-        # downstream `gtftools` does not fail with `IndexError: list index out of range`.
-        # `gffread` will rewrite the file adding the missing attributes. We write to a
-        # temporary file and then move it back so the final filename remains unchanged.
-        
-        # We need to work on a copy of the GTF to avoid modifying input
+        # Build every multi-exon transcript's junction chain directly from the
+        # corrected GTF in a single streaming awk pass (see _UJC_AWK above). This
+        # replaces the gffread -> gtftools -> bedtools pipeline whose gffread step
+        # alone took ~11 h on a 6 GB GTF and whose gtftools step took ~75 min/sample.
+        # Nothing downstream reads the (previously gffread-rewritten) corrected GTF —
+        # only the classification and junction files are loaded — so it is no longer
+        # copied or rewritten.
         input_gtf = f"{inputPathPrefix}_corrected.gtf"
-        output_gtf = f"{outputPathPrefix}_corrected.gtf"
-        
-        if not os.path.exists(output_gtf):
-             if os.path.exists(input_gtf):
-                 shutil.copy(input_gtf, output_gtf)
-             else:
-                 reads_logger.error(f"Input GTF not found: {input_gtf}")
-                 sys.exit(-1)
+        if not os.path.exists(input_gtf):
+            reads_logger.error(f"Input GTF not found: {input_gtf}")
+            sys.exit(-1)
 
-        gffread_tmp = f"{outputPathPrefix}_corrected.gtf.gffread_tmp"
-        gffread_cmd = f"gffread {output_gtf} -T -o {gffread_tmp} && mv {gffread_tmp} {output_gtf}"
-
+        # Invoke awk WITHOUT a shell: the program and the GTF path are passed as argv
+        # elements and stdout is redirected through a Python file handle, so a sample
+        # path containing spaces/quotes/other shell metacharacters cannot break the
+        # command or inject anything. LC_ALL=C (via env, not a shell prefix) keeps
+        # gawk's byte ops (index/substr) out of slow multibyte-locale paths; the awk is
+        # otherwise I/O-bound on the GTF read.
+        ujc_txt = f"{outputPathPrefix}tmp_UJC.txt"
+        _awk_env = {**os.environ, "LC_ALL": "C"}
         try:
-            subprocess.check_call(gffread_cmd, shell=True)
+            with open(ujc_txt, "w") as _ujc_out:
+                subprocess.check_call(["awk", _UJC_AWK, input_gtf],
+                                      stdout=_ujc_out, env=_awk_env)
         except subprocess.CalledProcessError:
-            reads_logger.error(f"ERROR running command: {gffread_cmd}\n Missing or failed gffread")
+            reads_logger.error(f"ERROR building UJC chains (awk) from {input_gtf}")
             sys.exit(-1)
-
-        ## Take the corrected GTF
-        # TODO: Change the file naming to use the standards of SQANTI3 via the helper function
-        introns_cmd = f"""gtftools -i {outputPathPrefix}tmp_introns.bed -c "$(cut -f 1 {output_gtf} | sort | uniq | paste -sd ',' - | sed 's/chr//g')" {output_gtf}"""
-        ujc_cmd = f"""awk -F'\t' -v OFS="\t" '{{print $5,"chr"$1,$4,$2+1"_"$3}}' {outputPathPrefix}tmp_introns.bed | bedtools groupby -g 1 -c 2,3,4 -o distinct,distinct,collapse | sed 's/,/_/g' | awk -F'\t' -v OFS="\t" '{{print $1,$2"_"$3"_"$4}}' > {outputPathPrefix}tmp_UJC.txt"""
-
-        if subprocess.check_call(introns_cmd, shell=True)!=0:
-            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing GTFTOOLS")
-            sys.exit(-1)
-
-        if os.path.exists(f"{outputPathPrefix}_corrected.gtf.ensembl"):
-            os.remove(f"{outputPathPrefix}_corrected.gtf.ensembl")
-
-        if subprocess.check_call(ujc_cmd, shell=True)!=0:
-            reads_logger.error(f"ERROR running command: {introns_cmd}\n Missing BEDTOOLS")
-            sys.exit(-1)
-        os.remove(f"{outputPathPrefix}tmp_introns.bed")
 
         ## Pandas merge to the left
         input_classfile = f"{inputPathPrefix}_classification.txt"
@@ -228,24 +280,67 @@ def make_UJC_hash(args, df):
              reads_logger.error(f"Input classification file not found: {input_classfile}")
              sys.exit(-1)
              
-        clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 7], dtype = "str")
-        clas_df.columns = ["isoform", "chr", "strand", "associated_transcript"]
+        # Classification columns: 0=isoform, 1=chrom, 2=start, 3=end, 4=strand,
+        # 7=structural_category, 11=associated_transcript. (Earlier code mislabeled
+        # col 2=start as "strand" and col 7=structural_category as "associated_transcript",
+        # which corrupted the monoexon UJC — every monoexon got a unique, unshareable hash.)
+        clas_df = pd.read_csv(input_classfile, sep = "\t", usecols = [0, 1, 2, 3, 4, 7, 11], dtype = "str")
+        clas_df.columns = ["isoform", "chr", "start", "end", "strand", "structural_category", "associated_transcript"]
         ujc_df = pd.read_csv(f"{outputPathPrefix}tmp_UJC.txt", sep = "\t", names = ["isoform", "jxn_string"], dtype = "str")
 
         merged_df = pd.merge(clas_df, ujc_df, on = "isoform", how = "left")
-        # Fill missing values in UJC column using the transcript ID
-        merged_df["jxn_string"] = merged_df.apply(lambda row: row["chr"] + "_" + row["strand"] + "_" + "monoexon" + "_" + row["associated_transcript"] if pd.isna(row["jxn_string"]) else row["jxn_string"], axis=1)
 
-        merged_df['jxnHash'] = merged_df['jxn_string'].apply(
-                    lambda x: hashlib.sha256(x.encode('utf-8')).hexdigest())
+        # Fill in the UJC key for monoexons (multi-exon isoforms already have a
+        # junction-chain jxn_string; monoexons have none). Vectorised over just the
+        # monoexon subset instead of a per-row Python apply across every read — on
+        # multi-million-read samples that apply dominated the "Calculating UJCs" step.
+        # Output is identical to the old row-wise keying:
+        #  - novel monoexon (no real associated_transcript) -> keyed by genomic span,
+        #    so distinct loci stay distinct instead of collapsing to one novel UJC;
+        #  - annotated monoexon -> keyed by reference transcript, so the same
+        #    monoexonic transcript is one shared UJC across samples.
+        mono = merged_df["jxn_string"].isna()
+        if mono.any():
+            sub = merged_df.loc[mono]
+            at = sub["associated_transcript"]
+            is_novel = at.isna() | at.isin(("novel", ""))
+            novel_key = (sub["chr"] + "_" + sub["strand"] + "_" + sub["start"] + "_"
+                         + sub["end"] + "_monoexon_" + sub["structural_category"])
+            annot_key = (sub["chr"] + "_" + sub["strand"] + "_monoexon_"
+                         + at.fillna("") + "_" + sub["structural_category"])
+            merged_df.loc[mono, "jxn_string"] = novel_key.where(is_novel, annot_key)
 
-        merged_df.to_csv(f"{outputPathPrefix}_temp.txt", index = False, sep = "\t")
-        
-        cmd_paste = f"""bash -c 'paste <(cat {input_classfile} | tr -d '\r') <(cut -f 5,6 {outputPathPrefix}_temp.txt | tr -d '\r') > {outputPathPrefix}_reads_classification.txt'"""
-        subprocess.call(cmd_paste, shell = True)
+        # Hash only the DISTINCT junction strings and broadcast back to every read.
+        # Reads that share a UJC (the common case) collapse to a single sha256 call
+        # instead of one per read — the dominant cost on large samples. Identical output.
+        _hmap = {s: hashlib.sha256(s.encode("utf-8")).hexdigest()
+                 for s in merged_df["jxn_string"].unique()}
+        merged_df["jxnHash"] = merged_df["jxn_string"].map(_hmap)
 
-        os.remove(f"{outputPathPrefix}tmp_UJC.txt")
-        os.remove(f"{outputPathPrefix}_temp.txt")
+        # Write only the two columns the paste actually appends (jxn_string, jxnHash);
+        # the merge preserves the classification's row order, so a positional paste is
+        # correct. Dropping the other four columns (incl. the long per-read isoform IDs)
+        # avoids writing millions of discarded values to the temp file.
+        temp_txt = f"{outputPathPrefix}_temp.txt"
+        out_txt = f"{outputPathPrefix}_reads_classification.txt"
+        merged_df[["jxn_string", "jxnHash"]].to_csv(temp_txt, index = False, sep = "\t")
+
+        # Column-append the two new fields to the classification (what the old `paste`
+        # did) in pure Python — no shell, so paths with spaces/special characters are
+        # safe. The merge preserved row order, so line i of the temp file lines up with
+        # line i of the classification (headers included). Lines are split on \n only
+        # and \r is stripped, matching the old `cat | tr -d '\r'` + `paste` pipeline.
+        with open(input_classfile, "r", newline = "\n") as _cf, \
+             open(temp_txt, "r", newline = "\n") as _tf, \
+             open(out_txt, "w", newline = "\n") as _of:
+            for _cl, _tl in zip(_cf, _tf):
+                _of.write(_cl.replace("\r", "").rstrip("\n") + "\t"
+                          + _tl.replace("\r", "").rstrip("\n") + "\n")
+
+        os.remove(ujc_txt)
+        os.remove(temp_txt)
+
+    _run_parallel(_one, [row for _, row in df.iterrows()], getattr(args, 'jobs', 1))
 
 def main():
     global utilitiesPath
@@ -298,11 +393,17 @@ def main():
         make_UJC_hash(args, df)
 
     # Run plotting script directly as a function call
+    if args.SKIPPLOTS:
+        reads_logger.info("--skip_plots set: skipping SQANTI-reads tables and plots generation.")
+        return
+
     reads_logger.info("Running SQANTI-reads tables and plots generation...")
-    
+
     prefix = args.PREFIX if args.PREFIX else "sqantiReads"
-    
-    from src.utilities.sqanti_reads_tables_and_plots_02ndk import run_reads_plots
+
+    from src.utilities.sqanti_reads_plots import run_reads_plots
+    from src.utilities.sqanti_reads_config import load_config
+    config = load_config(args.CONFIG)
     run_reads_plots(
         ref_gtf=args.refGTF,
         design_file=args.inDESIGN,
@@ -316,7 +417,9 @@ def main():
         factor_level=args.FACTORLVL,
         all_tables=args.ALLTABLES,
         pca_tables=args.PCATABLES,
-        report=args.report
+        report=args.report,
+        config=config,
+        jobs=args.jobs,
     )
 
 

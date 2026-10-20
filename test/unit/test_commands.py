@@ -66,3 +66,9 @@ def test_output_capture(default_args, caplog,tester_logger):
     caplog.set_level(logging.INFO)
     get_aligner_command("gmap", **default_args,logger=tester_logger)
     assert "****Aligning reads with GMAP..." in caplog.text
+def test_minimap2_default_max_intron(default_args, tester_logger, monkeypatch):
+    # Use the real template, not the mocked one: -G must allow introns > 200 kb (issue #216)
+    monkeypatch.undo()
+    cmd = get_aligner_command("minimap2", **default_args, logger=tester_logger)
+    expected = "minimap2 -ax splice --secondary=no -C5 -uf -G 2000000 -t 4 genome.fa iso.fa > out.sam"
+    assert cmd == expected

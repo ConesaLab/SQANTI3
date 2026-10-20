@@ -32,7 +32,11 @@ def rescue_argparse():
                       help = "Full path to the classification file obtained when running SQANTI3 QC on the reference transcriptome.\
                         \nMandatory when running the rescue on full mode")
   ci.add_argument("--counts",
-                      help = 'Isoforms abundancy values: "Isoform" \t "Count". Column names may differ')
+                      help = 'Isoforms abundance values: "Isoform" \t "Count". Column names may differ')
+  ci.add_argument("--counts_design",
+                      help = "TSV/CSV file with the experimental groups given to SQANTI3 QC (--counts_design). \
+                        \nUsed to recompute the prevalence_<group> columns after requantification, and by the evidence check \
+                        \nwhen the rules use prevalence_<group> columns.")
   
   # Customization options
   cc = parser.add_argument_group("Customization options")
@@ -46,9 +50,15 @@ def rescue_argparse():
                   default = "automatic", 
                   help = "If 'automatic' (default), only automatic rescue of FSM artifacts will be performed.\
                      \nIf 'full', rescue will include mapping of ISM, NNC and NIC artifacts to find potential replacement isoforms.")
-  cc.add_argument("-q","--requant",
+  cc.add_argument("--skip_requant",
                   action="store_true",
-                  help = "Run requantification of the rescued isoforms.")
+                  help = "Skip the requantification of the rescued isoforms, which redistributes counts \
+                    \nfrom discarded artifacts to their replacement transcripts and requires --counts.")
+  cc.add_argument("--min_expression", type = float, default = 0,
+                  help = "Minimum count for a transcript to be expressed in a sample, as given to SQANTI3 QC (--min_expression): \
+                    \n0 means any count above 0, any other value a count greater than or equal to it. \
+                    \nUsed to recompute prevalence and prevalence_<group> after requantification and in the evidence check. \
+                    \nDefault: %(default)s")
   cc.add_argument("-s","--strategy", 
                   choices = ["rules", "ml"],
                   default = "rules", 
@@ -61,6 +71,13 @@ def rescue_argparse():
                   default = default_json,
                   help = "Full path to the JSON file including the rules used when running the SQANTI3 rules filter. \
                     \nDefault: %(default)s")
+  rf.add_argument("--skip_evidence_check", action="store_true",
+                  help = "Do not apply the requisites on long-read counts (FL, prevalence, prevalence_<group>) \
+                    \nto the rescued reference transcripts (behaviour of previous versions).")
+  # Beta: maps the FSM artifacts of automatic rescue (needs --corrected_isoforms_fasta), so that they are
+  # reassigned to a long-read isoform if their reference transcript fails the evidence check.
+  # Hidden from the help and the wrapper config until it is tested further.
+  rf.add_argument("--map_automatic_fsm", action="store_true", help = argparse.SUPPRESS)
 
   # ML options
   ml = parser.add_argument_group("Machine Learning specific options")
@@ -68,7 +85,7 @@ def rescue_argparse():
                   help = "Full path to the randomforest.RData object obtained when running the SQANTI3 ML filter.")
   ml.add_argument("-t", "--threshold", 
                   type = float, default = 0.7, 
-                  help = "Machine learning probability threshold to filter elegible rescue targets (mapping hits). \
+                  help = "Machine learning probability threshold to filter eligible rescue targets (mapping hits). \
                     \nDefault: %(default)s")
   # Output options
   co = parser.add_argument_group("Output options")

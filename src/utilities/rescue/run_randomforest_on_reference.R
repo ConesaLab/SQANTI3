@@ -105,10 +105,18 @@ message("\n\tPerforming ML filter data cleaning on classification...\n")
     
     # Convert in integers columns with numerical variables
     integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov",
-                  "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak",
+                  "min_cov", "polyA_dist", "dist_to_CAGE_peak",
                   "FL", "length", "exons")
     for (x in integers){
       classification[,x] <- as.integer(classification[,x])
+    }
+    
+    # Convert back to numeric the columns turned into character by the NA replacement
+    # (replacement.na is a character vector)
+    # ratio_exp is a fraction (0-1): as.integer() would turn it into 0/1 (issue #634)
+    numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS", "ratio_exp")
+    for (x in numerics){
+      classification[,x] <- as.numeric(classification[,x])
     }
     
 
@@ -127,7 +135,19 @@ message("\n\tChecking column compatibility with pre-trained random forest classi
     
     ## Filter columns that were not used during training
     model_cols <- randomforest$trainingData %>% colnames
-    classification <- classification[, model_cols[-length(model_cols)]]
+    model_cols <- model_cols[-length(model_cols)]
+
+    # Columns from multi-sample long-read counts (FL.<sample>, prevalence) can be used by the
+    # classifier, but reference transcripts have no counts, so they are not in their classification
+    missing_cols <- setdiff(model_cols, colnames(classification))
+    if (length(missing_cols) > 0) {
+      stop(paste0("The random forest classifier was trained with columns that are not in the ",
+                  "reference classification: ", paste(missing_cols, collapse = ", "), ". ",
+                  "This happens when the ML filter was run on multi-sample long-read counts, ",
+                  "which the ML rescue does not support yet. Re-run the ML filter with these ",
+                  "columns in --remove_columns, or use the rules rescue."))
+    }
+    classification <- classification[, model_cols]
     
     ## Check for NAs
     message("\n\tValidating columns used in prediction...")

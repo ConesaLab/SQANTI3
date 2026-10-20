@@ -1,8 +1,11 @@
-import os, sys
-import subprocess
+import os, sys, json
+import gzip
 
-from src.commands import GFFREAD_PROG
+from src.commands import GFFREAD_PROG, run_command
+from src.helpers import find_isoform_id_collisions
 from src.module_logging import qc_logger, filter_logger, rescue_logger
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
+from src.utilities.rescue.evidence_check import target_count_rules, check_design_for_rules
 
 def valid_file(filename,logger):
     if not os.path.isfile(filename):
@@ -10,33 +13,56 @@ def valid_file(filename,logger):
         sys.exit(1)
     return filename
 
-def valid_fasta(filename,logger):
+def valid_fasta(filename,logger,allow_gz=False):
+    """
+    :param allow_gz: accept gzipped files (only for inputs read with the gzip-aware helpers)
+    """
     valid_file(filename,logger)
-    extension = filename.split('.')[-1]
+    extension = filename.removesuffix('.gz').split('.')[-1]
     valid_extensions = ['fasta', 'fa', 'fastq', 'fq', 'faa', 'fna']
     if extension not in valid_extensions:
         logger.error(f"File {filename} is not a FASTA file. Abort!")
         sys.exit(1)
+    if filename.endswith('.gz') and not allow_gz:
+        logger.error(f"File {filename} is gzipped, but SQANTI3 needs this file uncompressed. Please decompress it. Abort!")
+        sys.exit(1)
     return filename
 
-def valid_gtf(filename,logger):
+def valid_unique_ids(filename,logger):
+    """
+    SQANTI3 shortens sequence IDs to the part before '|' or the first space. Abort if two sequences
+    end up with the same ID, since they would become duplicated isoforms.
+    """
+    collisions = find_isoform_id_collisions(filename)
+    if collisions:
+        examples = "\n".join(f"  {new_id} <- {', '.join(ids)}" for new_id, ids in list(collisions.items())[:10])
+        logger.error(f"{len(collisions)} sequence IDs in {filename} are not unique once shortened to the part "
+                     f"before '|' or the first space (SQANTI3 needs unique IDs). "
+                     f"{'First 10 cases' if len(collisions) > 10 else 'Cases'}:\n{examples}\n"
+                     f"Please make the IDs unique before running SQANTI3. Abort!")
+        sys.exit(1)
+    return filename
+
+def valid_gtf(filename,logger,out_dir):
+    """
+    Accepts a GTF, or a GFF/GFF3 that is converted to GTF with gffread.
+    The converted file is written to out_dir, because the input folder may be read-only (issue #611).
+
+    :return: path of the GTF to use downstream (the converted one for GFF input)
+    """
     valid_file(filename,logger)
+    converted = False
     if not filename.endswith('.gtf'):
-        if not filename.endswith('.gff') or not filename.endswith('.gff3'):
-            qc_logger.error(f"File {filename} is not a GTF file. Abort!")
+        if not filename.endswith('.gff') and not filename.endswith('.gff3'):
+            logger.error(f"File {filename} is not a GTF file. Abort!")
             sys.exit(1)
         else:
             logger.warning("GTF file is in GFF3 format. Converting to GTF format.")
-            # GFF to GTF (in case the user provides gff instead of gtf)
-            gtf_name = filename.replace('.gff', '.gtf')
-            # Use the run command?
-            try:
-                subprocess.call([GFFREAD_PROG, filename , '-T', '-o', gtf_name])
-            except (RuntimeError, TypeError, NameError):
-                logger.error(f'File {filename} without GTF/GFF format.')
-                raise SystemExit(1)
+            gtf_name = os.path.join(out_dir, os.path.splitext(os.path.basename(filename))[0] + ".converted.gtf")
+            run_command(f"{GFFREAD_PROG} {filename} -T -o {gtf_name}", logger, f"{out_dir}/logs/gffread.log", "GFF to GTF conversion")
             logger.info(f"GFF file converted to GTF format. New file: {gtf_name}")
             filename = gtf_name
+            converted = True
 
     # Check if the GTF file is in the correct format
     ind = 0
@@ -48,6 +74,10 @@ def valid_gtf(filename,logger):
             elif len(line.split("\t"))==9:
                 ind += 1
         if ind == 0:
+            # gffread exits without error on a file that is not GFF, and just writes an empty GTF
+            if converted:
+                logger.error(f"No annotation lines could be read from {filename}. Please check that the input is a valid GFF file. Abort!")
+                sys.exit(1)
             logger.warning(f"GTF has {filename} no annotation lines.")
 
     return filename
@@ -101,8 +131,21 @@ def valid_sr(filename,logger):
                 sys.exit(1)
     return filename
 
+def index_sr_bams(SR_bam, index_dir, cpus, logger):
+    """
+    The TSS ratio counts reads through the BAM index. The --SR_bam files are checked and indexed here,
+    before the run is split, so that the chunks of a -n > 1 run share one index.
+    """
+    from src.utils import get_files_from_dir
+    from src.utilities.short_reads import get_bam_index
+    bams = [SR_bam] if SR_bam.endswith('.bam') else get_files_from_dir(SR_bam, ".bam")
+    for bam in bams:
+        valid_file(bam,logger)
+        get_bam_index(bam, index_dir, cpus)
+
 def contains_gene_name(filepath):
-    with open(filepath, 'r') as f:
+    open_function = gzip.open if filepath.endswith('.gz') else open
+    with open_function(filepath, 'rt') as f:
         for line in f:
             if 'gene_name' in line:
                 return True
@@ -115,20 +158,24 @@ def qc_args_validation(args):
     valid_file(args.isoforms,qc_logger)
     if args.isoforms.endswith('.gtf') or args.isoforms.endswith('.gff'):
         args.fasta = False
-    elif valid_fasta(args.isoforms,qc_logger):
+    elif valid_fasta(args.isoforms,qc_logger,allow_gz=True):
         args.fasta = True
     else:
         qc_logger.error("Input isoforms must be in GTF, FASTA, or FASTQ format. Abort!")
         sys.exit(1)
-    
-    valid_gtf(args.refGTF,qc_logger)
+    if args.fasta:
+        valid_unique_ids(args.isoforms, qc_logger)
+
     valid_fasta(args.refFasta,qc_logger)
 
     # Customization validation
     if args.short_reads is not None:
         valid_file(args.short_reads,qc_logger)
+    # BAM indexes made by SQANTI3 for the TSS ratio go here
+    args.bam_index_dir = os.path.join(os.path.abspath(args.dir), "bam_index")
     if args.SR_bam is not None:
         valid_sr(args.SR_bam,qc_logger)
+        index_sr_bams(args.SR_bam, args.bam_index_dir, args.cpus, qc_logger)
 
     # Mappers checks
     if args.fasta:
@@ -157,10 +204,24 @@ def qc_args_validation(args):
 
     # Output options checks
     valid_dir(args.dir,qc_logger)
+    # After valid_dir: a GFF reference is converted into the output directory
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
+    args.refGTF = valid_gtf(args.refGTF,qc_logger,args.dir)
     
     # FL counts given
     if args.fl_count is not None:
         valid_file(args.fl_count,qc_logger)
+    if args.counts_design is not None:
+        if args.fl_count is None:
+            qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
+            sys.exit(1)
+        valid_file(args.counts_design,qc_logger)
+        # Checked against the samples of the count file here, before the long steps run,
+        # and not again when the counts are read
+        check_counts_design(read_counts_design(args.counts_design), count_file_samples(args.fl_count))
+    if args.min_expression < 0:
+        qc_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
 
     if args.gff3 is not None:
         valid_gff3(args.gff3,qc_logger)
@@ -202,14 +263,16 @@ def filter_args_validation(args):
     valid_file(args.sqanti_class, filter_logger)
     if args.filter_isoforms is not None:
         valid_fasta(args.filter_isoforms, filter_logger)
-    if args.filter_gtf is not None:
-        valid_gtf(args.filter_gtf, filter_logger)
     if args.filter_sam is not None:
         valid_file(args.filter_sam, filter_logger)
     if args.filter_faa is not None:
         valid_fasta(args.filter_faa, filter_logger)
 
     valid_dir(args.dir,filter_logger)
+    # After valid_dir: a GFF is converted into the output directory
+    if args.filter_gtf is not None:
+        args.filter_gtf_input = args.filter_gtf # the parameters file records what the user gave, not the converted GTF
+        args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger, args.dir)
     if args.subcommand == 'rules':
         valid_file(args.json_filter, filter_logger)
     if args.subcommand == 'ml':
@@ -233,12 +296,19 @@ def filter_args_validation(args):
     
 
 def rescue_args_validation(args):
+    """
+    Validate the rescue inputs before any step runs.
+
+    :return: whether the evidence check of the rescued reference transcripts has to be run.
+    """
     valid_file(args.filter_class, rescue_logger)
     valid_dir(args.dir,rescue_logger)
-    valid_gtf(args.refGTF,rescue_logger)
+    args.refGTF_input = args.refGTF # the parameters file records what the user gave, not the converted GTF
+    args.refGTF = valid_gtf(args.refGTF,rescue_logger,args.dir)
     valid_fasta(args.refFasta,rescue_logger)
     if args.filtered_isoforms_gtf is not None:
-        valid_gtf(args.filtered_isoforms_gtf,rescue_logger)
+        args.filtered_isoforms_gtf_input = args.filtered_isoforms_gtf
+        args.filtered_isoforms_gtf = valid_gtf(args.filtered_isoforms_gtf,rescue_logger,args.dir)
     if args.mode == "full":
         try:
             valid_file(args.refClassif,rescue_logger)
@@ -257,5 +327,41 @@ def rescue_args_validation(args):
                 rescue_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
                 sys.exit(-1)
             valid_file(args.random_forest,rescue_logger)
-    if args.requant:
-        valid_file(args.counts,rescue_logger)
+    if args.counts_design is not None:
+        valid_file(args.counts_design, rescue_logger)
+    if args.map_automatic_fsm and args.corrected_isoforms_fasta is None:
+        rescue_logger.error("--map_automatic_fsm needs the corrected isoforms FASTA file (--corrected_isoforms_fasta).")
+        sys.exit(1)
+    if args.min_expression < 0:
+        rescue_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
+        sys.exit(1)
+    if args.counts is not None:
+        valid_file(args.counts, rescue_logger)
+    elif not args.skip_requant:
+        rescue_logger.error("Requantification is run by default and needs the --counts file. "
+                            "Provide --counts, or --skip_requant to rescue without requantification.")
+        sys.exit(1)
+    # The design is checked against the samples of --counts here, before mapping, and not again later
+    design = None
+    if args.counts_design is not None and args.counts is not None:
+        design = check_counts_design(read_counts_design(args.counts_design, rescue_logger),
+                                     count_file_samples(args.counts), rescue_logger)
+    # Evidence check of the rescued reference transcripts: only for the rules strategy, when the
+    # rules of reference targets have requisites on long-read counts (FL, prevalence, prevalence_<group>).
+    # It also reads --counts, so the file is needed even with --skip_requant.
+    evidence_check = False
+    if args.skip_evidence_check:
+        rescue_logger.info("Evidence check of reference targets skipped (--skip_evidence_check).")
+    elif args.strategy == "rules":
+        valid_file(args.json_filter, rescue_logger)
+        with open(args.json_filter) as f:
+            rule_sets = target_count_rules(json.load(f))
+        evidence_check = bool(rule_sets)
+        if evidence_check and args.counts is None:
+            rescue_logger.error("The rules have requisites on long-read counts: the evidence check of the "
+                                "rescued reference transcripts needs the --counts file used for requantification. "
+                                "Provide --counts, or --skip_evidence_check to reintroduce them without the check.")
+            sys.exit(1)
+        if evidence_check:
+            check_design_for_rules(rule_sets, design)
+    return evidence_check
