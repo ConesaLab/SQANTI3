@@ -39,6 +39,17 @@ extra:
   version:
     provider: mike
 
+# Pages kept in docs/ but not published: developer notes, archived pages and the GitHub wiki's own pages
+exclude_docs: |
+  commit_backlog.md
+  Future-improvements.md
+  Running-SQANTI3-rescue-v5.1.md
+  Sqanti3-wrapper-script.md
+  Running-SQANTI-BUGSI.md
+  Running-SQANTI-with-the-wrapper.md
+  Home.md
+  _Sidebar.md
+
 nav:
   - Home: index.md
   - Introduction to SQANTI3: Introduction-to-SQANTI3.md

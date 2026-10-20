@@ -422,3 +422,79 @@ class TestParseCounts:
         assert len(df.columns) == 2  # isoform + 1 sample column
         assert len(df) == 0
     
+
+
+### read_counts_design / check_counts_design ###
+
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
+
+
+def _design_file(tmp_path, content, name="design.tsv"):
+    f = tmp_path / name
+    f.write_text(content)
+    return str(f)
+
+
+class TestCountsDesign:
+    def test_valid_tsv_design(self, tmp_path):
+        content = "sample\tgroup\nK1\tK\nB1\tB\nK2\tK\nB2\tB\nB3\tB\n"
+        assert read_counts_design(_design_file(tmp_path, content)) == \
+            {"K": ["K1", "K2"], "B": ["B1", "B2", "B3"]}
+
+    def test_valid_csv_design_with_extra_columns(self, tmp_path):
+        content = "group,sample,batch\nK,K1,1\nB,B1,2\n"
+        assert read_counts_design(_design_file(tmp_path, content, "design.csv")) == \
+            {"K": ["K1"], "B": ["B1"]}
+
+    @pytest.mark.parametrize("content", [
+        "",                                     # empty file
+        "sample\tgroup\n",                      # no rows
+        "K1\tK\nB1\tB\n",                       # no header
+        "sample\tcondition\nK1\tK\n",            # no group column
+        "sample\tgroup\nK1\t\n",                 # empty group
+        "sample\tgroup\nK1\tK\nK1\tB\n",         # sample in two groups
+        "sample\tgroup\nK1\tK\nK1\tK\n",         # duplicated sample
+        "sample\tgroup\nK1\tK 1\n",              # not a valid column suffix
+    ])
+    def test_invalid_design_exits(self, tmp_path, content):
+        with pytest.raises(SystemExit):
+            read_counts_design(_design_file(tmp_path, content))
+
+    def test_check_accepts_unused_samples(self):
+        design = {"K": ["K1"], "B": ["B1"]}
+        assert check_counts_design(design, ["K1", "B1", "MIX"]) == design
+
+    def test_check_missing_sample_exits(self):
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"])
+
+    def test_check_single_sample_file_ignores_design(self):
+        assert check_counts_design({"K": ["K1"]}, ["K1"]) == {}
+
+    def test_check_uses_the_given_logger(self):
+        """Rescue passes its own logger, and the messages name no QC-only option."""
+        from unittest.mock import MagicMock
+        logger = MagicMock()
+        with pytest.raises(SystemExit):
+            check_counts_design({"K": ["K1", "K9"]}, ["K1", "K2"], logger)
+        messages = [c.args[0] for c in logger.error.call_args_list]
+        assert messages[0] == "Samples in the counts design file not found in the count file: ['K9']"
+        assert not any("--fl_count" in m for m in messages)
+
+
+class TestCountFileSamples:
+    """count_file_samples reads only the header, with the delimiter detection of parse_counts."""
+
+    @pytest.mark.parametrize("content, name", [
+        ("isoform\tS1\tS2\nPB.1.1\t1\t2\n", "counts.tsv"),
+        ("isoform,S1,S2\nPB.1.1,1,2\n", "counts.csv"),
+        ("# made by bambu\nisoform\tS1\tS2\nPB.1.1\t1\t2\n", "comments.tsv"),
+    ])
+    def test_samples(self, tmp_path, content, name):
+        f = tmp_path / name
+        f.write_text(content)
+        assert count_file_samples(str(f)) == ["S1", "S2"]
+
+    def test_matches_parse_counts(self):
+        f = os.path.join(main_path, "test/test_data/abundance/fl_count_multi_sample.csv")
+        assert count_file_samples(f) == parse_counts(f).columns[1:].tolist()

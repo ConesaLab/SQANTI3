@@ -207,10 +207,12 @@ class myQueryTranscripts:
     min_cov: Optional[float] = None
     min_cov_pos: Optional[float] = None
     sd_cov: Optional[float] = None
+    # length (bp) of the shortest intron, NA for mono-exonic transcripts
+    min_intron_length: Optional[int] = None
 
     FL: Optional[int] = None
-    # multisample m value. 
-    # Pending to allow different m values if groups have different size (M)
+    # multisample m value: number of samples where the transcript is expressed
+    # (is_expressed() with --min_expression), set by full_length_quantification()
     prevalence: Optional[int] = None
 
     n_indels: Optional[int] = None
@@ -251,6 +253,7 @@ class myQueryTranscripts:
 
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
+    prevalence_dict: Dict[str, int] = field(default_factory=dict)  # group -> prevalence (--counts_design)
     AS_genes: Set[str] = field(default_factory=set)
     genes: Optional[list] = None  # List of genes associated with the isoform
     transcripts: Optional[list] = None  # List of transcripts associated with the isoform
@@ -365,17 +368,17 @@ class myQueryTranscripts:
 
         # Handle multi-sample FL counts
         if self.FL_dict:
-            n = 1 # minimum count value
-            x = 0 # counts how many samples have expression
             for sample, count in self.FL_dict.items():
                 base[f"FL.{sample}"] = count
-                if count >= n: x += 1  
             # Set FL to sum of all samples for multi-sample case
             base["FL"] = sum(self.FL_dict.values())
-            base["prevalence"] = x
+
+        # Per-group prevalence (--counts_design)
+        for group, prevalence in self.prevalence_dict.items():
+            base[f"prevalence_{group}"] = prevalence
 
         # Eliminate non-report attributes
-        non_report_attrs = ['AS_genes','FL_dict','genes','transcripts', 'ref_start',
+        non_report_attrs = ['AS_genes','FL_dict','prevalence_dict','genes','transcripts', 'ref_start',
                             'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap']
         for attr in non_report_attrs:
             if attr in base:

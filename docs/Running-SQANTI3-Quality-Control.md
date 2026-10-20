@@ -63,7 +63,7 @@ usage: sqanti3_qc.py [-h] --isoforms ISOFORMS --refGTF REFGTF --refFasta REFFAST
                      [--aligner_choice {minimap2,deSALT,gmap,uLTRA}] [-x GMAP_INDEX] [--include_ORF] [--orf_input ORF_INPUT]
                      [--psauron_threshold PSAURON_THRESHOLD] [--short_reads SHORT_READS] [--SR_bam SR_BAM]
                      [--CAGE_peak CAGE_PEAK] [--polyA_motif_list POLYA_MOTIF_LIST] [--polyA_peak POLYA_PEAK]
-                     [--phyloP_bed PHYLOP_BED] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--isoAnnotLite] [--gff3 GFF3]
+                     [--phyloP_bed PHYLOP_BED] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--isoAnnotLite] [--gff3 GFF3]
                      [-o OUTPUT] [-d DIR] [--saturation] [--report {html,pdf,both,skip}] [--isoform_hits]
                      [--ratio_TSS_metric {max,mean,median,3quartile}] [-t CPUS] [-n CHUNKS] [-l {ERROR,WARNING,INFO,DEBUG}]
                      [--is_fusion] [-v] [--tusco {human,mouse}]
@@ -131,6 +131,15 @@ Orthogonal data inputs:
                         "mydir/*.junctions").
   -fl FL_COUNT, --fl_count FL_COUNT
                         Full-length PacBio abundance file
+  --counts_design COUNTS_DESIGN
+                        TSV/CSV file assigning the samples of a multi-sample --fl_count file to experimental groups, with a
+                        header and the columns "sample" and "group" (one row per sample). Adds one prevalence_<group> column
+                        per group to the classification file.
+  --min_expression MIN_EXPRESSION
+                        Minimum count for a transcript to be considered expressed in a sample of a multi-sample --fl_count
+                        file; prevalence and prevalence_<group> count those samples. With the default, 0, any count above 0
+                        is expression, which keeps fractional counts (e.g. bambu); with any other value the count must be
+                        greater than or equal to it. Default: 0
 
 Functional annotation:
   --isoAnnotLite        Run isoAnnot Lite to output a tappAS-compatible gff3 file
@@ -177,7 +186,9 @@ These are the minimal files that you will need to run SQANTI3 QC:
 *   **Long read-defined transcriptome**. It can be obtained after processing data from any of the available Third Generation Sequencing technologies like Iso-Seq (PacBio) or Oxford Nanopore (ONT). SQANTI3 is compatible with the output of any long read-based transcriptome building pipeline, such as IsoSeq3, TALON, or FLAIR. SQANTI3 accepts it in several formats such as FASTA, FASTQ and GTF:
 
     - **GTF (default)**: by default, SQANTI3 expects the transcriptome to be provided as a GTF file, and we recommend to stick to this format if your transcriptome construction pipeline allows it.
-    - **FASTA/FASTQ**: if you provide your transcript sequences in FASTA or FASTQ format, you will also need to supply the `--fasta` option. In this case, a mapping step will be initially performed. SQANTI3 currently supports minimap2 (default), uLTRA, deSALT and GMAP for mapping. To select a mapper, just supply the name to the `--aligner_choice` argument.
+    - **FASTA/FASTQ**: if you provide your transcript sequences in FASTA or FASTQ format, you will also need to supply the `--fasta` option. In this case, a mapping step will be initially performed. SQANTI3 currently supports minimap2 (default), uLTRA, deSALT and GMAP for mapping. To select a mapper, just supply the name to the `--aligner_choice` argument. The file can also be compressed with gzip (`.fasta.gz`, `.fa.gz`, `.fastq.gz` or `.fq.gz`), and there is no need to decompress it first.
+
+        minimap2 and GMAP accept introns of up to 2 Mb (minimap2 `-G 2000000`), so transcripts with very long introns are aligned in one piece. When an isoform still has supplementary or secondary alignments, for example a chimeric or split sequence, SQANTI3 only classifies its **primary alignment**. The isoforms with other alignments, and the isoforms that could not be aligned at all, are listed in two extra files (see [Supplementary output](Understanding-the-output-of-SQANTI3-QC.md#supplementary)), and SQANTI3 warns you about them in the log ([issue #216](https://github.com/ConesaLab/SQANTI3/issues/216)).
 
 *   **Reference transcriptome annotation** in GTF format. This file will be used as reference to describe the amount of novelty across long read transcripts. Some examples of reference transcriptomes for different species can be found in [GENCODE](https://www.gencodegenes.org/) or [CHESS](http://ccb.jhu.edu/chess/).
 
@@ -326,6 +337,8 @@ If you have several samples, we recommend providing them as separated `*SJ.out.t
 ### Short read mapping results (BAM files)
 If you used the `-c` argument to provide coverage information, but you want to calculate `ratio_TSS` values for each isoform, SQANTI3 QC will still require you to supply short read mapping information. Therefore, we recommend users to supply the BAM files obtained as a result of mapping short reads to the genome via the `--SR_bam` option. Otherwise, you may supply short reads as raw data to SQANTI3 and have all pre-processing steps done internally, however, keep in mind that this will take longer as well as require more memory/computational resources.
 
+The BAM files must be sorted by coordinate. SQANTI3 counts the reads around each TSS through the BAM index (`.bai` or `.csi` next to the BAM). If there is no index, SQANTI3 creates one in `<output_dir>/bam_index/` at the start of the run, so the input folder is never modified. Indexing a large BAM can take a few minutes; index your BAM files beforehand (`samtools index`) to skip this step. The counting uses the number of CPUs given with `-t`.
+
 
 <a name="cage"></a>
 
@@ -391,6 +404,27 @@ Using this information, SQANTI3 will write out the distance to the closest polyA
 SQANTI3 QC supports single or multi-sample FL counts in a stadarized format. These files must be in either tab-delimited (tsv) or comma-delimited (csv) format. The first column must contain the isoform identifiers matching those in the input long read-defined transcriptome. The rest of the columns must contain the FL counts for each sample/replicate. 
 
 The name of the first column can be anything, and the rest of the columns name will be used as sample/replicate identifiers. These will show up in the final classification file as `FL.<sample>` columns, where `<sample>` is the name of the corresponding column in the input FL count file. The sum of all the FL reads across the samples associated to one transcript will be recorded in the `FL` column of the `*_classification.txt` output file.
+
+With a multi-sample file, the `prevalence` column records the number of samples in which the transcript is expressed. The threshold is set with `--min_expression`: with the default, 0, a transcript is expressed in a sample when its count is above 0; with any other value, when its count is greater than or equal to that value (for instance, `--min_expression 1` requires at least one full read). The default keeps the fractional counts that quantifiers such as bambu assign when they distribute ambiguous reads among isoforms. Like any other numeric column, `prevalence` can be used in the [rules filter](Running-SQANTI3-filter.md#defining-rules-and-requisites) to discard transcripts detected in too few samples.
+
+### Prevalence per experimental group (`--counts_design`)
+
+When the samples come from several experimental conditions, the prevalence over all of them may not be the right measure: a transcript expressed in only one condition can never be detected in the samples of the others. The `--counts_design` option takes a TSV or CSV file with a header and one row per sample, in which the `sample` column holds the sample names, as in the header of the `--fl_count` file, and the `group` column the experimental group of each sample. Any other column is ignored:
+
+```
+sample	group
+K1	K
+K2	K
+K3	K
+B1	B
+B2	B
+```
+
+For each group, QC adds a `prevalence_<group>` column to the classification file (`prevalence_K` and `prevalence_B` in the example) with the number of samples of that group in which the transcript is expressed, with the same `--min_expression` threshold. The `prevalence` column over all samples is kept.
+
+Each sample can belong to a single group, and group names can only contain letters, digits, `_` and `.`, since they become part of a column name. Samples of the `--fl_count` file that are not listed in the design (for instance, mixtures used as a response variable) still count for `prevalence` but for no group; a warning lists them. Transcripts missing from the `--fl_count` file get 0 in every prevalence column. If the `--fl_count` file has a single sample, the design is ignored with a warning, since prevalence can then only be 0 or 1.
+
+In the rules filter, these columns follow the usual logic: the requisites of a rule must all be met, and a transcript passes if it meets any of the rules of its structural category. A rule such as `{"prevalence_K": 2, "prevalence_B": 2}` therefore requires detection in both groups, whereas two separate rules, `{"prevalence_K": 2}` and `{"prevalence_B": 2}`, require it in at least one of them.
 
 When plotted, the script [SQANTI3_report.R](https://github.com/ConesaLab/SQANTI3/blob/tree/master/utilities/SQANTI3_report.R) will convert the FL counts to TPM using the formula:
 

@@ -31,7 +31,6 @@ def create_config(config_path,options,level):
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
         "rescue": get_parser_specific_args_simple(rescue_argparse(),main_args)
     } 
-    print("hello")
     if options is not None:
         user_options = get_user_options(options,list(flatten_dict(config).keys()))
         replace_value(config,user_options)
@@ -131,7 +130,8 @@ def get_parser_specific_args_simple(parser,shared_args):
     for action in parser._actions:
 
         if action.dest not in shared_args:
-            if action.default == "==SUPPRESS==":
+            # Hidden options (help=SUPPRESS) are beta features, kept out of the config too
+            if action.default == "==SUPPRESS==" or action.help == "==SUPPRESS==":
                 continue
             else:
                 parser_args["options"][action.dest] = action.default if action.default is not None else "" 

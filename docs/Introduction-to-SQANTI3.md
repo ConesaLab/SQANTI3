@@ -137,10 +137,6 @@ The `rescue` subfolder contains a series of R scripts implementing the different
 - The `report_qc` folder contains the main R script and auxiliary plotting functions/scripts used to generate the **SQANTI3 QC report**.
 - The `report_filter` folder contains the main R script and auxiliary plotting functions used to generate the **SQANTI3 filter report**.
 
-##### GMST
-
-GeneMarkST tool. Used internally during QC for ORF prediction.
-
 <a name="data"></a>
 
 ### Data and examples
