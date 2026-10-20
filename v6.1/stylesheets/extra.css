@@ -1,0 +1,151 @@
+/* Custom color palette */
+:root {
+  --md-primary-fg-color: #f58a53;
+  --md-primary-fg-color--light: #f7a374;
+  --md-primary-fg-color--dark: #f37132;
+  --md-primary-bg-color: #ffffff;
+  --md-accent-fg-color: #fcc659;
+  --md-accent-fg-color--transparent: rgba(252, 198, 89, 0.1);
+  --md-tertiary-fg-color: #15918a;
+}
+
+/* Dark mode colors */
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #f58a53;
+  --md-primary-fg-color--light: #f7a374;
+  --md-primary-fg-color--dark: #f37132;
+  --md-accent-fg-color: #fcc659;
+  --md-accent-fg-color--transparent: rgba(252, 198, 89, 0.1);
+  --md-tertiary-fg-color: #15918a;
+}
+
+/* Apply primary color to header */
+.md-header {
+  background-color: var(--md-primary-fg-color);
+}
+
+/* Apply classic blue color to content links */
+.md-content a {
+  color: #0969da;
+}
+
+.md-content a:hover {
+  color: var(--md-primary-fg-color);
+}
+
+/* Style active navigation items */
+.md-nav__link--active {
+  color: var(--md-primary-fg-color) !important;
+}
+
+/* Style the version selector at bottom left */
+.md-version {
+  color: var(--md-primary-fg-color);
+}
+
+/* Hide tabs (top bar navigation) */
+.md-tabs {
+  display: none;
+}
+
+/* Left sidebar styling - dark gray background */
+.md-sidebar--primary {
+  background-color: #2d2d2d;
+}
+
+.md-sidebar--primary .md-sidebar__scrollwrap {
+  background-color: #2d2d2d;
+}
+
+/* Navigation links - lighter gray background with white outline */
+.md-nav__item {
+  background-color: #4a4a4a;
+  margin: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ffffff;
+  transition: all 0.2s ease;
+}
+
+.md-nav__link {
+  color: #0969da !important;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+/* Hover effect */
+.md-nav__item:hover {
+  background-color: #5a5a5a;
+  transform: translateX(2px);
+}
+
+/* Active/selected page - pressed/clicked effect */
+.md-nav__item--active {
+  background-color: #3a3a3a !important;
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.3), inset -1px -1px 2px rgba(255, 255, 255, 0.1);
+  transform: translateY(1px);
+  border-color: #ffffff;
+}
+
+.md-nav__link--active {
+  color: var(--md-primary-fg-color) !important;
+  font-weight: 600;
+}
+
+/* Left sidebar title styling - show only at top, black in light mode */
+.md-sidebar--primary .md-nav__title {
+  background-color: #2d2d2d;
+  color: #000000;
+  font-weight: 700;
+}
+
+.md-sidebar--primary .md-nav--primary > .md-nav__title:first-child {
+  display: block;
+}
+
+.md-sidebar--primary .md-nav--primary .md-nav__title ~ .md-nav__title {
+  display: none;
+}
+
+/* Right sidebar (table of contents) */
+.md-sidebar--secondary {
+  border-left: 1px solid #e0e0e0;
+}
+
+/* Right sidebar boxes with white outline */
+.md-sidebar--secondary .md-nav__item {
+  border: 1px solid #ffffff;
+  margin: 4px 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Right sidebar title - black in light mode */
+.md-sidebar--secondary .md-nav__title {
+  color: #000000;
+  font-weight: 700;
+}
+
+/* Site name (SQANTI3 Documentation) - black in light mode */
+[data-md-color-scheme="default"] .md-header__title {
+  color: #000000;
+}
+
+/* Highlight code blocks with tertiary color */
+.md-typeset code {
+  border-color: var(--md-tertiary-fg-color);
+}
+
+/* Button styling */
+.md-button {
+  background-color: var(--md-primary-fg-color);
+}
+
+.md-button--primary {
+  background-color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+}
+
+/* Footer version position */
+.md-version__current {
+  color: var(--md-primary-fg-color);
+}
