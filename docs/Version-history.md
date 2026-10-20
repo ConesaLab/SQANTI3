@@ -10,7 +10,7 @@ See the dedicated site for [installation instructions](Dependencies-and-installa
 
 
 
-## SQANTI3 v6.1 [LATEST, 16/10/2026]
+## SQANTI3 v6.1 [LATEST, 20/10/2026]
 
 #### Major changes:
 - **Supplementary alignments** ([issue #216](https://github.com/ConesaLab/SQANTI3/issues/216)): minimap2 now allows introns up to 2 Mb (`-G 2000000`, the same limit as GMAP). Before, transcripts with introns longer than 200 kb were split into several alignments. Only the primary alignment of each isoform is classified. Supplementary alignments are listed in `_supplementary_alignments.txt`, and isoforms that could not be aligned in `_unmapped.txt`.
