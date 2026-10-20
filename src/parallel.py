@@ -10,7 +10,9 @@ from multiprocessing import Process
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
-from src.helpers import get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped
+from src.helpers import (
+    align_isoforms, get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, 
+    get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped)
 from src.qc_output import (
     cleanup, generate_report, generate_tusco_report, write_classification_output, write_isoform_hits, write_junction_output, write_omitted_isoforms, write_collapsed_GFF_with_CDS)
 from src.module_logging import qc_logger
@@ -129,6 +131,35 @@ def split_input_run(args, outdir):
 
     else:
         split_outs = split_fasta_input(args.isoforms, SPLIT_ROOT_DIR, args.chunks)
+        # Align all the sequences at once, as a run without chunks does: an aligner per chunk builds its
+        # own genome index, and they all run at the same time. Each chunk gets the alignments of its
+        # sequences as its own SAM, so it skips the alignment. The whole SAM is removed with SPLIT_ROOT_DIR
+        _, all_sam, _, _, _ = get_corr_filenames(SPLIT_ROOT_DIR, args.output)
+        renamed_isoforms = align_isoforms(SPLIT_ROOT_DIR, all_sam, args.cpus, args.refFasta,
+                                          args.isoforms, args.aligner_choice,
+                                          args.gmap_index, args.refGTF)
+        # Chunk of every cleaned up isoform ID: the chunks and the renamed file keep the input order
+        chunk_sizes = []
+        for _, chunk_file in split_outs:
+            with open(chunk_file) as h:
+                chunk_sizes.append(sum(line.startswith('>') for line in h))
+        chunk_of_isoform = {}
+        with open(renamed_isoforms) as h:
+            isoform_ids = (line[1:].rstrip('\n') for line in h if line.startswith('>'))
+            for i, size in enumerate(chunk_sizes):
+                for _ in range(size):
+                    chunk_of_isoform[next(isoform_ids)] = i
+        # Every chunk gets the SAM header and the alignments of its isoforms
+        split_sams = [open(get_corr_filenames(d, args.output)[1], 'w') for d, _ in split_outs]
+        with open(all_sam) as h:
+            for line in h:
+                if line.startswith('@'):
+                    for f in split_sams:
+                        f.write(line)
+                else:
+                    split_sams[chunk_of_isoform[line.split('\t', 1)[0]]].write(line)
+        for f in split_sams:
+            f.close()
 
     pools = []
     
