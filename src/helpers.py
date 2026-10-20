@@ -80,16 +80,8 @@ def get_omitted_name(outdir, prefix):
     omitted_name = corrPathPrefix + "_omitted_due_to_min_ref_len.txt"
     return omitted_name
 
-def align_isoforms(
-    outdir: str,
-    corrSAM: str,
-    cpus: int,
-    genome: str,
-    isoforms: str,
-    aligner_choice: str,
-    gmap_index: Optional[str] = None,
-    annotation: Optional[str] = None
-    ) -> str:
+def align_isoforms(outdir, corrSAM, cpus, genome, isoforms, aligner_choice,
+                   gmap_index=None, annotation=None):
     """
     Clean up the isoform IDs and align the isoforms to the genome as corrSAM,
     unless corrSAM already exists. Returns the file with the cleaned up isoforms.
