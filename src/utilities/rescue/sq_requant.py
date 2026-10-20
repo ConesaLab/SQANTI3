@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from src.parsers import parse_counts, read_counts_design, check_counts_design
+from src.parsers import parse_counts, read_counts_design
 from src.utils import is_expressed
 warnings.filterwarnings("ignore") #TODO: See why pandas raises the warning on copying
 
@@ -60,10 +60,10 @@ def requantification_pipeline(output_dir, output_prefix, counts_file, rescue_df,
     requant_df = requantify(counts_df, rescue_df, original_class, prefix)
     rescue_logger.info("Requantification of counts completed.")
     rescue_logger.info(f"New count table saved to {prefix}_reassigned_counts.tsv")
+    # The design was checked against --counts by rescue_args_validation; with a single sample it is ignored
     design = {}
-    if counts_design is not None:
-        samples = [c for c in counts_df.columns if c != 'isoform']
-        design = check_counts_design(read_counts_design(counts_design, rescue_logger), samples, rescue_logger)
+    if counts_design is not None and len(counts_df.columns) > 2:
+        design = read_counts_design(counts_design, rescue_logger)
     update_classification(requant_df, rescue_class, prefix, design, min_expression)
     # Doing this, we loose the counts assigned to multi_transcript and artifacts (they have no length, so TPM cannot be calculated)
     #to_tpm(requant_df,rescue_class, prefix)

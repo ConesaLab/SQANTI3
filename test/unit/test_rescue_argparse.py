@@ -155,8 +155,21 @@ class TestEvidenceCheckValidation:
     @pytest.fixture
     def json_file(self, tmp_path):
         p = tmp_path / "rules.json"
+        p.write_text(json.dumps({"full-splice_match": [{"prevalence": 2}]}))
+        return str(p)
+
+    @pytest.fixture
+    def group_json(self, tmp_path):
+        p = tmp_path / "group_rules.json"
         p.write_text(json.dumps({"full-splice_match": [{"prevalence_K": 2}, {"prevalence_B": 2}]}))
         return str(p)
+
+    def files(self, tmp_path, samples, design):
+        counts = tmp_path / "counts.tsv"
+        counts.write_text("isoform\t" + "\t".join(samples) + "\nPB.1.1\t" + "\t".join("1" for _ in samples) + "\n")
+        design_file = tmp_path / "design.tsv"
+        design_file.write_text("sample\tgroup\n" + "".join(f"{s}\t{g}\n" for g, ss in design.items() for s in ss))
+        return str(counts), str(design_file)
 
     def args(self, json_file, **kw):
         base = dict(skip_evidence_check=False, json_filter=json_file, counts="counts.tsv")
@@ -185,3 +198,23 @@ class TestEvidenceCheckValidation:
     def test_skip_both_without_counts_passes(self, json_file):
         args = self.args(json_file, counts=None, skip_requant=True, skip_evidence_check=True)
         assert au.rescue_args_validation(args) is False
+
+    def test_group_rules_with_design(self, group_json, tmp_path):
+        counts, design = self.files(tmp_path, ["K1", "K2", "B1"], {"K": ["K1", "K2"], "B": ["B1"]})
+        assert au.rescue_args_validation(self.args(group_json, counts=counts, counts_design=design)) is True
+
+    def test_group_rules_without_design_exit(self, group_json, tmp_path):
+        """Checked at validation, before mapping, instead of in the evidence check step."""
+        counts, _ = self.files(tmp_path, ["K1", "B1"], {})
+        with pytest.raises(SystemExit):
+            au.rescue_args_validation(self.args(group_json, counts=counts))
+
+    def test_group_rules_single_sample_counts_exit(self, group_json, tmp_path):
+        counts, design = self.files(tmp_path, ["K1"], {"K": ["K1"]})
+        with pytest.raises(SystemExit):
+            au.rescue_args_validation(self.args(group_json, counts=counts, counts_design=design))
+
+    def test_design_sample_missing_from_counts_exit(self, json_file, tmp_path):
+        counts, design = self.files(tmp_path, ["K1", "K2"], {"K": ["K1", "K9"]})
+        with pytest.raises(SystemExit):
+            au.rescue_args_validation(self.args(json_file, counts=counts, counts_design=design))

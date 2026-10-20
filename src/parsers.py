@@ -266,6 +266,30 @@ def get_fusion_component(fusion_gtf):
             return 0
         
         
+def count_file_sep(count_file):
+    """Delimiter of a count file (TSV or CSV), sniffed after the leading '#' comment lines."""
+    with open(count_file, 'r') as f:
+        # Skip comments to find header
+        pos = f.tell()
+        line = f.readline()
+        while line and line.startswith('#'):
+            pos = f.tell()
+            line = f.readline()
+
+        # Sniff
+        f.seek(pos)
+        chunk = f.read(2048)
+        try:
+            return csv.Sniffer().sniff(chunk).delimiter
+        except csv.Error:
+            return '\t' if '\t' in line else ','
+
+def count_file_samples(count_file):
+    """Sample names of a count file, read from its header only (every column but the first).
+    Used to check the counts design before the long steps of QC and rescue run."""
+    header = pd.read_csv(count_file, sep=count_file_sep(count_file), comment='#', nrows=0)
+    return header.columns[1:].tolist()
+
 def parse_counts(count_file):
     """
     Parses a count file into a Pandas DataFrame.
@@ -280,22 +304,7 @@ def parse_counts(count_file):
     """
     try:
         # 1. Sniff the delimiter
-        with open(count_file, 'r') as f:
-            # Skip comments to find header
-            pos = f.tell()
-            line = f.readline()
-            while line and line.startswith('#'):
-                pos = f.tell()
-                line = f.readline()
-
-            # Sniff
-            f.seek(pos)
-            chunk = f.read(2048)
-            try:
-                dialect = csv.Sniffer().sniff(chunk)
-                sep = dialect.delimiter
-            except csv.Error:
-                sep = '\t' if '\t' in line else ','
+        sep = count_file_sep(count_file)
 
         # 2. Read with Pandas
         # dtype={'isoform': str} ensures IDs like "001" aren't read as integer 1

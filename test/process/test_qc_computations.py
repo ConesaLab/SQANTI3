@@ -5,6 +5,7 @@ Tests the various QC computation functions that modify isoforms_info dictionarie
 import pytest
 import pandas as pd
 from src.qc_output import write_classification_output
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
 from src.qc_computations import (
     classify_fsm,
     full_length_quantification,
@@ -280,10 +281,12 @@ class TestFullLengthQuantification:
         assert obj.prevalence == 0
         assert obj.prevalence_dict == {"K": 0, "B": 0}
 
-    def test_fl_count_design_unknown_sample_exits(self, sample_isoforms_info, fl_count_file_multi, tmp_path):
+    def test_fl_count_design_unknown_sample_exits(self, fl_count_file_multi, tmp_path):
+        """A design sample missing from --fl_count stops QC at validation (qc_args_validation runs
+        this check on the header of the count file), not after the alignment and classification."""
         design = write_design(tmp_path, {"A": ["sample1", "sampleX"]})
         with pytest.raises(SystemExit):
-            full_length_quantification(fl_count_file_multi, sample_isoforms_info, design, 0)
+            check_counts_design(read_counts_design(design), count_file_samples(fl_count_file_multi))
 
     def test_fl_count_design_single_sample_is_ignored(self, sample_isoforms_info, fl_count_file_single, tmp_path):
         """With a single-sample file the design is ignored with a warning, not an error."""

@@ -4,7 +4,8 @@ import gzip
 from src.commands import GFFREAD_PROG, run_command
 from src.helpers import find_isoform_id_collisions
 from src.module_logging import qc_logger, filter_logger, rescue_logger
-from src.utilities.rescue.evidence_check import target_count_rules
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
+from src.utilities.rescue.evidence_check import target_count_rules, check_design_for_rules
 
 def valid_file(filename,logger):
     if not os.path.isfile(filename):
@@ -215,6 +216,9 @@ def qc_args_validation(args):
             qc_logger.error("--counts_design requires a multi-sample --fl_count file.")
             sys.exit(1)
         valid_file(args.counts_design,qc_logger)
+        # Checked against the samples of the count file here, before the long steps run,
+        # and not again when the counts are read
+        check_counts_design(read_counts_design(args.counts_design), count_file_samples(args.fl_count))
     if args.min_expression < 0:
         qc_logger.error(f"--min_expression must be 0 or greater, instead given {args.min_expression}.")
         sys.exit(1)
@@ -337,6 +341,11 @@ def rescue_args_validation(args):
         rescue_logger.error("Requantification is run by default and needs the --counts file. "
                             "Provide --counts, or --skip_requant to rescue without requantification.")
         sys.exit(1)
+    # The design is checked against the samples of --counts here, before mapping, and not again later
+    design = None
+    if args.counts_design is not None and args.counts is not None:
+        design = check_counts_design(read_counts_design(args.counts_design, rescue_logger),
+                                     count_file_samples(args.counts), rescue_logger)
     # Evidence check of the rescued reference transcripts: only for the rules strategy, when the
     # rules of reference targets have requisites on long-read counts (FL, prevalence, prevalence_<group>).
     # It also reads --counts, so the file is needed even with --skip_requant.
@@ -346,10 +355,13 @@ def rescue_args_validation(args):
     elif args.strategy == "rules":
         valid_file(args.json_filter, rescue_logger)
         with open(args.json_filter) as f:
-            evidence_check = bool(target_count_rules(json.load(f)))
+            rule_sets = target_count_rules(json.load(f))
+        evidence_check = bool(rule_sets)
         if evidence_check and args.counts is None:
             rescue_logger.error("The rules have requisites on long-read counts: the evidence check of the "
                                 "rescued reference transcripts needs the --counts file used for requantification. "
                                 "Provide --counts, or --skip_evidence_check to reintroduce them without the check.")
             sys.exit(1)
+        if evidence_check:
+            check_design_for_rules(rule_sets, design)
     return evidence_check

@@ -72,12 +72,10 @@ def main():
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    if os.path.isfile(f"{prefix}_rescue_mapping_hits.tsv"):
-      rescue_logger.info("Mapping hits already exist, skipping mapping step.")
-      hits_df = pd.read_csv(f"{prefix}_rescue_mapping_hits.tsv",sep="\t")
-    else:
-      hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                           args.corrected_isoforms_fasta,args.dir,args.output)
+    # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
+    # file if it was made from the same targets and candidates (mapping fingerprint)
+    hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
+                         args.corrected_isoforms_fasta,args.dir,args.output)
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results

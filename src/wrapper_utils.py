@@ -31,7 +31,6 @@ def create_config(config_path,options,level):
         "filter": get_parser_specific_args_complex(filter_argparse(),main_args),
         "rescue": get_parser_specific_args_simple(rescue_argparse(),main_args)
     } 
-    print("hello")
     if options is not None:
         user_options = get_user_options(options,list(flatten_dict(config).keys()))
         replace_value(config,user_options)

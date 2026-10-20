@@ -27,9 +27,9 @@ from src.rescue_output import (
     write_rescue_gtf, write_rescue_fasta
 )
 
-from src.parsers import read_counts_design, check_counts_design
+from src.parsers import read_counts_design
 from src.utilities.rescue.evidence_check import (
-    rule_column_matches, target_count_rules, count_samples, check_design_for_rules,
+    rule_column_matches, target_count_rules, count_samples,
     write_evidence_rules, apply_evidence_check
 )
 from src.utilities.rescue.sq_requant import load_counts
@@ -323,11 +323,11 @@ def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filt
     with open(json_filter) as f:
         rule_sets = target_count_rules(json.load(f))
     counts_df = load_counts(counts_file, classif_df)
-    design = None
-    if counts_design is not None:
+    # The design and the rules were checked against --counts by rescue_args_validation;
+    # with a single sample the design is ignored
+    design = {}
+    if counts_design is not None and len(count_samples(counts_df)) > 1:
         design = read_counts_design(counts_design, rescue_logger)
-        design = check_counts_design(design, count_samples(counts_df), rescue_logger)
-    check_design_for_rules(rule_sets, design)
     rules_dict = write_evidence_rules(rule_sets, f"{out_dir}/evidence_check_rules.json")
     return apply_evidence_check(rescue_df, inclusion_list, classif_df, counts_df, hits_df, rules_dict,
                                 design, min_expression)

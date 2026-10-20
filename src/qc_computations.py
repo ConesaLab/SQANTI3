@@ -2,7 +2,7 @@ from collections import defaultdict
 from Bio  import SeqIO
 
 from src.utilities.rt_switching import rts
-from src.parsers import expression_parser, parse_counts, read_counts_design, check_counts_design
+from src.parsers import expression_parser, parse_counts, read_counts_design
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev, is_expressed
 from src.module_logging import qc_logger
@@ -84,9 +84,11 @@ def full_length_quantification(fl_count, isoforms_info, counts_design, min_expre
     fl_samples = df.columns.tolist()
     n = 0
 
+    # The design was checked against the count file by qc_args_validation; with a
+    # single sample it is ignored (prevalence can only be 0 or 1)
     design = {}
-    if counts_design is not None:
-        design = check_counts_design(read_counts_design(counts_design), fl_samples)
+    if counts_design is not None and len(fl_samples) > 1:
+        design = read_counts_design(counts_design)
     if design:
         qc_logger.info("Counts design: " + ", ".join(f"{g} ({len(s)} samples)" for g, s in design.items()))
 

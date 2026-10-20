@@ -426,7 +426,7 @@ class TestParseCounts:
 
 ### read_counts_design / check_counts_design ###
 
-from src.parsers import read_counts_design, check_counts_design
+from src.parsers import read_counts_design, check_counts_design, count_file_samples
 
 
 def _design_file(tmp_path, content, name="design.tsv"):
@@ -480,3 +480,21 @@ class TestCountsDesign:
         messages = [c.args[0] for c in logger.error.call_args_list]
         assert messages[0] == "Samples in the counts design file not found in the count file: ['K9']"
         assert not any("--fl_count" in m for m in messages)
+
+
+class TestCountFileSamples:
+    """count_file_samples reads only the header, with the delimiter detection of parse_counts."""
+
+    @pytest.mark.parametrize("content, name", [
+        ("isoform\tS1\tS2\nPB.1.1\t1\t2\n", "counts.tsv"),
+        ("isoform,S1,S2\nPB.1.1,1,2\n", "counts.csv"),
+        ("# made by bambu\nisoform\tS1\tS2\nPB.1.1\t1\t2\n", "comments.tsv"),
+    ])
+    def test_samples(self, tmp_path, content, name):
+        f = tmp_path / name
+        f.write_text(content)
+        assert count_file_samples(str(f)) == ["S1", "S2"]
+
+    def test_matches_parse_counts(self):
+        f = os.path.join(main_path, "test/test_data/abundance/fl_count_multi_sample.csv")
+        assert count_file_samples(f) == parse_counts(f).columns[1:].tolist()

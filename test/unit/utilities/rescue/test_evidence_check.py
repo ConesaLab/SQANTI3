@@ -397,13 +397,6 @@ class TestOrchestration:
         written = json.loads((tmp_path / "evidence_check_rules.json").read_text())
         assert written == {"full-splice_match": [{"prevalence_K": 2}, {"prevalence_B": 2}]}
 
-    def test_run_evidence_check_without_design_exits(self, json_file, tmp_path):
-        c = classif({"a1": ("Artifact", {"K1": 1})})
-        r = rescue_table([("a1", "REF1", "automatic", "reference", "yes")])
-        with pytest.raises(SystemExit):
-            run_evidence_check(c, r, pd.Series(["REF1"]), hits([]), json_file, None,
-                               counts_file(tmp_path, c), str(tmp_path), 0)
-
     def test_run_evidence_check_matches_main_unpacking(self, json_file, design_file, tmp_path):
         # main() unpacks (inclusion_list, rescue_df), as for the other rescue steps,
         # and save_rescue_results() calls to_frame() on the inclusion list
