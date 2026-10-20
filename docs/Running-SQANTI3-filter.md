@@ -640,10 +640,10 @@ the `-f` option is provided.
 <a name="inclusionml"></a>
 
 ## Good isoforms and filtering of SQANTI QC output files
-Finally, `*_pass_filter.txt` is a single-column file including the IDs of the transcripts 
+Finally, `*_pass_isoforms.txt` is a single-column file including the IDs of the transcripts 
 classified as true isoforms (i.e. flagged as `Isoform` in the `filter_result` column).
 This list will be used to provide filtered versions of supplied SQANTI QC output files. 
-Use the `--isoAnnotGFF3`, `--isoforms`, `--gtf`, `--faa` and `--sam` arguments to provide 
+Use the `--isoAnnotGFF3`, `--filter_isoforms`, `--filter_gtf`, `--filter_faa` and `--filter_sam` arguments to provide 
 each of the files you wish to obtain filtered.
 
 
