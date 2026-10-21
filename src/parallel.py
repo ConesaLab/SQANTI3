@@ -2,14 +2,18 @@ import pickle
 import shutil
 import os,copy
 import re
+import tempfile
 import time
 import psutil
 
-from multiprocessing import Process
+from multiprocessing import Process, get_start_method
+from multiprocessing.connection import wait
+from Bio import SeqIO
 
 
 from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
 from src.qc_pipeline import run
+from src.parsers import reference_parser
 from src.helpers import (
     align_isoforms, get_corr_filenames, get_class_junc_filenames, get_isoform_hits_name, get_pickle_filename, rename_novel_genes, 
     get_supplementary_name, get_unmapped_name, is_fastq_file, read_fasta_fastq, uncompressed_size, warn_supplementary, warn_unmapped)
@@ -66,7 +70,98 @@ def split_fasta_input(isoforms, split_root_dir, chunks):
         raise ValueError(f"Input file '{isoforms}' contains no sequences.")
     return split_outs
 
-def split_input_run(args, outdir):
+# Root, limit, usage and reclaimable-cache names of each cgroup memory layout
+CGROUP_MEMORY_LAYOUTS = {
+    'memory': ('/sys/fs/cgroup/memory', 'memory.limit_in_bytes',
+               'memory.usage_in_bytes', 'total_inactive_file'),  # cgroup v1
+    '': ('/sys/fs/cgroup', 'memory.max', 'memory.current',
+         'inactive_file'),  # cgroup v2
+}
+
+def read_cgroup_value(path):
+    """Return the integer in a cgroup file, or None if it is missing or 'max'."""
+    try:
+        with open(path) as f:
+            value = int(f.read().strip())
+    except (OSError, ValueError):
+        value = None
+    return value
+
+def read_cgroup_stat(path, key):
+    """Return one field of a cgroup memory.stat file, or 0 if it is missing."""
+    try:
+        with open(path) as f:
+            fields = dict(line.split() for line in f if len(line.split()) == 2)
+    except OSError:
+        fields = {}
+    return int(fields.get(key, 0))
+
+def read_cgroup_memory():
+    """
+    Return (used, limit) in bytes for the most restrictive memory cgroup that
+    holds this process, or None if no limit is set. SLURM sets --mem on the job
+    or step cgroup, not on the task cgroup of the process, so the cgroups above
+    it are checked too. Inactive file cache can be reclaimed and is not counted
+    as used.
+    """
+    result = None
+    try:
+        with open('/proc/self/cgroup') as f:
+            cgroup_lines = f.read().splitlines()
+    except OSError:
+        cgroup_lines = []
+    total_memory = psutil.virtual_memory().total
+    for line in cgroup_lines:
+        _, controllers, path = line.split(':', 2)
+        controller = 'memory' if 'memory' in controllers.split(',') else controllers
+        if result is None and controller in CGROUP_MEMORY_LAYOUTS:
+            root, limit_name, usage_name, inactive_name = CGROUP_MEMORY_LAYOUTS[controller]
+            directory = root + path.rstrip('/')
+            while directory.startswith(root):
+                limit = read_cgroup_value(os.path.join(directory, limit_name))
+                usage = read_cgroup_value(os.path.join(directory, usage_name))
+                # An unlimited cgroup reports 'max' (v2) or a huge number (v1)
+                if (limit is not None and usage is not None and limit < total_memory
+                        and (result is None or limit < result[1])):
+                    inactive = read_cgroup_stat(os.path.join(directory, 'memory.stat'),
+                                                inactive_name)
+                    result = (usage - inactive, limit)
+                directory = os.path.dirname(directory)
+    return result
+
+def memory_use_percent():
+    """
+    Percentage of memory in use: the larger of the use of the whole machine and,
+    inside a cgroup with a memory limit (a SLURM job with --mem, for instance),
+    the use of that cgroup against its limit.
+    """
+    percent = psutil.virtual_memory().percent
+    cgroup_memory = read_cgroup_memory()
+    if cgroup_memory is not None:
+        used, limit = cgroup_memory
+        percent = max(percent, round(100 * used / limit, 1))
+    return percent
+
+def read_shared_inputs(args):
+    """
+    Read the genome and parse the reference annotation once for all the chunks.
+    Forked workers share them with this process instead of reading them again.
+    With another start method they would be pickled for every worker, so None
+    is returned and each worker reads its own, as before.
+    """
+    genome_dict, reference = None, None
+    if get_start_method() == 'fork':
+        qc_logger.info(f"Reading genome fasta {args.refFasta}")
+        genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
+        # The genePred written by reference_parser is only needed while parsing
+        with tempfile.TemporaryDirectory(dir=args.dir) as ref_dir:
+            os.makedirs(os.path.join(ref_dir, 'logs'))
+            reference = reference_parser(args.refGTF, ref_dir, args.output,
+                                         list(genome_dict.keys()), args.genename,
+                                         args.isoAnnotLite)
+    return genome_dict, reference
+
+def split_input_run(args, outdir, genome_dict=None, reference=None):
     SPLIT_ROOT_DIR = outdir
     if os.path.exists(SPLIT_ROOT_DIR):
         qc_logger.warning(f"{SPLIT_ROOT_DIR} directory already exists!")
@@ -163,8 +258,15 @@ def split_input_run(args, outdir):
 
     pools = []
     
-    max_concurrent = psutil.cpu_count(logical=True) or 1
-    cpus_per_worker = args.cpus if hasattr(args, 'cpus') and args.cpus > 0 else 1
+    # -t is the CPU budget of the whole run (sequence_correction() already
+    # gives each worker's aligner cpus // chunks), and only the CPUs this
+    # process may use count, such as a SLURM allocation, not every CPU of the
+    # machine. A worker classifies on one CPU, so up to that many run at once
+    if hasattr(os, 'sched_getaffinity'):
+        available_cpus = len(os.sched_getaffinity(0))
+    else:
+        available_cpus = psutil.cpu_count(logical=True) or 1
+    max_workers = max(1, min(args.cpus, available_cpus))
 
     pending_tasks = list(enumerate(split_outs))
     active_processes = []
@@ -173,38 +275,40 @@ def split_input_run(args, outdir):
         # Keep only alive processes
         active_processes = [p for p in active_processes if p.is_alive()]
         
-        # Check system memory. We need to reserve some overhead (e.g., >15% free memory)
-        # to process the reference genome for each chunk
-        mem_info = psutil.virtual_memory()
-        can_launch_mem = mem_info.percent < 85  or len(active_processes) == 0
+        # Check memory, against the job's limit when there is one. We need to
+        # reserve some overhead (e.g., >15% free memory) for each new chunk
+        mem_percent = memory_use_percent()
+        can_launch_mem = mem_percent < 85  or len(active_processes) == 0
         
-        current_used_cpus = len(active_processes) * cpus_per_worker
-        # Always allow at least 1 process if active_processes is 0, to prevent deadlocks
-        can_launch_cpu = (current_used_cpus + cpus_per_worker) <= max_concurrent or len(active_processes) == 0
+        # max_workers is at least 1, so a worker can always start when none is running
+        can_launch_cpu = len(active_processes) < max_workers
 
         # Launch next chunk if resources are safe
         if pending_tasks and can_launch_cpu and can_launch_mem:
             i, (d, x) = pending_tasks.pop(0)
-            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_info.percent}%)")
+            qc_logger.info(f"Launching worker on {x} (Active workers: {len(active_processes)+1}, Mem usage: {mem_percent}%)")
             
             args2 = copy.deepcopy(args)
             args2.isoforms = x
             args2.novel_gene_prefix = str(i)
             args2.dir = d
             args2.report = 'skip'
-            args2.cpus = cpus_per_worker # Allocate a fair share of CPUs per worker
             
-            p = Process(target=run, args=(args2,))
+            p = Process(target=run, args=(args2, genome_dict, reference))
             p.start()
             
             active_processes.append(p)
             pools.append(p)
             
-            # Brief pause to let memory initialize before spawning another chunk
-            time.sleep(2)
+            # Brief pause to let memory initialize before spawning another chunk.
+            # Only a worker that reads its own genome and reference needs it;
+            # forked workers share those of this process
+            if genome_dict is None:
+                time.sleep(2)
         else:
-            # Wait for resources to free up
-            time.sleep(1)
+            # Wait for resources to free up: until a worker ends, checking
+            # again at least every second
+            wait([p.sentinel for p in active_processes], timeout=1)
 
     for p in pools:
         p.join()
@@ -276,7 +380,7 @@ def combine_alignment_outputs(args, split_dirs):
     n_unmapped = concat_tables([get_unmapped_name(d, args.output) for d in split_dirs], unmapped_file)
     warn_unmapped(n_unmapped, unmapped_file)
 
-def combine_split_runs(args, split_dirs):
+def combine_split_runs(args, split_dirs, genome_dict=None):
     """
     Combine .faa, .fasta, .gtf, .classification.txt, .junctions.txt and, with FASTA/FASTQ input,
     the alignment outputs (.sam, indels, supplementary alignments, unmapped isoforms).
@@ -348,7 +452,7 @@ def combine_split_runs(args, split_dirs):
     if args.fl_count:
         isoforms_info = full_length_quantification(args.fl_count, isoforms_info, args.counts_design,
                                                    args.min_expression)
-    isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta)
+    isoforms_info,RTS_info = process_rts(isoforms_info,outputJuncPath,args.refFasta,genome_dict)
 
     fields_junc_cur = headers[0]
     if args.include_ORF:

@@ -213,6 +213,155 @@ def get_reasons(row, force_multiexon, rules_dict):
         'filter_reason': '; '.join(reasons)
     })
 
+def rule_failures(classif, rows, column, rule_type, rule_value):
+    """Evaluate one rule on a subset of transcripts at once.
+
+    Vectorized counterpart of the per-row checks in apply_rules and
+    get_reasons: NA values fail, categories are compared in lower case and
+    thresholds are inclusive.
+
+    Args:
+        classif (pd.DataFrame): SQANTI3 classification data
+        rows (pd.Series): Boolean mask of the transcripts the rule applies to
+        column (str): Classification column the rule checks
+        rule_type (str): Category, Min_Threshold or Max_Threshold
+        rule_value (str/float/list): Accepted value(s) or threshold
+
+    Returns:
+        pd.Series: Boolean Series indexed like the selected rows, True where
+            the transcript fails the rule
+
+    Exits:
+        Calls sys.exit(1) if the column is missing or cannot be compared
+        with the rule value.
+    """
+    if column not in classif.columns:
+        filter_logger.error(f"Column {column} not found in SQANTI3 classification data.")
+        filter_logger.error(f"Perhaps you misspelled the column name in the rules file?")
+        sys.exit(1)
+    values = classif.loc[rows, column]
+    try:
+        if rule_type == 'Category':
+            text = values.astype(str).str.lower()
+            if isinstance(rule_value, list):
+                failed = ~text.isin(rule_value)
+            else:
+                failed = text != rule_value
+        elif rule_type == 'Min_Threshold':
+            failed = values < rule_value
+        else:
+            failed = values > rule_value
+    except TypeError:
+        filter_logger.error(f"Type error for column {column} with rule {rule_type} {rule_value}.")
+        filter_logger.error(f"Check if the column you indicated in the rules file is correct.")
+        sys.exit(1)
+    result = values.isna() | failed
+
+    return result
+
+def assigned_category(classif, rules_dict):
+    """Structural category whose rules apply to each transcript.
+
+    Args:
+        classif (pd.DataFrame): SQANTI3 classification data
+        rules_dict (dict): Parsed rules from read_json_rules()
+
+    Returns:
+        pd.Series: Structural category of each transcript, or 'rest' when
+            the rules file has no rules for it
+    """
+    category = classif['structural_category']
+    result = category.where(category.isin(list(rules_dict.keys())), 'rest')
+
+    return result
+
+def apply_rules_table(classif, force_multiexon, rules_dict):
+    """Apply the filtering rules to the whole classification at once.
+
+    Gives the same result as apply_rules row by row: a transcript passes
+    if it meets every rule of at least one rule set of its structural
+    category, junction rules are skipped for mono-exonic transcripts and,
+    with force_multiexon, mono-exonic transcripts are always artifacts.
+
+    Args:
+        classif (pd.DataFrame): SQANTI3 classification data
+        force_multiexon (bool): If True, automatically filter mono-exonic transcripts
+        rules_dict (dict): Parsed rules from read_json_rules()
+
+    Returns:
+        pd.Series: "Isoform" or "Artifact" for each transcript, indexed like classif
+    """
+    mono_exonic = classif['exons'].astype(float) == 1
+    forced_out = mono_exonic & force_multiexon
+    category = assigned_category(classif, rules_dict)
+    passed = pd.Series(False, index=classif.index)
+    for structural_category, rule_sets in rules_dict.items():
+        # As in apply_rules, a rule set is only evaluated on the transcripts
+        # that have not passed an earlier set of the same category.
+        pending = (category == structural_category) & ~forced_out
+        for rules in rule_sets:
+            set_passed = pending.copy()
+            for column, rule_type, rule_value in rules.itertuples(index=False):
+                applies = pending
+                if column in junction_related_columns:
+                    applies = pending & ~mono_exonic
+                if applies.any():
+                    failed = rule_failures(classif, applies, column, rule_type, rule_value)
+                    set_passed.loc[failed[failed].index] = False
+            passed = passed | set_passed
+            pending = pending & ~set_passed
+    result = passed.map({True: "Isoform", False: "Artifact"})
+
+    return result
+
+def get_reasons_table(artifacts, force_multiexon, rules_dict):
+    """Collect the filtering reasons of all artifacts at once.
+
+    Gives the same reasons as get_reasons row by row: every failed rule of
+    every rule set of the structural category, without duplicates.
+
+    Args:
+        artifacts (pd.DataFrame): Classification rows filtered as artifacts
+        force_multiexon (bool): Flag to enforce multi-exon filtering
+        rules_dict (dict): Parsed rules from read_json_rules()
+
+    Returns:
+        pd.DataFrame: Columns isoform, structural_category and filter_reason
+            (semicolon-separated failed criteria), one row per artifact
+    """
+    mono_exonic = artifacts['exons'].astype(float) == 1
+    category = assigned_category(artifacts, rules_dict)
+    messages = [pd.Series(dtype=str)]
+    if force_multiexon:
+        messages.append(pd.Series("Mono-exonic", index=artifacts.index[mono_exonic]))
+    for structural_category, rule_sets in rules_dict.items():
+        in_category = category == structural_category
+        for rules in rule_sets:
+            for column, rule_type, rule_value in rules.itertuples(index=False):
+                applies = in_category
+                if column in junction_related_columns:
+                    applies = in_category & ~mono_exonic
+                if applies.any():
+                    failed = rule_failures(artifacts, applies, column, rule_type, rule_value)
+                    values = artifacts.loc[failed[failed].index, column]
+                    text = f"{column}: " + values.astype(str)
+                    if rule_type == 'Min_Threshold':
+                        text = text + f" < {rule_value}"
+                    elif rule_type == 'Max_Threshold':
+                        text = text + f" > {rule_value}"
+                    text[values.isna()] = f"NA value in {column}"
+                    messages.append(text)
+    reasons = (pd.concat(messages).rename('filter_reason')
+               .rename_axis('row').reset_index().drop_duplicates())
+    joined = reasons.groupby('row', sort=False)['filter_reason'].agg('; '.join)
+    result = pd.DataFrame({
+        'isoform': artifacts['isoform'],
+        'structural_category': artifacts['structural_category'],
+        'filter_reason': joined.reindex(artifacts.index).fillna('')
+    })
+
+    return result
+
 def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
     """Main function to execute SQANTI3 filtering workflow.
     
@@ -242,12 +391,12 @@ def rules_filter(sqanti_class,json_file,force_multi_exon,prefix,logger):
 
     message("Applying rules to filter isoforms",logger)
 
-    classif['filter_result'] = classif.apply(lambda row: apply_rules(row, force_multi_exon, rules_dict), axis=1)
+    classif['filter_result'] = apply_rules_table(classif, force_multi_exon, rules_dict)
 
     inclusion_list = classif[classif['filter_result'] == "Isoform"]['isoform']
 
     artifacts_classif = classif[classif['filter_result'] == "Artifact"]
-    reasons_df = artifacts_classif.apply(lambda row: get_reasons(row, force_multi_exon, rules_dict), axis=1)
+    reasons_df = get_reasons_table(artifacts_classif, force_multi_exon, rules_dict)
 
     message("Writing results",logger)
     classif.to_csv(os.path.join(f"{prefix}_RulesFilter_classification.txt"), sep='\t', index=False)

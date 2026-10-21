@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 from src.module_logging import rescue_logger
 
@@ -9,24 +8,14 @@ def get_lost_reference_id(df):
     
     :param df: SQANTI classification dataframe in Pandas
     """
-    all_ref = df['associated_transcript'].to_numpy()
+    all_ref = df['associated_transcript'].unique()
     # Find all references were one of their transcripts is classified as "Isoforms"  
     isoform_ref = df.loc[df['filter_result'].eq('Isoform'), 'associated_transcript'].unique()
     rescue_logger.debug(f"Found {isoform_ref.size} references represented")
-    return np.setdiff1d(np.unique(all_ref), isoform_ref)
+    # Hash-based difference, sorted like np.setdiff1d; on string IDs numpy
+    # compares every pair of IDs
+    return pd.Index(all_ref).difference(isoform_ref).to_numpy()
 
-def rescue_lost_reference(ref_id, classif):
-    # Filter classification
-    classif_ref = classif[classif['associated_transcript'] == ref_id]
-    
-    # Check for FSM
-    ref_check = any(classif_ref['structural_category'] == "full-splice_match")
-    
-    # If there is an FSM associated to the lost reference, return lost reference
-    if ref_check:
-        ref_df = pd.DataFrame({'isoform': [ref_id]})
-        return ref_df
-    
 def generate_automatic_table(inclusion_df,class_df):
     """
     Generate the rescue table with the results of automatic rescue

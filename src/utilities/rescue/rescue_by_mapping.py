@@ -45,13 +45,21 @@ def add_filter_results(mapping_hits, combined_class, classif):
     return mapping_hits
     
 def select_best_hits(df):
+    """Select the best hit(s) of every rescue candidate in one pass.
+
+    Each candidate keeps its hits with the highest score and, among them,
+    only the lr_defined ones if there is any. Rows are sorted by candidate
+    (stable sort), the order the former groupby().apply() returned.
+    """
     # Keep rows with max score per group
-    df = df[df['score'] == df['score'].max()]
+    max_score = df.groupby('rescue_candidate')['score'].transform('max')
+    df = df[df['score'] == max_score]
     # Prefer lr_defined over reference
-    if (df['hit_origin'] == 'lr_defined').any():
-        df = df[df['hit_origin'] == 'lr_defined']
+    is_lr = df['hit_origin'] == 'lr_defined'
+    has_lr = is_lr.groupby(df['rescue_candidate']).transform('any')
+    df = df[is_lr | ~has_lr]
     # For now, we are keeping all best hits (in case of ties) 
-    return df
+    return df.sort_values('rescue_candidate', kind='stable')
 
 def filter_mapping_hits(mapping_hits, strategy):
     """Filter mapping hits and remove redundant references."""
@@ -65,10 +73,7 @@ def filter_mapping_hits(mapping_hits, strategy):
         mapping_hits_filt['score'] = mapping_hits_filt['alignment_score'] * mapping_hits_filt['hit_POS_MLprob']
 
     # Select the best hit(s) per rescue candidate
-    best_mapping_hits = mapping_hits_filt.groupby(
-    'rescue_candidate', 
-    group_keys=False
-    )[mapping_hits_filt.columns].apply(select_best_hits).copy()
+    best_mapping_hits = select_best_hits(mapping_hits_filt).copy()
 
     return best_mapping_hits
 

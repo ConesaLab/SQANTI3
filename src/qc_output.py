@@ -1,5 +1,5 @@
 from collections import defaultdict
-from csv import DictReader, DictWriter, writer
+from csv import DictReader, DictWriter, reader, writer
 import os, sys
 import pickle
 
@@ -44,13 +44,26 @@ def write_classification_output(isoforms_info, outputClassPath):
             fout_class.writerow(isoforms_info[iso_key].as_dict())
 
 def write_junction_output(outputJuncPath, RTS_info, fields_junc_cur):
-    with open(outputJuncPath, 'w') as h:
-        fout_junc = DictWriter(h, fieldnames=fields_junc_cur, delimiter='\t')
-        fout_junc.writeheader()
-        for r in DictReader(open(outputJuncPath+"_tmp"), delimiter='\t'):
-            # RTS_info only holds isoforms with at least one RT-switching junction
-            r['RTS_junction'] = 'TRUE' if r['junction_number'] in RTS_info.get(r['isoform'], ()) else 'FALSE'
-            fout_junc.writerow(r)
+    """
+    fields_junc_cur is the header of the _tmp file in both callers, so each
+    junction is read and written as a list, in the same column order, instead
+    of building a dict for it. Empty lines are skipped and short rows padded,
+    as DictReader and DictWriter did.
+    """
+    with open(outputJuncPath, 'w') as h, open(outputJuncPath+"_tmp") as tmp:
+        fout_junc = writer(h, delimiter='\t')
+        fout_junc.writerow(fields_junc_cur)
+        rows = reader(tmp, delimiter='\t')
+        column = {field: i for i, field in enumerate(next(rows, fields_junc_cur))}
+        isoform_col = column['isoform']
+        number_col = column['junction_number']
+        rts_col = column['RTS_junction']
+        for r in rows:
+            if r:
+                r += [''] * (len(column) - len(r))
+                # RTS_info only holds isoforms with at least one RT-switching junction
+                r[rts_col] = 'TRUE' if r[number_col] in RTS_info.get(r[isoform_col], ()) else 'FALSE'
+                fout_junc.writerow(r)
 
 def write_isoform_hits(outdir,prefix, isoforms_info):
     fields_hits = ['Isoform', 'Isoform_length', 'Isoform_exon_number', 'Hit', 'Hit_length', 'Hit_exon_number', 'Match', 'Diff_to_TSS', 'Diff_to_TTS', 'Matching_type']
