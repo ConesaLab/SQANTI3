@@ -295,7 +295,7 @@ def run_ML_rescue(filter_classification, reference_classification, hits_df, resc
 
 ## Evidence check of reference targets (count requisites of the rules)
 def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
-                         corrected_isoforms, out_dir, out_prefix):
+                         corrected_isoforms, out_dir, out_prefix, cpus):
     """Map the FSM artifacts of automatic rescue to the rescue targets.
 
     Automatic rescue does not map its artifacts. Their hits are only used to
@@ -312,7 +312,7 @@ def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
     message("Fallback mapping of automatic rescue artifacts", rescue_logger)
     targets = rescue_targets(classif_df, fsm_artifacts, ref_gtf, f"{out_dir}/{fb_prefix}")
     return run_candidate_mapping(ref_trans_fasta, targets, fsm_artifacts,
-                                 corrected_isoforms, out_dir, fb_prefix)
+                                 corrected_isoforms, out_dir, fb_prefix, cpus)
 
 
 def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filter,

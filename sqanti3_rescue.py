@@ -107,7 +107,8 @@ def main():
     fallback_hits = hits_df
     if args.map_automatic_fsm:
       fsm_hits = run_fallback_mapping(class_df, rescue_df, ref_trans_fasta, args.refGTF,
-                                      args.corrected_isoforms_fasta, args.dir, args.output)
+                                      args.corrected_isoforms_fasta, args.dir, args.output,
+                                      args.cpus)
       fallback_hits = pd.concat([hits_df, fsm_hits], ignore_index=True)
     inclusion_list, rescue_df = run_evidence_check(class_df, rescue_df, inclusion_list, fallback_hits,
                                                    args.json_filter, args.counts_design, args.counts, args.dir,
