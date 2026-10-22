@@ -288,10 +288,11 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
     '''
     Funtion to collapse modification information to UJC level and adding to classification table
     '''
-    # The first step will be to add to the tsv the jxnHash 
+    # paths 
     tsv_path = os.path.join(args.OUTPUT,file_acc, f"{sampleID}_modifications.tsv")
     clasif_path = os.path.join(args.OUTPUT, file_acc, f"{sampleID}_reads_classification.txt")
     mod_clasif_path = os.path.join(args.OUTPUT, file_acc, f"{sampleID}_reads_mods_classification.txt")
+    # The first step will be to add to the tsv the jxnHash 
     read_mods = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
     num_cols = ["start", "end", "read_length"] + [f"{mod}_n_mod" for mod in args.MODTYPES]
     read_mods[num_cols] = read_mods[num_cols].astype(int)
@@ -328,10 +329,10 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
                    n_cov=sites["n_cov"].astype(str))
     # We unstack our columns based on mod_types
     ujc = (fmt.groupby(["jxnHash", "mod_type"])
-          .agg(positions=("mod_pos", ",".join),
-               occupancy=("occupancy", ",".join),
-               n_mod=("n_mod", ",".join),
-               n_cov=("n_cov", ",".join))
+          .agg(positions=("mod_pos", "_".join),
+               occupancy=("occupancy", "_".join),
+               n_mod=("n_mod", "_".join),
+               n_cov=("n_cov", "_".join))
           .unstack("mod_type"))
     # Columns are now named like (positions,m6A) so we change it
     ujc.columns = [f"ujc_{mod}_{field}" for field, mod in ujc.columns]
