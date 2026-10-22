@@ -9,7 +9,7 @@ import shutil
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
-from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info, gen_mod_tsv
+from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info, gen_mod_tsv, ujc_mod_sites
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -328,6 +328,10 @@ def main():
             sampleID = row['sampleID']
             tsv = gen_mod_tsv(args, file_acc, sampleID, reads_logger)
             reads_logger.info(f"Modifications table generated for sample {sampleID} in {tsv}")
+            if not args.SKIPHASH:
+                mod_clasif = ujc_mod_sites(args, file_acc, sampleID, reads_logger)
+                reads_logger.info(f"Modification-aware classification file generated for sample {sampleID} in {mod_clasif}")
+            
     # Run plotting script directly as a function call
     reads_logger.info("Running SQANTI-reads tables and plots generation...")
     
