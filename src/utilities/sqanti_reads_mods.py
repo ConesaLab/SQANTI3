@@ -272,8 +272,8 @@ def gen_mod_tsv(args,file_acc,sampleID, reads_logger):
 def explode_mods(df,args,mod):
     df = df.copy()
     df = df[df[f"{mod}_n_mod"] > 0]
-    df[f"{mod}_positions"] = df[f"{mod}_positions"].str.split(",")
-    df[f"{mod}_probs"] = df[f"{mod}_probs"].str.split(",")
+    df[f"{mod}_positions"] = df[f"{mod}_positions"].str.split("_")
+    df[f"{mod}_probs"] = df[f"{mod}_probs"].str.split("_")
     df = df[["isoform", "jxnHash", "chrom", "strand", f"{mod}_positions", f"{mod}_probs"]]
     df_ex = df.explode([f"{mod}_positions" ,f"{mod}_probs"])
     df_ex = df_ex.rename(columns={f"{mod}_positions": "mod_pos", f"{mod}_probs": "mod_prob"})
