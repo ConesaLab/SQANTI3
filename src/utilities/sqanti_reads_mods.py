@@ -300,8 +300,8 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
     # Spans of ALL the reads of each UJC (I think dropna is not needed but just in case)
     # We generate a df with the start and end positions of all reads that belong to the same jxnHash
     spans = read_mods.dropna(subset=["jxnHash"]).groupby("jxnHash").agg(
-        starts=("start", lambda s: np.sort(s.to_numpy())),
-        ends=("end", lambda s: np.sort(s.to_numpy())),
+        starts=("start", lambda s: sorted(s)),
+        ends=("end", lambda s: sorted(s)),
         n_reads_ujc=("isoform", "size"))
     # We can use this to count the total number of reads that cover a position in the UJC
     exploded_tables = []
