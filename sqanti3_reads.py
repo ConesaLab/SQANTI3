@@ -43,7 +43,10 @@ def fill_design_table(args):
     else:
          # If no sqanti_dirs provided, we assume we are generating it in OUTPUT
          df['junction_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
-        
+    # If using mods mode we include the path to the classification_mod and ujc_sites
+    if args.mods_mode:
+        df['mod_classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_mods_classification.txt'
+        df["ujc_mod_sites_file"] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_ujc_mod_sites.tsv'
     return(df)
 
 def get_method_runSQANTI3(args, df):

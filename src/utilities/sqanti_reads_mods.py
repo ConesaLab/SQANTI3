@@ -61,6 +61,9 @@ def validate_MODS(args,reads_logger):
     if args.sqanti_dirs:
         reads_logger.error("[ERROR] Modifications mode cannot be run in Fast mode.")
         sys.exit(-1)
+    if args.SKIPHASH:
+        reads_logger.error("[ERROR] Modifications mode needs the UJC hashes, it cannot be run with --skip_hash.")
+        sys.exit(-1)
     types, all_correct = lookup_mods(args)
     if all_correct:
         args.MODTYPES = types
@@ -207,7 +210,7 @@ def convert_prob(prob):
 
 def new_row(read_id, read, args):
     row = {"isoform": read_id, "read_length": read.query_length, 
-           "start": read.reference_start + 1, "end": read.reference_end, # 1-based
+           "read_start": read.reference_start + 1, "read_end": read.reference_end, # 1-based
            "chrom": read.reference_name, "strand": "-" if read.is_reverse else "+"}
     for mod in args.MODTYPES:
         row[f"{mod}_positions"] = ""
@@ -294,15 +297,15 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
     mod_clasif_path = os.path.join(args.OUTPUT, file_acc, f"{sampleID}_reads_mods_classification.txt")
     # The first step will be to add to the tsv the jxnHash 
     read_mods = pd.read_csv(tsv_path, sep="\t", dtype=str, keep_default_na=False)
-    num_cols = ["start", "end", "read_length"] + [f"{mod}_n_mod" for mod in args.MODTYPES]
+    num_cols = ["read_start", "read_end", "read_length"] + [f"{mod}_n_mod" for mod in args.MODTYPES]
     read_mods[num_cols] = read_mods[num_cols].astype(int)
     clasif = pd.read_csv(clasif_path, sep="\t", usecols=["isoform", "jxnHash"])
     read_mods = read_mods.merge(clasif, on="isoform", how="left")
     # Spans of ALL the reads of each UJC (I think dropna is not needed but just in case)
     # We generate a df with the start and end positions of all reads that belong to the same jxnHash
     spans = read_mods.dropna(subset=["jxnHash"]).groupby("jxnHash").agg(
-        starts=("start", lambda s: sorted(s)),
-        ends=("end", lambda s: sorted(s)),
+        starts=("read_start", lambda s: sorted(s)),
+        ends=("read_end", lambda s: sorted(s)),
         n_reads_ujc=("isoform", "size"))
     # We can use this to count the total number of reads that cover a position in the UJC
     exploded_tables = []
@@ -339,23 +342,22 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
     # Now we only have to fill nas of 
     cols = [f"ujc_{mod}_{field}" for mod in args.MODTYPES for field in ("positions", "occupancy", "n_mod", "n_cov")]
     ujc = ujc.reindex(columns=cols).fillna("").reset_index()
-    # Each read gets the modified sites of its UJC and their occupancy
-    read_mods = read_mods.merge(ujc, on="jxnHash", how="left")
-    ujc_cols = [col for col in ujc.columns if col != "jxnHash"]
-    read_mods[ujc_cols] = read_mods[ujc_cols].fillna("")
-    # Reads table with the UJC info and long table with one row per UJC site
+    # One row per UJC with the lists of its modified sites
+    # We include number of reads associated to the UJC
+    ujc = ujc.merge(spans[["n_reads_ujc"]], left_on="jxnHash", right_index=True, how="left")
     out_prefix = os.path.join(args.OUTPUT, file_acc, sampleID)
-    read_mods.to_csv(f"{out_prefix}_reads_modifications_ujc.tsv", sep="\t", index=False)
+    ujc_path = f"{out_prefix}_ujc_modifications.tsv"
+    ujc.to_csv(ujc_path, sep="\t", index=False)
     sites.to_csv(f"{out_prefix}_ujc_mod_sites.tsv", sep="\t", index=False)
-    # Modification columns are added to the classification
+
+    # Per read modification columns are added to the classification
     clasif_completa = pd.read_csv(clasif_path, sep="\t", dtype=str, keep_default_na=False)
-    cols_tsv = [col for mod in args.MODTYPES for col in read_mods.columns
-                if col.startswith(f"{mod}_") or col.startswith(f"ujc_{mod}_")]
+    cols_tsv = [col for mod in args.MODTYPES for col in read_mods.columns if col.startswith(f"{mod}_")]
     # Columns from a previous run would be duplicated
-    clasif_completa = clasif_completa.drop(columns=[col for col in cols_tsv if col in clasif_completa.columns])
+    clasif_completa = clasif_completa.drop(columns=[col for col in ["read_start", "read_end"] + cols_tsv if col in clasif_completa.columns])
+    # Short check to make sure length of classification file stays the same
     n_rows = len(clasif_completa)
-    # Now we merge everything to the classification
-    clasif_completa = clasif_completa.merge(read_mods[["isoform"] + cols_tsv].astype(str),
+    clasif_completa = clasif_completa.merge(read_mods[["isoform","read_start","read_end"] + cols_tsv].astype(str),
                                             on="isoform", how="left")
     if len(clasif_completa) != n_rows:
         reads_logger.error(f"[ERROR] Classification rows changed after adding modifications for {sampleID}")
@@ -363,5 +365,5 @@ def ujc_mod_sites(args, file_acc, sampleID, reads_logger):
     clasif_completa.fillna("").to_csv(f"{mod_clasif_path}.tmp", sep="\t", index=False)
     os.replace(f"{mod_clasif_path}.tmp", mod_clasif_path)
 
-    reads_logger.info(f"{sampleID}: {len(sites)} modified UJC sites written to {out_prefix}_ujc_mod_sites.tsv")
+    reads_logger.info(f"{sampleID}: {len(sites)} modified UJC sites in {len(ujc)} UJCs written to {out_prefix}_ujc_mod_sites.tsv and {ujc_path}")
     return mod_clasif_path
