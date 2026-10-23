@@ -2204,13 +2204,21 @@ def load_sqanti_file(file,col_Lst, dtype_Dct, tolerant=False):
     that actually exist are loaded — so optional columns (e.g. the CAGE/polyA/
     short-read support columns, absent in older or evidence-free SQANTI3 runs) do
     not raise. Downstream code guards on ``_column_is_populated`` before using any
-    optional column, so a missing column simply makes its view no-op."""
+    optional column, so a missing column simply makes its view no-op.
+
+    ``Int64`` columns are parsed as plain numbers and converted afterwards:
+    the C parser reads nullable integers more than twice as slowly, which on
+    junction files of millions of rows is a large part of the load."""
     if tolerant:
         header = pd.read_csv(file, sep="\t", nrows=0).columns
-        present = [c for c in col_Lst if c in header]
-        dtype_Dct = {k: v for k, v in dtype_Dct.items() if k in present}
-        return pd.read_csv(file, sep="\t", usecols=present, dtype=dtype_Dct, low_memory=True)
-    return pd.read_csv(file, sep="\t", usecols=col_Lst, dtype=dtype_Dct, low_memory=True)
+        col_Lst = [c for c in col_Lst if c in header]
+        dtype_Dct = {k: v for k, v in dtype_Dct.items() if k in col_Lst}
+    int_cols = [k for k, v in dtype_Dct.items() if v == 'Int64']
+    read_dtypes = {k: v for k, v in dtype_Dct.items() if v != 'Int64'}
+    df = pd.read_csv(file, sep="\t", usecols=col_Lst, dtype=read_dtypes, low_memory=True)
+    for col in int_cols:
+        df[col] = df[col].astype('Int64')
+    return df
 
 
 def _column_is_populated(df, col):
@@ -2283,12 +2291,72 @@ def categorize_by_readcount(read_count):
     else:
         return '100+ reads'
     
-def cv(x):
-    if np.mean(x) == 0:
-        return np.nan
-    else:
-        return np.std(x) / np.mean(x)
-    
+def _site_dispersion(jxnDF, coord_col, diff_col):
+    """
+    Per reference splice site, dispersion of the read junctions around it
+
+    The site is (chrom, strand, coord + diff); the statistics are those of the
+    absolute distance to it: mean, sample std, coefficient of variation
+    (population std / mean, NaN when the mean is 0), number of junctions and
+    the genes they belong to.
+
+    Parameters:
+    - jxnDF: junctions with 'associated_gene' and no missing diff
+    - coord_col, diff_col: junction coordinate and its distance to the site
+
+    Returns:
+    - Dataframe with one row per site, sorted as groupby sorts it
+    """
+    keys = ['chrom', 'strand', 'coord']
+    sites = pd.DataFrame({
+        'chrom': jxnDF['chrom'],
+        'strand': jxnDF['strand'],
+        'coord': (jxnDF[coord_col] + jxnDF[diff_col]).astype(int),
+        'abs_diff': abs(jxnDF[diff_col]),
+        'associated_gene': jxnDF['associated_gene'],
+    })
+    grouped = sites.groupby(keys)
+    dispDF = grouped['abs_diff'].agg(['mean', 'std', 'size']).reset_index()
+    dispDF.columns = keys + ['mean_abs_diff', 'std_abs_diff', 'count']
+
+    ## Population std of each site: the values of a site are laid out
+    ## contiguously, in their original order, and summed with np.add.reduce
+    ## like np.std does, so the cv is the same float as np.std(x) / np.mean(x).
+    ## Sites whose distances do not vary have a std of 0 and need no sum.
+    site_id = grouped.ngroup().to_numpy()
+    order = np.argsort(site_id, kind='stable')
+    values = sites['abs_diff'].to_numpy(dtype='int64')[order].astype(float)
+    sizes = dispDF['count'].to_numpy()
+    starts = np.concatenate(([0], np.cumsum(sizes)[:-1]))
+    means = np.add.reduceat(values, starts) / sizes
+    varying = np.flatnonzero((np.minimum.reduceat(values, starts)
+                              < np.maximum.reduceat(values, starts))
+                             & (means > 0))
+    std_pop = np.zeros(len(sizes))
+    for i in varying:
+        dev = values[starts[i]:starts[i] + sizes[i]] - means[i]
+        std_pop[i] = np.sqrt(np.add.reduce(dev * dev) / sizes[i])
+    with np.errstate(divide='ignore', invalid='ignore'):
+        dispDF.insert(5, 'cv', np.where(means == 0, np.nan, std_pop / means))
+
+    ## Genes of each site; sites of several genes (dropped by default) get
+    ## them joined in sorted order
+    gene_count = grouped['associated_gene'].nunique(dropna=False).to_numpy()
+    genes = grouped['associated_gene'].first().to_numpy(dtype=object)
+    multi = gene_count > 1
+    if multi.any():
+        pairs = pd.DataFrame({
+            'site_id': site_id,
+            'gene': sites['associated_gene'].to_numpy(dtype=object),
+        })
+        pairs = (pairs[multi[site_id]].dropna().drop_duplicates()
+                 .sort_values(['site_id', 'gene']))
+        joined = pairs.groupby('site_id')['gene'].agg('|'.join)
+        genes[joined.index.to_numpy()] = joined.to_numpy(dtype=object)
+    dispDF['associated_gene'] = genes
+    dispDF['gene_count'] = gene_count
+    return dispDF
+
 def calc_jxn_cv(jxnDF, classDF, refDF, dropFlag=True):
     """
     Calculate cv of reference donors and acceptors from sqanti jxn file
@@ -2307,69 +2375,32 @@ def calc_jxn_cv(jxnDF, classDF, refDF, dropFlag=True):
     
     filter_jxnDF=pd.merge(filter_jxnDF, classDF[['isoform', 'associated_gene']], on='isoform', how='left')
     
-    
-    filter_jxnDF['ref_junction_start']=(filter_jxnDF['genomic_start_coord']+filter_jxnDF['diff_to_Ref_start_site']).astype(int)
-    filter_jxnDF['ref_junction_end']=(filter_jxnDF['genomic_end_coord']+filter_jxnDF['diff_to_Ref_end_site']).astype(int)
-    filter_jxnDF['abs_diff_to_start']=abs(filter_jxnDF['diff_to_Ref_start_site'])
-    filter_jxnDF['abs_diff_to_end']=abs(filter_jxnDF['diff_to_Ref_end_site'])
-    
+    ref_genes = refDF['gene_id'].unique()
+    parts = []
+    ##The junction start is the donor on + and the acceptor on -; the end, the reverse
+    for coord_col, diff_col, donor_strand, acceptor_strand in (
+            ('genomic_start_coord', 'diff_to_Ref_start_site', '+', '-'),
+            ('genomic_end_coord', 'diff_to_Ref_end_site', '-', '+')):
+        partDF = _site_dispersion(filter_jxnDF, coord_col, diff_col)
+        partDF['flag_multi_gene'] = np.where(partDF['gene_count'] > 1, 1, 0)
+        partDF['flag_annotated_gene'] = np.where(partDF['associated_gene'].isin(ref_genes), 1, 0)
+        partDF['flag_donor'] = np.where(partDF['strand'] == donor_strand, 1, 0)
+        partDF['flag_acceptor'] = np.where(partDF['strand'] == acceptor_strand, 1, 0)
+        partDF['flag_mean_0'] = np.where(partDF['mean_abs_diff'] == 0, 1, 0)
+        std_is_0 = (partDF['std_abs_diff'].notna() & (partDF['std_abs_diff'] == 0))
+        partDF['flag_std_0'] = np.where(std_is_0.to_numpy(dtype=bool), 1, 0)
+        parts.append(partDF)
 
-    
-    cv_startDF =filter_jxnDF.groupby(['chrom', 'strand', 'ref_junction_start']).agg({'abs_diff_to_start': ['mean', 'std', cv, 'size'], 'associated_gene': [lambda x: '|'.join(set(x)), lambda x: len(set(x)) ]}).reset_index()
-    cv_startDF.columns = ['chrom', 'strand', 'coord', 'mean_abs_diff', 'std_abs_diff','cv', 'count','associated_gene','gene_count']
-    
-    cv_startDF['flag_multi_gene'] = cv_startDF['gene_count'].apply(lambda x: 1 if x > 1 else 0)
-    cv_startDF['flag_annotated_gene'] = np.where(cv_startDF['associated_gene'].isin(refDF['gene_id'].unique()), 1, 0)
-    
-    cv_startDF['flag_donor'] = cv_startDF['strand'].apply(lambda x: 1 if x == '+' else 0)
-    cv_startDF['flag_acceptor'] = cv_startDF['strand'].apply(lambda x: 1 if x == '-' else 0)
-    #cv_startDF['flag_single'] = cv_startDF['count'].apply(lambda x: 1 if x == 1 else 0)
-    cv_startDF['flag_mean_0'] = cv_startDF['mean_abs_diff'].apply(lambda x: 1 if x == 0 else 0)
-    #cv_startDF['flag_std_0'] = cv_startDF['std_abs_diff'].apply(lambda x: 1 if x == 0 else 0)
-    cv_startDF['flag_std_0'] = cv_startDF['std_abs_diff'].apply(lambda x: 0 if pd.isna(x) else (1 if x == 0 else 0))
-    #cv_startDF['flag_cv_0'] = cv_startDF['cv'].apply(lambda x: 1 if x == 0 else 0)
-    #cv_startDF['flag_cv_0'] = cv_startDF['cv'].apply(lambda x: 0 if pd.isna(x) else (1 if x == 0 else 0))
-    
-    cv_endDF =filter_jxnDF.groupby(['chrom', 'strand', 'ref_junction_end']).agg({'abs_diff_to_end': ['mean', 'std', cv, 'size'], 'associated_gene': [lambda x: '|'.join(set(x)), lambda x: len(set(x)) ]}).reset_index()
-    cv_endDF.columns = ['chrom', 'strand', 'coord', 'mean_abs_diff', 'std_abs_diff','cv', 'count','associated_gene','gene_count']
-    
-   
-   
-    cv_endDF['flag_multi_gene'] = cv_endDF['gene_count'].apply(lambda x: 1 if x > 1 else 0)
-    cv_endDF['flag_annotated_gene'] =  np.where(cv_endDF['associated_gene'].isin(refDF['gene_id'].unique()), 1, 0)
-    
-    
-    cv_endDF['flag_donor'] = cv_endDF['strand'].apply(lambda x: 1 if x == '-' else 0)
-    cv_endDF['flag_acceptor'] = cv_endDF['strand'].apply(lambda x: 1 if x == '+' else 0)
-    #cv_endDF['flag_single'] = cv_endDF['count'].apply(lambda x: 1 if x == 1 else 0)
-    cv_endDF['flag_mean_0'] = cv_endDF['mean_abs_diff'].apply(lambda x: 1 if x == 0 else 0)
-    #cv_endDF['flag_std_0'] = cv_endDF['std_abs_diff'].apply(lambda x: 1 if x == 0 else 0)
-    cv_endDF['flag_std_0'] = cv_endDF['std_abs_diff'].apply(lambda x: 0 if pd.isna(x) else (1 if x == 0 else 0))
-    #cv_endDF['flag_cv_0'] = cv_endDF['cv'].apply(lambda x: 1 if x == 0 else 0)
-    #cv_endDF['flag_cv_0'] = cv_endDF['cv'].apply(lambda x: 0 if pd.isna(x) else (1 if x == 0 else 0))
-    
-    
-    cvDF=pd.concat([cv_startDF,cv_endDF])
-    cvDF['flag_ref_match'] = cvDF['flag_mean_0'].apply(lambda x: 1 if x == 1 else 0)
-    #cvDF['flag_cv_0'] = cvDF.apply(lambda row: 1 if row['cv'] == 0 and row['flag_mean_0'] != 1 else 0, axis=1)
-    #cvDF['flag_cv_0'] = cvDF.apply(lambda row: 1 if row['cv'] == 0 and row['flag_mean_0'] != 1 else 0, axis=1)
-    #cvDF['flag_cv_0'] = cvDF.apply(lambda row: 1 if not np.isnan(row['cv']) and row['cv'] == 0 and row['flag_mean_0'] != 1 else 0, axis=1)
-    #cvDF['flag_cv_gt_0'] = cvDF['cv'].apply(lambda x: 1 if x > 0 else 0)
-    #cvDF['flag_cv_gt_0'] = cvDF['cv'].apply(lambda x: 1 if not np.isnan(x) and x > 0 else 0)
-    cvDF['flag_cv_0'] = cvDF.apply(lambda row: 1 if pd.notna(row['cv']) and row['cv'] == 0 and row['flag_mean_0'] != 1 else 0, axis=1)
-    cvDF['flag_cv_gt_0'] = cvDF['cv'].apply(lambda x: 1 if pd.notna(x) and x > 0 else 0)
+    cvDF=pd.concat(parts)
+    cvDF['flag_ref_match'] = cvDF['flag_mean_0']
+    cvDF['flag_cv_0'] = np.where((cvDF['cv'] == 0) & (cvDF['flag_mean_0'] != 1), 1, 0)
+    cvDF['flag_cv_gt_0'] = np.where(cvDF['cv'] > 0, 1, 0)
     
     if dropFlag:
-         
-        #count=((cvDF['flag_annotated_gene'] != 1) | (cvDF['flag_multi_gene'] == 1)).sum()
-        #print(str(count)+"donors and acceptors assigned to multiple and/or novel genes")
-        
         drop=(cvDF['flag_annotated_gene'] != 1) | (cvDF['flag_multi_gene'] == 1)
-        cvDF_filtered=cvDF[~drop]
-        
-        return cvDF_filtered
-    else :
-        return cvDF
+        cvDF=cvDF[~drop]
+
+    return cvDF
     
 def flag_ref_monoexon(inRef):
     
@@ -2578,7 +2609,10 @@ def _summarize_jxn_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window=
     if jxn_DF is None or jxn_DF.empty:
         return pd.DataFrame(columns=cols)
 
-    df = jxn_DF.copy()
+    # Only the columns used here are copied, not the whole junction table.
+    df = jxn_DF[[c for c in ("strand", "diff_to_Ref_start_site",
+                             "diff_to_Ref_end_site", "canonical")
+                 if c in jxn_DF.columns]].copy()
     for c in ("diff_to_Ref_start_site", "diff_to_Ref_end_site"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
     can = df["canonical"] if "canonical" in df.columns else pd.Series("NA", index=df.index)
@@ -2620,7 +2654,7 @@ def _summarize_site_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window
             "diff_to_Ref_start_site", "diff_to_Ref_end_site"]
     if jxn_DF is None or jxn_DF.empty or not all(c in jxn_DF.columns for c in need):
         return pd.DataFrame(columns=cols)
-    df = jxn_DF.copy()
+    df = jxn_DF[need].copy()
     for c in ("genomic_start_coord", "genomic_end_coord",
               "diff_to_Ref_start_site", "diff_to_Ref_end_site"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
@@ -2642,10 +2676,14 @@ def _summarize_site_offsets(jxn_DF, sampleID, exp_factor, exp_factor_val, window
     long = long[long["offset"].abs() <= window]
     if long.empty:
         return pd.DataFrame(columns=cols)
-    long["ref_key"] = (long["chrom"].astype(str) + ":" + long["strand"].astype(str)
-                       + ":" + long["ref_coord"].astype("int64").astype(str))
-    out = (long.groupby(["ref_key", "site_type"], observed=True)["offset"]
+    # Grouped by the fields of ref_key, which is built once per site and not
+    # once per junction, then sorted by it as grouping by the key did.
+    out = (long.groupby(["chrom", "strand", "ref_coord", "site_type"],
+                        observed=True, dropna=False)["offset"]
                 .agg(median_offset="median", n="size").reset_index())
+    out["ref_key"] = (out["chrom"].astype(str) + ":" + out["strand"].astype(str)
+                      + ":" + out["ref_coord"].astype("int64").astype(str))
+    out = out.sort_values(["ref_key", "site_type"], ignore_index=True)
     out["sampleID"] = sampleID
     out[exp_factor] = exp_factor_val
     return out[cols]
@@ -2676,7 +2714,7 @@ def _summarize_fuzz_by_depth(jxn_DF, sampleID, exp_factor, exp_factor_val,
     cov = pd.to_numeric(jxn_DF["total_coverage_unique"], errors="coerce")
     if cov.notna().sum() == 0:   # all-NaN -> nothing to bin (fixture case)
         return pd.DataFrame(columns=cols)
-    df = jxn_DF.copy()
+    df = jxn_DF[["strand", "diff_to_Ref_start_site", "diff_to_Ref_end_site"]].copy()
     df["_cov"] = cov
     for c in ("diff_to_Ref_start_site", "diff_to_Ref_end_site"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
