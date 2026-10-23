@@ -1,3 +1,4 @@
+import bisect
 from collections import defaultdict
 from csv import DictReader, DictWriter, reader, writer
 import os, sys
@@ -202,7 +203,11 @@ def write_junction_info(trec, junctions_by_chr, accepted_canonical_sites, indelI
         junction_cat = "novel"
         if (trec.chrom in junctions_by_chr) and (trec.chrom not in missing_chr):
 
-            if ((d,a) in junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]):
+            # da_pairs is a sorted list: a binary search instead of a scan of
+            # every reference junction of the chromosome and strand
+            da_pairs = junctions_by_chr[trec.chrom]['da_pairs'][trec.strand]
+            i = bisect.bisect_left(da_pairs, (d,a))
+            if i < len(da_pairs) and da_pairs[i] == (d,a):
                 junction_cat = "known"
                 min_diff_s = min_diff_e = 0
             else:
