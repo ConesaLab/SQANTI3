@@ -89,12 +89,14 @@ def add_exon_bin(df):
     df["exon_bin"] = pd.cut(df["exons"], EXON_BIN_EDGES, labels=EXON_BIN_LABELS).astype(str)
     return df
 
-def _group_palette(df, group_col):
-    # With one sample the bars are coloured by group (categories get the SQANTI colours),
-    # with several samples each sample gets its own colour
+def _group_palette(df, group_col, sample_palette=None):
+    # With one sample the bars are coloured by group: SQANTI colours for the structural categories,
+    # Conesa colours for the exon bins. With several samples each sample gets its own colour
     if df["sampleID"].nunique() == 1:
-        return group_col, (CAT_PALETTE if group_col == "category" else None)
-    return "sampleID", None
+        if group_col == "category":
+            return group_col, CAT_PALETTE
+        return group_col, dict(zip(EXON_BIN_LABELS, color_conesa(len(EXON_BIN_LABELS))))
+    return "sampleID", sample_palette
 
 
 def _panel_grid(n_panels, ncols=4, width=4, height=3.5, **kwargs):
@@ -106,16 +108,17 @@ def _panel_grid(n_panels, ncols=4, width=4, height=3.5, **kwargs):
         # With a shared x axis the panel above an empty one would be left without tick labels
         if i - ncols >= 0:
             axes.flat[i - ncols].tick_params(labelbottom=True)
-    return fig, axes.flat
+    return fig, list(axes.flat)
 
 
-def plot_reads_by_group(reads, modtypes, group_col="category", order=None, metric="per_kb"):
+def plot_reads_by_group(reads, modtypes, group_col="category", order=None, metric="per_kb", palette=None):
     '''
     Per read modification metric by group (structural category or exon bin), a panel per type.
     metric="per_kb": mean modifications per kb of read; metric="pct": % of reads with >=1 modification
+    palette: colour per sample, used when there are several samples
     '''
     order = order or [g for g in CAT_ORDER if g in reads[group_col].unique()]
-    hue, palette = _group_palette(reads, group_col)
+    hue, palette = _group_palette(reads, group_col, palette)
     fig, axes = _panel_grid(len(modtypes), sharex=True)
     for ax, mod in zip(axes, modtypes):
         data = reads[["sampleID", group_col]].copy()
@@ -133,12 +136,14 @@ def plot_reads_by_group(reads, modtypes, group_col="category", order=None, metri
     return fig
 
 
-def plot_occupancy_by_group(sites, modtypes, group_col="category", order=None, min_cov=10, min_mod=1):
-    '''Occupancy of UJC sites by group (structural category or exon bin), a panel per type'''
+def plot_occupancy_by_group(sites, modtypes, group_col="category", order=None, min_cov=10, min_mod=1,
+                            palette=None):
+    '''Occupancy of UJC sites by group (structural category or exon bin), a panel per type.
+    palette: colour per sample, used when there are several samples'''
     covered = filter_sites(sites, min_cov, min_mod)
     order = order or [g for g in CAT_ORDER if g in covered[group_col].unique()]
     mods = [mod for mod in modtypes if mod in covered["mod_type"].unique()]
-    hue, palette = _group_palette(covered, group_col)
+    hue, palette = _group_palette(covered, group_col, palette)
     fig, axes = _panel_grid(len(mods), sharex=True, sharey=True)
     for ax, mod in zip(axes, mods):
         sns.boxplot(data=covered[covered["mod_type"] == mod], x=group_col, y="occupancy",
@@ -314,9 +319,9 @@ def add_ujc_positions(sites, reads, n_bins=METAGENE_BINS, max_dist=100):
     return sites, pd.concat(coverage, ignore_index=True), pd.concat(background, ignore_index=True)
 
 def plot_junction_profile(sites, background, modtypes, max_dist=100, min_cov=1, min_mod=1, smooth=5,
-                          metric="density"):
+                          metric="density", palette=None):
     '''
-    A panel per type and a line per sample.
+    A panel per type and a line per sample (palette: colour per sample).
     -if metric="density": sites per exonic position available at each distance, relative to the mean of
     the window (+- max_dist). It counts detected sites, so it also rises where coverage is higher.
     -elif metric="occupancy": mean occupancy of the sites at each distance. 
@@ -351,7 +356,7 @@ def plot_junction_profile(sites, background, modtypes, max_dist=100, min_cov=1, 
                           / n_sites.rolling(smooth, center=True, min_periods=1).sum())
                 # Reference line at the mean occupancy of the type in the whole window
                 ax.axhline(occ_sum.sum() / max(n_sites.sum(), 1), color="grey", lw=0.8, ls=":")
-            ax.plot(dists, values, label=sampleID)
+            ax.plot(dists, values, label=sampleID, color=palette[sampleID] if palette else None)
         ax.axvline(0, color="grey", lw=0.8, ls="--")
         if metric == "density":
             ax.axhline(1, color="grey", lw=0.8, ls=":")
@@ -367,11 +372,12 @@ def plot_junction_profile(sites, background, modtypes, max_dist=100, min_cov=1, 
     return fig
 
 
-def plot_metagene(sites, coverage, modtypes, n_bins=METAGENE_BINS, min_cov=10, min_mod=1, multiexon_only=False):
+def plot_metagene(sites, coverage, modtypes, n_bins=METAGENE_BINS, min_cov=10, min_mod=1, multiexon_only=False,
+                  palette=None):
     '''
     Sites along the 5'->3' UJC model (0-100). Rows: share of the sites of each type per bin,
     mean occupancy per bin (sites with enough coverage) and fraction of reads covering each bin.
-    A column per sample
+    A column per sample (palette: colour per modification type)
     '''
     data = sites[sites["rel_pos"].notna()]
     if multiexon_only:
@@ -386,11 +392,12 @@ def plot_metagene(sites, coverage, modtypes, n_bins=METAGENE_BINS, min_cov=10, m
         s = data[data["sampleID"] == sampleID]
         share = (s.groupby(["mod_type", "bin_center"]).size()
                   .groupby(level="mod_type").transform(lambda x: x / x.sum()).rename("share").reset_index())
-        sns.lineplot(data=share, x="bin_center", y="share", hue="mod_type", hue_order=hue_order, ax=axes[0, col])
+        sns.lineplot(data=share, x="bin_center", y="share", hue="mod_type", hue_order=hue_order,
+                     palette=palette, ax=axes[0, col])
         occ = (filter_sites(s, min_cov, min_mod).groupby(["mod_type", "bin_center"])["occupancy"]
                .mean().rename("mean_occupancy").reset_index())
         sns.lineplot(data=occ, x="bin_center", y="mean_occupancy", hue="mod_type", hue_order=hue_order,
-                     ax=axes[1, col], legend=False)
+                     palette=palette, ax=axes[1, col], legend=False)
         cov = coverage[coverage["sampleID"] == sampleID]
         axes[2, col].plot(cov["rel_pos"], cov["read_fraction"], color="black")
         axes[0, col].set_title(sampleID)
@@ -402,9 +409,10 @@ def plot_metagene(sites, coverage, modtypes, n_bins=METAGENE_BINS, min_cov=10, m
     fig.tight_layout()
     return fig
 
-def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1):
+def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1, palette=None):
     '''Sites by distance to the 3' end of their UJC: number of sites and mean occupancy per bin.
-    More stable than rel_pos in direct RNA, where the 3' ends of the reads vary much less than the 5' ends'''
+    More stable than rel_pos in direct RNA, where the 3' ends of the reads vary much less than the 5' ends.
+    palette: colour per modification type'''
     data = sites[(sites["dist_3p"] >= 0) & (sites["dist_3p"] < max_nt)]
     data = data.assign(bin_nt=(data["dist_3p"] // bin_nt) * bin_nt + bin_nt / 2)
     hue_order = [mod for mod in modtypes if mod in data["mod_type"].unique()]
@@ -413,11 +421,12 @@ def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1
     for col, sampleID in enumerate(samples):
         s = data[data["sampleID"] == sampleID]
         counts = s.groupby(["mod_type", "bin_nt"]).size().rename("n_sites").reset_index()
-        sns.lineplot(data=counts, x="bin_nt", y="n_sites", hue="mod_type", hue_order=hue_order, ax=axes[0, col])
+        sns.lineplot(data=counts, x="bin_nt", y="n_sites", hue="mod_type", hue_order=hue_order,
+                     palette=palette, ax=axes[0, col])
         occ = (filter_sites(s, min_cov, min_mod).groupby(["mod_type", "bin_nt"])["occupancy"]
                .mean().rename("mean_occupancy").reset_index())
         sns.lineplot(data=occ, x="bin_nt", y="mean_occupancy", hue="mod_type", hue_order=hue_order,
-                     ax=axes[1, col], legend=False)
+                     palette=palette, ax=axes[1, col], legend=False)
         axes[0, col].set_yscale("log")
         axes[0, col].set_title(sampleID)
         axes[0, col].set_ylabel("Number of sites")
@@ -428,11 +437,11 @@ def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1
     fig.tight_layout()
     return fig
 
-def plot_sample_correlation(sites, modtypes, min_cov=10, reads_logger):
+def plot_sample_correlation(sites, modtypes, min_cov=10):
     '''Spearman correlation of the occupancy of the sites shared by all samples with n_cov >= min_cov,
     a heatmap per type. Returns None with less than two samples'''
     if sites["sampleID"].nunique() < 2:
-        reads_logger.info("Only one sample, the correlation between samples needs at least two"))
+        reads_logger.info("Only one sample, the correlation between samples needs at least two")
         return None
     covered = sites[sites["n_cov"] >= min_cov]
     occ = covered.pivot_table(index=["jxnHash", "mod_type", "mod_pos"], columns="sampleID",
@@ -442,7 +451,7 @@ def plot_sample_correlation(sites, modtypes, min_cov=10, reads_logger):
     for ax, mod in zip(axes, mods):
         corr = occ.xs(mod, level="mod_type").corr(method="spearman")
         n_shared = len(occ.xs(mod, level="mod_type"))
-        sns.heatmap(corr, vmin=0, vmax=1, annot=True, fmt=".2f", cmap="viridis", ax=ax)
+        sns.heatmap(corr, vmin=0, vmax=1, annot=True, fmt=".2f", cmap=conesa_cmap("warm"), ax=ax)
         ax.set_title(f"{mod} ({n_shared} shared sites)")
         ax.set_xlabel("")
         ax.set_ylabel("")
@@ -459,25 +468,36 @@ def run_mods_plots(design_file, out_dir, prefix, args, min_cov=20, min_mod=2):
     reads = add_exon_bin(reads)
     sites_pos = add_exon_bin(sites_pos)
     modtypes = args.MODTYPES
+    # Fixed colours
+    samples = sorted(reads["sampleID"].unique())
+    mod_palette = dict(zip(modtypes, color_conesa(len(modtypes))))
+    sample_palette = dict(zip(samples, color_conesa(len(samples))))
     figures = [
         # B. Structural category
-        ("category % reads", lambda: plot_reads_by_group(reads, modtypes=modtypes, "category", metric="pct")),
-        ("category per kb", lambda: plot_reads_by_group(reads, modtypes=modtypes, "category", metric="per_kb")),
-        ("category occupancy", lambda: plot_occupancy_by_group(sites_pos, modtypes=modtypes, "category", min_cov=min_cov,
-                                                               min_mod=min_mod)),
+        ("category % reads", lambda: plot_reads_by_group(reads, modtypes, "category", metric="pct",
+                                                         palette=sample_palette)),
+        ("category per kb", lambda: plot_reads_by_group(reads, modtypes, "category", metric="per_kb",
+                                                        palette=sample_palette)),
+        ("category occupancy", lambda: plot_occupancy_by_group(sites_pos, modtypes, "category", min_cov=min_cov,
+                                                               min_mod=min_mod, palette=sample_palette)),
         # C. Number of exons
-        ("exons % reads", lambda: plot_reads_by_group(reads, modtypes=modtypes, "exon_bin", order=EXON_BIN_LABELS, metric="pct")),
-        ("exons per kb", lambda: plot_reads_by_group(reads, modtypes=modtypes,"exon_bin", order=EXON_BIN_LABELS, metric="per_kb")),
-        ("exons occupancy", lambda: plot_occupancy_by_group(sites_pos, modtypes=modtypes, "exon_bin", order=EXON_BIN_LABELS,
-                                                            min_cov=min_cov, min_mod=min_mod)),
+        ("exons % reads", lambda: plot_reads_by_group(reads, modtypes, "exon_bin", order=EXON_BIN_LABELS, metric="pct",
+                                                      palette=sample_palette)),
+        ("exons per kb", lambda: plot_reads_by_group(reads, modtypes, "exon_bin", order=EXON_BIN_LABELS,
+                                                     metric="per_kb", palette=sample_palette)),
+        ("exons occupancy", lambda: plot_occupancy_by_group(sites_pos, modtypes, "exon_bin", order=EXON_BIN_LABELS,
+                                                            min_cov=min_cov, min_mod=min_mod, palette=sample_palette)),
         # D-E. Junctions, metagene and 3' end
-        ("junction density", lambda: plot_junction_profile(sites_pos, junction_bg, modtypes)),
+        ("junction density", lambda: plot_junction_profile(sites_pos, junction_bg, modtypes, palette=sample_palette)),
         ("junction occupancy", lambda: plot_junction_profile(sites_pos, junction_bg, modtypes, min_cov=min_cov,
-                                                             min_mod=min_mod, metric="occupancy", smooth=9)),
-        ("metagene", lambda: plot_metagene(sites_pos, coverage, modtypes, min_cov=min_cov, min_mod=min_mod)),
-        ("distance to 3' end", lambda: plot_dist_3p(sites_pos, modtypes, min_cov=min_cov, min_mod=min_mod)),
+                                                             min_mod=min_mod, metric="occupancy", smooth=9,
+                                                             palette=sample_palette)),
+        ("metagene", lambda: plot_metagene(sites_pos, coverage, modtypes, min_cov=min_cov, min_mod=min_mod,
+                                           palette=mod_palette)),
+        ("distance to 3' end", lambda: plot_dist_3p(sites_pos, modtypes, min_cov=min_cov, min_mod=min_mod,
+                                                    palette=mod_palette)),
         # F. Between samples (skipped with one sample)
-        ("correlation between samples", lambda: plot_sample_correlation(sites_pos, min_cov=min_cov, modtypes=modtypes, reads_logger))
+        ("correlation between samples", lambda: plot_sample_correlation(sites_pos, min_cov=min_cov, modtypes=modtypes))
     ]
     pdf_path = os.path.join(out_dir, f"{prefix}_mods_plots.pdf")
     with PdfPages(pdf_path) as pdf:
