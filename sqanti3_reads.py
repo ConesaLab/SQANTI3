@@ -356,7 +356,11 @@ def main():
         pca_tables=args.PCATABLES,
         report=args.report
     )
-
+    # Modification plots, in their own PDF
+    if args.mods_mode and not args.SKIPPLOTS:
+        from src.utilities.sqanti_reads_mods_plots import run_mods_plots
+        reads_logger.info("Running SQANTI-reads modification plots...")
+        run_mods_plots(args.inDESIGN, args.OUTPUT, prefix, args)
 
 if __name__ == "__main__":
     main()
