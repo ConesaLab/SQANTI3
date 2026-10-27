@@ -68,7 +68,7 @@ def load_design_samples(design_file, args):
         reads_logger.info(f"Loading modifications of {row['sampleID']}")
         reads = load_reads(row["mod_classification_file"], row["sampleID"], args)
         all_reads.append(reads)
-        all_sites.append(load_sites(row["ujc_mods_file"], reads, row["sampleID"]))
+        all_sites.append(load_sites(row["ujc_mods_sites_file"], reads, row["sampleID"]))
     return pd.concat(all_reads,ignore_index=True), pd.concat(all_sites, ignore_index=True)
 
 def filter_sites(sites, min_cov=20, min_mod=1):
