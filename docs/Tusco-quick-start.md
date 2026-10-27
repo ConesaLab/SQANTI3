@@ -100,7 +100,7 @@ SQANTI3 includes pre-built TUSCO reference panels:
 
 | Species | File | Genes | Location |
 |---------|------|-------|----------|
-| Human | `tusco_human.tsv` | 45 | `src/utilities/report_qc/` |
+| Human | `tusco_human.tsv` | 60 | `src/utilities/report_qc/` |
 | Mouse | `tusco_mouse.tsv` | 28 | `src/utilities/report_qc/` |
 
 Each TSV file contains columns: Ensembl Gene ID, Ensembl Transcript ID, Gene Symbol, Entrez ID, RefSeq mRNA, RefSeq Protein.
