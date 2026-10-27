@@ -17,7 +17,7 @@ The [`data/tusco/`](https://github.com/ConesaLab/SQANTI3/tree/master/data/tusco)
 
 | File | Size | Description |
 |------|------|-------------|
-| `tusco_genome.fa` | 4.7 MB | Genomic regions around 46 TUSCO genes |
+| `tusco_genome.fa` | 4.7 MB | Genomic regions around the 46 human TUSCO genes of the paper release |
 | `tusco_genome.fa.fai` | 2 KB | FASTA index |
 | `tusco_annotation.gtf` | 3.7 MB | GENCODE v49 annotation subset (8,688 features) |
 | `tusco_input.gtf` | 13 KB | Example input transcripts (112 entries, 40 genes) |
@@ -100,10 +100,12 @@ SQANTI3 includes pre-built TUSCO reference panels:
 
 | Species | File | Genes | Location |
 |---------|------|-------|----------|
-| Human | `tusco_human.tsv` | 46 | `src/utilities/report_qc/` |
-| Mouse | `tusco_mouse.tsv` | 33 | `src/utilities/report_qc/` |
+| Human | `tusco_human.tsv` | 45 | `src/utilities/report_qc/` |
+| Mouse | `tusco_mouse.tsv` | 28 | `src/utilities/report_qc/` |
 
 Each TSV file contains columns: Ensembl Gene ID, Ensembl Transcript ID, Gene Symbol, Entrez ID, RefSeq mRNA, RefSeq Protein.
+
+The panels are TUSCO release 2026.10, built on GENCODE v50 (human) and vM39 (mouse). GENCODE v50 and vM39 added long-read isoforms to some genes of the paper release (46 human and 32 mouse genes), so those genes were replaced. The paper release and later releases, with the tissue-specific sets, can be downloaded from [tusco.uv.es](https://tusco.uv.es). Sensitivity is computed over all genes of the panel, so a reference annotation that lacks some of them (such as a subset of the genome) reports them as missing.
 
 ---
 
