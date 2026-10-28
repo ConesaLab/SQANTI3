@@ -69,8 +69,9 @@ def main():
     
     #### RUN MAPPING
     # when in full mode, rescue maps candidates not included in the
-    # automatic rescue (ISM, NIC, NNC) to long-read and reference
-    # isoforms passing the filter (targets)
+    # automatic rescue (ISM, NIC, NNC, and FSM of references that kept
+    # an FSM isoform) to long-read and reference isoforms passing the
+    # filter (targets)
 
     # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
     # file if it was made from the same targets and candidates (mapping fingerprint)

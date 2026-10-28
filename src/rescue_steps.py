@@ -90,8 +90,10 @@ def run_automatic_rescue(classif_df,monoexons):
 
 def rescue_candidates(classif_df,monoexons,prefix):
     """
-    Selection of rescue candidates from non-FSM artifacts.
-    The ISM artifacts are selected if they are not associated with a FSM artifact already (they have already been rescued)
+    Selection of rescue candidates from the artifacts that automatic rescue does not reassign.
+    NIC and NNC artifacts are always selected. ISM artifacts are selected if their reference was lost
+    and has no FSM (otherwise automatic rescue reassigns them), and FSM and ISM artifacts if their
+    reference kept an FSM isoform.
     """
     rescue_candidates = identify_rescue_candidates(classif_df, monoexons)
     
