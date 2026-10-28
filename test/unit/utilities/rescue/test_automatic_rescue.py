@@ -13,7 +13,6 @@ sys.path.insert(0, main_path)
 
 from src.utilities.rescue.automatic_rescue import (
     get_lost_reference_id,
-    rescue_lost_reference,
     generate_automatic_table
 )
 
@@ -69,49 +68,6 @@ class TestGetLostReferenceId:
         assert len(result) == 1
         assert result[0] == 'REF1'
 
-
-class TestRescueLostReference:
-    """Test suite for rescue_lost_reference function."""
-    
-    def test_reference_with_fsm(self):
-        """When reference has FSM, return the reference ID."""
-        classif = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.1.2'],
-            'associated_transcript': ['REF1', 'REF1'],
-            'structural_category': ['full-splice_match', 'incomplete-splice_match']
-        })
-        
-        result = rescue_lost_reference('REF1', classif)
-        
-        assert result is not None
-        assert len(result) == 1
-        assert result.iloc[0, 0] == 'REF1'
-    
-    def test_reference_without_fsm(self):
-        """When reference has no FSM, return None."""
-        classif = pd.DataFrame({
-            'isoform': ['PB.1.1', 'PB.1.2'],
-            'associated_transcript': ['REF1', 'REF1'],
-            'structural_category': ['incomplete-splice_match', 'novel_in_catalog']
-        })
-        
-        result = rescue_lost_reference('REF1', classif)
-        
-        assert result is None
-    
-    def test_reference_not_in_classification(self):
-        """When reference ID not in classification, return None."""
-        classif = pd.DataFrame({
-            'isoform': ['PB.1.1'],
-            'associated_transcript': ['REF1'],
-            'structural_category': ['full-splice_match']
-        })
-        
-        result = rescue_lost_reference('REF2', classif)
-        
-        # Should return None or empty DataFrame
-        assert result is None or len(result) == 0
- 
 
 class TestGenerateAutomaticTable:
     """Test suite for generate_automatic_table function."""

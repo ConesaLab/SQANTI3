@@ -1,5 +1,6 @@
+import re
+
 import pandas as pd
-from gtfparse import read_gtf
 from src.module_logging import rescue_logger
 from src.utilities.rescue.automatic_rescue import get_lost_reference_id
 
@@ -43,8 +44,24 @@ def identify_rescue_candidates(classif_df, monoexons='all'):
     )
     ism_candidates = classif_df[ism_mask]
 
-    # 4. Merge and Filter Monoexons
-    final_candidates = pd.concat([nic_nnc_candidates, ism_candidates])
+    # 4. Select FSM and ISM artifacts of references that kept an FSM isoform
+    # Automatic rescue skips them because their reference is still represented,
+    # so mapping decides which isoform (or reference) receives them
+    represented_ids = classif_df.loc[
+        (classif_df['structural_category'] == 'full-splice_match') &
+        (classif_df['filter_result'] == 'Isoform'),
+        'associated_transcript'
+    ].unique()
+
+    represented_mask = (
+        (classif_df['structural_category'].isin(['full-splice_match', 'incomplete-splice_match'])) &
+        (classif_df['filter_result'] == 'Artifact') &
+        (classif_df['associated_transcript'].isin(represented_ids))
+    )
+    represented_candidates = classif_df[represented_mask]
+
+    # 5. Merge and Filter Monoexons
+    final_candidates = pd.concat([nic_nnc_candidates, ism_candidates, represented_candidates])
 
     if monoexons != 'all':
         final_candidates = final_candidates[final_candidates['exons'] > 1]
@@ -57,22 +74,35 @@ def get_rescue_gene_targets(df, rescue_candidates):
     return df[df['isoform'].isin(rescue_candidates)]['associated_gene'].unique()
 
 
+# gene_id and transcript_id values of a GTF attribute column, quoted or not
+GENE_ID_RE = re.compile(r'(?:^|;)\s*gene_id\s+"?([^";\s]+)')
+TRANSCRIPT_ID_RE = re.compile(r'(?:^|;)\s*transcript_id\s+"?([^";\s]+)')
+
+
 def get_rescue_reference_targets(ref_gtf, target_genes):
     """
     Extracts transcript IDs for specific target genes from a GTF file.
+
+    Only the gene_id and transcript_id of the 'transcript' lines are read:
+    parsing every line and attribute of a whole reference GTF (gtfparse)
+    took most of the time of the target selection.
     """
-    df = read_gtf(ref_gtf).to_pandas()
     target_genes_set = set(target_genes)
-    
-    # Vectorized Filtering
-    # We apply both filters at once:
-    # - Rows that are transcripts
-    # - Rows where gene_id is in our target list
-    mask = (df['feature'] == 'transcript') & (df['gene_id'].isin(target_genes_set))
-    target_transcripts = df.loc[mask, 'transcript_id'].dropna().unique()
-    
+    # A dict keeps the IDs unique in order of first appearance
+    target_transcripts = {}
+    with open(ref_gtf) as gtf:
+        for line in gtf:
+            fields = line.split("\t", 8)
+            if (len(fields) == 9 and fields[2] == "transcript"
+                    and not line.startswith("#")):
+                gene = GENE_ID_RE.search(fields[8])
+                transcript = TRANSCRIPT_ID_RE.search(fields[8])
+                if (gene is not None and transcript is not None
+                        and gene.group(1) in target_genes_set):
+                    target_transcripts[transcript.group(1)] = None
+
     # Logging
     rescue_logger.debug(f"Input: {len(target_genes_set)} target genes.")
     rescue_logger.debug(f"Output: Found {len(target_transcripts)} matching transcripts in GTF.")
 
-    return pd.Series(target_transcripts, name='isoform')
+    return pd.Series(list(target_transcripts), name='isoform', dtype=object)
