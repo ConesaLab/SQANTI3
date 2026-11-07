@@ -53,8 +53,17 @@ filter:
       filter_faa: ''
       skip_report: false
       filter_mono_exonic: false
-    rules:
+    auto:
       enabled: true
+      options:
+        json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
+        percent_training: 0.8
+        TP: ''
+        TN: ''
+        max_class_size: 3000
+        intrapriming: 60
+    rules:
+      enabled: false
       options:
         json_filter: /home/pabloati/Programs/sqanti3/src/utilities/filter/filter_default.json
     ml:
@@ -72,7 +81,7 @@ filter:
 rescue:
   enabled: true
   options:
-    filter_class: sqanti3_results/isoforms_RulesFilter_classification.txt
+    filter_class: sqanti3_results/isoforms_AutoFilter_classification.txt
     corrected_isoforms_fasta: sqanti3_results/isoforms_corrected.fasta
     filtered_isoforms_gtf: sqanti3_results/isoforms.filtered.gtf
     refClassif: ''

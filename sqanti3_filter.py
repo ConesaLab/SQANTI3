@@ -19,12 +19,13 @@ __author__  = "francisco.pardo.palacios@gmail.com"
 
 
 import os
+import sys
 
-from src.filter_argparse import filter_argparse
+from src.filter_argparse import filter_argparse, default_subcommand
 from src.module_logging import filter_logger, update_logger
 from src.config import __version__
 from src.logging_config import art_logger,filter_art
-from src.filter_steps import filter_files, run_ML, run_rules
+from src.filter_steps import filter_files, run_ML, run_rules, run_auto
 from src.argparse_utils import filter_args_validation
 from src.write_parameters import write_filter_parameters
 
@@ -32,7 +33,7 @@ def main():
     global filter_logger
     # Create the log directory if it does not exist
     art_logger.info(filter_art())
-    args = filter_argparse().parse_args()
+    args = filter_argparse().parse_args(default_subcommand(sys.argv[1:]))
     update_logger(filter_logger,args.dir,"filter",args.log_level)
     # Create the log directory if it does not exist
     os.makedirs(f"{args.dir}/logs", exist_ok=True)
@@ -50,6 +51,9 @@ def main():
 ### Checking presence of files for Rules. Check arguments --> If ok run Rules
     if args.subcommand == 'rules':
         ids, inclusion_file = run_rules(args)
+### Automatic filter (default): graded pubLR or calibrated ML on NIC/NNC, rules elsewhere
+    if args.subcommand == 'auto':
+        ids, inclusion_file = run_auto(args)
     
     filter_files(args.filter_isoforms, args.filter_gtf, args.filter_sam, args.filter_faa,
                  args.isoAnnotGFF3, args.dir,args.output, ids, inclusion_file)

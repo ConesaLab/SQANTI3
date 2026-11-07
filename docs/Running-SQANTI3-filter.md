@@ -1,5 +1,9 @@
 ### Table of contents:
 
+- <a href="#auto">Automatic filter (default): graded pubLR or calibrated machine learning</a>
+    * <a href="#running_auto">Running the automatic filter</a>
+    * <a href="#autoout">Automatic filter output</a>
+
 - <a href="#rules">Rules filter: removing artifacts using the SQANTI3 output and user-defined rules</a>
     * <a href="#running_rules">Running the rules filter</a>
     * <a href="#default_filter">Default filter</a>
@@ -28,6 +32,103 @@
 
 
 __________________________________________
+
+<a name="auto"></a>
+
+## Automatic filter (default): graded pubLR or calibrated machine learning
+The automatic filter is the one run by `sqanti3_filter.py` when no filter is named. It needs a classification made by [SQANTI3 QC](Running-SQANTI3-Quality-Control.md) with `--pantranscriptome`, which adds to every multi-exon NIC and NNC the public evidence of its intron chain (`pantranscriptome`) and the probability that it is real given by the pubLR model (`pubLR_prob`). The filter then decides each isoform as follows:
+
+| Isoforms | Short-read junction coverage (`min_cov`) | Filter |
+|:---------|:-----------------------------------------|:-------|
+| Multi-exon NIC and NNC | no | graded pubLR |
+| Multi-exon NIC and NNC | yes | random forest of the ML filter with a calibrated cut |
+| Any other isoform, mono-exon NIC and NNC included | either | rules filter |
+
+**Graded pubLR** keeps an isoform with `pubLR_prob` of at least 0.7, keeps one between 0.5 and 0.7 only if it also passes the rules, and discards one below 0.5. **The calibrated random forest** is the classifier of the [ML filter](#ml) with its probability (`POS_MLprob`) cut separately within NIC and within NNC at the value that keeps 90% of the isoforms whose intron chain is `recurrent` in public data. In both, intra-primed NIC and NNC (`perc_A_downstream_TTS` at or above `--intrapriming`) are artifacts. When the random forest cannot be trained (too few TP or TN isoforms), or a category has fewer than 20 recurrent isoforms without intra-priming to set its cut, those NIC/NNC are filtered with graded pubLR instead. If the classification has no `pubLR_prob` (QC was run without `--pantranscriptome`, for instance with a genome assembly that has no catalog), the filter writes a warning and applies the rules filter to every isoform.
+
+<a name="running_auto"></a>
+
+### Running the automatic filter
+```bash
+python sqanti3_filter.py --sqanti_class path/to/classification.txt
+```
+
+`sqanti3_filter.py auto` does the same. The rules and machine learning filters described below remain available as `sqanti3_filter.py rules` and `sqanti3_filter.py ml`. These are the arguments accepted by `sqanti3_filter.py auto`:
+
+```
+usage: sqanti3_filter.py auto [-h] --sqanti_class SQANTI_CLASS [--isoAnnotGFF3 ISOANNOTGFF3] [--filter_isoforms FILTER_ISOFORMS] [--filter_gtf FILTER_GTF] [--filter_sam FILTER_SAM]
+                              [--filter_faa FILTER_FAA] [-o OUTPUT] [-d DIR] [--skip_report] [-e] [-v] [-c CPUS] [-l {ERROR,WARNING,INFO,DEBUG}] [-j JSON_FILTER] [-t PERCENT_TRAINING] [-p TP]
+                              [-n TN] [-z MAX_CLASS_SIZE] [-i INTRAPRIMING]
+
+Automatic filter selected (default). Multi-exon NIC and NNC are filtered with graded pubLR
+(kept with pubLR_prob >= 0.7; between 0.5 and 0.7, only if they also pass the rules; artifacts below 0.5)
+or, when the junctions have short-read coverage, with the random forest of the ML filter cut where it keeps
+90% of the NIC (and NNC) that are recurrent in public data. Intra-primed NIC/NNC are artifacts.
+The other isoforms get the rules filter. Needs a QC run with --pantranscriptome;
+without it, the rules filter is applied to every isoform.
+
+options:
+  -h, --help            show this help message and exit
+
+Required arguments:
+  --sqanti_class SQANTI_CLASS
+                        SQANTI3 QC classification file.
+
+Input options:
+  --isoAnnotGFF3 ISOANNOTGFF3
+                        isoAnnotLite GFF3 file to be filtered
+  --filter_isoforms FILTER_ISOFORMS
+                        fasta/fastq isoform file to be filtered
+  --filter_gtf FILTER_GTF
+                        GTF file to be filtered
+  --filter_sam FILTER_SAM
+                        SAM alignment of the input fasta/fastq
+  --filter_faa FILTER_FAA
+                        ORF prediction faa file to be filtered by SQANTI3
+
+Output options:
+  -o OUTPUT, --output OUTPUT
+                        Prefix for output files.
+  -d DIR, --dir DIR     Directory for output files. Default: ./sqanti3_results
+  --skip_report         Skip creation of a report about the filtering
+
+Filtering options:
+  -e, --filter_mono_exonic
+                        All mono-exonic transcripts are automatically filtered
+
+Extra options:
+  -v, --version         Display program version number.
+  -c CPUS, --cpus CPUS  Number of CPUs to use. Default: 4
+  -l {ERROR,WARNING,INFO,DEBUG}, --log_level {ERROR,WARNING,INFO,DEBUG}
+                        Set the logging level.
+                        Default: INFO
+
+Automatic filter specific options:
+  -j JSON_FILTER, --json_filter JSON_FILTER
+                        JSON file with the rules applied outside multi-exon NIC/NNC and to the NIC/NNC with pubLR_prob between 0.5 and 0.7.
+                        Default: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+  -t PERCENT_TRAINING, --percent_training PERCENT_TRAINING
+                        Proportion of the data that goes to training the random forest.
+                        Default: 0.8
+  -p TP, --TP TP        Path to file containing the list of the TP transcripts for the random forest, one ID by line, no header (optional).
+  -n TN, --TN TN        Path to file containing the list of the TN transcripts for the random forest, one ID by line, no header (optional).
+  -z MAX_CLASS_SIZE, --max_class_size MAX_CLASS_SIZE
+                        Maximum number of isoforms to include in True Positive and True Negative sets.
+                        Default: 3000
+  -i INTRAPRIMING, --intrapriming INTRAPRIMING
+                        Adenine percentage at genomic 3' end from which a NIC/NNC is intra-primed. Default: 60
+```
+
+<a name="autoout"></a>
+
+### Automatic filter output
+* `*_AutoFilter_classification.txt`: The classification with the columns `filter_route` (`rules`, `pubLR_graded` or `ML_calibrated`, the filter that decided the isoform), `filter_result` (*Isoform* or *Artifact*) and, when the random forest was run, `POS_MLprob`.
+* `*_pass_isoforms.txt`: IDs of the isoforms that passed the filter.
+* `*_filtering_reasons.txt`: Isoform ID, structural category and reason of every artifact: the failed rules, `Intra-priming`, or the probability below the cut (`pubLR_prob` or `POS_MLprob`).
+* `auto_ML/`: Output of the ML filter, when the random forest was run (see <a href="#mlout">Machine learning filter output</a>).
+* `*_SQANTI3_filter_report.pdf`: The filter report.
+
+The log lists the route chosen, the calibrated cuts and how many isoforms each route kept.
 
 <a name="rules"></a>
 

@@ -94,6 +94,24 @@ def replace_value(default_dict, user_config):
 def generate_default_path(config, filename):
     return f"{config['main']['dir']}/{config['main']['output']}{filename}"
 
+def filter_classification_suffix(config):
+    """Suffix of the classification written by the enabled filter.
+
+    Args:
+        config (dict): Wrapper configuration.
+
+    Returns:
+        str: Suffix of the filter classification read by the rescue.
+    """
+    filter_options = config['filter']['options']
+    result = '_ML_classification.txt'
+    if filter_options['auto']['enabled']:
+        result = '_AutoFilter_classification.txt'
+    elif filter_options['rules']['enabled']:
+        result = '_RulesFilter_classification.txt'
+
+    return result
+
 def set_default_values(config,user_options):
     user_options = user_options or {}
     
@@ -105,7 +123,7 @@ def set_default_values(config,user_options):
             'filter_faa': '_corrected.faa'
         },
         'rescue': {
-            'filter_class': '_RulesFilter_classification.txt' if config['filter']['options']['rules']['enabled'] else '_ML_classification.txt',
+            'filter_class': filter_classification_suffix(config),
             'corrected_isoforms_fasta': '_corrected.fasta',
             'filtered_isoforms_gtf': '.filtered.gtf',
             'random_forest': 'randomforest.RData'
@@ -150,16 +168,16 @@ def get_parser_specific_args_complex(parser,shared_args):
         i += 1
     options_to_move = []
     
-    # Check with arguments are common in both subparsers
+    # Check which arguments are common to all the subparsers
     for option, value in parser_args["options"][subparsers_names[0]]["options"].copy().items():
-        if option in parser_args["options"][subparsers_names[1]]["options"]:
+        if all(option in parser_args["options"][name]["options"] for name in subparsers_names[1:]):
             parser_args["options"]["common"][option] = value
             options_to_move.append(option)
     
     # Remove the common options from subparsers after iteration
     for option in options_to_move:
-        del parser_args["options"][subparsers_names[0]]["options"][option]
-        del parser_args["options"][subparsers_names[1]]["options"][option]
+        for name in subparsers_names:
+            del parser_args["options"][name]["options"][option]
     
     return parser_args  
 
@@ -213,7 +231,7 @@ def run_step(step,config,dry_run, user_options):
             else:
                 if subparser_args["enabled"]:
                     if first_subparser:
-                        main_logger.error("Both rules and machine learning are enabled. Only one can be used at a time.")
+                        main_logger.error("More than one filter (auto, rules, ml) is enabled. Only one can be used at a time.")
                         sys.exit(1)
                     first_subparser = True
                     options = options | subparser_args.get("options", {})

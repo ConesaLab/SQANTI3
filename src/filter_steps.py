@@ -1,5 +1,7 @@
 import os
 
+import pandas as pd
+
 from src.module_logging import filter_logger
 from src.commands import (
     run_command, RSCRIPTPATH,RSCRIPT_ML,
@@ -9,6 +11,9 @@ from src.filter_output import (
     filter_isoforms, filter_gtf, filter_sam, filter_gff3, filter_faa
 )
 from src.utilities.filter.sqanti3_rules_filter import rules_filter
+from src.utilities.filter.sqanti3_auto_filter import (
+    auto_filter, has_publr, has_short_reads, read_ml_probability
+)
 
 def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
                  outdir,prefix, ids_to_keep, inclusion_f):
@@ -84,3 +89,58 @@ def run_ML(args):
     seqs_to_keep = set(line.strip() for line in open(inclusion_list))
     return(seqs_to_keep, inclusion_list)
 
+
+# Subdirectory of the output directory where the automatic filter runs
+# the random forest of the ML filter.
+AUTO_ML_DIR = "auto_ML"
+# Threshold passed to the ML filter by the automatic filter, which
+# replaces it with the calibrated cut.
+AUTO_ML_THRESHOLD = 0.7
+
+def run_auto(args):
+    """Run the automatic filter (see sqanti3_auto_filter.py).
+
+    With pubLR probabilities and short-read junction coverage in the
+    classification, the ML filter is run first in AUTO_ML_DIR to get
+    the random forest probabilities.
+
+    Args:
+        args: Parsed arguments of the auto subcommand.
+
+    Returns:
+        Tuple with the set of isoform ids kept and the path of the
+        inclusion list.
+    """
+    prefix = os.path.join(args.dir, args.output)
+    classif = pd.read_csv(args.sqanti_class, sep="\t", low_memory=False,
+                          usecols=lambda column: column in
+                          ("pubLR_prob", "min_cov"))
+    ml_prob = None
+    if has_publr(classif) and has_short_reads(classif):
+        filter_logger.info("Short-read junction coverage found: running "
+                           "the random forest for the calibrated ML filter")
+        ml_dir = os.path.join(args.dir, AUTO_ML_DIR)
+        os.makedirs(ml_dir, exist_ok=True)
+        cmd = prepare_ml_cmd(args.sqanti_class, args.output, ml_dir,
+                             args.percent_training, AUTO_ML_THRESHOLD,
+                             args.intrapriming, False,
+                             args.filter_mono_exonic, False,
+                             args.max_class_size, args.TP, args.TN)
+        logFile = os.path.join(args.dir, 'logs', 'filter_ml.log')
+        run_command(cmd, filter_logger, logFile,
+                    "Machine learning filtering", silent=False)
+        ml_prob = read_ml_probability(
+            os.path.join(ml_dir, f"{args.output}_ML_classification.txt"))
+    elif has_publr(classif):
+        filter_logger.info("No short-read junction coverage: graded pubLR "
+                           "on NIC/NNC")
+    auto_filter(args.sqanti_class, args.json_filter, args.filter_mono_exonic,
+                args.intrapriming, ml_prob, prefix, filter_logger)
+    if not args.skip_report:
+      report_cmd = f"{RSCRIPTPATH} {RSCRIPT_FILTER_REPORT} -d {args.dir} -o {args.output} -u {utilitiesPath} -f auto"
+      logFile = os.path.join(args.dir, 'logs', 'filter_report.log')
+      run_command(report_cmd,filter_logger,logFile,"Automatic filtering report")
+
+    inclusion_list = f"{prefix}_pass_isoforms.txt"
+    seqs_to_keep = set(line.strip() for line in open(inclusion_list))
+    return(seqs_to_keep, inclusion_list)

@@ -1,6 +1,9 @@
 import argparse
 from src.config import __version__,__author__, default_json
 
+# Subcommands of sqanti3_filter.py; the first one is the default.
+SUBCOMMANDS = ("auto", "rules", "ml")
+
 def filter_argparse():
 
     ### Common arguments for both modes
@@ -32,8 +35,33 @@ def filter_argparse():
 
 # Parser creations
     parser = argparse.ArgumentParser(description="Filtering of Isoforms based on SQANTI3 attributes.\
-\nChoose between a rules filter or a Machine-Learning based filter.") 
+\nChoose between the automatic filter (default), a rules filter or a Machine-Learning based filter.") 
     subparsers = parser.add_subparsers(dest='subcommand')
+
+### Automatic filter arguments (default subcommand)
+    auto = subparsers.add_parser('auto',
+                                 parents=[common],
+                                 description="Automatic filter selected (default). Multi-exon NIC and NNC are filtered with graded pubLR"
+                                     "\n(kept with pubLR_prob >= 0.7; between 0.5 and 0.7, only if they also pass the rules; artifacts below 0.5)"
+                                     "\nor, when the junctions have short-read coverage, with the random forest of the ML filter cut where it keeps"
+                                     "\n90% of the NIC (and NNC) that are recurrent in public data. Intra-primed NIC/NNC are artifacts."
+                                     "\nThe other isoforms get the rules filter. Needs a QC run with --pantranscriptome;"
+                                     "\nwithout it, the rules filter is applied to every isoform.",
+                                 formatter_class=argparse.RawTextHelpFormatter)
+    af = auto.add_argument_group("Automatic filter specific options")
+    af.add_argument('-j', "--json_filter", default=default_json,
+                    help="JSON file with the rules applied outside multi-exon NIC/NNC and to the NIC/NNC with pubLR_prob between 0.5 and 0.7."
+                        "\nDefault: %(default)s")
+    af.add_argument('-t','--percent_training', type=float, default=0.8,
+                    help="Proportion of the data that goes to training the random forest.\nDefault: %(default)s")
+    af.add_argument('-p', '--TP',
+                    help="Path to file containing the list of the TP transcripts for the random forest, one ID by line, no header (optional).")
+    af.add_argument('-n', '--TN',
+                    help="Path to file containing the list of the TN transcripts for the random forest, one ID by line, no header (optional).")
+    af.add_argument('-z', '--max_class_size', type=int , default=3000,
+                    help="Maximum number of isoforms to include in True Positive and True Negative sets.\nDefault: %(default)s")
+    af.add_argument('-i',"--intrapriming", type=float, default=60,
+                    help='Adenine percentage at genomic 3\' end from which a NIC/NNC is intra-primed. Default: %(default)s')
 
 ### Rules filter arguments
     rules = subparsers.add_parser('rules', 
@@ -74,3 +102,21 @@ def filter_argparse():
     ml.add_argument('-i',"--intrapriming", type=float, default=60, help='Adenine percentage at genomic 3\' end to flag an isoform as intra-priming. Default: %(default)s')
 
     return parser
+
+
+def default_subcommand(argv: list[str]) -> list[str]:
+    """Put the default subcommand first when none is given.
+
+    Args:
+        argv: Command-line arguments, without the program name.
+
+    Returns:
+        argv, preceded by "auto" unless it starts with a subcommand or
+        asks for the help or the version.
+    """
+    result = list(argv)
+    explicit = {*SUBCOMMANDS, "-h", "--help", "-v", "--version"}
+    if not argv or argv[0] not in explicit:
+        result = ["auto", *argv]
+
+    return result

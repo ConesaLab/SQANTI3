@@ -38,7 +38,7 @@ You can add the wrapper script to your PATH in two ways:
 
 ## **Configuration File**
 
-The configuration file is written in YAML (⚠️ must use the `.yaml` extension). It contains all arguments and parameters required by the SQANTI3 modules and flags to select which modules (qc, filter, rescue) to run. For the filter and rescue modules, you can specify whether to use rules-based or machine learning approaches.
+The configuration file is written in YAML (⚠️ must use the `.yaml` extension). It contains all arguments and parameters required by the SQANTI3 modules and flags to select which modules (qc, filter, rescue) to run. For the filter and rescue modules, you can specify whether to use rules-based or machine learning approaches. The filter enables the automatic filter (`auto`) by default; to use the rules or the machine learning filter instead, set `enabled: true` in its section and `enabled: false` in `auto`, since only one filter can be enabled.
 
 **Structure:**
 - *Common options*: Shared across all modules (e.g., reference genome, maximum threads).
@@ -124,8 +124,17 @@ filter:
       filter_faa: ''
       skip_report: false
       filter_mono_exonic: false
-    rules:
+    auto:
       enabled: true
+      options:
+        json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
+        percent_training: 0.8
+        TP: ''
+        TN: ''
+        max_class_size: 3000
+        intrapriming: 60
+    rules:
+      enabled: false
       options:
         json_filter: <path_to>/SQANTI3/src/utilities/filter/filter_default.json
     ml:
@@ -143,7 +152,7 @@ filter:
 rescue:
   enabled: true
   options:
-    filter_class: sqanti3_results/isoforms_RulesFilter_result_classification.txt
+    filter_class: sqanti3_results/isoforms_AutoFilter_classification.txt
     corrected_isoforms_fasta: sqanti3_results/isoforms_corrected.fasta
     filtered_isoforms_gtf: sqanti3_results/isoforms.filtered.gtf
     refClassif: ''

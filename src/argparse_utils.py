@@ -275,25 +275,25 @@ def filter_args_validation(args):
     if args.filter_gtf is not None:
         args.filter_gtf_input = args.filter_gtf # the parameters file records what the user gave, not the converted GTF
         args.filter_gtf = valid_gtf(args.filter_gtf, filter_logger, args.dir)
-    if args.subcommand == 'rules':
+    if args.subcommand in ('rules', 'auto'):
         valid_file(args.json_filter, filter_logger)
-    if args.subcommand == 'ml':
+    if args.subcommand in ('ml', 'auto'):
         if args.TP is not None:
             valid_file(args.TP, filter_logger)
         if args.TN is not None:
             valid_file(args.TN, filter_logger)
-        if args.remove_columns is not None:
+        if args.subcommand == 'ml' and args.remove_columns is not None:
             valid_file(args.remove_columns, filter_logger)
         if args.percent_training < 0 or args.percent_training > 1.:
             filter_logger.error(f"--percent_training must be between 0-1, instead given {args.percent_training}! Abort!")
             sys.exit(-1)
-        if args.threshold < 0 or args.threshold > 1.:
+        if args.subcommand == 'ml' and (args.threshold < 0 or args.threshold > 1.):
             filter_logger.error(f"--threshold must be between 0-1, instead given {args.threshold}! Abort!")
             sys.exit(-1)
         if args.intrapriming < 25 or args.intrapriming > 100:
             filter_logger.error(f"--intrapriming must be between 25-100, instead given {args.intrapriming}! Remember to use the percentage value. Abort!")
             sys.exit(-1)
-        if args.remove_columns is not None:
+        if args.subcommand == 'ml' and args.remove_columns is not None:
             valid_file(args.remove_columns, filter_logger)
     
 

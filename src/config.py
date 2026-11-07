@@ -42,6 +42,17 @@ PANTRANSCRIPTOME_CATEGORIES = ("novel_in_catalog", "novel_not_in_catalog")
 PANTRANSCRIPTOME_MIN_STUDIES = 3
 PANTRANSCRIPTOME_MIN_PLATFORMS = 2
 
+# Automatic filter (sqanti3_filter.py auto)
+# pubLR probability below which a multi-exon NIC/NNC is an artifact
+PUBLR_THRESHOLD = 0.5
+# pubLR probability from which a NIC/NNC needs no rules (graded pubLR)
+PUBLR_GRADED_CUT = 0.7
+# Share of the clean recurrent NIC (and NNC) kept by the calibrated cut
+# of the random forest
+ML_CALIBRATION_TARGET = 0.90
+# Fewest clean recurrent models of a category to calibrate its cut
+ML_CALIBRATION_MIN_SUPPORTED = 20
+
 # Sequence names
 seqid_rex1 = re.compile(r'PB\.(\d+)\.(\d+)$')
 seqid_rex2 = re.compile(r'PB\.(\d+)\.(\d+)\|\S+')
