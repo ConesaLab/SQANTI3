@@ -27,7 +27,19 @@ FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
                 'dist_to_CAGE_peak', 'within_CAGE_peak',
                 'dist_to_polyA_site', 'within_polyA_site',
-                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
+                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS',
+                'pantranscriptome', 'pub_samples', 'pub_studies', 'pub_platforms']
+
+# Pantranscriptome catalog (--pantranscriptome)
+# Version of the catalog file format read by QC
+PANTRANSCRIPTOME_FORMAT = 1
+# Bits of the intron chain hashes stored in the catalog
+PANTRANSCRIPTOME_HASH_BITS = 44
+# Categories that get the pantranscriptome columns
+PANTRANSCRIPTOME_CATEGORIES = ("novel_in_catalog", "novel_not_in_catalog")
+# A chain seen in at least this many studies and platforms is recurrent
+PANTRANSCRIPTOME_MIN_STUDIES = 3
+PANTRANSCRIPTOME_MIN_PLATFORMS = 2
 
 # Sequence names
 seqid_rex1 = re.compile(r'PB\.(\d+)\.(\d+)$')

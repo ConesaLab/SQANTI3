@@ -199,6 +199,8 @@ def qc_args_validation(args):
         valid_file(args.polyA_motif_list,qc_logger)
     if args.polyA_peak is not None:
         valid_bed(args.polyA_peak,qc_logger)
+    if args.pantranscriptome is not None:
+        valid_file(args.pantranscriptome,qc_logger)
     if args.phyloP_bed is not None:
         valid_bed(args.phyloP_bed,qc_logger)
 

@@ -63,7 +63,7 @@ usage: sqanti3_qc.py [-h] --isoforms ISOFORMS --refGTF REFGTF --refFasta REFFAST
                      [--aligner_choice {minimap2,deSALT,gmap,uLTRA}] [-x GMAP_INDEX] [--include_ORF] [--orf_input ORF_INPUT]
                      [--psauron_threshold PSAURON_THRESHOLD] [--short_reads SHORT_READS] [--SR_bam SR_BAM]
                      [--CAGE_peak CAGE_PEAK] [--polyA_motif_list POLYA_MOTIF_LIST] [--polyA_peak POLYA_PEAK]
-                     [--phyloP_bed PHYLOP_BED] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--isoAnnotLite] [--gff3 GFF3]
+                     [--phyloP_bed PHYLOP_BED] [--pantranscriptome PANTRANSCRIPTOME] [-e EXPRESSION] [-c COVERAGE] [-fl FL_COUNT] [--counts_design COUNTS_DESIGN] [--min_expression MIN_EXPRESSION] [--isoAnnotLite] [--gff3 GFF3]
                      [-o OUTPUT] [-d DIR] [--saturation] [--report {html,pdf,both,skip}] [--isoform_hits]
                      [--ratio_TSS_metric {max,mean,median,3quartile}] [-t CPUS] [-n CHUNKS] [-l {ERROR,WARNING,INFO,DEBUG}]
                      [--is_fusion] [-v] [--tusco {human,mouse}]
@@ -124,6 +124,12 @@ Orthogonal data inputs:
                         PolyA Peak (BED format, optional)
   --phyloP_bed PHYLOP_BED
                         PhyloP BED for conservation score (BED, optional)
+  --pantranscriptome PANTRANSCRIPTOME
+                        Pantranscriptome catalog of the intron chains seen in public long-read samples (.npz, optional;
+                        download it from the assets of the SQANTI3 release that matches your genome assembly). Adds the
+                        columns pantranscriptome (recurrent: seen in at least 3 studies and 2 platforms; seen: in at
+                        least one sample; unseen), pub_samples, pub_studies and pub_platforms to multi-exon NIC and NNC
+                        isoforms; other isoforms get NA.
   -e EXPRESSION, --expression EXPRESSION
                         Expression matrix (supported: Kallisto tsv)
   -c COVERAGE, --coverage COVERAGE

@@ -25,7 +25,7 @@ from src.commands import (
 from src.qc_computations import (
     classify_fsm, isoform_expression_info, isoforms_junctions,
     process_rts, ratio_TSS_dict_reading,
-    full_length_quantification
+    full_length_quantification, pantranscriptome_annotation
 )
 from src.classification_preprocessing import (
     initialize_isoform_hits, read_CAGE_peaks, read_polyA_peaks,
@@ -112,6 +112,8 @@ def run(args, genome_dict=None, reference=None):
         isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
         isoforms_info = classify_fsm(isoforms_info)
         qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
+        isoforms_info = pantranscriptome_annotation(isoforms_info,
+                                                    args.pantranscriptome)
         
         ## FL count file
     

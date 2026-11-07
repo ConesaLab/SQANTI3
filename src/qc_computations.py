@@ -6,6 +6,10 @@ from src.parsers import expression_parser, parse_counts, read_counts_design
 from src.utilities.short_reads import kallisto
 from src.utils import pstdev, is_expressed
 from src.module_logging import qc_logger
+from src.qc_classes import Pantranscriptome
+from src.config import (
+    PANTRANSCRIPTOME_MIN_PLATFORMS, PANTRANSCRIPTOME_MIN_STUDIES
+)
 
 def process_rts(isoforms_info, outputJuncPath, genome, genome_dict=None,extension="_tmp"):
     """
@@ -49,6 +53,45 @@ def classify_fsm(isoforms_info):
         iso.FSM_class = gene_class_map[iso.geneName()]
             
     return isoforms_info
+
+def pantranscriptome_annotation(isoforms_info: dict,
+                                catalog_path: str | None) -> dict:
+    """Add the public evidence of the NIC/NNC intron chains.
+
+    Each multi-exon NIC/NNC gets the number of public samples, studies and
+    platforms where its intron chain was seen, and the label recurrent
+    (seen in at least PANTRANSCRIPTOME_MIN_STUDIES studies and
+    PANTRANSCRIPTOME_MIN_PLATFORMS platforms), seen (at least one
+    sample) or unseen. Other isoforms keep NA.
+
+    Args:
+        isoforms_info: Isoform id -> myQueryTranscripts, with the ujc
+            of NIC/NNC filled during the classification.
+        catalog_path: Pantranscriptome catalog (--pantranscriptome), or
+            None to skip the annotation.
+
+    Returns:
+        isoforms_info, annotated in place.
+    """
+    if catalog_path is not None:
+        qc_logger.info("Annotating NIC/NNC with the pantranscriptome")
+        catalog = Pantranscriptome(catalog_path)
+        novel = [iso for iso in isoforms_info.values() if iso.ujc is not None]
+        counts = catalog.lookup([iso.ujc for iso in novel])
+        for iso, (samples, studies, platforms) in zip(novel, counts.tolist()):
+            iso.pub_samples = samples
+            iso.pub_studies = studies
+            iso.pub_platforms = platforms
+            if (studies >= PANTRANSCRIPTOME_MIN_STUDIES
+                    and platforms >= PANTRANSCRIPTOME_MIN_PLATFORMS):
+                iso.pantranscriptome = "recurrent"
+            elif samples > 0:
+                iso.pantranscriptome = "seen"
+            else:
+                iso.pantranscriptome = "unseen"
+
+    return isoforms_info
+
 def ratio_TSS_dict_reading(isoforms_info,ratio_TSS_dict):
     qc_logger.info('**** Adding TSS ratio data.')
     # for iso in ratio_TSS_dict:

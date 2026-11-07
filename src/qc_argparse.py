@@ -38,6 +38,7 @@ def qc_argparse():
     apod.add_argument("--polyA_motif_list",  help="Ranked list of polyA motifs (text, optional)")
     apod.add_argument("--polyA_peak",  help='PolyA Peak (BED format, optional)')
     apod.add_argument("--phyloP_bed",  help="PhyloP BED for conservation score (BED, optional)")
+    apod.add_argument("--pantranscriptome", help="Pantranscriptome catalog of the intron chains seen in public long-read samples (.npz, optional; download it from the assets of the SQANTI3 release that matches your genome assembly). Adds the columns pantranscriptome (recurrent: seen in at least 3 studies and 2 platforms; seen: in at least one sample; unseen), pub_samples, pub_studies and pub_platforms to multi-exon NIC and NNC isoforms; other isoforms get NA.")
     apod.add_argument('-e','--expression',  help='Expression matrix (supported: Kallisto tsv)')
     apod.add_argument('-c','--coverage', help='Junction coverage files (provide a single file, comma-delmited filenames, or a file pattern, ex: "mydir/*.junctions").')
     apod.add_argument('-fl', '--fl_count', help='Full-length abundance file')

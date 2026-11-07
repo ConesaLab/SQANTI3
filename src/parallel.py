@@ -11,7 +11,7 @@ from multiprocessing.connection import wait
 from Bio import SeqIO
 
 
-from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info #type: ignore
+from src.qc_computations import classify_fsm, full_length_quantification, process_rts, isoform_expression_info, pantranscriptome_annotation #type: ignore
 from src.qc_pipeline import run
 from src.parsers import reference_parser
 from src.helpers import (
@@ -445,6 +445,7 @@ def combine_split_runs(args, split_dirs, genome_dict=None):
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
+    isoforms_info = pantranscriptome_annotation(isoforms_info, args.pantranscriptome)
     
     # Process expression data natively across all processed chunks
     isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)

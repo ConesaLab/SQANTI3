@@ -97,6 +97,7 @@ qc:
     polyA_motif_list: ''
     polyA_peak: ''
     phyloP_bed: ''
+    pantranscriptome: ''
     expression: ''
     coverage: ''
     fl_count: ''

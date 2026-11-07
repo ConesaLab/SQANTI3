@@ -23,6 +23,7 @@ def write_qc_parameters(args):
         f.write("PolyAPeak\t" + (os.path.abspath(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
         f.write("IsFusion\t" + str(args.is_fusion) + "\n")
         f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
+        f.write("Pantranscriptome\t" + (os.path.abspath(args.pantranscriptome) if args.pantranscriptome is not None else "NA") + "\n")
         f.write("includeORF\t" + str(args.include_ORF) + "\n")
         f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
         f.write("PsauronThreshold\t" + str(args.psauron_threshold) + "\n")

@@ -1,9 +1,13 @@
 # unctions with no imports within SQANTI3
 import bisect
 from collections.abc import Iterable
+import hashlib
+import lzma
 import math
 import os
 import re
+
+import numpy as np
 
 def is_expressed(count, min_expression):
     """Whether a count is expression in a sample, given --min_expression.
@@ -114,3 +118,73 @@ def calculate_tss(strand, start0, end1):
             return start0
         else:
             return end1
+
+
+def hash_intron_chains(keys: list[str], bits: int) -> np.ndarray:
+    """Hash intron chain keys to integers of a given number of bits.
+
+    The hash is the leading bits of the MD5 digest of the key, so it is
+    the same on every platform and Python version (unlike hash()).
+
+    Args:
+        keys: Intron chain keys (see intron_chain_key()).
+        bits: Number of bits to keep, from 1 to 64.
+
+    Returns:
+        uint64 array with one hash per key, in the order of keys.
+
+    Raises:
+        ValueError: If bits is outside 1-64.
+    """
+    if not 1 <= bits <= 64:
+        raise ValueError(f"Hash bits must be between 1 and 64, got {bits}.")
+    shift = 64 - bits
+    result = np.fromiter(
+        (int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
+         >> shift for key in keys),
+        dtype=np.uint64, count=len(keys))
+
+    return result
+
+
+def pack_array(values: np.ndarray) -> np.ndarray:
+    """Compress a numeric array for the pantranscriptome catalog.
+
+    The bytes of the little-endian values are regrouped by position
+    (all the first bytes, then all the second bytes...) before xz
+    compression, because the high bytes of small numbers are mostly
+    zeros and compress far better together.
+
+    Args:
+        values: One-dimensional array of unsigned integers.
+
+    Returns:
+        uint8 array with the compressed bytes.
+    """
+    little = values.astype(values.dtype.newbyteorder("<"), copy=False)
+    planes = little.view(np.uint8).reshape(-1, values.dtype.itemsize).T
+    compressed = lzma.compress(planes.tobytes(),
+                               preset=9 | lzma.PRESET_EXTREME)
+    result = np.frombuffer(compressed, dtype=np.uint8)
+
+    return result
+
+
+def unpack_array(packed: np.ndarray, dtype: str) -> np.ndarray:
+    """Undo pack_array().
+
+    Args:
+        packed: uint8 array returned by pack_array().
+        dtype: Unsigned integer type of the original values, e.g.
+            "uint32".
+
+    Returns:
+        The original values with the native byte order.
+    """
+    little = np.dtype(dtype).newbyteorder("<")
+    planes = np.frombuffer(lzma.decompress(packed.tobytes()),
+                           dtype=np.uint8)
+    values = planes.reshape(little.itemsize, -1).T.copy().view(little)
+    result = values.ravel().astype(dtype)
+
+    return result
