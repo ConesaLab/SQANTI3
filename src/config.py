@@ -28,11 +28,12 @@ FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',
                 'dist_to_CAGE_peak', 'within_CAGE_peak',
                 'dist_to_polyA_site', 'within_polyA_site',
                 'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS',
-                'pantranscriptome', 'pub_samples', 'pub_studies', 'pub_platforms']
+                'pantranscriptome', 'pub_samples', 'pub_studies', 'pub_platforms',
+                'pubLR_prob']
 
 # Pantranscriptome catalog (--pantranscriptome)
 # Version of the catalog file format read by QC
-PANTRANSCRIPTOME_FORMAT = 1
+PANTRANSCRIPTOME_FORMAT = 2
 # Bits of the intron chain hashes stored in the catalog
 PANTRANSCRIPTOME_HASH_BITS = 44
 # Categories that get the pantranscriptome columns

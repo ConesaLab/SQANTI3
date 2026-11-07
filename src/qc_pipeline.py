@@ -112,8 +112,9 @@ def run(args, genome_dict=None, reference=None):
         isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
         isoforms_info = classify_fsm(isoforms_info)
         qc_logger.info(f"After classify fsm: {len(isoforms_info)}")
-        isoforms_info = pantranscriptome_annotation(isoforms_info,
-                                                    args.pantranscriptome)
+        isoforms_info = pantranscriptome_annotation(
+            isoforms_info, args.pantranscriptome, args.refGTF,
+            args.refFasta, genome_dict)
         
         ## FL count file
     

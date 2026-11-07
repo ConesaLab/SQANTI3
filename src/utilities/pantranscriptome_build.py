@@ -8,14 +8,19 @@ n_studies and n_platforms; ujc as in intron_chain_key()). The catalog
 keeps a 44-bit hash of each chain instead of the chain itself, in two
 sorted groups: chains seen in a single sample, whose counts are 1, and
 the rest, stored with their counts. Hashes and counts are compressed
-with pack_array().
+with pack_array(). The catalog also carries the pubLR model that scores
+the NIC/NNC chains (src/publr_model.py): the LightGBM model text, the
+donor and acceptor PWMs, the variables in order, the PU constant c and
+the probability threshold, read from the directory written by pubLR's
+training (model.txt, pwm_donor.npy, pwm_acceptor.npy, meta.json).
 
-Version: 1.0
+Version: 1.1
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
 Date: 2026-11-07
 """
 
 import argparse
+import json
 import os
 import sys
 
@@ -34,6 +39,9 @@ from src.utils import pack_array  # noqa: E402
 COLUMNS = ["ujc", "n_samples", "n_studies", "n_platforms"]
 # Rows read from the input table at a time.
 BATCH_SIZE = 1_000_000
+# Files of the pubLR model directory.
+MODEL_FILES = ("model.txt", "pwm_donor.npy", "pwm_acceptor.npy",
+               "meta.json")
 # Largest count that fits in the catalog (uint16 samples and studies).
 MAX_COUNT = np.iinfo(np.uint16).max
 
@@ -115,18 +123,58 @@ def pack_hashes(hashes: np.ndarray) -> np.ndarray:
     return result
 
 
-def build_catalog(parquet_path: str, out_path: str, assembly: str) -> None:
+def read_model(model_dir: str) -> dict[str, np.ndarray]:
+    """Read the pubLR model as catalog arrays.
+
+    Args:
+        model_dir: Directory with model.txt, pwm_donor.npy,
+            pwm_acceptor.npy and meta.json.
+
+    Returns:
+        Arrays publr_model (packed model text), publr_pwm_donor,
+        publr_pwm_acceptor, publr_features, publr_c and
+        publr_threshold.
+
+    Raises:
+        FileNotFoundError: If a file of the model is missing.
+    """
+    paths = {name: os.path.join(model_dir, name)
+             for name in MODEL_FILES}
+    missing = [path for path in paths.values() if not os.path.isfile(path)]
+    if missing:
+        raise FileNotFoundError(f"Missing pubLR model files: {missing}")
+    with open(paths["model.txt"], "rb") as handle:
+        text = handle.read()
+    with open(paths["meta.json"]) as handle:
+        meta = json.load(handle)
+    result = {
+        "publr_model": pack_array(np.frombuffer(text, dtype=np.uint8)),
+        "publr_pwm_donor": np.load(paths["pwm_donor.npy"]),
+        "publr_pwm_acceptor": np.load(paths["pwm_acceptor.npy"]),
+        "publr_features": np.array(meta["features"]),
+        "publr_c": np.array(float(meta["c"])),
+        "publr_threshold": np.array(float(meta["threshold"])),
+    }
+
+    return result
+
+
+def build_catalog(parquet_path: str, model_dir: str, out_path: str,
+                  assembly: str) -> None:
     """Write the pantranscriptome catalog of an evidence table.
 
     Args:
         parquet_path: Parquet table with the columns in COLUMNS.
+        model_dir: Directory of the pubLR model (see read_model()).
         out_path: Output .npz file.
         assembly: Genome assembly of the coordinates, e.g. GRCh38.
 
     Raises:
-        FileNotFoundError: If parquet_path does not exist.
+        FileNotFoundError: If parquet_path or a model file does not
+            exist.
         ValueError: If the table is not a valid evidence table.
     """
+    model = read_model(model_dir)
     evidence = drop_collisions(read_evidence(parquet_path))
     single = ((evidence["samples"] == 1) & (evidence["studies"] == 1)
               & (evidence["platforms"] == 1))
@@ -142,7 +190,8 @@ def build_catalog(parquet_path: str, out_path: str, assembly: str) -> None:
              multi_studies=pack_array(
                  evidence["studies"][multi].astype(np.uint16)),
              multi_platforms=pack_array(
-                 evidence["platforms"][multi].astype(np.uint8)))
+                 evidence["platforms"][multi].astype(np.uint8)),
+             **model)
     print(f"[pantranscriptome] {single.sum()} single-sample and "
           f"{multi.sum()} multi-sample chains -> {out_path}",
           file=sys.stderr)
@@ -153,12 +202,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("evidence", help="Parquet table with the columns "
                         + ", ".join(COLUMNS))
+    parser.add_argument("model_dir", help="Directory of the pubLR model "
+                        "(" + ", ".join(MODEL_FILES) + ")")
     parser.add_argument("output", help="Output catalog (.npz)")
     parser.add_argument("--assembly", default="GRCh38",
                         help="Genome assembly of the coordinates "
                         "(default: %(default)s)")
     args = parser.parse_args()
-    build_catalog(args.evidence, args.output, args.assembly)
+    build_catalog(args.evidence, args.model_dir, args.output,
+                  args.assembly)
 
 
 if __name__ == "__main__":

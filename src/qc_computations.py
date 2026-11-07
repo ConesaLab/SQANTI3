@@ -1,5 +1,6 @@
 from collections import defaultdict
 from Bio  import SeqIO
+import pandas as pd
 
 from src.utilities.rt_switching import rts
 from src.parsers import expression_parser, parse_counts, read_counts_design
@@ -7,6 +8,9 @@ from src.utilities.short_reads import kallisto
 from src.utils import pstdev, is_expressed
 from src.module_logging import qc_logger
 from src.qc_classes import Pantranscriptome
+from src.publr_model import (
+    annotated_introns, genome_codes, model_probability
+)
 from src.config import (
     PANTRANSCRIPTOME_MIN_PLATFORMS, PANTRANSCRIPTOME_MIN_STUDIES
 )
@@ -55,20 +59,27 @@ def classify_fsm(isoforms_info):
     return isoforms_info
 
 def pantranscriptome_annotation(isoforms_info: dict,
-                                catalog_path: str | None) -> dict:
-    """Add the public evidence of the NIC/NNC intron chains.
+                                catalog_path: str | None, ref_gtf: str,
+                                genome_fasta: str,
+                                genome_dict: dict | None = None) -> dict:
+    """Add the public evidence and the pubLR probability of NIC/NNC.
 
     Each multi-exon NIC/NNC gets the number of public samples, studies and
-    platforms where its intron chain was seen, and the label recurrent
+    platforms where its intron chain was seen, the label recurrent
     (seen in at least PANTRANSCRIPTOME_MIN_STUDIES studies and
     PANTRANSCRIPTOME_MIN_PLATFORMS platforms), seen (at least one
-    sample) or unseen. Other isoforms keep NA.
+    sample) or unseen, and the probability of being real given by the
+    pubLR model of the catalog. Other isoforms keep NA.
 
     Args:
         isoforms_info: Isoform id -> myQueryTranscripts, with the ujc
             of NIC/NNC filled during the classification.
         catalog_path: Pantranscriptome catalog (--pantranscriptome), or
             None to skip the annotation.
+        ref_gtf: Reference annotation GTF, whose introns the pubLR
+            variables compare with.
+        genome_fasta: Genome FASTA, read only when genome_dict is None.
+        genome_dict: Chromosome -> SeqRecord, if already in memory.
 
     Returns:
         isoforms_info, annotated in place.
@@ -78,10 +89,24 @@ def pantranscriptome_annotation(isoforms_info: dict,
         catalog = Pantranscriptome(catalog_path)
         novel = [iso for iso in isoforms_info.values() if iso.ujc is not None]
         counts = catalog.lookup([iso.ujc for iso in novel])
-        for iso, (samples, studies, platforms) in zip(novel, counts.tolist()):
+        probability = []
+        if novel:
+            table = pd.DataFrame({
+                "ujc": [iso.ujc for iso in novel],
+                "structural_category": [iso.structural_category
+                                        for iso in novel],
+                "subcategory": [iso.subcategory for iso in novel]})
+            genome = genome_codes(genome_dict, genome_fasta,
+                                  {iso.chrom for iso in novel})
+            probability = model_probability(
+                table, genome, annotated_introns(ref_gtf),
+                catalog.model).tolist()
+        for iso, (samples, studies, platforms), prob in zip(
+                novel, counts.tolist(), probability):
             iso.pub_samples = samples
             iso.pub_studies = studies
             iso.pub_platforms = platforms
+            iso.pubLR_prob = prob
             if (studies >= PANTRANSCRIPTOME_MIN_STUDIES
                     and platforms >= PANTRANSCRIPTOME_MIN_PLATFORMS):
                 iso.pantranscriptome = "recurrent"

@@ -445,7 +445,8 @@ def combine_split_runs(args, split_dirs, genome_dict=None):
     # Fix novel genes and classify FSM
     isoforms_info = rename_novel_genes(isoforms_info, args.novel_gene_prefix)
     isoforms_info = classify_fsm(isoforms_info)
-    isoforms_info = pantranscriptome_annotation(isoforms_info, args.pantranscriptome)
+    isoforms_info = pantranscriptome_annotation(isoforms_info, args.pantranscriptome,
+                                                args.refGTF, args.refFasta, genome_dict)
     
     # Process expression data natively across all processed chunks
     isoforms_info = isoform_expression_info(isoforms_info, args.expression, args.short_reads, args.dir, corrFASTA, args.cpus)

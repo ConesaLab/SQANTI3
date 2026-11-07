@@ -128,8 +128,9 @@ Orthogonal data inputs:
                         Pantranscriptome catalog of the intron chains seen in public long-read samples (.npz, optional;
                         download it from the assets of the SQANTI3 release that matches your genome assembly). Adds the
                         columns pantranscriptome (recurrent: seen in at least 3 studies and 2 platforms; seen: in at
-                        least one sample; unseen), pub_samples, pub_studies and pub_platforms to multi-exon NIC and NNC
-                        isoforms; other isoforms get NA.
+                        least one sample; unseen), pub_samples, pub_studies, pub_platforms and pubLR_prob (probability
+                        of being a real isoform given by the pubLR model of the catalog, used by the default automatic
+                        filter) to multi-exon NIC and NNC isoforms; other isoforms get NA.
   -e EXPRESSION, --expression EXPRESSION
                         Expression matrix (supported: Kallisto tsv)
   -c COVERAGE, --coverage COVERAGE
