@@ -12,7 +12,8 @@ from src.filter_output import (
 )
 from src.utilities.filter.sqanti3_rules_filter import rules_filter
 from src.utilities.filter.sqanti3_auto_filter import (
-    auto_filter, has_publr, has_short_reads, read_ml_probability
+    auto_filter, has_pantranscriptome_prob, has_short_reads,
+    read_ml_probability
 )
 
 def filter_files(isoforms,gtf,sam,faa,isoAnnotGFF3,
@@ -100,7 +101,7 @@ AUTO_ML_THRESHOLD = 0.7
 def run_auto(args):
     """Run the automatic filter (see sqanti3_auto_filter.py).
 
-    With pubLR probabilities and short-read junction coverage in the
+    With pantranscriptome probabilities and short-read junction coverage in the
     classification, the ML filter is run first in AUTO_ML_DIR to get
     the random forest probabilities.
 
@@ -114,9 +115,9 @@ def run_auto(args):
     prefix = os.path.join(args.dir, args.output)
     classif = pd.read_csv(args.sqanti_class, sep="\t", low_memory=False,
                           usecols=lambda column: column in
-                          ("pubLR_prob", "min_cov"))
+                          ("pantranscriptome_prob", "min_cov"))
     ml_prob = None
-    if has_publr(classif) and has_short_reads(classif):
+    if has_pantranscriptome_prob(classif) and has_short_reads(classif):
         filter_logger.info("Short-read junction coverage found: running "
                            "the random forest for the calibrated ML filter")
         ml_dir = os.path.join(args.dir, AUTO_ML_DIR)
@@ -131,9 +132,9 @@ def run_auto(args):
                     "Machine learning filtering", silent=False)
         ml_prob = read_ml_probability(
             os.path.join(ml_dir, f"{args.output}_ML_classification.txt"))
-    elif has_publr(classif):
-        filter_logger.info("No short-read junction coverage: graded pubLR "
-                           "on NIC/NNC")
+    elif has_pantranscriptome_prob(classif):
+        filter_logger.info("No short-read junction coverage: graded "
+                           "pantranscriptome filter on NIC/NNC")
     auto_filter(args.sqanti_class, args.json_filter, args.filter_mono_exonic,
                 args.intrapriming, ml_prob, prefix, filter_logger)
     if not args.skip_report:

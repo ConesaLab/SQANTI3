@@ -51,7 +51,7 @@ def main():
 ### Checking presence of files for Rules. Check arguments --> If ok run Rules
     if args.subcommand == 'rules':
         ids, inclusion_file = run_rules(args)
-### Automatic filter (default): graded pubLR or calibrated ML on NIC/NNC, rules elsewhere
+### Automatic filter (default): graded pantranscriptome filter or calibrated ML on NIC/NNC, rules elsewhere
     if args.subcommand == 'auto':
         ids, inclusion_file = run_auto(args)
     

@@ -41,8 +41,8 @@ def filter_argparse():
 ### Automatic filter arguments (default subcommand)
     auto = subparsers.add_parser('auto',
                                  parents=[common],
-                                 description="Automatic filter selected (default). Multi-exon NIC and NNC are filtered with graded pubLR"
-                                     "\n(kept with pubLR_prob >= 0.7; between 0.5 and 0.7, only if they also pass the rules; artifacts below 0.5)"
+                                 description="Automatic filter selected (default). Multi-exon NIC and NNC are filtered with the graded pantranscriptome filter"
+                                     "\n(kept with pantranscriptome_prob >= 0.7; between 0.5 and 0.7, only if they also pass the rules; artifacts below 0.5)"
                                      "\nor, when the junctions have short-read coverage, with the random forest of the ML filter cut where it keeps"
                                      "\n90% of the NIC (and NNC) that are recurrent in public data. Intra-primed NIC/NNC are artifacts."
                                      "\nThe other isoforms get the rules filter. Needs a QC run with --pantranscriptome;"
@@ -50,7 +50,7 @@ def filter_argparse():
                                  formatter_class=argparse.RawTextHelpFormatter)
     af = auto.add_argument_group("Automatic filter specific options")
     af.add_argument('-j', "--json_filter", default=default_json,
-                    help="JSON file with the rules applied outside multi-exon NIC/NNC and to the NIC/NNC with pubLR_prob between 0.5 and 0.7."
+                    help="JSON file with the rules applied outside multi-exon NIC/NNC and to the NIC/NNC with pantranscriptome_prob between 0.5 and 0.7."
                         "\nDefault: %(default)s")
     af.add_argument('-t','--percent_training', type=float, default=0.8,
                     help="Proportion of the data that goes to training the random forest.\nDefault: %(default)s")

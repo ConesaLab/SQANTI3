@@ -2,12 +2,13 @@
 test_auto_filter.py
 
 Unit tests of the automatic filter of sqanti3_filter.py: default
-subcommand, graded pubLR, calibrated random forest cut and the
-fallbacks to graded pubLR and to the rules.
+subcommand, graded pantranscriptome filter, calibrated random forest
+cut and the fallbacks to the graded pantranscriptome filter and to the
+rules.
 
-Version: 1.0
+Version: 1.1
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
-Date: 2026-11-07
+Date: 2026-11-08
 """
 
 import json
@@ -22,7 +23,7 @@ main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path.insert(0, main_path)
 from src.filter_argparse import default_subcommand  # noqa: E402
 from src.utilities.filter.sqanti3_auto_filter import (  # noqa: E402
-    ROUTE_ML, ROUTE_PUBLR, ROUTE_RULES, auto_decisions, auto_filter,
+    ROUTE_ML, ROUTE_PANTRANSCRIPTOME, ROUTE_RULES, auto_decisions, auto_filter,
     calibrated_cuts
 )
 
@@ -32,10 +33,11 @@ LOGGER = logging.getLogger("test_auto_filter")
 
 
 def classification(rows: list[tuple]) -> pd.DataFrame:
-    """Classification of (category, exons, perc_A, pubLR_prob, label)."""
+    """Classification of (category, exons, perc_A, probability, label)."""
     table = pd.DataFrame(rows, columns=["structural_category", "exons",
                                         "perc_A_downstream_TTS",
-                                        "pubLR_prob", "pantranscriptome"])
+                                        "pantranscriptome_prob",
+                                        "pantranscriptome"])
     table.insert(0, "isoform", [f"t{i}" for i in range(len(table))])
     result = table
 
@@ -49,7 +51,7 @@ def test_default_subcommand() -> None:
         assert default_subcommand(argv) == argv
 
 
-def test_graded_publr() -> None:
+def test_graded_pantranscriptome() -> None:
     classif = classification([
         (NIC, 3, 10, 0.80, "seen"),        # sure: kept without rules
         (NIC, 3, 10, 0.60, "seen"),        # unsure, passes the rules
@@ -63,9 +65,10 @@ def test_graded_publr() -> None:
     decisions = auto_decisions(classif, keep_rules, None, 60, LOGGER)
     assert decisions["keep"].tolist() == [True, True, False, False, False,
                                           True, False]
-    assert decisions["filter_route"].tolist() == [ROUTE_PUBLR] * 5 + [
-        ROUTE_RULES] * 2
-    assert decisions.loc[3, "reason"].startswith("pubLR_prob: 0.4 <")
+    assert decisions["filter_route"].tolist() == (
+        [ROUTE_PANTRANSCRIPTOME] * 5 + [ROUTE_RULES] * 2)
+    assert decisions.loc[3, "reason"].startswith(
+        "pantranscriptome_prob: 0.4 <")
     assert decisions.loc[4, "reason"] == "Intra-priming"
     assert decisions.loc[2, "reason"] == ""
 
@@ -85,7 +88,7 @@ def test_calibrated_ml() -> None:
     assert (decisions["filter_route"][:21] == ROUTE_ML).all()
     assert decisions["keep"][:21].sum() == 19
     assert decisions.loc[20, "reason"] == "POS_MLprob: 0.05 < 0.1"
-    assert decisions.loc[21, "filter_route"] == ROUTE_PUBLR
+    assert decisions.loc[21, "filter_route"] == ROUTE_PANTRANSCRIPTOME
     assert decisions.loc[21, "keep"]
 
 
@@ -94,7 +97,7 @@ def test_untrained_forest_is_graded() -> None:
     ml_prob = pd.Series(np.nan, index=classif.index)
     keep_rules = pd.Series(True, index=classif.index)
     decisions = auto_decisions(classif, keep_rules, ml_prob, 60, LOGGER)
-    assert (decisions["filter_route"] == ROUTE_PUBLR).all()
+    assert (decisions["filter_route"] == ROUTE_PANTRANSCRIPTOME).all()
     assert not decisions["keep"].any()
 
 
@@ -115,17 +118,18 @@ def test_auto_filter_files(tmp_path) -> None:
     out = pd.read_csv(f"{prefix}_AutoFilter_classification.txt", sep="\t")
     assert out["filter_result"].tolist() == ["Artifact", "Isoform",
                                              "Artifact"]
-    assert out["filter_route"].tolist() == [ROUTE_PUBLR, ROUTE_PUBLR,
+    assert out["filter_route"].tolist() == [ROUTE_PANTRANSCRIPTOME,
+                                            ROUTE_PANTRANSCRIPTOME,
                                             ROUTE_RULES]
     kept = open(f"{prefix}_pass_isoforms.txt").read().split()
     assert kept == ["t1"]
     reasons = pd.read_csv(f"{prefix}_filtering_reasons.txt", sep="\t")
-    assert reasons["filter_reason"].iloc[0].startswith("pubLR_prob")
+    assert reasons["filter_reason"].iloc[0].startswith("pantranscriptome_prob")
     assert reasons["filter_reason"].iloc[1].startswith(
         "perc_A_downstream_TTS")
 
 
-def test_without_publr_uses_rules(tmp_path, caplog) -> None:
+def test_without_pantranscriptome_prob_uses_rules(tmp_path, caplog) -> None:
     classif = classification([(NIC, 3, 10, np.nan, None)])
     classif["all_canonical"] = "non_canonical"
     class_path = tmp_path / "x_classification.txt"
@@ -137,7 +141,7 @@ def test_without_publr_uses_rules(tmp_path, caplog) -> None:
     with caplog.at_level(logging.WARNING):
         auto_filter(str(class_path), str(json_path), False, 60, None,
                     prefix, LOGGER)
-    assert "no pubLR probabilities" in caplog.text
+    assert "no pantranscriptome probabilities" in caplog.text
     out = pd.read_csv(f"{prefix}_AutoFilter_classification.txt", sep="\t")
     assert out["filter_route"].tolist() == [ROUTE_RULES]
     assert out["filter_result"].tolist() == ["Artifact"]

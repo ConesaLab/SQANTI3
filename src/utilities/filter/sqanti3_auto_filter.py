@@ -11,18 +11,19 @@ the multi-exon NIC/NNC from the data of the experiment:
     recurrent in public data (calibrated ML);
   - otherwise, or when the random forest is not trained, or a category
     has fewer than ML_CALIBRATION_MIN_SUPPORTED clean recurrent
-    isoforms, graded pubLR: an isoform with pubLR_prob of at least
-    PUBLR_GRADED_CUT is kept, one between PUBLR_THRESHOLD and
-    PUBLR_GRADED_CUT is kept only if it also passes the rules, and one
-    below PUBLR_THRESHOLD is an artifact.
+    isoforms, graded pantranscriptome filter: an isoform with
+    pantranscriptome_prob of at least PANTRANSCRIPTOME_GRADED_CUT is
+    kept, one between PANTRANSCRIPTOME_THRESHOLD and
+    PANTRANSCRIPTOME_GRADED_CUT is kept only if it also passes the
+    rules, and one below PANTRANSCRIPTOME_THRESHOLD is an artifact.
 
 Intra-primed NIC/NNC are artifacts in both. Every other isoform, the
-mono-exon NIC/NNC included, gets the rules filter. Without pubLR
+mono-exon NIC/NNC included, gets the rules filter. Without pantranscriptome
 probabilities the rules filter is applied to everything.
 
-Version: 1.0
+Version: 1.1
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
-Date: 2026-11-07
+Date: 2026-11-08
 """
 
 import logging
@@ -33,7 +34,8 @@ import pandas as pd
 
 from src.config import (
     ML_CALIBRATION_MIN_SUPPORTED, ML_CALIBRATION_TARGET,
-    PANTRANSCRIPTOME_CATEGORIES, PUBLR_GRADED_CUT, PUBLR_THRESHOLD
+    PANTRANSCRIPTOME_CATEGORIES, PANTRANSCRIPTOME_GRADED_CUT,
+    PANTRANSCRIPTOME_THRESHOLD
 )
 from src.utilities.filter.sqanti3_rules_filter import (
     apply_rules_table, get_reasons_table, read_json_rules
@@ -41,22 +43,22 @@ from src.utilities.filter.sqanti3_rules_filter import (
 
 # Routes written in the filter_route column.
 ROUTE_RULES = "rules"
-ROUTE_PUBLR = "pubLR_graded"
+ROUTE_PANTRANSCRIPTOME = "pantranscriptome_graded"
 ROUTE_ML = "ML_calibrated"
 
 
-def has_publr(classif: pd.DataFrame) -> bool:
-    """Whether the classification carries pubLR probabilities.
+def has_pantranscriptome_prob(classif: pd.DataFrame) -> bool:
+    """Whether the classification carries pantranscriptome probabilities.
 
     Args:
         classif: SQANTI3 classification.
 
     Returns:
-        True if some isoform has a pubLR_prob (QC was run with
+        True if some isoform has a pantranscriptome_prob (QC was run with
         --pantranscriptome and there are multi-exon NIC/NNC).
     """
-    result = bool("pubLR_prob" in classif.columns
-                  and pd.to_numeric(classif["pubLR_prob"],
+    result = bool("pantranscriptome_prob" in classif.columns
+                  and pd.to_numeric(classif["pantranscriptome_prob"],
                                     errors="coerce").notna().any())
 
     return result
@@ -126,28 +128,30 @@ def auto_decisions(classif: pd.DataFrame, keep_rules: pd.Series,
         an artifact outside the rules; empty otherwise), same index.
     """
     probability = pd.Series(np.nan, index=classif.index)
-    if "pubLR_prob" in classif.columns:
-        probability = pd.to_numeric(classif["pubLR_prob"], errors="coerce")
+    if "pantranscriptome_prob" in classif.columns:
+        probability = pd.to_numeric(classif["pantranscriptome_prob"],
+                                    errors="coerce")
     clean = pd.to_numeric(classif["perc_A_downstream_TTS"],
                           errors="coerce").fillna(0) < intrapriming
     result = pd.DataFrame({"filter_route": ROUTE_RULES, "keep": keep_rules,
                            "reason": ""}, index=classif.index)
     if probability.notna().any():
         scored = probability.notna()
-        graded = (probability >= PUBLR_THRESHOLD) & clean & (
-            (probability >= PUBLR_GRADED_CUT) | keep_rules)
-        result.loc[scored, "filter_route"] = ROUTE_PUBLR
+        graded = (probability >= PANTRANSCRIPTOME_THRESHOLD) & clean & (
+            (probability >= PANTRANSCRIPTOME_GRADED_CUT) | keep_rules)
+        result.loc[scored, "filter_route"] = ROUTE_PANTRANSCRIPTOME
         result.loc[scored, "keep"] = graded[scored]
         result.loc[scored & ~graded & ~clean, "reason"] = "Intra-priming"
-        low = scored & clean & (probability < PUBLR_THRESHOLD)
+        low = scored & clean & (probability < PANTRANSCRIPTOME_THRESHOLD)
         result.loc[low, "reason"] = (
-            "pubLR_prob: " + probability[low].round(3).astype(str)
-            + f" < {PUBLR_THRESHOLD}")
+            "pantranscriptome_prob: " + probability[low].round(3).astype(str)
+            + f" < {PANTRANSCRIPTOME_THRESHOLD}")
         if ml_prob is not None and ml_prob.notna().any():
             cuts = calibrated_cuts(classif, ml_prob, clean)
             for category in PANTRANSCRIPTOME_CATEGORIES:
-                logger.info(f"Calibrated cut of {category}: "
-                            f"{cuts.get(category, 'none, graded pubLR')}")
+                cut_text = cuts.get(category,
+                                    "none, graded pantranscriptome filter")
+                logger.info(f"Calibrated cut of {category}: {cut_text}")
             cut = classif["structural_category"].map(cuts).astype(float)
             by_ml = scored & cut.notna() & ml_prob.notna()
             kept = (ml_prob >= cut) & clean
@@ -161,7 +165,8 @@ def auto_decisions(classif: pd.DataFrame, keep_rules: pd.Series,
                 + " < " + cut[below].round(3).astype(str))
         elif ml_prob is not None:
             logger.warning("The random forest was not trained; the "
-                           "NIC/NNC are filtered with graded pubLR.")
+                           "NIC/NNC are filtered with the graded "
+                           "pantranscriptome filter.")
     result["keep"] = result["keep"].astype(bool)
 
     return result
@@ -189,8 +194,9 @@ def auto_filter(sqanti_class: str, json_file: str, force_multi_exon: bool,
         logger: Logger for the progress, routes and cuts.
     """
     classif = pd.read_csv(sqanti_class, sep="\t", dtype={"chrom": str})
-    if not has_publr(classif):
-        logger.warning("The classification has no pubLR probabilities "
+    if not has_pantranscriptome_prob(classif):
+        logger.warning("The classification has no pantranscriptome "
+                       "probabilities "
                        "(QC was run without --pantranscriptome, or there "
                        "are no multi-exon NIC/NNC): applying the rules "
                        "filter to every isoform.")

@@ -1,8 +1,8 @@
 """
-publr_model.py
+pantranscriptome_model.py
 
 Probability that a NIC/NNC intron chain is a real isoform, from the
-pubLR model shipped inside the pantranscriptome catalog. pubLR is a
+model shipped inside the pantranscriptome catalog. The model is a
 LightGBM classifier trained with positive-unlabeled learning on the
 intron chains of public long-read samples: chains seen in at least 3
 studies and 2 platforms are the positives. Its variables describe the
@@ -11,9 +11,9 @@ and distance of the sites to the annotated ones, and direct repeats at
 the junctions), so every multi-exon NIC/NNC can be scored without
 reads. They are computed here exactly as in training.
 
-Version: 1.0
+Version: 1.1
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
-Date: 2026-11-07
+Date: 2026-11-08
 """
 
 import gzip
@@ -440,7 +440,7 @@ def chain_features(chains: pd.Series, genome: dict[str, np.ndarray],
 
 def model_probability(isoforms: pd.DataFrame, genome: dict[str, np.ndarray],
                       introns: pd.DataFrame, model: dict) -> np.ndarray:
-    """pubLR probability of some NIC/NNC isoforms.
+    """pantranscriptome probability of some NIC/NNC isoforms.
 
     Args:
         isoforms: One row per isoform with ujc, structural_category and

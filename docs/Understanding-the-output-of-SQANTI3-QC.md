@@ -159,7 +159,7 @@ The output `_classification.txt` has the following fields:
 57. `pub_samples`: Number of public samples of the catalog with the same intron chain (0 if `unseen`).
 58. `pub_studies`: Number of studies those samples come from.
 59. `pub_platforms`: Number of sequencing platforms (PacBio, ONT) where the chain was seen.
-60. `pubLR_prob`: Probability that the multi-exon NIC or NNC isoform is real, given by the pubLR model carried by the `--pantranscriptome` catalog. pubLR was trained on the intron chains of public long-read samples (the `recurrent` ones as positives) and only looks at the intron chain: its structure, the splice-site motifs and their strength, how far the novel sites are from annotated ones, and direct repeats at the junctions. The [automatic filter](Running-SQANTI3-filter.md#auto) uses it. NA for the other isoforms or without `--pantranscriptome`.
+60. `pantranscriptome_prob`: Probability that the multi-exon NIC or NNC isoform is real, given by the pantranscriptome model carried by the `--pantranscriptome` catalog. The model was trained on the intron chains of public long-read samples (the `recurrent` ones as positives) and only looks at the intron chain: its structure, the splice-site motifs and their strength, how far the novel sites are from annotated ones, and direct repeats at the junctions. The [automatic filter](Running-SQANTI3-filter.md#auto) uses it. NA for the other isoforms or without `--pantranscriptome`.
 
 
 <a name="junctioncols"></a>

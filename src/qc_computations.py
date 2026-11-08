@@ -8,7 +8,7 @@ from src.utilities.short_reads import kallisto
 from src.utils import pstdev, is_expressed
 from src.module_logging import qc_logger
 from src.qc_classes import Pantranscriptome
-from src.publr_model import (
+from src.pantranscriptome_model import (
     annotated_introns, genome_codes, model_probability
 )
 from src.config import (
@@ -62,21 +62,21 @@ def pantranscriptome_annotation(isoforms_info: dict,
                                 catalog_path: str | None, ref_gtf: str,
                                 genome_fasta: str,
                                 genome_dict: dict | None = None) -> dict:
-    """Add the public evidence and the pubLR probability of NIC/NNC.
+    """Add the public evidence and the model probability of NIC/NNC.
 
     Each multi-exon NIC/NNC gets the number of public samples, studies and
     platforms where its intron chain was seen, the label recurrent
     (seen in at least PANTRANSCRIPTOME_MIN_STUDIES studies and
     PANTRANSCRIPTOME_MIN_PLATFORMS platforms), seen (at least one
     sample) or unseen, and the probability of being real given by the
-    pubLR model of the catalog. Other isoforms keep NA.
+    pantranscriptome model of the catalog. Other isoforms keep NA.
 
     Args:
         isoforms_info: Isoform id -> myQueryTranscripts, with the ujc
             of NIC/NNC filled during the classification.
         catalog_path: Pantranscriptome catalog (--pantranscriptome), or
             None to skip the annotation.
-        ref_gtf: Reference annotation GTF, whose introns the pubLR
+        ref_gtf: Reference annotation GTF, whose introns the model
             variables compare with.
         genome_fasta: Genome FASTA, read only when genome_dict is None.
         genome_dict: Chromosome -> SeqRecord, if already in memory.
@@ -106,7 +106,7 @@ def pantranscriptome_annotation(isoforms_info: dict,
             iso.pub_samples = samples
             iso.pub_studies = studies
             iso.pub_platforms = platforms
-            iso.pubLR_prob = prob
+            iso.pantranscriptome_prob = prob
             if (studies >= PANTRANSCRIPTOME_MIN_STUDIES
                     and platforms >= PANTRANSCRIPTOME_MIN_PLATFORMS):
                 iso.pantranscriptome = "recurrent"

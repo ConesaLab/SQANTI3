@@ -8,15 +8,16 @@ n_studies and n_platforms; ujc as in intron_chain_key()). The catalog
 keeps a 44-bit hash of each chain instead of the chain itself, in two
 sorted groups: chains seen in a single sample, whose counts are 1, and
 the rest, stored with their counts. Hashes and counts are compressed
-with pack_array(). The catalog also carries the pubLR model that scores
-the NIC/NNC chains (src/publr_model.py): the LightGBM model text, the
-donor and acceptor PWMs, the variables in order, the PU constant c and
-the probability threshold, read from the directory written by pubLR's
-training (model.txt, pwm_donor.npy, pwm_acceptor.npy, meta.json).
+with pack_array(). The catalog also carries the pantranscriptome model
+that scores the NIC/NNC chains (src/pantranscriptome_model.py): the
+LightGBM model text, the donor and acceptor PWMs, the variables in
+order, the PU constant c and the probability threshold, read from the
+directory written by the training of the model (model.txt,
+pwm_donor.npy, pwm_acceptor.npy, meta.json).
 
-Version: 1.1
+Version: 1.2
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
-Date: 2026-11-07
+Date: 2026-11-08
 """
 
 import argparse
@@ -39,7 +40,7 @@ from src.utils import pack_array  # noqa: E402
 COLUMNS = ["ujc", "n_samples", "n_studies", "n_platforms"]
 # Rows read from the input table at a time.
 BATCH_SIZE = 1_000_000
-# Files of the pubLR model directory.
+# Files of the pantranscriptome model directory.
 MODEL_FILES = ("model.txt", "pwm_donor.npy", "pwm_acceptor.npy",
                "meta.json")
 # Largest count that fits in the catalog (uint16 samples and studies).
@@ -124,16 +125,16 @@ def pack_hashes(hashes: np.ndarray) -> np.ndarray:
 
 
 def read_model(model_dir: str) -> dict[str, np.ndarray]:
-    """Read the pubLR model as catalog arrays.
+    """Read the pantranscriptome model as catalog arrays.
 
     Args:
         model_dir: Directory with model.txt, pwm_donor.npy,
             pwm_acceptor.npy and meta.json.
 
     Returns:
-        Arrays publr_model (packed model text), publr_pwm_donor,
-        publr_pwm_acceptor, publr_features, publr_c and
-        publr_threshold.
+        Arrays model_text (packed model text), model_pwm_donor,
+        model_pwm_acceptor, model_features, model_c and
+        model_threshold.
 
     Raises:
         FileNotFoundError: If a file of the model is missing.
@@ -142,18 +143,19 @@ def read_model(model_dir: str) -> dict[str, np.ndarray]:
              for name in MODEL_FILES}
     missing = [path for path in paths.values() if not os.path.isfile(path)]
     if missing:
-        raise FileNotFoundError(f"Missing pubLR model files: {missing}")
+        raise FileNotFoundError(
+            f"Missing pantranscriptome model files: {missing}")
     with open(paths["model.txt"], "rb") as handle:
         text = handle.read()
     with open(paths["meta.json"]) as handle:
         meta = json.load(handle)
     result = {
-        "publr_model": pack_array(np.frombuffer(text, dtype=np.uint8)),
-        "publr_pwm_donor": np.load(paths["pwm_donor.npy"]),
-        "publr_pwm_acceptor": np.load(paths["pwm_acceptor.npy"]),
-        "publr_features": np.array(meta["features"]),
-        "publr_c": np.array(float(meta["c"])),
-        "publr_threshold": np.array(float(meta["threshold"])),
+        "model_text": pack_array(np.frombuffer(text, dtype=np.uint8)),
+        "model_pwm_donor": np.load(paths["pwm_donor.npy"]),
+        "model_pwm_acceptor": np.load(paths["pwm_acceptor.npy"]),
+        "model_features": np.array(meta["features"]),
+        "model_c": np.array(float(meta["c"])),
+        "model_threshold": np.array(float(meta["threshold"])),
     }
 
     return result
@@ -165,7 +167,7 @@ def build_catalog(parquet_path: str, model_dir: str, out_path: str,
 
     Args:
         parquet_path: Parquet table with the columns in COLUMNS.
-        model_dir: Directory of the pubLR model (see read_model()).
+        model_dir: Directory of the pantranscriptome model (see read_model()).
         out_path: Output .npz file.
         assembly: Genome assembly of the coordinates, e.g. GRCh38.
 
@@ -202,8 +204,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[1])
     parser.add_argument("evidence", help="Parquet table with the columns "
                         + ", ".join(COLUMNS))
-    parser.add_argument("model_dir", help="Directory of the pubLR model "
-                        "(" + ", ".join(MODEL_FILES) + ")")
+    parser.add_argument("model_dir", help="Directory of the pantranscriptome "
+                        "model (" + ", ".join(MODEL_FILES) + ")")
     parser.add_argument("output", help="Output catalog (.npz)")
     parser.add_argument("--assembly", default="GRCh38",
                         help="Genome assembly of the coordinates "

@@ -256,12 +256,12 @@ class myQueryTranscripts:
 
     # Public evidence of the intron chain of NIC/NNC (--pantranscriptome):
     # recurrent, seen or unseen, the samples, studies and platforms, and
-    # the probability of being real given by the pubLR model
+    # the probability of being real given by the pantranscriptome model
     pantranscriptome: Optional[str] = None
     pub_samples: Optional[int] = None
     pub_studies: Optional[int] = None
     pub_platforms: Optional[int] = None
-    pubLR_prob: Optional[float] = None
+    pantranscriptome_prob: Optional[float] = None
 
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
@@ -611,7 +611,8 @@ class Pantranscriptome:
     the hashes of the intron chain keys in two sorted groups: chains
     seen in one sample (so in one study and one platform) and the rest,
     stored with their numbers of samples, studies and platforms. It
-    also carries the pubLR model (see src/publr_model.py) in model.
+    also carries the pantranscriptome model (see
+    src/pantranscriptome_model.py) in model.
     """
 
     def __init__(self, catalog_path: str) -> None:
@@ -631,8 +632,8 @@ class Pantranscriptome:
                              "catalog (.npz).") from error
         required = {"format", "hash_bits", "assembly", "single", "multi",
                     "multi_samples", "multi_studies", "multi_platforms",
-                    "publr_model", "publr_pwm_donor", "publr_pwm_acceptor",
-                    "publr_features", "publr_c", "publr_threshold"}
+                    "model_text", "model_pwm_donor", "model_pwm_acceptor",
+                    "model_features", "model_c", "model_threshold"}
         missing = required - set(catalog.files)
         if missing:
             raise ValueError(f"{catalog_path} is not a pantranscriptome "
@@ -656,13 +657,13 @@ class Pantranscriptome:
             unpack_array(catalog["multi_platforms"], "uint8")]
             ).astype(np.int64)
         self.model = {
-            "booster": unpack_array(catalog["publr_model"],
+            "booster": unpack_array(catalog["model_text"],
                                     "uint8").tobytes().decode(),
-            "pwm_donor": catalog["publr_pwm_donor"],
-            "pwm_acceptor": catalog["publr_pwm_acceptor"],
-            "features": [str(name) for name in catalog["publr_features"]],
-            "c": float(catalog["publr_c"]),
-            "threshold": float(catalog["publr_threshold"])}
+            "pwm_donor": catalog["model_pwm_donor"],
+            "pwm_acceptor": catalog["model_pwm_acceptor"],
+            "features": [str(name) for name in catalog["model_features"]],
+            "c": float(catalog["model_c"]),
+            "threshold": float(catalog["model_threshold"])}
         catalog.close()
         qc_logger.info(f"Pantranscriptome catalog ({self.assembly}): "
                        f"{len(self.single) + len(self.multi)} intron "

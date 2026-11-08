@@ -2,12 +2,12 @@
 test_pantranscriptome.py
 
 Unit tests of the pantranscriptome annotation of SQANTI3 QC: catalog
-packing, intron chain keys, catalog building and lookup, the pubLR
+packing, intron chain keys, catalog building and lookup, the model
 variables and the columns added to NIC/NNC.
 
-Version: 1.1
+Version: 1.2
 Author: Adrian Berenguer-Agustí (I2SysBio-CSIC)
-Date: 2026-11-07
+Date: 2026-11-08
 """
 
 import json
@@ -27,7 +27,7 @@ from src.classification_steps import intron_chain_key  # noqa: E402
 from src.qc_classes import (  # noqa: E402
     Pantranscriptome, genePredRecord, myQueryTranscripts
 )
-from src.publr_model import (  # noqa: E402
+from src.pantranscriptome_model import (  # noqa: E402
     SUBCATEGORIES, annotated_introns, chain_features, genome_codes
 )
 from src.qc_computations import pantranscriptome_annotation  # noqa: E402
@@ -41,7 +41,7 @@ CHAINS = {
     "chr2+10-20_30-40_50-60": (3, 2, 1),  # seen, not recurrent
     "chr3+5-9": (2, 3, 1),                # 3 studies, one platform
 }
-# Variables of the test pubLR model, in the order of the real one.
+# Variables of the test pantranscriptome model, in the order of the real one.
 FEATURES = (["n_junctions", "intron_log_min", "intron_log_max",
              "intron_log_mean", "internal_exon_min", "n_noncanonical",
              "donor_score_min", "donor_score_mean", "acceptor_score_min",
@@ -56,7 +56,7 @@ CHROM_LENGTH = 1000
 
 @pytest.fixture
 def model_dir(tmp_path) -> str:
-    """Train a small pubLR-like model on random data and save it."""
+    """Train a small pantranscriptome-like model on random data and save it."""
     rng = np.random.default_rng(1)
     data = lgb.Dataset(rng.normal(size=(200, len(FEATURES))),
                        label=rng.integers(0, 2, 200),
@@ -195,9 +195,9 @@ def test_annotation(catalog_path: str, reference: tuple[str, str]
     assert isoforms["new"].pub_samples == 0
     row = isoforms["fsm"].as_dict()
     assert row["pantranscriptome"] == "NA" and row["pub_samples"] == "NA"
-    assert "ujc" not in row and row["pubLR_prob"] == "NA"
+    assert "ujc" not in row and row["pantranscriptome_prob"] == "NA"
     for name in ("nic", "nnc", "new"):
-        assert 0.0 <= isoforms[name].pubLR_prob <= 1.0
+        assert 0.0 <= isoforms[name].pantranscriptome_prob <= 1.0
 
 
 def test_annotation_without_catalog() -> None:
@@ -207,4 +207,4 @@ def test_annotation_without_catalog() -> None:
     pantranscriptome_annotation({"nic": iso}, None, "unused.gtf",
                                 "unused.fa")
     assert iso.pantranscriptome is None and iso.pub_samples is None
-    assert iso.pubLR_prob is None
+    assert iso.pantranscriptome_prob is None
