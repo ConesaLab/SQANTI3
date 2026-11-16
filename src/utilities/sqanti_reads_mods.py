@@ -223,7 +223,12 @@ def process_read(read,args,reads_logger):
     Function to process a read and return the modifications that pass the probability threshold
     '''
     read_id = read.query_name
-    mods = read.modified_bases
+    try:
+        mods = read.modified_bases
+    except (ValueError, RuntimeError):
+        mods = None
+    if mods is None:
+        return None
     # We create the row with the read id, start, end, ... and a list for each mod with pos and probs 
     row = new_row(read_id, read, args)
     # We will have to convert read pos to genomic 
@@ -258,6 +263,7 @@ def gen_mod_tsv(args,file_acc,sampleID, reads_logger):
     '''
     path_to_bam = os.path.join(args.OUTPUT, file_acc, f"{sampleID}_mods.bam")
     rows = []
+    n_bad = 0
     with pysam.AlignmentFile(path_to_bam, "rb", threads=1) as bamfile:
         if not bamfile.check_index():
             reads_logger.error("Error: The BAM file does not have an index (.bai). Aborting.")
@@ -267,9 +273,15 @@ def gen_mod_tsv(args,file_acc,sampleID, reads_logger):
             if read.is_secondary or read.is_supplementary or read.is_unmapped:
                 continue
             row = process_read(read,args,reads_logger)
+            if row is None:
+                n_bad += 1
+                continue
             rows.append(row)
     df = pd.DataFrame(rows)
     df.to_csv(os.path.join(args.OUTPUT, file_acc, f"{sampleID}_modifications.tsv"), sep="\t", index=False)
+    if n_bad:
+        reads_logger.warning(f"{sampleID}: {n_bad:,} reads skipped because their MM/ML tags do not match the "
+                             f"sequence ({n_bad / (n_bad + len(rows)):.2%})")
     return str(os.path.join(args.OUTPUT,file_acc, f"{sampleID}_modifications.tsv"))
 
 def explode_mods(df,args,mod):

@@ -96,7 +96,8 @@ def _group_palette(df, group_col, sample_palette=None):
         if group_col == "category":
             return group_col, CAT_PALETTE
         return group_col, dict(zip(EXON_BIN_LABELS, color_conesa(len(EXON_BIN_LABELS))))
-    return "sampleID", sample_palette
+    hue_order = list(sample_palette) if sample_palette else list(df["sampleID"].unique())
+    return "sampleID", sample_palette, hue_order
 
 
 def _panel_grid(n_panels, ncols=4, width=4, height=3.5, **kwargs):
@@ -118,13 +119,13 @@ def plot_reads_by_group(reads, modtypes, group_col="category", order=None, metri
     palette: colour per sample, used when there are several samples
     '''
     order = order or [g for g in CAT_ORDER if g in reads[group_col].unique()]
-    hue, palette = _group_palette(reads, group_col, palette)
+    hue, palette, hue_order = _group_palette(reads, group_col, palette)
     fig, axes = _panel_grid(len(modtypes), sharex=True)
     for ax, mod in zip(axes, modtypes):
         data = reads[["sampleID", group_col]].copy()
         data["value"] = (reads[f"{mod}_per_kb"] if metric == "per_kb"
                          else (reads[f"{mod}_n_mod"] > 0) * 100)
-        sns.barplot(data=data, x=group_col, y="value", hue=hue, order=order, palette=palette,
+        sns.barplot(data=data, x=group_col, y="value", hue=hue, order=hue_order or order, palette=palette,
                     errorbar="se", ax=ax, legend=(hue == "sampleID" and ax is axes[0]))
         ax.set_title(mod)
         ax.set_xlabel("")
@@ -143,11 +144,11 @@ def plot_occupancy_by_group(sites, modtypes, group_col="category", order=None, m
     covered = filter_sites(sites, min_cov, min_mod)
     order = order or [g for g in CAT_ORDER if g in covered[group_col].unique()]
     mods = [mod for mod in modtypes if mod in covered["mod_type"].unique()]
-    hue, palette = _group_palette(covered, group_col, palette)
+    hue, palette, hue_order = _group_palette(covered, group_col, palette)
     fig, axes = _panel_grid(len(mods), sharex=True, sharey=True)
     for ax, mod in zip(axes, mods):
         sns.boxplot(data=covered[covered["mod_type"] == mod], x=group_col, y="occupancy",
-                    hue=hue, order=order, palette=palette, showfliers=False, ax=ax,
+                    hue=hue, order=hue_order or order, palette=palette, showfliers=False, ax=ax,
                     legend=(hue == "sampleID" and ax is axes[0]))
         ax.set_title(mod)
         ax.set_xlabel("")
@@ -332,12 +333,15 @@ def plot_junction_profile(sites, background, modtypes, max_dist=100, min_cov=1, 
     # We filter out all sites that our further away than the selected max_dist
     near = near[near["dist_junction"].abs() <= max_dist]
     mods = [mod for mod in modtypes if mod in near["mod_type"].unique()]
-    
+    samples = list(palette) if palette else list(background["sampleID"].unique())
     fig, axes = _panel_grid(len(mods))
     # One panel for each mod
     for ax, mod in zip(axes, mods):
         # For each sample
-        for sampleID, bg in background.groupby("sampleID"):
+        for sampleID in samples:
+            bg = background[background["sampleID"] == sampleID]
+            if bg.empty:
+                continue
             # We group sites from the sample that have the mod by distance to junction
             by_dist = near[(near["mod_type"] == mod) & (near["sampleID"] == sampleID)].groupby("dist_junction")
             # Distances to junction
@@ -437,6 +441,13 @@ def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1
     fig.tight_layout()
     return fig
 
+def _cluster_order(corr):
+    '''Sample order from average-linkage clustering on 1 - correlation'''
+    dist = 1 - corr.to_numpy()
+    np.fill_diagonal(dist, 0)
+    link = linkage(squareform(dist, checks=False), method="average")
+    return list(corr.index[leaves_list(link)])
+
 def plot_sample_correlation(sites, modtypes, min_cov=10):
     '''Spearman correlation of the occupancy of the sites shared by all samples with n_cov >= min_cov,
     a heatmap per type. Returns None with less than two samples'''
@@ -447,7 +458,11 @@ def plot_sample_correlation(sites, modtypes, min_cov=10):
     occ = covered.pivot_table(index=["jxnHash", "mod_type", "mod_pos"], columns="sampleID",
                               values="occupancy").dropna()
     mods = [mod for mod in modtypes if mod in occ.index.get_level_values("mod_type")]
+    corrs = {mod: occ.xs(mod, level="mod_type").corr(method="spearman") for mod in mods}
+    n_shared = {mod: len(occ.xs(mod, level="mod_type")) for mod in mods}
     fig, axes = _panel_grid(len(mods), width=4.5, height=4)
+    mean_corr = sum(corrs.values()) / len(corrs)
+    order = _cluster_order(mean_corr)
     for ax, mod in zip(axes, mods):
         corr = occ.xs(mod, level="mod_type").corr(method="spearman")
         n_shared = len(occ.xs(mod, level="mod_type"))
@@ -469,7 +484,7 @@ def run_mods_plots(design_file, out_dir, prefix, args, min_cov=20, min_mod=2):
     sites_pos = add_exon_bin(sites_pos)
     modtypes = args.MODTYPES
     # Fixed colours
-    samples = sorted(reads["sampleID"].unique())
+    samples = list(reads["sampleID"].unique())
     mod_palette = dict(zip(modtypes, color_conesa(len(modtypes))))
     sample_palette = dict(zip(samples, color_conesa(len(samples))))
     figures = [
