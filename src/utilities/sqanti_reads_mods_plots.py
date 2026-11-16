@@ -94,8 +94,8 @@ def _group_palette(df, group_col, sample_palette=None):
     # Conesa colours for the exon bins. With several samples each sample gets its own colour
     if df["sampleID"].nunique() == 1:
         if group_col == "category":
-            return group_col, CAT_PALETTE
-        return group_col, dict(zip(EXON_BIN_LABELS, color_conesa(len(EXON_BIN_LABELS))))
+            return group_col, CAT_PALETTE, None
+        return group_col, dict(zip(EXON_BIN_LABELS, color_conesa(len(EXON_BIN_LABELS)))), None
     hue_order = list(sample_palette) if sample_palette else list(df["sampleID"].unique())
     return "sampleID", sample_palette, hue_order
 
@@ -125,7 +125,7 @@ def plot_reads_by_group(reads, modtypes, group_col="category", order=None, metri
         data = reads[["sampleID", group_col]].copy()
         data["value"] = (reads[f"{mod}_per_kb"] if metric == "per_kb"
                          else (reads[f"{mod}_n_mod"] > 0) * 100)
-        sns.barplot(data=data, x=group_col, y="value", hue=hue, order=hue_order or order, palette=palette,
+        sns.barplot(data=data, x=group_col, y="value", hue=hue, order=order, hue_order=hue_order, palette=palette,
                     errorbar="se", ax=ax, legend=(hue == "sampleID" and ax is axes[0]))
         ax.set_title(mod)
         ax.set_xlabel("")
@@ -148,7 +148,7 @@ def plot_occupancy_by_group(sites, modtypes, group_col="category", order=None, m
     fig, axes = _panel_grid(len(mods), sharex=True, sharey=True)
     for ax, mod in zip(axes, mods):
         sns.boxplot(data=covered[covered["mod_type"] == mod], x=group_col, y="occupancy",
-                    hue=hue, order=hue_order or order, palette=palette, showfliers=False, ax=ax,
+                    hue=hue, order=order, hue_order=hue_order, palette=palette, showfliers=False, ax=ax,
                     legend=(hue == "sampleID" and ax is axes[0]))
         ax.set_title(mod)
         ax.set_xlabel("")
@@ -441,13 +441,6 @@ def plot_dist_3p(sites, modtypes, max_nt=3000, bin_nt=100, min_cov=10, min_mod=1
     fig.tight_layout()
     return fig
 
-def _cluster_order(corr):
-    '''Sample order from average-linkage clustering on 1 - correlation'''
-    dist = 1 - corr.to_numpy()
-    np.fill_diagonal(dist, 0)
-    link = linkage(squareform(dist, checks=False), method="average")
-    return list(corr.index[leaves_list(link)])
-
 def plot_sample_correlation(sites, modtypes, min_cov=10):
     '''Spearman correlation of the occupancy of the sites shared by all samples with n_cov >= min_cov,
     a heatmap per type. Returns None with less than two samples'''
@@ -458,16 +451,16 @@ def plot_sample_correlation(sites, modtypes, min_cov=10):
     occ = covered.pivot_table(index=["jxnHash", "mod_type", "mod_pos"], columns="sampleID",
                               values="occupancy").dropna()
     mods = [mod for mod in modtypes if mod in occ.index.get_level_values("mod_type")]
-    corrs = {mod: occ.xs(mod, level="mod_type").corr(method="spearman") for mod in mods}
-    n_shared = {mod: len(occ.xs(mod, level="mod_type")) for mod in mods}
+    if not mods:
+        return None
+    # design order, as in the other figures (samples without covered sites are left out)
+    order = [s for s in sites["sampleID"].unique() if s in occ.columns]
     fig, axes = _panel_grid(len(mods), width=4.5, height=4)
-    mean_corr = sum(corrs.values()) / len(corrs)
-    order = _cluster_order(mean_corr)
     for ax, mod in zip(axes, mods):
-        corr = occ.xs(mod, level="mod_type").corr(method="spearman")
-        n_shared = len(occ.xs(mod, level="mod_type"))
-        sns.heatmap(corr, vmin=0, vmax=1, annot=True, fmt=".2f", cmap=conesa_cmap("warm"), ax=ax)
-        ax.set_title(f"{mod} ({n_shared} shared sites)")
+        data = occ.xs(mod, level="mod_type")
+        sns.heatmap(data.corr(method="spearman").loc[order, order], vmin=0, vmax=1, annot=True, fmt=".2f",
+                    cmap=conesa_cmap("warm"), ax=ax)
+        ax.set_title(f"{mod} ({len(data):,} shared sites)")
         ax.set_xlabel("")
         ax.set_ylabel("")
     fig.suptitle(f"Occupancy correlation between samples (n_cov ≥ {min_cov} in all)")
