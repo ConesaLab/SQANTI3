@@ -355,9 +355,17 @@ if (run_ML) {
   cat("\nHandling integer columns...")
   
   integers <- c("diff_to_gene_TSS", "diff_to_gene_TTS", "min_sample_cov", 
-                "min_cov", "ratio_exp" , "polyA_dist", "dist_to_CAGE_peak")
+                "min_cov", "polyA_dist", "dist_to_CAGE_peak")
   for (x in integers){
     d1[, x] <- as.integer(d1[, x])
+  }
+  
+  # Convert back to numeric the columns turned into character by the NA replacement
+  # (replacement.na is a character vector)
+  # ratio_exp is a fraction (0-1): as.integer() would turn it into 0/1 (issue #634)
+  numerics <- c("n_indels", "n_indels_junc", "dist_to_polyA_site", "ratio_TSS", "ratio_exp")
+  for (x in numerics){
+    d1[, x] <- as.numeric(d1[, x])
   }
   
   r = as.vector(which(apply(d1, 2, function(x) (anyNA(x)))))
@@ -479,9 +487,8 @@ if (run_ML) {
   cat("\n-------------------------------------------------")
   
   # check working directory for previously classifier object
-  RF_outfiles <- dir(opt$dir)
   rf_file <- paste0(opt$dir, "/",opt$output ,"_randomforest.RData")
-  if(rf_file %in% RF_outfiles) {
+  if(file.exists(rf_file)) {
     
     # if the object exists, it is loaded to save runtime
     

@@ -506,3 +506,74 @@ def test_polyapeak_empty_bed_file(tmp_path):
     empty_file.write_text("")
     polya = PolyAPeak(str(empty_file))
     assert len(polya.polya_peaks) == 0
+
+
+### prevalence tests ###
+# prevalence and prevalence_<group> are computed by full_length_quantification()
+# (see test_qc_computations.py); as_dict() only reports them.
+
+
+def _transcript_with_counts(fl_dict):
+    """Build a minimal transcript carrying a multi-sample FL count dict."""
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        length=1000,
+        exons=3,
+        structural_category="full-splice_match",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+    )
+    obj.FL_dict = fl_dict
+    return obj
+
+
+def test_multi_sample_fl_columns():
+    """Each sample gets an FL.<sample> column and FL is the sum over samples."""
+    d = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5.5}).as_dict()
+    assert (d["FL.s1"], d["FL.s2"], d["FL.s3"]) == (10, 0, 5.5)
+    assert d["FL"] == 15.5
+
+
+def test_prevalence_is_reported():
+    obj = _transcript_with_counts({"s1": 10, "s2": 0, "s3": 5})
+    obj.prevalence = 2
+    assert obj.as_dict()["prevalence"] == 2
+
+
+def test_is_expressed():
+    """0 means any count above 0; any other value is a minimum count, inclusive."""
+    from src.utils import is_expressed
+    assert [is_expressed(c, 0) for c in (0, 0.01, 1)] == [False, True, True]
+    assert [is_expressed(c, 0.5) for c in (0.4, 0.5, 2)] == [False, True, True]
+
+
+def test_prevalence_absent_without_fl_counts():
+    """Without --fl_count there is no FL_dict, so prevalence reports NA.
+
+    This is the default path for most users, who do not supply abundances.
+    The column must not break the classification table.
+    """
+    obj = myQueryTranscripts(
+        isoform="transcript1",
+        length=1000,
+        exons=3,
+        structural_category="full-splice_match",
+        genes=["gene1"],
+        transcripts=["transcript1"],
+    )
+    assert obj.as_dict()["prevalence"] == "NA"
+
+
+def test_group_prevalence_columns():
+    """Each entry of prevalence_dict becomes a prevalence_<group> column."""
+    obj = _transcript_with_counts({"K1": 3, "B1": 0})
+    obj.prevalence = 1
+    obj.prevalence_dict = {"K": 1, "B": 0}
+    d = obj.as_dict()
+    assert (d["prevalence"], d["prevalence_K"], d["prevalence_B"]) == (1, 1, 0)
+    assert "prevalence_dict" not in d
+
+
+def test_group_prevalence_absent_without_design():
+    d = _transcript_with_counts({"K1": 3, "B1": 2}).as_dict()
+    assert not [k for k in d if k.startswith("prevalence_")]

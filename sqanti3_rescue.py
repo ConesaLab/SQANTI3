@@ -22,11 +22,13 @@ from src.rescue_steps import (
   run_automatic_rescue,
   rescue_candidates, rescue_targets,
   run_candidate_mapping, run_rules_rescue, run_ML_rescue,
-  save_rescue_results
+  save_rescue_results,
+  run_fallback_mapping, run_evidence_check
 )
 from src.utilities.rescue.candidate_mapping_helpers import prepare_fasta_transcriptome
 from src.utilities.rescue.rescue_helpers import read_classification
 from src.utilities.rescue.sq_requant import requantification_pipeline
+from src.utilities.rescue.evidence_check import rows_for_requant
 from src.write_parameters import write_rescue_parameters
 
 def main():
@@ -36,7 +38,7 @@ def main():
   # Create the log directory if it does not exist
   os.makedirs(f"{args.dir}/logs", exist_ok=True)
   # Check if the logs directory exists, if not create it
-  rescue_args_validation(args)
+  evidence_check = rescue_args_validation(args)
   write_rescue_parameters(args)
   rescue_logger.info(f"Running SQANTI3 rescue pipeline version {__version__}")
 
@@ -53,7 +55,9 @@ def main():
   ## Convert reference transcriptome GTF to FASTA
   ref_trans_fasta = prepare_fasta_transcriptome(args.refGTF,args.refFasta,args.dir)
 
+  hits_df = pd.DataFrame(columns=["rescue_candidate", "mapping_hit", "alignment_type", "alignment_score"])
   ### RUN FULL RESCUE (IF REQUESTED) ###
+  candidates = None
   if args.mode == "full":
     candidates = rescue_candidates(class_df,args.rescue_mono_exonic,
                                    prefix)
@@ -68,12 +72,10 @@ def main():
     # automatic rescue (ISM, NIC, NNC) to long-read and reference
     # isoforms passing the filter (targets)
 
-    if os.path.isfile(f"{prefix}_rescue_mapping_hits.tsv"):
-      rescue_logger.info("Mapping hits already exist, skipping mapping step.")
-      hits_df = pd.read_csv(f"{prefix}_rescue_mapping_hits.tsv",sep="\t")
-    else:
-      hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                           args.corrected_isoforms_fasta,args.dir,args.output)
+    # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
+    # file if it was made from the same targets and candidates (mapping fingerprint)
+    hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
+                         args.corrected_isoforms_fasta,args.dir,args.output)
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
@@ -94,9 +96,26 @@ def main():
       inclusion_list, rescue_df = run_rules_rescue(class_df, args.refClassif, hits_df, rescue_df,
                                                    inclusion_list,args.dir, args.json_filter)
 
+  #### EVIDENCE CHECK OF REFERENCE TARGETS ####
+  # The requisites on long-read counts, removed to filter the reference, are applied
+  # to the counts each reintroduced reference transcript receives from its artifacts
+  if evidence_check:
+    # FSM artifacts of automatic rescue are not mapped: if their reference fails, their
+    # counts go to the gene residual. With --map_automatic_fsm they are mapped, so that
+    # they can fall back to a long-read isoform (in any rescue mode)
+    fallback_hits = hits_df
+    if args.map_automatic_fsm:
+      fsm_hits = run_fallback_mapping(class_df, rescue_df, ref_trans_fasta, args.refGTF,
+                                      args.corrected_isoforms_fasta, args.dir, args.output)
+      fallback_hits = pd.concat([hits_df, fsm_hits], ignore_index=True)
+    inclusion_list, rescue_df = run_evidence_check(class_df, rescue_df, inclusion_list, fallback_hits,
+                                                   args.json_filter, args.counts_design, args.counts, args.dir,
+                                                   args.min_expression)
+
   #### WRITE FINAL OUTPUTS OF RESCUE ####
   # Create new GTF including rescued transcripts #
   if args.filtered_isoforms_gtf is None:
+    rescue_class = None
     rescue_logger.warning("No filtered GTF provided.")
     rescue_logger.warning("Rescue will be performed but no GTF will be generated.")
   else:
@@ -106,11 +125,22 @@ def main():
                                        class_df,args.refClassif)
 
   ## END ##
-  message("Rescue finished successfully!",rescue_logger)
+ 
 
-  if args.requant:  
-    message("Running requantification.",rescue_logger)
-    requantification_pipeline(args.dir, args.output, args.counts, rescue_df, class_df, rescue_class)
+  if not args.skip_requant:
+    if rescue_class is None:
+      rescue_logger.warning(
+        "Requantification skipped: it requires the rescued classification, which is only "
+        "generated when --filtered_isoforms_gtf is provided."
+      )
+    else:
+      message("Running requantification.", rescue_logger)
+      requantification_pipeline(args.dir, args.output, args.counts, rows_for_requant(rescue_df),
+                                class_df, rescue_class, args.counts_design, args.min_expression)
+  else:
+    rescue_logger.info("Requantification skipped (--skip_requant). The count matrix will not include rescued transcripts.")
+
+  message("Rescue finished successfully!", rescue_logger)
 
 ## Run main()
 if __name__ == "__main__":

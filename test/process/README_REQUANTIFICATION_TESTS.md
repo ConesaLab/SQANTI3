@@ -15,7 +15,7 @@ Tests individual helper functions in isolation:
 - **`TestBuildArtifactTable`**: Tests combining rescued and unrescued artifacts
 - **`TestPrepareCountMatrices`**: Tests splitting counts into base (valid) and source (artifact) matrices
 - **`TestCalculateDistributionFractions`**: Tests proportional weight calculation for count distribution
-- **`TestDistributeIntegerCounts`**: Tests integer count distribution with conservation
+- **`TestDistributeIntegerCounts`**: Tests count distribution with conservation, for both integer and fractional input
 - **`TestExportCounts`**: Tests file export functionality
 - **`TestCalculateTPM`**: Tests TPM (Transcripts Per Million) calculation
 
@@ -92,7 +92,8 @@ pytest test/unit/utilities/rescue/test_requant_helpers.py test/process/test_requ
 - ✅ Simple artifact-to-isoform redistribution
 - ✅ Multi-target redistribution (proportional split)
 - ✅ Count conservation (totals preserved)
-- ✅ Integer arithmetic (no fractional counts)
+- ✅ Integer arithmetic (floor plus explicit remainder)
+- ✅ Fractional input distributed proportionally, without flooring
 - ✅ File I/O operations
 
 ### Edge Cases
@@ -118,7 +119,7 @@ pytest test/unit/utilities/rescue/test_requant_helpers.py test/process/test_requ
 ## Key Testing Principles
 
 1. **Count Conservation**: All tests verify that total counts are preserved through redistribution
-2. **Integer Arithmetic**: No fractional counts are allowed; remainders are handled explicitly
+2. **Count Arithmetic**: Integer input is floored with explicit remainder reallocation. Fractional input (EM-based quantifiers) is distributed proportionally and kept fractional; totals are conserved in both cases.
 3. **Proportional Distribution**: When splitting to multiple targets, use proportional weights
 4. **File Integrity**: All output files are tested for correct format and content
 5. **Edge Case Handling**: Comprehensive testing of boundary conditions

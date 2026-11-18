@@ -5,6 +5,16 @@ import math
 import os
 import re
 
+def is_expressed(count, min_expression):
+    """Whether a count is expression in a sample, given --min_expression.
+
+    With min_expression 0 (the default) any count above 0 is expression; otherwise
+    the count must reach min_expression. Works on numbers and on pandas objects.
+    """
+    if min_expression == 0:
+        return count > 0
+    return count >= min_expression
+
 def mergeDict(dict1, dict2):
     """ Merge dictionaries to collect info from several files"""
     dict3 = {**dict1, **dict2}

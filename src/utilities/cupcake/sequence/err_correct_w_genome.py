@@ -23,10 +23,11 @@ def err_correct(genome_file, sam_file, output_err_corrected_fasta, genome_dict=N
         print("done reading {0}".format(genome_file), file=sys.stderr)
 
     f = open(output_err_corrected_fasta, 'w')
-    reader = BioReaders.GMAPSAMReader(sam_file, True)
+    # Only primary alignments: supplementary/secondary ones would duplicate the qID (issue #216)
+    reader = BioReaders.GMAPSAMReader(sam_file, True, skip_non_primary=True)
     for r in reader:
         if r.sID == '*': continue
-        seq = sp.consistute_genome_seq_from_exons(genome_dict, r.sID, r.segments, r.flag.strand) #TODO: Check if the alignmentis supplementary to save it with a different name
+        seq = sp.consistute_genome_seq_from_exons(genome_dict, r.sID, r.segments, r.flag.strand)
         f.write(">{0}\n{1}\n".format(r.qID, seq))
 
     f.close()

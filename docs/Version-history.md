@@ -10,7 +10,39 @@ See the dedicated site for [installation instructions](Dependencies-and-installa
 
 
 
-## SQANTI3 v6.0.2 [LATEST, 22/07/2026]
+## SQANTI3 v6.1 [LATEST, 20/10/2026]
+
+#### Major changes:
+- **Supplementary alignments** ([issue #216](https://github.com/ConesaLab/SQANTI3/issues/216)): minimap2 now allows introns up to 2 Mb (`-G 2000000`, the same limit as GMAP). Before, transcripts with introns longer than 200 kb were split into several alignments. Only the primary alignment of each isoform is classified. Supplementary alignments are listed in `_supplementary_alignments.txt`, and isoforms that could not be aligned in `_unmapped.txt`.
+- **SQANTI-reads report**: reworked plots, an interactive HTML report that matches the PDF, new UJC-level, junction, ISM and RTS metrics, upset and saturation plots, and a `summary.json` with the run parameters. SQANTI-reads also runs faster.
+- **TSS ratio with short reads**: reads are now counted with pysam through the BAM index instead of `bedtools coverage`. The results are the same, and memory use drops from more than 200 GB to about 1 GB on a 72 GB BAM. Unindexed `--SR_bam` files are indexed once into `<dir>/bam_index`.
+- **ML filter and rescue**: numeric columns are no longer turned into text after NA replacement ([PR #633](https://github.com/ConesaLab/SQANTI3/pull/633)), and `ratio_exp` is no longer truncated to an integer ([issue #634](https://github.com/ConesaLab/SQANTI3/issues/634)). ⚠️**Warning**: because of these two fixes, the ML filter can classify some isoforms differently than v6.0.2 on the same data.
+- **Prevalence per experimental group** ([PR #636](https://github.com/ConesaLab/SQANTI3/pull/636)): with a multi-sample `--fl_count` file, the new `--counts_design` option assigns the samples to experimental groups, and QC adds one `prevalence_<group>` column per group. `--min_expression` sets the minimum count for a transcript to be expressed in a sample (by default, any count above 0, so fractional counts are kept). The rules filter can use `prevalence` and `prevalence_<group>` like any other column, for example to keep transcripts detected in two samples of any group, or of every group.
+- **Rescue requantifies by default** ([PR #636](https://github.com/ConesaLab/SQANTI3/pull/636)): requantification now runs unless `--skip_requant` is given, and it needs the `--counts` file. The `-q/--requant` option was removed. ⚠️**Warning**: scripts and wrapper configuration files that use `-q`, `--requant` or `requant: true` must be updated.
+- **Evidence check of rescued reference transcripts** ([PR #636](https://github.com/ConesaLab/SQANTI3/pull/636)): reference transcripts have no long-read counts of their own, so the rules filter applied to the reference transcriptome no longer uses the requisites on `FL`, `FL.<sample>`, `prevalence` or `prevalence_<group>`. Instead, rescue computes the counts that each reference transcript receives from its artifacts and applies those requisites to them before reintroducing it. Reference transcripts that fail are not reintroduced, and their counts go to a long read-defined isoform or to the gene residual. `--skip_evidence_check` keeps the behaviour of previous versions.
+
+#### Minor fixes/enhancements:
+- New `min_intron_length` column in the classification (the shortest intron of each transcript, NA for mono-exonic transcripts), which can be used in the rules filter ([PR #636](https://github.com/ConesaLab/SQANTI3/pull/636)).
+- After requantification, `prevalence` and `prevalence_<group>` are recomputed in the rescued classification, including the reintroduced reference transcripts ([PR #636](https://github.com/ConesaLab/SQANTI3/pull/636)).
+- Rescue stops at the start, before any mapping, when `--counts` is missing, or when the rules need a `--counts_design` file that was not given. QC and rescue also check that every sample of the `--counts_design` file is in the count file before any long step runs.
+- Rescue no longer reuses the mapping hits of an earlier run in the same output folder, which crashed rescue when it was run again with a different filter result.
+- New `prevalence` column in the classification: the number of samples in which each transcript is detected ([PR #627](https://github.com/ConesaLab/SQANTI3/pull/627)).
+- Fractional FL counts are kept, and rescue distributes them proportionally ([issue #624](https://github.com/ConesaLab/SQANTI3/issues/624)).
+- With several samples, isoforms missing from one sample's counts get 0 for that sample ([issue #613](https://github.com/ConesaLab/SQANTI3/issues/613)).
+- Rescue-by-mapping no longer produces duplicated transcripts ([issue #622](https://github.com/ConesaLab/SQANTI3/issues/622)).
+- The ML filter reuses an existing `_randomforest.RData` instead of retraining every run. ML rescue with a classifier trained on multi-sample counts now stops with a clear message instead of crashing.
+- GFF/GFF3 reference annotations are no longer rejected at input validation ([PR #635](https://github.com/ConesaLab/SQANTI3/pull/635)).
+- QC accepts gzipped FASTA/FASTQ as `--isoforms`.
+- FASTQ input can be run in parallel (`-n` > 1), and the renamed FASTA is written to `--dir` instead of the input folder.
+- With FASTA/FASTQ input and `-n` > 1, the sequences are aligned once, with all the CPUs given with `-t`, instead of once per chunk. Before, each chunk ran its own aligner and loaded its own copy of the genome index at the same time, so runs with many chunks could run out of memory ([PR #643](https://github.com/ConesaLab/SQANTI3/pull/643)).
+- QC stops with an error when two isoform IDs become identical after renaming.
+- Fixed `--SR_bam` input paths ([issue #611](https://github.com/ConesaLab/SQANTI3/issues/611)), the `--ratio_TSS_metric 3quartile` crash, `RTS_junction` written as `????` in `_junctions.txt`, and transcript ID parsing in TD2 ORF headers ([PR #626](https://github.com/ConesaLab/SQANTI3/pull/626)).
+
+> [Download release](https://github.com/ConesaLab/SQANTI3/releases/tag/v6.1)
+
+_______
+
+## SQANTI3 v6.0.2 (22/07/2026)
 
 #### Minor fixes/enhancements:
 - Fixes in Cupcake SAM to GFF3 conversion and short-reads utilities.

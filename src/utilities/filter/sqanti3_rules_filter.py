@@ -8,6 +8,7 @@ junction_related_columns = [
     "min_cov",
     "min_cov_pos",
     "sd_cov",
+    "min_intron_length",
     "n_indels_junc",
     "bite",
     "predicted_NMD"

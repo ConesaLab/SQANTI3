@@ -133,7 +133,7 @@ python sqanti3_qc.py --isoforms example/UHR_chr22.gtf \
 
 ### 3.2 Understanding SQANTI3 QC:
 
-SQANTI3 QC produces a series of output files following its execution, using flags like `--dir` or `-d` and `--output` or `-o` to specify the directory and file prefix, respectively. This tool also relies on other software, including STAR, kallisto, and GMST, which means there will be subfolders in the output directory. For an example output, refer to the `example/SQANTI3_QC_output` subfolder in the main SQANTI3 directory.
+SQANTI3 QC produces a series of output files following its execution, using flags like `--dir` or `-d` and `--output` or `-o` to specify the directory and file prefix, respectively. This tool also relies on other software, including STAR, kallisto, and TD2, which means there will be subfolders in the output directory. For an example output, refer to the `example/SQANTI3_QC_output` subfolder in the main SQANTI3 directory.
 
 #### 3.2.1 SQANTI3 transcriptome classification ([Video link for this part](https://youtu.be/TTjDAwuhB68?si=pL4hhn5aFuC-HaF6&t=941))
 SQANTI3 sorts each isoform by comparing it to a known reference transcript. Here's how it categorizes them:

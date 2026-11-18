@@ -42,7 +42,8 @@ def calc_indels_from_sam(samFile):
 
 
     for read in sam.fetch():
-        if read.is_unmapped:
+        # Only primary alignments, otherwise indels of split alignments add up under one isoform (issue #216)
+        if read.is_unmapped or read.is_secondary or read.is_supplementary:
             continue
         cigarLine = read.cigar
         ## reading splice junctions and storing information

@@ -391,6 +391,41 @@ class TestUpdateClassification:
         assert pb11_row['FL.sample1'] == 150  # Updated from 100 to 150
         assert pb11_row['FL'] == 150  # Updated total
     
+    def test_prevalence_recomputed(self, tmp_path):
+        """With several samples, prevalence and prevalence_<group> follow the new counts,
+        with the --min_expression threshold of QC."""
+        requant_df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'REF1'],
+            'K1': [3, 1], 'K2': [0, 2], 'B1': [5, 0], 'B2': [1, 0]
+        })
+        rescue_class = pd.DataFrame({
+            'isoform': ['PB.1.1', 'REF1'],
+            'prevalence': [1, float('nan')],
+            'prevalence_K': [1, float('nan')],
+            'prevalence_B': [0, float('nan')]
+        })
+        prefix = str(tmp_path / "test_output")
+        design = {'K': ['K1', 'K2'], 'B': ['B1', 'B2']}
+
+        update_classification(requant_df, rescue_class, prefix, design, 0)
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t').set_index('isoform')
+        assert result.loc['PB.1.1', ['prevalence', 'prevalence_K', 'prevalence_B']].tolist() == [3, 1, 2]
+        assert result.loc['REF1', ['prevalence', 'prevalence_K', 'prevalence_B']].tolist() == [2, 2, 0]
+
+        update_classification(requant_df, rescue_class, prefix, design, 2)
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t').set_index('isoform')
+        assert result.loc['PB.1.1', ['prevalence', 'prevalence_K', 'prevalence_B']].tolist() == [2, 1, 1]
+        assert result.loc['REF1', ['prevalence', 'prevalence_K', 'prevalence_B']].tolist() == [1, 1, 0]
+
+    def test_single_sample_has_no_prevalence(self, tmp_path):
+        """QC only writes prevalence for multi-sample counts."""
+        requant_df = pd.DataFrame({'isoform': ['PB.1.1'], 'sample1': [4]})
+        rescue_class = pd.DataFrame({'isoform': ['PB.1.1'], 'FL': [2]})
+        prefix = str(tmp_path / "test_output")
+        update_classification(requant_df, rescue_class, prefix)
+        result = pd.read_csv(f"{prefix}_rescued_classification.txt", sep='\t')
+        assert 'prevalence' not in result.columns
+
     def test_no_matching_isoforms(self, tmp_path, capsys):
         """Test behavior when no isoforms match between files."""
         # Setup: completely different isoforms
