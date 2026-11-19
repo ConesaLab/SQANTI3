@@ -121,8 +121,7 @@ def checkSJforRTS(sj_dict, sj_relations_dict, genome_dict, wiggle_count, include
                 flag, matchLen, matchPat, mismatch = checkForRepeatPat(seq_exon, seq_intron, min_match, allow_mismatch)
                 if flag:
                     for junction in sj_relations_dict[(sj.chromo, sj.strand, str(sj.strpos), str(sj.endpos))]:  # get all junctions with the same start and end
-                        isoform = junction.split('-')[0]
-                        junc_number = junction.split('-')[1]
+                        isoform, junc_number = junction.rsplit('-', 1)
                         
                         try:
                             RTS_info_by_isoform[isoform].append(junc_number)
