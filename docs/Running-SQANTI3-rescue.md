@@ -72,13 +72,15 @@ By default, SQANTI3 Rescue runs under `--mode automatic`. As a result, this is t
 
 #### 1.b Selection of rescue candidate and target transcripts
 
-In spite of its potential to achieve the goals that we set for the rescue, the previous strategy does not consider ISM, NIC or NNC artifacts. These will be included in the **rescue candidate** group, i.e. transcripts classified as artifacts for which SQANTI3 will try to find a matching reference transcript to include in the final, curated transcriptome.
+In spite of its potential to achieve the goals that we set for the rescue, the previous strategy does not consider ISM, NIC or NNC artifacts, nor FSM artifacts whose reference transcript is still represented. These will be included in the **rescue candidate** group, i.e. transcripts classified as artifacts for which SQANTI3 will try to find a matching reference transcript to include in the final, curated transcriptome.
 
 - For **ISM artifact** transcripts, there are two possible situations:
 
   - There will be cases where the same discarded reference transcript is supported by FSM and ISM. **ISM artifacts with an FSM artifact counterpart** will therefore be "collapsed" into the rescued reference transcript during the automatic rescue step.
 
   - Conversely, there will be `associated_transcript` references that are only supported by one or more ISM. Those **ISM artifacts that constituted evidence of a non-FSM supported reference** will therefore be included in the rescue candidate list.
+
+- For **FSM and ISM artifacts of a represented reference**, i.e. a reference transcript that kept at least one FSM isoform after filtering, automatic rescue does not act because the reference is not lost. These artifacts are also included in the rescue candidate list, so that mapping assigns them (and their counts) to their best-matching target, usually the FSM isoform of the same reference. ISM artifacts of a reference represented only by ISM isoforms are not included.
 
 - For **novel transcripts** from the NIC and NNC categories, since there is no associated transcript information, all transcripts classified as artifacts will be included in the rescue candidate list.
 
@@ -329,7 +331,7 @@ Independently of running only rescue on `automatic` or `full` mode, two main fil
 
 In the case of the user running the rescue in `full` mode, additional output files will be generated, as explained below.
 
-- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](#1b-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories (which did not undergo automatic rescue) for which a reference transcript match needs to be found. Two rescue candidate files are generated:
+- **Rescue candidate files** (for `--mode full`): Briefly, [rescue candidates](#1b-selection-of-rescue-candidate-and-target-transcripts) are a group artifact transcripts from the ISM, NIC and NNC categories, plus the FSM and ISM artifacts of reference transcripts that kept an FSM isoform (none of them undergo automatic rescue), for which a reference transcript match needs to be found. Two rescue candidate files are generated:
 
   - A rescue candidate ID list, named `*_rescue_candidates.tsv`.
   - A rescue candidate FASTA file named `*_rescue_candidates.fasta` containing the sequences of rescue candidates for mapping.

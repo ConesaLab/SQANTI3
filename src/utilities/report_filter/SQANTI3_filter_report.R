@@ -33,7 +33,7 @@ option_list <- list(
                         help = "Full path to SQANTI3/utilities folder."),
   optparse::make_option(c("-f", "--filter_type"), type = "character", default = "ml",
                         help = "Type of SQ3 filter that was run to generate input.
-                        Must be one of the following: 'ml' or 'rules'.
+                        Must be one of the following: 'ml', 'rules' or 'auto'.
                         Default: 'ml'.")
 )
 
@@ -54,6 +54,10 @@ if (opt$filter_type == "ml"){
 }else if (opt$filter_type == "rules"){
   message("\n-------------------------------------------------")
   message("\n \t SQANTI3 Rules filter report")
+  message("\n--------------------------------------------------")
+}else if (opt$filter_type == "auto"){
+  message("\n-------------------------------------------------")
+  message("\n \t SQANTI3 Automatic filter report")
   message("\n--------------------------------------------------")
 }
 
@@ -113,11 +117,14 @@ if(opt$filter_type == "ml"){
     conf <- readr::read_tsv(path_conf)
     
   
-}else if (opt$filter_type == "rules"){
-  # Detect path and load ML output classification
-  message("\nReading Rules result classification table...")
+}else if (opt$filter_type %in% c("rules", "auto")){
+  # Detect path and load Rules (or Automatic) output classification
+  message("\nReading filter result classification table...")
   
-  which_classif <- stringr::str_detect(paths, "RulesFilter_classification")
+  classif_pattern <- ifelse(opt$filter_type == "auto",
+                            "AutoFilter_classification",
+                            "RulesFilter_classification")
+  which_classif <- stringr::str_detect(paths, classif_pattern)
   path_classif <- paths[which_classif]
   classif <- readr::read_tsv(path_classif, 
                              col_types = readr::cols(exons = readr::col_integer(),

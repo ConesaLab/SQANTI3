@@ -29,6 +29,26 @@ def classify_isoform(rec, refs_1exon_by_chr, refs_exons_by_chr, junctions_by_chr
 
         return isoform_hit
 
+
+def intron_chain_key(rec) -> str:
+    """Intron chain key of a multi-exon isoform, as in the catalog.
+
+    The key is the chromosome and the strand followed by each intron as
+    "<last base of the exon>-<first base of the next exon>" (1-based),
+    joined by "_", e.g. "chr1+1000-2000_2100-3000".
+
+    Args:
+        rec: genePredRecord of the isoform, with two or more exons.
+
+    Returns:
+        The intron chain key.
+    """
+    introns = "_".join(f"{end}-{start + 1}" for end, start
+                       in zip(rec.exonEnds[:-1], rec.exonStarts[1:]))
+    result = f"{rec.chrom}{rec.strand}{introns}"
+
+    return result
+
 def process_cage_peak_info(isoform_hit,rec, cage_peak_obj):
     if rec.strand == '+':
         within_CAGE, dist_CAGE = cage_peak_obj.find(rec.chrom, rec.strand, rec.txStart)

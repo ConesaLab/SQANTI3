@@ -27,7 +27,33 @@ FIELDS_CLASS = ['isoform', 'chrom', 'start','end' ,'strand', 'length',  'exons',
                 'perc_A_downstream_TTS', 'seq_A_downstream_TTS',
                 'dist_to_CAGE_peak', 'within_CAGE_peak',
                 'dist_to_polyA_site', 'within_polyA_site',
-                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS']
+                'polyA_motif', 'polyA_dist', 'polyA_motif_found', 'ORF_seq', 'ratio_TSS',
+                'pantranscriptome', 'pub_samples', 'pub_studies', 'pub_platforms',
+                'pantranscriptome_prob']
+
+# Pantranscriptome catalog (--pantranscriptome)
+# Version of the catalog file format read by QC
+PANTRANSCRIPTOME_FORMAT = 2
+# Bits of the intron chain hashes stored in the catalog
+PANTRANSCRIPTOME_HASH_BITS = 44
+# Categories that get the pantranscriptome columns
+PANTRANSCRIPTOME_CATEGORIES = ("novel_in_catalog", "novel_not_in_catalog")
+# A chain seen in at least this many studies and platforms is recurrent
+PANTRANSCRIPTOME_MIN_STUDIES = 3
+PANTRANSCRIPTOME_MIN_PLATFORMS = 2
+
+# Automatic filter (sqanti3_filter.py auto)
+# Pantranscriptome model probability below which a multi-exon NIC/NNC
+# is an artifact
+PANTRANSCRIPTOME_THRESHOLD = 0.5
+# Probability from which a NIC/NNC needs no rules (graded
+# pantranscriptome filter)
+PANTRANSCRIPTOME_GRADED_CUT = 0.7
+# Share of the clean recurrent NIC (and NNC) kept by the calibrated cut
+# of the random forest
+ML_CALIBRATION_TARGET = 0.90
+# Fewest clean recurrent models of a category to calibrate its cut
+ML_CALIBRATION_MIN_SUPPORTED = 20
 
 # Sequence names
 seqid_rex1 = re.compile(r'PB\.(\d+)\.(\d+)$')

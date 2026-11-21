@@ -3,9 +3,12 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
+from functools import cache
 from typing import List, Dict, Set, Optional, Union, get_args, get_origin
+import numpy as np
+from src.config import PANTRANSCRIPTOME_FORMAT, PANTRANSCRIPTOME_HASH_BITS
 from src.module_logging import qc_logger
-from src.utils import calculate_tss
+from src.utils import calculate_tss, hash_intron_chains, unpack_array
 
 class genePredReader(object):
     """
@@ -251,6 +254,15 @@ class myQueryTranscripts:
 
     ratio_TSS: Optional[float] = None
 
+    # Public evidence of the intron chain of NIC/NNC (--pantranscriptome):
+    # recurrent, seen or unseen, the samples, studies and platforms, and
+    # the probability of being real given by the pantranscriptome model
+    pantranscriptome: Optional[str] = None
+    pub_samples: Optional[int] = None
+    pub_studies: Optional[int] = None
+    pub_platforms: Optional[int] = None
+    pantranscriptome_prob: Optional[float] = None
+
     # Extra fields not in FIELDS_CLASS TODO: take them out of the dictionary
     FL_dict: Dict[str, int] = field(default_factory=dict)
     prevalence_dict: Dict[str, int] = field(default_factory=dict)  # group -> prevalence (--counts_design)
@@ -262,6 +274,8 @@ class myQueryTranscripts:
     ref_strand: Optional[str] = None
     q_splicesite_hit: Optional[int] = None
     q_exon_overlap: Optional[int] = None
+    # Intron chain key of NIC/NNC, for the pantranscriptome lookup
+    ujc: Optional[str] = None
 
     def __post_init__(self):
         self._validate_input()
@@ -277,27 +291,41 @@ class myQueryTranscripts:
                 raise ValueError("CDS start must be less than CDS end.")
         
     def _validate_types(self):
+        nullable_fields = self._nullable_fields()
         for field_name, expected_type in self.__annotations__.items():
             value = getattr(self, field_name)
 
             # Skip None values unless the field is not Optional
             if value is None:
-                origin = get_origin(expected_type)
-                if origin is Union and type(None) in get_args(expected_type):
-                    continue  # It's Optional[...] and value is None, which is fine
-                if expected_type is Optional:
-                    continue  # Fallback
-                if expected_type is type(None):
-                    continue
-                # If it's not optional and is None, raise
-                raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
-
-            if not self._is_instance_of_type(value, expected_type):
+                if field_name not in nullable_fields:
+                    raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
+            elif not self._is_instance_of_type(value, expected_type):
                 raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__} (value: {value})")
+
+    @classmethod
+    @cache
+    def _nullable_fields(cls):
+        """
+        Names of the fields that may be None (Optional[...] annotations).
+        Worked out once per class: one object is built for every query and
+        reference gene compared, and inspecting the annotations each time
+        was a large share of the classification time.
+        """
+        return frozenset(
+            field_name for field_name, expected_type in cls.__annotations__.items()
+            if (get_origin(expected_type) is Union and type(None) in get_args(expected_type))
+            or expected_type is Optional or expected_type is type(None)
+        )
+
+    @staticmethod
+    @cache
+    def _type_parts(expected_type):
+        """Origin and arguments of a type annotation, worked out once per type."""
+        return get_origin(expected_type), get_args(expected_type)
+
     @staticmethod
     def _is_instance_of_type(value, expected_type):
-        origin = get_origin(expected_type)
-        args = get_args(expected_type)
+        origin, args = myQueryTranscripts._type_parts(expected_type)
 
         if origin is None:
             return isinstance(value, expected_type)
@@ -379,7 +407,8 @@ class myQueryTranscripts:
 
         # Eliminate non-report attributes
         non_report_attrs = ['AS_genes','FL_dict','prevalence_dict','genes','transcripts', 'ref_start',
-                            'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap']
+                            'ref_end', 'ref_strand','protein_seq','q_splicesite_hit','q_exon_overlap',
+                            'ujc']
         for attr in non_report_attrs:
             if attr in base:
                 del base[attr]
@@ -573,3 +602,112 @@ class PolyAPeak:
                 dist_polyA = distance
 
         return within_polyA, dist_polyA
+
+
+class Pantranscriptome:
+    """Public evidence of intron chains, read from a catalog file.
+
+    The catalog (built by utilities/pantranscriptome_build.py) holds
+    the hashes of the intron chain keys in two sorted groups: chains
+    seen in one sample (so in one study and one platform) and the rest,
+    stored with their numbers of samples, studies and platforms. It
+    also carries the pantranscriptome model (see
+    src/pantranscriptome_model.py) in model.
+    """
+
+    def __init__(self, catalog_path: str) -> None:
+        """Read and decode a catalog file.
+
+        Args:
+            catalog_path: Path to the .npz catalog.
+
+        Raises:
+            ValueError: If the file is not a catalog with the format
+                and hash size that this SQANTI3 version reads.
+        """
+        try:
+            catalog = np.load(catalog_path, allow_pickle=False)
+        except (OSError, ValueError) as error:
+            raise ValueError(f"{catalog_path} is not a pantranscriptome "
+                             "catalog (.npz).") from error
+        required = {"format", "hash_bits", "assembly", "single", "multi",
+                    "multi_samples", "multi_studies", "multi_platforms",
+                    "model_text", "model_pwm_donor", "model_pwm_acceptor",
+                    "model_features", "model_c", "model_threshold"}
+        missing = required - set(catalog.files)
+        if missing:
+            raise ValueError(f"{catalog_path} is not a pantranscriptome "
+                             f"catalog: missing {sorted(missing)}.")
+        if (int(catalog["format"]) != PANTRANSCRIPTOME_FORMAT
+                or int(catalog["hash_bits"]) != PANTRANSCRIPTOME_HASH_BITS):
+            raise ValueError(
+                f"{catalog_path} has format {int(catalog['format'])} with "
+                f"{int(catalog['hash_bits'])}-bit hashes; this SQANTI3 "
+                f"reads format {PANTRANSCRIPTOME_FORMAT} with "
+                f"{PANTRANSCRIPTOME_HASH_BITS}-bit hashes.")
+        self.assembly = str(catalog["assembly"])
+        # Hashes are stored sorted, as differences from the previous one
+        self.single = np.cumsum(unpack_array(catalog["single"], "uint64"),
+                                dtype=np.uint64)
+        self.multi = np.cumsum(unpack_array(catalog["multi"], "uint64"),
+                               dtype=np.uint64)
+        self.counts = np.column_stack([
+            unpack_array(catalog["multi_samples"], "uint16"),
+            unpack_array(catalog["multi_studies"], "uint16"),
+            unpack_array(catalog["multi_platforms"], "uint8")]
+            ).astype(np.int64)
+        self.model = {
+            "booster": unpack_array(catalog["model_text"],
+                                    "uint8").tobytes().decode(),
+            "pwm_donor": catalog["model_pwm_donor"],
+            "pwm_acceptor": catalog["model_pwm_acceptor"],
+            "features": [str(name) for name in catalog["model_features"]],
+            "c": float(catalog["model_c"]),
+            "threshold": float(catalog["model_threshold"])}
+        catalog.close()
+        qc_logger.info(f"Pantranscriptome catalog ({self.assembly}): "
+                       f"{len(self.single) + len(self.multi)} intron "
+                       "chains.")
+
+    def lookup(self, keys: list[str]) -> np.ndarray:
+        """Public samples, studies and platforms of some intron chains.
+
+        Args:
+            keys: Intron chain keys (see intron_chain_key()).
+
+        Returns:
+            int64 array with one row per key and the columns samples,
+            studies and platforms; zeros for chains not in the catalog.
+        """
+        hashes = hash_intron_chains(keys, PANTRANSCRIPTOME_HASH_BITS)
+        result = np.zeros((len(keys), 3), dtype=np.int64)
+        in_single, _ = _find_sorted(self.single, hashes)
+        result[in_single] = 1
+        in_multi, position = _find_sorted(self.multi, hashes)
+        result[in_multi] = self.counts[position[in_multi]]
+
+        return result
+
+
+def _find_sorted(values: np.ndarray, queries: np.ndarray
+                 ) -> tuple[np.ndarray, np.ndarray]:
+    """Find queries in a sorted array.
+
+    Args:
+        values: Sorted array.
+        queries: Values to look for.
+
+    Returns:
+        Boolean mask of the queries found and their positions in values
+        (only meaningful where found).
+    """
+    position = np.searchsorted(values, queries)
+    found = np.zeros(len(queries), dtype=bool)
+    if len(values):
+        # A query above every value gets len(values); clip it so that
+        # the comparison below is valid (it can only fail there).
+        position = np.minimum(position, len(values) - 1)
+        found = values[position] == queries
+    result = (found, position)
+
+    return result

@@ -162,6 +162,7 @@ def get_method_runSQANTI3(args, df):
                     "-d", f"{args.OUTPUT}/{file_acc}",
                     "-o", sampleID,
                     "-s", str(args.sites),
+                    "-n", str(args.chunks),
                 ]
 
                 qc_cmds.append(cmd_sqanti)

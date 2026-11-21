@@ -46,7 +46,7 @@ def fake_minimap2(cmd, *args, **kwargs):
 def run(workdir, targets=TARGETS, candidates=CANDIDATES):
     return run_candidate_mapping(
         f"{workdir}/ref.fasta", targets, candidates,
-        f"{workdir}/corrected.fasta", workdir, "isoform"
+        f"{workdir}/corrected.fasta", workdir, "isoform", 1
     )
 
 
