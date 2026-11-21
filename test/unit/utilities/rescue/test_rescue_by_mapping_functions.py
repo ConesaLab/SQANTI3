@@ -206,6 +206,21 @@ class TestSelectBestHits:
         assert len(result) == 2
         assert set(result['mapping_hit']) == {'REF1', 'REF2'}
 
+    def test_several_candidates(self):
+        """Test that each candidate is resolved on its own, sorted by candidate."""
+        df = pd.DataFrame({
+            'rescue_candidate': ['PB.2.1', 'PB.1.1', 'PB.2.1', 'PB.1.1', 'PB.2.1'],
+            'mapping_hit': ['REF4', 'REF1', 'LR.2.1', 'LR.1.1', 'REF5'],
+            'score': [90, 100, 90, 80, 90],
+            'hit_origin': ['reference', 'reference', 'lr_defined',
+                           'lr_defined', 'reference']
+        })
+
+        result = select_best_hits(df)
+
+        assert list(result['rescue_candidate']) == ['PB.1.1', 'PB.2.1']
+        assert list(result['mapping_hit']) == ['REF1', 'LR.2.1']
+
 
 class TestFilterMappingHits:
     """Test suite for filter_mapping_hits function."""

@@ -30,6 +30,9 @@ def prepare_fasta_transcriptome(ref_gtf,ref_fasta,outdir):
     return ref_trans_Fasta
 
 def filter_transcriptome(input_fasta, target_ids):
+    # A set makes each lookup constant time; with a list, every record
+    # was compared against all the IDs
+    target_ids = set(target_ids)
     target_records = []
     # Filter and write sequences
     for record in SeqIO.parse(input_fasta, 'fasta'):

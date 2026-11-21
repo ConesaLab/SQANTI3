@@ -14,6 +14,9 @@ from src.classification_utils import (
     calc_overlap, categorize_incomplete_matches, get_gene_diff_tss_tts
 )
 
+# Best hit of each reference gene; defined once, building the class for
+# every query was a noticeable share of the classification time
+geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'rStrand', 'iso_hit'])
 
 def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons_by_chr, 
                                 start_ends_by_gene, trec, genome_dict, nPolyA):
@@ -242,7 +245,6 @@ def transcriptsKnownSpliceSites(isoform_hits_name, refs_1exon_by_chr, refs_exons
             best_by_gene[ref_gene] = isoform_hit
         # now we have the best transcript hit for each gene, we need to select the best one
         # start with the best scoring one (FSM is best) --> can add other genes if they don't overlap
-        geneHitTuple = namedtuple('geneHitTuple', ['score', 'rStart', 'rEnd', 'rGene', 'rStrand', 'iso_hit'])
         best_by_gene = [geneHitTuple(cat_ranking[iso_hit.structural_category], iso_hit.ref_start, iso_hit.ref_end,
                                      ref_gene, iso_hit.ref_strand, iso_hit) for ref_gene, iso_hit in best_by_gene.items()]
         best_by_gene = list(filter(lambda x: x.score > 0, best_by_gene)) # filter out non-matches
@@ -411,7 +413,13 @@ def novelIsoformsKnownGenes(isoform_hit, trec, junctions_by_chr, junctions_by_ge
         all_junctions_known = True
         all_junctions_in_hit_ref = True
         for d,a in trec.junctions:
-            all_junctions_known = all_junctions_known and (d in junctions_by_chr[trec.chrom]['donors']) and (a in junctions_by_chr[trec.chrom]['acceptors'])
+            # donors and acceptors are sorted lists: a binary search instead
+            # of a scan of every reference site of the chromosome
+            donors = junctions_by_chr[trec.chrom]['donors']
+            acceptors = junctions_by_chr[trec.chrom]['acceptors']
+            i = bisect.bisect_left(donors, d)
+            j = bisect.bisect_left(acceptors, a)
+            all_junctions_known = all_junctions_known and (i < len(donors) and donors[i] == d) and (j < len(acceptors) and acceptors[j] == a)
             all_junctions_in_hit_ref = all_junctions_in_hit_ref and ((d,a) in ref_gene_junctions)
         if all_junctions_known:
             isoform_hit.structural_category = "novel_in_catalog"

@@ -34,7 +34,7 @@ from src.classification_preprocessing import (
 from src.classification_main import isoform_classification_pipeline
 from src.module_logging import qc_logger
 
-def run(args):
+def run(args, genome_dict=None, reference=None):
     global isoform_hits_name
 
     # Get filenames
@@ -45,9 +45,12 @@ def run(args):
     start3 = timeit.default_timer()
 
     qc_logger.info("Parsing provided files")
-    qc_logger.info(f"Reading genome fasta {args.refFasta}")
-    # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
-    genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
+    # With chunks, the genome and the parsed reference can come from the
+    # parent process, which read them once for all the chunks
+    if genome_dict is None:
+        qc_logger.info(f"Reading genome fasta {args.refFasta}")
+        # NOTE: can't use LazyFastaReader because inefficient. Bring the whole genome in!
+        genome_dict = dict((r.name, r) for r in SeqIO.parse(open(args.refFasta), 'fasta'))
     ## correction of sequences and ORF prediction (if gtf provided instead of fasta file, correction of sequences will be skipped)
     sequence_correction(args.dir, args.output, args.cpus, args.chunks, args.fasta,
                         genome_dict, badstrandGTF, args.refFasta, args.isoforms, args.aligner_choice,
@@ -57,10 +60,11 @@ def run(args):
                          corrFASTA, corrORF,args.psauron_threshold, args.cpus)
 
     ## parse reference id (GTF) to dicts
+    if reference is None:
+        reference = reference_parser(args.refGTF,args.dir,args.output, list(genome_dict.keys()),
+                                     args.genename, args.isoAnnotLite)
     refs_1exon_by_chr, refs_exons_by_chr, \
-        junctions_by_chr, junctions_by_gene, start_ends_by_gene = \
-            reference_parser(args.refGTF,args.dir,args.output, list(genome_dict.keys()),
-                             args.genename, args.isoAnnotLite)
+        junctions_by_chr, junctions_by_gene, start_ends_by_gene = reference
 
     ## parse query isoforms
     corrgenPred = GTF_to_genePred(corrGTF)

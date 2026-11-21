@@ -530,7 +530,7 @@ Once we have the mapping of the candidate isoforms to the targets and the refere
 
     -   Targets FSM (Full Splice Match) artifacts arising when there's insufficient confidence in validating Transcription Start Sites (TSS) or Transcription Termination Sites (TTS).
     -   If a reference transcript relates to a removed FSM, it's automatically added to the transcriptome. However, if multiple FSMs point to the same reference but have varied TSS, the reference is added just once.
-    -   Artifacts from ISM, NIC, and NNC categories are seen as potential rescue candidates. ISM artifacts are considered only if they don't have an associated FSM with the same reference transcript.
+    -   Artifacts from ISM, NIC, and NNC categories are seen as potential rescue candidates. ISM artifacts are considered only if they don't have an associated FSM with the same reference transcript, or if that FSM passed the filter. FSM artifacts whose reference kept an FSM isoform are also rescue candidates.
 2.  Rescue Target Identification:
 
     -   Defines a group of "rescue targets" or potential replacements for the rescue candidates. This encompasses both long read-defined and reference isoforms that have at least one same-gene rescue target.

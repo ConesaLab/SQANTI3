@@ -78,19 +78,76 @@ class TestIdentifyRescueCandidates:
         # PB.8.1 has reference REF10 which has no FSM
         assert 'PB.8.1' in result['isoform'].values
     
-    def test_ism_with_existing_fsm_excluded(self, extended_classification_df):
-        """ISM with reference that has FSM should be excluded."""
+    def test_ism_with_existing_fsm_included(self, extended_classification_df):
+        """ISM with a reference that kept an FSM isoform should be included."""
         result = identify_rescue_candidates(extended_classification_df)
         
-        # PB.3.2 has reference REF2 which has FSM (PB.1.2)
-        assert 'PB.3.2' not in result['isoform'].values
+        # PB.3.2 has reference REF2 which has FSM isoform (PB.1.2)
+        assert 'PB.3.2' in result['isoform'].values
     
-    def test_fsm_excluded(self, extended_classification_df):
-        """FSM transcripts should never be included."""
+    def test_fsm_isoforms_excluded(self, extended_classification_df):
+        """FSM transcripts that passed the filter should never be included."""
         result = identify_rescue_candidates(extended_classification_df)
         
         assert 'PB.1.1' not in result['isoform'].values
         assert 'PB.1.2' not in result['isoform'].values
+    
+    def test_artifacts_of_represented_reference_included(self):
+        """FSM and ISM artifacts of a reference with FSM isoforms should be included."""
+        df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2', 'PB.1.3', 'PB.1.4'],
+            'structural_category': ['full-splice_match', 'full-splice_match',
+                                    'full-splice_match', 'incomplete-splice_match'],
+            'exons': [3, 3, 3, 2],
+            'filter_result': ['Isoform', 'Isoform', 'Artifact', 'Artifact'],
+            'associated_transcript': ['REF1', 'REF1', 'REF1', 'REF1'],
+            'associated_gene': ['GENE1', 'GENE1', 'GENE1', 'GENE1']
+        })
+        result = identify_rescue_candidates(df)
+        
+        assert set(result['isoform']) == {'PB.1.3', 'PB.1.4'}
+    
+    def test_artifacts_of_lost_reference_excluded(self):
+        """FSM and ISM artifacts of a lost reference with FSM go to automatic rescue."""
+        df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2'],
+            'structural_category': ['full-splice_match', 'incomplete-splice_match'],
+            'exons': [3, 2],
+            'filter_result': ['Artifact', 'Artifact'],
+            'associated_transcript': ['REF1', 'REF1'],
+            'associated_gene': ['GENE1', 'GENE1']
+        })
+        result = identify_rescue_candidates(df)
+        
+        assert result.empty
+    
+    def test_ism_of_reference_with_only_ism_isoforms_excluded(self):
+        """ISM artifacts of a reference represented only by ISM isoforms should be excluded."""
+        df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2'],
+            'structural_category': ['incomplete-splice_match', 'incomplete-splice_match'],
+            'exons': [2, 2],
+            'filter_result': ['Isoform', 'Artifact'],
+            'associated_transcript': ['REF1', 'REF1'],
+            'associated_gene': ['GENE1', 'GENE1']
+        })
+        result = identify_rescue_candidates(df)
+        
+        assert result.empty
+    
+    def test_monoexonic_fsm_of_represented_reference(self):
+        """Mono-exonic FSM artifacts follow the same mono-exonic filter as other candidates."""
+        df = pd.DataFrame({
+            'isoform': ['PB.1.1', 'PB.1.2'],
+            'structural_category': ['full-splice_match', 'full-splice_match'],
+            'exons': [1, 1],
+            'filter_result': ['Isoform', 'Artifact'],
+            'associated_transcript': ['REF1', 'REF1'],
+            'associated_gene': ['GENE1', 'GENE1']
+        })
+        
+        assert 'PB.1.2' in identify_rescue_candidates(df, monoexons='all')['isoform'].values
+        assert identify_rescue_candidates(df, monoexons='fsm').empty
     
     def test_non_artifacts_excluded(self, extended_classification_df):
         """Non-artifact NIC/NNC should be excluded."""
@@ -191,10 +248,11 @@ class TestIdentifyRescueCandidates:
         # - PB.2.1 (NIC artifact, REF3)
         # - PB.2.2 (NNC artifact, REF4)
         # - PB.3.1 (ISM with lost reference REF5)
+        # - PB.3.2 (ISM of REF2, which has FSM isoform PB.1.2)
         # - PB.4.1 (ISM with lost reference REF6, monoexon)
         # - PB.7.1 (NIC artifact REF9, monoexon)
         # - PB.8.1 (ISM with lost reference REF10)
-        assert len(result) == 6
+        assert len(result) == 7
     
     def test_candidate_count_no_monoexons(self, extended_classification_df):
         """Verify expected number of candidates when monoexons are filtered."""
@@ -204,8 +262,9 @@ class TestIdentifyRescueCandidates:
         # - PB.2.1 (NIC artifact, REF3, 2 exons)
         # - PB.2.2 (NNC artifact, REF4, 3 exons)
         # - PB.3.1 (ISM with lost reference REF5, 2 exons)
+        # - PB.3.2 (ISM of REF2, which has FSM isoform PB.1.2, 2 exons)
         # - PB.8.1 (ISM with lost reference REF10, 4 exons)
-        assert len(result) == 4
+        assert len(result) == 5
 
 
 class TestGetRescueGeneTargets:
