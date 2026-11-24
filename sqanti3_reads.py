@@ -136,23 +136,27 @@ def get_method_runSQANTI3(args, df):
                      if args.verbose:
                          reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
         if args.mods_mode:
-            # uBAM -> fastq -> mappedBAM
+            # uBAM -> fastq -> mappedBAM. Done here, one sample at a time: the alignment
+            # already uses all the --cpus.
             fastq = align_uBAM(args, uBAM_files[file_acc], file_acc, sampleID, reads_logger)
-            cmd_sqanti = (
-                f"python {sqantiqcPath}/sqanti3_qc.py "
-                f"--isoforms {fastq} "
-                f"--refGTF {args.refGTF} "
-                f"--refFasta {args.refFasta} "
-                f"--min_ref_len {args.min_ref_len} "
-                f"--aligner_choice minimap2 "
-                f"-t {args.cpus} "
-                f"-d {args.OUTPUT}/{file_acc} "
-                f"-o {sampleID} "
-                f"-s {args.sites} "
-                f"--fasta"
-            )
+            # QC reuses the SAM written by align_uBAM. The command goes through qc_cmds like
+            # the other modes, so a failed QC stops the run instead of leaving the new
+            # alignment next to the classification of a previous run.
+            cmd_sqanti = [
+                "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                "--isoforms", fastq,
+                "--refGTF", args.refGTF,
+                "--refFasta", args.refFasta,
+                "--min_ref_len", str(args.min_ref_len),
+                "--aligner_choice", "minimap2",
+                "-t", str(args.cpus),
+                "-d", f"{args.OUTPUT}/{file_acc}",
+                "-o", sampleID,
+                "-s", str(args.sites),
+                "--fasta",
+            ]
             reads_logger.debug(cmd_sqanti)
-            subprocess.call(cmd_sqanti, shell = True)
+            qc_cmds.append(cmd_sqanti)
             continue
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
