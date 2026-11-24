@@ -130,3 +130,46 @@ class TestValidateMODS:
         with caplog.at_level(logging.WARNING):
             validate_MODS(args, logger)
         assert "--chunks is ignored" in caplog.text
+
+
+class TestEmptySamples:
+    """A sample without usable reads or without modifications must not stop a multi-sample run."""
+
+    def test_sample_without_mapped_reads(self, tmp_path):
+        write_mods_bam(tmp_path, "s1", "s1", [])
+        write_classification(tmp_path, "s1", "s1", [])
+        args = mods_args(tmp_path)
+        gen_mod_tsv(args, "s1", "s1", logger)
+        out = ujc_mod_sites(args, "s1", "s1", logger)
+        assert len(pd.read_csv(out, sep="\t")) == 0
+        assert len(pd.read_csv(tmp_path / "s1" / "s1_ujc_mod_sites.tsv", sep="\t")) == 0
+
+    def test_sample_without_modifications_above_threshold(self, tmp_path):
+        write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "ml": (10,), "start": 999}])
+        write_classification(tmp_path, "s1", "s1", [["r1", "full-splice_match", "chr1_+_monoexon_T1", "h1"]])
+        args = mods_args(tmp_path)
+        gen_mod_tsv(args, "s1", "s1", logger)
+        out = ujc_mod_sites(args, "s1", "s1", logger)
+        classif = pd.read_csv(out, sep="\t")
+        assert classif["isoform"].tolist() == ["r1"]
+        assert classif["m6A_n_mod"].tolist() == [0]
+        assert len(pd.read_csv(tmp_path / "s1" / "s1_ujc_mod_sites.tsv", sep="\t")) == 0
+
+
+class TestGenModTsv:
+    """Test suite for gen_mod_tsv."""
+
+    def test_columns_of_the_per_read_table(self, tmp_path):
+        write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "start": 999}])
+        table = pd.read_csv(gen_mod_tsv(mods_args(tmp_path, modtypes=("m6A", "m5C")), "s1", "s1", logger), sep="\t")
+        assert table.columns.tolist() == ["isoform", "read_length", "read_start", "read_end", "chrom", "strand",
+                                          "m6A_positions", "m6A_probs", "m6A_n_mod",
+                                          "m5C_positions", "m5C_probs", "m5C_n_mod"]
+        assert table[["isoform", "read_start", "read_end", "m6A_n_mod", "m5C_n_mod"]].values.tolist() == [["r1", 1000, 1099, 1, 0]]
+
+    def test_sample_without_reads_keeps_the_header(self, tmp_path, caplog):
+        write_mods_bam(tmp_path, "s1", "s1", [])
+        table = pd.read_csv(gen_mod_tsv(mods_args(tmp_path), "s1", "s1", logger), sep="\t")
+        assert len(table) == 0
+        assert "m6A_n_mod" in table.columns
+        assert "no mapped reads with modification tags" in caplog.text

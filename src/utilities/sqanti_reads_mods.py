@@ -290,8 +290,13 @@ def gen_mod_tsv(args,file_acc,sampleID, reads_logger):
                 n_bad += 1
                 continue
             rows.append(row)
-    df = pd.DataFrame(rows)
+    # Columns are given so that a sample without reads still gets a table with its header
+    columns = ["isoform", "read_length", "read_start", "read_end", "chrom", "strand"]
+    columns += [f"{mod}_{field}" for mod in args.MODTYPES for field in ("positions", "probs", "n_mod")]
+    df = pd.DataFrame(rows, columns=columns)
     df.to_csv(os.path.join(args.OUTPUT, file_acc, f"{sampleID}_modifications.tsv"), sep="\t", index=False)
+    if not rows:
+        reads_logger.warning(f"[WARNING] {sampleID}: no mapped reads with modification tags, its modification tables are empty")
     if n_bad:
         reads_logger.warning(f"{sampleID}: {n_bad:,} reads skipped because their MM/ML tags do not match the "
                              f"sequence ({n_bad / (n_bad + len(rows)):.2%})")

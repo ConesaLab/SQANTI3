@@ -471,6 +471,9 @@ def run_mods_plots(design_file, out_dir, prefix, args, min_cov=20, min_mod=2):
     '''Modification report: loads the reads and UJC sites of every sample of the processed design,
     adds their positions along the UJCs and writes <prefix>_mods_plots.pdf in out_dir'''
     reads, sites = load_design_samples(design_file, args)
+    if reads.empty:
+        reads_logger.warning("[WARNING] No sample has reads with modification information, the modification plots are skipped")
+        return None
     reads_logger.info("Placing the modified sites along their UJCs...")
     sites_pos, coverage, junction_bg = add_ujc_positions(sites, reads)
     reads = add_exon_bin(reads)
