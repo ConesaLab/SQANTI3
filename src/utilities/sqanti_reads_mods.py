@@ -110,28 +110,36 @@ def mod_files_check(args, file_acc, reads_logger):
     """Checks that all the files needed for mods mode are in order"""
     # Check for uBAM
     uBAM_pattern = os.path.join(args.input_dir, f"{file_acc}*.bam")
-    try:
-        uBAM_files = glob.glob(uBAM_pattern)[0]
-    except IndexError:
+    exact = os.path.join(args.input_dir, f"{file_acc}.bam")
+    matches = sorted(glob.glob(uBAM_pattern))
+    if os.path.isfile(exact):
+        uBAM_files = exact
+    elif len(matches) == 1:
+        uBAM_files = matches[0]
+    elif not matches:
         reads_logger.error(f"[ERROR] {uBAM_pattern} does not exist")
         sys.exit(-1)
     else:
-        if os.path.isfile(args.refFasta) is False:
-            reads_logger.error(f'[ERROR] You inputted uBAM files to map SQANTI3 but no reference genome FASTA')
-            sys.exit(-1)
-        if os.path.isfile(args.refGTF) is False:
-            reads_logger.error(f'[ERROR] You inputted uBAM files to map but no reference annotation GTF')
-            sys.exit(-1)
-        if args.verbose:
-            reads_logger.debug(f'[INFO] You inputted bam files, we will run sqanti_reads in modifications mode for sample {uBAM_files}')
-        mods = check_uBAM(uBAM_files,reads_logger)
-        if not mods:
-            reads_logger.error(f"[ERROR] While checking first 1000 reads, no MM/ML tags were found")
-            sys.exit(-1)
-        if not set(args.MODTYPES).issubset(mods):
-            reads_logger.error(f"[ERROR] The following modifications were requested but not found in the uBAM: {', '.join(sorted(set(args.MODTYPES) - mods))}")
-            sys.exit(-1)
-        return mods, uBAM_files
+        # file_acc is the prefix of several files (sample1, sample10): never guess
+        reads_logger.error(f"[ERROR] Several uBAM files match {file_acc} and none is named {file_acc}.bam: "
+                           f"{', '.join(os.path.basename(f) for f in matches)}")
+        sys.exit(-1)
+    if os.path.isfile(args.refFasta) is False:
+        reads_logger.error(f'[ERROR] You inputted uBAM files to map SQANTI3 but no reference genome FASTA')
+        sys.exit(-1)
+    if os.path.isfile(args.refGTF) is False:
+        reads_logger.error(f'[ERROR] You inputted uBAM files to map but no reference annotation GTF')
+        sys.exit(-1)
+    if args.verbose:
+        reads_logger.debug(f'[INFO] You inputted bam files, we will run sqanti_reads in modifications mode for sample {uBAM_files}')
+    mods = check_uBAM(uBAM_files,reads_logger)
+    if not mods:
+        reads_logger.error(f"[ERROR] While checking first 1000 reads, no MM/ML tags were found")
+        sys.exit(-1)
+    if not set(args.MODTYPES).issubset(mods):
+        reads_logger.error(f"[ERROR] The following modifications were requested but not found in the uBAM: {', '.join(sorted(set(args.MODTYPES) - mods))}")
+        sys.exit(-1)
+    return mods, uBAM_files
 
 def align_uBAM(args, uBAM_file, file_acc, sampleID, reads_logger):
     '''Converts the uBAM to fastq keeping the MM/ML tags, aligns it with minimap2 into the
