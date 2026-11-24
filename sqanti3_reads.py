@@ -430,9 +430,8 @@ def main():
             sampleID = row['sampleID']
             tsv = gen_mod_tsv(args, file_acc, sampleID, reads_logger)
             reads_logger.info(f"Modifications table generated for sample {sampleID} in {tsv}")
-            if not args.SKIPHASH:
-                mod_clasif = ujc_mod_sites(args, file_acc, sampleID, reads_logger)
-                reads_logger.info(f"Modification-aware classification file generated for sample {sampleID} in {mod_clasif}")
+            mod_clasif = ujc_mod_sites(args, file_acc, sampleID, reads_logger)
+            reads_logger.info(f"Modification-aware classification file generated for sample {sampleID} in {mod_clasif}")
             
     # Run plotting script directly as a function call
     if args.SKIPPLOTS:
@@ -464,7 +463,7 @@ def main():
         jobs=args.jobs,
     )
     # Modification plots, in their own PDF
-    if args.mods_mode and not args.SKIPPLOTS:
+    if args.mods_mode:
         from src.utilities.sqanti_reads_mods_plots import run_mods_plots
         reads_logger.info("Running SQANTI-reads modification plots...")
         run_mods_plots(args.inDESIGN, args.OUTPUT, prefix, args)

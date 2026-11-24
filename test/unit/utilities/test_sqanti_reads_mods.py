@@ -106,3 +106,27 @@ class TestModFilesCheck:
         with pytest.raises(SystemExit):
             mod_files_check(args, "sample1", logger)
         assert "sample10.bam, sample1_a.bam" in caplog.text
+
+
+class TestValidateMODS:
+    """Test suite for validate_MODS."""
+
+    def base_args(self, **kwargs):
+        args = SimpleNamespace(MODPROB=[0.9], MODTYPES=["m6A"], sqanti_dirs=None, SKIPHASH=False,
+                               aligner_choice="minimap2", chunks=1)
+        args.__dict__.update(kwargs)
+        return args
+
+    def test_other_aligner_is_rejected(self, caplog):
+        """Mods mode always aligns with minimap2, so asking for uLTRA stops the run."""
+        args = self.base_args(aligner_choice="uLTRA")
+        with pytest.raises(SystemExit):
+            validate_MODS(args, logger)
+        assert "--aligner_choice uLTRA" in caplog.text
+
+    def test_chunks_are_reported_as_ignored(self, caplog):
+        """The alignment is done once before QC, so --chunks only gives a warning."""
+        args = self.base_args(chunks=4)
+        with caplog.at_level(logging.WARNING):
+            validate_MODS(args, logger)
+        assert "--chunks is ignored" in caplog.text

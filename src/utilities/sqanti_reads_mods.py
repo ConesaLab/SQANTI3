@@ -64,6 +64,11 @@ def validate_MODS(args,reads_logger):
     if args.SKIPHASH:
         reads_logger.error("[ERROR] Modifications mode needs the UJC hashes, it cannot be run with --skip_hash.")
         sys.exit(-1)
+    if args.aligner_choice != "minimap2":
+        reads_logger.error(f"[ERROR] Modifications mode aligns the uBAM reads with minimap2, it cannot be run with --aligner_choice {args.aligner_choice}.")
+        sys.exit(-1)
+    if args.chunks > 1:
+        reads_logger.warning("[WARNING] --chunks is ignored in modifications mode: the reads are aligned once and SQANTI3 QC reuses that alignment.")
     types, all_correct = lookup_mods(args)
     if all_correct:
         args.MODTYPES = types
