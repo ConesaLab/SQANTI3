@@ -19,6 +19,9 @@ from src.utilities.sqanti_reads_mods import (
 
 logger = logging.getLogger("test_mods")
 
+# Expected failure until the numeric codes are supported (issue 7 of the review of PR #646)
+NUMERIC_CODES = pytest.mark.xfail(reason="PR #646 issue 7: numeric modification codes are not recognised")
+
 SEQ = "ACGT" * 25  # 100 nt, an A every 4 bases starting at read position 0
 
 
@@ -74,6 +77,25 @@ def mods_args(out_dir, modtypes=("m6A",), prob=0.9):
                            MODTOTHRESH={mod: prob for mod in modtypes})
 
 
+class TestModificationCodes:
+    """m6A and m5C can be written with their letter (a, m) or their ChEBI number (21891, 27551)."""
+
+    @pytest.mark.parametrize("mm, expected", [("A+a,0;", "m6A"), pytest.param("A+21891,0;", "m6A", marks=NUMERIC_CODES),
+                                               ("C+m,0;", "m5C"), pytest.param("C+27551,0;", "m5C", marks=NUMERIC_CODES)])
+    def test_check_uBAM_recognises_letter_and_number(self, tmp_path, mm, expected):
+        ubam = tmp_path / "sample.bam"
+        write_ubam(ubam, [{"name": "r1", "mm": mm}])
+        assert check_uBAM(str(ubam), logger) == {expected}
+
+    @pytest.mark.parametrize("mm", ["A+a,0;", pytest.param("A+21891,0;", marks=NUMERIC_CODES)])
+    def test_process_read_recognises_letter_and_number(self, tmp_path, mm):
+        path = write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "mm": mm, "start": 999}])
+        with pysam.AlignmentFile(path) as bam:
+            row = process_read(next(bam.fetch()), mods_args(tmp_path), logger)
+        assert row["m6A_n_mod"] == 1
+        assert row["m6A_positions"] == "1000"
+
+
 class TestModFilesCheck:
     """Test suite for mod_files_check."""
 
@@ -116,6 +138,19 @@ class TestValidateMODS:
                                aligner_choice="minimap2", chunks=1)
         args.__dict__.update(kwargs)
         return args
+
+    @pytest.mark.xfail(reason="PR #646 issue 6: --mod_prob 1 discards every call")
+    def test_threshold_of_one_is_reachable_or_rejected(self, tmp_path):
+        """The highest ML value (255) is 0.998, so --mod_prob 1 must either be rejected or still keep it."""
+        args = self.base_args(MODPROB=[1.0])
+        try:
+            validate_MODS(args, logger)
+        except SystemExit:
+            return
+        path = write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "start": 999}])
+        with pysam.AlignmentFile(path) as bam:
+            row = process_read(next(bam.fetch()), mods_args(tmp_path, prob=1.0), logger)
+        assert row["m6A_n_mod"] == 1
 
     def test_other_aligner_is_rejected(self, caplog):
         """Mods mode always aligns with minimap2, so asking for uLTRA stops the run."""
@@ -173,3 +208,31 @@ class TestGenModTsv:
         assert len(table) == 0
         assert "m6A_n_mod" in table.columns
         assert "no mapped reads with modification tags" in caplog.text
+
+
+class TestUjcModSites:
+    """Test suite for ujc_mod_sites."""
+
+    def test_occupancy_of_a_shared_site(self, tmp_path):
+        """Two reads of the same UJC cover position 1000 and only one is modified there."""
+        write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "ml": (255,), "start": 999},
+                                              {"name": "r2", "ml": (10,), "start": 999}])
+        write_classification(tmp_path, "s1", "s1", [["r1", "full-splice_match", "chr1_+_monoexon_T1", "h1"],
+                                                    ["r2", "full-splice_match", "chr1_+_monoexon_T1", "h1"]])
+        args = mods_args(tmp_path)
+        gen_mod_tsv(args, "s1", "s1", logger)
+        ujc_mod_sites(args, "s1", "s1", logger)
+        sites = pd.read_csv(tmp_path / "s1" / "s1_ujc_mod_sites.tsv", sep="\t")
+        assert sites[["mod_pos", "n_mod", "n_cov"]].values.tolist() == [[1000, 1, 2]]
+        assert sites["occupancy"].tolist() == pytest.approx([0.5])
+
+    def test_read_listed_twice_in_classification(self, tmp_path):
+        """Before issue #216 a chimeric read had one classification row per alignment. Both rows get
+        the modifications of the primary alignment, so the run stops instead of mis-assigning them."""
+        write_mods_bam(tmp_path, "s1", "s1", [{"name": "r1", "start": 999}])
+        write_classification(tmp_path, "s1", "s1", [["r1", "full-splice_match", "chr1_+_1_2", "h1"],
+                                                    ["r1", "intergenic", "chr2_+_5_6", "h2"]])
+        args = mods_args(tmp_path)
+        gen_mod_tsv(args, "s1", "s1", logger)
+        with pytest.raises(SystemExit):
+            ujc_mod_sites(args, "s1", "s1", logger)
