@@ -11,14 +11,9 @@ from src.module_logging import reads_logger
 from src.utilities.conesa_colors import color_conesa, conesa_cmap
 
 #CONSTANTS
-CAT_ABBR = {"full-splice_match": "FSM", "incomplete-splice_match": "ISM",
-            "novel_in_catalog": "NIC", "novel_not_in_catalog": "NNC",
-            "antisense": "AS", "fusion": "FUS", "genic": "GENIC",
-            "genic_intron": "GI", "intergenic": "INTER"}
-CAT_ORDER = ["FSM", "ISM", "NIC", "NNC", "AS", "FUS", "GENIC", "GI", "INTER"]
-CAT_PALETTE = {"FSM": "#6BAED6", "ISM": "#FC8D59", "NIC": "#78C679", "NNC": "#EE6A50",
-               "GENIC": "#969696", "AS": "#66C2A4", "FUS": "#ffc125",
-               "INTER": "#e9967a", "GI": "#41B6C4"}
+# Same category names, order and colours as the SQANTI-reads report
+from src.utilities.sqanti_reads_plots import (
+    _CAT_ABBR as CAT_ABBR, cat_order as CAT_ORDER, category_color_palette as CAT_PALETTE)
 
 READ_COLS = ["isoform", "chrom", "read_start", "read_end", "strand", "length", "exons",
              "structural_category", "subcategory", "associated_gene",
