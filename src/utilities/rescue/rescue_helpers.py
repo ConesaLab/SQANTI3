@@ -44,8 +44,24 @@ def identify_rescue_candidates(classif_df, monoexons='all'):
     )
     ism_candidates = classif_df[ism_mask]
 
-    # 4. Merge and Filter Monoexons
-    final_candidates = pd.concat([nic_nnc_candidates, ism_candidates])
+    # 4. Select FSM and ISM artifacts of references that kept an FSM isoform
+    # Automatic rescue skips them because their reference is still represented,
+    # so mapping decides which isoform (or reference) receives them
+    represented_ids = classif_df.loc[
+        (classif_df['structural_category'] == 'full-splice_match') &
+        (classif_df['filter_result'] == 'Isoform'),
+        'associated_transcript'
+    ].unique()
+
+    represented_mask = (
+        (classif_df['structural_category'].isin(['full-splice_match', 'incomplete-splice_match'])) &
+        (classif_df['filter_result'] == 'Artifact') &
+        (classif_df['associated_transcript'].isin(represented_ids))
+    )
+    represented_candidates = classif_df[represented_mask]
+
+    # 5. Merge and Filter Monoexons
+    final_candidates = pd.concat([nic_nnc_candidates, ism_candidates, represented_candidates])
 
     if monoexons != 'all':
         final_candidates = final_candidates[final_candidates['exons'] > 1]
