@@ -157,68 +157,11 @@ def apply_rules(row, force_multiexon, rules_dict):
     else:
         return "Artifact"
 
-def get_reasons(row, force_multiexon, rules_dict):
-    """Collect detailed reasons for transcript filtering decisions.
-    
-    Args:
-        row (pd.Series): Single row from SQANTI3 classification dataframe
-        force_multiexon (bool): Flag to enforce multi-exon filtering
-        rules_dict (dict): Parsed rules from read_json_rules()
-        
-    Returns:
-        pd.Series: Contains three elements:
-            - isoform: Transcript ID
-            - structural_category: Assigned structural category
-            - filter_reason: Semicolon-separated list of failed criteria
-            
-    Note:
-        Uses set to avoid duplicate reasons from multiple rule checks
-    """
-    reasons = set()
-    if force_multiexon and row['exons'] == 1:
-        reasons.add("Mono-exonic")
-    
-    structural_category = row['structural_category'] if row['structural_category'] in rules_dict else 'rest'
-
-    for rules in rules_dict[structural_category]:
-        for _, rule in rules.iterrows():
-            column = rule['column']
-            rule_type = rule['type']
-            rule_value = rule['rule']
-
-            if float(row['exons']) == 1 and column in junction_related_columns:
-                continue
-
-            if pd.isna(row[column]):
-                reasons.add(f"NA value in {column}")
-                continue
-
-            if rule_type == 'Category':
-                if isinstance(rule_value, list):
-                    if str(row[column]).lower() not in rule_value:
-                        reasons.add(f"{column}: {row[column]}")
-                else:
-                    if str(row[column]).lower() != rule_value:
-                        reasons.add(f"{column}: {row[column]}")
-            elif rule_type == 'Min_Threshold':
-                if row[column] < rule_value:
-                    reasons.add(f"{column}: {row[column]} < {rule_value}")
-            elif rule_type == 'Max_Threshold':
-                if row[column] > rule_value:
-                    reasons.add(f"{column}: {row[column]} > {rule_value}")
-    
-    return pd.Series({
-        'isoform': row['isoform'], 
-        'structural_category': row['structural_category'], 
-        'filter_reason': '; '.join(reasons)
-    })
-
 def rule_failures(classif, rows, column, rule_type, rule_value):
     """Evaluate one rule on a subset of transcripts at once.
 
-    Vectorized counterpart of the per-row checks in apply_rules and
-    get_reasons: NA values fail, categories are compared in lower case and
-    thresholds are inclusive.
+    Vectorized counterpart of the per-row checks in apply_rules: NA values
+    fail, categories are compared in lower case and thresholds are inclusive.
 
     Args:
         classif (pd.DataFrame): SQANTI3 classification data
@@ -317,8 +260,8 @@ def apply_rules_table(classif, force_multiexon, rules_dict):
 def get_reasons_table(artifacts, force_multiexon, rules_dict):
     """Collect the filtering reasons of all artifacts at once.
 
-    Gives the same reasons as get_reasons row by row: every failed rule of
-    every rule set of the structural category, without duplicates.
+    The reasons of a transcript are every failed rule of every rule set of
+    its structural category, without duplicates.
 
     Args:
         artifacts (pd.DataFrame): Classification rows filtered as artifacts

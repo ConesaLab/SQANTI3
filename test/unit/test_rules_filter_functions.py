@@ -6,7 +6,11 @@ from typing import Any
 
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
-from src.utilities.filter.sqanti3_rules_filter import read_json_rules, apply_rules, get_reasons, junction_related_columns
+from src.utilities.filter.sqanti3_rules_filter import read_json_rules, apply_rules, get_reasons_table, junction_related_columns
+
+def reasons_of(row, force_multiexon, rules_dict):
+    """Filtering reasons of one transcript, as the row of get_reasons_table."""
+    return get_reasons_table(pd.DataFrame([row]), force_multiexon, rules_dict).iloc[0]
 
 ## Reading JSON rules
 @pytest.fixture
@@ -135,7 +139,7 @@ def test_monoexon_junction_failsafe_ignored():
 
     assert apply_rules(row, False, rules_dict) == "Isoform"
     
-    reasons_series = get_reasons(row, False, rules_dict)
+    reasons_series = reasons_of(row, False, rules_dict)
     assert reasons_series['filter_reason'] == ""
 
 def test_multiexon_junction_failsafe_enforced():
@@ -157,7 +161,7 @@ def test_multiexon_junction_failsafe_enforced():
 
     assert apply_rules(row, False, rules_dict) == "Artifact"
     
-    reasons_series = get_reasons(row, False, rules_dict)
+    reasons_series = reasons_of(row, False, rules_dict)
     reasons = set(reasons_series["filter_reason"].split("; "))
     assert len(reasons) == 2
     assert reasons == {"min_cov: 0 < 10", "bite: False"}
@@ -179,7 +183,7 @@ def test_min_intron_length_rule(exons, distance, expected):
 
     assert "min_intron_length" in junction_related_columns
     assert apply_rules(row, False, rules_dict) == expected
-    reasons = get_reasons(row, False, rules_dict)["filter_reason"]
+    reasons = reasons_of(row, False, rules_dict)["filter_reason"]
     assert reasons == ("min_intron_length: 99 < 100" if expected == "Artifact" else "")
 
 def test_apply_rules_isoform_rest(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
@@ -225,7 +229,7 @@ def test_get_reasons_isoform_passes(classification_df: pd.DataFrame, rules_dict:
     # Since min_cov is a junction-related column checked in the rules, but row has it as NaN:
     # Ensure it's given a mocked valid value for the "passes" test!
     row['min_cov'] = 10
-    result = get_reasons(row, False, rules_dict)
+    result = reasons_of(row, False, rules_dict)
     
     assert result["isoform"] == row["isoform"]
     assert result["structural_category"] == row["structural_category"]
@@ -233,14 +237,14 @@ def test_get_reasons_isoform_passes(classification_df: pd.DataFrame, rules_dict:
 
 def test_get_reasons_artifact_due_to_monoexon(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[0] 
-    result = get_reasons(row, True, rules_dict)
+    result = reasons_of(row, True, rules_dict)
     
     assert "Mono-exonic" in result["filter_reason"]
     assert result["isoform"] == row["isoform"]
 
 def test_get_reasons_threshold_violation(classification_df: pd.DataFrame, rules_dict: dict[str, Any]):
     row = classification_df.iloc[39]
-    result = get_reasons(row, False, rules_dict)
+    result = reasons_of(row, False, rules_dict)
 
     assert result["isoform"] == row["isoform"]
     assert result["filter_reason"] != ""
@@ -257,7 +261,7 @@ def test_get_reasons_categorical_mismatch():
         "category": [pd.DataFrame([["col", "Category", "expected"]], columns=["column", "type", "rule"])],
         "rest": []
     }
-    result = get_reasons(row, False, rules_dict)
+    result = reasons_of(row, False, rules_dict)
     
     assert "col: Mismatch" in result["filter_reason"]
 
@@ -279,7 +283,7 @@ def test_get_reasons_multiple_failures():
         "category": [rules_df],
         "rest": []
     }
-    result = get_reasons(row, False, rules_dict)
+    result = reasons_of(row, False, rules_dict)
 
     assert "col1: 3 < 5" in result["filter_reason"]
     assert "col2: 20 > 10" in result["filter_reason"]
