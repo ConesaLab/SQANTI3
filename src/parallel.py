@@ -70,12 +70,12 @@ def split_fasta_input(isoforms, split_root_dir, chunks):
         raise ValueError(f"Input file '{isoforms}' contains no sequences.")
     return split_outs
 
-# Root, limit, usage and reclaimable-cache names of each cgroup memory layout
+# Root, limit, usage and file-cache names of each cgroup memory layout
 CGROUP_MEMORY_LAYOUTS = {
-    'memory': ('/sys/fs/cgroup/memory', 'memory.limit_in_bytes',
-               'memory.usage_in_bytes', 'total_inactive_file'),  # cgroup v1
+    'memory': ('/sys/fs/cgroup/memory', 'memory.limit_in_bytes', 'memory.usage_in_bytes',
+               ('total_inactive_file', 'total_active_file')),  # cgroup v1
     '': ('/sys/fs/cgroup', 'memory.max', 'memory.current',
-         'inactive_file'),  # cgroup v2
+         ('inactive_file', 'active_file')),  # cgroup v2
 }
 
 def read_cgroup_value(path):
@@ -101,8 +101,9 @@ def read_cgroup_memory():
     Return (used, limit) in bytes for the most restrictive memory cgroup that
     holds this process, or None if no limit is set. SLURM sets --mem on the job
     or step cgroup, not on the task cgroup of the process, so the cgroups above
-    it are checked too. Inactive file cache can be reclaimed and is not counted
-    as used.
+    it are checked too. The file cache (the files that were read, such as the
+    genome or the SAM) can be reclaimed by the kernel, so it is not counted as
+    used.
     """
     result = None
     try:
@@ -115,7 +116,7 @@ def read_cgroup_memory():
         _, controllers, path = line.split(':', 2)
         controller = 'memory' if 'memory' in controllers.split(',') else controllers
         if result is None and controller in CGROUP_MEMORY_LAYOUTS:
-            root, limit_name, usage_name, inactive_name = CGROUP_MEMORY_LAYOUTS[controller]
+            root, limit_name, usage_name, cache_names = CGROUP_MEMORY_LAYOUTS[controller]
             directory = root + path.rstrip('/')
             while directory.startswith(root):
                 limit = read_cgroup_value(os.path.join(directory, limit_name))
@@ -123,9 +124,9 @@ def read_cgroup_memory():
                 # An unlimited cgroup reports 'max' (v2) or a huge number (v1)
                 if (limit is not None and usage is not None and limit < total_memory
                         and (result is None or limit < result[1])):
-                    inactive = read_cgroup_stat(os.path.join(directory, 'memory.stat'),
-                                                inactive_name)
-                    result = (usage - inactive, limit)
+                    stat_file = os.path.join(directory, 'memory.stat')
+                    file_cache = sum(read_cgroup_stat(stat_file, name) for name in cache_names)
+                    result = (max(0, usage - file_cache), limit)
                 directory = os.path.dirname(directory)
     return result
 
