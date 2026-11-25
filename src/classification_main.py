@@ -3,8 +3,9 @@ from csv import DictWriter
 from src.classification_steps import (
     assign_genomic_coordinates, classify_isoform, 
     detect_nmd, fill_cds_info, find_polya_motif_info,
-    process_cage_peak_info, process_polya_peak_info
+    process_cage_peak_info, process_polya_peak_info, intron_chain_key
 ) # type: ignore
+from src.config import PANTRANSCRIPTOME_CATEGORIES
 from src.qc_output import write_junction_info
 from src.utils import alphanum_key
 from src.module_logging import qc_logger
@@ -57,6 +58,12 @@ def isoform_classification_pipeline(
 
             if isoform_hit.CDS_genomic_end is not None:
                 detect_nmd(isoform_hit, rec)
+
+            # Intron chain key of multi-exon NIC/NNC for the pantranscriptome
+            # lookup, which runs once all the chunks are classified
+            if (isoform_hit.structural_category in PANTRANSCRIPTOME_CATEGORIES
+                    and rec.exonCount > 1):
+                isoform_hit.ujc = intron_chain_key(rec)
             isoforms_info[rec.id] = isoform_hit
 
     # Sort isoforms_info by the chromosome and then id.

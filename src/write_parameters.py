@@ -23,6 +23,7 @@ def write_qc_parameters(args):
         f.write("PolyAPeak\t" + (os.path.abspath(args.polyA_peak)  if args.polyA_peak is not None else "NA") + "\n")
         f.write("IsFusion\t" + str(args.is_fusion) + "\n")
         f.write("PhyloP\t" + (os.path.abspath(args.phyloP_bed)  if args.phyloP_bed is not None else "NA") + "\n")
+        f.write("Pantranscriptome\t" + (os.path.abspath(args.pantranscriptome) if args.pantranscriptome is not None else "NA") + "\n")
         f.write("includeORF\t" + str(args.include_ORF) + "\n")
         f.write("ORFInput\t" + (os.path.abspath(args.orf_input) if args.orf_input is not None else "NA" ) + "\n" )
         f.write("PsauronThreshold\t" + str(args.psauron_threshold) + "\n")
@@ -70,6 +71,13 @@ def write_filter_parameters(args):
       f.write("LogLevel\t" + str(args.log_level) + "\n")
       if args.subcommand == 'rules':
           f.write("JSON\t" + str(args.json_filter) + "\n")
+      if args.subcommand == 'auto':
+          f.write("JSON\t" + str(args.json_filter) + "\n")
+          f.write("PercentTraining\t" + str(args.percent_training) + "\n")
+          f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")
+          f.write("TN\t" + (str(args.TN) if args.TN is not None else "NA") + "\n")
+          f.write("MaxClassSize\t" + str(args.max_class_size) + "\n")
+          f.write("Intrapriming\t" + str(args.intrapriming) + "\n")
       if args.subcommand == 'ml':
           f.write("PercentTraining\t" + str(args.percent_training) + "\n")
           f.write("TP\t" + (str(args.TP) if args.TP is not None else "NA") + "\n")

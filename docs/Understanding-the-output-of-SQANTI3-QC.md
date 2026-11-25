@@ -155,6 +155,11 @@ The output `_classification.txt` has the following fields:
 53. `polyA_dist`: if `--polyA_motif_list` is given, shows the location of the  last base of the hexamer. Position 0 is the putative poly(A) site. This distance is hence always negative because it is upstream. 
 54. `polyA_motif_found`: TRUE if a polyA motif given via `--polyA_motif_list` is detected in the 3'end of the transcript.  
 55. `ratio_TSS`: Using Short-Read data, we measure the mean coverage of the 100bp upstream and downstream a reported TSS. Then we calculate the ratio *coverage inside isoform + 0.01/ coverage outside isoform + 0.01*. If several SR samples are provided, `ratio_TSS` will represent the maximum value of the ratios across the samples. This means that if an isoform has a `ratio_TSS` greater than 1 it is more likely that its TSS is true. Meanwhile, if the `ratio_TSS` is close or lower than 1, the SR coverage is similar inside and outside the isoform, something that we wouldn't expect if the TSS was true.
+56. `pantranscriptome`: Public evidence of the intron chain of multi-exon NIC and NNC isoforms, from the catalog given with `--pantranscriptome`: `recurrent` if the chain was seen in public long-read samples of at least 3 studies and 2 sequencing platforms, `seen` if it was seen in at least one public sample, and `unseen` otherwise. NA for the other isoforms or without `--pantranscriptome`.
+57. `pub_samples`: Number of public samples of the catalog with the same intron chain (0 if `unseen`).
+58. `pub_studies`: Number of studies those samples come from.
+59. `pub_platforms`: Number of sequencing platforms (PacBio, ONT) where the chain was seen.
+60. `pantranscriptome_prob`: Probability that the multi-exon NIC or NNC isoform is real, given by the pantranscriptome model carried by the `--pantranscriptome` catalog. The model was trained on the intron chains of public long-read samples (the `recurrent` ones as positives) and only looks at the intron chain: its structure, the splice-site motifs and their strength, how far the novel sites are from annotated ones, and direct repeats at the junctions. The [automatic filter](Running-SQANTI3-filter.md#auto) uses it. NA for the other isoforms or without `--pantranscriptome`.
 
 
 <a name="junctioncols"></a>
