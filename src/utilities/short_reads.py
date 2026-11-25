@@ -223,19 +223,46 @@ def get_bam_index(bam_file, index_dir, cpus):
 
 def count_reads_in_windows(bam_file, bam_index, windows):
     """
-    Number of reads overlapping each (chrom, start, end) window, counted as bedtools coverage -counts does:
-    unmapped reads are skipped, secondary, duplicate and QC-failed reads are counted.
+    Number of reads supporting the inside and outside TSS windows for each
+    (chrom, in_start, in_end, out_start, out_end) tuple.
+
+    A read counts in inside only when its aligned bases overlap the inside window,
+    so spliced reads whose intron (CIGAR N) spans across the TSS without aligning
+    in either window do not dilute the ratio. A read counts in outside when its
+    aligned bases overlap outside, or when it aligns inside and its alignment span
+    crosses outside (e.g. a read splicing from an upstream exon into an internal
+    exon overlapping inside). Unmapped reads and records without a CIGAR are
+    skipped; secondary, duplicate and QC-failed reads are counted.
     """
+    counts = []
     with pysam.AlignmentFile(bam_file, "rb", index_filename=bam_index) as bam:
         contigs = set(bam.references)
-        return [bam.count(chrom, start, end, read_callback=lambda read: not read.is_unmapped) if chrom in contigs else 0
-                for chrom, start, end in windows]
+        for chrom, in_start, in_end, out_start, out_end in windows:
+            if chrom not in contigs:
+                counts.append((0, 0))
+                continue
+            inside = 0
+            outside = 0
+            lo = min(in_start, out_start)
+            hi = max(in_end, out_end)
+            for read in bam.fetch(chrom, lo, hi):
+                if read.is_unmapped or not read.cigartuples:
+                    continue
+                if read.get_overlap(in_start, in_end) > 0:
+                    inside += 1
+                    if read.reference_start < out_end and read.reference_end > out_start:
+                        outside += 1
+                elif read.get_overlap(out_start, out_end) > 0:
+                    outside += 1
+            counts.append((inside, outside))
+    return counts
 
 
 def count_TSS_reads(bam_file, bam_index, windows, cpus):
     """
-    Counts the reads in each TSS window. Every window is looked up through the BAM index, so memory does not
-    grow with read depth: bedtools coverage needed 207 GiB on a BAM with a chloroplast covered ~1 million-fold.
+    Counts the inside and outside reads for each paired TSS window. Every pair is fetched once
+    through the BAM index, so memory does not grow with read depth: bedtools coverage needed
+    207 GiB on a BAM with a chloroplast covered ~1 million-fold.
     """
     if cpus == 1:
         return count_reads_in_windows(bam_file, bam_index, windows)
@@ -245,7 +272,7 @@ def count_TSS_reads(bam_file, bam_index, windows, cpus):
     chunks = [windows[i::n_chunks] for i in range(n_chunks)]
     with Pool(cpus) as pool:
         chunk_counts = pool.starmap(count_reads_in_windows, [(bam_file, bam_index, chunk) for chunk in chunks])
-    counts = [0] * len(windows)
+    counts = [(0, 0)] * len(windows)
     for i, chunk in enumerate(chunk_counts):
         counts[i::n_chunks] = chunk
     return counts
@@ -268,15 +295,25 @@ def get_ratio_TSS(inside_bed, outside_bed, replicates, metric, cpus, bam_index_d
     out_TSS_file = os.path.join(os.path.dirname(inside_bed), "ratio_TSS.csv")
     inside_windows = read_windows(inside_bed)
     outside_windows = read_windows(outside_bed)
-    # Inside and outside windows are counted in one go, then split again
-    all_windows = pd.concat([inside_windows, outside_windows])
-    windows = list(zip(all_windows['chrom'], all_windows['start'].tolist(), all_windows['end'].tolist()))
+    paired = pd.merge(
+        inside_windows,
+        outside_windows[['id', 'start', 'end']],
+        on='id',
+        suffixes=('_in', '_out'),
+    )
+    windows = list(zip(
+        paired['chrom'],
+        paired['start_in'].tolist(),
+        paired['end_in'].tolist(),
+        paired['start_out'].tolist(),
+        paired['end_out'].tolist(),
+    ))
     ratio_rep_df = None
     for b,bam_file in enumerate(replicates):
         bam_index = get_bam_index(bam_file, bam_index_dir, cpus)
         counts = count_TSS_reads(bam_file, bam_index, windows, cpus)
-        inside_df = process_coverage(inside_windows, counts[:len(inside_windows)], 'inside')
-        outside_df = process_coverage(outside_windows, counts[len(inside_windows):], 'outside')
+        inside_df = process_coverage(paired, [c[0] for c in counts], 'inside')
+        outside_df = process_coverage(paired, [c[1] for c in counts], 'outside')
 
         merged = pd.merge(inside_df, outside_df, on="id")
         merged['ratio_TSS'] = (merged['inside'] + 0.01) / (merged['outside'] + 0.01)

@@ -291,7 +291,7 @@ def test_get_ratio_TSS_metrics(test_files, tmp_path, metric, expected):
 ### get_bam_index and count_TSS_reads ###
 
 def write_bam(bam_path, reads, sort_order="coordinate"):
-    """Writes a BAM on chr1 from (name, flag, start, cigar) tuples. A cigar of None is an unmapped read."""
+    """Writes a BAM on chr1 from (name, flag, start, cigar) tuples. A cigar of None leaves the CIGAR unset."""
     header = {"HD": {"VN": "1.6", "SO": sort_order}, "SQ": [{"SN": "chr1", "LN": 10000}]}
     with pysam.AlignmentFile(str(bam_path), "wb", header=header) as bam:
         for name, flag, start, cigar in reads:
@@ -317,6 +317,7 @@ def tss_bam(tmp_path):
         ("secondary", 256, 1050, "50M"),
         ("duplicate", 1024, 1060, "50M"),
         ("unmapped", 4, 1070, None),         # unmapped mate placed next to its pair
+        ("no_cigar", 0, 1080, None),         # mapped flag without CIGAR: no aligned bases
         ("far", 0, 2000, "50M"),
     ]
     return write_bam(input_dir / "Aligned.sortedByCoord.out.bam", reads)
@@ -365,17 +366,51 @@ class TestGetBamIndex:
 class TestCountTSSReads:
     """Test suite for count_TSS_reads."""
 
-    windows = [("chr1", 1000, 1100), ("chr1", 1900, 2000), ("chr1", 2000, 2010), ("chrUn", 0, 100)]
+    # Paired (chrom, in_start, in_end, out_start, out_end) windows; the first sits inside the
+    # intron of "spliced" (500-1550, 20M1000N30M) so that read must not be counted.
+    windows = [
+        ("chr1", 1000, 1100, 899, 999),
+        ("chr1", 1900, 2000, 1799, 1899),
+        ("chr1", 2000, 2010, 1899, 1999),
+        ("chrUn", 0, 100, 101, 201),
+    ]
 
-    def test_counts_as_bedtools(self, tss_bam, tmp_path):
-        """Same counts as bedtools coverage -counts: reads spanning the window with an intron, secondary
-        and duplicate reads count, unmapped reads don't, and a contig missing from the BAM gives 0."""
+    def test_counts_aligned_reads_excluding_intron_spanning(self, tss_bam, tmp_path):
+        """Secondary and duplicate reads count, unmapped reads, records without a CIGAR, and
+        intron-spanning reads (CIGAR N across both windows) do not, and a missing contig gives (0, 0)."""
         bam_index = get_bam_index(tss_bam, str(tmp_path / "bam_index"), 1)
-        assert count_TSS_reads(tss_bam, bam_index, self.windows, 1) == [4, 0, 1, 0]
+        assert count_TSS_reads(tss_bam, bam_index, self.windows, 1) == [(3, 0), (0, 0), (1, 0), (0, 0)]
 
     @pytest.mark.parametrize("cpus", [2, 3, 8])
     def test_same_counts_in_parallel(self, tss_bam, tmp_path, cpus):
         """Windows are dealt round-robin to the processes; the counts must come back in the input order."""
         bam_index = get_bam_index(tss_bam, str(tmp_path / "bam_index"), 1)
         windows = self.windows * 5
-        assert count_TSS_reads(tss_bam, bam_index, windows, cpus) == [4, 0, 1, 0] * 5
+        assert count_TSS_reads(tss_bam, bam_index, windows, cpus) == [(3, 0), (0, 0), (1, 0), (0, 0)] * 5
+
+    def test_spliced_reads_at_tss_boundaries(self, tmp_path):
+        """Distinguishes spliced-read geometries on both strands:
+        - intron spanning both windows with no aligned bases: excluded from inside and outside;
+        - read aligning only in outside and splicing across inside: counts in outside only;
+        - read splicing from an upstream exon into inside: counts in both;
+        - read starting in inside and splicing downstream: counts in inside only."""
+        reads = [
+            # Plus strand TSS at 1000: inside=[1000, 1100), outside=[899, 999)
+            ("plus_intron_span", 0, 500, "20M1000N30M"),       # exons [500,520), [1520,1550) -> (0, 0)
+            ("plus_into_in", 0, 500, "20M480N30M"),            # exons [500,520), [1000,1030) -> (1, 1)
+            ("plus_outside_only", 0, 910, "50M"),              # [910,960) -> (0, 1)
+            ("plus_out_spliced_over_in", 0, 950, "20M500N30M"),  # exons [950,970), [1470,1500) -> (0, 1)
+            ("plus_out_of_in", 0, 1010, "30M500N20M"),         # exons [1010,1040), [1540,1560) -> (1, 0)
+            # Minus strand TSS at 5000: inside=[4900, 5000), outside=[5001, 5101)
+            ("minus_out_of_in", 16, 4400, "20M520N30M"),       # exons [4400,4420), [4940,4970) -> (1, 0)
+            ("minus_out_spliced_over_in", 16, 4400, "20M620N30M"),  # exons [4400,4420), [5040,5070) -> (0, 1)
+            ("minus_intron_span", 16, 4500, "20M1000N30M"),    # exons [4500,4520), [5520,5550) -> (0, 0)
+            ("minus_into_in", 16, 4970, "30M500N20M"),         # exons [4970,5000), [5500,5520) -> (1, 1)
+        ]
+        bam = write_bam(tmp_path / "spliced.bam", reads)
+        bam_index = get_bam_index(bam, str(tmp_path / "bam_index"), 1)
+        windows = [
+            ("chr1", 1000, 1100, 899, 999),    # plus: 2 inside, 3 outside
+            ("chr1", 4900, 5000, 5001, 5101),  # minus: 2 inside, 2 outside
+        ]
+        assert count_TSS_reads(bam, bam_index, windows, 1) == [(2, 3), (2, 2)]
