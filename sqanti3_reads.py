@@ -8,6 +8,7 @@ import hashlib
 
 from src.reads_argparse import reads_argparser
 from src.module_logging import reads_logger, update_logger
+from src.utilities.sqanti_reads_mods import validate_MODS, align_uBAM, get_mods_info, gen_mod_tsv, ujc_mod_sites
 import logging
 
 __author__  = "carolina.monzo@csic.es"
@@ -89,7 +90,10 @@ def fill_design_table(args):
     else:
          # If no sqanti_dirs provided, we assume we are generating it in OUTPUT
          df['junction_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_junctions.txt'
-        
+    # If using mods mode we include the path to the classification_mod and ujc_sites
+    if args.mods_mode:
+        df['mod_classification_file'] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_reads_mods_classification.txt'
+        df["ujc_mod_sites_file"] = args.OUTPUT + '/' + df['file_acc'] + '/' + df['sampleID'] + '_ujc_mod_sites.tsv'
     return(df)
 
 def _run_qc_cmd(cmd):
@@ -99,6 +103,8 @@ def _run_qc_cmd(cmd):
     subprocess.check_call(cmd)
 
 def get_method_runSQANTI3(args, df):
+    if args.mods_mode:
+        uBAM_files = get_mods_info(args, df, reads_logger)
 
     qc_cmds = []
     for index, row in df.iterrows():
@@ -129,7 +135,29 @@ def get_method_runSQANTI3(args, df):
                 else:
                      if args.verbose:
                          reads_logger.debug(f"Directory found but files missing:\n  Class: {os.path.isfile(classification_file_path)}\n  Junc: {os.path.isfile(junction_file_path)}")
-        
+        if args.mods_mode:
+            # uBAM -> fastq -> mappedBAM. Done here, one sample at a time: the alignment
+            # already uses all the --cpus.
+            fastq = align_uBAM(args, uBAM_files[file_acc], file_acc, sampleID, reads_logger)
+            # QC reuses the SAM written by align_uBAM. The command goes through qc_cmds like
+            # the other modes, so a failed QC stops the run instead of leaving the new
+            # alignment next to the classification of a previous run.
+            cmd_sqanti = [
+                "python", f"{sqantiqcPath}/sqanti3_qc.py",
+                "--isoforms", fastq,
+                "--refGTF", args.refGTF,
+                "--refFasta", args.refFasta,
+                "--min_ref_len", str(args.min_ref_len),
+                "--aligner_choice", "minimap2",
+                "-t", str(args.cpus),
+                "-d", f"{args.OUTPUT}/{file_acc}",
+                "-o", sampleID,
+                "-s", str(args.sites),
+                "--fasta",
+            ]
+            reads_logger.debug(cmd_sqanti)
+            qc_cmds.append(cmd_sqanti)
+            continue
         # Check for .gtf or .gff file
         gtf_pattern = os.path.join(args.input_dir, f"{file_acc}*.g*f")
         reads_logger.debug(gtf_pattern)
@@ -208,7 +236,7 @@ def get_method_runSQANTI3(args, df):
                 continue
 
         # If none of the conditions are met, raise an error
-        reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
+        reads_logger.error(f"ERROR: The file_acc you included in your design file ({file_acc}) does not correspond to .fastq, .gtf, .ubam or directories with junctions and classification files in the {args.sqanti_dirs} or {args.input_dir} directory")
         sys.exit(-1)
 
     # Run the per-sample SQANTI3-QC commands (simple mode), in parallel if --jobs>1.
@@ -362,7 +390,7 @@ def main():
         args.refGTF = os.path.abspath(os.path.expanduser(args.refGTF))
     if args.refFasta:
         args.refFasta = os.path.abspath(os.path.expanduser(args.refFasta))
-
+    
     # Ensure output directory exists
     if not os.path.exists(args.OUTPUT):
         os.makedirs(args.OUTPUT)
@@ -374,7 +402,10 @@ def main():
         log_level = logging.INFO
     
     update_logger(reads_logger, args.OUTPUT, "reads", log_level)
-
+    
+    if args.mods_mode:
+        validate_MODS(args, reads_logger)
+            
     # Check and read design file
     df = fill_design_table(args)
     
@@ -392,7 +423,17 @@ def main():
     # Make UJC and hash
     if not args.SKIPHASH:
         make_UJC_hash(args, df)
-
+        
+    # Make modifications table if mods_mode is activated
+    if args.mods_mode:
+        for index, row in df.iterrows():
+            file_acc = row['file_acc']
+            sampleID = row['sampleID']
+            tsv = gen_mod_tsv(args, file_acc, sampleID, reads_logger)
+            reads_logger.info(f"Modifications table generated for sample {sampleID} in {tsv}")
+            mod_clasif = ujc_mod_sites(args, file_acc, sampleID, reads_logger)
+            reads_logger.info(f"Modification-aware classification file generated for sample {sampleID} in {mod_clasif}")
+            
     # Run plotting script directly as a function call
     if args.SKIPPLOTS:
         reads_logger.info("--skip_plots set: skipping SQANTI-reads tables and plots generation.")
@@ -422,7 +463,11 @@ def main():
         config=config,
         jobs=args.jobs,
     )
-
+    # Modification plots, in their own PDF
+    if args.mods_mode:
+        from src.utilities.sqanti_reads_mods_plots import run_mods_plots
+        reads_logger.info("Running SQANTI-reads modification plots...")
+        run_mods_plots(args.inDESIGN, args.OUTPUT, prefix, args)
 
 if __name__ == "__main__":
     main()
