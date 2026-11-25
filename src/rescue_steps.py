@@ -9,7 +9,7 @@ from src.commands import (
     RSCRIPTPATH, run_command, PYTHONPATH, RESCUE_RANDOM_FOREST
 )
 from src.utilities.rescue.automatic_rescue import (
-    get_lost_reference_id, rescue_lost_reference, generate_automatic_table
+    get_lost_reference_id, generate_automatic_table
 )
 from src.utilities.rescue.rescue_helpers import (
     identify_rescue_candidates,
@@ -70,9 +70,14 @@ def run_automatic_rescue(classif_df,monoexons):
        rescue_df = generate_automatic_table(pd.DataFrame({'associated_transcript': ['none']}),classif_df)
        return pd.DataFrame(columns=['isoform']), rescue_df
     rescue_logger.debug(f"Found {len(lost_ref)} lost references")
-    rescue = pd.DataFrame()
-    for ref_id in lost_ref:
-        rescue = pd.concat([rescue,rescue_lost_reference(ref_id, rescue_classif)])
+    # Lost references with an FSM, found in one pass over the table instead
+    # of filtering it once per lost reference
+    fsm_refs = rescue_classif.loc[
+        rescue_classif['structural_category'] == 'full-splice_match',
+        'associated_transcript'
+    ].unique()
+    has_fsm = pd.Series(lost_ref).isin(fsm_refs).to_numpy()
+    rescue = pd.DataFrame({'isoform': lost_ref[has_fsm]})
 
     # Split into reference transcripts and ISM TODO: Eliminate this step?
     rescue_ref = rescue[rescue['isoform'].isin(rescue_classif['associated_transcript'])]
@@ -121,7 +126,7 @@ def rescue_targets(classif_df,rescue_candidates,ref_gtf,prefix):
 
 ## Run mapping of rescue candidates (artifacts) to targets
 def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
-                          corrected_isoforms, out_dir, out_prefix):
+                          corrected_isoforms, out_dir, out_prefix, cpus):
     prefix = f"{out_dir}/{out_prefix}"
     #### PREPARATION OF FILES FOR MINIMAP2 ####
     message("Preparation of files for artifact mapping:", rescue_logger)
@@ -170,7 +175,7 @@ def run_candidate_mapping(ref_trans_fasta,targets_list,candidates_list,
             rescue_logger.info("Existing mapping file was generated from different inputs, mapping again.")
         # make command (written to a temporary file so an interrupted run never leaves a truncated SAM behind)
         tmp_sam_file = f"{sam_file}.tmp"
-        minimap_cmd = f"minimap2 {MINIMAP2_RESCUE_OPTS} {targets_fasta} {candidates_fasta} > {tmp_sam_file}"
+        minimap_cmd = f"minimap2 {MINIMAP2_RESCUE_OPTS} -t {cpus} {targets_fasta} {candidates_fasta} > {tmp_sam_file}"
         # run
         logFile=f"{out_dir}/logs/rescue/minimap2.log"
         run_command(minimap_cmd,rescue_logger,logFile,"Mapping rescue candidates to targets")
@@ -290,7 +295,7 @@ def run_ML_rescue(filter_classification, reference_classification, hits_df, resc
 
 ## Evidence check of reference targets (count requisites of the rules)
 def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
-                         corrected_isoforms, out_dir, out_prefix):
+                         corrected_isoforms, out_dir, out_prefix, cpus):
     """Map the FSM artifacts of automatic rescue to the rescue targets.
 
     Automatic rescue does not map its artifacts. Their hits are only used to
@@ -307,7 +312,7 @@ def run_fallback_mapping(classif_df, rescue_df, ref_trans_fasta, ref_gtf,
     message("Fallback mapping of automatic rescue artifacts", rescue_logger)
     targets = rescue_targets(classif_df, fsm_artifacts, ref_gtf, f"{out_dir}/{fb_prefix}")
     return run_candidate_mapping(ref_trans_fasta, targets, fsm_artifacts,
-                                 corrected_isoforms, out_dir, fb_prefix)
+                                 corrected_isoforms, out_dir, fb_prefix, cpus)
 
 
 def run_evidence_check(classif_df, rescue_df, inclusion_list, hits_df, json_filter,

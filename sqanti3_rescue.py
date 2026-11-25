@@ -75,7 +75,8 @@ def main():
     # The hit table is not reused as is: run_candidate_mapping() only reuses the SAM
     # file if it was made from the same targets and candidates (mapping fingerprint)
     hits_df = run_candidate_mapping(ref_trans_fasta,targets,candidates,
-                         args.corrected_isoforms_fasta,args.dir,args.output)
+                         args.corrected_isoforms_fasta,args.dir,args.output,
+                         args.cpus)
 
     #### RUN ML FILTER RESCUE ####
     # this part combines reference ML filter run with mapping results
@@ -106,7 +107,8 @@ def main():
     fallback_hits = hits_df
     if args.map_automatic_fsm:
       fsm_hits = run_fallback_mapping(class_df, rescue_df, ref_trans_fasta, args.refGTF,
-                                      args.corrected_isoforms_fasta, args.dir, args.output)
+                                      args.corrected_isoforms_fasta, args.dir, args.output,
+                                      args.cpus)
       fallback_hits = pd.concat([hits_df, fsm_hits], ignore_index=True)
     inclusion_list, rescue_df = run_evidence_check(class_df, rescue_df, inclusion_list, fallback_hits,
                                                    args.json_filter, args.counts_design, args.counts, args.dir,

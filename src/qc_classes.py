@@ -3,6 +3,7 @@ import os
 from bx.intervals import Interval, IntervalTree
 from collections import defaultdict
 from dataclasses import dataclass, field
+from functools import cache
 from typing import List, Dict, Set, Optional, Union, get_args, get_origin
 from src.module_logging import qc_logger
 from src.utils import calculate_tss
@@ -277,27 +278,41 @@ class myQueryTranscripts:
                 raise ValueError("CDS start must be less than CDS end.")
         
     def _validate_types(self):
+        nullable_fields = self._nullable_fields()
         for field_name, expected_type in self.__annotations__.items():
             value = getattr(self, field_name)
 
             # Skip None values unless the field is not Optional
             if value is None:
-                origin = get_origin(expected_type)
-                if origin is Union and type(None) in get_args(expected_type):
-                    continue  # It's Optional[...] and value is None, which is fine
-                if expected_type is Optional:
-                    continue  # Fallback
-                if expected_type is type(None):
-                    continue
-                # If it's not optional and is None, raise
-                raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
-
-            if not self._is_instance_of_type(value, expected_type):
+                if field_name not in nullable_fields:
+                    raise TypeError(f"'{field_name}' must be of type {expected_type}, but got None")
+            elif not self._is_instance_of_type(value, expected_type):
                 raise TypeError(f"'{field_name}' must be of type {expected_type}, got {type(value).__name__} (value: {value})")
+
+    @classmethod
+    @cache
+    def _nullable_fields(cls):
+        """
+        Names of the fields that may be None (Optional[...] annotations).
+        Worked out once per class: one object is built for every query and
+        reference gene compared, and inspecting the annotations each time
+        was a large share of the classification time.
+        """
+        return frozenset(
+            field_name for field_name, expected_type in cls.__annotations__.items()
+            if (get_origin(expected_type) is Union and type(None) in get_args(expected_type))
+            or expected_type is Optional or expected_type is type(None)
+        )
+
+    @staticmethod
+    @cache
+    def _type_parts(expected_type):
+        """Origin and arguments of a type annotation, worked out once per type."""
+        return get_origin(expected_type), get_args(expected_type)
+
     @staticmethod
     def _is_instance_of_type(value, expected_type):
-        origin = get_origin(expected_type)
-        args = get_args(expected_type)
+        origin, args = myQueryTranscripts._type_parts(expected_type)
 
         if origin is None:
             return isinstance(value, expected_type)

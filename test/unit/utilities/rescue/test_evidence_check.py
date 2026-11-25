@@ -411,7 +411,7 @@ class TestOrchestration:
 
     def test_fallback_mapping_without_automatic_rows(self, tmp_path):
         r = rescue_table([("a1", "REF1", "rules_mapping", "reference", "yes")])
-        out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x")
+        out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x", 1)
         assert out.empty
 
     def test_fallback_mapping_ignores_stale_hits(self, tmp_path, monkeypatch):
@@ -421,11 +421,11 @@ class TestOrchestration:
                                                 sep="\t", index=False)
         monkeypatch.setattr(rescue_steps, "rescue_targets", lambda *a: ["LR1", "REF1"])
         calls = []
-        def fake_mapping(ref_fasta, targets, artifacts, corrected, out_dir, prefix):
+        def fake_mapping(ref_fasta, targets, artifacts, corrected, out_dir, prefix, cpus):
             calls.append((targets, artifacts, prefix))
             return hits([("fsm1", "LR1", 0, 50)])
         monkeypatch.setattr(rescue_steps, "run_candidate_mapping", fake_mapping)
         r = rescue_table([("fsm1", "REF1", "automatic", "reference", "yes")])
-        out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x")
+        out = run_fallback_mapping(classif({}), r, None, None, None, str(tmp_path), "x", 1)
         assert calls == [(["LR1", "REF1"], ["fsm1"], "x_fallback")]
         assert out["mapping_hit"].tolist() == ["LR1"]

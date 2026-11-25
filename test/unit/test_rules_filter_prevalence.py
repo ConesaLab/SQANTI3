@@ -12,7 +12,11 @@ from unittest.mock import mock_open, patch
 main_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, main_path)
 
-from src.utilities.filter.sqanti3_rules_filter import read_json_rules, apply_rules, get_reasons
+from src.utilities.filter.sqanti3_rules_filter import read_json_rules, apply_rules, get_reasons_table
+
+def reasons_of(row, force_multiexon, rules_dict):
+    """Filtering reasons of one transcript, as the row of get_reasons_table."""
+    return get_reasons_table(pd.DataFrame([row]), force_multiexon, rules_dict).iloc[0]
 
 
 # ---------------------------------------------------------------- helpers
@@ -56,7 +60,7 @@ def test_na_prevalence_fails():
     """An isoform missing from --fl_count has NA prevalence: it was detected in no sample."""
     row = isoform(prevalence=float("nan"))
     assert result(row, {"genic": [{"prevalence": 1}]}) == "Artifact"
-    reasons = get_reasons(row, False, rules_from({"genic": [{"prevalence": 1}]}))
+    reasons = reasons_of(row, False, rules_from({"genic": [{"prevalence": 1}]}))
     assert reasons["filter_reason"] == "NA value in prevalence"
 
 
@@ -87,7 +91,7 @@ def test_global_or_groups():
 
 def test_group_failure_reason():
     row = isoform(prevalence_K=1, prevalence_B=0)
-    reasons = get_reasons(row, False, rules_from(AND_RULES))["filter_reason"].split("; ")
+    reasons = reasons_of(row, False, rules_from(AND_RULES))["filter_reason"].split("; ")
     assert sorted(reasons) == ["prevalence_B: 0 < 2", "prevalence_K: 1 < 2"]
 
 

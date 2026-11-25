@@ -219,7 +219,7 @@ def createGTFFromSqanti(file_exons, file_trans, file_junct, dc_gene_description,
             #aux
             strand = fields[6]
             #desc = fields[8]
-            desc = "Chr=" + str(fields[8]) + "\n"
+            desc = "Chr=" + str(fields[0]) + "\n"
 
             #Exons Dictionary
             if(not dc_exons.get(transcript)):

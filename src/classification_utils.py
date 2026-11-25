@@ -14,8 +14,29 @@ def calc_splicesite_agreement(query_exons, ref_exons):
 
 def calc_exon_overlap(query_exons, ref_exons):
     """Determines the number of bases that overlap between query and reference"""
-    query_ranges = set(b for e in query_exons for b in range(e.start, e.end))
-    return sum(1 for e in ref_exons for b in range(e.start, e.end) if b in query_ranges)
+    # Interval arithmetic instead of base-by-base sets: the query exons are
+    # merged so a base shared by two of them still counts once
+    query_ranges = []
+    for start, end in sorted((e.start, e.end) for e in query_exons):
+        if query_ranges and start <= query_ranges[-1][1]:
+            query_ranges[-1][1] = max(query_ranges[-1][1], end)
+        else:
+            query_ranges.append([start, end])
+    # One sweep over both lists sorted by start instead of every pair: the
+    # merged ranges are disjoint, so a range that ends before a reference
+    # exon starts cannot overlap any later reference exon either
+    overlap = 0
+    first = 0
+    n_ranges = len(query_ranges)
+    for ref_start, ref_end in sorted((e.start, e.end) for e in ref_exons):
+        while first < n_ranges and query_ranges[first][1] <= ref_start:
+            first += 1
+        i = first
+        while i < n_ranges and query_ranges[i][0] < ref_end:
+            overlap += (min(ref_end, query_ranges[i][1])
+                        - max(ref_start, query_ranges[i][0]))
+            i += 1
+    return overlap
 
 def _exonic_len_between(exons, a, b):
     """
