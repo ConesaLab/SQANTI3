@@ -142,6 +142,21 @@ def memory_use_percent():
         percent = max(percent, round(100 * used / limit, 1))
     return percent
 
+def chunk_cpu_plan(cpus, n_chunks, available_cpus):
+    """
+    Share the CPUs of the run among the chunks that run at the same time.
+
+    -t is the CPU budget of the whole run, limited to the CPUs this process may
+    use. A chunk classifies on one CPU, but STAR, the TSS ratio and the ORF
+    prediction use all the CPUs the chunk is given, so the chunks that run at
+    once share the budget instead of getting all of it each.
+
+    :return: (chunks that run at once, CPUs of each chunk)
+    """
+    budget = max(1, min(cpus, available_cpus))
+    max_workers = max(1, min(budget, n_chunks))
+    return max_workers, max(1, budget // max_workers)
+
 def read_shared_inputs(args):
     """
     Read the genome and parse the reference annotation once for all the chunks.
@@ -258,15 +273,14 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
 
     pools = []
     
-    # -t is the CPU budget of the whole run (sequence_correction() already
-    # gives each worker's aligner cpus // chunks), and only the CPUs this
-    # process may use count, such as a SLURM allocation, not every CPU of the
-    # machine. A worker classifies on one CPU, so up to that many run at once
+    # -t is the CPU budget of the whole run, and only the CPUs this process
+    # may use count, such as a SLURM allocation, not every CPU of the machine
     if hasattr(os, 'sched_getaffinity'):
         available_cpus = len(os.sched_getaffinity(0))
     else:
         available_cpus = psutil.cpu_count(logical=True) or 1
-    max_workers = max(1, min(args.cpus, available_cpus))
+    max_workers, chunk_cpus = chunk_cpu_plan(args.cpus, len(split_outs), available_cpus)
+    qc_logger.info(f"Running up to {max_workers} chunks at the same time with {chunk_cpus} CPUs each")
 
     pending_tasks = list(enumerate(split_outs))
     active_processes = []
@@ -293,6 +307,7 @@ def split_input_run(args, outdir, genome_dict=None, reference=None):
             args2.novel_gene_prefix = str(i)
             args2.dir = d
             args2.report = 'skip'
+            args2.cpus = chunk_cpus
             
             p = Process(target=run, args=(args2, genome_dict, reference))
             p.start()
